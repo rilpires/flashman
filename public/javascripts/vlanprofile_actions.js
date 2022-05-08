@@ -1,10 +1,12 @@
 
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
+
+const t = i18next.t;
 
 window.checkVlanName = function(input) {
   if (/[^A-Za-z\-0-9_]+/.test(input.value)) {
-    input.setCustomValidity('O nome deve ter caracteres'+
-      ' alfanuméricos, hífen ou sublinhado.');
+    input.setCustomValidity(t('vlanProfileNameCharRules'));
   } else {
     $.get('/vlan/profile/fetch', function(res) {
       if (res.type == 'success') {
@@ -16,8 +18,7 @@ window.checkVlanName = function(input) {
           }
         });
         if (distinctValidity) {
-          input.setCustomValidity('O Nome do Perfil da VLAN'+
-            ' deve ser distinto dos já existentes.');
+          input.setCustomValidity(t('vlanProfileNameUniquenessRule'));
         } else {
           input.setCustomValidity('');
         }
@@ -27,7 +28,7 @@ window.checkVlanName = function(input) {
 };
 
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('.needs-validation').submit(function(event) {
     if ($(this)[0].checkValidity()) {
       $.post($(this).attr('action'), $(this).serialize(), 'json')

@@ -1,8 +1,11 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import {setFirmwareStorage,
         getFirmwareStorage,
         deleteFirmwareStorage} from './session_storage.js';
 import 'datatables.net-bs4';
+
+const t = i18next.t;
 
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
@@ -12,9 +15,9 @@ const fetchLocalFirmwares = function(firmwaresTable) {
         let isRestricted = firmware.is_restricted;
         let displayRestricted = '';
         if (isRestricted) {
-          displayRestricted = 'Sim';
+          displayRestricted = t('Yes');
         } else {
-          displayRestricted = 'Não';
+          displayRestricted = t('No');
         }
         let firmwareRow = $('<tr></tr>').append(
           $('<td></td>').append(
@@ -93,7 +96,7 @@ window.changeCpeForm = function(input) {
   }
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];
@@ -105,10 +108,10 @@ $(document).ready(function() {
     'lengthChange': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhum registro encontrado',
-      'infoEmpty': 'Nenhum firmware disponível',
+      'zeroRecords': t('noRegisterFound'),
+      'infoEmpty': t('noFirmwaresAvailable'),
       'search': '',
-      'searchPlaceholder': 'Buscar...',
+      'searchPlaceholder': t('Search...'),
     },
     'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
     'columnDefs': [
@@ -177,7 +180,7 @@ $(document).ready(function() {
                             company: firmware.company,
                             firmwarefile: firmware.firmwarefile,
                             wanproto: firmware.wanproto,
-                            flashboxVer: firmware.flashboxver,
+                            flashboxversion: firmware.flashboxver,
                             isbeta: firmware.isbeta,
                             isrestricted: selectedItensRestrict.includes(firmware.firmwarefile)};
       fws.push(firmwareAttrs);
@@ -308,7 +311,7 @@ $(document).ready(function() {
     } else {
       displayAlertMsg({
         type: 'danger',
-        message: 'Nenhum arquivo foi selecionado',
+        message: t('noFileSelected'),
       });
     }
 
@@ -379,11 +382,11 @@ $(document).ready(function() {
           'info': false,
           'pagingType': 'numbers',
           'language': {
-            'zeroRecords': 'Nenhum registro encontrado',
-            'infoEmpty': 'Nenhum firmware disponível',
+            'zeroRecords': t('noRegisterFound'),
+            'infoEmpty': t('noFirmwaresAvailable'),
             'search': '',
-            'searchPlaceholder': 'Buscar...',
-            'lengthMenu': 'Exibir _MENU_',
+            'searchPlaceholder': t('Search...'),
+            'lengthMenu': t('Show')+' _MENU_',
           },
           'order': [[1, 'asc'], [2, 'asc'], [3, 'asc'], [4, 'asc']],
           'columnDefs': [
@@ -399,7 +402,7 @@ $(document).ready(function() {
         $('.dt-up-firm-table-btns').append(
           $('<div></div>').addClass('btn-group').attr('role', 'group').append(
             $('<div></div>').addClass('fas fa-plus fa-lg btn-fw-add-icon'),
-                  $('<span></span>').html('&nbsp Adicionar')).addClass(
+                  $('<span></span>').html('&nbsp '+t('Add'))).addClass(
                   'btn btn-md ml-0 my-md-0 btn-primary btn-firmware-add'),
         );
       } else {

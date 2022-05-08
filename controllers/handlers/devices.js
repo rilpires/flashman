@@ -68,7 +68,7 @@ deviceHandlers.isApTooOld = function(dateLastSeen) {
   return isTooOld(dateLastSeen, 60);
 };
 
-const syncUpdateScheduler = async function(mac) {
+deviceHandlers.syncUpdateScheduler = async function(mac) {
   try {
     let config = await Config.findOne({is_default: true}).lean();
     if (!config || !config.device_update_schedule ||
@@ -80,6 +80,10 @@ const syncUpdateScheduler = async function(mac) {
     let device = rule.in_progress_devices.find((d)=>d.mac === mac);
     let doneLength = rule.done_devices.length;
     if (!device) return;
+    let nextState = 'error';
+    if (device.state === 'topology') {
+      nextState = 'error_topology';
+    }
     // Move from in progress to done, with status error
     let query = {
       '$set': {
@@ -91,7 +95,7 @@ const syncUpdateScheduler = async function(mac) {
       '$push': {
         'device_update_schedule.rule.done_devices': {
           'mac': mac,
-          'state': 'error',
+          'state': nextState,
           'slave_count': device.slave_count,
           'slave_updates_remaining': device.slave_updates_remaining,
         },
@@ -104,15 +108,40 @@ const syncUpdateScheduler = async function(mac) {
   }
 };
 
-deviceHandlers.timeoutUpdateAck = function(mac) {
-  // Default timeout is 3 minutes, enough time to download 16MB over a 1Mbps
-  // connection, with enough breathing room
-  let timeout = 3*60*1000;
-  if (process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) {
-    timeout = parseInt(process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) * 1000;
-    if (isNaN(timeout)) {
-      timeout = 3*60*1000; // just in case someone messes up the parameter
+deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
+  let timeout;
+  let targetStatus; // waiting status
+  let errStatus; // timeout status
+  let timeoutMsg;
+  if (timeoutType === 'update') {
+    // Default timeout is 3 minutes, enough time to download 16MB over a 1Mbps
+    // connection, with enough breathing room
+    timeout = 3*60*1000;
+    targetStatus = 0;
+    errStatus = 5;
+    timeoutMsg = 'UPDATE: Did not receive update ack for MAC ' + mac;
+    if (process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) {
+      timeout = parseInt(process.env.FLM_UPDATE_ACK_TIMEOUT_SECONDS) * 1000;
+      if (isNaN(timeout)) {
+        timeout = 3*60*1000; // just in case someone messes up the parameter
+      }
     }
+  } else if (timeoutType === 'onlinedevs') {
+    // Default timeout is 25 seconds
+    timeout = 25*1000;
+    targetStatus = 20;
+    errStatus = 6;
+    timeoutMsg = 'UPDATE: Did not receive topology info for all devices in '+
+    'mesh network of master with MAC ' + mac;
+    if (process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) {
+      timeout = parseInt(process.env.FLM_TOPOLOGY_INFO_TIMEOUT_SECONDS) * 1000;
+      if (isNaN(timeout)) {
+        timeout = 25*1000; // just in case someone messes up the parameter
+      }
+    }
+  } else {
+    console.log('Invalid timeout type');
+    return;
   }
   setTimeout(()=>{
     DeviceModel.findById(mac, function(err, matchedDevice) {
@@ -122,27 +151,99 @@ deviceHandlers.timeoutUpdateAck = function(mac) {
         matchedDevice.wifi_is_5ghz_capable,
         matchedDevice.model,
       );
-      if (permissions.grantUpdateAck && matchedDevice.do_update_status === 0) {
+      if (timeoutType === 'update' && !permissions.grantUpdateAck) return;
+      if (matchedDevice.do_update_status === targetStatus) {
         // Ack expected but not received after timeout - assume error and cancel
-        console.log('UPDATE: Device '+mac+' did not send ack, aborting update');
-        matchedDevice.do_update_status = 5; // ack not received
-        matchedDevice.save();
+        console.log(timeoutMsg);
+        matchedDevice.do_update_status = errStatus; // ack not received
+        matchedDevice.save().catch((err) => {
+          console.log('Error saving ack update status: ' + err);
+        });
         // Sync with update scheduler to signal error for that update
         // TODO: Find a way to use the function in update_scheduler.js instead
         //       We have to use a local one here because of circular dependency
         if (matchedDevice.mesh_master) {
           // Slave routers call the function with their master's mac
-          syncUpdateScheduler(matchedDevice.mesh_master);
+          deviceHandlers.syncUpdateScheduler(matchedDevice.mesh_master);
         } else {
-          syncUpdateScheduler(mac);
+          deviceHandlers.syncUpdateScheduler(mac);
         }
       }
     });
   }, timeout);
 };
 
+// Check if secondary device in mesh v1 has support in mesh v2
+const isSlaveInV1CompatibleInV2 = function(slave) {
+  const slavePermissions = DeviceVersion.findByVersion(
+    slave.version,
+    slave.wifi_is_5ghz_capable,
+    slave.model,
+  );
+  if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
+// Check if primary device in mesh v1 has support in mesh v2
+const isMasterInV1CompatibleInV2 = function(master) {
+  const masterPermissions = DeviceVersion.findByVersion(
+    master.version,
+    master.wifi_is_5ghz_capable,
+    master.model,
+  );
+  if (!masterPermissions.grantMeshV2PrimaryModeUpgrade) {
+    return false;
+  }
+  return true;
+};
+
+// Check if the desired firmware version upgrade is possible considering
+// scenarios of possible mesh configuration incompatibilities when there is
+// an active mesh network
+deviceHandlers.isUpgradePossible = function(device, nextVersion) {
+  if ((device.mesh_slaves && device.mesh_slaves.length) ||
+    device.mesh_master) {
+    // find out what kind of upgrade this is
+    const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+      device.version, nextVersion,
+    );
+    if (!typeUpgrade.unknownVersion) {
+      if (typeUpgrade.current === 2 && typeUpgrade.upgrade === 1) {
+        // no mesh v2 -> v1 downgrade if in active mesh network
+        return false;
+      } else if (typeUpgrade.current === 1 && typeUpgrade.upgrade === 2) {
+        // mesh v1 -> v2
+        if (device.mesh_slaves && device.mesh_slaves.length) {
+          // is a master
+          if (!isMasterInV1CompatibleInV2(device)) {
+            return false;
+          }
+        } else {
+          // is a slave
+          if (!isSlaveInV1CompatibleInV2(device)) {
+            return false;
+          }
+        }
+        return true;
+      } else {
+        // allow mesh v1 -> v1 or mesh v2 -> v2
+        return true;
+      }
+    } else {
+      // block upgrade if one of target versions is unknown
+      return false;
+    }
+  } else {
+    // No mesh network. Current restrictions are in active mesh networks
+    return true;
+  }
+};
+
 deviceHandlers.removeDeviceFromDatabase = function(device) {
   let meshMaster = device.mesh_master;
+  let meshSlaves = device.mesh_slaves;
   // Use this .remove method so middleware post hook receives object info
   device.remove();
   if (meshMaster) {
@@ -153,11 +254,28 @@ deviceHandlers.removeDeviceFromDatabase = function(device) {
         if (index > -1) {
           masterDevice.mesh_slaves.splice(index, 1);
         }
-        masterDevice.save();
+        masterDevice.save().catch((err) => {
+          console.log('Error saving mesh slave remove operation: ' + err);
+        });
         console.log('Slave ' + device._id.toUpperCase() +
           ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
+  }
+  if (meshSlaves && meshSlaves.length > 0) {
+    // This is a mesh master. Remove master registration for each slave found
+    for (let meshSlaveMac of meshSlaves) {
+      DeviceModel.findById(meshSlaveMac, {mesh_master: true},
+        function(err, slaveDevice) {
+          if (!err && slaveDevice && slaveDevice.mesh_master) {
+            slaveDevice.mesh_master = undefined;
+            slaveDevice.save().catch((err) => {
+              console.log('Error saving mesh master remove operation: ' + err);
+            });
+          }
+        },
+      );
+    }
   }
 };
 
@@ -251,45 +369,86 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   return prefixObj;
 };
 
+// getting values for inform configurations for tr069 from Config.
+const getOnlyTR069Configs = async function() {
+  let configsWithTr069 = await Config.findOne({is_default: true}, 'tr069')
+    .lean().exec()
+    .catch((err) => err); // in case of error, return error in await.
+  // it's very unlikely that we will incur in any error but,
+  if (configsWithTr069.constructor === Error) { // if we returned an error.
+    // print error message.
+    console.log('Error when getting user config from database.'+
+      '\nUsing default values for tr069 config.');
+    return { // build a default configuration.
+      inform_interval: 5*60*1000,
+      offline_threshold: 1,
+      recovery_threshold: 3,
+    };
+  } else { // if no error.
+    return configsWithTr069.tr069; // get only tr069 config inside the document.
+  }
+};
+
+// returns an object containing the tr069 time threshold used when defining
+// device status (to give it a color). Will return an Error Object in case
+// of any error.
+deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
+  // in some places this function is called, the current time was not taken.
+  currentTimestamp = currentTimestamp || Date.now();
+
+  // getting user configured tr069 parameters.
+  let tr069Config = await getOnlyTR069Configs();
+  return { // thresholds for tr069 status classification.
+    // time when devices are considered in recovery for tr069.
+    recovery: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.recovery_threshold)),
+    // time when devices are considered offline for tr069.
+    offline: new Date(currentTimestamp - (tr069Config.inform_interval*
+      tr069Config.offline_threshold)),
+  };
+};
+
 deviceHandlers.sendPingToTraps = function(id, results) {
   sio.anlixSendPingTestNotifications(id, results);
   // No await needed
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
     if (!err && matchedConfig) {
       // Send ping results if device traps are activated
       if (matchedConfig.traps_callbacks &&
-          matchedConfig.traps_callbacks.device_crud) {
-        let requestOptions = {};
-        let callbackUrl =
-        matchedConfig.traps_callbacks.device_crud.url;
-        let callbackAuthUser =
-        matchedConfig.traps_callbacks.device_crud.user;
-        let callbackAuthSecret =
-        matchedConfig.traps_callbacks.device_crud.secret;
-        if (callbackUrl) {
-          requestOptions.url = callbackUrl;
-          requestOptions.method = 'PUT';
-          requestOptions.json = {
-            'id': id,
-            'type': 'device',
-            'changes': {ping_results: results},
-          };
-          if (callbackAuthUser && callbackAuthSecret) {
-            requestOptions.auth = {
-              user: callbackAuthUser,
-              pass: callbackAuthSecret,
+          matchedConfig.traps_callbacks.devices_crud
+      ) {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
+          let requestOptions = {};
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': id,
+              'type': 'device',
+              'changes': {ping_results: results},
             };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
           }
-          request(requestOptions).then((resp) => {
-            // Ignore API response
-            console.log(resp);
-            return;
-          }, (err) => {
-            // Ignore API endpoint errors
-            console.log(err);
-            return;
-          });
-        }
+        });
+        Promise.all(promises).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     }
   });
@@ -353,7 +512,9 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     device.last_speedtest_error.error = 'Error';
   }
 
-  await device.save();
+  await device.save().catch((err) => {
+    console.log('Error saving device speedtest: ' + err);
+  });
   if (mutex.isLocked()) mutexRelease();
 
   sio.anlixSendSpeedTestNotifications(device._id, result);

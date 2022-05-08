@@ -1,3 +1,4 @@
+/* global __line */
 
 // Load required packages
 const passport = require('passport');
@@ -5,6 +6,7 @@ const BasicStrategy = require('passport-http').BasicStrategy;
 const LocalStrategy = require('passport-local');
 const User = require('../models/user');
 const Role = require('../models/role');
+const t = require('./language').i18next.t;
 
 passport.use(new BasicStrategy(
   function(name, password, callback) {
@@ -29,7 +31,7 @@ passport.use(new BasicStrategy(
         return callback(null, user);
       });
     });
-  }
+  },
 ));
 
 passport.use(new LocalStrategy(
@@ -37,26 +39,26 @@ passport.use(new LocalStrategy(
   function(name, password, callback) {
     User.findOne({name: name}, function(err, user) {
       if (err) {
-        return callback({message: 'Erro'}, null);
+        return callback({message: t('Error')}, null);
       }
       // No user found with that name
       if (!user) {
-        return callback({message: 'Usuário desconhecido'}, null);
+        return callback({message: t('unknownUser')}, null);
       }
       // Make sure the password is correct
       user.verifyPassword(password, function(err, isMatch) {
         if (err) {
-          return callback({message: 'Erro'}, null);
+          return callback({message: t('Error')}, null);
         }
         // Password did not match
         if (!isMatch) {
-          return callback({message: 'Senha inválida'}, null);
+          return callback({message: t('invalidPassword')}, null);
         }
         // Success
         return callback(null, user);
       });
     });
-  }
+  },
 ));
 
 passport.serializeUser(function(user, done) {
@@ -76,7 +78,7 @@ exports.uiAuthenticate = function(req, res, next) {
     }
     if (!user) {
       return res.render('login', {
-        message: 'Usuário não encontrado',
+        message: t('userNotFound', {errorline: __line}),
         type: 'danger',
       });
     }
@@ -91,7 +93,9 @@ exports.uiAuthenticate = function(req, res, next) {
       }
 
       user.lastLogin = new Date();
-      user.save();
+      user.save().catch((err) => {
+        console.log('Error saving last login to database');
+      });
 
       res.redirect('/devicelist');
     });
@@ -114,12 +118,12 @@ exports.ensurePermission = function(permission, level=1) {
           console.log(err);
           if (req.accepts('text/html') && !req.is('application/json')) {
             res.status(403).render('login', {
-              message: 'Permissão negada',
+              message: t('permissionDenied', {errorline: __line}),
               type: 'danger',
             });
           } else {
             res.status(403).json({
-              message: 'Permissão negada',
+              message: t('permissionDenied', {errorline: __line}),
               type: 'danger',
             });
           }
@@ -129,12 +133,12 @@ exports.ensurePermission = function(permission, level=1) {
         } else {
           if (req.accepts('text/html') && !req.is('application/json')) {
             res.status(403).render('login', {
-              message: 'Permissão negada',
+              message: t('permissionDenied', {errorline: __line}),
               type: 'danger',
             });
           } else {
             res.status(403).json({
-              message: 'Permissão negada',
+              message: t('permissionDenied', {errorline: __line}),
               type: 'danger',
             });
           }
@@ -143,12 +147,12 @@ exports.ensurePermission = function(permission, level=1) {
     } else {
       if (req.accepts('text/html') && !req.is('application/json')) {
         res.status(403).render('login', {
-          message: 'Permissão negada',
+          message: t('permissionDenied', {errorline: __line}),
           type: 'danger',
         });
       } else {
         res.status(403).json({
-          message: 'Permissão negada',
+          message: t('permissionDenied', {errorline: __line}),
           type: 'danger',
         });
       }

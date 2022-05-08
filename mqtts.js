@@ -31,7 +31,8 @@ mqtts.unifiedClientsMap = {};
 const findServerId = function(id) {
   let correctServerId = null;
   for (let serverId in mqtts.unifiedClientsMap) {
-    if (Object.prototype.hasOwnProperty.call(mqtts.unifiedClientsMap, serverId)) {
+    if (Object.prototype.hasOwnProperty.call(mqtts.unifiedClientsMap,
+                                             serverId)) {
       let clientsMap = mqtts.unifiedClientsMap[serverId];
       if (Object.prototype.hasOwnProperty.call(clientsMap, id)) {
         correctServerId = serverId;
@@ -160,7 +161,7 @@ mqtts.on('ack', function(packet, client, err) {
 mqtts.getConnectedClients = function() {
   return Object.values(mqtts.unifiedClientsMap)
     .reduce((acc, clients) => acc.concat(Object.keys(clients)), []);
-}
+};
 
 mqtts.authenticate = function(client, username, password, cb) {
   let needauth = true;
@@ -200,7 +201,9 @@ mqtts.authenticate = function(client, username, password, cb) {
               debug('MQTT AUTH OK: id ' + username);
               cb(null, true);
             } else {
-              let config = await Config.findOne({is_default: true}).catch(
+              let config = await Config.findOne(
+                {is_default: true}, {mqtt_secret_bypass: true},
+              ).lean().catch(
                 (err) => {
                   debug('MQTT AUTH ERROR: Config not found!');
                 },
@@ -212,7 +215,10 @@ mqtts.authenticate = function(client, username, password, cb) {
                             ' wrong password! Bypass allowed...');
                 matchedDevice.mqtt_secret_bypass = false;
                 matchedDevice.mqtt_secret = password;
-                matchedDevice.save();
+                await matchedDevice.save().catch((err) => {
+                  console.log('Error saving MQTT data to matched device: ' +
+                              err);
+                });
                 cb(null, true);
               } else {
                 debug('MQTT AUTH ERROR: Device ' + username +

@@ -1,13 +1,15 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import 'datatables.net-bs4';
 import 'regenerator-runtime/runtime';
+
+const t = i18next.t;
 
 window.checkVlanId = function(input) {
   // restricted to this range of value by the definition of 802.1q protocol
   // vlan 2 is restricted to wan
   if (input.value != 1 && (input.value < 3 || input.value > 4094)) {
-    input.setCustomValidity('O VLAN ID não pode ser'+
-      ' menor que 3 ou maior que 4094.');
+    input.setCustomValidity(t('vlanIdLengthRule')+'.');
   } else {
     let distinctValidity = false;
     let vlanIdsOnTable = $('.td-vlan-id');
@@ -17,7 +19,7 @@ window.checkVlanId = function(input) {
       }
     }
     if (distinctValidity) {
-      input.setCustomValidity('O VLAN ID deve ser distinto dos já existentes.');
+      input.setCustomValidity(t('vlanIdUniquenessRule')+'.');
     } else {
       input.setCustomValidity('');
     }
@@ -26,10 +28,7 @@ window.checkVlanId = function(input) {
 
 window.checkVlanName = function(input) {
   if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(input.value) == false) {
-    input.setCustomValidity('O nome do Perfil de VLAN'+
-      ' deve começar com um caractere do alfabeto,'+
-      ' conter caracteres alfanuméricos, hífen ou '+
-      'sublinhado, não pode ser vazio e deve ser distinto dos já existentes.');
+    input.setCustomValidity(t('vlanProfileNameRules')+'.');
   } else {
     let distinctValidity = false;
     let vlanIdsOnTable = $('.td-profile-name');
@@ -39,8 +38,7 @@ window.checkVlanName = function(input) {
       }
     }
     if (distinctValidity) {
-      input.setCustomValidity('O Nome do Perfil da VLAN deve'+
-        ' ser distinto dos já existentes.');
+      input.setCustomValidity(t('vlanProfileNameUniquenessRule')+'.');
     } else {
       input.setCustomValidity('');
     }
@@ -70,7 +68,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
           $('<td>').append(
             $('<button>').append(
               $('<div>').addClass('fas fa-edit btn-vp-edit-icon'),
-              $('<span>').html('&nbsp Editar nome'),
+              $('<span>').html(`&nbsp ${t('editName')}`),
             ).addClass('btn btn-sm btn-primary my-0 btn-vp-edit')
             .attr('data-vlan-profile-id', vlanProfileObj.vlan_id)
             .attr('type', 'button'),
@@ -84,7 +82,7 @@ const fetchVlanProfiles = function(vlanProfilesTable) {
   }, 'json');
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   let selectedItens = [];
 
   let vlanProfilesTable = $('#vlan-profile-table').DataTable({
@@ -93,11 +91,11 @@ $(document).ready(function() {
     'info': false,
     'pagingType': 'numbers',
     'language': {
-      'zeroRecords': 'Nenhum perfil de VLAN encontrado',
-      'infoEmpty': 'Nenhum perfil de VLAN encontrado',
+      'zeroRecords': t('noVlanProfileFound'),
+      'infoEmpty': t('noVlanProfileFound'),
       'search': '',
-      'searchPlaceholder': 'Buscar...',
-      'lengthMenu': 'Exibir _MENU_',
+      'searchPlaceholder': t('Search...'),
+      'lengthMenu': `${t('Show')} _MENU_`,
     },
     'order': [[1, 'asc'], [2, 'asc']],
     'columnDefs': [
@@ -169,14 +167,11 @@ $(document).ready(function() {
   $(document).on('click', '.btn-trash', async function(event) {
     swal({
       type: 'warning',
-      title: 'Atenção!',
-      text: 'Podem existir dispositivos cuja configuração de VLAN utiliza ' +
-        'estes perfis de VLAN. Prosseguir com esta exclusão irá associar ' +
-        'as portas que estão associadas a estes perfis de VLAN ' +
-        'ao perfil de VLAN padrão. Deseja continuar mesmo assim?',
-      confirmButtonText: 'Prosseguir',
+      title: t('Attention!'),
+      text: t('vlanDeleteWarning'),
+      confirmButtonText: t('Proceed'),
       confirmButtonColor: '#4db6ac',
-      cancelButtonText: 'Cancelar',
+      cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
       showCancelButton: true,
     }).then(async function(result) {
@@ -193,9 +188,8 @@ $(document).ready(function() {
         swal.close();
         swal({
           type: 'error',
-          title: 'Erro ao excluir perfis de VLAN',
-          text: 'Exclusão de perfis não foi possível pois ' +
-                'alguns CPEs não atualizaram a configuração de VLAN.',
+          title: t('errorDeletingVlanProfile'),
+          text: t('cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration'),
           confirmButtonColor: '#4db6ac',
         });
       } else {
@@ -208,7 +202,7 @@ $(document).ready(function() {
             swal.close();
             swal({
               type: 'success',
-              title: 'Perfis excluídos com sucesso!',
+              title: t('operationSuccessful'),
               confirmButtonColor: '#4db6ac',
             });
             if (res.type == 'success') {

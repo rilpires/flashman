@@ -1,20 +1,22 @@
+/* global __line */
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
 const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
+const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const keyHandlers = require('./handlers/keys');
 const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
+const deviceList = require('./device_list.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
-const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/tasks-api');
 const controlApi = require('./external-api/control');
+const t = require('./language').i18next.t;
 
 let diagAppAPIController = {};
 
@@ -111,7 +113,7 @@ const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
     {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
-  ).catch((err) => err);
+  ).lean().catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -148,20 +150,20 @@ diagAppAPIController.sessionLogin = (req, res) => {
     if (err || !user) {
       return res.status(404).json({
         success: false,
-        message: 'Usuário não encontrado',
+        message: t('userNotFound', {errorline: __line}),
       });
     }
     Role.findOne({name: user.role}, async (err, role) => {
       if (err || (!user.is_superuser && !role)) {
         return res.status(500).json({
           success: false,
-          message: 'Erro ao encontrar permissões',
+          message: t('permissionFindError', {errorline: __line}),
         });
       }
       if (!user.is_superuser && !role.grantDiagAppAccess) {
         return res.status(403).json({
           success: false,
-          message: 'Permissão negada',
+          message: t('permissionDenied', {errorline: __line}),
         });
       }
       let session = await generateSessionCredential(user.name);
@@ -187,17 +189,19 @@ diagAppAPIController.configureWifi = async function(req, res) {
         device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
+        return res.status(404).json({'error':
+          t('macNotFound', {errorline: __line})});
       }
       let content = req.body;
       let updateParameters = false;
       let changes = {wifi2: {}, wifi5: {}};
 
       // Get SSID prefix data
-      let matchedConfig = await ConfigModel.findOne({is_default: true});
+      let matchedConfig = await ConfigModel.findOne({is_default: true}).lean();
       if (!matchedConfig) {
         console.error('No config exists');
-        return res.status(500).json({'error': 'Internal error'});
+        return res.status(500).json({'error':
+          t('configFindError', {errorline: __line})});
       }
 
       let createPrefixErrNotification = false;
@@ -306,8 +310,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         });
         if (!matchedNotif || matchedNotif.allow_duplicate) {
           let notification = new Notification({
-            'message': 'Não foi possível habilitar o prefixo SSID ' +
-                       'pois o tamanho máximo de 32 caracteres foi excedido.',
+            'message': t('ssidPrefixInvalidLength'),
             'message_code': 5,
             'severity': 'alert',
             'type': 'communication',
@@ -324,11 +327,13 @@ diagAppAPIController.configureWifi = async function(req, res) {
       }
       return res.status(200).json({'success': true});
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -346,95 +351,48 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
       device = await DeviceModel.findById(req.body.mac);
     }
     if (!device) {
-      return res.status(404).json({'error': 'Device not found'});
+      return res.status(404).json({'error':
+        t('cpeNotFound', {errorline: __line})});
     }
-    let targetMode = parseInt(req.body.mesh_mode);
-    if (isNaN(targetMode) || targetMode < 0 || targetMode > 4) {
-      return res.status(403).json({'error': 'invalid targetMode'});
-    }
-    if (targetMode === 0 && device.mesh_slaves.length > 0) {
-      return res.status(500).json({
-        'error': 'Cannot disable mesh with registered slaves',
-      });
-    }
-    const wifiRadioState = 1;
-    const meshChannel = 7;
-    const meshChannel5GHz = 40; // Value has better results on some routers
-    let model = device.model;
-    let changes;
-    let acsID;
-    let splitID;
-    if (device.use_tr069) {
-      acsID = device.acs_id;
-      splitID = acsID.split('-');
-      model = splitID.slice(1, splitID.length-1).join('-');
-    }
-    const permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      model,
+    const targetMode = parseInt(req.body.mesh_mode);
+    const validateStatus = await meshHandlers.validateMeshMode(
+      device, targetMode,
     );
-    const isMeshV1Compatible = permissions.grantMeshMode;
-    const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
-    if (!isMeshV1Compatible && !isMeshV2Compatible) {
-      return res.status(403).json({
-        'error': 'CPE isn\'t compatibe with mesh',
-      });
+    if (!validateStatus.success) {
+      return res.status(500).json({'error': validateStatus.msg});
     }
-    const isWifi5GHzCompatible = permissions.grantWifi5ghz;
-    if (!isWifi5GHzCompatible && targetMode > 2) {
-      return res.status(403).json({
-        'error': 'CPE is not compatible with 5GHz mesh',
-      });
-    }
-    if (isMeshV2Compatible && device.use_tr069) {
-      const hasMeshVAPObject = permissions.grantMeshVAPObject;
-      /*
-        If device doesn't have SSID Object by default, then
-        we need to check if it has been created already.
-        If it hasn't, we will create both the 2.4 and 5GHz mesh AP objects
-        IMPORTANT: even if target mode is 1 (cable) we must create these
-        objects because, in that case, we disable the virtual APs. If the
-        objects don't exist yet this will cause an error!
-      */
-      let populateVAPObjects = false;
-      if (!hasMeshVAPObject && targetMode > 0) {
-        const returnObj = await acsDeviceInfo.coordVAPObjects(device);
-        if (returnObj.code !== 200) {
-          return res.status(returnObj.code).json({'error': returnObj.msg});
-        }
-        populateVAPObjects = returnObj.populate;
+    /*
+      For tr-069 CPEs we must wait until after device has been
+      updated via genie to save device in database.
+    */
+    if (device.use_tr069) {
+      let configOk = await acsDeviceInfo.configTR069VirtualAP(
+        device, targetMode,
+      );
+      if (!configOk.success) {
+        return res.status(500).json({success: false, message: configOk.msg});
       }
-      changes = meshHandlers.buildTR069Changes(device, targetMode,
-        wifiRadioState, meshChannel, meshChannel5GHz, populateVAPObjects);
+      const collectOk = await deviceList.ensureBssidCollected(
+        device, targetMode,
+      );
+      if (!collectOk.success) {
+        return res.status(500).json({
+          'error': collectOk.msg,
+        });
+      }
     }
-    // Assure radios are enabled and correct channels are set
-    if (targetMode === 2 || targetMode === 4) {
-      device.wifi_channel = meshChannel;
-      device.wifi_state = wifiRadioState;
-    }
-    if (targetMode === 3 || targetMode === 4) {
-      // For best performance and avoiding DFS issues
-      // all APs must work on a single 5GHz non-DFS channel
-      device.wifi_channel_5ghz = meshChannel5GHz;
-      device.wifi_state_5ghz = wifiRadioState;
-    }
-    device.mesh_mode = targetMode;
-    // Apply changes to database and update device
+    meshHandlers.setMeshMode(device, targetMode);
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
-    if (device.use_tr069) {
-      // tr-069 device, call acs
-      acsDeviceInfo.updateInfo(device, changes);
-    } else {
+    if (!device.use_tr069) {
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
     }
     return res.status(200).json({'success': true});
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error': err.msg});
   }
 };
 
@@ -445,7 +403,8 @@ diagAppAPIController.checkMeshStatus = async function(req, res) {
       // Fetch device from database
       let device = await DeviceModel.findById(req.body.mac);
       if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
+        return res.status(404).json({'error':
+          t('macNotFound', {errorline: __line})});
       }
       if (!device.mesh_slaves || device.mesh_slaves.length === 0) {
         return res.status(200).json({'count': 0, 'slaves': []});
@@ -455,11 +414,13 @@ diagAppAPIController.checkMeshStatus = async function(req, res) {
         'slaves': device.mesh_slaves,
       });
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -470,19 +431,23 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
       // Fetch device from database
       let device = await DeviceModel.findById(req.body.remove_mac);
       if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
+        return res.status(404).json({'error':
+          t('macNotFound', {errorline: __line})});
       }
       if (!device.mesh_master) {
-        return res.status(403).json({'error': 'Device is not a mesh slave!'});
+        return res.status(403).json({'error':
+          t('cpeIsNotMeshSlave', {errorline: __line})});
       }
       deviceHandlers.removeDeviceFromDatabase(device);
       return res.status(200).json({'success': true});
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -490,7 +455,8 @@ diagAppAPIController.receiveCertification = async (req, res) => {
   try {
     let result = await UserModel.find({'name': req.body.user});
     if (result.length === 0) {
-      return res.status(404).json({'error': 'User not found'});
+      return res.status(404).json({'error':
+        t('userNotFound', {errorline: __line})});
     }
     let user = result[0]; // Should only match one since name is unique
     let content = req.body;
@@ -539,7 +505,8 @@ diagAppAPIController.receiveCertification = async (req, res) => {
     return res.status(200).json(session);
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -551,12 +518,14 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       let device;
       let tr069Info = {url: '', interval: 0};
 
-      if (req.body.isOnu && req.body.onuMac) {
-        device = await DeviceModel.findById(req.body.onuMac);
-      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
-        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
-      } else if (req.body.isOnu) {
-        device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+      if (req.body.isOnu) {
+        if (req.body.onuMac) {
+          device = await DeviceModel.findById(req.body.onuMac);
+        } else if (req.body.useAlternativeTR069UID) {
+          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
+        } else {
+          device = await DeviceModel.findOne({serial_tr069: req.body.mac});
+        }
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
@@ -573,7 +542,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             licenseApiSecret: true,
             company: true,
           },
-        ).catch((err) => err)
+        ).lean().catch((err) => err)
       );
 
       if (config.tr069) {
@@ -705,17 +674,19 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         'company': config.company || '',
       });
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
 diagAppAPIController.getTR069Config = async function(req, res) {
   let config = await ConfigModel.findOne({is_default: true}, 'tr069')
-    .exec().catch((err) => err);
+    .lean().exec().catch((err) => err);
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
@@ -747,7 +718,8 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
         device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
+        return res.status(404).json({'error':
+          t('macNotFound', {errorline: __line})});
       }
       let content = req.body;
       if (content.pppoe_user) {
@@ -763,11 +735,13 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       await device.save();
       return res.status(200).json({'success': true});
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -790,7 +764,8 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
         device = await DeviceModel.findById(req.body.mac);
       }
       if (!device) {
-        return res.status(404).json({'error': 'MAC not found'});
+        return res.status(404).json({'error':
+          t('macNotFound', {errorline: __line})});
       }
       return res.status(200).json({
         'success': true,
@@ -800,11 +775,13 @@ diagAppAPIController.fetchOnuConfig = async function(req, res) {
         'wifiPass5ghz': device.wifi_password_5ghz,
       });
     } else {
-      return res.status(403).json({'error': 'Did not specify MAC'});
+      return res.status(403).json({'error':
+        t('macUndefined', {errorline: __line})});
     }
   } catch (err) {
     console.log(err);
-    return res.status(500).json({'error': 'Internal error'});
+    return res.status(500).json({'error':
+      t('serverError', {errorline: __line})});
   }
 };
 
@@ -822,7 +799,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     switchEnabledStatus: 'failed',
   };
   if (!req.body.master || !req.body.slave) {
-    response.message = 'JSON recebido não é válido';
+    response.message = t('jsonInvalidFormat', {errorline: __line});
     response.errcode = 'invalid';
     return res.status(500).json(response);
   }
@@ -838,7 +815,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
       let possibleMatch = await DeviceModel.findById(
         possibleSlaveMac, {_id: true})
       .catch((err) => {
-        response.message = 'Erro ao acessar a base de dados';
+        response.message = t('cpeFindError', {errorline: __line});
         return res.status(500).json(response);
       });
       if (possibleMatch && possibleMatch._id) {
@@ -851,12 +828,13 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   }
 
   if (!utilHandlers.isMacValid(masterMacAddr)) {
-    response.message = 'MAC do CPE primário inválido';
+    response.message = t('primaryCpeMacInvalid', {errorline: __line});
     response.errcode = 'invalid-mac-primary';
     return res.status(403).json(response);
   }
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
-    response.message = 'MAC do CPE candidato a secundário inválido';
+    response.message =
+      t('secondaryCandidateCpeMacInvalid', {errorline: __line});
     response.errcode = 'invalid-mac-secondary';
     return res.status(403).json(response);
   }
@@ -869,22 +847,22 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   try {
     matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection);
   } catch (err) {
-    response.message = 'Erro interno';
+    response.message = t('cpeFindError', {errorline: __line});
     response.errcode = 'internal';
     return res.status(500).json(response);
   }
   if (!matchedMaster) {
-    response.message = 'CPE primário não encontrado';
+    response.message = t('primaryCpeNotFound', {errorline: __line});
     response.errcode = 'notfound-mac-primary';
     return res.status(404).json(response);
   }
   if (matchedMaster.mesh_mode === 0) {
-    response.message = 'CPE indicado como primário não está em modo mesh';
+    response.message = t('primaryCpeNotInMeshMode', {errorline: __line});
     response.errcode = 'primary-not-mesh';
     return res.status(403).json(response);
   }
   if (matchedMaster.mesh_master) {
-    response.message = 'CPE indicado como primário é secundário';
+    response.message = t('primaryCpeIsSecondary', {errorline: __line});
     response.errcode = 'primary-is-secondary';
     return res.status(403).json(response);
   }
@@ -898,12 +876,12 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   try {
     matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection);
   } catch (err) {
-    response.message = 'Erro interno';
+    response.message = t('cpeFindError', {errorline: __line});
     response.errcode = 'internal';
     return res.status(500).json(response);
   }
   if (!matchedSlave) {
-    response.message = 'CPE candidato a secundário não encontrado';
+    response.message = t('secondaryCandidateCpeNotFound', {errorline: __line});
     response.errcode = 'notfound-mac-secondary';
     return res.status(404).json(response);
   }
@@ -913,26 +891,28 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     matchedSlave.model,
   ).grantMeshV2SecondaryMode;
   if (!isMeshV2Compatible) {
-    response.message = 'CPE candidato a secundário não é ' +
-    'compatível com o mesh v2';
+    response.message = t('secondaryCandidateCpeNotCompatibleWithMeshV2',
+      {errorline: __line});
     response.errcode = 'secondary-incompatible';
     return res.status(403).json(response);
   }
   if (matchedSlave.mesh_master &&
   matchedSlave.mesh_master !== masterMacAddr) {
-    response.message = 'CPE candidato a secundário já está registrado' +
-    ' como secundário de ' + matchedSlave.mesh_master;
+    response.message = t('secondaryCandidateCpeAlreadyAssignedTo',
+      {mesh_master: matchedSlave.mesh_master, errorline: __line});
     response.errcode = 'secondary-already-has-master';
     return res.status(403).json(response);
   }
   if ((matchedSlave.mesh_mode !== 0 && !matchedSlave.mesh_master) ||
   (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length)) {
-    response.message = 'CPE candidato a secundário é primário';
-  response.errcode = 'secondary-is-primary';
+    response.message = t('secondaryCandidateCpeIsPrimary',
+      {errorline: __line});
+    response.errcode = 'secondary-is-primary';
     return res.status(403).json(response);
   }
   if (matchedSlave.use_tr069) {
-    response.message = 'CPE candidato a secundário não pode ser TR-069';
+    response.message = t('secondaryCandidateCpeCannotBeTr069',
+      {errorline: __line});
     response.errcode = 'secondary-is-tr069';
     return res.status(403).json(response);
   }
@@ -940,7 +920,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     return map[slaveMacAddr];
   });
   if (!isSlaveOn) {
-    response.message = 'CPE candidato a secundário não está online';
+    response.message = t('secondaryCandidateCpeNotOnline', {errorline: __line});
     response.errcode = 'secondary-not-online';
     return res.status(403).json(response);
   }
@@ -949,11 +929,25 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   // to make sure master and slave are synchronized
   matchedSlave.mesh_master = matchedMaster._id;
   meshHandlers.syncSlaveWifi(matchedMaster, matchedSlave);
-  await matchedSlave.save();
+  try {
+    await matchedSlave.save();
+  } catch (err) {
+    console.log('Error saving slave mesh assoc: ' + err);
+    response.message = t('saveError', {errorline: __line});
+    response.errcode = 'internal';
+    return res.status(500).json(response);
+  }
 
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     matchedMaster.mesh_slaves.push(slaveMacAddr);
-    await matchedMaster.save();
+    try {
+      await matchedMaster.save();
+    } catch (err) {
+      console.log('Error saving master mesh assoc: ' + err);
+      response.message = t('saveError', {errorline: __line});
+      response.errcode = 'internal';
+      return res.status(500).json(response);
+    }
   }
 
   // Now we must put slave in bridge mode
@@ -977,7 +971,14 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   }
 
   if (isBridge === 'success' || isSwitchEnabled === 'success') {
-    await matchedSlave.save();
+    try {
+      await matchedSlave.save();
+    } catch (err) {
+      console.log('Error saving slave mesh assoc: ' + err);
+      response.message = t('saveError', {errorline: __line});
+      response.errcode = 'internal';
+      return res.status(500).json(response);
+    }
   }
 
   // We do not differentiate the case where
@@ -988,11 +989,16 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   // Instead of updating slave, we send lastboot_date
   // to app and a reboot is done
 
-  response.message = 'Sucesso';
+  response.message = t('Success');
   response.registrationStatus = 'success';
   response.bridgeStatus = isBridge;
   response.switchEnabledStatus = isSwitchEnabled;
-  response.lastBootDate = matchedSlave.lastboot_date.getTime();
+  let lastBootDate = matchedSlave.lastboot_date;
+  if (!lastBootDate) {
+    response.lastBootDate = 0;
+  } else {
+    response.lastBootDate = lastBootDate.getTime();
+  }
 
   return res.status(200).json(response);
 };
@@ -1001,14 +1007,14 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!req.body.slave) {
     return res.status(500).json({
       success: false,
-      message: 'JSON recebido não é válido',
+      message: t('jsonInvalidFormat', {errorline: __line}),
     });
   }
   const slaveMacAddr = req.body.slave.toUpperCase();
   if (!utilHandlers.isMacValid(slaveMacAddr)) {
     return res.status(403).json({
       success: false,
-      message: 'MAC do CPE indicado como secundário inválido',
+      message: t('secondaryIndicatedCpeMacInvalid', {errorline: __line}),
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
@@ -1016,26 +1022,27 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   .catch((err) => {
     return res.status(500).json({
       success: false,
-      message: 'Erro interno',
+      message: t('cpeFindError', {errorline: __line}),
     });
   });
   if (!matchedSlave) {
     return res.status(404).json({
       success: false,
-      message: 'CPE indicado como secundário não encontrado',
+      message: t('secondaryIndicatedCpeNotFound', {errorline: __line}),
     });
   }
   if (!matchedSlave.mesh_master) {
     return res.status(403).json({
       success: false,
-      message: 'CPE indicado como secundário não possui primário associado',
+      message: t('secondaryIndicatedCpeNotAssignedToPrimary',
+        {errorline: __line}),
     });
   }
   if (matchedSlave.mesh_slaves && matchedSlave.mesh_slaves.length) {
     return res.status(403).json({
       success: false,
-      message: 'CPE indicado como secundário possui ' +
-      'CPEs secundários associados',
+      message: t('secondaryIndicatedCpeHasSecondariesAssigned',
+        {errorline: __line}),
     });
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
@@ -1044,32 +1051,31 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   .catch((err) => {
     return res.status(500).json({
       success: false,
-      message: 'Erro interno',
+      message: t('cpeFindError', {errorline: __line}),
     });
   });
   if (!matchedMaster) {
     return res.status(404).json({
       success: false,
-      message: 'CPE indicado como primário não encontrado',
+      message: t('primaryCpeNotFound', {errorline: __line}),
     });
   }
   if (matchedMaster.mesh_mode === 0) {
     return res.status(403).json({
       success: false,
-      message: 'CPE indicado como primário não está em modo mesh',
+      message: t('primaryCpeNotInMeshMode', {errorline: __line}),
     });
   }
   if (matchedMaster.mesh_master) {
     return res.status(403).json({
       success: false,
-      message: 'CPE indicado como primário é secundário',
+      message: t('primaryCpeIsSecondary', {errorline: __line}),
     });
   }
   if (!matchedMaster.mesh_slaves.includes(slaveMacAddr)) {
     return res.status(403).json({
       success: false,
-      message: 'CPE indicado como secundário não está na ' +
-      'lista de secundários do CPE indicado como primário',
+      message: t('secondaryIndicatedCpeNotInPrimaryList', {errorline: __line}),
     });
   }
 
@@ -1078,17 +1084,33 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   if (!controlApiRet.success) {
     return res.status(500).json({
       success: false,
-      message: 'Erro ao creditar a licença mesh',
+      message: t('errorCreditingMeshLicense', {errorline: __line}),
     });
   }
 
   matchedSlave.mesh_master = '';
   matchedSlave.mesh_mode = 0;
-  await matchedSlave.save();
+  try {
+    await matchedSlave.save();
+  } catch (err) {
+    console.log('Error saving slave mesh disassoc: ' + err);
+    return res.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
 
   const slaveIndex = matchedMaster.mesh_slaves.indexOf(slaveMacAddr);
   matchedMaster.mesh_slaves.splice(slaveIndex, 1);
-  await matchedMaster.save();
+  try {
+    await matchedMaster.save();
+  } catch (err) {
+    console.log('Error saving master mesh disassoc: ' + err);
+    return res.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
 
   const isSlaveOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
     return map[slaveMacAddr];
@@ -1097,29 +1119,34 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
 
   return res.status(200).json({
     success: true,
-    message: 'Sucesso',
+    message: t('Success'),
   });
 };
 
 diagAppAPIController.poolFlashmanField = async function(req, res) {
   if (!req.body.mac || !req.body.field) {
-    return res.status(500).json({message: 'JSON recebido não é válido'});
+    return res.status(500).json({message:
+      t('jsonInvalidFormat', {errorline: __line})});
   }
   const macAddr = req.body.mac.toUpperCase();
   if (!utilHandlers.isMacValid(macAddr)) {
-    return res.status(403).json({message: 'MAC inválido'});
+    return res.status(403).json({message:
+      t('macInvalid', {errorline: __line})});
   }
   const field = req.body.field;
   let matchedDevice = await DeviceModel.findById(macAddr, field)
   .catch((err) => {
-    return res.status(500).json({message: 'Erro interno'});
+    return res.status(500).json({message:
+      t('cpeFindError', {errorline: __line})});
   });
   if (!matchedDevice) {
-    return res.status(404).json({message: 'CPE não encontrado'});
+    return res.status(404).json({message:
+      t('cpeNotFound', {errorline: __line})});
   }
   let fieldValue = matchedDevice[field];
   if (fieldValue === undefined) {
-    return res.status(404).json({message: 'Campo não encontrado'});
+    return res.status(404).json({message:
+      t('fieldNotFound', {errorline: __line})});
   }
   if (fieldValue instanceof Date) fieldValue = fieldValue.getTime();
   return res.status(200).json({fieldValue: fieldValue});
@@ -1132,24 +1159,28 @@ diagAppAPIController.getSpeedTest = function(req, res) {
   DeviceModel.findByMacOrSerial(req.body.mac).exec(
   async (err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('cpeFindError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
+        message: t('cpeNotFound', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
 
     let config;
     try {
-      config = await ConfigModel.findOne({is_default: true}).lean();
+      config = await ConfigModel.findOne(
+        {is_default: true}, {measureServerIP: true, measureServerPort: true},
+      ).lean();
       if (!config) throw new Error('Config not found');
     } catch (err) {
-      console.log(err);
+      console.log(err.message);
     }
 
     let reply = {'speedtest': {}};
@@ -1179,16 +1210,18 @@ diagAppAPIController.doSpeedTest = function(req, res) {
   DeviceModel.findByMacOrSerial(req.body.mac).exec(
   async (err, matchedDevice) => {
     if (err) {
-      return res.status(500).json({message: 'Erro interno'});
+      return res.status(500).json({message:
+        t('cpeFindError', {errorline: __line})});
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       matchedDevice = matchedDevice[0];
     } else {
       return res.status(404).json({success: false,
-                                   message: 'CPE não encontrado'});
+        message: t('cpeNotFound', {errorline: __line})});
     }
     if (!matchedDevice) {
-      return res.status(404).json({message: 'CPE não encontrado'});
+      return res.status(404).json({message:
+        t('cpeNotFound', {errorline: __line})});
     }
 
     // Send reply first, then send mqtt message
@@ -1221,10 +1254,12 @@ diagAppAPIController.doSpeedTest = function(req, res) {
     setTimeout(async () => {
       let config;
       try {
-        config = await ConfigModel.findOne({is_default: true}).lean();
-        if (!config) throw {error: 'Config not found'};
+        config = await ConfigModel.findOne(
+          {is_default: true}, {measureServerIP: true, measureServerPort: true},
+        ).lean();
+        if (!config) throw new Error('Config not found');
       } catch (err) {
-        console.log(err);
+        console.log(err.message);
       }
 
       if (config && config.measureServerIP) {
@@ -1232,8 +1267,12 @@ diagAppAPIController.doSpeedTest = function(req, res) {
           matchedDevice.current_speedtest.timestamp = new Date();
           matchedDevice.current_speedtest.user = req.user.name;
           matchedDevice.current_speedtest.stage = 'estimative';
-          await matchedDevice.save();
-          acsDeviceInfo.fireSpeedDiagnose(matchedDevice._id);
+          try {
+            await matchedDevice.save();
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
+          } catch (err) {
+            console.log('Error saving speed test estimative: ' + err);
+          }
         } else {
           // Send mqtt message to perform speedtest
           let url = config.measureServerIP + ':' + config.measureServerPort;

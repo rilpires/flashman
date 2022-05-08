@@ -10,6 +10,7 @@ let Schema = mongoose.Schema;
 let deviceSchema = new Schema({
   _id: String,
   use_tr069: {type: Boolean, default: false},
+  secure_tr069: {type: Boolean, default: true},
   serial_tr069: {type: String, sparse: true},
   // Used when serial is not reliable for crossing data
   alt_uid_tr069: {type: String, sparse: true},
@@ -20,7 +21,9 @@ let deviceSchema = new Schema({
   recovering_tr069_reset: {type: Boolean, default: false},
   created_at: {type: Date},
   external_reference: {
-    kind: {type: String, enum: ['CPF', 'CNPJ', 'Outro']},
+    // 'kind' will have to be translated according to region.
+    // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
+    kind: String,
     data: String,
   },
   model: String,
@@ -106,6 +109,7 @@ let deviceSchema = new Schema({
       'reject', // explicit user reject
       'none', // never asked
     ]},
+    ping: Number,
   }],
   port_mapping: [{
     ip: String,
@@ -156,7 +160,9 @@ let deviceSchema = new Schema({
       2, // 2.4 Radio
       3, // 5.0 Radio
     ]},
+    n_conn_dev: {type: Number, default: 0},
   }],
+  mesh_father: {type: String, default: ''},
   bridge_mode_enabled: {type: Boolean, default: false},
   bridge_mode_switch_disable: {type: Boolean, default: true},
   bridge_mode_ip: String,
@@ -183,10 +189,22 @@ let deviceSchema = new Schema({
     2, // error, image download failed
     3, // error, image check failed
     4, // error, update aborted manually
-    5, // error, ack not received in time
-    10, // ack recevied
+    5, // error, update ack not received in time
+    6, // error, topology info not received in time
+    7, // error, invalid topology
+    10, // ack received
+    20, // waiting for topology info
+    30, // topology received
   ]},
-  do_update_mesh_remaining: {type: Number, default: 0},
+  // Next device to update in a mesh network.
+  // Only master will have this
+  mesh_next_to_update: String,
+  // How many devices in a mesh network must still send onlinedevs info
+  // Only master will have this
+  mesh_onlinedevs_remaining: {type: Number, default: 0},
+  // Devices in a mesh network that must still update
+  // Only master will have this
+  mesh_update_remaining: [String],
   mqtt_secret: String,
   mqtt_secret_bypass: {type: Boolean, default: false},
   firstboot_log: Buffer,
@@ -211,8 +229,8 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  sys_up_time: {type: Number, default: 0},
-  wan_up_time: {type: Number, default: 0},
+  sys_up_time: {type: Number, default: 0}, // seconds
+  wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
@@ -224,7 +242,7 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
-  // The object bellow is used to save the user that requested the speedtest 
+  // The object bellow is used to save the user that requested the speedtest
   // and to indicate what time the speedtest was requested. Te timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the
@@ -315,37 +333,41 @@ deviceSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.device_crud) {
+                 !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-      if (callbackUrl) {
-        attrsList.forEach((attr) => {
-          changedAttrs[attr] = device[attr];
-        });
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': device._id,
-          'type': 'device',
-          'changes': changedAttrs,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
+      const promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+        let callbackUrl = deviceCrud.url;
+        let callbackAuthUser = deviceCrud.user;
+        let callbackAuthSecret = deviceCrud.secret;
+        if (callbackUrl) {
+          attrsList.forEach((attr) => {
+            changedAttrs[attr] = device[attr];
+          });
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': device._id,
+            'type': 'device',
+            'changes': changedAttrs,
           };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          return request(requestOptions);
         }
-        request(requestOptions).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
-        });
-      }
+      });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     });
   }
   callback();
@@ -360,31 +382,34 @@ deviceSchema.post('remove', function(device, callback) {
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);
     }
-    let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-    let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-    let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-    if (callbackUrl) {
-      requestOptions.url = callbackUrl;
-      requestOptions.method = 'PUT';
-      requestOptions.json = {
-        'id': device._id,
-        'type': 'device',
-        'removed': true,
-      };
-      if (callbackAuthUser && callbackAuthSecret) {
-        requestOptions.auth = {
-          user: callbackAuthUser,
-          pass: callbackAuthSecret,
+    let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+      let callbackUrl = deviceCrud.url;
+      let callbackAuthUser = deviceCrud.user;
+      let callbackAuthSecret = deviceCrud.secret;
+      if (callbackUrl) {
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'removed': true,
         };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        return request(requestOptions);
       }
-      request(requestOptions).then((resp) => {
-        // Ignore API response
-        return;
-      }, (err) => {
-        // Ignore API endpoint errors
-        return;
-      });
-    }
+    });
+    Promise.all(promises).then((resp) => {
+      // Ignore API response
+      return;
+    }, (err) => {
+      // Ignore API endpoint errors
+      return;
+    });
   });
   callback();
 });

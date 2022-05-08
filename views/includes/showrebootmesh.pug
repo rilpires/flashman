@@ -4,17 +4,17 @@
       .modal-header
         p.heading.lead
           span.fas.fa-sync-alt.fa-lg
-          strong &nbsp;&nbsp; Reiniciar CPEs em rede mesh&nbsp;
+          strong &nbsp;&nbsp; #{t('restartCpesInMeshNetwork')}&nbsp;
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
         #reboot-select.text-center
           .row
             .col
-              h4 Selecione quais CPEs da rede devem ser reiniciados
+              h4 #{t('selectWhichCpesInNetworkToRestart')}
           .my-3.custom-control.custom-checkbox
             input#select-reboot-all.custom-control-input(type="checkbox")
-            label.custom-control-label(for="select-reboot-all") Todos os CPEs
+            label.custom-control-label(for="select-reboot-all")= t('allCpes')
           .custom-control.custom-checkbox
             input#select-reboot-master.mesh-router.custom-control-input(type="checkbox")
             label#reboot-master-label.custom-control-label(for="select-reboot-master")
@@ -24,30 +24,30 @@
             i.fas.fa-spinner.fa-pulse.fa-2x
             br
             br
-            span Enviando comando para os CPEs...
+            span= t('sendingCommandToCpes...')
         #reboot-error.text-center
           h3.text-center.grey-text.mb-3
             i.fas.fa-times.fa-2x
             br
-            span Não foi possível enviar um ou mais comandos!
+            span= t('oneOrMoreCommandCouldNotBeSent!')
           #reboot-error-div.mt-3
         #reboot-done.text-center
           h3.text-center.grey-text.mb-3
             i.fas.fa-check.fa-2x
             br
-            span Comando enviado com sucesso!
+            span= t('commandSuccessfullySent!')
       #reboot-mesh-button.row.text-center.mb-3
         .col
           button.btn.btn-primary.btn-reboot-mesh(type="button" disabled)
             i.fas.fa-check.fa-lg
-            span &nbsp; Reiniciar
+            span &nbsp; #{t('Restart')}
       #reboot-error-button.row.text-center.mb-3
         .col
           button.btn.btn-primary.btn-reboot-mesh-retry(type="button")
             i.fas.fa-sync-alt.fa-lg
-            span &nbsp; Tentar Novamente
+            span &nbsp; #{t('tryAgain')}
       #reboot-done-button.row.text-center.mb-3
         .col
           button.btn.btn-primary.btn-reboot-mesh-close(type="button")
             i.fas.fa-check.fa-lg
-            span &nbsp; OK
+            span &nbsp; #{t('Ok')}

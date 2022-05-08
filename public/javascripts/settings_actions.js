@@ -1,6 +1,9 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
 import {setConfigStorage, getConfigStorage} from './session_storage.js';
+
+const t = i18next.t;
 
 // assigning tr069 elements.
 let recoveryInput =
@@ -29,8 +32,8 @@ const resetRecoveryOfflineInputDependencyError = function() {
 // offline inputs and shows an error message that belongs to both input fields.
 const setRecoveryOfflineInputDependencyError = function() {
   // setting custom validity, which means inpute becomes invalid.
-  recoveryInput.setCustomValidity('recovery precisa ser menor que offline');
-  offlineInput.setCustomValidity('offline precisa ser maior que recovery');
+  recoveryInput.setCustomValidity(t('unstableShouldBeLessThanOffline'));
+  offlineInput.setCustomValidity(t('OfflineShouldBeBiggerThanUnstable'));
   // we report validity by showing a text right below the inputs and hide
   // each input's individual error text message.
   recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
@@ -75,15 +78,26 @@ window.changeSsidPrefixInputDisableness = function(value) {
 
 
 const setSsidPrefixError = function() {
-  ssidPrefixInput.setCustomValidity('Este campo não pode ter '+
-    'mais de 16 caracteres e Somente são aceitos: caracteres'+
-    ' alfanuméricos, espaços, ponto, - e _');
+  ssidPrefixInput.setCustomValidity(t('ssidPrefixInvalidFeedback'));
   ssidPrefixErrorElement.style.display = 'block';
 };
 
 const resetSsidPrefixError = function() {
   ssidPrefixInput.setCustomValidity('');
   ssidPrefixErrorElement.style.display = 'none';
+};
+
+const forceOfflineCPEReconnect = function() {
+  $.post('/acs/forceOfflineReconnect', '{}', 'json')
+    .done(function(res) {
+      displayAlertMsg(res);
+      setTimeout(function() {
+        window.location.reload();
+      }, 1750);
+    })
+    .fail(function(jqXHR, textStatus, errorThrown) {
+      displayAlertMsg(JSON.parse(jqXHR.responseText));
+    });
 };
 
 // called after save button is pressed.
@@ -139,7 +153,7 @@ let configFlashman = function(event) {
   } else {
     displayAlertMsg({
       type: 'danger',
-      message: 'Há erros em um ou mais campos de configuração',
+      message: t('errorsInOneOrMoreConfigurationsFields'),
     });
     event.preventDefault();
     event.stopPropagation();
@@ -148,9 +162,10 @@ let configFlashman = function(event) {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   setConfigStorage('isClientPayingPersonalizationApp', false);
   $('#config-flashman-form').submit(configFlashman);
+  $('#offline-cpe-force-reconnect').click(forceOfflineCPEReconnect);
 
   // Load configuration options
   $.ajax({
@@ -266,7 +281,39 @@ $(document).ready(function() {
       if (resp.tr069STUNEnable) {
         $('#stun_enable').prop('checked', true).change();
       }
+      if ('hasNeverEnabledInsecureTR069' in resp) {
+        setConfigStorage(
+          'hasNeverEnabledInsecureTR069', resp.hasNeverEnabledInsecureTR069,
+        );
+      }
+      if (resp.tr069InsecureEnable) {
+        $('#insecure_enable').prop('checked', true).change();
+      }
+      $(`select[name=selected-language] option[value=${resp.language}]`)
+        .attr('selected', '');
     },
+  });
+
+  // popup warning if first time enabling insecure tr069
+  $('#insecure_enable').on('change', (input)=> {
+    if (
+      input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
+    ) {
+      swal({
+        type: 'warning',
+        title: t('Attention!'),
+        html: t('enablingTr069HttpCommunicationMustReadAndAgreeConditions'),
+        confirmButtonText: t('Enable'),
+        confirmButtonColor: '#4db6ac',
+        cancelButtonText: t('Cancel'),
+        cancelButtonColor: '#f2ab63',
+        showCancelButton: true,
+      }).then((result)=>{
+        if (!result.value) {
+          $('#insecure_enable').prop('checked', false).change();
+        }
+      });
+    }
   });
 
   // change prefix ssid input visibility

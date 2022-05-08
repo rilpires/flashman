@@ -1,15 +1,14 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
+const t = i18next.t;
+
+// updating text, in some elements, when device search is done.
 const fillTotalDevicesFromSearch = function(amount) {
   totalDevicesFromSearch = amount;
-  [...document.getElementsByClassName('amountOfDevices')].forEach(
-    (e) => e.innerHTML = String(totalDevicesFromSearch));
-  let pluralElements = [...document.getElementsByClassName('plural')];
-  if (totalDevicesFromSearch > 1) {
-    pluralElements.forEach((e) => e.innerHTML = 's');
-  } else {
-    pluralElements.forEach((e) => e.innerHTML = '');
-  }
+  [...document.getElementsByClassName('nDevicesWillBeChanged')].forEach(
+    (e) => e.innerHTML = t('nDevicesWillBeChanged',
+                           {count: totalDevicesFromSearch}));
 };
 
 // The amount of devices in search result from device list.
@@ -50,15 +49,15 @@ let setFieldValidLabel = (target) => {
 
 let setFieldInvalidLabel = (target, invalidMessage) => {
   target.nextElementSibling.style.display = 'block';
-  target.setCustomValidity(invalidMessage);
+  target.setCustomValidity(t('inputValidAddress'));
 };
 
 window.checkFqdn = (e) => isFqdnValid(e.target.value) ?
   setFieldValidLabel(e.target) :
-  setFieldInvalidLabel(e.target, 'Insira um endereço válido');
+  setFieldInvalidLabel(e.target, t('inputValidAddress'));
 
 window.datalistFqdn = (e) => {
-  if (e.target.value === 'Apagar' || e.target.value === 'Não alterar' ||
+  if (e.target.value === t('Erase') || e.target.value === t('doNotChange') ||
       e.target.value === '') {
     setFieldValidLabel(e.target);
   } else {
@@ -90,18 +89,18 @@ $(document).ready(function() {
       type: String,
       service: true, device: true,
       validations: isFqdnValid,
-      invalidMessage: 'Insira um endereço válido'
+      invalidMessage: t('inputValidAddres')
     },
     alarm_fqdn: {
       type: String,
       service: true,
       validations: isFqdnValid,
-      invalidMessage: 'Insira um endereço válido'
+      invalidMessage: t('inputValidAddres')
     },
     ping_packets: { // validation for ping_packets is done directly in html.
       type: Number,
       service: true, 
-      invalidMessage: 'Insira um número inteiro entre 0 e 100.'
+      invalidMessage: t('insertANumberBetweenMinMax', {min: 1, max: 100})
     },
   }
   for (let name in parameters) {
@@ -209,7 +208,7 @@ $(document).ready(function() {
         else if (p.type === Number) value = Number(input.value);
         data[name] = value; // assigning value to data to be submitted.
       }
-      sendDataCollectingParameters(data, form, 'Parâmetros salvos.');
+      sendDataCollectingParameters(data, form, t('parametersSaved'));
     }
     return false;
   };
@@ -240,12 +239,12 @@ $(document).ready(function() {
         input.setCustomValidity('');
         input.value = input.value.trim();
         // when we have to unset.
-        if (input.value === 'Apagar') {
+        if (input.value === t('Erase')) {
           if (data.$unset === undefined) data.$unset = {};
           data.$unset[name] = '';
           anyChange = true;
         // when we have to set.
-        } else if (input.value !== '' && input.value !== 'Não alterar') {
+        } else if (input.value !== '' && input.value !== t('doNotChange')) {
           if (data.$set === undefined) data.$set = {};
           // if invalid, sets input as invalid. if valid, sets data.
           if (p.validation !== undefined && !p.validation(input.value)) {
@@ -262,7 +261,7 @@ $(document).ready(function() {
         if (value === '') continue;
         let numericValue = Number(value);
         if (isNaN(numericValue)) {
-          input.setCustomValidity('Valor não é numérico');
+          input.setCustomValidity(t('notNumeric'));
           continue
         }
         if (p.validation !== undefined && !p.validation(value)) {
@@ -281,13 +280,12 @@ $(document).ready(function() {
       form.classList.add('was-validated');
       if (valid) {
         data.filter_list = lastDevicesSearchInputQuery;
-        let plural = totalDevicesFromSearch > 1 ? 's' : '';
-        let msg = `Parâmetros salvos em ${totalDevicesFromSearch}`+
-          ` dispositivo${plural}.`;
+        let msg =
+          t('parametersSavedForNDevices', {total: totalDevicesFromSearch});
         sendDataCollectingParameters(data, form, msg, true);
       }
     } else {
-      hideModalShowAllert(serviceModal, 'Nada a ser alterado.', 'danger');
+      hideModalShowAllert(serviceModal, t('nothingToChange'), 'danger');
     }
     return false;
   };
@@ -340,11 +338,14 @@ $(document).ready(function() {
 
       if (valid) {
         setDeviceParameters(deviceRow);
-        sendDataCollectingParameters(data, form,
-          `Parâmetros salvos para o dispositivo ${deviceId}.`);
+        sendDataCollectingParameters(
+          data,
+          form,
+          t('savedParametersForDeviceId', {deviceId: deviceId}),
+        );
       }
     } else {
-      hideModalShowAllert(deviceModal, 'Nada a ser alterado', 'warning');
+      hideModalShowAllert(deviceModal, t('nothingToChange'), 'warning');
     }
     return false;
   };

@@ -1,6 +1,9 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
+
+const t = i18next.t;
 
 let renderDeviceErrors = function(errors) {
   for (let key in errors) {
@@ -141,9 +144,9 @@ let validateNewDevice = function() {
   return false;
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $('#deviceForm').submit(validateNewDevice);
-  $('#new_external_reference').mask('000.000.000-009').keyup();
+  $('#new_external_reference').mask(t('personIdentificationMask')).keyup();
   $('#new_mac').mask('HH:HH:HH:HH:HH:HH', {
     translation: {
       H: {pattern: /[A-Fa-f0-9]/},

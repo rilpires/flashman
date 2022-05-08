@@ -4,7 +4,7 @@
       .modal-header
         p.heading.lead
           span.fas.fa-chart-line.fa-lg
-          strong &nbsp; Tráfego WAN de&nbsp;
+          strong &nbsp; #{t('wanBytesFor')}&nbsp;
           strong(name="wan-bytes-visual" id="wan-bytes-visual")
           span.d-none(name="wan-bytes-hlabel" id="wan-bytes-hlabel")
         button.close(type="button", data-dismiss="modal")
@@ -14,28 +14,28 @@
           .col.p-0.text-right
             button#btn-wan-bytes-refresh.btn.btn-primary.btn-sm
               i.fas.fa-sync-alt.fa-lg
-              span &nbsp Atualizar
+              span &nbsp; #{t('Update')}
         .row#wan-bytes-placeholder-ready
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
               br
               br
-              span Atualize os dados para visualizar
+              span= t('updateDataToView')
         .row#wan-bytes-placeholder-progress
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
-              span Atualizando bytes trafegados...
+              span= t('updatingWanBytes...')
         .row#wan-bytes-placeholder-none
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
               br
               br
-              span Nenhum dado encontrado
+              span= t('noDataFound')
         #wan-bytes-graphs
           #wan-bytes-down-graph
           hr

@@ -1,8 +1,11 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import 'jquery-mask-plugin';
+
+const t = i18next.t;
 
 let forceUpdateFlashman = function() {
   swal({
-    title: 'Atualizando Flashman...',
+    title: t('updatingFlashman...'),
     onOpen: () => {
       swal.showLoading();
     },
@@ -19,8 +22,8 @@ let forceUpdateFlashman = function() {
       if (resp.updated) {
         swal({
           type: 'success',
-          title: 'Atualização feita com sucesso!',
-          text: 'Você precisará fazer login novamente',
+          title: t('updateSuccess'),
+          text: t('youNeedToLogInAgain'),
           confirmButtonColor: '#4db6ac',
         }).then(function() {
           window.location.href = '/logout';
@@ -28,7 +31,7 @@ let forceUpdateFlashman = function() {
       } else {
         swal({
           type: 'error',
-          title: 'Erro ao atualizar',
+          title: t('updateError'),
           confirmButtonColor: '#4db6ac',
         });
       }
@@ -39,12 +42,9 @@ let forceUpdateFlashman = function() {
 let alertMajorUpdateFlashman = function() {
   swal({
     type: 'warning',
-    title: 'Atualização importante disponível!',
-    text: 'A nova versão do Flashman requer uma instalação manual. Por favor, '+
-          'entre na nossa página de documentação e siga os passos para '+
-          'atualizar o seu Flashman para a nova versão. Se precisar, entre em '+
-          'contato com a equipe Anlix.',
-    confirmButtonText: 'Ver instruções',
+    title: t('importUpdateAvailable'),
+    text: t('newFlashmanVersionNeedsManualInstallPleaseReadDocumentation'),
+    confirmButtonText: t('seeInstructions'),
     confirmButtonColor: '#4db6ac',
   }).then(function(result) {
     if (result.value) {
@@ -56,11 +56,11 @@ let alertMajorUpdateFlashman = function() {
 let alertUpdateFlashman = function() {
   swal({
     type: 'warning',
-    title: 'Atualização disponível!',
-    text: 'Deseja instalar a nova versão agora?',
-    confirmButtonText: 'Atualizar',
+    title: t('updateAvailable'),
+    text: t('wouldYouLikeToInstallNewVersionNow?'),
+    confirmButtonText: t('Update'),
     confirmButtonColor: '#4db6ac',
-    cancelButtonText: 'Agora não',
+    cancelButtonText: t('notNow'),
     cancelButtonColor: '#f2ab63',
     showCancelButton: true,
   }).then(function(result) {
@@ -72,7 +72,7 @@ let alertUpdateFlashman = function() {
 
 let checkUpdateFlashman = function() {
   swal({
-    title: 'Buscando atualizações...',
+    title: t('searchingForUpdates...'),
     onOpen: () => {
       swal.showLoading();
     },
@@ -91,7 +91,7 @@ let checkUpdateFlashman = function() {
       } else {
         swal({
           type: 'error',
-          title: 'Nenhuma atualização encontrada',
+          title: t('noUpdateFound'),
           confirmButtonColor: '#4db6ac',
         });
       }
@@ -99,7 +99,7 @@ let checkUpdateFlashman = function() {
   });
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.update', checkUpdateFlashman);
   $('.ip-mask-field').mask('099.099.099.099');
 

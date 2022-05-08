@@ -1,31 +1,34 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import Validator from './device_validator.js';
 import {setPortForwardStorage,
         getPortForwardStorage,
         deletePortForwardStorage} from './session_storage.js';
 
+const t = i18next.t;
+
 let triggerRedAlert = function(message) {
   if ($('#port-forward-tr069-modal-alert')[0].classList.contains('d-block')) {
-    $('#port-forward-tr069-modal-alert').
-      append(
-        $('<hr></hr>'),
-      ).
-      append(
-        $('<h5></h5>').
-          html(message),
+    $('#port-forward-tr069-modal-alert')
+      .append(
+        $('<hr>'),
+      )
+      .append(
+        $('<h5>')
+          .html(message),
       );
   } else {
-    $('#port-forward-tr069-modal-alert').
-      removeClass('d-none').
-      addClass('d-block').
-      html(
-        $('<h5></h5>').
-          html(message),
+    $('#port-forward-tr069-modal-alert')
+      .removeClass('d-none')
+      .addClass('d-block')
+      .html(
+        $('<h5>')
+          .html(message),
       );
     setTimeout(function() {
-        $('#port-forward-tr069-modal-alert').
-          removeClass('d-block').
-          addClass('d-none');
-      }, 2500);
+      $('#port-forward-tr069-modal-alert')
+        .removeClass('d-block')
+        .addClass('d-none');
+    }, 2500);
   }
 };
 
@@ -37,42 +40,43 @@ let showIncompatibilityMessage = function(compatibility) {
   let compatInfoDiv = $('#port-forward-tr069-modal-compat-info');
   let compatInfoMessage = $('#port-forward-tr069-modal-compat-info-message');
   let compatInfoList = $('#port-forward-tr069-modal-compat-info-list');
-  let message = 'O modelo ' + getPortForwardStorage('model') +
-                ' versão ' + getPortForwardStorage('version') +
-                ' não suporta as seguintes formas de a abertura de portas: ';
+  let message = t('tr069PortOpenningIncompatibilityMessage', {
+    model: getPortForwardStorage('model'),
+    version: getPortForwardStorage('version'),
+  });
   let show = false;
   compatInfoList.html('');
   if (!compatibility.simpleSymmetric) {
     show = true;
     compatInfoList.append(
-      $('<li>').html('simples simétrica'),
+      $('<li>').html(t('simpleSymmetric')),
     );
   }
   if (!compatibility.simpleAsymmetric) {
     show = true;
     compatInfoList.append(
-      $('<li>').html('simples assimétrica'),
+      $('<li>').html(t('simpleAsymmetric')),
     );
   }
   if (!compatibility.rangeSymmetric) {
     show = true;
     compatInfoList.append(
-      $('<li>').html('faixa de portas simétrica'),
+      $('<li>').html(t('symmetricRangeOfPorts')),
     );
   }
   if (!compatibility.rangeAsymmetric) {
     show = true;
     compatInfoList.append(
-      $('<li>').html('faixa de portas assimétrica'),
+      $('<li>').html(t('asymmetricRangeOfPorts')),
     );
   }
   message += '';
   if (show) {
-    compatInfoDiv.
-        removeClass('d-none').
-        addClass('d-block');
-    compatInfoMessage.
-      html(message);
+    compatInfoDiv
+      .removeClass('d-none')
+      .addClass('d-block');
+    compatInfoMessage
+      .html(message);
   }
   if (!compatibility.simpleSymmetric) {
     portInputs[0].disabled = portInputs[1].disabled =
@@ -124,18 +128,18 @@ window.checkAdvancedOptions = function() {
 
     portInputs[2].value = portInputs[3].value = '';
     if (isRangeOfPorts.checked) {
-      portLabel[0].innerHTML = 'Inicial';
-      portLabel[1].innerHTML = 'Final';
+      portLabel[0].innerHTML = t('Initial');
+      portLabel[1].innerHTML = t('Final');
     } else {
-      portLabel[0].innerHTML = 'Origem';
-      portLabel[1].innerHTML = 'Destino';
+      portLabel[0].innerHTML = t('Source');
+      portLabel[1].innerHTML = t('Destination');
     }
   } else if (isRangeOfPorts.checked == true && isAsymOpening.checked == true) {
     advOptionsLabel.className = 'row';
     portBox[1].className = portBox[2].className =
      portBox[3].className = 'col-md-2 col-4 port-forward-tr069-port';
-    portLabel[0].innerHTML = portLabel[2].innerHTML = 'Inicial';
-    portLabel[1].innerHTML = portLabel[3].innerHTML = 'Final';
+    portLabel[0].innerHTML = portLabel[2].innerHTML = t('Initial');
+    portLabel[1].innerHTML = portLabel[3].innerHTML = t('Final');
   }
 };
 
@@ -146,7 +150,8 @@ let checkPortsValues = function(portsValues) {
   let isPortsNotEmpty = true;
   let isRangeOfSameSize = true;
   let isRangeNegative = true;
-  let isRangeOfPorts = $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
+  let isRangeOfPorts =
+    $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
   let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0].checked;
   let checkUntil = 1;
   let portToCheck;
@@ -181,7 +186,7 @@ let checkPortsValues = function(portsValues) {
     isPortsNumber = false;
   }
   if (!isPortsNumber) {
-    triggerRedAlert('As portas devem ser números!');
+    triggerRedAlert(t('portsShouldBeNumbers!'));
   } else {
     if (isRangeOfPorts) {
       let firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
@@ -201,19 +206,16 @@ let checkPortsValues = function(portsValues) {
     }
   }
   if (!isPortsOnRange) {
-    triggerRedAlert('As portas devem estar na faixa entre 1 - 65535! ' +
-                    '(Por particularidades de aplicações do dispositivo ' +
-                    'TR-069 as seguintes portas também não são permitidas : ' +
-                    '22, 23, 80, 443, 7547 e 58000)');
+    triggerRedAlert(t('tr069ValidPortsInstructions'));
   }
   if (!isPortsNotEmpty) {
-    triggerRedAlert('Os campos devem ser preenchidos!');
+    triggerRedAlert(t('fieldsShouldBeFilled!'));
   }
   if (!isRangeOfSameSize) {
-    triggerRedAlert('As faixas de portas são de tamanhos diferentes!');
+    triggerRedAlert(t('portRangesAreDifferentInSize!'));
   }
   if (!isRangeNegative) {
-    triggerRedAlert('As faixas de portas estão com limites invertidos!');
+    triggerRedAlert(t('portRangesHaveLimitsInverted'));
   }
   return (isPortsNumber && isPortsOnRange &&
     isPortsNotEmpty && isRangeOfSameSize && isRangeNegative);
@@ -263,7 +265,7 @@ window.removeOnePortMapping = function(input) {
         l.internal_port_end != ports[3];
       });
     } else {
-      triggerRedAlert('Um erro inesperado aconteceu');
+      triggerRedAlert(t('unexpectedErrorHappened'));
     }
     /* *** */
     setPortForwardStorage('listOfMappings', listOfMappings);
@@ -357,7 +359,7 @@ let checkOverlappingPorts = function(ip, listOfMappings,
         ret = true;
       }
     } else {
-      triggerRedAlert('Um erro inesperado aconteceu');
+      triggerRedAlert(t('unexpectedErrorHappened'));
     }
   }
   return ret;
@@ -392,7 +394,7 @@ let putPortMapping = function(ip, ports) {
   isOverlapping = checkOverlappingPorts(ip, listOfMappings,
                                         ports, isRangeOfPorts);
   if (isOverlapping) {
-    triggerRedAlert('Porta estão sobrepostas!');
+    triggerRedAlert(t('portsAreOverlapping!'));
     return;
   } else {
     if (ports.length == 1) {
@@ -407,7 +409,7 @@ let putPortMapping = function(ip, ports) {
           'internal_port_end': ports[0],
         });
       } else {
-        triggerRedAlert('Opção não compatível!');
+        triggerRedAlert(t('incompatibleOption!'));
         return;
       }
     } else if (ports.length == 2) {
@@ -424,7 +426,7 @@ let putPortMapping = function(ip, ports) {
             'internal_port_end': ports[1],
           });
         } else {
-          triggerRedAlert('Opção não compatível!');
+          triggerRedAlert(t('incompatibleOption!'));
           return;
         }
       } else {
@@ -440,7 +442,7 @@ let putPortMapping = function(ip, ports) {
             'internal_port_end': ports[1],
           });
         } else {
-          triggerRedAlert('Opção não compatível!');
+          triggerRedAlert(t('incompatibleOption!'));
           return;
         }
       }
@@ -459,57 +461,57 @@ let putPortMapping = function(ip, ports) {
           'internal_port_end': ports[3],
         });
       } else {
-        triggerRedAlert('Opção não compatível!');
+        triggerRedAlert(t('incompatibleOption!'));
         return;
       }
     } else {
-      triggerRedAlert('Um erro inesperado aconteceu');
+      triggerRedAlert(t('unexpectedErrorHappened'));
       return;
     }
     let listOfBadges = $('<td>').addClass('align-items-center')
                                 .addClass('justify-content-center');
     for (i = 0; i < portsBadges.length; i++) {
       listOfBadges.append(
-            $('<div>').
-              addClass('badge badge-primary badge-pill mr-2 mb-1').
-              append(
-                $('<label>').
-                css('margin-top', '0.4rem').
-                addClass('mr-1').
-                html(
+            $('<div>')
+              .addClass('badge badge-primary badge-pill mr-2 mb-1')
+              .append(
+                $('<label>')
+                .css('margin-top', '0.4rem')
+                .addClass('mr-1')
+                .html(
                   portsBadges[i],
                 ),
-              ).
-              append(
-                $('<a>').
-                  addClass('close').
-                  attr('onclick', 'removeOnePortMapping(this)').
-                  attr('data-ip', ip).
-                  attr('data-port-mapping', portsBadges[i]).
-                  addClass('white-text').
-                  html('&times;')),
+              )
+              .append(
+                $('<a>')
+                  .addClass('close')
+                  .attr('onclick', 'removeOnePortMapping(this)')
+                  .attr('data-ip', ip)
+                  .attr('data-port-mapping', portsBadges[i])
+                  .addClass('white-text')
+                  .html('&times;')),
               );
     }
     portMappingTable.find('[data-ip="' + ip + '"]').remove();
     portMappingTable.append(
       $('<tr>').append(
-        $('<td>').
-        addClass('text-left').
-        append(
-          $('<span>').
-          css('display', 'block').
-          html(ip),
+        $('<td>')
+        .addClass('text-left')
+        .append(
+          $('<span>')
+          .css('display', 'block')
+          .html(ip),
         ),
         listOfBadges,
-        $('<td>').
-          addClass('text-right').
-          append(
-            $('<button>').
-            append(
-              $('<div>').
-              addClass('fas fa-times fa-lg'),
-            ).
-            addClass('btn btn-sm btn-danger my-0 mr-0')
+        $('<td>')
+          .addClass('text-right')
+          .append(
+            $('<button>')
+            .append(
+              $('<div>')
+                .addClass('fas fa-times fa-lg'),
+            )
+            .addClass('btn btn-sm btn-danger my-0 mr-0')
             .attr('type', 'button')
             .attr('onclick', 'removeSetOfPortMapping(this)')
             .attr('data-ip', ip),
@@ -533,11 +535,10 @@ window.checkPortMappingInputs = function() {
   let isPortsValid;
   let portsValues = [];
   let validator = new Validator();
-  isAddressValid = validator.
-  checkAddressSubnetRange(deviceIp,
+  isAddressValid = validator.checkAddressSubnetRange(deviceIp,
     ipAddressGiven, maskBits);
   if (!isAddressValid) {
-    triggerRedAlert('Endereço IP inválido!');
+    triggerRedAlert(t('invalidIpAddress!'));
   } else {
     for (i = 0; i < portsInputs.length; i++) {
       portsValues.push(portsInputs[i].value);
@@ -624,46 +625,46 @@ let buildMappingTable = function(ip) {
                               .addClass('justify-content-center');
   for (let i = 0; i < portsBadges.length; i++) {
     listOfBadges.append(
-          $('<div>').
-            addClass('badge badge-primary badge-pill mr-2 mb-1').
-            append(
-              $('<label>').
-              css('margin-top', '0.4rem').
-              addClass('mr-1').
-              html(
+          $('<div>')
+            .addClass('badge badge-primary badge-pill mr-2 mb-1')
+            .append(
+              $('<label>')
+              .css('margin-top', '0.4rem')
+              .addClass('mr-1')
+              .html(
                 portsBadges[i],
               ),
-            ).
-            append(
-              $('<a>').
-                addClass('close').
-                attr('onclick', 'removeOnePortMapping(this)').
-                attr('data-ip', ip).
-                attr('data-port-mapping', portsBadges[i]).
-                addClass('white-text').
-                html('&times;')),
+            )
+            .append(
+              $('<a>')
+                .addClass('close')
+                .attr('onclick', 'removeOnePortMapping(this)')
+                .attr('data-ip', ip)
+                .attr('data-port-mapping', portsBadges[i])
+                .addClass('white-text')
+                .html('&times;')),
             );
   }
   portMappingTable.find('[data-ip="' + ip + '"]').remove();
   portMappingTable.append(
     $('<tr>').append(
-      $('<td>').
-      addClass('text-left').
-      append(
-        $('<span>').
-        css('display', 'block').
-        html(ip),
+      $('<td>')
+      .addClass('text-left')
+      .append(
+        $('<span>')
+        .css('display', 'block')
+        .html(ip),
       ),
       listOfBadges,
-      $('<td>').
-        addClass('text-right').
-        append(
-          $('<button>').
-          append(
-            $('<div>').
-            addClass('fas fa-times fa-lg'),
-          ).
-          addClass('btn btn-sm btn-danger my-0 mr-0')
+      $('<td>')
+        .addClass('text-right')
+        .append(
+          $('<button>')
+          .append(
+            $('<div>')
+            .addClass('fas fa-times fa-lg'),
+          )
+          .addClass('btn btn-sm btn-danger my-0 mr-0')
           .attr('type', 'button')
           .attr('onclick', 'removeSetOfPortMapping(this)')
           .attr('data-ip', ip),
@@ -673,7 +674,7 @@ let buildMappingTable = function(ip) {
   );
 };
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-port-forward-tr069-modal', function(event) {
     let row = $(event.target).parents('tr');
     // clean modal
@@ -736,13 +737,13 @@ $(document).ready(function() {
       success: function(res) {
         if (res.success) {
           swal({
-            title: 'Sucesso!',
+            title: t('Success!'),
             type: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
           swal({
-            title: 'Falha ao aplicar a abertura de portas',
+            title: t('failedToApplyPortOpenning'),
             text: res.message,
             type: 'error',
             confirmButtonColor: '#4db6ac',
@@ -751,7 +752,7 @@ $(document).ready(function() {
       },
       error: function(xhr, status, error) {
         swal({
-          title: 'Falha ao aplicar a abertura de portas',
+          title: t('failedToApplyPortOpenning'),
           text: error,
           type: 'error',
           confirmButtonColor: '#4db6ac',

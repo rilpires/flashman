@@ -1,5 +1,8 @@
+import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 import 'selectize';
+
+const t = i18next.t;
 
 const selectizeOptionsMacs = {
   create: true,
@@ -7,19 +10,19 @@ const selectizeOptionsMacs = {
   labelField: 'label',
   render: {
     option_create: function(data, escape) {
-      return $('<div></div>').addClass('create').append(
-        'Adicionar: ',
-        $('<strong></strong>').html(escape(data.input))
+      return $('<div>').addClass('create').append(
+        t('Add') + ': ',
+        $('<strong>').html(escape(data.input)),
       );
     },
     option: function(data, escape) {
       let dataVal =
         isJsonString(data.value) ? JSON.parse(data.value)[0] : data.value;
-      return $('<div></div>').addClass('option').append(
-        $('<span></span>').addClass('title')
+      return $('<div>').addClass('option').append(
+        $('<span>').addClass('title')
         .html(escape(data.label.toUpperCase())),
-        $('<span></span>').addClass('description')
-        .html(escape(dataVal.toUpperCase()))
+        $('<span>').addClass('description')
+        .html(escape(dataVal.toUpperCase())),
       );
     },
   },
@@ -51,17 +54,17 @@ const selectizeOptionsPorts = {
   render: {
     option_create: function(data, escape) {
       if (data.input.indexOf(':') == -1) {
-        return $('<div></div>').addClass('create').append(
-          'Adicionar: ',
-          $('<strong></strong>').html(escape(data.input))
+        return $('<div>').addClass('create').append(
+          t('Add') + ': ',
+          $('<strong>').html(escape(data.input)),
         );
       } else {
         let res = data.input.split(':', 2);
-        return $('<div></div>').addClass('create').append(
-          'Dispositivo: ',
-          $('<strong></strong>').html(escape(res[0])),
-          '<br>Externo: ',
-          $('<strong></strong>').html(escape(res[1]))
+        return $('<div>').addClass('create').append(
+          t('Device') + ': ',
+          $('<strong>').html(escape(res[0])),
+          '<br>' + t('External') + ': ',
+          $('<strong>').html(escape(res[1])),
         );
       }
     },
@@ -104,11 +107,11 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
       }
     }
     portListBadges.append(
-      $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4)
+      $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv4),
     );
     if (hasPortOpenIpv6 && deviceEntry.has_dhcpv6) {
       portListBadgesIpv6.append(
-        $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6)
+        $('<span>').addClass('badge badge-primary mr-1').html(finalValueIpv6),
       );
     }
   });
@@ -123,22 +126,22 @@ const insertOpenFirewallDoorRule = function(deviceEntry) {
       $('<td>').addClass('text-left').append(
         $('<span>').css('display', 'block').append(
           $('<strong>').html(deviceEntry.label.toUpperCase())
-                                .addClass('conn-device-label')
+                                .addClass('conn-device-label'),
         ),
         $('<span>').css('display', 'block')
-                          .html(deviceEntry.mac.toUpperCase())
+                          .html(deviceEntry.mac.toUpperCase()),
       ),
       portListBadges,
       portListBadgesIpv6,
       $('<td>').addClass('text-center').html(dmzString),
       $('<td>').addClass('text-right').append(
         $('<button>').append(
-          $('<div>').addClass('fas fa-times fa-lg')
+          $('<div>').addClass('fas fa-times fa-lg'),
         ).addClass('btn btn-sm btn-danger my-0 openFirewallPortsRemoveRule')
-        .attr('type', 'button')
-      )
+        .attr('type', 'button'),
+      ),
     ).addClass('bounceIn')
-    .attr('data-device', deviceEntry.mac)
+    .attr('data-device', deviceEntry.mac),
   );
   // Delete rule from list if MAC already exists
   let rules = $('#openFirewallPortsFinalRules');
@@ -191,7 +194,7 @@ socket.on('ONLINEDEVS', function(macaddr, data) {
   }
 });
 
-$(document).ready(function() {
+anlixDocumentReady.add(function() {
   // Init selectize fields
   $('#openFirewallPortsMac').selectize(selectizeOptionsMacs);
   $('#openFirewallPortsPorts').selectize(selectizeOptionsPorts);
@@ -302,8 +305,8 @@ $(document).ready(function() {
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (deviceId == '') {
       swal({
-        title: 'Falha na inclusão da regra',
-        text: 'O dispositivo deve ser informado!',
+        title: t('ruleInclusionFail'),
+        text: t('deviceMustBeInformed!'),
         type: 'error',
         confirmButtonColor: '#4db6ac',
       });
@@ -311,8 +314,8 @@ $(document).ready(function() {
     }
     if (ports == '') {
       swal({
-        title: 'Falha na inclusão da regra',
-        text: 'Informe, no mínimo, uma porta para liberar acesso!',
+        title: t('ruleInclusionFail'),
+        text: t('informAtLeastOnePortToOpenAccess!'),
         type: 'error',
         confirmButtonColor: '#4db6ac',
       });
@@ -323,8 +326,8 @@ $(document).ready(function() {
     $.each(ports, function(idx, portValue) {
       if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'CPE não aceita portas assimétricas! Atualize o firmware.',
+          title: t('ruleInclusionFail'),
+          text: t('cpeDoesNotSupportAsymmetricPorts'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -343,6 +346,7 @@ $(document).ready(function() {
       let rulesJson = JSON.parse(rules.val());
       $.each(rulesJson, function(idx, ruleEntry) {
         let portsArray = [];
+        // eslint-disable-next-line no-prototype-builtins
         if (ruleEntry.hasOwnProperty('router_port') && ruleEntry.router_port) {
           portsArray = ruleEntry.router_port;
         } else {
@@ -375,8 +379,8 @@ $(document).ready(function() {
 
       if (reservedPorts.indexOf(parseInt(portFinal)) != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'Porta Externa já utilizada!',
+          title: t('ruleInclusionFail'),
+          text: t('externalPortAlreadyInUse!'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -386,8 +390,8 @@ $(document).ready(function() {
 
       if (intPorts.indexOf(parseInt(intPort)) != -1) {
         swal({
-          title: 'Falha na inclusão da regra',
-          text: 'Porta Interna já utilizada!',
+          title: t('ruleInclusionFail'),
+          text: t('internalPortAlreadyInUse!'),
           type: 'error',
           confirmButtonColor: '#4db6ac',
         });
@@ -430,13 +434,13 @@ $(document).ready(function() {
       success: function(res) {
         if (res.success) {
           swal({
-            title: 'Sucesso! Reinicie o dispositivo alterado',
+            title: `${t('Success')}! ${t('restartModifiedDeviced')}`,
             type: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
           swal({
-            title: 'Falha ao aplicar regras',
+            title: t('ruleApplicationFail'),
             text: res.message,
             type: 'error',
             confirmButtonColor: '#4db6ac',
@@ -445,7 +449,7 @@ $(document).ready(function() {
       },
       error: function(xhr, status, error) {
         swal({
-          title: 'Falha ao aplicar regras',
+          title: t('ruleApplicationFail'),
           text: error,
           type: 'error',
           confirmButtonColor: '#4db6ac',

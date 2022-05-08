@@ -1,3 +1,5 @@
+/* global __line */
+
 const localPackageJson = require('../package.json');
 const localEnvironmentJson = require('../environment.config.json');
 const exec = require('child_process').exec;
@@ -7,6 +9,8 @@ const commandExists = require('command-exists');
 const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
+const language = require('./language');
+const t = language.i18next.t;
 let Config = require('../models/config');
 let updateController = {};
 
@@ -95,22 +99,29 @@ const updateDependencies = function() {
 
 const updateGenieRepo = function(ref) {
   let fetch = 'cd ../genieacs && git fetch';
-  let checkout = 'cd ../genieacs && git checkout ' + ref;
+  let checkoutCurr = 'cd ../genieacs && git checkout .';
+  let checkoutNext = 'cd ../genieacs && git checkout ' + ref;
   let install = 'cd ../genieacs && npm install';
   let build = 'cd ../genieacs && npm run build';
-  let reload = 'pm2 reload genieacs-nbi genieacs-fs';
+  let reloadNbi = 'pm2 reload genieacs-nbi';
+  let reloadFs = 'pm2 reload genieacs-fs';
   return new Promise((resolve, reject)=>{
     exec(fetch, (err, stdout, stderr)=>{
       if (err) return reject();
-      exec(checkout, (err, stdout, stderr) => {
-        if (err) return reject();
-        exec(install, (err, stdout, stderr) => {
+      exec(checkoutCurr, (err, stdout, stderr) => {
+        exec(checkoutNext, (err, stdout, stderr) => {
           if (err) return reject();
-          exec(build, (err, stdout, stderr) => {
+          exec(install, (err, stdout, stderr) => {
             if (err) return reject();
-            exec(reload, (err, stdout, stderr) => {
+            exec(build, (err, stdout, stderr) => {
               if (err) return reject();
-              return resolve();
+              exec(reloadNbi, (err, stdout, stderr) => {
+                if (err) return reject();
+                exec(reloadFs, (err, stdout, stderr) => {
+                  if (err) return reject();
+                  return resolve();
+                });
+              });
             });
           });
         });
@@ -122,7 +133,6 @@ const updateGenieRepo = function(ref) {
 const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
     let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-    // Get config from database
     Config.findOne({is_default: true}).then((config)=>{
       if (!config) {
         console.log('Error reading configs from database in update GenieACS!');
@@ -330,43 +340,56 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
   });
 };
 
+const stopInsecureGenieACS = function() {
+  exec('pm2 stop genieacs-cwmp-http');
+};
+
+const startInsecureGenieACS = function() {
+  exec('pm2 start genieacs-cwmp-http');
+};
 
 updateController.rebootGenie = function(instances) {
   // Treat bugged case where pm2 may fail to provide the number of instances
   // correctly - it may be 0 or undefined, and we must then rely on both the
   // envitonment.config.json file and nproc to tell us how many flashman
   // instances there are
-  exec('nproc', (err, stdout, stderr)=>{
-    instances = parseInt(instances);
-    if (isNaN(instances)) {
-      instances = parseInt(localEnvironmentJson.apps[0].instances);
+  Config.findOne({is_default: true}).then((config)=>{
+    exec('nproc', (err, stdout, stderr)=>{
+      instances = parseInt(instances);
       if (isNaN(instances)) {
-        instances = parseInt(stdout.trim()); // remove trailing newline
+        instances = parseInt(localEnvironmentJson.apps[0].instances);
+        if (isNaN(instances)) {
+          instances = parseInt(stdout.trim()); // remove trailing newline
+        }
       }
-    }
-    // If somehow is still NaN, replace with 1 as a fallback
-    if (isNaN(instances)) {
-      instances = '1';
-    } else {
-      instances = instances.toString(); // Merely for type safety
-    }
-    // We do a stop/start instead of restart to avoid racing conditions when
-    // genie's worker processes are killed and then respawned - this prevents
-    // issues with CPEs connections since exceptions lead to buggy exp. backoff
-    exec('pm2 stop genieacs-cwmp', async (err, stdout, stderr)=>{
-      // Replace genieacs instances config with what flashman gives us
-      let replace = 'const INSTANCES_COUNT = .*;';
-      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-      let sedExpr = 's/' + replace + '/' + newText + '/';
-      let targetFile = 'controllers/external-genieacs/devices-api.js';
-      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      // If somehow is still NaN, replace with 1 as a fallback
+      if (isNaN(instances)) {
+        instances = '1';
+      } else {
+        instances = instances.toString(); // Merely for type safety
+      }
+      // We do a stop/start instead of restart to avoid racing conditions when
+      // genie's worker processes are killed and then respawned - this prevents
+      // issues with CPEs connections since exceptions lead to buggy exp.backoff
+      let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
+      exec(pm2Command, async (err, stdout, stderr)=>{
+        // Replace genieacs instances config with what flashman gives us
+        let replace = 'const INSTANCES_COUNT = .*;';
+        let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+        let sedExpr = 's/' + replace + '/' + newText + '/';
+        let targetFile = 'controllers/external-genieacs/devices-api.js';
+        let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
 
-      // Update genieACS diagnostic's script and preset
-      console.log('Updating genieACS diacnostic\'s script and preset');
-      await updateDiagnostics();
+        // Update genieACS diagnostic's script and preset
+        console.log('Updating genieACS diacnostic\'s script and preset');
+        await updateDiagnostics();
 
-      exec(sedCommand, (err, stdout, stderr)=>{
-        exec('pm2 start genieacs-cwmp');
+        exec(sedCommand, (err, stdout, stderr)=>{
+          exec('pm2 start genieacs-cwmp');
+          if (config.tr069.insecure_enable) {
+            exec('pm2 start genieacs-cwmp-http');
+          }
+        });
       });
     });
   });
@@ -377,7 +400,7 @@ const rebootFlashman = function(version) {
   // racing conditions when onus try to connect - we use the service name to
   // avoid booting genieacs on servers where it was never booted in the first
   // place (as opposed to using environment.genieacs.json)
-  exec('pm2 stop genieacs-cwmp', (err, stdout, stderr)=>{
+  exec('pm2 stop genieacs-cwmp genieacs-cwmp-http', (err, stdout, stderr)=>{
     // & necessary because otherwise process would kill itself and cause issues
     exec('pm2 reload environment.config.json &');
   });
@@ -548,6 +571,9 @@ updateController.getAutoConfig = function(req, res) {
         tr069RecoveryThreshold: matchedConfig.tr069.recovery_threshold,
         tr069OfflineThreshold: matchedConfig.tr069.offline_threshold,
         tr069STUNEnable: matchedConfig.tr069.stun_enable,
+        tr069InsecureEnable: matchedConfig.tr069.insecure_enable,
+        hasNeverEnabledInsecureTR069:
+          matchedConfig.tr069.has_never_enabled_insecure,
         pon_signal_threshold: matchedConfig.tr069.pon_signal_threshold,
         pon_signal_threshold_critical:
           matchedConfig.tr069.pon_signal_threshold_critical,
@@ -564,6 +590,7 @@ updateController.getAutoConfig = function(req, res) {
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
+        language: matchedConfig.language,
       });
     } else {
       return res.status(200).json({
@@ -609,7 +636,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
     console.error(e);
-    throw new Error('Erro ao salvar intervalo de informs do TR-069 no ACS.');
+    throw new Error(t('geniePresetPutError', {errorline: __line}));
   });
 };
 
@@ -617,7 +644,7 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: 'Erro ao encontrar configuração base'};
+    if (!config) throw new {message: t('configNotFound', {errorline: __line})};
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -629,7 +656,7 @@ updateController.setAutoConfig = async function(req, res) {
     if (measureServerIP && !measureServerIP.match(ipRegex)) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     let measureServerPort = parseInt(req.body['measure-server-port']);
@@ -642,7 +669,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.measureServerIP = measureServerIP;
@@ -657,7 +684,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold = ponSignalThreshold;
@@ -672,7 +699,7 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
@@ -685,7 +712,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Erro validando os campos',
+          message: t('fieldsInvalid', {errorline: __line}),
         });
       }
       /* check if ssid prefix was not empty and for some reason is coming
@@ -693,7 +720,7 @@ updateController.setAutoConfig = async function(req, res) {
       if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser vazio',
+          message: t('ssidPrefixEmptyError'),
         });
       // If prefix is disabled, do not allow changes in current prefix
       } else if (!isSsidPrefixEnabled &&
@@ -701,8 +728,7 @@ updateController.setAutoConfig = async function(req, res) {
                  config.ssidPrefix !== req.body['ssid-prefix']) {
         return res.status(500).json({
           type: 'danger',
-          message: 'Prefixo de SSID não pode ser ' +
-                   'alterado se estiver desabilitado',
+          message: t('ssidPrefixDisabledAlterationError'),
         });
       }
       config.ssidPrefix = req.body['ssid-prefix'];
@@ -721,12 +747,12 @@ updateController.setAutoConfig = async function(req, res) {
     ) {
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
     config.tr069.pon_signal_threshold_critical_high =
       ponSignalThresholdCriticalHigh;
-    let message = 'Salvo com sucesso!';
+    let message = t('operationSuccessful');
 
     // checking tr069 configuration fields.
     let tr069ServerURL = req.body['tr069-server-url'];
@@ -740,6 +766,25 @@ updateController.setAutoConfig = async function(req, res) {
       // in case of falsey value, use current one
       onuWebPassword = config.tr069.web_password;
     }
+    // validate that it is a strong password, but only if value changes
+    // first character cannot be special character
+    if (onuWebPassword !== config.tr069.web_password) {
+      let passRegex = new RegExp(''
+        + /(?=.{8,16}$)/.source
+        + /(?=.*[A-Z])/.source
+        + /(?=.*[a-z])/.source
+        + /(?=.*[0-9])/.source
+        + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      if (
+        !passRegex.test(onuWebPassword) ||
+        '-!@#$%^&*+_.'.includes(onuWebPassword[0])
+      ) {
+        return res.status(500).json({
+          type: 'danger',
+          message: t('tr069WebPasswordValidationError'),
+        });
+      }
+    }
     let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
     // parsing fields to number.
     let tr069InformInterval = Number(req.body['inform-interval']);
@@ -749,6 +794,8 @@ updateController.setAutoConfig = async function(req, res) {
     let tr069OfflineThreshold =
       Number(req.body['lost-informs-offline-threshold']);
     let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
+    let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
+    let changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -780,12 +827,16 @@ updateController.setAutoConfig = async function(req, res) {
         pon_signal_threshold_critical: ponSignalThresholdCritical,
         pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
         stun_enable: STUNEnable,
+        insecure_enable: insecureEnable,
+        has_never_enabled_insecure: (
+          config.tr069.has_never_enabled_insecure && !insecureEnable
+        ),
       };
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
       return res.status(500).json({
         type: 'danger',
-        message: 'Erro validando os campos relacionados ao TR-069.',
+        message: t('fieldsInvalid', {errorline: __line}),
       });
     }
 
@@ -814,16 +865,38 @@ updateController.setAutoConfig = async function(req, res) {
       config.certification.flashman_step_required = flashmanStepRequired;
     }
 
+    // language config change.
+    let lng = req.body['selected-language'];
+    // if received language is different from current language.
+    if (lng !== language.i18next.resolvedLanguage) {
+      // try to change the language in i18next.
+      let {status, message} = await language.updateLanguage(lng).then((x) => x);
+      if (status !== 200) { // if attempt, of changing language, didn't work.
+        // send the returned status and message in response.
+        return res.status(status).json({type: 'danger', message: message});
+      }
+      // if it worked. it's been already saved in the database.
+    }
+
     await config.save();
+
+    // Start / stop insecure GenieACS instance if parameter changed
+    if (changedInsecure && config.tr069.insecure_enable) {
+      startInsecureGenieACS();
+    } else if (changedInsecure) {
+      stopInsecureGenieACS();
+    }
+
     return res.status(200).json({
       type: 'success',
       message: message,
     });
   } catch (err) {
-    console.log(err);
+    console.log(err.message ? err.message : err);
     return res.status(500).json({
       type: 'danger',
-      message: (err.message) ? err.message : 'Erro salvando configurações',
+      message: (err.message) ? err.message :
+                               t('configSaveError', {errorline: __line}),
     });
   }
 };

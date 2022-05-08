@@ -1,3 +1,5 @@
+const util = require('../controllers/handlers/util');
+
 let DeviceVersion = {};
 
 const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
@@ -45,13 +47,16 @@ const tr069Devices = {
       'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -86,13 +91,16 @@ const tr069Devices = {
       'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -100,7 +108,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -119,13 +127,16 @@ const tr069Devices = {
       'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: false,
       speed_test_limit: 0,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: true,
       firmware_upgrade: true,
       stun: false,
@@ -133,12 +144,12 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
-    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x0'],
-    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '0x0', '0x0', '0x2'],
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x2'],
     mesh_ssid_object_exists: true,
   },
   'ZXHN H198A V3.0': {
@@ -152,13 +163,16 @@ const tr069Devices = {
       'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: true,
       speed_test_limit: 100,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
       stun: true,
@@ -172,21 +186,26 @@ const tr069Devices = {
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
-      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL'],
-      'V9.1.0P3N2_MUL': [],
+      'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
+      'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
+      'V9.1.0P4N1_MUL': [],
     },
     port_forward_opts: {
       'V9.1.0P1_MUL': portForwardNoAsymRanges,
       'V9.1.0P3N2_MUL': portForwardNoAsymRanges,
+      'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
       wps: false,
       ping_test: true,
       speed_test: true,
       speed_test_limit: 550,
-      block_devices: false,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
       pon_signal: false,
       firmware_upgrade: true,
       stun: true,
@@ -194,7 +213,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: true,
-    mesh_bssid_offset_hardcoded: true,
+    mesh_bssid_offset_hardcoded: false,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
     // offset of the leftmost octet, and so forth)
@@ -211,6 +230,7 @@ const tr069Devices = {
       'V1.2.3': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -219,6 +239,46 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'GONUAC002': {
+    vendor: 'Greatek',
+    versions_upgrade: {
+      'V2.2.0': [],
+      'V2.2.3': [],
+      'V2.2.7': [],
+    },
+    port_forward_opts: {
+      'V2.2.0': portForwardFullSupport,
+      'V2.2.3': portForwardFullSupport,
+      'V2.2.7': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 250,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -242,18 +302,57 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
+      wps: false,
+      stun: false,
       speed_test: true,
       speed_test_limit: 300,
       ping_test: true,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
     wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'HG9': {
+    vendor: 'Tenda',
+    versions_upgrade: {
+      'v1.0.1': [],
+    },
+    port_forward_opts: {
+      'v1.0.1': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      stun: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      ping_test: true,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
     // offset of each BSSID octet in relation
     // to the MAC address (first element corresponds to
@@ -270,6 +369,7 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -278,6 +378,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -299,6 +401,7 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -307,6 +410,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -320,6 +425,66 @@ const tr069Devices = {
     mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x5'],
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
   },
+  'BEACON 1 HA-020W-B': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE49127HJII42': [],
+    },
+    port_forward_opts: {
+      '3FE49127HJII42': portForwardNoAsymRanges,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: false, // no fiber
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 800,
+      ping_test: true,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'G-2425G-A': {
+    vendor: 'Nokia',
+    versions_upgrade: {
+      '3FE49025IJHK03': [],
+    },
+    port_forward_opts: {
+      '3FE49025IJHK03': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      speed_test: true,
+      speed_test_limit: 850,
+      ping_test: true,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      wps: false,
+      stun: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: false,
+  },
   '121AC': {
     vendor: 'Intelbras',
     versions_upgrade: {
@@ -331,6 +496,7 @@ const tr069Devices = {
       '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -339,6 +505,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 350,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: true,
       stun: false,
       mesh_v2_primary_support: false,
@@ -368,6 +536,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -376,6 +545,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -396,6 +567,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -404,6 +576,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -424,6 +598,7 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
       upnp: false,
@@ -432,6 +607,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
@@ -454,6 +631,7 @@ const tr069Devices = {
       'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -462,6 +640,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 250,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: true,
@@ -487,6 +667,7 @@ const tr069Devices = {
       'V5R020C00S280': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
       upnp: false,
@@ -495,6 +676,8 @@ const tr069Devices = {
       speed_test: true,
       speed_test_limit: 850,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: true,
       stun: false,
       mesh_v2_primary_support: true,
@@ -509,12 +692,41 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x8'],
     mesh_ssid_object_exists: false,
   },
+  'EG8145X6': {
+    port_forward_opts: {
+      'V5R020C00S060': portForwardNoAsymRanges,
+    },
+    vendor: 'Huawei',
+    versions_upgrade: {
+      'V5R020C00S060': [],
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 700,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
   'WS5200-21': {
     vendor: 'Huawei',
     versions_upgrade: {
       '10.0.5.9(C506)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -523,6 +735,8 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
@@ -537,6 +751,7 @@ const tr069Devices = {
       '10.0.5.5(C947)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -545,8 +760,144 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'WS7001-40': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '2.0.0.315(SP2C947)': [],
+    },
+    port_forward_opts: {
+      '2.0.0.315(SP2C947)': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'WS7100-30': {
+    vendor: 'Huawei',
+    versions_upgrade: {
+      '10.0.5.29(C947)': [],
+    },
+    port_forward_opts: {
+      '10.0.5.29(C947)': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: true,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'DIR-842': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.3': [],
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 180,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'DIR-841': {
+    vendor: 'DLink',
+    versions_upgrade: {
+      '3.0.4': [],
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 180,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'AC10': {
+    vendor: 'Tenda',
+    versions_upgrade: {
+      'V16.03.06.05_multi_BR01': [],
+    },
+    port_forward_opts: {
+      'V16.03.06.05_multi_BR01': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: false, // Practical tests doesnt worked properly
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },
@@ -559,6 +910,7 @@ const tr069Devices = {
       '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
+      wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
       upnp: false,
@@ -567,10 +919,94 @@ const tr069Devices = {
       speed_test: false,
       speed_test_limit: 0,
       block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
       firmware_upgrade: false,
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'ST-1001-FL': {
+    vendor: 'Hurakall',
+    versions_upgrade: {
+      'V1.0.8': [],
+    },
+    port_forward_opts: {
+      'V1.0.8': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'DM985-424 HW3': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V3.2.0': [],
+    },
+    port_forward_opts: {
+      'V3.2.0': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      connected_devices: true,
+    },
+  },
+  'EC220-G5': {
+    vendor: 'TP-Link',
+    versions_upgrade: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+    },
+    port_forward_opts: {
+      '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      pon_signal: false,
+      port_forward: true,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 230,
+      stun: false,
+      upnp: false,
+      wps: false,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -801,7 +1237,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 0,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -821,7 +1257,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 0,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 100,
@@ -840,7 +1276,7 @@ const flashboxFirmwareDevices = {
     'max_vid': 4094,
     'mesh_support': true,
     'mesh_v2_primary_support': true,
-    'mesh_v2_secondary_support': false,
+    'mesh_v2_secondary_support': true,
     'wps_support': true,
     'speedtest_support': true,
     'speedtest_limit': 200,
@@ -1980,7 +2416,8 @@ const grantWifi5ghz = function(version, is5ghzCapable, model) {
     return true;
   }
   if (version.match(versionRegex)) {
-    return (is5ghzCapable && (DeviceVersion.versionCompare(version, '0.13.0') >= 0));
+    return (is5ghzCapable && (DeviceVersion.versionCompare(version,
+                                                           '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
@@ -2087,7 +2524,7 @@ const grantLanGwEdit = function(version, model) {
 
 const grantLanDevices = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.connected_devices;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
@@ -2156,6 +2593,14 @@ const grantSpeedTestLimit = function(version, model) {
 const grantBlockDevices = function(model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.block_devices;
+  }
+  // Enabled for all Flashbox firmwares
+  return true;
+};
+
+const grantBlockWiredDevices = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.block_wired_devices;
   }
   // Enabled for all Flashbox firmwares
   return true;
@@ -2255,10 +2700,9 @@ const grantMeshV1Mode = function(version, model) {
   }
 };
 
-const grantMeshV2PrimaryMode = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support.mesh_v2_primary_support;
-  }
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 primary device
+const grantMeshV2PrimaryModeUpgrade = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -2268,7 +2712,37 @@ const grantMeshV2PrimaryMode = function(version, model) {
       // Model is not compatible with feature
       return false;
     }
+    return true;
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+const grantMeshV2PrimaryMode = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.mesh_v2_primary_support;
+  }
+  if (grantMeshV2PrimaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
+  } else {
+    return false;
+  }
+};
+
+// No need to check version, just used to check if device in correct release
+// could be a mesh v2 secondary device
+const grantMeshV2SecondaryModeUpgrade = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].mesh_v2_secondary_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return true;
   } else {
     // Development version, enable everything by default
     return true;
@@ -2279,19 +2753,10 @@ const grantMeshV2SecondaryMode = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.mesh_v2_secondary_support;
   }
-  if (version.match(versionRegex)) {
-    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
-      // Unspecified model
-      return false;
-    }
-    if (!flashboxFirmwareDevices[model].mesh_v2_secondary_support) {
-      // Model is not compatible with feature
-      return false;
-    }
+  if (grantMeshV2SecondaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
-    // Development version, enable everything by default
-    return true;
+    return false;
   }
 };
 
@@ -2337,6 +2802,14 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
+const grantWiFiAXSupport = function(model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wifi_ax_mode;
+  }
+  // Firmware CPEs do not have AX mode support
+  return false;
+};
+
 const hasSTUNSupport = function(model) {
   let STUNEnable = false;
   if (tr069Devices[model]) {
@@ -2376,18 +2849,24 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantSpeedTest = grantSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
+  result.grantBlockWiredDevices = grantBlockWiredDevices(model);
   result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
   result.grantWanBytesSupport = grantWanBytesSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(model);
   result.grantMeshMode = grantMeshV1Mode(version, model);
+  result.grantMeshV2PrimaryModeUpgrade =
+    grantMeshV2PrimaryModeUpgrade(version, model);
   result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2SecondaryModeUpgrade =
+    grantMeshV2SecondaryModeUpgrade(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
   result.grantMeshV2HardcodedBssid = grantMeshV2HardcodedBssid(model);
   result.grantMeshVAPObject = grantMeshVAPObject(model);
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   result.grantSTUN = hasSTUNSupport(model);
+  result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   if (result.grantPortForward && Object.keys(tr069Devices).includes(model)) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);
@@ -2474,32 +2953,26 @@ DeviceVersion.getFirmwaresUpgradesByVersion = function(model, version) {
   return versions;
 };
 
-/*
-  Flashbox devices with firmware version before 0.32.0 only
-  had mesh v1 capabilities. If these models are in mesh mode (not on cable, > 1)
-  with associated slaves they can't be allowed to upgrade to a mesh v2
-  compatible release because mesh v2 is not compatible with mesh v1
-  (slaves will lose connection).
-  Analogously, mesh v2 devices cannot upgrade to mesh v1 under same conditions
-*/
-DeviceVersion.testFirmwareUpgradeMeshLegacy = function(
-  meshMode, slaves, curVersion, nextVersion) {
-  if (curVersion.match(versionRegex)) {
-    if (meshMode > 1 && slaves && slaves.length > 0) {
-      if (!nextVersion) {
-        return false;
-      } else if (DeviceVersion.versionCompare(curVersion, '0.32.0') < 0) {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') < 0);
-      } else {
-        return (DeviceVersion.versionCompare(nextVersion, '0.32.0') >= 0);
-      }
+DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
+  let result = {unknownVersion: false, current: 0, upgrade: 0};
+  const currVer = util.returnStrOrEmptyStr(curVersion);
+  const nextVer = util.returnStrOrEmptyStr(nextVersion);
+  if (currVer.match(versionRegex) && nextVer.match(versionRegex)) {
+    if (DeviceVersion.versionCompare(currVer, '0.32.0') < 0) {
+      result.current = 1;
     } else {
-      return true;
+      result.current = 2;
+    }
+    if (DeviceVersion.versionCompare(nextVer, '0.32.0') < 0) {
+      result.upgrade = 1;
+    } else {
+      result.upgrade = 2;
     }
   } else {
-    // development version, allow everything
-    return true;
+    // either current or target release are development version
+    result.unknownVersion = true;
   }
+  return result;
 };
 
 DeviceVersion.isUpgradeSupport = function(model) {

@@ -1,6 +1,8 @@
+/* global __line */
 const TasksAPI = require('./tasks-api');
 const fs = require('fs');
 const pathModule = require('path');
+const t = require('../language').i18next.t;
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const GENIEHOST = 'localhost';
@@ -19,7 +21,7 @@ firmwaresAPI.receiveFile = function(filename) {
       resolve(binData);
     });
     stream.on('error', () => {
-      reject(new Error('Erro ao baixar arquivo'));
+      reject(new Error(t('errorDownloadingFile', {errorline: __line})));
     });
   });
 };
@@ -67,12 +69,11 @@ firmwaresAPI.sendUpgradeFirmware = async function(firmware, device) {
     fileType: '1 Firmware Upgrade Image',
     fileName: firmware.filename,
   };
-  let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask,
-    true, 10000, []);
-  if (result.finished == true && result.task.name === 'download') {
-    return 'Tarefa de atualizar firmware submetida com sucesso!';
+  let result = await TasksAPI.addTask(device.acs_id, upgradeFirmwareTask);
+  if (result.success) {
+    return t('operationSuccessful');
   } else {
-    return 'Tarefa de atualizar firmware não foi terminada';
+    return t('firmwareUpdateTaskDidNotFinsh', {errorline: __line});
   }
 };
 

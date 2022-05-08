@@ -1,4 +1,17 @@
 (function() {
+  // this code is used in both back end and front end and we need to use
+  // i18next in both. So this will handle i18next for both cases.
+  const nodeVer = typeof process !== 'undefined' && process.versions
+    && process.versions.node;
+  // making webpack ignore 'require' global call.
+  const nodeRequire = nodeVer ?
+    typeof __webpack_require__ === 'function'? __non_webpack_require__ : require
+    : undefined;
+  // using translation function from global i18next (front end) or from our
+  // language controller (nodejs back end).
+  const t = typeof i18next !== 'undefined' ? i18next.t
+    : nodeRequire('../../controllers/language.js').i18next.t;
+
   let deviceValidator = (function() {
     let validateRegex = function(value, minlength, length, regex) {
       let valid = true;
@@ -25,7 +38,7 @@
     Validator.prototype.validateMac = function(mac) {
       return {
         valid: mac.match(/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/),
-        err: ['Endereço MAC inválido'],
+        err: [t('invalidMacAddress')],
       };
     };
 
@@ -34,38 +47,39 @@
         valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
                 '12', '13', '36', '40', '44', '48', '149', '153', '157',
                 '161', '165', 'auto'].includes(channel),
-        err: ['Canal selecionado inválido'],
+        err: [t('invalidSelectedChannel')],
       };
     };
 
     Validator.prototype.validateBand = function(band) {
       return {
-        valid: ['auto', 'HT20', 'HT40', 'VHT20', 'VHT40', 'VHT80'].includes(band),
-        err: ['Somente são aceitos os valores auto,HT20,HT40,VHT20,VHT40 e VHT80'],
+        valid: ['auto', 'HT20', 'HT40',
+                'VHT20', 'VHT40', 'VHT80'].includes(band),
+        err: [t('willOnlyAcceptValueWifiBandwidth')],
       };
     };
 
     Validator.prototype.validateMode = function(mode) {
       return {
-        valid: ['11g', '11n', '11na', '11ac'].includes(mode),
-        err: ['Somente são aceitos os valores 11g, 11n, 11na e 11ac'],
+        valid: ['11g', '11n', '11na', '11ac', '11ax'].includes(mode),
+        err: [t('willOnlyAcceptValueWifiMode')],
       };
     };
 
     Validator.prototype.validatePower = function(power) {
       return {
         valid: ['25', '50', '75', '100', 25, 50, 75, 100].includes(power),
-        err: ['Somente são aceitos os valores 25%, 50%, 75% e 100%'],
+        err: [t('willOnlyAcceptValueWifiPower')],
       };
     };
 
     Validator.prototype.validateUser = function(user) {
       const messages = [
-        'Este campo é obrigatório',
-        'Este campo não pode ter mais de 64 caracteres',
-        'Somente são aceitos: caracteres alfanuméricos, espaços, @, _, - e .',
+        t('thisFieldIsMandatory'),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
+        t('acceptableCharOnly0-9a-zA-Z @ul-.'),
       ];
-      let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@\.\-\_\#\s]+$/);
+      let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -75,56 +89,58 @@
         minlength = 8;
       }
       const messages = [
-        'Este campo deve ter no mínimo ' + minlength + ' caracteres',
-        'Este campo não pode ter mais de 64 caracteres',
-        'Letras com acento, cedilha, e alguns caracteres especiais não são aceitos',
+        t('thisFieldMustHaveAtLeastMinChars', {min: minlength}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
+        t('someEspecialCharactersAccentCedileAreNotAccepted'),
       ];
-      let ret = validateRegex(pass, minlength, 64, /^[a-zA-Z0-9\.\-\_\#\!\@\$\%\&\*\=\+\?]+$/);
+      let ret = validateRegex(pass, minlength, 64,
+                              /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
 
     Validator.prototype.validateSSID = function(ssid) {
       const messages = [
-        'Este campo é obrigatório',
-        'Este campo não pode ter mais de 32 caracteres',
-        'Somente são aceitos: caracteres alfanuméricos, espaços, ponto, - e _',
+        t('thisFieldIsMandatory'),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
+        t('acceptableCharsAre0-9a-zA-Z .-ul'),
       ];
-      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9\.\-\_\#\s]+$/);
+      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
 
     Validator.prototype.validateSSIDPrefix = function(ssid, isRequired) {
       const messages = [
-        'Este campo é obrigatório',
-        'Este campo não pode ter mais de 16 caracteres',
-        'São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #',
-        'Deve ter pelo menos um ponto, -, _ ou # como separador no final',
+        t('thisFieldIsMandatory'),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
+        t('acceptableCharsAre0-9a-zA-Z .-ul#'),
+        t('endingSeparatorMustHaveAtLeastOne.-ul#'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
-        /^([a-zA-Z0-9\.\-\_\#\s]+(\.|\-|\_|\#))*$/);
-      
+        /^([a-zA-Z0-9.\-_#\s]+(\.|-|_|#))*$/);
+
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
 
     Validator.prototype.validateWifiPassword = function(pass) {
       const messages = [
-        'Este campo deve ter no mínimo 8 caracteres',
-        'Este campo não pode ter mais de 64 caracteres',
-        'Letras com acento, cedilha, e alguns caracteres especiais não são aceitos',
+        t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
+        t('someEspecialCharactersAccentCedileAreNotAccepted'),
       ];
-      let ret = validateRegex(pass, 8, 64, /^[a-zA-Z0-9\.\-\_\#\!\@\$\%\&\*\=\+\?]+$/);
+      let ret = validateRegex(pass, 8, 64,
+                              /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
 
     Validator.prototype.validateIP = function(ip) {
       const messages = [
-        'Este campo deve ter no mínimo 7 caracteres',
-        'Este campo não pode ter mais de 15 caracteres',
-        'Este campo deve conter um formato IP válido',
+        t('thisFieldMustHaveAtLeastMinChars', {min: 7}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 15}),
+        t('thisFieldMustHaveValidIpFormat'),
       ];
       let ret = validateRegex(ip, 7, 15, /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -134,22 +150,22 @@
     Validator.prototype.validateIPAgainst = function(ip, ipChallenge) {
       return {
         valid: !ip.includes(ipChallenge),
-        err: ['Este campo não pode conter o valor ' + ipChallenge +
-              '. O valor é reservado.'],
+        err: [
+          t('thisFieldCannotHaveTheValueValItIsReserved', {val: ipChallenge})],
       };
     };
 
     Validator.prototype.validateNetmask = function(netmask) {
       return {
         valid: [24, 25, 26, '24', '25', '26'].includes(netmask),
-        err: ['Somente são aceitas as máscaras 24, 25 ou 26'],
+        err: [t('willOnlyAcceptValueMask')],
       };
     };
 
     Validator.prototype.validateIpv6Enabled = function(ipv6Enabled) {
       return {
         valid: ['0', '1', '2', 0, 1, 2].includes(ipv6Enabled),
-        err: ['Valor inválido para ativar ou desativar IPv6'],
+        err: [t('invalidValueToDeactiveIpv6')],
       };
     };
 

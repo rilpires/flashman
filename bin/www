@@ -6,6 +6,7 @@
  * Module dependencies.
  */
 
+require('./globals.js');
 let app = require('../app');
 let mqtts = require('../mqtts');
 let sio = require('../sio');
@@ -48,7 +49,13 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 // Attach socket.io messages to the server
-sio.listen(server);
+if (process.env.FLM_USE_MQTT_PERSISTENCE) {
+  Promise.all([sio.pubClient.connect(), sio.subClient.connect()]).then(() => {
+    sio.listen(server);
+  });
+} else {
+  sio.listen(server);
+}
 
 /**
  * Normalize a port into a number, string, or false.

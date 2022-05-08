@@ -12,7 +12,7 @@ block content
             .col-1
               .fas.fa-plus
             .col-10.text-center
-              span.card-title Adicionar nova classe de permissões
+              span.card-title= t('addNewRole')
         .card-body.collapse.out(id="new-role-card")
           form.needs-validation(
             id="new-role-form",
@@ -23,237 +23,237 @@ block content
             .row.mb-3
               .col
                 .md-form.input-entry
-                  label Nome da classe
+                  label= t('roleName')
                   input.form-control(type="text",
                                      name="name",
                                      required)
-                  .invalid-feedback Por favor, preencha este campo
-            h5.text-muted.m-0 Permissões do cadastro e ações nas CPEs
+                  .invalid-feedback= t('pleaseFillInThisField')
+            h5.text-muted.m-0= t('registerPermissionsAndActionsInCpes')
             hr.my-1
             .row.mb-4
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações do WiFi
+                    label= t('wifiInformation')
                     select.browser-default.md-select(name="grant-wifi-info")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e editar
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndEdit')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações do PPPoE
+                    label= t('pppoeInformation')
                     select.browser-default.md-select(name="grant-pppoe-info")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e editar
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndEdit')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Visualização de Senhas ao Editar
+                    label= t('viewPasswordWhenEditing')
                     select.browser-default.md-select(name="grant-pass-show")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle do Tipo de Conexão
+                    label= t('connectionTypeControl')
                     select.browser-default.md-select(name="grant-wan-type")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Identificação do CPE
+                    label= t('cpeIdentificationControl')
                     select.browser-default.md-select(name="grant-device-id")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Ações no CPE
+                    label= t('actionsInCpeControl')
                     select.browser-default.md-select(name="grant-device-actions")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle da rede LAN
+                    label= t('lanNetworkControl')
                     select.browser-default.md-select(name="grant-lan-edit")
-                      option(value="false") Visualizar
-                      option(value="true") Visualizar e editar
+                      option(value="false")= t('View')
+                      option(value="true")= t('viewAndEdit')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Bloqueio de Internet nos dispositivos
+                    label= t('blockInternetInDevices')
                     select.browser-default.md-select(name="grant-lan-devices-block")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Modo de Operação
+                    label= t('operationModeControl')
                     select.browser-default.md-select(name="grant-opmode-edit")
-                      option(value="false") Visualizar
-                      option(value="true") Visualizar e editar
+                      option(value="false")= t('View')
+                      option(value="true")= t('viewAndEdit')
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Acesso aos Logs dos CPEs
+                    label= t('accessCpeLogs')
                     select.browser-default.md-select(name="grant-log-access")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Remoção de Registro de CPEs
+                    label= t('cpesRegistersRemoval')
                     select.browser-default.md-select(name="grant-device-removal")
-                      option(value=0) Bloquear
-                      option(value=1) Permitir
-                      option(value=2) Permitir em massa
+                      option(value=0)= t('Block')
+                      option(value=1)= t('Allow')
+                      option(value=2)= t('allowMany')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Adição de Registro de CPEs
+                    label= t('cpesRegistersAddition')
                     select.browser-default.md-select(name="grant-device-add")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Mostrar Alertas em CPEs
+                    label= t('showCpeAlerts')
                     select.browser-default.md-select(name="grant-notification-popups")
-                      option(value="true") Permitir
-                      option(value="false") Bloquear
+                      option(value="true")= t('Allow')
+                      option(value="false")= t('Block')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações Sobre Dispositivos Conectados
+                    label= t('connectedDevicesInformation')
                     select.browser-default.md-select(name="grant-lan-devices")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e realizar ações
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndMakeActions')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações sobre Redes ao Redor
+                    label= t('neighboringNetworksInformation')
                     select.browser-default.md-select(name="grant-site-survey")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações Sobre Medição de Velocidade
+                    label= t('speedTestInformation')
                     select.browser-default.md-select(name="grant-measure-devices")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e realizar ações
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndMakeActions')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Acesso a gráficos de tráfego na WAN
+                    label= t('wanTrafficPlotsAccess')
                     select.browser-default.md-select(name="grant-wan-bytes")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Informações de VLANs
+                    label= t('vlanInformation')
                     select.browser-default.md-select(name="grant-vlan")
-                      option(value=0) Não Visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e Editar
-            h5.text-muted.m-0 Permissões de atualização de firmware
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndEdit')
+            h5.text-muted.m-0= t('firmwareUpdatePermissions')
             hr.my-1
             .row.mb-4
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Gerência de Firmwares
+                    label= t('firmwareManagementControl')
                     select.browser-default.md-select(name="grant-firmware-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware
+                    label= t('firmwareUpdateControl')
                     select.browser-default.md-select(name="grant-firmware-upgrade")
-                      option(value=0) Bloquear
-                      option(value=1) Permitir
-                      option(value=2) Permitir em massa
+                      option(value=0)= t('Block')
+                      option(value=1)= t('Allow')
+                      option(value=2)= t('allowMany')
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware Beta
+                    label= t('betaFirmwareUpdateControl')
                     select.browser-default.md-select(name="grant-firmware-beta-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Atualização de Firmware Restrita
+                    label= t('restrictedFirmwareUpdateControl')
                     select.browser-default.md-select(name="grant-firmware-restricted-upgrade")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
-            h5.text-muted.m-0 Permissões gerais do Flashman
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
+            h5.text-muted.m-0= t('generalFlashmanPermissions')
             hr.my-1
             .row.mb-4
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Configuração de parâmetros do TR-069
+                    label= t('tr069ParametersConfiguration')
                     select.browser-default.md-select(name="grant-monitor-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Permitir Acesso a API REST
+                    label= t('allowRestApiAccess')
                     select.browser-default.md-select(name="grant-api-access")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Gerência de Usuários
+                    label= t('userManagementControl')
                     select.browser-default.md-select(name="grant-user-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Acesso ao App do Técnico
+                    label= t('technicianAppAccess')
                     select.browser-default.md-select(name="grant-diag-app-access")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Total sobre status de CPEs
+                    label= t('cpeStatusTotal')
                     select.browser-default.md-select(name="grant-search-summary")
-                      option(value="false") Não visualizar
-                      option(value="true") Visualizar
+                      option(value="false")= t('cannotView')
+                      option(value="true")= t('View')
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Busca de CPEs
+                    label= t('cpeSearch')
                     select.browser-default.md-select(name="grant-search-level")
-                      option(value=0) Não permitir busca e visualização
-                      option(value=1) Busca simples
-                      option(value=2) Busca completa com filtros especiais
+                      option(value=0)= t('cannotSearchAndView')
+                      option(value=1)= t('simpleSearch') 
+                      option(value=2)= t('completeSearchWithSpecialFilters')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Exportação de cadastros por CSV
+                    label= t('csvRegisterExport')
                     select.browser-default.md-select(name="grant-csv-export")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Controle de Configurações do Flashman
+                    label= t('flashmanConfigurationsControl')
                     select.browser-default.md-select(name="grant-flashman-manage")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Acesso às Certificações de CPEs
+                    label= t('cpeCertificatesAccess')
                     select.browser-default.md-select(name="grant-certification-access")
-                      option(value=0) Não visualizar
-                      option(value=1) Visualizar
-                      option(value=2) Visualizar e editar
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndEdit')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label Adição/Edição/Remoção de Perfis de VLANs
+                    label= t('vlanProfilesAdditionEditionRemoval')
                     select.browser-default.md-select(name="grant-vlan-profile-edit")
-                      option(value="false") Bloquear
-                      option(value="true") Permitir
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
             .row
               .col.text-center
                 .form-buttons
                   button.btn.btn-primary(type="submit")
                     .fas.fa-check.fa-lg
-                    span &nbsp Adicionar
+                    span &nbsp; #{t('Add')}
   .card.mt-4.mb-4
     h4.card-header.teal.lighten-2.white-text
       .fas.fa-address-card.fa-lg
-      span &nbsp Classes de permissões
+      span &nbsp; #{t('permissionsRoles')}
     .card-body
       h3#loading-roles.text-center
         i.fas.fa-spinner.fa-pulse.fa-2x.grey-text
@@ -267,7 +267,7 @@ block content
             tr
               th.col-xs-1
                 input.checkbox(type="checkbox" id="checkall")
-              th.text-center Nome da Classe
+              th.text-center= t('roleName')
               th
           tbody#roles-table-content
 
