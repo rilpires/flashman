@@ -143,7 +143,7 @@
             .row
               .col
                 .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
                     .md-selectfield.form-control
                       label(for="data_collecting_mass_update_is_active")= t('lossCollection')
                       select.browser-default.md-select(id="data_collecting_mass_update_is_active")
@@ -159,7 +159,7 @@
             .row
               .col
                 .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
                     .md-selectfield.form-control
                       label(for="data_collecting_mass_update_burst_loss")= t('burstCollection')
                       select.browser-default.md-select(id="data_collecting_mass_update_burst_loss")
@@ -187,7 +187,22 @@
                     )
                       span.input-group-text.md-addon.pr-0
                         .fas.fa-question-circle.fa-lg
-            hr
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_wifi_devices")= t('wifiCollection')
+                      select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
+                        option(value="")= t('doNotChange')
+                        option(value="True")= t('Activated')
+                        option(value="False")= t('Deactivated')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('ifCollectingIsOffDeviceWillBehaveAsOff')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
             .row
               .col
                 .input-group
@@ -208,23 +223,6 @@
                     )
                       span.input-group-text.md-addon.pr-0
                         .fas.fa-question-circle.fa-lg
-            hr
-            .row
-              .col
-                .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
-                    .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_wifi_devices")= t('wifiCollection')
-                      select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
-                        option(value="")= t('doNotChange')
-                        option(value="True")= t('Activated')
-                        option(value="False")= t('Deactivated')
-                  .input-group-append(
-                    data-toggle="tooltip",
-                    title=t('ifCollectingIsOffDeviceWillBehaveAsOff')
-                  )
-                    span.input-group-text.md-addon.pr-0
-                      .fas.fa-question-circle.fa-lg
             .row
               .col.text-center
                 button.btn.btn-primary(type="submit")
