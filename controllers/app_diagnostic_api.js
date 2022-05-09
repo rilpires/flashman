@@ -486,7 +486,10 @@ diagAppAPIController.receiveCertification = async (req, res) => {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      if (content.current.latitude && content.current.longitude && !device.stop_coordinates_update) {
+      if (
+        content.current.latitude && content.current.longitude &&
+        !device.stop_coordinates_update
+      ) {
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
         device.last_location_date = new Date();

@@ -2121,20 +2121,20 @@ deviceInfoController.editCoordinates = async function(req, res) {
   }
 
   for (const device of devices) {
-    const { mac: id, latitude, longitude, stopCoordinatesUpdate } = device;
+    const {mac: id, latitude, longitude, stopCoordinatesUpdate} = device;
     const errorObj = {
       id,
     };
 
     try {
       const matchedDevice = await DeviceModel.findById(id);
-      
+
       if (!matchedDevice) {
         errorObj.message = t('deviceNotFoundError');
         errors.push(errorObj);
         continue;
       }
- 
+
       if (typeof latitude !== 'number') {
         errorObj.message = t('invalidField', {name: 'latitude'});
         errors.push(errorObj);
@@ -2165,7 +2165,7 @@ deviceInfoController.editCoordinates = async function(req, res) {
       errorObj.message = t('deviceFindError');
       errors.push(errorObj);
     }
-  };
+  }
   const success = devices.length - errors.length;
   return res.status(200).json({
     success,
