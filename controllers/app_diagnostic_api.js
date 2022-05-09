@@ -493,12 +493,12 @@ diagAppAPIController.receiveCertification = async (req, res) => {
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
         device.last_location_date = new Date();
-        if (content.current.contractType && content.current.contract) {
-          device.external_reference.kind = content.current.contractType;
-          device.external_reference.data = content.current.contract;
-        }
-        await device.save();
       }
+      if (content.current.contractType && content.current.contract) {
+        device.external_reference.kind = content.current.contractType;
+        device.external_reference.data = content.current.contract;
+      }
+      await device.save();
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
