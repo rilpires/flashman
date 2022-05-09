@@ -3416,7 +3416,11 @@ deviceListController.editCoordinates = async function(req, res) {
   let failCount = 0;
   let status = {};
 
-  if (!(devices instanceof Array) || devices.length === 0) {
+  if (
+    !(devices instanceof Array) ||
+    devices.length === 0 ||
+    devices.some((d)=>typeof d.id !== 'string')
+  ) {
     return res.status(500).json({
       success: false,
       okCount: okCount,
@@ -3439,12 +3443,16 @@ deviceListController.editCoordinates = async function(req, res) {
         matchedDevice = matchedDevice[0];
       } else {
         failCount += 1;
-        status[id] = t('cpeNotFound', {errorline: __line});
+        status[id] = {
+          success: false, msg: t('cpeNotFound', {errorline: __line}),
+        };
         continue;
       }
     } catch (e) {
       failCount += 1;
-      status[id] = t('cpeFindError', {errorline: __line});
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
       continue;
     }
 
@@ -3461,7 +3469,7 @@ deviceListController.editCoordinates = async function(req, res) {
 
     if (error) {
       failCount += 1;
-      status[id] = error;
+      status[id] = {success: false, msg: error};
       continue;
     }
 
@@ -3472,11 +3480,13 @@ deviceListController.editCoordinates = async function(req, res) {
       await matchedDevice.save();
     } catch (err) {
       failCount += 1;
-      status[id] = t('cpeFindError', {errorline: __line});
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
       continue;
     }
     okCount += 1;
-    status[id] = t('Success!');
+    status[id] = {success: true, msg: t('Success!')};
   }
   return res.status(200).json({
     success: okCount > 0,
