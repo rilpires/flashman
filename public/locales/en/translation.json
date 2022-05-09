@@ -958,9 +958,5 @@
 	"errorDeletingVlanProfile": "Error Deleting VLAN Profiles",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Deletion of profiles was not possible as some CPEs did not update the VLAN configuration.",
 	"vlanProfile": "VLAN Profile",
-	"invalidField": "Field '{{-name}}' invalid",
-	"deviceNotFoundError": "Device not found",
-	"deviceFindError": "Error fetching device",
-	"deviceSaveError": "Error saving device",
 	"arrayElementNotFound": "No element found for the given index"
 }

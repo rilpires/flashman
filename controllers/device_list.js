@@ -3411,73 +3411,78 @@ deviceListController.exportDevicesCsv = async function(req, res) {
 };
 
 deviceListController.editCoordinates = async function(req, res) {
-  let envsec = req.headers['x-anlix-sec'];
-
-  if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
-      console.log('Wps: Secrets do not match');
-      return res.status(404).json({processed: 0});
-    }
-  }
-
   const devices = req.body.devices;
-  const errors = [];
+  let okCount = 0;
+  let failCount = 0;
+  let status = {};
 
-  if (!devices || devices.length === 0) {
-    return res.status(500).json({processed: 0});
+  if (!(devices instanceof Array) || devices.length === 0) {
+    return res.status(500).json({
+      success: false,
+      okCount: okCount,
+      failCount: failCount,
+      message: t('fieldNameInvalid', {name: 'devices', errorline: __line}),
+      status: {},
+    });
   }
 
-  for (const device of devices) {
-    const {mac: id, latitude, longitude, stopCoordinatesUpdate} = device;
-    const errorObj = {
-      id,
-    };
+  for (let device of devices) {
+    let id = device.id;
+    let latitude = device.latitude;
+    let longitude = device.longitude;
+    let preventAutoUpdate = device.preventAutoUpdate;
 
+    let matchedDevice;
     try {
-      const matchedDevice = await DeviceModel.findById(id);
-
-      if (!matchedDevice) {
-        errorObj.message = t('deviceNotFoundError');
-        errors.push(errorObj);
+      matchedDevice = await DeviceModel.findByMacOrSerial(id);
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        matchedDevice = matchedDevice[0];
+      } else {
+        failCount += 1;
+        status[id] = t('cpeNotFound', {errorline: __line});
         continue;
       }
-
-      if (typeof latitude !== 'number') {
-        errorObj.message = t('invalidField', {name: 'latitude'});
-        errors.push(errorObj);
-        continue;
-      }
-      if (typeof longitude !== 'number') {
-        errorObj.message = t('invalidField', {name: 'longitude'});
-        errors.push(errorObj);
-        continue;
-      }
-      if (typeof stopCoordinatesUpdate !== 'boolean') {
-        errorObj.message = t('invalidField', {name: 'stopCoordinatesUpdate'});
-        errors.push(errorObj);
-        continue;
-      }
-
-      matchedDevice.latitude = latitude;
-      matchedDevice.longitude = longitude;
-      matchedDevice.stop_coordinates_update = stopCoordinatesUpdate;
-
-      try {
-        await matchedDevice.save();
-      } catch (err) {
-        errorObj.message = t('deviceSaveError');
-        errors.push(errorObj);
-      }
-    } catch (err) {
-      errorObj.message = t('deviceFindError');
-      errors.push(errorObj);
+    } catch (e) {
+      failCount += 1;
+      status[id] = t('cpeFindError', {errorline: __line});
+      continue;
     }
+
+    let error = '';
+    if (typeof latitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'latitude', errorline: __line});
+    } else if (typeof longitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'longitude', errorline: __line});
+    } else if (typeof preventAutoUpdate !== 'boolean') {
+      error = t(
+        'fieldNameInvalid', {name: 'preventAutoUpdate', errorline: __line},
+      );
+    }
+
+    if (error) {
+      failCount += 1;
+      status[id] = error;
+      continue;
+    }
+
+    matchedDevice.latitude = latitude;
+    matchedDevice.longitude = longitude;
+    matchedDevice.stop_coordinates_update = preventAutoUpdate;
+    try {
+      await matchedDevice.save();
+    } catch (err) {
+      failCount += 1;
+      status[id] = t('cpeFindError', {errorline: __line});
+      continue;
+    }
+    okCount += 1;
+    status[id] = t('Success!');
   }
-  const success = devices.length - errors.length;
   return res.status(200).json({
-    success,
-    failure: errors.length,
-    errors,
+    success: okCount > 0,
+    okCount: okCount,
+    failCount: failCount,
+    status: status,
   });
 };
 
