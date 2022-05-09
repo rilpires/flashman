@@ -25,7 +25,6 @@ router.route('/receive/wps').post(
   deviceInfoController.receiveWpsResult);
 router.route('/receive/speedtestresult').post(
   deviceInfoController.receiveSpeedtestResult);
-router.route('/coordinates').put(deviceInfoController.editCoordinates);
 router.use('/app', require('./app_api'));
 
 module.exports = router;
