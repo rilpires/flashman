@@ -130,7 +130,7 @@ const updateGenieRepo = function(ref) {
   });
 };
 
-const updateGenieACS = function(upgrades) {
+updateController.updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
     let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
     Config.findOne({is_default: true}).then((config)=>{
@@ -203,7 +203,8 @@ const updateGenieACS = function(upgrades) {
   });
 };
 
-const updateDiagnostics = function() {
+updateController.updateDiagnostics = function() {
+  console.log('Updating genieACS diacnostic\'s script and preset');
   return new Promise((resolve, reject) => {
     // Get config from database
     Config.findOne({is_default: true}).then((config)=>{
@@ -217,7 +218,7 @@ const updateDiagnostics = function() {
         let provisionScript = fs.readFileSync(
           './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
         );
-        console.log('Updating GenieACS provision...');
+        console.log('Updating Genie diagnostic-provision...');
         waitForProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
       } catch (e) {
         waitForProvision = Promise.reject();
@@ -381,8 +382,7 @@ updateController.rebootGenie = function(instances) {
         let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
 
         // Update genieACS diagnostic's script and preset
-        console.log('Updating genieACS diacnostic\'s script and preset');
-        await updateDiagnostics();
+        await updateController.updateDiagnostics();
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
@@ -471,7 +471,7 @@ const updateFlashman = function(automatic, res) {
                     return Promise.reject(rejectedValue);
                   })
                   .then(()=>{
-                    return updateGenieACS(genieUpgrades);
+                    return updateController.updateGenieACS(genieUpgrades);
                   }, (rejectedValue)=>{
                     return Promise.reject(rejectedValue);
                   })
