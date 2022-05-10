@@ -269,6 +269,15 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
        await Device.syncIndexes();
      }
   }).catch(console.error);
+
+  /* Update main and diagnostics, provision and preset,
+    whenever flashman (re)boot */
+  updater.updateGenieACS({
+    'updateGenie': false,
+    'updateProvision': true,
+    'updatePreset': true,
+  });
+  updater.updateDiagnostics();
 }
 
 // Check md5 file hashes on firmware directory
@@ -452,10 +461,12 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
-    // Restart genieacs service whenever Flashman is restarted
-    updater.rebootGenie(process.env.instances);
-    // Force an update check to alert user on app startup
-    updater.checkUpdate();
+    if (process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
+      // Restart genieacs service whenever Flashman is restarted
+      updater.rebootGenie(process.env.instances);
+      // Force an update check to alert user on app startup
+      updater.checkUpdate();
+    }
 
     let early4amRule = new schedule.RecurrenceRule();
     early4amRule.hour = 4;
