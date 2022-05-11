@@ -56,38 +56,41 @@ roleSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.role_crud) {
+                 !defConfig.traps_callbacks.roles_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.role_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.role_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.role_crud.secret;
-      if (callbackUrl) {
-        attrsList.forEach((attr) => {
-          changedAttrs[attr] = role[attr];
-        });
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': role._id,
-          'type': 'role',
-          'name': role.name,
-          'changes': changedAttrs,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
+      const promises = defConfig.traps_callbacks.roles_crud.map((roleCrud) => {
+        let callbackUrl = roleCrud.url;
+        let callbackAuthUser = roleCrud.user;
+        let callbackAuthSecret = roleCrud.secret;
+        if (callbackUrl) {
+          attrsList.forEach((attr) => {
+            changedAttrs[attr] = role[attr];
+          });
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': role._id,
+            'type': 'role',
+            'name': role.name,
+            'changes': changedAttrs,
           };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          return request(requestOptions);
         }
-        request(requestOptions).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
-        });
-      }
+      });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     });
   }
   callback();
@@ -102,32 +105,35 @@ roleSchema.post('remove', function(role, callback) {
                !defConfig.traps_callbacks.role_crud) {
       return callback(err);
     }
-    let callbackUrl = defConfig.traps_callbacks.role_crud.url;
-    let callbackAuthUser = defConfig.traps_callbacks.role_crud.user;
-    let callbackAuthSecret = defConfig.traps_callbacks.role_crud.secret;
-    if (callbackUrl) {
-      requestOptions.url = callbackUrl;
-      requestOptions.method = 'PUT';
-      requestOptions.json = {
-        'id': role._id,
-        'type': 'role',
-        'name': role.name,
-        'removed': true,
-      };
-      if (callbackAuthUser && callbackAuthSecret) {
-        requestOptions.auth = {
-          user: callbackAuthUser,
-          pass: callbackAuthSecret,
+    const promises = defConfig.traps_callbacks.roles_crud.map((roleCrud) => {
+      let callbackUrl = roleCrud.url;
+      let callbackAuthUser = roleCrud.user;
+      let callbackAuthSecret = roleCrud.secret;
+      if (callbackUrl) {
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': role._id,
+          'type': 'role',
+          'name': role.name,
+          'removed': true,
         };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        return request(requestOptions);
       }
-      request(requestOptions).then((resp) => {
-        // Ignore API response
-        return;
-      }, (err) => {
-        // Ignore API endpoint errors
-        return;
-      });
-    }
+    });
+    Promise.all(promises).then((resp) => {
+      // Ignore API response
+      return;
+    }, (err) => {
+      // Ignore API endpoint errors
+      return;
+    });
   });
   callback();
 });
