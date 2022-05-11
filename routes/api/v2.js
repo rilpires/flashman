@@ -95,8 +95,15 @@ router.route('/device/traps/callback').get(
 
 // Set LAN device block state
 router.route('/device/landevice/block').put(
+  authController.ensurePermission('grantAPIAccess'),
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
+
+// Set latitude/longitude values
+router.route('/device/coordinates').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.editCoordinates,
+);
 
 // *************
 // *** Users ***

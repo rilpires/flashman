@@ -254,6 +254,7 @@ let deviceSchema = new Schema({
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  stop_coordinates_update: {type: Boolean, default: false},
   last_location_date: {type: Date},
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
