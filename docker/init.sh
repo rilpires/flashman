@@ -15,5 +15,5 @@ do
     sleep 1
 done
 # init cron for daily update certs
-crond -l 8
+crond -l 8 && echo 'cron inited...'
 node bin/www
