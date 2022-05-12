@@ -18,7 +18,7 @@ rm -rf /app/certs
 cd /app
 while :
 do
-    sleep 15
+    sleep 1
     wget -r --no-parent --reject "index.html*" -nd -P certs 'http://courier:2332/files/certs' >/dev/null 2>/dev/null
     ret=$?
     echo $ret
