@@ -277,10 +277,7 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
   if (device.model == 'HG8121H') {
-    task.parameterValues = [
-      [diagnStateField, 'Requested', 'xsd:string'],
-      [diagnURLField, speedtestHostUrl, 'xsd:string']
-    ];
+    task.parameterValues.splice(1, 1);
   }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
