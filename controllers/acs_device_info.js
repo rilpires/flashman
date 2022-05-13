@@ -640,8 +640,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  parameterNames.push(fields.wifi2.mode);
-  parameterNames.push(fields.wifi2.band);
+  if (fields.wifi2.mode) {
+    parameterNames.push(fields.wifi2.mode);
+  }
+  if (fields.wifi2.band) {
+    parameterNames.push(fields.wifi2.band);
+  }
   if (device.wifi_is_5ghz_capable) {
     dataToFetch.wifi5 = true;
     parameterNames.push(fields.wifi5.enable);
@@ -650,8 +654,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    parameterNames.push(fields.wifi5.mode);
-    parameterNames.push(fields.wifi5.band);
+    if (fields.wifi5.mode) {
+      parameterNames.push(fields.wifi5.mode);
+    }
+    if (fields.wifi5.band) {
+      parameterNames.push(fields.wifi5.band);
+    }
   }
   // Mesh WiFi configuration fields - only if in wifi mesh mode
   if (device.mesh_mode === 2 || device.mesh_mode === 4) {
@@ -694,6 +702,7 @@ const requestSync = async function(device) {
 
 // Extract data from raw GenieACS json output, in value/writable format
 const getFieldFromGenieData = function(data, field) {
+  if (typeof field === 'undefined') return {};
   let obj = utilHandlers.getFromNestedKey(data, field);
   if (typeof obj === 'undefined') return {};
   return {value: obj['_value'], writable: obj['_writable']};
