@@ -35,17 +35,15 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+            hr
             .row
               .col
-                .input-group
-                  .md-form.input-entry.my-2(style="flex-grow: 1;")
-                    label(for="data_collecting_service_alarm_fqdn")= t('serviceAddress')
-                    input.form-control(type="text",
-                                       id="data_collecting_service_alarm_fqdn",
-                                       required="required",
-                                       minlength="3",
-                                       oninput="checkFqdn(event)")
-                    .invalid-feedback= t('inputValidAddress')
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_burst_loss",
+                                               id="data_collecting_service_burst_loss")
+                    label.custom-control-label(for="data_collecting_service_burst_loss")= t('burstCollection')
                   .input-group-append(
                     data-toggle="tooltip",
                     title=t('usedByAllDevices')
@@ -58,9 +56,27 @@
                 .input-group(style="align-items: center;")
                   .custom-control.custom-checkbox
                     input.custom-control-input(type="checkbox",
-                                               name="data_collecting_service_burst_loss",
-                                               id="data_collecting_service_burst_loss")
-                    label.custom-control-label(for="data_collecting_service_burst_loss")= t('burstCollection')
+                                               name="data_collecting_service_wifi_devices",
+                                               id="data_collecting_service_wifi_devices")
+                    label.custom-control-label(for="data_collecting_service_wifi_devices")= t('wifiCollection')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('usedByAllDevices')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry.my-2(style="flex-grow: 1;")
+                    label(for="data_collecting_service_alarm_fqdn")= t('serviceAddress')
+                    input.form-control(type="text",
+                                       id="data_collecting_service_alarm_fqdn",
+                                       required="required",
+                                       minlength="3",
+                                       oninput="checkFqdn(event)")
+                    .invalid-feedback= t('inputValidAddress')
                   .input-group-append(
                     data-toggle="tooltip",
                     title=t('usedByAllDevices')
@@ -96,21 +112,6 @@
                                        value=100,
                                        placeholder=100)
                     .invalid-feedback= t('canOnlyBy100')
-                  .input-group-append(
-                    data-toggle="tooltip",
-                    title=t('usedByAllDevices')
-                  )
-                    span.input-group-text.md-addon.pr-0
-                      .fas.fa-question-circle.fa-lg
-            hr
-            .row
-              .col
-                .input-group(style="align-items: center;")
-                  .custom-control.custom-checkbox
-                    input.custom-control-input(type="checkbox",
-                                               name="data_collecting_service_wifi_devices",
-                                               id="data_collecting_service_wifi_devices")
-                    label.custom-control-label(for="data_collecting_service_wifi_devices")= t('wifiCollection')
                   .input-group-append(
                     data-toggle="tooltip",
                     title=t('usedByAllDevices')
@@ -176,7 +177,8 @@
               .col
                 .input-group
                   .md-form.input-entry(style="flex-grow: 1;").my-2
-                    label(for="data_collecting_mass_update_has_latency")= t('latencyCollecting')
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_has_latency")= t('latencyCollecting')
                       select.browser-default.md-select(id="data_collecting_mass_update_has_latency")
                         option(value="")= t('doNotChange')
                         option(value="True")= t('Activated')
@@ -260,7 +262,6 @@
                 )
                   span.input-group-text.md-addon.pr-0
                     .fas.fa-question-circle.fa-lg
-          hr
           .row
             .col
               .input-group(style="align-items: center;").my-2
@@ -277,12 +278,26 @@
                     .fas.fa-question-circle.fa-lg
           .row
             .col
-              .input-group
-                .md-form.input-entry.my-2(style="flex-grow: 1;")
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_has_latency",
                                              id="data_collecting_device_has_latency")
                   label.custom-control-label(for="data_collecting_device_has_latency")= t('latencyCollecting')
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title=t('ifCollectingIsOffThisMeasureWillNotHappen')
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_wifi_devices",
+                                             id="data_collecting_device_wifi_devices")
+                  label.custom-control-label(for="data_collecting_device_wifi_devices")= t('wifiCollection')
                 .input-group-append(
                   data-toggle="tooltip",
                   title=t('ifCollectingIsOffThisMeasureWillNotHappen')
@@ -299,21 +314,6 @@
                                      minlength="3",
                                      oninput="checkDeviceFqdn(event)")
                   .invalid-feedback= t('inputValidAddress')
-                .input-group-append(
-                  data-toggle="tooltip",
-                  title=t('dataCollectingPingFqdnTooltip')
-                )
-                  span.input-group-text.md-addon.pr-0
-                    .fas.fa-question-circle.fa-lg
-          hr
-          .row
-            .col
-              .input-group(style="align-items: center;").my-2
-                .custom-control.custom-checkbox
-                  input.custom-control-input(type="checkbox",
-                                             name="data_collecting_device_wifi_devices",
-                                             id="data_collecting_device_wifi_devices")
-                  label.custom-control-label(for="data_collecting_device_wifi_devices")= t('wifiCollection')
                 .input-group-append(
                   data-toggle="tooltip",
                   title=t('dataCollectingPingFqdnTooltip')

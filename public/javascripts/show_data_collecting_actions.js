@@ -1,4 +1,3 @@
-import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 
 const t = i18next.t;
