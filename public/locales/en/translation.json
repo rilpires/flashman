@@ -818,6 +818,7 @@
 	"mandatoryIpvxVerification": "IPv{{-x}} verification required",
 	"mandatoryDnsVerification": "Mandatory DNS Verification",
 	"mandatoryFlashmanRegisterVerification": "Flashman registration verification required",
+	"Enable": "Enable",
 	"Enabled": "Enable",
 	"Disabled": "Disabled",
 	"tr069Configurations": "TR-069 Settings",
