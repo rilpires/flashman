@@ -1087,6 +1087,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       switch (modelName) {
         case 'DIR-842':
         case 'DIR-841':
+        case 'DIR-615':
           message = '';
           fields = getDLinkFields(modelName);
           break;
