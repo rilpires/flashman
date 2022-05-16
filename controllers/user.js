@@ -773,25 +773,32 @@ userController.setUserCrudTrap = function(req, res) {
   // Store callback URL for users
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        matchedConfig.traps_callbacks.user_crud.url = req.body.url;
-
-        if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.user_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.user_crud.secret = req.body.secret;
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let userCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
+          userCrud.user = req.body.user;
+          userCrud.secret = req.body.secret;
+        }
+        let index = matchedConfig.traps_callbacks.users_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.users_crud[index] = userCrud;
+        } else {
+          matchedConfig.traps_callbacks.users_crud.push(userCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -802,9 +809,49 @@ userController.setUserCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
+    }
+  });
+};
+
+userController.deleteUserCrudTrap = function(req, res) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const userCrudIndex = req.body.index;
+  if (typeof userCrudIndex !== 'number' || userCrudIndex < 0) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
+    });
+  }
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      if (!matchedConfig.traps_callbacks.users_crud[userCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
+      matchedConfig.traps_callbacks.users_crud.splice(userCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
     }
   });
 };
@@ -813,26 +860,28 @@ userController.getUserCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const url = matchedConfig.traps_callbacks.user_crud.url;
-      if (!url) {
+      const usersCrud = matchedConfig.traps_callbacks.users_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (usersCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
-      const user = matchedConfig.traps_callbacks.user_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
+        url: usersCrud[0].url,
+        user: (usersCrud[0].user) ? usersCrud[0].user : '',
+        usersCrud: usersCrud,
       });
     }
   });
@@ -842,24 +891,32 @@ userController.setRoleCrudTrap = function(req, res) {
   // Store callback URL for roles
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        matchedConfig.traps_callbacks.role_crud.url = req.body.url;
-        if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.role_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.role_crud.secret = req.body.secret;
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let roleCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
+          roleCrud.user = req.body.user;
+          roleCrud.secret = req.body.secret;
+        }
+        let index = matchedConfig.traps_callbacks.roles_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.roles_crud[index] = roleCrud;
+        } else {
+          matchedConfig.traps_callbacks.roles_crud.push(roleCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -870,9 +927,50 @@ userController.setRoleCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
+    }
+  });
+};
+
+userController.deleteRoleCrudTrap = function(req, res) {
+  // Delete callback URL for roles
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const roleCrudIndex = req.body.index;
+  if (typeof roleCrudIndex !== 'number' || roleCrudIndex < 0) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
+    });
+  }
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      if (!matchedConfig.traps_callbacks.roles_crud[roleCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
+      matchedConfig.traps_callbacks.roles_crud.splice(roleCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
     }
   });
 };
@@ -881,26 +979,28 @@ userController.getRoleCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const url = matchedConfig.traps_callbacks.role_crud.url;
-      if (!url) {
+      const rolesCrud = matchedConfig.traps_callbacks.roles_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (rolesCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
-      const user = matchedConfig.traps_callbacks.role_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
+        url: rolesCrud[0].url,
+        user: (rolesCrud[0].user) ? rolesCrud[0].user : '',
+        rolesCrud: rolesCrud,
       });
     }
   });
@@ -908,27 +1008,34 @@ userController.getRoleCrudTrap = function(req, res) {
 
 userController.setCertificationCrudTrap = function(req, res) {
   // Store callback URL for users
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        matchedConfig.traps_callbacks.certification_crud.url = req.body.url;
-
-        if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.certification_crud.user =
-            req.body.user;
-          matchedConfig.traps_callbacks.certification_crud.secret =
-            req.body.secret;
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let certCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
+          certCrud.user = req.body.user;
+          certCrud.secret = req.body.secret;
+        }
+        let index = matchedConfig.traps_callbacks.certifications_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.certifications_crud[index] = certCrud;
+        } else {
+          matchedConfig.traps_callbacks.certifications_crud.push(certCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
             return res.status(500).json({
               success: false,
-              message: t('saveError', {errorline: __line}),
+              message: t('cpeSaveError', {errorline: __line}),
             });
           }
           return res.status(200).json({
@@ -939,25 +1046,70 @@ userController.setCertificationCrudTrap = function(req, res) {
       } else {
         return res.status(500).json({
           success: false,
-          message: t('fieldInvalid', {errorline: __line}),
+          message: t('fieldNameMissing', {name: 'url', errorline: __line}),
         });
       }
     }
   });
 };
 
-userController.getCertificationCrudTrap = function(req, res) {
-  // Get callback url and user
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+userController.deleteCertificationCrudTrap = function(req, res) {
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const certCrudIndex = req.body.index;
+  if (typeof certCrudIndex !== 'number' || certCrudIndex < 0) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
+    });
+  }
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
     if (err || !matchedConfig) {
       return res.status(500).json({
         success: false,
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const user = matchedConfig.traps_callbacks.certification_crud.user;
-      const url = matchedConfig.traps_callbacks.certification_crud.url;
-      if (!user || !url) {
+      if (!matchedConfig.traps_callbacks.certifications_crud[certCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
+      matchedConfig.traps_callbacks.certifications_crud.splice(
+        certCrudIndex, 1,
+      );
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
+userController.getCertificationCrudTrap = function(req, res) {
+  // Get callback url and user
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      const certsCrud = matchedConfig.traps_callbacks.certifications_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (certsCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
@@ -966,8 +1118,9 @@ userController.getCertificationCrudTrap = function(req, res) {
       return res.status(200).json({
         success: true,
         exists: true,
-        user: user,
-        url: url,
+        url: certsCrud[0].url,
+        user: (certsCrud[0].user) ? certsCrud[0].user : '',
+        certsCrud: certsCrud,
       });
     }
   });

@@ -85,14 +85,25 @@ router.route('/device/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.setDeviceCrudTrap);
 
+router.route('/device/traps/callback').delete(
+    authController.ensurePermission('grantAPIAccess'),
+    deviceListController.deleteDeviceCrudTrap);
+
 router.route('/device/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.getDeviceCrudTrap);
 
 // Set LAN device block state
 router.route('/device/landevice/block').put(
+  authController.ensurePermission('grantAPIAccess'),
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
+
+// Set latitude/longitude values
+router.route('/device/coordinates').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.editCoordinates,
+);
 
 // *************
 // *** Users ***
@@ -118,6 +129,11 @@ router.route('/user/del').put(
 router.route('/user/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setUserCrudTrap);
+
+// Set traps URL for users CRUD operations
+router.route('/user/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteUserCrudTrap);
 
 router.route('/user/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
@@ -148,6 +164,10 @@ router.route('/role/traps/callback').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.setRoleCrudTrap);
 
+router.route('/role/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteRoleCrudTrap);
+
 router.route('/role/traps/callback').get(
   authController.ensurePermission('grantAPIAccess'),
   userController.getRoleCrudTrap);
@@ -161,6 +181,10 @@ router.route('/certification/traps/callback').put(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantAPIAccess'),
   userController.setCertificationCrudTrap);
+
+router.route('/certification/traps/callback').delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteCertificationCrudTrap);
 
 router.route('/certification/traps/callback').get(
   authController.ensureAPIAccess,
