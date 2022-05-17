@@ -860,6 +860,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             ping_packets: 100,
             burst_loss: false,
             wifi_devices: false,
+            ping_and_wan: false,
           };
           // for each data_collecting parameter, in config, we copy its value.
           // This also makes the code compatible with a data base with no data
@@ -962,6 +963,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'data_collecting_ping_packets': dataCollecting.ping_packets,
             'data_collecting_burst_loss': dataCollecting.burst_loss,
             'data_collecting_wifi_devices': dataCollecting.wifi_devices,
+            'data_collecting_ping_and_wan': dataCollecting.ping_and_wan,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index':

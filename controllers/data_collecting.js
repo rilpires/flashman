@@ -25,6 +25,7 @@ dataCollectingController.mergeConfigs = function(service, device, version) {
     ping_packets: 100,
     burst_loss: false,
     wifi_devices: false,
+    ping_and_wan: false,
   };
 
   // for each data_collecting parameter, in service, we copy its value.
@@ -36,14 +37,17 @@ dataCollectingController.mergeConfigs = function(service, device, version) {
   // combining 'device' and 'service' if data_collecting exists in 'device'.
   if (device !== undefined) {
     // for on/off buttons we apply bit wise AND when merging.
-    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices'];
+    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices',
+                    'ping_and_wan'];
     // eslint-disable-next-line guard-for-in
     for (let name of applyAnd) {
       // device value && config value, if it exists in device.
       if (device[name] !== undefined) res[name] = res[name] && device[name];
     }
-    // we use both 'burst_loss' and 'is_active' to activate the service.
-    res.is_active = res.is_active && res.burst_loss;
+    // we use both 'is_active' and at least one of the measurement
+    // to activate the service.
+    res.is_active = res.is_active &&
+                    (res.burst_loss || res.ping_and_wan || res.wifi_devices);
 
     // for values that device has preference, use it, if it exists.
     let devicePreference = ['ping_fqdn'];
@@ -106,6 +110,8 @@ const checkIsActive = (obj) =>
   checkField(obj, 'is_active', checkBooleanField);
 const checkHaslatency = (obj) =>
   checkField(obj, 'has_latency', checkBooleanField);
+const checkHasPingAndWan = (obj) =>
+  checkField(obj, 'ping_and_wan', checkBooleanField);
 const checkAlarmFqdn = (obj) =>
   checkField(obj, 'alarm_fqdn', util.isFqdnValid);
 const checkPingFqdn = (obj) =>
@@ -270,7 +276,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
-        checkPingFqdn, checkPingPackets, checkHasBurstLoss, checkHasWifiDevices],
+        checkPingFqdn, checkPingPackets, checkHasBurstLoss,
+        checkHasWifiDevices, checkHasPingAndWan],
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
@@ -288,7 +295,7 @@ dataCollectingController.updateManyParameters = async function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkHasBurstLoss, checkHasWifiDevices],
+        checkHasBurstLoss, checkHasWifiDevices, checkHasPingAndWan],
     },
     $unset: {
       obj: req.body.$unset,
@@ -342,7 +349,7 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
     $set: {
       obj: req.body.$set,
       fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
-        checkHasBurstLoss, checkHasWifiDevices],
+        checkHasBurstLoss, checkHasWifiDevices, checkHasPingAndWan],
     },
     $unset: {
       obj: req.body.$unset,

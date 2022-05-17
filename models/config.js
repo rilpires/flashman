@@ -53,6 +53,7 @@ let configSchema = new mongoose.Schema({
     ping_packets: Number,
     burst_loss: Boolean,
     wifi_devices: Boolean,
+    ping_and_wan: Boolean,
   },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},

@@ -1480,7 +1480,8 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-qtd-ports="'+
             (device.qtdPorts ? device.qtdPorts : '')+'"';
           if (device.data_collecting !== undefined) {
-            let booleans = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices'];
+            let booleans = ['is_active', 'has_latency', 'burst_loss',
+                            'wifi_devices', 'ping_and_wan'];
             for (let parameter of booleans) {
               formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] ? 'true' : 'false'}"`;
             }

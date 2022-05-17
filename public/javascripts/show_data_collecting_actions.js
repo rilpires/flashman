@@ -84,24 +84,25 @@ $(document).ready(function() {
     has_latency: {type: Boolean, service: true, device: true},
     burst_loss: {type: Boolean, service: true, device: true},
     wifi_devices: {type: Boolean, service: true, device: true},
+    ping_and_wan: {type: Boolean, service: true, device: true},
     ping_fqdn: {
       type: String,
       service: true, device: true,
       validations: isFqdnValid,
-      invalidMessage: t('inputValidAddres')
+      invalidMessage: t('inputValidAddres'),
     },
     alarm_fqdn: {
       type: String,
       service: true,
       validations: isFqdnValid,
-      invalidMessage: t('inputValidAddres')
+      invalidMessage: t('inputValidAddres'),
     },
     ping_packets: { // validation for ping_packets is done directly in html.
       type: Number,
-      service: true, 
-      invalidMessage: t('insertANumberBetweenMinMax', {min: 1, max: 100})
+      service: true,
+      invalidMessage: t('insertANumberBetweenMinMax', {min: 1, max: 100}),
     },
-  }
+  };
   for (let name in parameters) {
     let p = parameters[name];
     if (p.service) { // if service is true, this parameter exists in config model.
