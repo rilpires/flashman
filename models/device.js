@@ -350,7 +350,9 @@ deviceSchema.pre('save', function(callback) {
         let callbackAuthSecret = deviceCrud.secret;
         if (callbackUrl) {
           attrsList.forEach((attr) => {
-            changedAttrs[attr] = device[attr];
+            if (!attr.includes('pingtest_results')) {
+              changedAttrs[attr] = device[attr];
+            }
           });
           requestOptions.url = callbackUrl;
           requestOptions.method = 'PUT';
