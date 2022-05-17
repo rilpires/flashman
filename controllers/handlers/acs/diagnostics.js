@@ -26,6 +26,15 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
   return result;
 };
 
+const getNextPingTest = function(device) {
+  for (let pingTest of device.pingtest_results) {
+    if (!pingTest.completed) {
+      return pingTest.host;
+    }
+  }
+  return '';
+};
+
 const getSpeedtestFile = async function(device) {
   let matchedConfig = await Config.findOne(
     {is_default: true}, {measureServerIP: true, measureServerPort: true},
@@ -74,18 +83,14 @@ const getSpeedtestFile = async function(device) {
   return '';
 };
 
-const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
+const calculatePingDiagnostic = async function(
+    device, data, pingKeys, pingFields,
+  ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
+
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
     let result = {};
-    device.ping_hosts.forEach((host) => {
-      if (host) {
-        result[host] = {
-          lat: '---',
-          loss: '--- ',
-        };
-      }
-    });
+
     if (
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
@@ -95,18 +100,41 @@ const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
       if (isNaN(loss)) {
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
-      result[pingKeys.host] = {
-        lat: pingKeys.avg_resp_time.toString(),
-        loss: loss.toString(),
-      };
+
+      let index = device.pingtest_results.map((e) => e.host)
+        .indexOf(pingKeys.host);
+      device.pingtest_results[index].lat = pingKeys.avg_resp_time.toString();
+      device.pingtest_results[index].loss = loss.toString();
+      device.pingtest_results[index].completed = true;
+
       let model = device.model;
       if (model === 'HG8245Q2' || model === 'EG8145V5' ||
           model === 'EG8145X6' || model === 'HG9') {
-        if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
-        else result[pingKeys.host]['loss'] = '100';
+        if (pingKeys.success_count === 1) {
+          device.pingtest_results[index].loss = '0';
+        } else {
+          device.pingtest_results[index].loss = '100';
+        }
       }
+
+      await device.save().catch((err) => {
+        console.log('Error saving ping test to database: ' + err);
+      });
+
+      device.pingtest_results.forEach((pingTest) => {
+        if (pingTest) {
+          result[pingTest.host] = {
+            lat: pingTest.lat,
+            loss: pingTest.loss,
+          };
+        }
+      });
+
+      deviceHandlers.sendPingToTraps(device._id, {results: result});
+
+      acsDiagnosticsHandler.firePingDiagnose(device._id);
+      return;
     }
-    deviceHandlers.sendPingToTraps(device._id, {results: result});
   }
 };
 
@@ -229,8 +257,13 @@ const startPingDiagnose = async function(acsID) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
-  let pingHostUrl = device.ping_hosts[0];
+  let pingHostUrl = getNextPingTest(device);
   let timeout = 1000;
+
+  if (!pingHostUrl || pingHostUrl === '') {
+    console.log('No valid pingtest URL found for ' + acsID);
+    return;
+  }
 
   let task = {
     name: 'setParameterValues',
