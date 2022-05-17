@@ -228,6 +228,13 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  // Store pinttest results
+  pingtest_results: [{
+    host: String,
+    lat: {type: String, default: '---'},
+    loss: {type: String, default: '--- '},
+    completed: {type: Boolean, default: false},
+  }],
   sys_up_time: {type: Number, default: 0}, // seconds
   wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
