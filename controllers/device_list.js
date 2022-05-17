@@ -3410,4 +3410,90 @@ deviceListController.exportDevicesCsv = async function(req, res) {
   }
 };
 
+deviceListController.editCoordinates = async function(req, res) {
+  const devices = req.body.devices;
+  let okCount = 0;
+  let failCount = 0;
+  let status = {};
+
+  if (
+    !(devices instanceof Array) ||
+    devices.length === 0 ||
+    devices.some((d)=>typeof d.id !== 'string')
+  ) {
+    return res.status(500).json({
+      success: false,
+      okCount: okCount,
+      failCount: failCount,
+      message: t('fieldNameInvalid', {name: 'devices', errorline: __line}),
+      status: {},
+    });
+  }
+
+  for (let device of devices) {
+    let id = device.id;
+    let latitude = device.latitude;
+    let longitude = device.longitude;
+    let preventAutoUpdate = device.preventAutoUpdate;
+
+    let matchedDevice;
+    try {
+      matchedDevice = await DeviceModel.findByMacOrSerial(id);
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        matchedDevice = matchedDevice[0];
+      } else {
+        failCount += 1;
+        status[id] = {
+          success: false, msg: t('cpeNotFound', {errorline: __line}),
+        };
+        continue;
+      }
+    } catch (e) {
+      failCount += 1;
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
+      continue;
+    }
+
+    let error = '';
+    if (typeof latitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'latitude', errorline: __line});
+    } else if (typeof longitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'longitude', errorline: __line});
+    } else if (typeof preventAutoUpdate !== 'boolean') {
+      error = t(
+        'fieldNameInvalid', {name: 'preventAutoUpdate', errorline: __line},
+      );
+    }
+
+    if (error) {
+      failCount += 1;
+      status[id] = {success: false, msg: error};
+      continue;
+    }
+
+    matchedDevice.latitude = latitude;
+    matchedDevice.longitude = longitude;
+    matchedDevice.stop_coordinates_update = preventAutoUpdate;
+    try {
+      await matchedDevice.save();
+    } catch (err) {
+      failCount += 1;
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
+      continue;
+    }
+    okCount += 1;
+    status[id] = {success: true, msg: t('Success!')};
+  }
+  return res.status(200).json({
+    success: okCount > 0,
+    okCount: okCount,
+    failCount: failCount,
+    status: status,
+  });
+};
+
 module.exports = deviceListController;

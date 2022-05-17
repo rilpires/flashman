@@ -830,6 +830,7 @@
 	"mandatoryIpvxVerification": "IPv{{-x}} verificación requerida",
 	"mandatoryDnsVerification": "Verificación DNS Obligatoria",
 	"mandatoryFlashmanRegisterVerification": "Se requiere verificación de registro de Flashman",
+	"Enable": "Habilitar",
 	"Enabled": "Poder",
 	"Disabled": "Desactivado",
 	"tr069Configurations": "Configuración de TR-069",
