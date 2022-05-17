@@ -6,7 +6,6 @@ const DeviceModel = require('../models/device');
 const ConfigModel = require('../models/config');
 const deviceListController = require('./device_list.js');
 const Config = require('../models/config');
-const DeviceVersion = require('../models/device_version');
 const t = require('./language').i18next.t;
 
 let dataCollectingController = {};
@@ -60,7 +59,7 @@ dataCollectingController.mergeConfigs = function(service, device, version) {
   }
 
   return res;
-}
+};
 
 
 // A function that treats body fields.
@@ -104,8 +103,6 @@ const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
 // functions to check a field in a received json.
-const checkId = (obj) =>
-  checkField(obj, 'id', util.isMacValid);
 const checkIsActive = (obj) =>
   checkField(obj, 'is_active', checkBooleanField);
 const checkHaslatency = (obj) =>
@@ -330,7 +327,6 @@ dataCollectingController.updateManyParameters = async function(req, res) {
 
 // returns data_collecting object of a given device.
 dataCollectingController.returnDeviceParameters = function(req, res) {
-  console.log('returnDeviceParameters id', req.params.id)
   return Promise.resolve()
   .then(() => checkIdUrlParameter(req.params.id))
   .then(() => DeviceModel.findOne({_id: req.params.id}, 'data_collecting')

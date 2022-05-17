@@ -159,7 +159,7 @@ $(document).ready(function() {
           // this will be caught and the message will be used in alert in screen.
           throw {message: 'Erro ao receber resposta do Flashman'};
         }
-      })
+      });
     }
   };
 

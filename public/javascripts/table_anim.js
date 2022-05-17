@@ -1483,11 +1483,13 @@ anlixDocumentReady.add(function() {
             let booleans = ['is_active', 'has_latency', 'burst_loss',
                             'wifi_devices', 'ping_and_wan'];
             for (let parameter of booleans) {
-              formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] ? 'true' : 'false'}"`;
+              formAttr += ` data-data_collecting-${parameter}=
+              "${device.data_collecting[parameter] ? 'true' : 'false'}"`;
             }
             let strings = ['ping_fqdn'];
             for (let parameter of strings) {
-              formAttr += ` data-data_collecting-${parameter}="${device.data_collecting[parameter] || ''}"`;
+              formAttr += ` data-data_collecting-${parameter}=
+              "${device.data_collecting[parameter] || ''}"`;
             }
           }
           formAttr += ' data-grant-block-wired-devices="' +

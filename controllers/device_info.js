@@ -15,7 +15,7 @@ const deviceHandlers = require('./handlers/devices');
 const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
-const data_collecting = require('./data_collecting')
+const data_collecting = require('./data_collecting');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -993,15 +993,15 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           };
 
           // adding all data_collecting parameters to response json.
-          let dc_res = data_collecting.mergeConfigs(
-            matchedConfig.data_collecting, 
+          let dcRes = data_collecting.mergeConfigs(
+            matchedConfig.data_collecting,
             matchedDevice.data_collecting,
-            matchedDevice.version
+            matchedDevice.version,
           );
           // eslint-disable-next-line guard-for-in
-          for (let parameter in dc_res) {
-            // console.log('parameter', parameter, dc_res[parameter])
-            resJson['data_collecting_'+parameter] = dc_res[parameter];
+          for (let parameter in dcRes) {
+            // console.log('parameter', parameter, dcRes[parameter])
+            resJson['data_collecting_'+parameter] = dcRes[parameter];
           }
 
           // Only answer ipv6 status if flashman knows current state
