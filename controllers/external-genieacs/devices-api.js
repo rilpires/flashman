@@ -51,7 +51,7 @@ const getFieldType = function(masterKey, key, model) {
     case 'wifi5-band':
     case 'mesh2-band':
     case 'mesh5-band':
-      if(model === 'EG8145X6') {
+      if(model === 'EG8145X6' || model === 'HG8121H') {
         return 'xsd:unsignedInt';
       } else {
         return 'xsd:string';
@@ -198,13 +198,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
-      if (model === 'EG8145X6') return '1';
+      if (model === 'EG8145X6'  || model === 'HG8121H') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
-      if (model === 'EG8145X6') return '2';
+      if (model === 'EG8145X6'  || model === 'HG8121H') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
@@ -226,6 +226,7 @@ const convertWifiBand = function(band, model, is5ghz=false) {
       } else if (model == 'G-2425G-A') {
         return '80MHz';
       }
+      if (model === 'HG8121H') return '0';
       if (model === 'EG8145X6') return (is5ghz) ? '3' : '0';
       return 'auto';
     default:
@@ -486,7 +487,7 @@ const getTPLinkFields = function(model) {
 
 const getHuaweiFields = function(model, modelName) {
   let fields = getDefaultFields();
-  if (['HG8245Q2', 'EG8145V5', 'EG8145X6'].includes(model)) {
+  if (['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6'].includes(model)) {
     fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName';
     fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password';
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived';
@@ -504,7 +505,6 @@ const getHuaweiFields = function(model, modelName) {
     fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
     fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
     fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey');
-
     fields.mesh5.ssid = fields.mesh5.ssid.replace(/6/g, '3');
     fields.mesh5.bssid = fields.mesh5.bssid.replace(/6/g, '3');
     fields.mesh5.password = fields.mesh5.password.replace(/6/g, '3');
@@ -519,10 +519,9 @@ const getHuaweiFields = function(model, modelName) {
     fields.mesh2.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers';
     fields.mesh5.rates = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates';
     fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers';
-
-    if (model === 'EG8145X6') {
-      fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HW_HT20';
-      fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_HW_HT20';
+    if (model === 'HG8121H' || model == 'EG8145X6') {
+      fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
+      fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
     }
   } else if (model === 'Huawei') {
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
@@ -997,6 +996,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
   switch (model) {
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'HG8121H': // Huawei HG8121H
     case 'EG8145X6': // Huawei EG8145X6
       message = '';
       fields = getHuaweiFields(model, modelName);
@@ -1088,6 +1088,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       switch (modelName) {
         case 'DIR-842':
         case 'DIR-841':
+        case 'DIR-615':
           message = '';
           fields = getDLinkFields(modelName);
           break;
@@ -1135,6 +1136,7 @@ const getBeaconTypeByModel = function(model) {
     case 'ST-1001-FL': // Hurakall ST-1001-FL
     case 'HG8245Q2': // Huawei HG8245Q2
     case 'EG8145V5': // Huawei EG8145V5
+    case 'HG8121H': // Huawei HG8121H
     case 'EG8145X6': // Huawei EG8145X6
     case 'AC10': // Tenda AC10
       ret = 'WPAand11i';

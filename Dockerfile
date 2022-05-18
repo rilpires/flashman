@@ -5,7 +5,7 @@ MAINTAINER anlix "guisenges@gmail.com"
 
 WORKDIR /app
 
-COPY /app.js /mqtts.js /sio.js /migrations.js /LICENSE /package.json /docker/environment.config.json /docker/wait-for-courier.sh /docker/init.sh /webpack.* /app/
+COPY /app.js /mqtts.js /migrations.js /sio.js /migrations.js /LICENSE /package.json /docker/environment.config.json /docker/wait-for-courier.sh /docker/init.sh /webpack.* /app/
 COPY /bin /app/bin
 COPY /controllers /app/controllers
 COPY /models /app/models

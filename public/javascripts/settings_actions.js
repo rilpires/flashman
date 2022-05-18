@@ -319,13 +319,9 @@ anlixDocumentReady.add(function() {
   // change prefix ssid input visibility
   $('#is-ssid-prefix-enabled').on('change', (input) => {
     if (input.target.checked) {
-      $('#ssid-prefix-div').
-        removeClass('d-none').
-        addClass('d-block');
+      $('#ssid-prefix-div').removeClass('d-none').addClass('d-block');
     } else {
-      $('#ssid-prefix-div').
-        removeClass('d-block').
-        addClass('d-none');
+      $('#ssid-prefix-div').removeClass('d-block').addClass('d-none');
     }
   });
 });
