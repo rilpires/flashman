@@ -9,7 +9,7 @@ let updater = require('./controllers/update_flashman');
 const Config = require('./models/config');
 
 
-module.exports = (app) => {
+module.exports = async (app) => {
   if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
     // Check default config
     controlApi.checkPubKey(app).then(() => {
@@ -18,53 +18,57 @@ module.exports = (app) => {
     });
 
     // put default values in old config
-    Config.findOne({is_default: true}, function(err, config) {
-      if (!err && config) {
-        if (typeof config.isSsidPrefixEnabled === 'undefined') {
-          config.isSsidPrefixEnabled = false;
-        }
-        if (typeof config.ssidPrefix === 'undefined') {
-          config.ssidPrefix = '';
-        }
-        let vlans = [];
-        for (let i = 0; i < config.vlans_profiles.length; i++) {
-          vlans.push(config.vlans_profiles[i].vlan_id);
-        }
-        // 1 is the mandatory lan vlan id
-        if (! vlans.includes(1)) {
-          config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
-        }
-        let cbacks = config.traps_callbacks;
-        if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
-          const deviceCrud = utilHandlers.deepCopyObject(cbacks.device_crud);
-          cbacks.device_crud.url = '';
-          cbacks.devices_crud.push(deviceCrud);
-        }
-        if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
-          const userCrud = utilHandlers.deepCopyObject(cbacks.user_crud);
-          cbacks.user_crud.url = '';
-          cbacks.users_crud.push(userCrud);
-        }
-        if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
-          const roleCrud = utilHandlers.deepCopyObject(cbacks.role_crud);
-          cbacks.role_crud.url = '';
-          cbacks.roles_crud.push(roleCrud);
-        }
-        if (
-          cbacks.certification_crud.url &&
-          cbacks.certifications_crud.length == 0
-        ) {
-          const certCrud = utilHandlers.deepCopyObject(
-            cbacks.certification_crud,
-          );
-          cbacks.certification_crud.url = '';
-          cbacks.certifications_crud.push(certCrud);
-        }
-        // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
-        // *** DO NOT TOUCH ***
-        config.save();
+    let config = await Config.findOne(
+      {is_default: true}).catch(
+      (err) => {
+        debug('MQTT AUTH ERROR: Config not found!');
+      },
+    );
+    if (config) {
+      if (typeof config.isSsidPrefixEnabled === 'undefined') {
+        config.isSsidPrefixEnabled = false;
       }
-    });
+      if (typeof config.ssidPrefix === 'undefined') {
+        config.ssidPrefix = '';
+      }
+      let vlans = [];
+      for (let i = 0; i < config.vlans_profiles.length; i++) {
+        vlans.push(config.vlans_profiles[i].vlan_id);
+      }
+      // 1 is the mandatory lan vlan id
+      if (! vlans.includes(1)) {
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
+      }
+      let cbacks = config.traps_callbacks;
+      if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
+        const deviceCrud = utilHandlers.deepCopyObject(cbacks.device_crud);
+        cbacks.device_crud.url = '';
+        cbacks.devices_crud.push(deviceCrud);
+      }
+      if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
+        const userCrud = utilHandlers.deepCopyObject(cbacks.user_crud);
+        cbacks.user_crud.url = '';
+        cbacks.users_crud.push(userCrud);
+      }
+      if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
+        const roleCrud = utilHandlers.deepCopyObject(cbacks.role_crud);
+        cbacks.role_crud.url = '';
+        cbacks.roles_crud.push(roleCrud);
+      }
+      if (
+        cbacks.certification_crud.url &&
+        cbacks.certifications_crud.length == 0
+      ) {
+        const certCrud = utilHandlers.deepCopyObject(
+          cbacks.certification_crud,
+        );
+        cbacks.certification_crud.url = '';
+        cbacks.certifications_crud.push(certCrud);
+      }
+      // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
+      // *** DO NOT TOUCH ***
+      config.save();
+    }
 
     // Check administration user existence
     User.find({is_superuser: true}, function(err, matchedUsers) {
