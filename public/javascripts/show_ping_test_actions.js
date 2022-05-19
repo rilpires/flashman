@@ -56,8 +56,9 @@ const selectizeOptionsHosts = {
 socket.on('PINGTEST', function(macaddr, data) {
   if (($('#ping-test').data('bs.modal') || {})._isShown) {
     let id = $('#ping-test-hlabel').text();
+    let textarea = $('#ping-test-results');
     if (id == macaddr) {
-      $('#ping-test-results').hide('fast').empty();
+      textarea.hide('fast').empty();
       $('.btn-start-ping-test').prop('disabled', false);
       let resultsList = $('<ul>').addClass('list-group list-group-flush');
 
@@ -66,21 +67,36 @@ socket.on('PINGTEST', function(macaddr, data) {
         let hostLatency = value.lat;
         let hostLoss = value.loss;
 
-        resultsList.append(
-          $('<li>').addClass('list-group-item d-flex')
-          .addClass('justify-content-between align-items-center')
-          .html(hostname)
-          .append(
-            $('<span>')
-            .addClass('badge badge-primary badge-pill')
-            .html(t('Latency=X', {x: hostLatency})),
-            $('<span>')
-            .addClass('badge badge-primary badge-pill')
-            .html(hostLoss + t('%LostPackets')),
-          ),
-        );
+        if (hostLatency.includes('---') && hostLoss.includes('---')) {
+          resultsList.append(
+            $('<li>').addClass('list-group-item d-flex')
+            .addClass('justify-content-between align-items-center')
+            .html(hostname)
+            .append(
+              $('<span>')
+              .addClass('text-center grey-text')
+              .append(
+                $('<i>').addClass('fas fa-spinner fa-pulse fa-2x'),
+              ),
+            ),
+          );
+        } else {
+          resultsList.append(
+            $('<li>').addClass('list-group-item d-flex')
+            .addClass('justify-content-between align-items-center')
+            .html(hostname)
+            .append(
+              $('<span>')
+              .addClass('badge badge-primary badge-pill')
+              .html(t('Latency=X', {x: hostLatency})),
+              $('<span>')
+              .addClass('badge badge-primary badge-pill')
+              .html(hostLoss + t('%LostPackets')),
+            ),
+          );
+        }
       });
-      $('#ping-test-results').append(resultsList).show('fast');
+      textarea.append(resultsList).show('fast');
     }
   }
 });
