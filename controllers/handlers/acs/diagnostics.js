@@ -160,7 +160,8 @@ const calculateSpeedDiagnostic = async function(
   }
 
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
-    if (speedKeys.diag_state == 'Completed') {
+    const diagState = speedKeys.diag_state;
+    if (diagState == 'Completed' || diagState == 'Complete') {
       if (device.speedtest_results.length > 0) {
         lastTime = utilHandlers.parseDate(
           device.speedtest_results[device.speedtest_results.length-1].timestamp,
@@ -308,6 +309,9 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
+  if (device.model == 'HG8121H') {
+    task.parameterValues.splice(1, 1);
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting speedtest diagnose for ' + acsID);
