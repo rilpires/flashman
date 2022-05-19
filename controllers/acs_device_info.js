@@ -97,12 +97,14 @@ const convertWifiBand = function(model, band, mode, is5ghz) {
   switch (band) {
     // Number input
     case '0':
-      if (model === 'EG8145X6') return 'auto';
+      if (model === 'EG8145X6' || model === 'HG8121H') return 'auto';
       return (isAC) ? 'VHT20' : 'HT20';
     case '1':
+      if (model === 'HG8121H') return 'HT20';
       if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
       return (isAC) ? 'VHT40' : 'HT40';
     case '2':
+      if (model === 'HG8121H') return 'HT40';
       if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
       return 'auto';
     case '3':
