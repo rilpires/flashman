@@ -1178,7 +1178,8 @@ const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
   if (shareLoad && numInstances > 1 &&
-    process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
+      typeof process.env.FLM_IS_A_DOCKER_RUN !== 'undefined' &&
+      process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn
     // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
