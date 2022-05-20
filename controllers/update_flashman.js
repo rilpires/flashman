@@ -381,9 +381,6 @@ updateController.rebootGenie = function(instances) {
         let targetFile = 'controllers/external-genieacs/devices-api.js';
         let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
 
-        // Update genieACS diagnostic's script and preset
-        await updateController.updateDiagnostics();
-
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
           if (config.tr069.insecure_enable) {
