@@ -66,20 +66,23 @@ socket.on('PINGTEST', function(macaddr, data) {
         let hostname = key;
         let hostLatency = value.lat;
         let hostLoss = value.loss;
+        let isCompleted = value.completed;
 
-        if (hostLatency.includes('---') && hostLoss.includes('---')) {
-          resultsList.append(
-            $('<li>').addClass('list-group-item d-flex')
-            .addClass('justify-content-between align-items-center')
-            .html(hostname)
-            .append(
-              $('<span>')
-              .addClass('text-center grey-text')
+        if (isCompleted === false) {
+          if (hostLatency.includes('---') && hostLoss.includes('---')) {
+            resultsList.append(
+              $('<li>').addClass('list-group-item d-flex')
+              .addClass('justify-content-between align-items-center')
+              .html(hostname)
               .append(
-                $('<i>').addClass('fas fa-spinner fa-pulse fa-2x'),
+                $('<span>')
+                .addClass('text-center grey-text')
+                .append(
+                  $('<i>').addClass('fas fa-spinner fa-pulse fa-2x'),
+                ),
               ),
-            ),
-          );
+            );
+          }
         } else {
           resultsList.append(
             $('<li>').addClass('list-group-item d-flex')
