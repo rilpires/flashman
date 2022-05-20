@@ -201,7 +201,7 @@ let validateEditDevice = function(event) {
                       errors.pppoe_password, pppoePassLength);
     }
   }
-  if (validateWifi) {
+  if (validateWifi && password.length !== 0) {
     genericValidate(ssidPrefix+ssid,
       validator.validateSSID, errors.ssid);
     genericValidate(password, validator.validateWifiPassword, errors.password);
@@ -214,7 +214,7 @@ let validateEditDevice = function(event) {
   if (validateWifiPower) {
     genericValidate(power, validator.validatePower, errors.power);
   }
-  if (validateWifi5ghz) {
+  if (validateWifi5ghz && password5ghz.length !== 0) {
     genericValidate(ssidPrefix+ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
     genericValidate(password5ghz,
@@ -268,7 +268,7 @@ let validateEditDevice = function(event) {
     if (validateIpv6Enabled) {
       data.content.ipv6_enabled = ipv6Enabled;
     }
-    if (validateWifi) {
+    if (validateWifi && password.length !== 0) {
       data.content.wifi_ssid = ssid;
       data.content.wifi_password = password;
       data.content.wifi_channel = channel;
@@ -280,7 +280,7 @@ let validateEditDevice = function(event) {
     if (validateWifiPower) {
       data.content.wifi_power = power;
     }
-    if (validateWifi5ghz) {
+    if (validateWifi5ghz && password5ghz.length !== 0) {
       data.content.wifi_ssid_5ghz = ssid5ghz;
       data.content.wifi_password_5ghz = password5ghz;
       data.content.wifi_channel_5ghz = channel5ghz;
