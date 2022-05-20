@@ -67,7 +67,7 @@ module.exports = async (app) => {
       }
       // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
       // *** DO NOT TOUCH ***
-      config.save();
+      await config.save();
     }
 
     // Check administration user existence
