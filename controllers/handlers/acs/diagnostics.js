@@ -27,12 +27,8 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
 };
 
 const getNextPingTest = function(device) {
-  for (let pingTest of device.pingtest_results) {
-    if (!pingTest.completed) {
-      return pingTest.host;
-    }
-  }
-  return '';
+  let found = device.pingtest_results.find((pingTest) => !pingTest.completed);
+  return (found) ? found.host : '';
 };
 
 const getSpeedtestFile = async function(device) {
@@ -101,20 +97,19 @@ const calculatePingDiagnostic = async function(
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
 
-      let index = device.pingtest_results.map((e) => e.host)
-        .indexOf(pingKeys.host);
-      device.pingtest_results[index].lat = pingKeys.avg_resp_time.toString();
-      device.pingtest_results[index].loss = loss.toString();
-      device.pingtest_results[index].completed = true;
+      let pingTest = device.pingtest_results.find(
+        (pingTest) => pingTest.host === pingKeys.host,
+      );
+      pingTest.lat = pingKeys.avg_resp_time.toString();
+      pingTest.loss = loss.toString();
+      pingTest.completed = true;
 
       let model = device.model;
-      if (model === 'HG8245Q2' || model === 'EG8145V5' ||
-          model === 'EG8145X6' || model === 'HG9') {
-        if (pingKeys.success_count === 1) {
-          device.pingtest_results[index].loss = '0';
-        } else {
-          device.pingtest_results[index].loss = '100';
-        }
+      if (
+        ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
+      ) {
+        if (pingKeys.success_count === 1) pingTest.loss = '0';
+        else pingTest.loss = '100';
       }
 
       await device.save().catch((err) => {
@@ -126,6 +121,7 @@ const calculatePingDiagnostic = async function(
           result[pingTest.host] = {
             lat: pingTest.lat,
             loss: pingTest.loss,
+            completed: pingTest.completed,
           };
         }
       });
@@ -262,7 +258,8 @@ const startPingDiagnose = async function(acsID) {
   let timeout = 1000;
 
   if (!pingHostUrl || pingHostUrl === '') {
-    console.log('No valid pingtest URL found for ' + acsID);
+    console.log('Ping results for device ' + acsID
+      + ' completed successfully.');
     return;
   }
 
