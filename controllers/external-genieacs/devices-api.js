@@ -1059,6 +1059,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getDefaultFields();
       break;
+    case 'EMG3524-T10A': // Zyxel
+      message = '';
+      fields = getDefaultFields();
+      break;
     case 'FW323DAC':
       message = '';
       fields = getFastWirelessFields();
