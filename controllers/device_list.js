@@ -1190,12 +1190,9 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           if (device && device.use_tr069) {
             device.pingtest_results = [];
-            if (device.pingtest_results && device.ping_hosts) {
-              device.ping_hosts.forEach((host) => {
-                device.pingtest_results.push({
-                  host: host,
-                });
-              });
+            if (Object.keys(device.ping_hosts).length > 0) {
+              device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
+
               await device.save().catch((err) => {
                 console.log('Error saving device ping test: ' + err);
               });
