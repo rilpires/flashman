@@ -98,7 +98,7 @@ const calculatePingDiagnostic = async function(
       }
 
       let pingTest = device.pingtest_results.find(
-        (pingTest) => pingTest.host === pingKeys.host,
+        (e) => e.host === pingKeys.host,
       );
       pingTest.lat = pingKeys.avg_resp_time.toString();
       pingTest.loss = loss.toString();
@@ -116,19 +116,19 @@ const calculatePingDiagnostic = async function(
         console.log('Error saving ping test to database: ' + err);
       });
 
-      device.pingtest_results.forEach((pingTest) => {
-        if (pingTest) {
-          result[pingTest.host] = {
-            lat: pingTest.lat,
-            loss: pingTest.loss,
-            completed: pingTest.completed,
+      device.pingtest_results.map((p) => {
+        if (p) {
+          result[p.host] = {
+            lat: p.lat,
+            loss: p.loss,
+            completed: p.completed,
           };
         }
       });
 
       deviceHandlers.sendPingToTraps(device._id, {results: result});
 
-      acsDiagnosticsHandler.firePingDiagnose(device._id);
+      startPingDiagnose(device.acs_id);
       return;
     }
   }
