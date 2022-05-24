@@ -236,19 +236,21 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 device.rssi = utilHandlers.getFromNestedKey(
                   data, rssiKey+'._value',
                 );
-                // Casts to string if is a number so we can replace 'dBm'
-                if (typeof device.rssi === 'number') {
-                  device.rssi = device.rssi.toString();
-                }
-                device.rssi = device.rssi.replace('dBm', '');
-                // Cast back to number to avoid converting issues
-                device.rssi = parseInt(device.rssi);
-                if (isNaN(parseInt(device.rssi))) {
-                  debug(`device.rssi is NaN beware!!!`);
-                }
-                // Convert wrongly sent positive values to negative for Greatek
-                if (model == 'GONUAC002' && device.rssi > 0) {
-                  device.rssi = -device.rssi;
+                if (typeof device.rssi !== 'undefined') {
+                  // Casts to string if is a number so we can replace 'dBm'
+                  if (typeof device.rssi === 'number') {
+                    device.rssi = device.rssi.toString();
+                  }
+                  device.rssi = device.rssi.replace('dBm', '');
+                  // Cast back to number to avoid converting issues
+                  device.rssi = parseInt(device.rssi);
+                  if (isNaN(parseInt(device.rssi))) {
+                    debug(`device.rssi is NaN beware!!!`);
+                  }
+                  // Convert wrong positive values to negative for Greatek
+                  if (model == 'GONUAC002' && device.rssi > 0) {
+                    device.rssi = -device.rssi;
+                  }
                 }
               }
               // Collect snr, if available

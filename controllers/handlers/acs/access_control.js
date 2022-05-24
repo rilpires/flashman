@@ -258,8 +258,15 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
   // blocked devices. It will also force the algorithm to repopulate the
   // rule tree.
   let condA = !device.wifi_is_5ghz_capable && ids['wifi2'].length != maxId;
-  let condBA = (ids['wifi2'].length + ids['wifi5'].length) != maxId;
-  let condBB = ids['wifi2'].length != ids['wifi5'].length;
+  let condBA;
+  let condBB;
+  if (device.wifi_is_5ghz_capable) {
+    condBA = (ids['wifi2'].length + ids['wifi5'].length) != maxId;
+    condBB = ids['wifi2'].length != ids['wifi5'].length;
+  } else {
+    condBA = ids['wifi2'].length != maxId;
+    condBB = false;
+  }
   let condB = condBA || condBB;
   let condC = device.wifi_is_5ghz_capable;
   if (condA || (condB && condC) || maxId >= 64) {

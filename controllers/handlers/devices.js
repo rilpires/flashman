@@ -405,36 +405,38 @@ deviceHandlers.sendPingToTraps = function(id, results) {
     if (!err && matchedConfig) {
       // Send ping results if device traps are activated
       if (matchedConfig.traps_callbacks &&
-          matchedConfig.traps_callbacks.device_crud) {
-        let requestOptions = {};
-        let callbackUrl =
-        matchedConfig.traps_callbacks.device_crud.url;
-        let callbackAuthUser =
-        matchedConfig.traps_callbacks.device_crud.user;
-        let callbackAuthSecret =
-        matchedConfig.traps_callbacks.device_crud.secret;
-        if (callbackUrl) {
-          requestOptions.url = callbackUrl;
-          requestOptions.method = 'PUT';
-          requestOptions.json = {
-            'id': id,
-            'type': 'device',
-            'changes': {ping_results: results},
-          };
-          if (callbackAuthUser && callbackAuthSecret) {
-            requestOptions.auth = {
-              user: callbackAuthUser,
-              pass: callbackAuthSecret,
+          matchedConfig.traps_callbacks.devices_crud
+      ) {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
+          let requestOptions = {};
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': id,
+              'type': 'device',
+              'changes': {ping_results: results},
             };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
           }
-          request(requestOptions).then((resp) => {
-            // Ignore API response
-            return;
-          }, (err) => {
-            // Ignore API endpoint errors
-            return;
-          });
-        }
+        });
+        Promise.all(promises).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     }
   });

@@ -191,8 +191,7 @@ acsMeshDeviceHandler.createVirtualAPObjects = async function(device) {
     let numObjsToCreate = createMesh2VAP + createMesh5VAP; // cast bool to int
     for (let i = 0; i < numObjsToCreate; i++) {
       try {
-        let ret = await TasksAPI.addTask(acsID, addObjTask, true,
-          10000, [5000, 10000]);
+        let ret = await TasksAPI.addTask(acsID, addObjTask);
         if (!ret || !ret.success || !ret.executed) {
           throw new Error('task error');
         }

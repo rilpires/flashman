@@ -3067,11 +3067,19 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      if ('url' in req.body) {
-        matchedConfig.traps_callbacks.device_crud.url = req.body.url;
-        if ('user' in req.body && 'secret' in req.body) {
-          matchedConfig.traps_callbacks.device_crud.user = req.body.user;
-          matchedConfig.traps_callbacks.device_crud.secret = req.body.secret;
+      if (typeof req.body.url === 'string' && req.body.url) {
+        let deviceCrud = {url: req.body.url};
+        if (req.body.user && req.body.secret) {
+          deviceCrud.user = req.body.user;
+          deviceCrud.secret = req.body.secret;
+        }
+        let index = matchedConfig.traps_callbacks.devices_crud.findIndex(
+          (d)=>d.url===req.body.url,
+        );
+        if (index > -1) {
+          matchedConfig.traps_callbacks.devices_crud[index] = deviceCrud;
+        } else {
+          matchedConfig.traps_callbacks.devices_crud.push(deviceCrud);
         }
         matchedConfig.save((err) => {
           if (err) {
@@ -3095,6 +3103,47 @@ deviceListController.setDeviceCrudTrap = function(req, res) {
   });
 };
 
+deviceListController.deleteDeviceCrudTrap = function(req, res) {
+  // Delete callback URL for devices
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  const deviceCrudIndex = req.body.index;
+  if (typeof deviceCrudIndex !== 'number' || deviceCrudIndex < 0) {
+    return res.status(500).send({
+      success: false,
+      message: t('fieldNameInvalid', {name: 'index', errorline: __line}),
+    });
+  }
+  Config.findOne(query, projection).exec(function(err, matchedConfig) {
+    if (err || !matchedConfig) {
+      return res.status(500).json({
+        success: false,
+        message: t('configFindError', {errorline: __line}),
+      });
+    } else {
+      if (!matchedConfig.traps_callbacks.devices_crud[deviceCrudIndex]) {
+        return res.status(500).json({
+          success: false,
+          message: t('arrayElementNotFound'),
+        });
+      }
+      matchedConfig.traps_callbacks.devices_crud.splice(deviceCrudIndex, 1);
+      matchedConfig.save((err) => {
+        if (err) {
+          return res.status(500).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+        });
+      });
+    }
+  });
+};
+
 deviceListController.getDeviceCrudTrap = function(req, res) {
   // get callback url and user
   let query = {is_default: true};
@@ -3106,19 +3155,21 @@ deviceListController.getDeviceCrudTrap = function(req, res) {
         message: t('configFindError', {errorline: __line}),
       });
     } else {
-      const url = matchedConfig.traps_callbacks.device_crud.url;
-      if (!url) {
+      const devicesCrud = matchedConfig.traps_callbacks.devices_crud.map(
+        (d)=>({url: d.url, user: (d.user) ? d.user : ''}),
+      );
+      if (devicesCrud.length == 0) {
         return res.status(200).json({
           success: true,
           exists: false,
         });
       }
-      const user = matchedConfig.traps_callbacks.device_crud.user;
       return res.status(200).json({
         success: true,
         exists: true,
-        user: typeof user === 'undefined' ? '' : user,
-        url: url,
+        url: devicesCrud[0].url,
+        user: (devicesCrud[0].user) ? devicesCrud[0].user : '',
+        devicesCrud: devicesCrud,
       });
     }
   });
@@ -3340,6 +3391,92 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     res.set('Content-Type', 'text/csv');
     return res.send(emptyReturn);
   }
+};
+
+deviceListController.editCoordinates = async function(req, res) {
+  const devices = req.body.devices;
+  let okCount = 0;
+  let failCount = 0;
+  let status = {};
+
+  if (
+    !(devices instanceof Array) ||
+    devices.length === 0 ||
+    devices.some((d)=>typeof d.id !== 'string')
+  ) {
+    return res.status(500).json({
+      success: false,
+      okCount: okCount,
+      failCount: failCount,
+      message: t('fieldNameInvalid', {name: 'devices', errorline: __line}),
+      status: {},
+    });
+  }
+
+  for (let device of devices) {
+    let id = device.id;
+    let latitude = device.latitude;
+    let longitude = device.longitude;
+    let preventAutoUpdate = device.preventAutoUpdate;
+
+    let matchedDevice;
+    try {
+      matchedDevice = await DeviceModel.findByMacOrSerial(id);
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        matchedDevice = matchedDevice[0];
+      } else {
+        failCount += 1;
+        status[id] = {
+          success: false, msg: t('cpeNotFound', {errorline: __line}),
+        };
+        continue;
+      }
+    } catch (e) {
+      failCount += 1;
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
+      continue;
+    }
+
+    let error = '';
+    if (typeof latitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'latitude', errorline: __line});
+    } else if (typeof longitude !== 'number') {
+      error = t('fieldNameInvalid', {name: 'longitude', errorline: __line});
+    } else if (typeof preventAutoUpdate !== 'boolean') {
+      error = t(
+        'fieldNameInvalid', {name: 'preventAutoUpdate', errorline: __line},
+      );
+    }
+
+    if (error) {
+      failCount += 1;
+      status[id] = {success: false, msg: error};
+      continue;
+    }
+
+    matchedDevice.latitude = latitude;
+    matchedDevice.longitude = longitude;
+    matchedDevice.stop_coordinates_update = preventAutoUpdate;
+    try {
+      await matchedDevice.save();
+    } catch (err) {
+      failCount += 1;
+      status[id] = {
+        success: false, msg: t('cpeFindError', {errorline: __line}),
+      };
+      continue;
+    }
+    okCount += 1;
+    status[id] = {success: true, msg: t('Success!')};
+  }
+  return res.status(200).json({
+    success: okCount > 0,
+    okCount: okCount,
+    failCount: failCount,
+    status: status,
+  });
 };
 
 module.exports = deviceListController;
