@@ -87,6 +87,10 @@ const calculatePingDiagnostic = async function(
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
     let result = {};
 
+    let currentPingTest = device.pingtest_results.find(
+      (e) => e.host === pingKeys.host,
+    );
+
     if (
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
@@ -97,40 +101,39 @@ const calculatePingDiagnostic = async function(
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
 
-      let pingTest = device.pingtest_results.find(
-        (e) => e.host === pingKeys.host,
-      );
-      pingTest.lat = pingKeys.avg_resp_time.toString();
-      pingTest.loss = loss.toString();
-      pingTest.completed = true;
+      currentPingTest.lat = pingKeys.avg_resp_time.toString();
+      currentPingTest.loss = loss.toString();
 
       let model = device.model;
       if (
         ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
       ) {
-        if (pingKeys.success_count === 1) pingTest.loss = '0';
-        else pingTest.loss = '100';
+        if (pingKeys.success_count === 1) currentPingTest.loss = '0';
+        else currentPingTest.loss = '100';
       }
-
-      await device.save().catch((err) => {
-        console.log('Error saving ping test to database: ' + err);
-      });
-
-      device.pingtest_results.map((p) => {
-        if (p) {
-          result[p.host] = {
-            lat: p.lat,
-            loss: p.loss,
-            completed: p.completed,
-          };
-        }
-      });
-
-      deviceHandlers.sendPingToTraps(device._id, {results: result});
-
-      startPingDiagnose(device.acs_id);
-      return;
     }
+
+    // Always set completed to true to not break recursion on failure
+    currentPingTest.completed = true;
+
+    await device.save().catch((err) => {
+      console.log('Error saving ping test to database: ' + err);
+    });
+
+    device.pingtest_results.map((p) => {
+      if (p) {
+        result[p.host] = {
+          lat: p.lat,
+          loss: p.loss,
+          completed: p.completed,
+        };
+      }
+    });
+
+    deviceHandlers.sendPingToTraps(device._id, {results: result});
+
+    startPingDiagnose(device.acs_id);
+    return;
   }
 };
 
