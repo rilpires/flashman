@@ -975,6 +975,29 @@ const getHurakallFields = function() {
   return fields;
 };
 
+const getZyxelFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_username = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.UserName';
+  fields.common.web_admin_password = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.Password';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.1.Stats.EthernetBytesSent';
+  // fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  // fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
+  // fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -1061,7 +1084,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       break;
     case 'EMG3524-T10A': // Zyxel
       message = '';
-      fields = getDefaultFields();
+      fields = getZyxelFields();
       break;
     case 'FW323DAC':
       message = '';
