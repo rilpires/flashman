@@ -66,9 +66,8 @@ socket.on('PINGTEST', function(macaddr, data) {
         let hostname = key;
         let hostLatency = value.lat;
         let hostLoss = value.loss;
-        let isCompleted = value.completed;
 
-        if (isCompleted === false) {
+        if (('completed' in value) && value.completed === false) {
           if (hostLatency.includes('---') && hostLoss.includes('---')) {
             resultsList.append(
               $('<li>').addClass('list-group-item d-flex')
