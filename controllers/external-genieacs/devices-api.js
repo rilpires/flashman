@@ -197,13 +197,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '1';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '2';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
@@ -236,6 +236,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
 const convertField = function(masterKey, key, oui, model, value) {
   let result = {value: null, type: getFieldType(masterKey, key, model)};
   switch (masterKey+'-'+key) {
+    case 'wan-rate':
+      if (model == 'EMG3524-T10A') {
+        result.value = parseInt(value) / 1000;
+      } else {
+        result.value = parseInt(value);
+      }
+      break;
     case 'lan-subnet_mask':
       result.value = convertSubnetIntToMask(value); // convert to ip subnet
       break;
