@@ -21,30 +21,33 @@ const request = require('request');
 const tr069Models = {
   basicCPEModel: require('./cpe-models/base-model'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
-  dlinkDir841Model: require('./cpe-models/base-model'),
-  dlinkDir842Model: require('./cpe-models/base-model'),
-  fastwirelessFW323DACModel: require('./cpe-models/base-model'),
-  greatekStavixModel: require('./cpe-models/base-model'),
-  intelbrasWiFiberModel: require('./cpe-models/base-model'),
-  huaweiEG8145V5Model: require('./cpe-models/base-model'),
-  huaweiHG8245Q2Model: require('./cpe-models/base-model'),
-  huaweiWS5200Model: require('./cpe-models/base-model'),
-  huaweiWS7001Model: require('./cpe-models/base-model'),
-  huaweiWS7100Model: require('./cpe-models/base-model'),
-  hurakallST1001FLModel: require('./cpe-models/base-model'),
-  multilaserF660Model: require('./cpe-models/base-model'),
-  multilaserF670LModel: require('./cpe-models/base-model'),
-  multilaserF680Model: require('./cpe-models/base-model'),
-  multilaserH198Model: require('./cpe-models/base-model'),
-  multilaserH199Model: require('./cpe-models/base-model'),
-  nokiaBeaconOneModel: require('./cpe-models/base-model'),
-  nokiaG140WCModel: require('./cpe-models/base-model'),
-  nokiaG2425Model: require('./cpe-models/base-model'),
-  tendaAC10Model: require('./cpe-models/base-model'),
-  tendaHG9Model: require('./cpe-models/base-model'),
-  tplinkArcherC6: require('./cpe-models/base-model'),
-  tplinkEC220G5Model: require('./cpe-models/base-model'),
-  uneeStavixModel: require('./cpe-models/base-model'),
+  dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
+  dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
+  dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
+  fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
+  greatekStavixModel: require('./cpe-models/greatek-stavix'),
+  intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
+  huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
+  huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
+  huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
+  huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
+  huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
+  huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
+  hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
+  multilaserF660Model: require('./cpe-models/multilaser-f660'),
+  multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
+  multilaserF680Model: require('./cpe-models/multilaser-f680'),
+  multilaserH198Model: require('./cpe-models/multilaser-h198'),
+  multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
+  nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
+  nokiaG2425Model: require('./cpe-models/nokia-g2425'),
+  tendaAC10Model: require('./cpe-models/tenda-ac10'),
+  tendaHG9Model: require('./cpe-models/tenda-hg9'),
+  tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
+  tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  uneeStavixModel: require('./cpe-models/unee-stavix'),
 };
 
 const getTR069UpgradeableModels = function() {
@@ -71,6 +74,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   if (modelName === 'DM985-424') {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
+  } else if (modelName === 'DIR-615') {
+    // D-Link DIR-615
+    return {success: true, cpe: tr069Models.dlinkDir615Model};
   } else if (modelName === 'DIR-841') {
     // D-Link DIR-841
     return {success: true, cpe: tr069Models.dlinkDir841Model};
@@ -91,6 +97,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EG8145V5') {
     // Huawei EG8145V5
     return {success: true, cpe: tr069Models.huaweiEG8145V5Model};
+  } else if (modelName === 'EG8145X6') {
+    // Huawei EG8145X6
+    return {success: true, cpe: tr069Models.huaweiEG8145X6Model};
+  } else if (modelName === 'HG8121H') {
+    // Huawei HG8121H
+    return {success: true, cpe: tr069Models.huaweiHG8121HModel};
   } else if (modelName === 'HG8245Q2') {
     // Huawei HG8245Q2
     return {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
