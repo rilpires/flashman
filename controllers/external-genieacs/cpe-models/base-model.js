@@ -52,7 +52,7 @@ basicCPEModel.modelPermissions = function() {
     lan: {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
-      listLANDevices: false, // list connected LAN devices
+      listLANDevices: true, // list connected LAN devices
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
     },
     wan: {
@@ -61,19 +61,20 @@ basicCPEModel.modelPermissions = function() {
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
     },
     wifi: {
-      dualBand: false, // specifies if model has 2 different Wi-Fi radios
+      dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       bandRead: true, // will display current wifi band
       bandWrite: true, // can change current wifi band
-      extended2GhzChannels: false, // allow channels 12 and 13
+      extended2GhzChannels: true, // allow channels 12 and 13
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
     },
     mesh: {
       bssidOffsets2Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
-      bssidOffsets5Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '002'],
+      bssidOffsets5Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
+      objectExists: false, // special flag for mesh xml object
     },
     usesStavixXMLConfig: false, // special flag for stavix-like models
   };

@@ -2,6 +2,20 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = {};
 
+nokiaModel.identifier = 'Nokia G-140W-C';
+
+nokiaModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.firmwareUpgrades = {
+    '3FE46343AFIA57': [],
+    '3FE46343AFIA89': [],
+    '3FE46343AFIA94': [],
+  };
+  return permissions;
+};
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +

@@ -2,6 +2,20 @@ const basicCPEModel = require('./base-model');
 
 let datacomModel = {};
 
+datacomModel.identifier = 'Datacom DM985-424';
+
+datacomModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.portForward = true;
+  permissions.features.ponSignal = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.firmwareUpgrades = {
+    'V3.2.0': [],
+  };
+  return permissions;
+};
+
 datacomModel.getFieldType = basicCPEModel.getFieldType;
 
 datacomModel.convertWifiMode = function(mode) {

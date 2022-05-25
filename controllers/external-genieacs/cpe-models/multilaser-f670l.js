@@ -2,6 +2,36 @@ const basicCPEModel = require('./base-model');
 
 let multilaserModel = {};
 
+multilaserModel.identifier = 'Multilaser/ZTE F670L';
+
+multilaserModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
+  permissions.features.mesh = true;
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.lan.blockLANDevices = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.mesh.bssidOffsets2Ghz = [
+    '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
+  ];
+  permissions.mesh.bssidOffsets5Ghz = [
+    '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
+  ];
+  permissions.mesh.objectExists = true;
+  permissions.firmwareUpgrades = {
+    'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
+    'V1.1.20P1T18': ['V1.1.20P3N3'],
+    'V1.1.20P3N3': ['V1.1.20P3N4D', 'V1.1.20P3N6B'],
+    'V1.1.20P3N4C': ['V1.1.20P3N4D'],
+    'V1.1.20P3N4D': ['V1.1.20P3N6B'],
+    'V1.1.20P3N6B': [],
+  };
+  return permissions;
+};
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

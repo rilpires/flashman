@@ -2,6 +2,18 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = {};
 
+huaweiModel.identifier = 'Huawei WS5200';
+
+huaweiModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.firmwareUpgrades = {
+    '10.0.5.9(C506)': [],
+    '10.0.5.5(C947)': [],
+  };
+  return permissions;
+};
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +

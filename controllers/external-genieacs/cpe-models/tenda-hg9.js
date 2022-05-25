@@ -2,6 +2,22 @@ const basicCPEModel = require('./base-model');
 
 let tendaModel = {};
 
+tendaModel.identifier = 'Tenda HG9';
+
+tendaModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.usesStavixXMLConfig = true;
+  permissions.firmwareUpgrades = {
+    'v1.0.1': [],
+  };
+  return permissions;
+};
+
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+

@@ -2,6 +2,18 @@ const basicCPEModel = require('./base-model');
 
 let dlinkModel = {};
 
+dlinkModel.identifier = 'D-Link DIR-615';
+
+dlinkModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.wifi.dualBand = false;
+  permissions.firmwareUpgrades = {
+    '3.0.7': [],
+  };
+  return permissions;
+};
+
 dlinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');

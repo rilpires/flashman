@@ -2,6 +2,29 @@ const basicCPEModel = require('./base-model');
 
 let multilaserModel = {};
 
+multilaserModel.identifier = 'Multilaser/ZTE H199';
+
+multilaserModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
+  permissions.features.mesh = true;
+  permissions.features.pingTest = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.features.stun = true;
+  permissions.lan.blockLANDevices = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.speedTestLimit = 550;
+  permissions.mesh.objectExists = true;
+  permissions.firmwareUpgrades = {
+    'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
+    'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
+    'V9.1.0P4N1_MUL': [],
+  };
+  return permissions;
+};
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +

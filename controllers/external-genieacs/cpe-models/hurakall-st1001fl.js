@@ -2,6 +2,18 @@ const basicCPEModel = require('./base-model');
 
 let hurakallModel = {};
 
+hurakallModel.identifier = 'Hurakall ST-1001-FL';
+
+hurakallModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.ponSignal = true;
+  permissions.lan.listLANDevices = false;
+  permissions.firmwareUpgrades = {
+    'V1.0.8': [],
+  };
+  return permissions;
+};
+
 hurakallModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +

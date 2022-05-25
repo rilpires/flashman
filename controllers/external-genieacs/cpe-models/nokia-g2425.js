@@ -2,6 +2,23 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = {};
 
+nokiaModel.identifier = 'Nokia G-2425';
+
+nokiaModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.speedTestLimit = 850;
+  permissions.firmwareUpgrades = {
+    '3FE49025IJHK03': [],
+  };
+  return permissions;
+};
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi2.password = fields.wifi2.password.replace(

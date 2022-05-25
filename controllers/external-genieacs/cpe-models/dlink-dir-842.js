@@ -2,6 +2,19 @@ const basicCPEModel = require('./base-model');
 
 let dlinkModel = {};
 
+dlinkModel.identifier = 'D-Link DIR-842';
+
+dlinkModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 180;
+  permissions.firmwareUpgrades = {
+    '3.0.3': [],
+  };
+  return permissions;
+};
+
 dlinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');

@@ -2,6 +2,21 @@ const basicCPEModel = require('./base-model');
 
 let fastwirelessModel = {};
 
+fastwirelessModel.identifier = 'FastWireless FW323DAC';
+
+fastwirelessModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 250;
+  permissions.usesStavixXMLConfig = true;
+  permissions.firmwareUpgrades = {
+    'V2.0.08-191129': [],
+  };
+  return permissions;
+};
+
 fastwirelessModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

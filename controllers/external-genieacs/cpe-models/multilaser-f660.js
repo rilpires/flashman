@@ -2,6 +2,26 @@ const basicCPEModel = require('./base-model');
 
 let multilaserModel = {};
 
+multilaserModel.identifier = 'Multilaser/ZTE F660';
+
+multilaserModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.lan.blockLANDevices = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.dualBand = false;
+  permissions.firmwareUpgrades = {
+    'V7.1.10P1T1': [],
+    'V7.1.10P1T2': ['V7.1.10P1N8'],
+    'V7.1.10P1N8': [],
+  };
+  return permissions;
+};
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

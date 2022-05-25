@@ -2,6 +2,26 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = {};
 
+intelbrasModel.identifier = 'Intelbras WiFiber 121AC';
+
+intelbrasModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.wan.speedTestLimit = 350;
+  permissions.usesStavixXMLConfig = true;
+  permissions.firmwareUpgrades = {
+    'V210414': ['1.0-210917'],
+    '1.0-210917': [],
+  };
+  return permissions;
+};
+
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

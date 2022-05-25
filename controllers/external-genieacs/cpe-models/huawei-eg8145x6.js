@@ -2,6 +2,24 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = {};
 
+huaweiModel.identifier = 'Huawei EG8145X6';
+
+huaweiModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.speedTestLimit = 850;
+  permissions.wifi.axWiFiMode = true;
+  permissions.firmwareUpgrades = {
+    'V5R020C00S060': [],
+  };
+  return permissions;
+};
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

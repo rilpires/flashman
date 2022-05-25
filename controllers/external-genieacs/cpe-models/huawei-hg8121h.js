@@ -2,6 +2,21 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = {};
 
+huaweiModel.identifier = 'Huawei HG8121H';
+
+huaweiModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 150;
+  permissions.wifi.dualBand = false;
+  permissions.firmwareUpgrades = {
+    'V3R018C00S128': [],
+  };
+  return permissions;
+};
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

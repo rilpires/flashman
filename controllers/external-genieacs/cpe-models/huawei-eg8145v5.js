@@ -2,6 +2,32 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = {};
 
+huaweiModel.identifier = 'Huawei EG8145V5';
+
+huaweiModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
+  permissions.features.mesh = true;
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.speedTestLimit = 850;
+  permissions.mesh.bssidOffsets2Ghz = [
+    '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
+  ];
+  permissions.mesh.bssidOffsets5Ghz = [
+    '0x0', '0x0', '0x0', '0x0', '0x0', '0x8',
+  ];
+  permissions.firmwareUpgrades = {
+    'V5R019C10S350': ['V5R020C00S280'],
+    'V5R020C00S280': [],
+  };
+  return permissions;
+};
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

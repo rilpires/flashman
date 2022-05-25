@@ -2,6 +2,22 @@ const basicCPEModel = require('./base-model');
 
 let uneeModel = {};
 
+uneeModel.identifier = 'Unee Stavix G421R';
+
+uneeModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 300;
+  permissions.usesStavixXMLConfig = true;
+  permissions.firmwareUpgrades = {
+    'V1.2.9': [],
+    'V1.3.4': [],
+  };
+  return permissions;
+};
+
 uneeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+

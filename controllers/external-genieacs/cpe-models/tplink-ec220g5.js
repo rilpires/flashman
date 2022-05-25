@@ -2,6 +2,22 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = {};
 
+tplinkModel.identifier = 'TP-Link EC220-G5';
+
+tplinkModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.speedTestLimit = 230;
+  permissions.firmwareUpgrades = {
+    '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+  };
+  return permissions;
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   Object.keys(fields.wifi5).forEach((k)=>{

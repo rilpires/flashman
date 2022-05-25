@@ -2,6 +2,27 @@ const basicCPEModel = require('./base-model');
 
 let greatekModel = {};
 
+greatekModel.identifier = 'Greatek Stavix G421R';
+
+greatekModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.wan.speedTestLimit = 250;
+  permissions.usesStavixXMLConfig = true;
+  permissions.firmwareUpgrades = {
+    'V1.2.3': [],
+    'V2.2.0': [],
+    'V2.2.3': [],
+    'V2.2.7': [],
+  };
+  return permissions;
+};
+
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +

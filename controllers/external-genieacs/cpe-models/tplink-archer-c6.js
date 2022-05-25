@@ -2,6 +2,19 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = {};
 
+tplinkModel.identifier = 'TP-Link Archer C6';
+
+tplinkModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = false;
+  permissions.features.pingTest = true;
+  permissions.wan.dhcpUptime = false;
+  permissions.firmwareUpgrades = {
+    '1.0.14 Build 20211118 rel.43110(5553)': [],
+  };
+  return permissions;
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.mac = 'InternetGatewayDevice.LANDevice.1.'+

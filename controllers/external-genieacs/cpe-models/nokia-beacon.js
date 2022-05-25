@@ -2,6 +2,22 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = {};
 
+nokiaModel.identifier = 'Nokia Beacon One';
+
+nokiaModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.speedTestLimit = 800;
+  permissions.firmwareUpgrades = {
+    '3FE49127HJII42': [],
+  };
+  return permissions;
+};
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi2.password = fields.wifi2.password.replace(

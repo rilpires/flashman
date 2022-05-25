@@ -2,6 +2,21 @@ const basicCPEModel = require('./base-model');
 
 let tendaModel = {};
 
+tendaModel.identifier = 'Tenda AC10';
+
+tendaModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.portForward = true;
+  permissions.features.stun = true;
+  permissions.lan.needEnableConfig = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
+  permissions.firmwareUpgrades = {
+    'V16.03.06.05_multi_BR01': [],
+  };
+  return permissions;
+};
+
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

@@ -2,6 +2,18 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = {};
 
+huaweiModel.identifier = 'Huawei WS7100';
+
+huaweiModel.modelPermissions = function() {
+  let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
+  permissions.wifi.axWiFiMode = true;
+  permissions.firmwareUpgrades = {
+    '10.0.5.29(C947)': [],
+  };
+  return permissions;
+};
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
