@@ -1736,7 +1736,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantMeshV2SecondaryModeUpgrade: false,
     grantMeshV2SecondaryMode: false,
     grantMeshV2HardcodedBssid: cpePermissions.mesh.hardcodedBSSIDOffset,
-    grantMeshVAPObject: cpePermissions.mesh.virtualAPObjectExists,
+    grantMeshVAPObject: cpePermissions.mesh.objectExists,
     grantUpdateAck: false,
     grantWpsFunction: false,
     grantSTUN: cpePermissions.features.stun,
