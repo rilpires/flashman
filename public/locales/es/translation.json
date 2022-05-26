@@ -961,5 +961,7 @@
 	"errorDeletingVlanProfile": "Error al eliminar perfiles de VLAN",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "La eliminación de perfiles no fue posible ya que algunos CPE no actualizaron la configuración de VLAN",
 	"vlanProfile": "Perfil de VLAN",
-	"arrayElementNotFound": "No se encontró ningún elemento para el índice dado"
+	"arrayElementNotFound": "No se encontró ningún elemento para el índice dado",
+	"alert": "alerta",
+	"alertFilterDescription": "Utilice estos filtros para devolver solo los CPE que tienen una alerta."
 }
