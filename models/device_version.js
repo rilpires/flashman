@@ -231,6 +231,41 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
     mesh_ssid_object_exists: true,
   },
+  'GWR-1200AC': {
+    versions_upgrade: {
+      '638.112.100.1383': [],
+    },
+    port_forward_opts: {
+      '638.112.100.1383': portForwardFullSupport,
+    },
+    feature_support: {
+      lan_read: true,
+      lan_edit: false,
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 300,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
   'GONUAC001': {
     vendor: 'Greatek',
     versions_upgrade: {

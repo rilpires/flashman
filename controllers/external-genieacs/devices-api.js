@@ -92,8 +92,9 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g';
       } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
@@ -120,8 +121,9 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr === 'DIR-842' ||
         ouiModelStr === 'DIR-841' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g,n';
       } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
@@ -143,14 +145,15 @@ const convertWifiMode = function(mode, oui, model) {
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
-        ouiModelStr === 'G-140W-UD'
+        ouiModelStr === 'G-140W-UD' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
         return 'an';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'a,n';
-      } else if (ouiModelStr == 'G-2425G-A') {
+      } else if (ouiModelStr === 'G-2425G-A') {
         return 'a,n,ac';
       } else return '11na';
     case '11ac':
@@ -169,8 +172,9 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n,ac';
       } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
@@ -189,7 +193,7 @@ const convertWifiMode = function(mode, oui, model) {
 };
 
 const convertWifiBand = function(band, model, is5ghz=false) {
-  if ((model == 'G-2425G-A') && !is5ghz) {
+  if ((model === 'G-2425G-A') && !is5ghz) {
     return '20MHz';
   }
   switch (band) {
@@ -221,7 +225,7 @@ const convertWifiBand = function(band, model, is5ghz=false) {
         return 'Auto';
       } else if (model === 'AC10') {
         return '2';
-      } else if (model == 'G-2425G-A') {
+      } else if (model === 'G-2425G-A') {
         return '80MHz';
       }
       if (model === 'HG8121H') return '0';
@@ -717,6 +721,54 @@ const getNokiaG2425Fields = function(model) {
   return fields;
 };
 
+const getGreatekFields = function(model) {
+  let fields = getDefaultFields();
+  for (let [key, value] of Object.entries(fields.wifi2)) {
+    fields.wifi2[key] =
+      value.replace(/WLANConfiguration.1/g, 'WLANConfiguration.2');
+  }
+  for (let [key, value] of Object.entries(fields.wifi5)) {
+    fields.wifi5[key] =
+      value.replace(/WLANConfiguration.5/g, 'WLANConfiguration.1');
+  }
+  for (let [key, value] of Object.entries(fields.mesh2)) {
+    fields.mesh2[key] =
+      value.replace(/WLANConfiguration.2/g, 'WLANConfiguration.4');
+  }
+  for (let [key, value] of Object.entries(fields.mesh5)) {
+    fields.mesh5[key] =
+      value.replace(/WLANConfiguration.6/g, 'WLANConfiguration.3');
+  }
+  fields.wifi2.password = fields.wifi2.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.wifi5.password = fields.wifi5.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.mesh2.password = fields.mesh2.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.mesh5.password = fields.mesh5.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  // This model does not have the WiFi band field
+  delete fields.wifi2.band;
+  delete fields.wifi5.band;
+  delete fields.mesh2.band;
+  delete fields.mesh5.band;
+  // This model can not do full load speedtest
+  delete fields.diagnostics.speedtest.num_of_conn;
+  delete fields.diagnostics.speedtest.down_transports;
+  delete fields.diagnostics.speedtest.full_load_bytes_rec;
+  delete fields.diagnostics.speedtest.full_load_period;
+  // Port forwarding fields
+  fields.port_mapping_fields.external_port_end =
+    ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.port_mapping_values.protocol =
+    ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
+  return fields;
+};
+
 const getStavixFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
@@ -1077,6 +1129,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
           fields = getTPLinkFields(modelName);
+          break;
+        case 'GWR-1200AC':
+          message = '';
+          fields = getGreatekFields(modelName);
           break;
         default:
           return unknownModel;
