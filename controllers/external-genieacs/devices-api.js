@@ -50,12 +50,11 @@ const getFieldType = function(masterKey, key, model) {
     case 'wifi5-band':
     case 'mesh2-band':
     case 'mesh5-band':
-      if(model === 'EG8145X6' || model === 'HG8121H') {
+      if (model === 'EG8145X6' || model === 'HG8121H') {
         return 'xsd:unsignedInt';
       } else {
         return 'xsd:string';
       }
-    break;
     default:
       return 'xsd:string';
   }
@@ -197,13 +196,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '1';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '2';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
@@ -703,7 +702,7 @@ const getNokiaFields = function(model) {
       fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
       break;
     default:
-      break
+      break;
   }
   return fields;
 };
@@ -716,7 +715,7 @@ const getNokiaG2425Fields = function(model) {
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   return fields;
-}
+};
 
 const getStavixFields = function(model) {
   let fields = getDefaultFields();

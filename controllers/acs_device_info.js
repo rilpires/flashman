@@ -383,9 +383,9 @@ const createRegistry = async function(req, permissions) {
     wifi_channel: wifi2Channel,
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
-    wifi_band: (data.wifi2.band) ?
-      convertWifiBand(model, data.wifi2.band.value, data.wifi2.mode.value, false) :
-       undefined,
+    wifi_band: (data.wifi2.band) ? convertWifiBand(
+      model, data.wifi2.band.value, data.wifi2.mode.value, false,
+    ) : undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
@@ -394,9 +394,9 @@ const createRegistry = async function(req, permissions) {
     wifi_channel_5ghz: wifi5Channel,
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
-    wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(model, data.wifi5.band.value, data.wifi5.mode.value, true) :
-       undefined,
+    wifi_band_5ghz: (data.wifi5.band) ? convertWifiBand(
+      model, data.wifi5.band.value, data.wifi5.mode.value, true,
+    ) : undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
