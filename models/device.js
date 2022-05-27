@@ -354,6 +354,10 @@ deviceSchema.pre('save', function(callback) {
               changedAttrs[attr] = device[attr];
             }
           });
+          // Nothing to send - don't call trap
+          if (Object.keys(changedAttrs).length === 0) {
+            return Promise.resolve();
+          }
           requestOptions.url = callbackUrl;
           requestOptions.method = 'PUT';
           requestOptions.json = {
