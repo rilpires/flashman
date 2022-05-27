@@ -59,7 +59,12 @@ socket.on('PINGTEST', function(macaddr, data) {
     let textarea = $('#ping-test-results');
     if (id == macaddr) {
       textarea.hide('fast').empty();
-      $('.btn-start-ping-test').prop('disabled', false);
+      let allDone = Object.keys(data.results).every(
+        (k)=>(!('completed' in data.results[k]) || data.results[k].completed),
+      );
+      if (allDone) {
+        $('.btn-start-ping-test').prop('disabled', false);
+      }
       let resultsList = $('<ul>').addClass('list-group list-group-flush');
 
       $.each(data.results, function(key, value) {
