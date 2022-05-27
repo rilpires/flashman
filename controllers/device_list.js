@@ -1189,6 +1189,14 @@ deviceListController.sendMqttMsg = function(req, res) {
             );
           }
           if (device && device.use_tr069) {
+            device.pingtest_results = [];
+            if (Object.keys(device.ping_hosts).length > 0) {
+              device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
+
+              await device.save().catch((err) => {
+                console.log('Error saving device ping test: ' + err);
+              });
+            }
             acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
           } else if (device) {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
