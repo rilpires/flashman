@@ -1681,16 +1681,22 @@ acsDeviceInfoController.updateInfo = async function(
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
   if (changes.wifi2 && changes.wifi2.ssid) {
-    changes.wifi2.password = device.wifi_password;
+    if (changes.wifi2.password) {
+      changes.wifi2.password = device.wifi_password;
+    }
   }
   if (changes.wifi5 && changes.wifi5.ssid) {
-    changes.wifi5.password = device.wifi_password_5ghz;
+    if (changes.wifi5.password) {
+      changes.wifi5.password = device.wifi_password_5ghz;
+    }
   }
   // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
   if (changes.wan && changes.wan.pppoe_user) {
-    changes.wan.pppoe_pass = device.pppoe_password;
+    if (changes.wan.pppoe_pass) {
+      changes.wan.pppoe_pass = device.pppoe_password;
+    }
   }
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
@@ -1808,6 +1814,7 @@ acsDeviceInfoController.updateInfo = async function(
       if (!result || !result.success || !result.executed) {
         return;
       }
+      console.log(result);
       return taskCallback(acsID);
     } else {
       // Simply call addTask and free up this context
