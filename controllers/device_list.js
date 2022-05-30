@@ -8,6 +8,7 @@ const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
 const DeviceVersion = require('../models/device_version');
+const Notifications = require('../models/notification');
 const Config = require('../models/config');
 const Role = require('../models/role');
 const firmware = require('./firmware');
@@ -405,6 +406,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
     'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
     'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
+    'alerta': new RegExp(`^${t('alerta')}$`), // /^alerta/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
@@ -441,6 +443,12 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
           _id: {$in: mqttClients},
         };
         tr069 = {last_contact: {$gte: tr069Times.recovery}};
+      } else if (statusTags['alerta'].test(tag)) {
+        const targets = await Notifications.distinct('target').exec();
+        flashbox = {
+          _id: {$in: targets},
+        };
+        tr069 = {_id: {$in: targets}};
       } else if (statusTags['recovery'].test(tag)) {
         flashbox = {
           _id: {$nin: mqttClients},
@@ -1189,6 +1197,14 @@ deviceListController.sendMqttMsg = function(req, res) {
             );
           }
           if (device && device.use_tr069) {
+            device.pingtest_results = [];
+            if (Object.keys(device.ping_hosts).length > 0) {
+              device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
+
+              await device.save().catch((err) => {
+                console.log('Error saving device ping test: ' + err);
+              });
+            }
             acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
           } else if (device) {
             mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
