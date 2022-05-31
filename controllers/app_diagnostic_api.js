@@ -629,6 +629,31 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         if (req.body.wifi5Pass) {
           device.wifi_password_5ghz = req.body.wifi5Pass;
         }
+        // Saving IPv6 and VoIP info sent from app
+        if ('voipEnabled' in req.body) {
+          let voipEnabled = req.body.voipEnabled;
+          if (typeof voipEnabled === 'boolean') {
+            device.custom_tr069_fields.voip_enabled = voipEnabled;
+          } else {
+            device.custom_tr069_fields.voip_enabled = false;
+          }
+        }
+        if ('ipv6Enabled' in req.body) {
+          let ipv6Enabled = req.body.ipv6Enabled;
+          if (typeof ipv6Enabled === 'boolean') {
+            device.custom_tr069_fields.ipv6_enabled = ipv6Enabled;
+          } else {
+            device.custom_tr069_fields.ipv6_enabled = false;
+          }
+        }
+        if ('ipv6Mode' in req.body) {
+          let ipv6Mode = req.body.ipv6Mode;
+          if (typeof ipv6Mode === 'string') {
+            device.custom_tr069_fields.ipv6_mode = ipv6Mode;
+          } else {
+            device.custom_tr069_fields.ipv6_mode = '';
+          }
+        }
         // We need to store WiFiber's OMCI Mode for OLT connection
         if (req.body.intelbrasOmciMode) {
           let omciMode = req.body.intelbrasOmciMode;
