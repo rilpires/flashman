@@ -958,5 +958,7 @@
 	"errorDeletingVlanProfile": "Error Deleting VLAN Profiles",
 	"cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration": "Deletion of profiles was not possible as some CPEs did not update the VLAN configuration.",
 	"vlanProfile": "VLAN Profile",
-	"arrayElementNotFound": "No element found for the given index"
+	"arrayElementNotFound": "No element found for the given index",
+	"alert": "alert",
+	"alertFilterDescription": "Use this filters to return only CPEs that have an alert."
 }
