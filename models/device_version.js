@@ -271,14 +271,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V1.2.3': [],
     },
-    port_forward_opts: {
-      'V1.2.3': portForwardFullSupport,
-    },
     feature_support: {
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
-      port_forward: true,
+      port_forward: false,
       pon_signal: true,
       upnp: false,
       wps: false,

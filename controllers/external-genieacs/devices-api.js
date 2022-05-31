@@ -524,6 +524,11 @@ const getHuaweiFields = function(model, modelName) {
     if (model === 'HG8121H' || model == 'EG8145X6') {
       fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
       fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
+      // This model can not do full load speedtest
+      delete fields.diagnostics.speedtest.num_of_conn;
+      delete fields.diagnostics.speedtest.down_transports;
+      delete fields.diagnostics.speedtest.full_load_bytes_rec;
+      delete fields.diagnostics.speedtest.full_load_period;
     }
   } else if (model === 'Huawei') {
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
