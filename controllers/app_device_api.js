@@ -585,6 +585,19 @@ const makeDeviceBackupData = function(device, config, certFile) {
   if (deviceCustomFields && deviceCustomFields.intelbras_omci_mode) {
     customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
   }
+  if (
+    deviceCustomFields && typeof deviceCustomFields.voip_enabled === 'boolean'
+  ) {
+    customFields.voipEnabled = deviceCustomFields.voip_enabled;
+  }
+  if (
+    deviceCustomFields &&
+    typeof deviceCustomFields.ipv6_enabled === 'boolean' &&
+    typeof deviceCustomFields.ipv6_mode === 'string'
+  ) {
+    customFields.ipv6Enabled = deviceCustomFields.ipv6_enabled;
+    customFields.ipv6Mode = deviceCustomFields.ipv6_mode;
+  }
   return {
     timestamp: formattedNow,
     model: device.model,
