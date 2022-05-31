@@ -594,7 +594,6 @@ const makeDeviceBackupData = function(device, config, certFile) {
     customFields.ipv6Enabled = deviceCustomFields.ipv6_enabled;
     customFields.ipv6Mode = deviceCustomFields.ipv6_mode;
   }
-
   return {
     timestamp: formattedNow,
     model: device.model,
