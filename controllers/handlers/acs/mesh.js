@@ -111,7 +111,7 @@ const fetchMeshBSSID = function(device, meshMode) {
             return {success: false};
           }
         }
-        resolve({sucess: true, mesh2: bssid2, mesh5: bssid5});
+        resolve({success: true, mesh2: bssid2, mesh5: bssid5});
       });
     });
     req.end();
@@ -134,7 +134,7 @@ acsMeshDeviceHandler.createVirtualAPObjects = async function(device) {
     if (!ret || !ret.success || !ret.executed) {
       throw new Error('task error');
     }
-    if (ret.finished) {
+    if (ret.executed) {
       meshObjsStatus = await checkMeshObjsCreated(device);
       if (!meshObjsStatus.success) {
         throw new Error('invalid data');
@@ -174,7 +174,7 @@ acsMeshDeviceHandler.createVirtualAPObjects = async function(device) {
     } catch (e) {
       const msg = `[!] -> ${e.message} in ${acsID}`;
       console.log(msg);
-      return {sucess: false, msg: msg};
+      return {success: false, msg: msg};
     }
   }
   // Virtual APs objects haven't been created yet - do so now

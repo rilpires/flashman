@@ -409,8 +409,14 @@ deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
 };
 
 deviceHandlers.sendPingToTraps = function(id, results) {
-  sio.anlixSendPingTestNotifications(id, results);
   // No await needed
+  sio.anlixSendPingTestNotifications(id, results);
+  // Only send if all tests are completed - absence of completed key is legacy
+  // case - assume means true
+  let resultsObj = results['results'];
+  if (Object.keys(resultsObj).some((k)=>(resultsObj[k].completed === false))) {
+    return;
+  }
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
   Config.findOne(query, projection, function(err, matchedConfig) {
