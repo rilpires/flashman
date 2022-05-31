@@ -278,7 +278,7 @@ let deviceSchema = new Schema({
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
     voip_enabled: {type: Boolean, default: false},
     ipv6_enabled: {type: Boolean, default: false},
-    ipv6_mode: {type: String, default: null},
+    ipv6_mode: {type: String, default: ''},
   },
 });
 
