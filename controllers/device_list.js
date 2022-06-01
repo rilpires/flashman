@@ -158,6 +158,34 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
+const initiatePingCommand = function(device){
+  if (device && device.use_tr069) {
+    device.pingtest_results = [];
+
+    if ( device.temp_ping_hosts ){
+      device.temp_ping_hosts = device.temp_ping_hosts.filter((obj)=>(
+        obj.valid_until < new Date()
+      ))
+      device.pingtest_results = device.temp_ping_hosts.map((obj)=>({
+        host: obj.host
+      }))
+    }
+
+    if ( device.pingtest_results.length == 0 ) {
+      device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
+    }
+
+    if( device.pingtest_results.length > 0 ){
+      await device.save().catch((err) => {
+        console.log('Error saving device after ping command: ' + err);
+      });
+    }
+    acsDiagnosticsHandler.firePingDiagnose(device.mac.toUpperCase());
+  } else if (device) {
+    mqtt.anlixMessageRouterPingTest(device.mac.toUpperCase());
+  }
+}
+
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -1196,33 +1224,7 @@ deviceListController.sendMqttMsg = function(req, res) {
               req.sessionID, req.params.id.toUpperCase(),
             );
           }
-          if (device && device.use_tr069) {
-            device.pingtest_results = [];
-
-            if ( device.temp_ping_hosts ){
-              device.temp_ping_hosts = device.temp_ping_hosts.filter((obj)=>(
-                obj.valid_until < new Date()
-              ))
-              device.pingtest_results = device.temp_ping_hosts.map((obj)=>({
-                host: obj.host
-              }))
-            }
-
-            if ( device.pingtest_results.length == 0 ) {
-              device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
-            }
-
-            if( device.pingtest_results.length > 0 ){
-              await device.save().catch((err) => {
-                console.log('Error saving device after ping command: ' + err);
-              });
-            }
-            
-            acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
-
-          } else if (device) {
-            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
-          }
+          initiatePingCommand(device)
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1303,6 +1305,45 @@ deviceListController.sendMqttMsg = function(req, res) {
     return res.status(200).json({success: true});
   });
 };
+
+deviceListController.sendCustomPing = function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
+    if (err) {
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
+    }
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+    }
+   
+    let fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
+    let hostFilter = (host)=>host.match(fqdnLengthRegex)
+    let approvedTempHosts = [];
+    approvedTempHosts = content.hosts.map((host)=>host.toLowerCase())
+    approvedTempHosts = approvedTempHosts.filter(hostFilter)
+    device.temp_ping_hosts = approvedTempHosts.map((host)=>({
+      host: host,
+      valid_until: new Date() + 60000
+    }))
+
+    try { await device.save() }
+    catch {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeSaveError', {errorline: __line}),
+      });
+    } 
+    initiatePingCommand(device)
+
+    return res.status(200).json({success: true});
+  })
+}
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -2848,18 +2889,13 @@ deviceListController.setPingHostsList = function(req, res) {
     if (util.isJsonString(req.body.content)) {
       let content = JSON.parse(req.body.content);
       let approvedHosts = [];
-      let approvedTempHosts = [];
       let fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
       let hostFilter = (host)=>host.match(fqdnLengthRegex)
 
       approvedHosts = content.hosts.map((host)=>host.toLowerCase())
       approvedHosts = approvedHosts.filter(hostFilter)
       
-      approvedTempHosts = content.temp_hosts.map((host)=>host.toLowerCase())
-      approvedTempHosts = approvedTempHosts.filter(hostFilter)
-      
       matchedDevice.ping_hosts = approvedHosts;
-      matchedDevice.temp_ping_hosts = approvedTempHosts;
       
       matchedDevice.save(function(err) {
         if (err) {
@@ -2874,6 +2910,7 @@ deviceListController.setPingHostsList = function(req, res) {
           temp_hosts: approvedTempHosts
         });
       });
+
     } else {
       return res.status(200).json({
         success: false,
