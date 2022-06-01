@@ -228,7 +228,18 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // Store pinttest results
+  // For any of the following temp_[...]_hosts:
+  // If there is any valid host, it should be used instead the usual host.
+  // After expiring OR being retrieved once, it should be discarded.
+  temp_ping_hosts: [{
+    host: {type: String, default: 'www.netflix.com'},
+    valid_until : Date
+  }],
+  temp_speedtest_host: {
+    url: {type: String, default: 'www.netflix.com'},
+    valid_until : Date
+  },
+  // Store pingtest results
   pingtest_results: [{
     host: String,
     lat: {type: String, default: '---'},

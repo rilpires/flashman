@@ -250,6 +250,13 @@ const startPingDiagnose = async function(acsID) {
     return {success: false, message: t('cpeFindError', {errorline: __line})};
   }
 
+  let pingHostUrl = getNextPingTest(device);
+  if (!pingHostUrl || pingHostUrl === '') {
+    console.log('Ping results for device ' + acsID
+      + ' completed successfully.');
+    return;
+  }
+
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
@@ -257,14 +264,8 @@ const startPingDiagnose = async function(acsID) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
-  let pingHostUrl = getNextPingTest(device);
   let timeout = 1000;
 
-  if (!pingHostUrl || pingHostUrl === '') {
-    console.log('Ping results for device ' + acsID
-      + ' completed successfully.');
-    return;
-  }
 
   let task = {
     name: 'setParameterValues',
