@@ -158,7 +158,7 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-const initiatePingCommand = function(device){
+const initiatePingCommand = async function(device){
   if (device && device.use_tr069) {
     device.pingtest_results = [];
 
