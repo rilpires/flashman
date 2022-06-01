@@ -1306,7 +1306,7 @@ deviceListController.sendMqttMsg = function(req, res) {
   });
 };
 
-deviceListController.sendCustomPing = function(req, res) {
+deviceListController.sendCustomPing = async function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, device) {
     if (err) {
