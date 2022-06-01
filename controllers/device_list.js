@@ -1322,10 +1322,24 @@ deviceListController.sendCustomPing = async function(req, res) {
                                     {errorline: __line})});
     }
    
+    let inputHosts = [];
+
+    if( req.body.content && 
+      req.body.content.hosts && 
+      Array.isArray(req.body.content.hosts) 
+    ){
+      inputHosts = req.body.content.hosts.filter((h)=>typeof(h)=='string')
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldInvalid', {errorline: __line}),
+      });
+    }
+
     let fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
     let hostFilter = (host)=>host.match(fqdnLengthRegex)
     let approvedTempHosts = [];
-    approvedTempHosts = content.hosts.map((host)=>host.toLowerCase())
+    approvedTempHosts = inputHosts.map((host)=>host.toLowerCase())
     approvedTempHosts = approvedTempHosts.filter(hostFilter)
     device.temp_ping_hosts = approvedTempHosts.map((host)=>({
       host: host,
