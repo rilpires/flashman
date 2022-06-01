@@ -2869,9 +2869,7 @@ deviceListController.getPingHostsList = function(req, res) {
       device.temp_ping_hosts = device.temp_ping_hosts.filter((obj)=>(
         obj.valid_until < new Date()
       ))
-      responseHosts = device.temp_ping_hosts.map((obj)=>({
-        host: obj.host
-      }))
+      responseHosts = device.temp_ping_hosts.map((obj)=>obj.host)
       responseHosts = Array.from(new Set(responseHosts))
     }
     if( responseHosts.length == 0 ){
