@@ -240,7 +240,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
         i--) {
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
+        ret = await TasksAPI.addTask(
+          acsID, changeEntriesSizeTask, null, 0, false);
         if (!ret || !ret.success || !ret.executed) {
           return;
         }
@@ -253,7 +254,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
+        ret = await TasksAPI.addTask(
+          acsID, changeEntriesSizeTask, null, 0, false);
         if (!ret || !ret.success || !ret.executed) {
           return;
         }
