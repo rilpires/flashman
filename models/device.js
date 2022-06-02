@@ -233,11 +233,9 @@ let deviceSchema = new Schema({
   // After expiring OR being retrieved once, it should be discarded.
   temp_ping_hosts: [{
     host: {type: String, default: 'www.netflix.com'},
-    valid_until : Date
   }],
   temp_speedtest_host: {
     url: {type: String, default: 'www.netflix.com'},
-    valid_until : Date
   },
   // Store pingtest results
   pingtest_results: [{

@@ -163,12 +163,10 @@ const initiatePingCommand = async function(device){
     device.pingtest_results = [];
 
     if ( device.temp_ping_hosts ){
-      device.temp_ping_hosts = device.temp_ping_hosts.filter((obj)=>(
-        obj.valid_until < new Date()
-      ))
       device.pingtest_results = device.temp_ping_hosts.map((obj)=>({
         host: obj.host
       }))
+      device.temp_ping_hosts = []
     }
 
     if ( device.pingtest_results.length == 0 ) {
@@ -180,9 +178,9 @@ const initiatePingCommand = async function(device){
         console.log('Error saving device after ping command: ' + err);
       });
     }
-    acsDiagnosticsHandler.firePingDiagnose(device.mac.toUpperCase());
+    acsDiagnosticsHandler.firePingDiagnose(device._id.toUpperCase());
   } else if (device) {
-    mqtt.anlixMessageRouterPingTest(device.mac.toUpperCase());
+    mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
   }
 }
 
@@ -1343,16 +1341,15 @@ deviceListController.sendCustomPing = async function(req, res) {
     approvedTempHosts = approvedTempHosts.filter(hostFilter)
     device.temp_ping_hosts = approvedTempHosts.map((host)=>({
       host: host,
-      valid_until: new Date() + 60000
     }))
 
-    try { await device.save() }
-    catch {
+    await device.save().catch( (err)=>{
       return res.status(200).json({
         success: false,
         message: t('cpeSaveError', {errorline: __line}),
       });
-    } 
+    })
+
     initiatePingCommand(device)
 
     return res.status(200).json({success: true});
@@ -2847,7 +2844,7 @@ deviceListController.getPortForward = function(req, res) {
   });
 };
 
-deviceListController.getPingHostsList = function(req, res) {
+deviceListController.getPingHostsList = async function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
     if (err) {
@@ -2865,14 +2862,21 @@ deviceListController.getPingHostsList = function(req, res) {
                                     {errorline: __line})});
     }
     let responseHosts = [];
-    if ( device.temp_ping_hosts ){
-      device.temp_ping_hosts = device.temp_ping_hosts.filter((obj)=>(
-        obj.valid_until < new Date()
-      ))
+    if ( Array.isArray(device.temp_ping_hosts) &&
+    device.temp_ping_hosts.length > 0 ){
       responseHosts = device.temp_ping_hosts.map((obj)=>obj.host)
       responseHosts = Array.from(new Set(responseHosts))
-    }
-    if( responseHosts.length == 0 ){
+      device.temp_ping_hosts = []
+      
+      await device.save().catch( (err)=>{
+        return res.status(200).json({
+          success: false,
+          message: t('cpeSaveError', {errorline: __line}),
+        });
+      })
+
+
+    } else if( responseHosts.length == 0 ){
       responseHosts = device.ping_hosts
     }
     return res.status(200).json({
