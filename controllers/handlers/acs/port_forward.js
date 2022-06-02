@@ -231,18 +231,27 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> DC in '+acsID);
     return;
   }
+  let currentLength = device.port_mapping.length;
   // change array size via addObject or deleteObject
+  // TODO: isolar o fluxo do requestConn somente pro GWR-1200AC
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
-    for (i = (device.port_mapping.length + rulesDiffLength);
-        i > device.port_mapping.length;
-        i--) {
-      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
+    for (i = 0; i < -rulesDiffLength; i++) {
+      let index = i + currentLength + 1;
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + index;
       try {
+        // TODO: check nesse fluxo aqui, não está entrando quando precisa
+        // deletar todas as regras
+        let isLastIter = (i+1 == -rulesDiffLength);
+        let requestConn = false;
+        if (currentLength == 0 && isLastIter) {
+          requestConn = true;
+        }
         ret = await TasksAPI.addTask(
-          acsID, changeEntriesSizeTask, null, 0, false);
-        if (!ret || !ret.success || !ret.executed) {
+          acsID, changeEntriesSizeTask, null, 0, requestConn);
+        console.log('Delete Task ->', ret);
+        if (!ret || !ret.success) {
           return;
         }
       } catch (e) {
@@ -256,7 +265,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
       try {
         ret = await TasksAPI.addTask(
           acsID, changeEntriesSizeTask, null, 0, false);
-        if (!ret || !ret.success || !ret.executed) {
+        console.log('Add Task ->', ret);
+        if (!ret || !ret.success) {
           return;
         }
       } catch (e) {
@@ -266,7 +276,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> A('+rulesDiffLength+') in '+acsID);
   }
   // set entries values for respective array in the device
-  for (i = 0; i < device.port_mapping.length; i++) {
+  for (i = 0; i < currentLength; i++) {
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
@@ -287,7 +297,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   }
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
-    console.log('[#] -> U in '+acsID);
+    console.log('[#] -> U('+updateTasks.parameterValues.length+') in '+acsID);
     await TasksAPI.addTask(acsID, updateTasks);
   }
 };

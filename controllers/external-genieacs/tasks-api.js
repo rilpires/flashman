@@ -95,7 +95,10 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
-    if (['session_terminated', 'timeout', 'cwmp.9002'].includes(doc.code)) {
+    if ([
+      'session_terminated', 'timeout',
+      'cwmp.9002', 'cwmp.9003',
+    ].includes(doc.code)) {
       // Ignore session timeout and session terminated errors - no benefit
       // reporting them and clutter flashman
       return;
@@ -290,8 +293,8 @@ const postTask = function(deviceid, task, legacyTimeout, requestConn) {
   // console.log("Posting a task.")
   let encodedID = encodeURIComponent(deviceid);
   let timeout = (legacyTimeout > 0) ? legacyTimeout.toString() : '7500';
-  let path = '/devices/'+encodedID+'/tasks?timeout='+timeout+
-             (requestConn) ? +'&connection_request' : '';
+  let path = '/devices/'+encodedID+'/tasks?timeout='+timeout;
+  if (requestConn) path += '&connection_request';
   return genie.request({
     method: 'POST', hostname: GENIEHOST, port: GENIEPORT,
     path: path,

@@ -236,7 +236,7 @@ const tr069Devices = {
       '638.112.100.1383': [],
     },
     port_forward_opts: {
-      '638.112.100.1383': portForwardFullSupport,
+      '638.112.100.1383': portForwardNoRanges,
     },
     feature_support: {
       lan_read: true,
@@ -275,7 +275,7 @@ const tr069Devices = {
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
-      port_forward: false,
+      port_forward: true,
       pon_signal: true,
       upnp: false,
       wps: false,
