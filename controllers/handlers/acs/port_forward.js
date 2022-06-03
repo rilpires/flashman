@@ -232,25 +232,24 @@ acsPortForwardHandler.changePortForwardRules = async function(
     return;
   }
   let currentLength = device.port_mapping.length;
-  // change array size via addObject or deleteObject
-  // TODO: isolar o fluxo do requestConn somente pro GWR-1200AC
+  // The flag needsToQueueTasks marks the models that need to queue the tasks of
+  // addObject and deleteObject
+  let needsToQueueTasks = (['GWR-1200AC'].includes(device.model));
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
-    for (i = 0; i < -rulesDiffLength; i++) {
+    for (i = 0; i < rulesDiffLength; i++) {
       let index = i + currentLength + 1;
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + index;
       try {
-        // TODO: check nesse fluxo aqui, não está entrando quando precisa
-        // deletar todas as regras
-        let isLastIter = (i+1 == -rulesDiffLength);
-        let requestConn = false;
-        if (currentLength == 0 && isLastIter) {
-          requestConn = true;
-        }
+        // When we're in the last iteration, and we're not going to do a
+        // setParameterValues task, so we need to request the connection
+        // on the last deleteObject task
+        let isLastIter = (i+1 == rulesDiffLength); // Last iteration flag
+        let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
+        let requestConn = ((!needsToQueueTasks) || (noRuleToAdd && isLastIter));
         ret = await TasksAPI.addTask(
           acsID, changeEntriesSizeTask, null, 0, requestConn);
-        console.log('Delete Task ->', ret);
         if (!ret || !ret.success) {
           return;
         }
@@ -263,8 +262,9 @@ acsPortForwardHandler.changePortForwardRules = async function(
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
+        let requestConn = (!needsToQueueTasks);
         ret = await TasksAPI.addTask(
-          acsID, changeEntriesSizeTask, null, 0, false);
+          acsID, changeEntriesSizeTask, null, 0, requestConn);
         console.log('Add Task ->', ret);
         if (!ret || !ret.success) {
           return;
