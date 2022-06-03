@@ -14,18 +14,26 @@ COPY /routes /app/routes
 COPY /views /app/views
 
 # Run as root
-RUN apk update ; \
-	apk add netcat-openbsd wget busybox-suid && rm -rf /var/cache/apk/* ; \
-	mkdir -p /app/public/firmwares ; \
-	chmod +x /app/init.sh ; \
-	chmod +x /app/wait-for-courier.sh ; \
-	npm install npm@8 -g ; \
-	npm --version ; \
-	npm config set fetch-retry-mintimeout 20000 ; \
-	npm config set fetch-retry-maxtimeout 120000 ; \
-	cp /app/wait-for-courier.sh /etc/periodic/daily ; \
-	npm install ; \
-	npm run build
+RUN rm -rf /tmp/* \
+    /usr/includes/* \
+    /usr/share/man/* \
+    /usr/src/* \
+    /var/cache/apk/* \
+    /var/tmp/* \
+    /opt/oracle/instantclient* \
+    /var/lib/apt/lists/* \
+    apk update ; \
+    apk --no-cache add netcat-openbsd wget busybox-suid && rm -rf /var/cache/apk/* ; \
+    mkdir -p /app/public/firmwares ; \
+    chmod +x /app/init.sh ; \
+    chmod +x /app/wait-for-courier.sh ; \
+    npm install npm@8 -g ; \
+    npm --version ; \
+    npm config set fetch-retry-mintimeout 20000 ; \
+    npm config set fetch-retry-maxtimeout 120000 ; \
+    cp /app/wait-for-courier.sh /etc/periodic/daily ; \
+    npm install ; \
+    npm run build
 
 EXPOSE 8000
 EXPOSE 1883
