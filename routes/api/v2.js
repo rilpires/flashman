@@ -70,9 +70,9 @@ router.route('/device/pingdiagnostic/:id').put(
   deviceListController.sendCustomPing);
 
 // Send a customized speedtest command
-//router.route('/device/speeddiagnostic/:id').put(
-//  authController.ensurePermission('grantAPIAccess'),
-//  deviceListController.sendCustomSpeedTest);
+router.route('/device/speeddiagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomSpeedTest);
 
 // Set/Get Port forward
 router.route('/device/portforward/:id').get(

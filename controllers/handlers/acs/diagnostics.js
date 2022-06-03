@@ -11,6 +11,7 @@ const sio = require('../../../sio');
 const http = require('http');
 const debug = require('debug')('ACS_DIAGNOSTICS');
 const t = require('../../language').i18next.t;
+const request = require('request-promise-native');
 
 let acsDiagnosticsHandler = {};
 
@@ -44,6 +45,11 @@ const getSpeedtestFile = async function(device) {
     console.error('Error creating entry. Config does not exists.');
     return '';
   }
+
+  if (device.temp_command_trap && device.temp_command_trap.speedtest_url ) {
+    return device.temp_command_trap.speedtest_url;
+  }
+
   let stage = device.current_speedtest.stage;
   let band = device.current_speedtest.band_estimative;
   let url = 'http://' + matchedConfig.measureServerIP + ':' +
@@ -113,6 +119,12 @@ const calculatePingDiagnostic = async function(
       }
     }
 
+    let currentCommandTrap = undefined;
+    if (device.temp_command_trap && device.temp_command_trap.ping_hosts) {
+      currentCommandTrap = device.temp_command_trap;
+      device.temp_command_trap = undefined;
+    }
+
     // Always set completed to true to not break recursion on failure
     currentPingTest.completed = true;
 
@@ -120,6 +132,7 @@ const calculatePingDiagnostic = async function(
       console.log('Error saving ping test to database: ' + err);
     });
 
+    // Filling the result object
     device.pingtest_results.map((p) => {
       if (p) {
         result[p.host] = {
@@ -130,7 +143,33 @@ const calculatePingDiagnostic = async function(
       }
     });
 
-    deviceHandlers.sendPingToTraps(device._id, {results: result});
+    // If ping command was sent from a customized api call,
+    // we don't want to propagate it to the generic webhook
+    if (currentCommandTrap && currentCommandTrap.webhook) {
+      let requestOptions = {};
+      let webhook = currentCommandTrap.webhook;
+      requestOptions.url = webhook.url;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': device._id,
+        'type': 'device',
+        'ping_results': result,
+      };
+      if (webhook.user && webhook.secret) {
+        requestOptions.auth = {
+          user: webhook.user,
+          pass: webhook.secret,
+        };
+      }
+      // No wait!
+      request(requestOptions);
+    } else {
+      // Generic ping test
+      await device.save().catch((err) => {
+        console.log('Error saving ping test to database: ' + err);
+      });
+      deviceHandlers.sendPingToTraps(device._id, {results: result});
+    }
 
     startPingDiagnose(device.acs_id);
     return;

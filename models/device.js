@@ -228,20 +228,19 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // For any of the following temp_[...]_hosts:
-  // If there is any valid host, it should be used instead the usual host.
-  // After expiring OR being retrieved once, it should be discarded.
-  temp_ping_hosts: [{
-    host: {type: String, default: 'www.netflix.com'},
-  }],
-  temp_speedtest_host: {
-    url: {type: String, default: 'www.netflix.com'},
+  // This field, when present, means that the next ping/speedtest
+  // result should also be sent to this webhook. This will be set
+  // on specific api calls (i.e., sendCustomPing)
+  temp_command_trap: {
+    ping_hosts: [String],
+    speedtest_url: String,
+    webhook: {url: String, user: String, secret: String},
   },
   // Store pingtest results
   pingtest_results: [{
     host: String,
     lat: {type: String, default: '---'},
-    loss: {type: String, default: '--- '},
+    loss: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
