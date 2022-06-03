@@ -232,9 +232,12 @@ let deviceSchema = new Schema({
   // result should also be sent to this webhook. This will be set
   // on specific api calls (i.e., sendCustomPing)
   temp_command_trap: {
+    active: {type: Boolean, default: false},
     ping_hosts: [String],
     speedtest_url: String,
-    webhook: {url: String, user: String, secret: String},
+    webhook_url: {type: String, default: ''},
+    webhook_user: {type: String, default: ''},
+    webhook_secret: {type: String, default: ''},
   },
   // Store pingtest results
   pingtest_results: [{

@@ -1923,23 +1923,23 @@ deviceInfoController.receivePingResult = function(req, res) {
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.temp_command_trap) {
-      let currentCommandTrap = matchedDevice.temp_command_trap;
-      matchedDevice.temp_command_trap = undefined;
-      if (currentCommandTrap.webhook) {
-        let webhook = currentCommandTrap.webhook;
+    if (matchedDevice.temp_command_trap.active &&
+      matchedDevice.temp_command_trap.ping_hosts.length > 0) {
+      matchedDevice.temp_command_trap.active = false;
+      if (matchedDevice.temp_command_trap.webhook_url!='') {
         let requestOptions = {};
-        requestOptions.url = webhook.url;
+        requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
         requestOptions.method = 'PUT';
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
           'ping_results': req.body.results,
         };
-        if (webhook.user && webhook.secret) {
+        if (matchedDevice.temp_command_trap.webhook_user
+        && matchedDevice.temp_command_trap.webhook_secret) {
           requestOptions.auth = {
-            user: webhook.user,
-            pass: webhook.secret,
+            user: matchedDevice.temp_command_trap.webhook_user,
+            pass: matchedDevice.temp_command_trap.webhook_secret,
           };
         }
         request(requestOptions);

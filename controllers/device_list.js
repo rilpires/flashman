@@ -162,7 +162,8 @@ const initiatePingCommand = async function(device) {
   if (device && device.use_tr069) {
     device.pingtest_results = [];
 
-    if (device.temp_command_trap && device.temp_command_trap.ping_hosts) {
+    if (device.temp_command_trap.active
+    && device.temp_command_trap.ping_hosts.length > 0) {
       device.pingtest_results = device.temp_command_trap.ping_hosts
       .map((item)=>({
         host: item,
@@ -1322,10 +1323,10 @@ deviceListController.sendCustomPing = async function(req, res) {
 
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap) {
+    if (device.temp_command_trap.active) {
       return res.status(200).json({
         success: false,
-        message: t('errorStartingSchedule'),
+        message: t('errorOccurredTryAgain'),
       });
     }
 
@@ -1350,9 +1351,21 @@ deviceListController.sendCustomPing = async function(req, res) {
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
 
     device.temp_command_trap = {
+      active: true,
       ping_hosts: approvedTempHosts,
-      webhook: req.body.content.webhook,
+      speedtest_url: '',
+      webhook_url: '',
     };
+    if (typeof(req.body.content.webhook)=='object') {
+      device.temp_command_trap.webhook_url = req.body.content.webhook.url;
+      if ( typeof(req.body.content.webhook.user)=='string'
+      && typeof(req.body.content.webhook.secrete)=='string' ) {
+        device.temp_command_trap.webhook_user
+          = req.body.content.webhook.user;
+        device.temp_command_trap.webhook_secret
+          = req.body.content.webhook.secret;
+      }
+    }
 
     await device.save().catch( (err)=>{
       return res.status(200).json({
@@ -1384,7 +1397,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     }
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap) {
+    if (device.temp_command_trap.active) {
       return res.status(200).json({
         success: false,
         message: t('errorOccurredTryAgain'),
@@ -1413,9 +1426,21 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     }
 
     device.temp_command_trap = {
+      active: true,
+      ping_hosts: [],
       speedtest_url: req.body.content.url,
-      webhook: req.body.content.webhook,
+      webhook_url: '',
     };
+    if (typeof(req.body.content.webhook)=='object') {
+      device.temp_command_trap.webhook_url = req.body.content.webhook.url;
+      if ( typeof(req.body.content.webhook.user)=='string'
+      && typeof(req.body.content.webhook.secrete)=='string' ) {
+        device.temp_command_trap.webhook_user
+          = req.body.content.webhook.user;
+        device.temp_command_trap.webhook_secret
+          = req.body.content.webhook.secret;
+      }
+    }
 
     await device.save().catch( (err)=>{
       return res.status(200).json({
@@ -2936,7 +2961,8 @@ deviceListController.getPingHostsList = async function(req, res) {
     }
     let responseHosts = [];
 
-    if ( device.temp_command_trap && device.temp_command_trap.ping_hosts ) {
+    if ( device.temp_command_trap.active
+    && device.temp_command_trap.ping_hosts.length > 0 ) {
       responseHosts = device.temp_command_trap.ping_hosts;
       responseHosts = Array.from(new Set(responseHosts));
     } else if ( responseHosts.length == 0 ) {

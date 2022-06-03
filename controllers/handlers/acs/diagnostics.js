@@ -46,7 +46,8 @@ const getSpeedtestFile = async function(device) {
     return '';
   }
 
-  if (device.temp_command_trap && device.temp_command_trap.speedtest_url ) {
+  if (device.temp_command_trap.active
+  && device.temp_command_trap.speedtest_url ) {
     return device.temp_command_trap.speedtest_url;
   }
 
@@ -120,9 +121,10 @@ const calculatePingDiagnostic = async function(
     }
 
     let currentCommandTrap = undefined;
-    if (device.temp_command_trap && device.temp_command_trap.ping_hosts) {
+    if (device.temp_command_trap.active
+    && device.temp_command_trap.ping_hosts.length>0 ) {
       currentCommandTrap = device.temp_command_trap;
-      device.temp_command_trap = undefined;
+      device.temp_command_trap.active = false;
     }
 
     // Always set completed to true to not break recursion on failure
@@ -145,20 +147,22 @@ const calculatePingDiagnostic = async function(
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (currentCommandTrap && currentCommandTrap.webhook) {
+    if (currentCommandTrap
+    && currentCommandTrap.ping_hosts.length > 0
+    && currentCommandTrap.webhook_url ) {
       let requestOptions = {};
-      let webhook = currentCommandTrap.webhook;
-      requestOptions.url = webhook.url;
+      requestOptions.url = currentCommandTrap.webhook_url;
       requestOptions.method = 'PUT';
       requestOptions.json = {
         'id': device._id,
         'type': 'device',
         'ping_results': result,
       };
-      if (webhook.user && webhook.secret) {
+      if (currentCommandTrap.webhook_user
+      && currentCommandTrap.webook_secret) {
         requestOptions.auth = {
-          user: webhook.user,
-          pass: webhook.secret,
+          user: currentCommandTrap.webhook_user,
+          pass: currentCommandTrap.webhook_secret,
         };
       }
       // No wait!

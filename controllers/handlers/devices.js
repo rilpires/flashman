@@ -461,22 +461,24 @@ deviceHandlers.sendPingToTraps = function(id, results) {
 };
 
 const sendSpeedtestResultToCustomTrap = async function(device, result) {
-  if (!device.temp_command_trap || !device.temp_command_trap.webhook) {
+  if (!device.temp_command_trap.active ||
+  device.temp_command_trap.speedtest_url=='' ||
+  device.temp_command_trap.webhook_url=='') {
     return;
   }
   let requestOptions = {};
-  let webhook = device.temp_command_trap.webhook;
-  requestOptions.url = webhook.url;
+  requestOptions.url = device.temp_command_trap.webhook_url;
   requestOptions.method = 'PUT';
   requestOptions.json = {
     'id': device._id,
     'type': 'device',
     'speedtest_result': result,
   };
-  if (webhook.user && webhook.secret) {
+  if (device.temp_command_trap.webhook_user!=''
+  && device.temp_command_trap.webhook_secret!='') {
     requestOptions.auth = {
-      user: webhook.user,
-      pass: webhook.secret,
+      user: device.temp_command_trap.webhook_user,
+      pass: device.temp_command_trap.webhook_secret,
     };
   }
   // No wait!
@@ -543,10 +545,11 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   }
 
   result = formatSpeedtestResult(result);
-  if (device.temp_command_trap) {
+  if (device.temp_command_trap.active
+  && device.temp_command_trap.speedtest_url) {
     // Don't care about waiting here
     sendSpeedtestResultToCustomTrap(device, result);
-    device.temp_command_trap = undefined;
+    device.temp_command_trap.active = false;
   } else if (result.last_speedtest_error) {
     device.last_speedtest_error = result.last_speedtest_error;
   } else {
