@@ -1,6 +1,9 @@
 
+/* global __line */
+
 const request = require('request-promise-native');
 const keyHandlers = require('../handlers/keys');
+const t = require('./language').i18next.t;
 
 let Config = require('../../models/config');
 
@@ -98,7 +101,34 @@ controlController.getLicenseStatus = function(app, device) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro: ' + err.message});
+      return resolve({success: false, message: err.message});
+    });
+  });
+};
+
+controlController.changeLicenseStatus = function(app, blockStatus, devices) {
+  if (!Array.isArray(devices)) {
+    return {success: false,
+            message: t('jsonInvalidFormat', {errorline: __line})};
+  }
+  const newBlockStatus = (blockStatus === true || blockStatus === 'true');
+  return new Promise((resolve, reject) => {
+    request({
+      url: controlApiAddr + '/device/block',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+        'block': newBlockStatus,
+        'ids': devices,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({success: true});
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: err.message});
     });
   });
 };
