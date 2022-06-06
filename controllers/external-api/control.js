@@ -146,7 +146,8 @@ controlController.authUser = function(name, password) {
     }).then((res) => {
       return resolve({success: true, res: JSON.parse(res)});
     }, (err) => {
-      return resolve({success: false, message: 'Erro na requisição'});
+      return resolve({success: false, message:
+        t('requestError', {errorline: __line})});
     });
   });
 };
@@ -160,7 +161,7 @@ controlController.sendTokenControl = function(req, token) {
     },
   }).then(
     (resp) => Promise.resolve(resp),
-    (err) => Promise.reject({message: 'Erro no token fornecido'}),
+    (err) => Promise.reject({message: t('tokenError', {errorline: __line})}),
   );
 };
 
@@ -180,7 +181,8 @@ controlController.isAccountBlocked = function(app) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro na requisição'});
+      return resolve({success: false, message:
+        t('requestError', {errorline: __line})});
     });
   });
 };
@@ -211,7 +213,8 @@ controlController.reportDevices = function(app, devicesArray) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro na requisição'});
+      return resolve({success: false, message:
+        t('requestError', {errorline: __line})});
     });
   });
 };
@@ -236,7 +239,7 @@ controlController.getPersonalizationHash = function(app) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro: ' + err.message});
+      return resolve({success: false, message: err.message});
     });
   });
 };
@@ -260,7 +263,7 @@ controlController.getLicenseApiSecret = function(app) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro: ' + err.message});
+      return resolve({success: false, message: err.message});
     });
   });
 };
@@ -272,11 +275,13 @@ controlController.meshLicenseCredit = async function(slaveId) {
     matchedConfig = await Config.findOne({is_default: true});
     if (!matchedConfig) {
       console.error('Error obtaining message config');
-      return {success: false, message: 'Erro ao consultar configurações'};
+      return {success: false, message:
+        t('configFindError', {errorline: __line})};
     }
   } catch (err) {
     console.error('Error obtaining message config');
-    return {success: false, message: 'Erro ao consultar configurações'};
+    return {success: false, message:
+      t('configFindError', {errorline: __line})};
   }
 
   return new Promise((resolve) => {
@@ -298,7 +303,7 @@ controlController.meshLicenseCredit = async function(slaveId) {
         return resolve({success: false, message: res.message});
       }
     }, (err) => {
-      return resolve({success: false, message: 'Erro: ' + err.message});
+      return resolve({success: false, message: err.message});
     });
   });
 };
