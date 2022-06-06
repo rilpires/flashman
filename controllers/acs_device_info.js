@@ -1192,8 +1192,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Force a wifi password sync after a hard reset
   if (device.recovering_tr069_reset) {
-    changes.wifi2.password = device.wifi_password.trim();
-    if (device.wifi_is_5ghz_capable) {
+    if (device.wifi_password) {
+      changes.wifi2.password = device.wifi_password.trim();
+    }
+    if (device.wifi_is_5ghz_capable && device.wifi_password_5ghz) {
       changes.wifi5.password = device.wifi_password_5ghz.trim();
     }
     hasChanges = true;
