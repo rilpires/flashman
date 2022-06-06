@@ -1589,7 +1589,11 @@ deviceListController.setDeviceReg = function(req, res) {
             validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
-          genericValidate(password, validator.validateWifiPassword, 'password');
+          if (!matchedDevice.use_tr069 || password) {
+            // Do not validate this field if a TR069 device left it blank
+            genericValidate(password,
+                            validator.validateWifiPassword, 'password');
+          }
         }
         if (content.hasOwnProperty('wifi_channel')) {
           genericValidate(channel, validator.validateChannel, 'channel');
@@ -1608,8 +1612,11 @@ deviceListController.setDeviceReg = function(req, res) {
             validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
-          genericValidate(password5ghz,
+          if (!matchedDevice.use_tr069 || password5ghz) {
+            // Do not validate this field if a TR069 device left it blank
+            genericValidate(password5ghz,
                           validator.validateWifiPassword, 'password5ghz');
+          }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
           genericValidate(channel5ghz,
