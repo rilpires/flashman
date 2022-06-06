@@ -3264,9 +3264,9 @@ deviceListController.updateLicenseStatus = async function(req, res) {
   try {
     let matchedDevice = await DeviceModel.findOne(
       {$or: [
-        {_id: {$in: req.body.id}},
-        {serial_tr069: {$in: req.body.id}},
-        {alt_uid_tr069: {$in: req.body.id}},
+        {_id: req.body.id},
+        {serial_tr069: req.body.id},
+        {alt_uid_tr069: req.body.id},
       ]},
       {_id: true, serial_tr069: true, use_tr069: true,
        alt_uid_tr069: true, is_license_active: true});
