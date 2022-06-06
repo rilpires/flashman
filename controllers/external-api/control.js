@@ -3,7 +3,7 @@
 
 const request = require('request-promise-native');
 const keyHandlers = require('../handlers/keys');
-const t = require('./language').i18next.t;
+const t = require('../language').i18next.t;
 
 let Config = require('../../models/config');
 
@@ -82,7 +82,7 @@ controlController.getMessageConfig = async function(app) {
   });
 };
 
-controlController.getLicenseStatus = function(app, device) {
+controlController.getLicenseStatus = function(app, deviceId) {
   return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/device/list',
@@ -90,7 +90,7 @@ controlController.getLicenseStatus = function(app, device) {
       json: {
         'secret': app.locals.secret,
         'all': false,
-        'mac': device._id,
+        'mac': deviceId,
       },
     }).then((res) => {
       if (res.success) {
