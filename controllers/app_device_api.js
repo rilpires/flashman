@@ -92,7 +92,10 @@ let appSet = function(req, res, processFunction) {
         wan: {}, lan: {}, wifi2: {}, wifi5: {}, changeBlockedDevices: false};
 
       // Update location data if present
-      if (content.latitude && content.longitude) {
+      if (
+        content.latitude && content.longitude &&
+        !matchedDevice.stop_coordinates_update
+      ) {
         matchedDevice.latitude = content.latitude;
         matchedDevice.longitude = content.longitude;
         matchedDevice.last_location_date = new Date();
@@ -582,6 +585,19 @@ const makeDeviceBackupData = function(device, config, certFile) {
   if (deviceCustomFields && deviceCustomFields.intelbras_omci_mode) {
     customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
   }
+  if (
+    deviceCustomFields && typeof deviceCustomFields.voip_enabled === 'boolean'
+  ) {
+    customFields.voipEnabled = deviceCustomFields.voip_enabled;
+  }
+  if (
+    deviceCustomFields &&
+    typeof deviceCustomFields.ipv6_enabled === 'boolean' &&
+    typeof deviceCustomFields.ipv6_mode === 'string'
+  ) {
+    customFields.ipv6Enabled = deviceCustomFields.ipv6_enabled;
+    customFields.ipv6Mode = deviceCustomFields.ipv6_mode;
+  }
   return {
     timestamp: formattedNow,
     model: device.model,
@@ -987,7 +1003,9 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let longitude = req.body.content.longitude;
     let lanDevice = matchedDevice.lan_devices.find((d)=>d.app_uid===appid);
     let mustUpdateFCM = (fcmid && lanDevice && fcmid !== lanDevice.fcm_uid);
-    let mustUpdateLocation = (latitude && longitude);
+    let mustUpdateLocation = (
+      latitude && longitude && !matchedDevice.stop_coordinates_update
+    );
     if (mustUpdateFCM || mustUpdateLocation) {
       // Query again but this time without .lean() so we can edit register
       DeviceModel.findById(req.body.id).exec(async function(err,

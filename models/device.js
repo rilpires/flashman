@@ -228,6 +228,13 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  // Store pinttest results
+  pingtest_results: [{
+    host: String,
+    lat: {type: String, default: '---'},
+    loss: {type: String, default: '--- '},
+    completed: {type: Boolean, default: false},
+  }],
   sys_up_time: {type: Number, default: 0}, // seconds
   wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
@@ -254,6 +261,7 @@ let deviceSchema = new Schema({
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
+  stop_coordinates_update: {type: Boolean, default: false},
   last_location_date: {type: Date},
   wps_is_active: {type: Boolean, default: false},
   wps_last_connected_date: {type: Date},
@@ -268,6 +276,9 @@ let deviceSchema = new Schema({
   web_admin_password: String,
   custom_tr069_fields: {
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+    voip_enabled: {type: Boolean, default: false},
+    ipv6_enabled: {type: Boolean, default: false},
+    ipv6_mode: {type: String, default: ''},
   },
 });
 
@@ -332,37 +343,47 @@ deviceSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                 !defConfig.traps_callbacks.device_crud) {
+                 !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
-      let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-      let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-      let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-      if (callbackUrl) {
-        attrsList.forEach((attr) => {
-          changedAttrs[attr] = device[attr];
-        });
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': device._id,
-          'type': 'device',
-          'changes': changedAttrs,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
+      const promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+        let callbackUrl = deviceCrud.url;
+        let callbackAuthUser = deviceCrud.user;
+        let callbackAuthSecret = deviceCrud.secret;
+        if (callbackUrl) {
+          attrsList.forEach((attr) => {
+            if (!attr.includes('pingtest_results')) {
+              changedAttrs[attr] = device[attr];
+            }
+          });
+          // Nothing to send - don't call trap
+          if (Object.keys(changedAttrs).length === 0) {
+            return Promise.resolve();
+          }
+          requestOptions.url = callbackUrl;
+          requestOptions.method = 'PUT';
+          requestOptions.json = {
+            'id': device._id,
+            'type': 'device',
+            'changes': changedAttrs,
           };
+          if (callbackAuthUser && callbackAuthSecret) {
+            requestOptions.auth = {
+              user: callbackAuthUser,
+              pass: callbackAuthSecret,
+            };
+          }
+          return request(requestOptions);
         }
-        request(requestOptions).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
-        });
-      }
+      });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
     });
   }
   callback();
@@ -377,31 +398,34 @@ deviceSchema.post('remove', function(device, callback) {
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);
     }
-    let callbackUrl = defConfig.traps_callbacks.device_crud.url;
-    let callbackAuthUser = defConfig.traps_callbacks.device_crud.user;
-    let callbackAuthSecret = defConfig.traps_callbacks.device_crud.secret;
-    if (callbackUrl) {
-      requestOptions.url = callbackUrl;
-      requestOptions.method = 'PUT';
-      requestOptions.json = {
-        'id': device._id,
-        'type': 'device',
-        'removed': true,
-      };
-      if (callbackAuthUser && callbackAuthSecret) {
-        requestOptions.auth = {
-          user: callbackAuthUser,
-          pass: callbackAuthSecret,
+    let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+      let callbackUrl = deviceCrud.url;
+      let callbackAuthUser = deviceCrud.user;
+      let callbackAuthSecret = deviceCrud.secret;
+      if (callbackUrl) {
+        requestOptions.url = callbackUrl;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'removed': true,
         };
+        if (callbackAuthUser && callbackAuthSecret) {
+          requestOptions.auth = {
+            user: callbackAuthUser,
+            pass: callbackAuthSecret,
+          };
+        }
+        return request(requestOptions);
       }
-      request(requestOptions).then((resp) => {
-        // Ignore API response
-        return;
-      }, (err) => {
-        // Ignore API endpoint errors
-        return;
-      });
-    }
+    });
+    Promise.all(promises).then((resp) => {
+      // Ignore API response
+      return;
+    }, (err) => {
+      // Ignore API endpoint errors
+      return;
+    });
   });
   callback();
 });

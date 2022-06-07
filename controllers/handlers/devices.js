@@ -409,44 +409,52 @@ deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
 };
 
 deviceHandlers.sendPingToTraps = function(id, results) {
-  sio.anlixSendPingTestNotifications(id, results);
   // No await needed
+  sio.anlixSendPingTestNotifications(id, results);
+  // Only send if all tests are completed - absence of completed key is legacy
+  // case - assume means true
+  let resultsObj = results['results'];
+  if (Object.keys(resultsObj).some((k)=>(resultsObj[k].completed === false))) {
+    return;
+  }
   let query = {is_default: true};
   let projection = {traps_callbacks: true};
   Config.findOne(query, projection, function(err, matchedConfig) {
     if (!err && matchedConfig) {
       // Send ping results if device traps are activated
       if (matchedConfig.traps_callbacks &&
-          matchedConfig.traps_callbacks.device_crud) {
-        let requestOptions = {};
-        let callbackUrl =
-        matchedConfig.traps_callbacks.device_crud.url;
-        let callbackAuthUser =
-        matchedConfig.traps_callbacks.device_crud.user;
-        let callbackAuthSecret =
-        matchedConfig.traps_callbacks.device_crud.secret;
-        if (callbackUrl) {
-          requestOptions.url = callbackUrl;
-          requestOptions.method = 'PUT';
-          requestOptions.json = {
-            'id': id,
-            'type': 'device',
-            'changes': {ping_results: results},
-          };
-          if (callbackAuthUser && callbackAuthSecret) {
-            requestOptions.auth = {
-              user: callbackAuthUser,
-              pass: callbackAuthSecret,
+          matchedConfig.traps_callbacks.devices_crud
+      ) {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
+          let requestOptions = {};
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': id,
+              'type': 'device',
+              'changes': {ping_results: results},
             };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
           }
-          request(requestOptions).then((resp) => {
-            // Ignore API response
-            return;
-          }, (err) => {
-            // Ignore API endpoint errors
-            return;
-          });
-        }
+        });
+        Promise.all(promises).then((resp) => {
+          // Ignore API response
+          return;
+        }, (err) => {
+          // Ignore API endpoint errors
+          return;
+        });
       }
     }
   });

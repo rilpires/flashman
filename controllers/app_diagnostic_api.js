@@ -473,29 +473,32 @@ diagAppAPIController.receiveCertification = async (req, res) => {
     }
     // Save current certification, if any
     if (content.current && content.current.mac) {
-      if (content.current.latitude && content.current.longitude) {
-        let device;
-        if (req.body.isOnu && req.body.onuMac) {
-          device = await DeviceModel.findById(req.body.onuMac);
-        } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
-          device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
-        } else if (req.body.isOnu) {
-          let devices = await DeviceModel.find({serial_tr069: req.body.mac});
-          if (devices.length > 0) {
-            device = devices[0];
-          }
-        } else {
-          device = await DeviceModel.findById(req.body.mac);
+      let device;
+      if (req.body.isOnu && req.body.onuMac) {
+        device = await DeviceModel.findById(req.body.onuMac);
+      } else if (req.body.isOnu && req.body.useAlternativeTR069UID) {
+        device = await DeviceModel.findOne({alt_uid_tr069: req.body.mac});
+      } else if (req.body.isOnu) {
+        let devices = await DeviceModel.find({serial_tr069: req.body.mac});
+        if (devices.length > 0) {
+          device = devices[0];
         }
+      } else {
+        device = await DeviceModel.findById(req.body.mac);
+      }
+      if (
+        content.current.latitude && content.current.longitude &&
+        !device.stop_coordinates_update
+      ) {
         device.latitude = content.current.latitude;
         device.longitude = content.current.longitude;
         device.last_location_date = new Date();
-        if (content.current.contractType && content.current.contract) {
-          device.external_reference.kind = content.current.contractType;
-          device.external_reference.data = content.current.contract;
-        }
-        await device.save();
       }
+      if (content.current.contractType && content.current.contract) {
+        device.external_reference.kind = content.current.contractType;
+        device.external_reference.data = content.current.contract;
+      }
+      await device.save();
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
@@ -625,6 +628,31 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         }
         if (req.body.wifi5Pass) {
           device.wifi_password_5ghz = req.body.wifi5Pass;
+        }
+        // Saving IPv6 and VoIP info sent from app
+        if ('voipEnabled' in req.body) {
+          let voipEnabled = req.body.voipEnabled;
+          if (typeof voipEnabled === 'boolean') {
+            device.custom_tr069_fields.voip_enabled = voipEnabled;
+          } else {
+            device.custom_tr069_fields.voip_enabled = false;
+          }
+        }
+        if ('ipv6Enabled' in req.body) {
+          let ipv6Enabled = req.body.ipv6Enabled;
+          if (typeof ipv6Enabled === 'boolean') {
+            device.custom_tr069_fields.ipv6_enabled = ipv6Enabled;
+          } else {
+            device.custom_tr069_fields.ipv6_enabled = false;
+          }
+        }
+        if ('ipv6Mode' in req.body) {
+          let ipv6Mode = req.body.ipv6Mode;
+          if (typeof ipv6Mode === 'string') {
+            device.custom_tr069_fields.ipv6_mode = ipv6Mode;
+          } else {
+            device.custom_tr069_fields.ipv6_mode = '';
+          }
         }
         // We need to store WiFiber's OMCI Mode for OLT connection
         if (req.body.intelbrasOmciMode) {

@@ -95,12 +95,14 @@ const convertWifiBand = function(model, band, mode, is5ghz) {
   switch (band) {
     // Number input
     case '0':
-      if (model === 'EG8145X6') return 'auto';
+      if (model === 'EG8145X6' || model === 'HG8121H') return 'auto';
       return (isAC) ? 'VHT20' : 'HT20';
     case '1':
+      if (model === 'HG8121H') return 'HT20';
       if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
       return (isAC) ? 'VHT40' : 'HT40';
     case '2':
+      if (model === 'HG8121H') return 'HT40';
       if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
       return 'auto';
     case '3':
@@ -638,8 +640,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  parameterNames.push(fields.wifi2.mode);
-  parameterNames.push(fields.wifi2.band);
+  if (fields.wifi2.mode) {
+    parameterNames.push(fields.wifi2.mode);
+  }
+  if (fields.wifi2.band) {
+    parameterNames.push(fields.wifi2.band);
+  }
   if (device.wifi_is_5ghz_capable) {
     dataToFetch.wifi5 = true;
     parameterNames.push(fields.wifi5.enable);
@@ -648,8 +654,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    parameterNames.push(fields.wifi5.mode);
-    parameterNames.push(fields.wifi5.band);
+    if (fields.wifi5.mode) {
+      parameterNames.push(fields.wifi5.mode);
+    }
+    if (fields.wifi5.band) {
+      parameterNames.push(fields.wifi5.band);
+    }
   }
   // Mesh WiFi configuration fields - only if in wifi mesh mode
   if (device.mesh_mode === 2 || device.mesh_mode === 4) {
@@ -692,6 +702,7 @@ const requestSync = async function(device) {
 
 // Extract data from raw GenieACS json output, in value/writable format
 const getFieldFromGenieData = function(data, field) {
+  if (typeof field === 'undefined') return {};
   let obj = utilHandlers.getFromNestedKey(data, field);
   if (typeof obj === 'undefined') return {};
   return {value: obj['_value'], writable: obj['_writable']};
@@ -1181,8 +1192,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Force a wifi password sync after a hard reset
   if (device.recovering_tr069_reset) {
-    changes.wifi2.password = device.wifi_password.trim();
-    if (device.wifi_is_5ghz_capable) {
+    if (device.wifi_password) {
+      changes.wifi2.password = device.wifi_password.trim();
+    }
+    if (device.wifi_is_5ghz_capable && device.wifi_password_5ghz) {
       changes.wifi5.password = device.wifi_password_5ghz.trim();
     }
     hasChanges = true;
@@ -1669,16 +1682,16 @@ acsDeviceInfoController.updateInfo = async function(
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2 && changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid && device.wifi_password) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5 && changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid && device.wifi_password_5ghz) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
-  if (changes.wan && changes.wan.pppoe_user) {
+  if (changes.wan && changes.wan.pppoe_user && device.pppoe_password) {
     changes.wan.pppoe_pass = device.pppoe_password;
   }
   Object.keys(changes).forEach((masterKey)=>{

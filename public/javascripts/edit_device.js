@@ -202,9 +202,13 @@ let validateEditDevice = function(event) {
     }
   }
   if (validateWifi) {
+    if (!isTR069 || password) {
+      // Do not validate this field if a TR069 device left it blank
+      genericValidate(password,
+                      validator.validateWifiPassword, errors.password);
+    }
     genericValidate(ssidPrefix+ssid,
       validator.validateSSID, errors.ssid);
-    genericValidate(password, validator.validateWifiPassword, errors.password);
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
   if (validateWifiBand) {
@@ -215,10 +219,13 @@ let validateEditDevice = function(event) {
     genericValidate(power, validator.validatePower, errors.power);
   }
   if (validateWifi5ghz) {
+    if (!isTR069 || password5ghz) {
+      // Do not validate this field if a TR069 device left it blank
+      genericValidate(password5ghz,
+                      validator.validateWifiPassword, errors.password5ghz);
+    }
     genericValidate(ssidPrefix+ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
-    genericValidate(password5ghz,
-                    validator.validateWifiPassword, errors.password5ghz);
     genericValidate(channel5ghz,
                     validator.validateChannel, errors.channel5ghz);
     genericValidate(band5ghz,
@@ -270,7 +277,7 @@ let validateEditDevice = function(event) {
     }
     if (validateWifi) {
       data.content.wifi_ssid = ssid;
-      data.content.wifi_password = password;
+      data.content.wifi_password = (password) ? password : '';
       data.content.wifi_channel = channel;
     }
     if (validateWifiBand) {
@@ -282,7 +289,7 @@ let validateEditDevice = function(event) {
     }
     if (validateWifi5ghz) {
       data.content.wifi_ssid_5ghz = ssid5ghz;
-      data.content.wifi_password_5ghz = password5ghz;
+      data.content.wifi_password_5ghz = (password5ghz) ? password5ghz : '';
       data.content.wifi_channel_5ghz = channel5ghz;
       data.content.wifi_band_5ghz = band5ghz;
       data.content.wifi_mode_5ghz = mode5ghz;

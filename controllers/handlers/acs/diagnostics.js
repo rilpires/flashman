@@ -26,6 +26,11 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
   return result;
 };
 
+const getNextPingTest = function(device) {
+  let found = device.pingtest_results.find((pingTest) => !pingTest.completed);
+  return (found) ? found.host : '';
+};
+
 const getSpeedtestFile = async function(device) {
   let matchedConfig = await Config.findOne(
     {is_default: true}, {measureServerIP: true, measureServerPort: true},
@@ -72,18 +77,18 @@ const getSpeedtestFile = async function(device) {
   return '';
 };
 
-const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
+const calculatePingDiagnostic = async function(
+    device, data, pingKeys, pingFields,
+  ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
+
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
     let result = {};
-    device.ping_hosts.forEach((host) => {
-      if (host) {
-        result[host] = {
-          lat: '---',
-          loss: '--- ',
-        };
-      }
-    });
+
+    let currentPingTest = device.pingtest_results.find(
+      (e) => e.host === pingKeys.host,
+    );
+
     if (
       pingKeys.diag_state === 'Complete' ||
       pingKeys.diag_state === 'Complete\n'
@@ -93,18 +98,40 @@ const calculatePingDiagnostic = function(device, data, pingKeys, pingFields) {
       if (isNaN(loss)) {
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
-      result[pingKeys.host] = {
-        lat: pingKeys.avg_resp_time.toString(),
-        loss: loss.toString(),
-      };
+
+      currentPingTest.lat = pingKeys.avg_resp_time.toString();
+      currentPingTest.loss = loss.toString();
+
       let model = device.model;
-      if (model === 'HG8245Q2' || model === 'EG8145V5' ||
-          model === 'EG8145X6' || model === 'HG9') {
-        if (pingKeys.success_count === 1) result[pingKeys.host]['loss'] = '0';
-        else result[pingKeys.host]['loss'] = '100';
+      if (
+        ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
+      ) {
+        if (pingKeys.success_count === 1) currentPingTest.loss = '0';
+        else currentPingTest.loss = '100';
       }
     }
+
+    // Always set completed to true to not break recursion on failure
+    currentPingTest.completed = true;
+
+    await device.save().catch((err) => {
+      console.log('Error saving ping test to database: ' + err);
+    });
+
+    device.pingtest_results.map((p) => {
+      if (p) {
+        result[p.host] = {
+          lat: p.lat,
+          loss: p.loss,
+          completed: p.completed,
+        };
+      }
+    });
+
     deviceHandlers.sendPingToTraps(device._id, {results: result});
+
+    startPingDiagnose(device.acs_id);
+    return;
   }
 };
 
@@ -130,7 +157,8 @@ const calculateSpeedDiagnostic = async function(
   }
 
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
-    if (speedKeys.diag_state == 'Completed') {
+    const diagState = speedKeys.diag_state;
+    if (diagState == 'Completed' || diagState == 'Complete') {
       if (device.speedtest_results.length > 0) {
         lastTime = utilHandlers.parseDate(
           device.speedtest_results[device.speedtest_results.length-1].timestamp,
@@ -227,8 +255,14 @@ const startPingDiagnose = async function(acsID) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
-  let pingHostUrl = device.ping_hosts[0];
+  let pingHostUrl = getNextPingTest(device);
   let timeout = 1000;
+
+  if (!pingHostUrl || pingHostUrl === '') {
+    console.log('Ping results for device ' + acsID
+      + ' completed successfully.');
+    return;
+  }
 
   let task = {
     name: 'setParameterValues',
@@ -273,6 +307,9 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
+  if (device.model == 'HG8121H') {
+    task.parameterValues.splice(1, 1);
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting speedtest diagnose for ' + acsID);
