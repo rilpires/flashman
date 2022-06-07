@@ -2539,12 +2539,12 @@ deviceListController.setPortForward = function(req, res) {
       });
     // Flashbox firmware routers
     } else {
-      
-      let content
-      if ( typeof(req.body.content)=='string' && 
-      util.isJsonString(req.body.content ) ) {
+      let content;
+      if (typeof req.body.content == 'string' &&
+          util.isJsonString(req.body.content)
+      ) {
         content = JSON.parse(req.body.content);
-      } else if( typeof(req.body.content)=='object' ) {
+      } else if (typeof req.body.content == 'object') {
         content = req.body.content;
       } else {
         return res.status(200).json({
@@ -2822,12 +2822,13 @@ deviceListController.setPingHostsList = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    
-    let content
-    if ( typeof(req.body.content)=='string' && 
-    util.isJsonString(req.body.content ) ) {
+
+    let content;
+    if (typeof(req.body.content) == 'string' &&
+        util.isJsonString(req.body.content)
+    ) {
       content = JSON.parse(req.body.content);
-    } else if( typeof(req.body.content)=='object' ) {
+    } else if (typeof(req.body.content) == 'object') {
       content = req.body.content;
     } else {
       return res.status(200).json({
@@ -2858,7 +2859,6 @@ deviceListController.setPingHostsList = function(req, res) {
         hosts: approvedHosts,
       });
     });
-    
   });
 };
 
