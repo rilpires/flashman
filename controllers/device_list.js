@@ -3262,8 +3262,8 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
 
 deviceListController.updateLicenseStatus = async function(req, res) {
   if (!('id' in req.body)) {
-    return {success: false,
-            message: t('jsonInvalidFormat', {errorline: __line})};
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
   }
   try {
     let matchedDevice = await DeviceModel.findOne(
@@ -3308,8 +3308,8 @@ deviceListController.updateLicenseStatus = async function(req, res) {
 
 deviceListController.changeLicenseStatus = async function(req, res) {
   if (!('ids' in req.body) || !('block' in req.body)) {
-    return {success: false,
-            message: t('jsonInvalidFormat', {errorline: __line})};
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
   }
   try {
     const newBlockStatus =
