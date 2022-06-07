@@ -3268,14 +3268,32 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
 };
 
 deviceListController.updateLicenseStatus = async function(req, res) {
+  if (!('id' in req.body)) {
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
   try {
-    let matchedDevice = await DeviceModel.findById(req.body.id);
+    let matchedDevice = await DeviceModel.findOne(
+      {$or: [
+        {_id: req.body.id},
+        {serial_tr069: req.body.id},
+        {alt_uid_tr069: req.body.id},
+      ]},
+      {_id: true, serial_tr069: true, use_tr069: true,
+       alt_uid_tr069: true, is_license_active: true});
+
     if (!matchedDevice) {
       return res.status(500).json({success: false,
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
+    let deviceId = matchedDevice._id;
+    if (matchedDevice.use_tr069 && matchedDevice.alt_uid_tr069) {
+      deviceId = matchedDevice.alt_uid_tr069;
+    } else if (matchedDevice.use_tr069) {
+      deviceId = matchedDevice.serial_tr069;
+    }
+    let retObj = await controlApi.getLicenseStatus(req.app, deviceId);
     if (retObj.success) {
       if (matchedDevice.is_license_active === undefined) {
         matchedDevice.is_license_active = !retObj.isBlocked;
@@ -3292,6 +3310,59 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     return res.status(500).json({success: false,
                                  message: t('serverError',
                                   {errorline: __line})});
+  }
+};
+
+deviceListController.changeLicenseStatus = async function(req, res) {
+  if (!('ids' in req.body) || !('block' in req.body)) {
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    const newBlockStatus =
+      (req.body.block === true || req.body.block === 'true');
+    let devIds = req.body.ids;
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
+    let matchedDevices = await DeviceModel.find(
+      {$or: [
+        {_id: {$in: devIds}},
+        {serial_tr069: {$in: devIds}},
+        {alt_uid_tr069: {$in: devIds}},
+      ]},
+      {_id: true, serial_tr069: true, use_tr069: true,
+       alt_uid_tr069: true, is_license_active: true});
+
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({success: false,
+                                   message: t('cpesNotFound',
+                                   {errorline: __line})});
+    }
+    const idsArray = matchedDevices.map((device)=> {
+      if (device.use_tr069 && device.alt_uid_tr069) {
+        return device.alt_uid_tr069;
+      } else if (device.use_tr069) {
+        return device.serial_tr069;
+      } else {
+        return device._id;
+      }
+    });
+    let retObj =
+      await controlApi.changeLicenseStatus(req.app, newBlockStatus, idsArray);
+    if (retObj.success) {
+      for (let device of matchedDevices) {
+        device.is_license_active = !newBlockStatus;
+        await device.save();
+      }
+      return res.json({success: true});
+    } else {
+      return res.json({success: false, message: retObj.message});
+    }
+  } catch (err) {
+    return res.status(500).json({success: false,
+                                 message: t('serverError',
+                                 {errorline: __line})});
   }
 };
 
