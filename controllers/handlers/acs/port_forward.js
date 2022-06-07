@@ -265,7 +265,6 @@ acsPortForwardHandler.changePortForwardRules = async function(
         let requestConn = (!needsToQueueTasks);
         ret = await TasksAPI.addTask(
           acsID, changeEntriesSizeTask, null, 0, requestConn);
-        console.log('Add Task ->', ret);
         if (!ret || !ret.success) {
           return;
         }
