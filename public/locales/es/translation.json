@@ -125,6 +125,7 @@
 	"fileChecksumError": "Error al generar el hash de integridad del archivo ({{errorline}})",
 	"firmwareAlreadyExists": "No es posible registrar más de un firmware para un modelo/versión determinado ({{errorline}})",
 	"requestError": "Error de solicitud ({{errorline}})",
+	"tokenError": "Error en el token previsto ({{errorline}})",
 	"authenticationError": "Error de autenticación ({{errorline}})",
 	"languageNotFound": "El idioma '{{-language}}' no existe ({{errorline}})",
 	"notificationFindError": "Error al obtener notificaciones ({{errorline}})",

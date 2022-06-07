@@ -1589,7 +1589,11 @@ deviceListController.setDeviceReg = function(req, res) {
             validator.validateSSID, 'ssid');
         }
         if (content.hasOwnProperty('wifi_password')) {
-          genericValidate(password, validator.validateWifiPassword, 'password');
+          if (!matchedDevice.use_tr069 || password) {
+            // Do not validate this field if a TR069 device left it blank
+            genericValidate(password,
+                            validator.validateWifiPassword, 'password');
+          }
         }
         if (content.hasOwnProperty('wifi_channel')) {
           genericValidate(channel, validator.validateChannel, 'channel');
@@ -1608,8 +1612,11 @@ deviceListController.setDeviceReg = function(req, res) {
             validator.validateSSID, 'ssid5ghz');
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
-          genericValidate(password5ghz,
+          if (!matchedDevice.use_tr069 || password5ghz) {
+            // Do not validate this field if a TR069 device left it blank
+            genericValidate(password5ghz,
                           validator.validateWifiPassword, 'password5ghz');
+          }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
           genericValidate(channel5ghz,
@@ -2539,158 +2546,13 @@ deviceListController.setPortForward = function(req, res) {
       });
     // Flashbox firmware routers
     } else {
-      if (util.isJsonString(req.body.content)) {
-        let content = JSON.parse(req.body.content);
-
-        let usedAsymPorts = [];
-
-        content.forEach((r) => {
-          let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-
-          if (!r.hasOwnProperty('mac') ||
-              !r.hasOwnProperty('dmz') ||
-              !r.mac.match(macRegex)) {
-            return res.status(200).json({
-              success: false,
-              message: t('macInvalidInJson'),
-            });
-          }
-
-          if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-            !(r.port.map((p) => parseInt(p))
-                    .every((p) => (p >= 1 && p <= 65535)))
-          ) {
-            return res.status(200).json({
-              success: false,
-              message: t('internalPortsInvalidInJson'),
-            });
-          }
-
-          let localPorts = r.port.map((p) => parseInt(p));
-            // Get unique port set
-          let localUniquePorts = [...new Set(localPorts)];
-
-          if (r.hasOwnProperty('router_port')) {
-            if (!permissions.grantPortForwardAsym) {
-              return res.status(200).json({
-                success: false,
-                message: t('cpeNotAcceptingSymmetricalPorts'),
-              });
-            }
-
-            if (!Array.isArray(r.router_port) ||
-              !(r.router_port.map((p) => parseInt(p)).every(
-                  (p) => (p >= 1 && p <= 65535)))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsInvalidInJson'),
-              });
-            }
-
-            let localAsymPorts = r.router_port.map((p) => parseInt(p));
-            // Get unique port set
-            let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-            if (localUniqueAsymPorts.length != localAsymPorts.length) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-
-            if (localUniqueAsymPorts.length != localUniquePorts.length) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalAndInternalPortsIncorrectInJson'),
-              });
-            }
-
-            if (
-              !(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-
-            usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
-          } else {
-            if (
-              !(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-            usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
-          }
-        });
-
-        // If we get here, all is validated!
-
-        // Remove all old firewall rules
-        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-          if (matchedDevice.lan_devices[idx].port.length > 0) {
-            matchedDevice.lan_devices[idx].port = [];
-            matchedDevice.lan_devices[idx].router_port = [];
-            matchedDevice.lan_devices[idx].dmz = false;
-          }
-        }
-
-        // Update with new ones
-        content.forEach((r) => {
-          let newRuleMac = r.mac.toLowerCase();
-          let portsArray = r.port.map((p) => parseInt(p));
-          portsArray = [...new Set(portsArray)];
-          let portAsymArray = [];
-
-          if (r.hasOwnProperty('router_port')) {
-            portAsymArray = r.router_port.map((p) => parseInt(p));
-            portAsymArray = [...new Set(portAsymArray)];
-          }
-
-          let newLanDevice = true;
-          for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-            if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
-              matchedDevice.lan_devices[idx].port = portsArray;
-              matchedDevice.lan_devices[idx].router_port = portAsymArray;
-              matchedDevice.lan_devices[idx].dmz = r.dmz;
-              matchedDevice.lan_devices[idx].last_seen = Date.now();
-              newLanDevice = false;
-              break;
-            }
-          }
-          if (newLanDevice) {
-            matchedDevice.lan_devices.push({
-              mac: newRuleMac,
-              port: portsArray,
-              router_port: portAsymArray,
-              dmz: r.dmz,
-              first_seen: Date.now(),
-              last_seen: Date.now(),
-            });
-          }
-        });
-
-        matchedDevice.forward_index = Date.now();
-
-        matchedDevice.save(function(err) {
-          if (err) {
-            console.log('Error Saving Port Forward: '+err);
-            return res.status(200).json({
-              success: false,
-              message: t('cpeSaveError', {errorline: __line}),
-            });
-          }
-          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
-
-          return res.status(200).json({
-            success: true,
-            message: '',
-          });
-        });
+      let content;
+      if (typeof req.body.content == 'string' &&
+          util.isJsonString(req.body.content)
+      ) {
+        content = JSON.parse(req.body.content);
+      } else if (typeof req.body.content == 'object') {
+        content = req.body.content;
       } else {
         return res.status(200).json({
           success: false,
@@ -2698,6 +2560,156 @@ deviceListController.setPortForward = function(req, res) {
             {name: 'content', errorline: __line}),
         });
       }
+
+      let usedAsymPorts = [];
+
+      content.forEach((r) => {
+        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+
+        if (!r.hasOwnProperty('mac') ||
+            !r.hasOwnProperty('dmz') ||
+            !r.mac.match(macRegex)) {
+          return res.status(200).json({
+            success: false,
+            message: t('macInvalidInJson'),
+          });
+        }
+
+        if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
+          !(r.port.map((p) => parseInt(p))
+                  .every((p) => (p >= 1 && p <= 65535)))
+        ) {
+          return res.status(200).json({
+            success: false,
+            message: t('internalPortsInvalidInJson'),
+          });
+        }
+
+        let localPorts = r.port.map((p) => parseInt(p));
+          // Get unique port set
+        let localUniquePorts = [...new Set(localPorts)];
+
+        if (r.hasOwnProperty('router_port')) {
+          if (!permissions.grantPortForwardAsym) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeNotAcceptingSymmetricalPorts'),
+            });
+          }
+
+          if (!Array.isArray(r.router_port) ||
+            !(r.router_port.map((p) => parseInt(p)).every(
+                (p) => (p >= 1 && p <= 65535)))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsInvalidInJson'),
+            });
+          }
+
+          let localAsymPorts = r.router_port.map((p) => parseInt(p));
+          // Get unique port set
+          let localUniqueAsymPorts = [...new Set(localAsymPorts)];
+          if (localUniqueAsymPorts.length != localAsymPorts.length) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsRepeatedInJson'),
+            });
+          }
+
+          if (localUniqueAsymPorts.length != localUniquePorts.length) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalAndInternalPortsIncorrectInJson'),
+            });
+          }
+
+          if (
+            !(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsRepeatedInJson'),
+            });
+          }
+
+          usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
+        } else {
+          if (
+            !(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsRepeatedInJson'),
+            });
+          }
+          usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
+        }
+      });
+
+      // If we get here, all is validated!
+
+      // Remove all old firewall rules
+      for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+        if (matchedDevice.lan_devices[idx].port.length > 0) {
+          matchedDevice.lan_devices[idx].port = [];
+          matchedDevice.lan_devices[idx].router_port = [];
+          matchedDevice.lan_devices[idx].dmz = false;
+        }
+      }
+
+      // Update with new ones
+      content.forEach((r) => {
+        let newRuleMac = r.mac.toLowerCase();
+        let portsArray = r.port.map((p) => parseInt(p));
+        portsArray = [...new Set(portsArray)];
+        let portAsymArray = [];
+
+        if (r.hasOwnProperty('router_port')) {
+          portAsymArray = r.router_port.map((p) => parseInt(p));
+          portAsymArray = [...new Set(portAsymArray)];
+        }
+
+        let newLanDevice = true;
+        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+          if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
+            matchedDevice.lan_devices[idx].port = portsArray;
+            matchedDevice.lan_devices[idx].router_port = portAsymArray;
+            matchedDevice.lan_devices[idx].dmz = r.dmz;
+            matchedDevice.lan_devices[idx].last_seen = Date.now();
+            newLanDevice = false;
+            break;
+          }
+        }
+        if (newLanDevice) {
+          matchedDevice.lan_devices.push({
+            mac: newRuleMac,
+            port: portsArray,
+            router_port: portAsymArray,
+            dmz: r.dmz,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
+      });
+
+      matchedDevice.forward_index = Date.now();
+
+      matchedDevice.save(function(err) {
+        if (err) {
+          console.log('Error Saving Port Forward: '+err);
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+        return res.status(200).json({
+          success: true,
+          message: '',
+        });
+      });
     }
   });
 };
@@ -2817,29 +2829,14 @@ deviceListController.setPingHostsList = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    if (util.isJsonString(req.body.content)) {
-      let content = JSON.parse(req.body.content);
-      let approvedHosts = [];
-      content.hosts.forEach((host) => {
-        let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
-        host = host.toLowerCase();
-        if (host.match(fqdnLengthRegex)) {
-          approvedHosts.push(host);
-        }
-      });
-      matchedDevice.ping_hosts = approvedHosts;
-      matchedDevice.save(function(err) {
-        if (err) {
-          return res.status(200).json({
-            success: false,
-            message: t('cpeSaveError', {errorline: __line}),
-          });
-        }
-        return res.status(200).json({
-          success: true,
-          hosts: approvedHosts,
-        });
-      });
+
+    let content;
+    if (typeof(req.body.content) == 'string' &&
+        util.isJsonString(req.body.content)
+    ) {
+      content = JSON.parse(req.body.content);
+    } else if (typeof(req.body.content) == 'object') {
+      content = req.body.content;
     } else {
       return res.status(200).json({
         success: false,
@@ -2847,6 +2844,28 @@ deviceListController.setPingHostsList = function(req, res) {
           {name: 'content', errorline: __line}),
       });
     }
+
+    let approvedHosts = [];
+    content.hosts.forEach((host) => {
+      let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
+      host = host.toLowerCase();
+      if (host.match(fqdnLengthRegex)) {
+        approvedHosts.push(host);
+      }
+    });
+    matchedDevice.ping_hosts = approvedHosts;
+    matchedDevice.save(function(err) {
+      if (err) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeSaveError', {errorline: __line}),
+        });
+      }
+      return res.status(200).json({
+        success: true,
+        hosts: approvedHosts,
+      });
+    });
   });
 };
 
@@ -3261,14 +3280,32 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
 };
 
 deviceListController.updateLicenseStatus = async function(req, res) {
+  if (!('id' in req.body)) {
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
   try {
-    let matchedDevice = await DeviceModel.findById(req.body.id);
+    let matchedDevice = await DeviceModel.findOne(
+      {$or: [
+        {_id: req.body.id},
+        {serial_tr069: req.body.id},
+        {alt_uid_tr069: req.body.id},
+      ]},
+      {_id: true, serial_tr069: true, use_tr069: true,
+       alt_uid_tr069: true, is_license_active: true});
+
     if (!matchedDevice) {
       return res.status(500).json({success: false,
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let retObj = await controlApi.getLicenseStatus(req.app, matchedDevice);
+    let deviceId = matchedDevice._id;
+    if (matchedDevice.use_tr069 && matchedDevice.alt_uid_tr069) {
+      deviceId = matchedDevice.alt_uid_tr069;
+    } else if (matchedDevice.use_tr069) {
+      deviceId = matchedDevice.serial_tr069;
+    }
+    let retObj = await controlApi.getLicenseStatus(req.app, deviceId);
     if (retObj.success) {
       if (matchedDevice.is_license_active === undefined) {
         matchedDevice.is_license_active = !retObj.isBlocked;
@@ -3285,6 +3322,59 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     return res.status(500).json({success: false,
                                  message: t('serverError',
                                   {errorline: __line})});
+  }
+};
+
+deviceListController.changeLicenseStatus = async function(req, res) {
+  if (!('ids' in req.body) || !('block' in req.body)) {
+    return res.status(500).json({success: false,
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    const newBlockStatus =
+      (req.body.block === true || req.body.block === 'true');
+    let devIds = req.body.ids;
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
+    let matchedDevices = await DeviceModel.find(
+      {$or: [
+        {_id: {$in: devIds}},
+        {serial_tr069: {$in: devIds}},
+        {alt_uid_tr069: {$in: devIds}},
+      ]},
+      {_id: true, serial_tr069: true, use_tr069: true,
+       alt_uid_tr069: true, is_license_active: true});
+
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({success: false,
+                                   message: t('cpesNotFound',
+                                   {errorline: __line})});
+    }
+    const idsArray = matchedDevices.map((device)=> {
+      if (device.use_tr069 && device.alt_uid_tr069) {
+        return device.alt_uid_tr069;
+      } else if (device.use_tr069) {
+        return device.serial_tr069;
+      } else {
+        return device._id;
+      }
+    });
+    let retObj =
+      await controlApi.changeLicenseStatus(req.app, newBlockStatus, idsArray);
+    if (retObj.success) {
+      for (let device of matchedDevices) {
+        device.is_license_active = !newBlockStatus;
+        await device.save();
+      }
+      return res.json({success: true});
+    } else {
+      return res.json({success: false, message: retObj.message});
+    }
+  } catch (err) {
+    return res.status(500).json({success: false,
+                                 message: t('serverError',
+                                 {errorline: __line})});
   }
 };
 
