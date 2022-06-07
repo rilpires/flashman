@@ -3314,16 +3314,20 @@ deviceListController.changeLicenseStatus = async function(req, res) {
   try {
     const newBlockStatus =
       (req.body.block === true || req.body.block === 'true');
+    let devIds = req.body.ids;
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
     let matchedDevices = await DeviceModel.find(
       {$or: [
-        {_id: {$in: req.body.ids}},
-        {serial_tr069: {$in: req.body.ids}},
-        {alt_uid_tr069: {$in: req.body.ids}},
+        {_id: {$in: devIds}},
+        {serial_tr069: {$in: devIds}},
+        {alt_uid_tr069: {$in: devIds}},
       ]},
       {_id: true, serial_tr069: true, use_tr069: true,
        alt_uid_tr069: true, is_license_active: true});
 
-    if (!matchedDevices) {
+    if (matchedDevices.length === 0) {
       return res.status(500).json({success: false,
                                    message: t('cpesNotFound',
                                    {errorline: __line})});
@@ -3344,7 +3348,7 @@ deviceListController.changeLicenseStatus = async function(req, res) {
         device.is_license_active = !newBlockStatus;
         await device.save();
       }
-      return res.json({success: true, status: !retObj.isBlocked});
+      return res.json({success: true});
     } else {
       return res.json({success: false, message: retObj.message});
     }
