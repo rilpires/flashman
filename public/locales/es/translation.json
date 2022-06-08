@@ -439,6 +439,10 @@
 	"massUpdateIndividualConfigurations": "Cambios masivos en configuraciones individuales",
 	"parametersHereWillBeAppliedToAllSelectedDevices": "Los parámetros definidos aquí se aplicarán a todos los dispositivos listados en la búsqueda actual realizada. Los campos sin valor, o en blanco, no se registrarán, se mantendrán los valores ya existentes en cada dispositivo",
 	"lossCollection": "Cobro de pérdidas",
+	"dataCollection": "Colección de datos",
+	"burstCollection": "Colección de ráfagas de ping",
+	"wifiCollection": "Colección de datos de dispositivos conectados a Wi-Fi",
+	"pingAndWanCollection": "Colección de datos de ping y wan",
 	"doNotChange": "No cambies",
 	"Activated": "Activado",
 	"ifCollectingIsOffDeviceWillBehaveAsOff": "Si el servicio de recolección no está activado, los dispositivos activos se comportarán como dispositivos inactivos",
@@ -838,6 +842,7 @@
 	"cpesWebinterfacePassword": "Contraseña para la interfaz web de los CPE",
 	"onuWebPasswordTooltip": "La contraseña debe tener de 8 a 16 caracteres, contener al menos una letra mayúscula, una letra minúscula, un número y un carácter especial. ¡El carácter especial no puede ser el primer carácter!",
 	"insertValidPassword": "Por favor introduce una contraseña válida",
+	"notNumeric": "El valor no es numérico",
 	"configureOnusRemoteAccess": "Configurar acceso remoto para ONU",
 	"enableStunServerUsage": "Habilitar el uso del servidor STUN",
 	"stunEnableTooltip": "Requerido para que los CPE sean totalmente comunicables por Flashman cuando están detrás de NAT (solo modelos compatibles)",
@@ -964,5 +969,6 @@
 	"vlanProfile": "Perfil de VLAN",
 	"arrayElementNotFound": "No se encontró ningún elemento para el índice dado",
 	"alert": "alerta",
-	"alertFilterDescription": "Utilice esto filtro para devolver solo los CPE que tienen una alerta."
+	"alertFilterDescription": "Utilice esto filtro para devolver solo los CPE que tienen una alerta.",
+	"flashmanUnavailable": "Flashman inaccesible"
 }

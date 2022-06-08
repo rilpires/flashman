@@ -439,6 +439,10 @@
 	"massUpdateIndividualConfigurations": "Bulk changes to individual settings",
 	"parametersHereWillBeAppliedToAllSelectedDevices": "The parameters defined here will be applied to all devices listed in the current search performed. Fields with no value, or blank, will not be recorded, the values already existing in each device will be kept.",
 	"lossCollection": "Loss Collection",
+	"dataCollection": "Data Collection",
+	"burstCollection": "Ping Burst Collection",
+	"wifiCollection": "Data collection from devices connected to Wi-Fi",
+	"pingAndWanCollection": "Ping and Wan data collection",
 	"doNotChange": "Do not change",
 	"Activated": "Activated",
 	"ifCollectingIsOffDeviceWillBehaveAsOff": "If the collection service is not turned on, active devices will behave as inactive devices.",
@@ -830,6 +834,7 @@
 	"cpesWebinterfacePassword": "Password for the CPEs web interface",
 	"onuWebPasswordTooltip": "Password must be 8 to 16 characters long, contain at least one uppercase letter, one lowercase letter, one number, and one special character. The special character cannot be the first character!",
 	"insertValidPassword": "Please enter a valid password",
+	"notNumeric": "Value is not a number",
 	"configureOnusRemoteAccess": "Configure remote access for ONUs",
 	"enableStunServerUsage": "Enable use of STUN Server",
 	"stunEnableTooltip": "Required for CPEs to be fully communicable by Flashman when behind NAT (supported models only)",
@@ -956,5 +961,6 @@
 	"vlanProfile": "VLAN Profile",
 	"arrayElementNotFound": "No element found for the given index",
 	"alert": "alert",
-	"alertFilterDescription": "Use this filters to return only CPEs that have an alert."
+	"alertFilterDescription": "Use this filters to return only CPEs that have an alert.",
+	"flashmanUnavailable": "Flashman unavailable"
 }
