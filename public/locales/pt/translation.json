@@ -447,7 +447,7 @@
 	"Activated": "Ativado",
 	"ifCollectingIsOffDeviceWillBehaveAsOff": "Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos.",
 	"ifCollectingIsOffThisMeasureWillNotHappen": "Se o serviço de coleta não estiver ligado, este dispositivo não efetuará esta coleta.",
-"latencyCollecting": "Coleta de latência",
+	"latencyCollecting": "Coleta de latência",
 	"Erase": "Apagar",
 	"usedByAllDevicesBlankMeansNoChange": "Usados por todos os dispositivos. Campo em branco signfica que esta configuração não será alterada.",
 	"dataCollectingForDeviceId": "Coleta de Dados do dispositivo {{-id}}",

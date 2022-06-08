@@ -1,3 +1,5 @@
+/* eslint-disable guard-for-in */
+/* eslint-disable no-throw-literal */
 import {displayAlertMsg} from './common_actions.js';
 
 const t = i18next.t;
@@ -105,15 +107,18 @@ $(document).ready(function() {
   };
   for (let name in parameters) {
     let p = parameters[name];
-    if (p.service) { // if service is true, this parameter exists in config model.
+    // if service is true, this parameter exists in config model.
+    if (p.service) {
       // substituting it with the html element that holds its value.
-      p.service = document.getElementById('data_collecting_service_'+name)
+      p.service = document.getElementById('data_collecting_service_'+name);
     }
     if (p.device) { // if device is true, this parameter exists in device model.
       // substituting it with the html element that holds its value.
-      p.device = document.getElementById('data_collecting_device_'+name)
-      // creating an attribute pointing to the html element that holds the mass update value.
-      p.massUpdate = document.getElementById('data_collecting_mass_update_'+name)
+      p.device = document.getElementById('data_collecting_device_'+name);
+      // creating an attribute pointing to the html
+      // element that holds the mass update value.
+      p.massUpdate =
+        document.getElementById('data_collecting_mass_update_'+name);
     }
   }
 
@@ -146,17 +151,18 @@ $(document).ready(function() {
       return Promise.resolve(res.json()).catch((e) => {});
     } else if (res.status === 502) {
       // this will be caught and the message will be used in alert in screen.
-      throw ({message: 'Flashman inacessível.'})
+      throw ({message: 'Flashman inacessível.'});
     } else {
       // will return body as raw string if we can't parse it as json.
       return Promise.resolve(res.text())
       .then((body) => {
         try {
-          // this will be caught and the message will be used in alert in screen.
+          // this will be caught and the message
+          // will be used in alert in screen.
           throw JSON.parse(body);
         } catch (e) {
-          console.log('raw response as string:', x);
-          // this will be caught and the message will be used in alert in screen.
+          // this will be caught and the message
+          // will be used in alert in screen.
           throw {message: 'Erro ao receber resposta do Flashman'};
         }
       });
@@ -178,11 +184,13 @@ $(document).ready(function() {
   };
 
   const submitServiceParameters = function(event) {
-    // for text fields, resetting custom validity, trimming and executing validation.
+    // for text fields, resetting custom validity,
+    // trimming and executing validation.
     for (let name in parameters) {
       let p = parameters[name];
       let input = p.service; // the html element.
-      // if parameter name not defined in service or parameter not of type string.
+      // if parameter name not defined in service
+      // or parameter not of type string.
       if (!input || p.type !== String) continue;
 
       input.setCustomValidity('');
@@ -262,7 +270,7 @@ $(document).ready(function() {
         let numericValue = Number(value);
         if (isNaN(numericValue)) {
           input.setCustomValidity(t('notNumeric'));
-          continue
+          continue;
         }
         if (p.validation !== undefined && !p.validation(value)) {
           input.setCustomValidity(p.invalidMessage);
@@ -295,7 +303,7 @@ $(document).ready(function() {
     let savedDeviceData = getDeviceParameters(deviceRow);
     let data = {$set: {}}; // data to be submitted.
     let anyChange = false;
-    
+
     for (let name in parameters) {
       let p = parameters[name];
       let input = p.device; // the html element.
@@ -306,27 +314,42 @@ $(document).ready(function() {
       if (p.type === Boolean) {
         value = input.checked; // reading parameter value from html element.
         data.$set[name] = value; // adding value to data to be submitted.
-        if (value !== savedDeviceData[name]) anyChange = true; // checking change.
+        // checking change.
+        if (value !== savedDeviceData[name]) anyChange = true;
       } else if (p.type === String) {
         input.setCustomValidity(''); // resetting validation.
-        let value = input.value = input.value.trim(); // trimming data and updating value.
+        // trimming data and updating value.
+        let value = input.value = input.value.trim();
         // validating data.
-        if (value !== '' && p.validation !== undefined && !p.validation(value)) {
-          input.setCustomValidity(p.invalidMessage); // setting message for invalid field.
+        if (value !== '' && p.validation !== undefined &&
+            !p.validation(value)
+        ) {
+          // setting message for invalid field.
+          input.setCustomValidity(p.invalidMessage);
         }
         value = input.value; // reading parameter value from html element.
         // adding value to data to be submitted.
-        if (value === '') { // empty string means we should remove data from database.
-          if (data.$unset === undefined) data.$unset = {}; // if unset field is not defined yet.
-          data.$unset[name] = ''; // adding name to data to be submitted. any value will work.
-        } else { // any other string value should be set as is (validation has already happened).
+
+        // empty string means we should remove data from database.
+        if (value === '') {
+          // if unset field is not defined yet.
+          if (data.$unset === undefined) data.$unset = {};
+          // adding name to data to be submitted. any value will work.
+          data.$unset[name] = '';
+        // any other string value should be set
+        // as is (validation has already happened).
+        } else {
           data.$set[name] = value; // adding value to data to be submitted.
         }
         if (value !== savedDeviceData[name]) anyChange = true;
-      } else if (p.type === Number) { // currently no numeric parameters exist for device.
-        value = Number(input.value); // reading parameter value from html element.
-        data.$set[name] = value; // adding value to data to be submitted.
-        if (value !== savedDeviceData[name]) anyChange = true; // checking change.
+      // currently no numeric parameters exist for device.
+      } else if (p.type === Number) {
+        // reading parameter value from html element.
+        value = Number(input.value);
+        // adding value to data to be submitted.
+        data.$set[name] = value;
+        // checking change.
+        if (value !== savedDeviceData[name]) anyChange = true;
       }
     }
 
@@ -367,9 +390,11 @@ $(document).ready(function() {
     for (let name in parameters) {
       let p = parameters[name];
       let input = p.device; // the html element.
-      if (!input) continue; // if attribute 'device' is not defined, skip parameter.
+      // if attribute 'device' is not defined, skip parameter.
+      if (!input) continue;
 
-      let value = deviceParameters[name] // value from device_list.
+      // value from device_list.
+      let value = deviceParameters[name];
       if (p.type === Boolean) {
         input.checked = value;
       } else if (p.type === String) {
@@ -409,7 +434,7 @@ $(document).ready(function() {
   if (btnDataCollecting) {
     btnDataCollecting.onclick = (event) => serviceModal.modal('show');
   }
-  [...document.getElementsByClassName('panel-arrow')].forEach((e) => 
+  [...document.getElementsByClassName('panel-arrow')].forEach((e) =>
     e.addEventListener('click', hideShowPannel));
 
   let serviceForm = document.getElementById('data_collecting_serviceForm');

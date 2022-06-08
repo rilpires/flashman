@@ -107,19 +107,25 @@ anlixDocumentReady.add(function() {
     type: 'GET',
     url: '/data_collecting/service/parameters',
     success: function(resp) {
+      // eslint-disable-next-line guard-for-in
       for (let parameter in resp) {
-        // element id is derived from the data_collecting original parameter name.
-        let element = document.getElementById('data_collecting_service_'+parameter);
+        // Element id is derived from the data_collecting
+        // original parameter name.
+        let element =
+          document.getElementById('data_collecting_service_'+parameter);
         if (!element) continue; // if element doesn't exist, skip it.
 
         let value = resp[parameter];
-        switch (value.constructor) { // value assignment to the html element differs by data type.
+        // value assignment to the html element differs by data type.
+        switch (value.constructor) {
           case Boolean: // a checkbox implements boolean values.
             element.checked = value;
             break;
           case String: // an input field of type text implements strings.
             element.value = value;
-            if (element.value !== '') element.previousElementSibling.classList.add('active');
+            if (element.value !== '') {
+              element.previousElementSibling.classList.add('active');
+            }
             break;
           case Number: // an input field of type numeric implements numbers.
             element.value = value;
