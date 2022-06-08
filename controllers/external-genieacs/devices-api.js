@@ -1103,6 +1103,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getHurakallFields();
       break;
+    case 'P20':
+      message = '';
+      fields = getDefaultFields();
+      break;
     default:
       return unknownModel;
   }

@@ -359,6 +359,18 @@ const createRegistry = async function(req, permissions) {
     doChanges = true;
   }
 
+  if (data.wifi5.bssid === undefined) {
+    data.wifi5 = {
+      bssid: undefined,
+      mode: undefined,
+      band: undefined,
+      enable: undefined,
+    }
+  }
+  if (data.wan.mtu === undefined || data.wan.mtu_ppp === undefined) {
+    data.wan.mtu = { value: undefined };
+    data.wan.mtu_ppp = { value: undefined };
+  }
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
