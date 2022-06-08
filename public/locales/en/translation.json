@@ -961,5 +961,6 @@
 	"vlanProfile": "VLAN Profile",
 	"arrayElementNotFound": "No element found for the given index",
 	"alert": "alert",
-	"alertFilterDescription": "Use this filters to return only CPEs that have an alert."
+	"alertFilterDescription": "Use this filters to return only CPEs that have an alert.",
+	"flashmanUnavailable": "Flashman unavailable"
 }

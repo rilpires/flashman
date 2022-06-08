@@ -151,7 +151,7 @@ $(document).ready(function() {
       return Promise.resolve(res.json()).catch((e) => {});
     } else if (res.status === 502) {
       // this will be caught and the message will be used in alert in screen.
-      throw ({message: 'Flashman inacessível.'});
+      throw ({message: t('flashmanUnavailable')});
     } else {
       // will return body as raw string if we can't parse it as json.
       return Promise.resolve(res.text())
@@ -163,7 +163,7 @@ $(document).ready(function() {
         } catch (e) {
           // this will be caught and the message
           // will be used in alert in screen.
-          throw {message: 'Erro ao receber resposta do Flashman'};
+          throw {message: t('jsonError')};
         }
       });
     }
