@@ -100,6 +100,7 @@ const watchGenieFaults = async function() {
     if (['session_terminated', 'timeout', 'cwmp.9002'].includes(doc.code)) {
       // Ignore session timeout and session terminated errors - no benefit
       // reporting them and clutter flashman
+      faultsCollection.deleteOne({_id: doc._id});
       return;
     }
     let errorMsg = '';
