@@ -15,7 +15,7 @@ const deviceHandlers = require('./handlers/devices');
 const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
-const dataCollecting = require('./data_collecting');
+const dataCollectingController = require('./data_collecting');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -993,7 +993,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           };
 
           // adding all data_collecting parameters to response json.
-          let dcRes = dataCollecting.mergeConfigs(
+          let dcRes = dataCollectingController.mergeConfigs(
             matchedConfig.data_collecting,
             matchedDevice.data_collecting,
             matchedDevice.version,
