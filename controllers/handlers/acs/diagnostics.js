@@ -198,12 +198,6 @@ const calculateSpeedDiagnostic = async function(
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
-      if (device.speedtest_results.length > 0) {
-        lastTime = utilHandlers.parseDate(
-          device.speedtest_results[device.speedtest_results.length-1].timestamp,
-        );
-      }
-
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
       let endTime = (new Date(speedKeys.end_time)).valueOf();
       // 10**3 => seconds to miliseconds (because of valueOf() notation)
