@@ -235,7 +235,7 @@ let deviceSchema = new Schema({
   // on specific api calls (i.e., sendCustomPing)
   temp_command_trap: {
     ping_hosts: [String],
-    speedtest_url: String,
+    speedtest_url: {type: String, default: ''},
     webhook_url: {type: String, default: ''},
     webhook_user: {type: String, default: ''},
     webhook_secret: {type: String, default: ''},
