@@ -1192,8 +1192,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Force a wifi password sync after a hard reset
   if (device.recovering_tr069_reset) {
-    changes.wifi2.password = device.wifi_password.trim();
-    if (device.wifi_is_5ghz_capable) {
+    if (device.wifi_password) {
+      changes.wifi2.password = device.wifi_password.trim();
+    }
+    if (device.wifi_is_5ghz_capable && device.wifi_password_5ghz) {
       changes.wifi5.password = device.wifi_password_5ghz.trim();
     }
     hasChanges = true;
@@ -1680,16 +1682,16 @@ acsDeviceInfoController.updateInfo = async function(
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2 && changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid && device.wifi_password) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5 && changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid && device.wifi_password_5ghz) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
-  if (changes.wan && changes.wan.pppoe_user) {
+  if (changes.wan && changes.wan.pppoe_user && device.pppoe_password) {
     changes.wan.pppoe_pass = device.pppoe_password;
   }
   Object.keys(changes).forEach((masterKey)=>{
