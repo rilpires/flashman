@@ -3259,18 +3259,14 @@ deviceListController.doSpeedTest = function(req, res) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
 
-      let customUrl = undefined;
-      if (matchedDevice.temp_speedtest_host &&
-        matchedDevice.temp_speedtest_host.url) {
-          customUrl = matchedDevice.temp_speedtest_host.url;
-      }
+      let customUrl = matchedDevice.temp_command_trap.speedtest_url;
 
       if (matchedDevice.use_tr069) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
         // When customUrl is defined, we skip 'estimative' stage
         matchedDevice.current_speedtest.stage =
-          (customUrl)?('measure'):('estimative');
+          (customUrl!='')?('measure'):('estimative');
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,
@@ -3279,15 +3275,13 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
-        let url = customUrl || matchedConfig.measureServerIP
-          + ':' + matchedConfig.measureServerPort;
-        matchedDevice.temp_speedtest_host = undefined;
-        await matchedDevice.save().catch((err) => {
-          return res.status(200).json({
-            success: false,
-            message: t('cpeSaveError', {errorline: __line}),
-          });
-        });
+        let url;
+        if (customUrl != ''){
+          url = customUrl;
+        } else {
+          url = matchedConfig.measureServerIP
+            + ':' + matchedConfig.measureServerPort;
+        }
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
       return res.status(200).json({
