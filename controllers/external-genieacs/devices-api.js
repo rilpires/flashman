@@ -524,11 +524,10 @@ const getHuaweiFields = function(model, modelName) {
     if (model === 'HG8121H' || model == 'EG8145X6') {
       fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
       fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
-      // This model can not do full load speedtest
+    }
+    if (model === 'HG8121H') {
+      // This model can not do number of connections on speedtest
       delete fields.diagnostics.speedtest.num_of_conn;
-      delete fields.diagnostics.speedtest.down_transports;
-      delete fields.diagnostics.speedtest.full_load_bytes_rec;
-      delete fields.diagnostics.speedtest.full_load_period;
     }
   } else if (model === 'Huawei') {
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
@@ -756,16 +755,8 @@ const getGreatekFields = function(model) {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
-  // This model does not have the WiFi band field
-  delete fields.wifi2.band;
-  delete fields.wifi5.band;
-  delete fields.mesh2.band;
-  delete fields.mesh5.band;
-  // This model can not do full load speedtest
+  // This model can not do number of connections on speedtest
   delete fields.diagnostics.speedtest.num_of_conn;
-  delete fields.diagnostics.speedtest.down_transports;
-  delete fields.diagnostics.speedtest.full_load_bytes_rec;
-  delete fields.diagnostics.speedtest.full_load_period;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =
     ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
