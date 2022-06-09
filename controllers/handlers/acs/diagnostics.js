@@ -290,8 +290,7 @@ const startSpeedtestDiagnose = async function(acsID) {
 
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnStateField = fields.diagnostics.speedtest.diag_state;
-  let diagnNumConnField = ('num_of_conn' in fields.diagnostics.speedtest) ?
-    fields.diagnostics.speedtest.num_of_conn : null;
+  let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
   let numberOfCon = 3;
@@ -308,7 +307,8 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
-  if (diagnNumConnField == null) {
+  // Special case for models that cannot change number of connections
+  if (!diagnNumConnField) {
     task.parameterValues.splice(1, 1);
   }
   const result = await TasksAPI.addTask(acsID, task);
