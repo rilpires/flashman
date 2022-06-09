@@ -46,8 +46,7 @@ const getSpeedtestFile = async function(device) {
     return '';
   }
 
-  if (device.temp_command_trap.active
-  && device.temp_command_trap.speedtest_url ) {
+  if (device.temp_command_trap.speedtest_url) {
     return device.temp_command_trap.speedtest_url;
   }
 
@@ -121,10 +120,9 @@ const calculatePingDiagnostic = async function(
     }
 
     let currentCommandTrap = undefined;
-    if (device.temp_command_trap.active
-    && device.temp_command_trap.ping_hosts.length>0 ) {
+    if (device.temp_command_trap.ping_hosts.length>0) {
+      device.temp_command_trap.ping_hosts = [];
       currentCommandTrap = device.temp_command_trap;
-      device.temp_command_trap.active = false;
     }
 
     // Always set completed to true to not break recursion on failure
@@ -147,9 +145,7 @@ const calculatePingDiagnostic = async function(
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (currentCommandTrap
-    && currentCommandTrap.ping_hosts.length > 0
-    && currentCommandTrap.webhook_url ) {
+    if (currentCommandTrap && currentCommandTrap.webhook_url) {
       let requestOptions = {};
       requestOptions.url = currentCommandTrap.webhook_url;
       requestOptions.method = 'PUT';

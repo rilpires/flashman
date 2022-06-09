@@ -162,8 +162,7 @@ const initiatePingCommand = async function(device) {
   if (device && device.use_tr069) {
     device.pingtest_results = [];
 
-    if (device.temp_command_trap.active
-    && device.temp_command_trap.ping_hosts.length > 0) {
+    if ( device.temp_command_trap.ping_hosts.length > 0) {
       device.pingtest_results = device.temp_command_trap.ping_hosts
       .map((item)=>({
         host: item,
@@ -1323,7 +1322,8 @@ deviceListController.sendCustomPing = async function(req, res) {
 
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap.active) {
+    if (device.temp_command_trap.ping_hosts.length > 0
+      || device.temp_command_trap.speedtest_url!='') {
       return res.status(200).json({
         success: false,
         message: t('errorOccurredTryAgain'),
@@ -1351,7 +1351,6 @@ deviceListController.sendCustomPing = async function(req, res) {
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
 
     device.temp_command_trap = {
-      active: true,
       ping_hosts: approvedTempHosts,
       speedtest_url: '',
       webhook_url: '',
@@ -1397,7 +1396,8 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     }
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap.active) {
+    if (device.temp_command_trap.ping_hosts.length > 0
+      || device.temp_command_trap.speedtest_url!='') {
       return res.status(200).json({
         success: false,
         message: t('errorOccurredTryAgain'),
@@ -1426,7 +1426,6 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     }
 
     device.temp_command_trap = {
-      active: true,
       ping_hosts: [],
       speedtest_url: req.body.content.url,
       webhook_url: '',
@@ -2961,11 +2960,10 @@ deviceListController.getPingHostsList = async function(req, res) {
     }
     let responseHosts = [];
 
-    if ( device.temp_command_trap.active
-    && device.temp_command_trap.ping_hosts.length > 0 ) {
+    if (device.temp_command_trap.ping_hosts.length > 0) {
       responseHosts = device.temp_command_trap.ping_hosts;
       responseHosts = Array.from(new Set(responseHosts));
-    } else if ( responseHosts.length == 0 ) {
+    } else {
       responseHosts = device.ping_hosts;
     }
     return res.status(200).json({

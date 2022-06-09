@@ -1923,9 +1923,8 @@ deviceInfoController.receivePingResult = function(req, res) {
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.temp_command_trap.active &&
-      matchedDevice.temp_command_trap.ping_hosts.length > 0) {
-      matchedDevice.temp_command_trap.active = false;
+    if ( matchedDevice.temp_command_trap.ping_hosts.length > 0) {
+      matchedDevice.temp_command_trap.ping_hosts = [];
       if (matchedDevice.temp_command_trap.webhook_url!='') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
