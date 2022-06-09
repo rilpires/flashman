@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 
 const express = require('express');
 const deviceListController = require('../../controllers/device_list');
@@ -113,6 +114,18 @@ router.route('/device/landevice/block').put(
 router.route('/device/coordinates').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.editCoordinates,
+);
+
+// Get license status of desired CPE
+router.route('/device/license/get').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.updateLicenseStatus,
+);
+
+// Set license status of desired CPEs
+router.route('/device/license/set').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.changeLicenseStatus,
 );
 
 // *************

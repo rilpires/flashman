@@ -10,6 +10,58 @@ const t = require('./language').i18next.t;
 
 let dataCollectingController = {};
 
+
+// receives data_collecting parameters object from service and from device and
+// merges them, taking the device's version into consideration for
+// compatibility, and returns the res data_collecting parameters.
+dataCollectingController.mergeConfigs = function(service, device, version) {
+  // default data collecting parameters to be sent, to device, in response.
+  let res = { // nothing happens in device with these parameters.
+    is_active: false,
+    has_latency: false,
+    ping_fqdn: '',
+    alarm_fqdn: '',
+    ping_packets: 100,
+    burst_loss: false,
+    wifi_devices: false,
+    ping_and_wan: false,
+  };
+
+  // for each data_collecting parameter, in service, we copy its value.
+  // This also makes the code compatible with a data base with no data
+  // collecting parameters.
+  // eslint-disable-next-line guard-for-in
+  for (let parameter in service) res[parameter] = service[parameter];
+
+  // combining 'device' and 'service' if data_collecting exists in 'device'.
+  if (device !== undefined) {
+    // for on/off buttons we apply bit wise AND when merging.
+    let applyAnd = ['is_active', 'has_latency', 'burst_loss', 'wifi_devices',
+                    'ping_and_wan'];
+    // eslint-disable-next-line guard-for-in
+    for (let name of applyAnd) {
+      // device value && config value, if it exists in device.
+      if (device[name] !== undefined) res[name] = res[name] && device[name];
+    }
+    // we use both 'is_active' and at least one of the measurement
+    // to activate the service.
+    res.is_active = res.is_active &&
+                    (res.burst_loss || res.ping_and_wan || res.wifi_devices);
+
+    // for values that device has preference, use it, if it exists.
+    let devicePreference = ['ping_fqdn'];
+    for (let name of devicePreference) {
+      if (device[name] !== undefined) res[name] = device[name];
+    }
+  } else { // if data collecting doesn't exist for device, it won't collect.
+    // but we have to send at least one variable to disabled it.
+    res.is_active = false;
+  }
+
+  return res;
+};
+
+
 // A function that treats body fields.
 // Executes a given validity function for 'fieldName's value, if 'fieldName'
 // exists in 'obj' and returns 4 values:
@@ -50,10 +102,13 @@ const checkNumericField = (v) => v.constructor === Number;
 const checkNumericFieldInsideInterval = (min, max) =>
   (v) => checkNumericField(v) && v >= min && v <= max;
 
+// functions to check a field in a received json.
 const checkIsActive = (obj) =>
   checkField(obj, 'is_active', checkBooleanField);
 const checkHaslatency = (obj) =>
   checkField(obj, 'has_latency', checkBooleanField);
+const checkHasPingAndWan = (obj) =>
+  checkField(obj, 'ping_and_wan', checkBooleanField);
 const checkAlarmFqdn = (obj) =>
   checkField(obj, 'alarm_fqdn', util.isFqdnValid);
 const checkPingFqdn = (obj) =>
@@ -63,6 +118,10 @@ const checkPingFqdnToUnset = (obj) =>
 const checkPingPackets = (obj) => // so far, only value=100 is allowed.
   checkField(obj, 'ping_packets',
     checkNumericFieldInsideInterval(100, 100));
+const checkHasBurstLoss = (obj) =>
+  checkField(obj, 'burst_loss', checkBooleanField);
+const checkHasWifiDevices = (obj) =>
+  checkField(obj, 'wifi_devices', checkBooleanField);
 
 // An Object class to be used as errors to be returned in responses.
 // Every router http handler will have a final catch that expects an object of
@@ -214,7 +273,8 @@ dataCollectingController.updateServiceParameters = function(req, res) {
     $set: {
       obj: req.body,
       fieldChecks: [checkIsActive, checkHaslatency, checkAlarmFqdn,
-        checkPingFqdn, checkPingPackets],
+        checkPingFqdn, checkPingPackets, checkHasBurstLoss,
+        checkHasWifiDevices, checkHasPingAndWan],
     },
   }))
   .then((update) => ConfigModel.updateOne({is_default: true}, update).exec()
@@ -231,10 +291,16 @@ dataCollectingController.updateManyParameters = async function(req, res) {
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
-      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
+      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
+        checkHasBurstLoss, checkHasWifiDevices, checkHasPingAndWan],
     },
     $unset: {
       obj: req.body.$unset,
+      // for front-end, if user leave this field as empty string, it means
+      // he wants to use the value from Config, instead of the device value.
+      // so we remove the device's value and let the function
+      // 'dataCollectingController.mergeConfigs()' work. The ping_fqdn is coded
+      // to use the service value when device value is not present.
       fieldChecks: [checkPingFqdnToUnset],
     },
   }))
@@ -278,7 +344,8 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
   .then(() => readChangesAndBuildMongoDBUpdateObject({
     $set: {
       obj: req.body.$set,
-      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn],
+      fieldChecks: [checkIsActive, checkHaslatency, checkPingFqdn,
+        checkHasBurstLoss, checkHasWifiDevices, checkHasPingAndWan],
     },
     $unset: {
       obj: req.body.$unset,
