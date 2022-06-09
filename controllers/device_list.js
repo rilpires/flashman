@@ -3276,7 +3276,7 @@ deviceListController.doSpeedTest = function(req, res) {
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
         let url;
-        if (customUrl != ''){
+        if (customUrl != '') {
           url = customUrl;
         } else {
           url = matchedConfig.measureServerIP

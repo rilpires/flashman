@@ -544,7 +544,7 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   }
 
   result = formatSpeedtestResult(result);
-  if (device.temp_command_trap.speedtest_url) {
+  if (device.temp_command_trap.speedtest_url != '') {
     // Don't care about waiting here
     sendSpeedtestResultToCustomTrap(device, result);
     device.temp_command_trap.speedtest_url = '';
