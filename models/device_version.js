@@ -1061,6 +1061,31 @@ const tr069Devices = {
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
   },
+  'P20': {
+    vendor: 'PhyHome',
+    versions_upgrade: {
+      '1.0.14 Build 20211118 rel.43110(5553)': [],
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 0,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
 };
 
 const flashboxFirmwareDevices = {
