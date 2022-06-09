@@ -252,8 +252,10 @@ acsPortForwardHandler.changePortForwardRules = async function(
         let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
         let requestConn = ((!needsToQueueTasks) || (noRuleToAdd && isLastIter));
         ret = await TasksAPI.addTask(
-          acsID, changeEntriesSizeTask, null, 0, requestConn);
-        if (!ret || !ret.success) {
+          acsID, changeEntriesSizeTask, null, 0, requestConn,
+        );
+        // Need to check for executed flag if we sent requestConn flag to true
+        if (!ret || !ret.success || (requestConn && !ret.executed)) {
           return;
         }
       } catch (e) {
@@ -268,7 +270,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
         let requestConn = (!needsToQueueTasks);
         ret = await TasksAPI.addTask(
           acsID, changeEntriesSizeTask, null, 0, requestConn);
-        if (!ret || !ret.success) {
+        // Need to check for executed flag if we sent requestConn flag to true
+        if (!ret || !ret.success || (requestConn && !ret.executed)) {
           return;
         }
       } catch (e) {
