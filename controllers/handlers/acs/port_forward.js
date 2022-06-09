@@ -233,12 +233,15 @@ acsPortForwardHandler.changePortForwardRules = async function(
   }
   let currentLength = device.port_mapping.length;
   // The flag needsToQueueTasks marks the models that need to queue the tasks of
-  // addObject and deleteObject
+  // addObject and deleteObject - this happens because they reboot or lose
+  // connection while running the task
   let needsToQueueTasks = (['GWR-1200AC'].includes(device.model));
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
     for (i = 0; i < rulesDiffLength; i++) {
+      // If, for example, we had 8 rules and now have 5, we need to delete
+      // indexes 6, 7, and 8 (TR-069 starts indexes at 1 rather than 0)
       let index = i + currentLength + 1;
       changeEntriesSizeTask.objectName = portMappingTemplate + '.' + index;
       try {
