@@ -76,7 +76,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9') {
+      if (ouiModelStr === 'HG9' || ouiModelStr === 'P20') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
@@ -97,7 +97,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bg';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'g-only';
@@ -125,7 +129,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'b,g,n';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bgn';
       } else return '11bgn';
     case '11na':
