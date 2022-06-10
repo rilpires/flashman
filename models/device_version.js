@@ -1064,7 +1064,7 @@ const tr069Devices = {
   'P20': {
     vendor: 'PhyHome',
     versions_upgrade: {
-      '1.0.14 Build 20211118 rel.43110(5553)': [],
+      'V6.1.6T1': [],
     },
     feature_support: {
       wifi_ax_mode: false,
