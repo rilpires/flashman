@@ -197,27 +197,31 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '1';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
+      if (model === 'EC220-G5') return '20M';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '2';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
+      if (model === 'EC220-G5') return '40M';
       return '40MHz';
     case 'VHT80':
       if (model === 'AC10' || model === 'EG8145X6') return '3';
       if (model === 'ST-1001-FL') return '80Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40/80MHz';
+      if (model === 'EC220-G5') return '80M';
       return '80MHz';
     case 'auto':
       if (model === 'DIR-842' || model === 'DIR-841') {
         return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistence';
       } else if (
         model === 'BEACON 1 HA-020W-B' ||
-        model === 'ST-1001-FL'
+        model === 'ST-1001-FL' ||
+        model === 'EC220-G5'
       ) {
         return 'Auto';
       } else if (model === 'AC10') {
