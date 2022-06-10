@@ -162,8 +162,13 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi = true;
             }
           } else {
-            // DIR-842 leaves the dot in the layer2 interface name
-            if (l2iface === iface2 || l2iface === iface2 + '.') {
+            let cmpIface2 = iface2;
+            if (model === 'GWR-1200AC') {
+              // For some reason it uses index 6 instead of 2 here
+              cmpIface2 = iface2.replace(/2/g, '6');
+            }
+            // Some models leave the dot in the layer2 interface name
+            if (l2iface === cmpIface2 || l2iface === cmpIface2 + '.') {
               device.wifi = true;
               device.wifi_freq = 2.4;
             } else if (l2iface === iface5 || l2iface === iface5 + '.') {
