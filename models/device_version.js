@@ -253,7 +253,7 @@ const tr069Devices = {
       block_wired_devices: false,
       connected_devices: true,
       firmware_upgrade: false,
-      stun: false,
+      stun: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
     },

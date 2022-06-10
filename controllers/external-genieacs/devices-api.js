@@ -762,6 +762,16 @@ const getGreatekFields = function(model) {
     ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
   fields.port_mapping_values.protocol =
     ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
+  // STUN fields
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address =
+    'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port =
+    'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   return fields;
 };
 
