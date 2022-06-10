@@ -1,0 +1,14 @@
+{
+    "_id": "periodic_event",
+    "channel": "Events",
+    "weight": 0,
+    "events": {
+        "2 PERIODIC": true
+    },
+    "precondition": "",
+    "configurations": [{
+        "type": "provision",
+        "name": "flashman",
+        "args": null
+    }]
+}
