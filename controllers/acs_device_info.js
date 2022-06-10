@@ -959,6 +959,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  } else if (device.model === 'GWR-1200AC') {
+    serialTR069 = device._id;
   }
   device.serial_tr069 = serialTR069;
 
