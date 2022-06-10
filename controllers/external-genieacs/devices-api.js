@@ -581,6 +581,20 @@ const getHuaweiFields = function(model, modelName) {
   return fields;
 };
 
+const getPhyHomeFields = function(model, modelName) {
+  let fields = getDefaultFields();
+  console.log(model);
+  switch (model) {
+    case 'P20': {
+      fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+      fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+      fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+      fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
+    }
+  }
+  return fields;
+}
+
 const getZTEFields = function(model) {
   let fields = getDefaultFields();
   switch (model) {
@@ -1113,7 +1127,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       break;
     case 'P20':
       message = '';
-      fields = getDefaultFields();
+      fields = getPhyHomeFields(model);
       break;
     default:
       return unknownModel;
