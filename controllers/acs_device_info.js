@@ -313,6 +313,8 @@ const createRegistry = async function(req, permissions) {
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  } else if (model === 'GWR-1200AC') {
+    serialTR069 = macAddr;
   }
 
   // Collect PON signal, if available
