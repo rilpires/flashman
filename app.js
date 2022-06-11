@@ -285,7 +285,11 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
     // Restart genieacs service whenever Flashman is restarted
-    updater.rebootGenie(process.env.instances);
+    if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
+      updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
+    } else {
+      updater.rebootGenie(process.env.instances);
+    }
     // Force an update check to alert user on app startup
     updater.checkUpdate();
 
