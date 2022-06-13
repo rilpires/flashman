@@ -361,18 +361,35 @@ const createRegistry = async function(req, permissions) {
     doChanges = true;
   }
 
-  if (data.wifi5.bssid === undefined) {
-    data.wifi5 = {
-      bssid: undefined,
-      mode: undefined,
-      band: undefined,
-      enable: undefined,
+  let wanMtu;
+  if (hasPPPoE && data.wan.mtu_ppp && data.wan.mtu_ppp.value) {
+    wanMtu = data.wan.mtu_ppp.value;
+  } else if (!hasPPPoE && data.wan.mtu && data.wan.mtu.value) {
+    wanMtu = data.wan.mtu.value;
+  }
+
+  let mode2;
+  let band2;
+  if (data.wifi2.mode && data.wifi2.mode.value) {
+    mode2 = convertWifiMode(data.wifi2.mode.value, true);
+    if (data.wifi2.band && data.wifi2.band.value) {
+      band2 = convertWifiBand(
+        model, data.wifi2.band.value, data.wifi2.mode.value, true,
+      );
     }
   }
-  if (data.wan.mtu === undefined || data.wan.mtu_ppp === undefined) {
-    data.wan.mtu = { value: undefined };
-    data.wan.mtu_ppp = { value: undefined };
+
+  let mode5;
+  let band5;
+  if (data.wifi5.mode && data.wifi5.mode.value) {
+    mode5 = convertWifiMode(data.wifi5.mode.value, true);
+    if (data.wifi5.band && data.wifi5.band.value) {
+      band5 = convertWifiBand(
+        model, data.wifi5.band.value, data.wifi5.mode.value, true,
+      );
+    }
   }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -389,36 +406,34 @@ const createRegistry = async function(req, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
-    wan_vlan_id: (data.wan.vlan) ? data.wan.vlan.value : undefined,
-    wan_mtu: (hasPPPoE) ? data.wan.mtu_ppp.value : data.wan.mtu.value,
+    wan_vlan_id: (data.wan.vlan && data.wan.vlan.value) ?
+      data.wan.vlan.value : undefined,
+    wan_mtu: wanMtu,
     wifi_ssid: ssid,
-    wifi_bssid:
-      (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
+    wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
+      data.wifi2.bssid.value.toUpperCase() : undefined,
     wifi_channel: wifi2Channel,
-    wifi_mode: (data.wifi2.mode) ?
-      convertWifiMode(data.wifi2.mode.value, false) : undefined,
-    wifi_band: (data.wifi2.band) ? convertWifiBand(
-      model, data.wifi2.band.value, data.wifi2.mode.value, false,
-    ) : undefined,
-    wifi_state: (data.wifi2.enable.value) ? 1 : 0,
+    wifi_mode: mode2,
+    wifi_band: band2,
+    wifi_state: (data.wifi2.enable && data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
-    wifi_bssid_5ghz:
-      (data.wifi5.bssid) ? data.wifi5.bssid.value.toUpperCase() : undefined,
+    wifi_bssid_5ghz: (data.wifi5.bssid && data.wifi5.bssid.value) ?
+      data.wifi5.bssid.value.toUpperCase() : undefined,
     wifi_channel_5ghz: wifi5Channel,
-    wifi_mode_5ghz: (data.wifi5.mode) ?
-      convertWifiMode(data.wifi5.mode.value, true) : undefined,
-    wifi_band_5ghz: (data.wifi5.band) ? convertWifiBand(
-      model, data.wifi5.band.value, data.wifi5.mode.value, true,
-    ) : undefined,
-    wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
+    wifi_mode_5ghz: mode5,
+    wifi_band_5ghz: band5,
+    wifi_state_5ghz: (
+      wifi5Capable && data.wifi5.enable && data.wifi5.enable.value
+    ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: (data.wan.rate) ? data.wan.rate.value : undefined,
-    wan_negociated_duplex:
-      (data.wan.duplex) ? data.wan.duplex.value : undefined,
+    wan_negociated_speed: (data.wan.rate && data.wan.rate.value) ?
+      data.wan.rate.value : undefined,
+    wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
+      data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
     created_at: Date.now(),
