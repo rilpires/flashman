@@ -261,6 +261,7 @@ const tr069Devices = {
       stun: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -1204,6 +1205,8 @@ const tr069Devices = {
       'V1.42(ABXU.1)b6_0118': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false,
