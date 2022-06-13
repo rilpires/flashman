@@ -1208,7 +1208,7 @@ const tr069Devices = {
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
-      port_forward: true,
+      port_forward: false,
       pon_signal: false,
       upnp: false,
       wps: false,
