@@ -125,6 +125,7 @@
 	"fileChecksumError": "Erro ao gerar hash de integridade do arquivo ({{errorline}})",
 	"firmwareAlreadyExists": "Não é possível cadastrar mais de um firmware para um determinado modelo/versão ({{errorline}})",
 	"requestError": "Erro na requisição ({{errorline}})",
+	"tokenError": "Erro no token fornecido ({{errorline}})",
 	"authenticationError": "Erro na autenticação ({{errorline}})",
 	"languageNotFound": "Lingua '{{-language}}' não existe ({{errorline}})",
 	"notificationFindError": "Erro ao buscar notificações ({{errorline}})",
@@ -438,6 +439,10 @@
 	"massUpdateIndividualConfigurations": "Alterações em massa das configurações individuais",
 	"parametersHereWillBeAppliedToAllSelectedDevices": "Os parâmetros definidos aqui serão aplicados a todos os dispositivos listados na atual busca feita. Campos sem valor, ou em branco, não serão gravados, serão mantidos os valores já existente em cada dispositivo.",
 	"lossCollection": "Coleta de perda",
+	"dataCollection": "Coleta de dados",
+	"burstCollection": "Coleta de ping em rajada",
+	"wifiCollection": "Coleta de dados de dispositivos conectados no Wi-Fi",
+	"pingAndWanCollection": "Coleta de dados de ping e wan",
 	"doNotChange": "Não alterar",
 	"Activated": "Ativado",
 	"ifCollectingIsOffDeviceWillBehaveAsOff": "Se o serviço de coleta não estiver ligado, os dispositivos ativos se comportarão como desativos.",
@@ -837,6 +842,7 @@
 	"cpesWebinterfacePassword": "Senha para a interface web das CPEs",
 	"onuWebPasswordTooltip": "A senha deve ter de 8 a 16 caracteres, conter pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial. O caractere especial não pode ser o primeiro caractere!",
 	"insertValidPassword": "Insira uma senha válida",
+	"notNumeric": "Valor não é numérico",
 	"configureOnusRemoteAccess": "Configurar acesso remoto para ONUs",
 	"enableStunServerUsage": "Habilitar uso do Servidor STUN",
 	"stunEnableTooltip": "Necessário para que as CPEs sejam totalmente comunicáveis pelo Flashman quando estão atrás de NAT (somente para modelos compatíveis)",
@@ -963,5 +969,6 @@
 	"vlanProfile": "Perfil de VLAN",
 	"arrayElementNotFound": "Não foi encontrado nenhum elemento para o índice passado",
 	"alert": "alerta",
-	"alertFilterDescription": "Use este filtro para retornar somente os CPEs que possuem alerta."
+	"alertFilterDescription": "Use este filtro para retornar somente os CPEs que possuem alerta.",
+	"flashmanUnavailable": "Flashman inacessível"
 }
