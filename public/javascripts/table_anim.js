@@ -1354,7 +1354,8 @@ anlixDocumentReady.add(function() {
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantWifiExtendedChannels =
             device.permissions.grantWifiExtendedChannels;
-          let grantLanEdit = device.permissions.grantLanEdit;
+          let grantDeviceLanRead = device.permissions.grantLanRead;
+          let grantDeviceLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
@@ -1459,7 +1460,7 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-validate-wifi-power="'+
             (!device.use_tr069 && grantWifiPowerHiddenIpv6Box &&
               (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-lan="'+grantLanEdit+'"';
+          formAttr += ' data-validate-lan="'+grantDeviceLanRead+'"';
           formAttr += ' data-validate-vlan-access="'+
             (isSuperuser?2:grantVlan)+'"';
           formAttr += ' data-validate-port-forward-asym="'+
@@ -1480,13 +1481,17 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-qtd-ports="'+
             (device.qtdPorts ? device.qtdPorts : '')+'"';
           if (device.data_collecting !== undefined) {
-            // data collecting parameters could be undefined.
-            formAttr += ' data-data_collecting-is_active="'+
-              (device.data_collecting.is_active ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-has_latency="'+
-              (device.data_collecting.has_latency ? 'true' : 'false')+'"';
-            formAttr += ' data-data_collecting-ping_fqdn="'+
-              (device.data_collecting.ping_fqdn || '')+'"';
+            let booleans = ['is_active', 'has_latency', 'burst_loss',
+                            'wifi_devices', 'ping_and_wan'];
+            for (let parameter of booleans) {
+              formAttr += ` data-data_collecting-${parameter}=
+              "${device.data_collecting[parameter] ? 'true' : 'false'}"`;
+            }
+            let strings = ['ping_fqdn'];
+            for (let parameter of strings) {
+              formAttr += ` data-data_collecting-${parameter}=
+              "${device.data_collecting[parameter] || ''}"`;
+            }
           }
           formAttr += ' data-grant-block-wired-devices="' +
             grantBlockWiredDevices + '"';
@@ -1884,7 +1889,7 @@ anlixDocumentReady.add(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (device.bridge_mode_enabled || !grantLanEdit ||
+          if (device.bridge_mode_enabled || !grantDeviceLanEdit ||
               (!isSuperuser && !grantLanEditAccess)
           ) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
@@ -2854,7 +2859,7 @@ anlixDocumentReady.add(function() {
             '</td>'+
           '</tr>';
           formRow = formRow.replace('$REPLACE_ATTRIBUTES', formAttr);
-          if (grantLanEdit) {
+          if (grantDeviceLanRead) {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', lanEdit);
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');

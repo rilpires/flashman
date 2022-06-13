@@ -34,8 +34,10 @@ let deviceSchema = new Schema({
   data_collecting: {
     is_active: Boolean, // logical AND with config.js value.
     has_latency: Boolean, // logical AND with config.js value.
-    // should use config.js value if this value is falsifiable.
-    ping_fqdn: String,
+    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    burst_loss: Boolean, // logical AND with config.js value.
+    wifi_devices: Boolean, // logical AND with config.js value.
+    ping_and_wan: Boolean, // logical AND with config.js value.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
@@ -276,6 +278,9 @@ let deviceSchema = new Schema({
   web_admin_password: String,
   custom_tr069_fields: {
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+    voip_enabled: {type: Boolean, default: false},
+    ipv6_enabled: {type: Boolean, default: false},
+    ipv6_mode: {type: String, default: ''},
   },
 });
 

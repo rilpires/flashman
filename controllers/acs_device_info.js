@@ -313,6 +313,8 @@ const createRegistry = async function(req, permissions) {
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  } else if (model === 'GWR-1200AC') {
+    serialTR069 = macAddr;
   }
 
   // Collect PON signal, if available
@@ -395,9 +397,9 @@ const createRegistry = async function(req, permissions) {
     wifi_channel: wifi2Channel,
     wifi_mode: (data.wifi2.mode) ?
       convertWifiMode(data.wifi2.mode.value, false) : undefined,
-    wifi_band: (data.wifi2.band) ?
-      convertWifiBand(model, data.wifi2.band.value, data.wifi2.mode.value, false) :
-       undefined,
+    wifi_band: (data.wifi2.band) ? convertWifiBand(
+      model, data.wifi2.band.value, data.wifi2.mode.value, false,
+    ) : undefined,
     wifi_state: (data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
@@ -406,9 +408,9 @@ const createRegistry = async function(req, permissions) {
     wifi_channel_5ghz: wifi5Channel,
     wifi_mode_5ghz: (data.wifi5.mode) ?
       convertWifiMode(data.wifi5.mode.value, true) : undefined,
-    wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(model, data.wifi5.band.value, data.wifi5.mode.value, true) :
-       undefined,
+    wifi_band_5ghz: (data.wifi5.band) ? convertWifiBand(
+      model, data.wifi5.band.value, data.wifi5.mode.value, true,
+    ) : undefined,
     wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
@@ -971,6 +973,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     });
     // join parts in final format
     serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
+  } else if (device.model === 'GWR-1200AC') {
+    serialTR069 = device._id;
   }
   device.serial_tr069 = serialTR069;
 
@@ -1204,8 +1208,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Force a wifi password sync after a hard reset
   if (device.recovering_tr069_reset) {
-    changes.wifi2.password = device.wifi_password.trim();
-    if (device.wifi_is_5ghz_capable) {
+    if (device.wifi_password) {
+      changes.wifi2.password = device.wifi_password.trim();
+    }
+    if (device.wifi_is_5ghz_capable && device.wifi_password_5ghz) {
       changes.wifi5.password = device.wifi_password_5ghz.trim();
     }
     hasChanges = true;
@@ -1692,16 +1698,16 @@ acsDeviceInfoController.updateInfo = async function(
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2 && changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid && device.wifi_password) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5 && changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid && device.wifi_password_5ghz) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
-  if (changes.wan && changes.wan.pppoe_user) {
+  if (changes.wan && changes.wan.pppoe_user && device.pppoe_password) {
     changes.wan.pppoe_pass = device.pppoe_password;
   }
   Object.keys(changes).forEach((masterKey)=>{

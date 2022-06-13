@@ -50,29 +50,27 @@ const getSpeedtestFile = async function(device) {
                   matchedConfig.measureServerPort + '/measure/tr069/';
   if (stage) {
     if (stage == 'estimative') {
-      return url + 'file_512KB.bin';
+      return url + 'file_1920KB.bin';
     }
     if (stage == 'measure') {
-      if (band >= 700) {
-        return url + 'file_640000KB.bin';
-      } else if (band >= 500) {
-        return url + 'file_448000KB.bin';
+      if (band >= 500) {
+        return url + 'file_640000KB.bin'; // Max time to download: 10s
       } else if (band >= 300) {
-        return url + 'file_320000KB.bin';
-      } else if (band >= 100) {
-        return url + 'file_192000KB.bin';
-      } else if (band >= 50) {
-        return url + 'file_64000KB.bin';
+        return url + 'file_448000KB.bin'; // Max time to download: 12s, Min: 7s
+      } else if (band >= 150) {
+        return url + 'file_320000KB.bin'; // Max time to download: 17s, Min: 8s
+      } else if (band >= 70) {
+        return url + 'file_192000KB.bin'; // Max time to download: 22s, Min: 10s
       } else if (band >= 30) {
-        return url + 'file_32000KB.bin';
-      } else if (band >= 10) {
-        return url + 'file_19200KB.bin';
-      } else if (band >= 5) {
-        return url + 'file_6400KB.bin';
+        return url + 'file_64000KB.bin'; // Max time to download: 17s, Min: 7s
+      } else if (band >= 15) {
+        return url + 'file_32000KB.bin'; // Max time to download: 17s, Min: 9s
+      } else if (band >= 9) {
+        return url + 'file_19200KB.bin'; // Max time to download: 17s, Min: 11s
       } else if (band >= 3) {
-        return url + 'file_1920KB.bin';
+        return url + 'file_6400KB.bin'; // Max time to download: 17s, Min: 6s
       } else if (band < 3) {
-        return url + 'file_512KB.bin';
+        return url + 'file_1920KB.bin'; // Max time to download: 15s, Min: 7s
       }
     }
   }
@@ -309,7 +307,8 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
-  if (device.model == 'HG8121H') {
+  // Special case for models that cannot change number of connections
+  if (!diagnNumConnField) {
     task.parameterValues.splice(1, 1);
   }
   const result = await TasksAPI.addTask(acsID, task);

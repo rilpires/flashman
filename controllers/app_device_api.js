@@ -585,6 +585,19 @@ const makeDeviceBackupData = function(device, config, certFile) {
   if (deviceCustomFields && deviceCustomFields.intelbras_omci_mode) {
     customFields.intelbrasOmciMode = deviceCustomFields.intelbras_omci_mode;
   }
+  if (
+    deviceCustomFields && typeof deviceCustomFields.voip_enabled === 'boolean'
+  ) {
+    customFields.voipEnabled = deviceCustomFields.voip_enabled;
+  }
+  if (
+    deviceCustomFields &&
+    typeof deviceCustomFields.ipv6_enabled === 'boolean' &&
+    typeof deviceCustomFields.ipv6_mode === 'string'
+  ) {
+    customFields.ipv6Enabled = deviceCustomFields.ipv6_enabled;
+    customFields.ipv6Mode = deviceCustomFields.ipv6_mode;
+  }
   return {
     timestamp: formattedNow,
     model: device.model,
@@ -1549,7 +1562,7 @@ appDeviceAPIController.appSetPasswordFromApp = function(req, res) {
   let query = req.body.id;
   let projection = {_id: 1, app_password: 1, apps: 1};
   DeviceModel.findById(query, projection).exec(async function(err,
-                                                              matchedDevice
+                                                              matchedDevice,
   ) {
     if (err) {
       return res.status(500).json({message:
@@ -1667,7 +1680,8 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = acsXMLConfigHandler.onlineAfterReset.includes(device.model);
+    let onlineReset =
+      acsXMLConfigHandler.onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
@@ -1716,7 +1730,8 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset = acsXMLConfigHandler.onlineAfterReset.includes(device.model);
+    let onlineReset =
+      acsXMLConfigHandler.onlineAfterReset.includes(device.model);
 
     if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure

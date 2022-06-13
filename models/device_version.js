@@ -47,6 +47,8 @@ const tr069Devices = {
       'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -91,6 +93,8 @@ const tr069Devices = {
       'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -127,6 +131,8 @@ const tr069Devices = {
       'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -163,6 +169,8 @@ const tr069Devices = {
       'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -196,6 +204,8 @@ const tr069Devices = {
       'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -221,6 +231,41 @@ const tr069Devices = {
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
     mesh_ssid_object_exists: true,
   },
+  'GWR-1200AC': {
+    versions_upgrade: {
+      '638.112.100.1383': [],
+    },
+    port_forward_opts: {
+      '638.112.100.1383': portForwardNoRanges,
+    },
+    feature_support: {
+      lan_read: true,
+      lan_edit: false,
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 300,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
   'GONUAC001': {
     vendor: 'Greatek',
     versions_upgrade: {
@@ -230,6 +275,8 @@ const tr069Devices = {
       'V1.2.3': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -268,6 +315,8 @@ const tr069Devices = {
       'V2.2.7': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -302,6 +351,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -336,6 +387,8 @@ const tr069Devices = {
       'v1.0.1': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -369,6 +422,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -401,6 +456,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -434,6 +491,8 @@ const tr069Devices = {
       '3FE49127HJII42': portForwardNoAsymRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false, // no fiber
@@ -466,6 +525,8 @@ const tr069Devices = {
       '3FE49025IJHK03': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -496,6 +557,8 @@ const tr069Devices = {
       '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -536,6 +599,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -567,6 +632,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -598,6 +665,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -631,6 +700,8 @@ const tr069Devices = {
       'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -667,6 +738,8 @@ const tr069Devices = {
       'V5R020C00S280': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -701,6 +774,8 @@ const tr069Devices = {
       'V5R020C00S060': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: true,
       pon_signal: true,
@@ -726,6 +801,8 @@ const tr069Devices = {
       'V3R018C00S128': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -751,6 +828,8 @@ const tr069Devices = {
       '10.0.5.9(C506)': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -776,6 +855,8 @@ const tr069Devices = {
       '10.0.5.5(C947)': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -804,6 +885,8 @@ const tr069Devices = {
       '2.0.0.315(SP2C947)': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: false,
       pon_signal: false,
@@ -832,6 +915,8 @@ const tr069Devices = {
       '10.0.5.29(C947)': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: false,
       pon_signal: false,
@@ -857,6 +942,8 @@ const tr069Devices = {
       '3.0.3': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -882,6 +969,8 @@ const tr069Devices = {
       '3.0.4': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -907,6 +996,8 @@ const tr069Devices = {
       '3.0.7': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -935,6 +1026,8 @@ const tr069Devices = {
       'V16.03.06.05_multi_BR01': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false,
@@ -960,6 +1053,8 @@ const tr069Devices = {
       '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -988,6 +1083,8 @@ const tr069Devices = {
       'V1.0.8': portForwardFullSupport,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -1016,6 +1113,8 @@ const tr069Devices = {
       'V3.2.0': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -1042,6 +1141,8 @@ const tr069Devices = {
       '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
     },
     feature_support: {
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       block_devices: false,
       block_wired_devices: false,
@@ -2573,9 +2674,9 @@ const grantPingTest = function(version, model) {
   }
 };
 
-const grantLanEdit = function(version, model) {
+const grantLanRead = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.lan_read;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -2585,9 +2686,22 @@ const grantLanEdit = function(version, model) {
   }
 };
 
+const grantLanEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.lan_edit;
+  }
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+// Capability of the LAN Gateway IP being different from the first available IP
 const grantLanGwEdit = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.lan_edit;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
@@ -2916,6 +3030,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
   result.grantPingTest = grantPingTest(version, model);
+  result.grantLanRead = grantLanRead(version, model);
   result.grantLanEdit = grantLanEdit(version, model);
   result.grantLanGwEdit = grantLanGwEdit(version, model);
   result.grantLanDevices = grantLanDevices(version, model);
