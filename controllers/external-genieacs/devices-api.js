@@ -75,7 +75,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9') {
+      if (ouiModelStr === 'HG9' || ouiModelStr === 'P20') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
@@ -97,7 +97,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bg';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'g-only';
@@ -126,7 +130,11 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g,n';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bgn';
       } else return '11bgn';
     case '11na':
@@ -577,6 +585,15 @@ const getHuaweiFields = function(model, modelName) {
       delete fields.port_mapping_values.lease;
     }
   }
+  return fields;
+};
+
+const getPhyHomeFields = function(model, modelName) {
+  let fields = getDefaultFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
   return fields;
 };
 
@@ -1163,6 +1180,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'CDTSNAND128H':
       message = '';
       fields = getHurakallFields();
+      break;
+    case 'P20':
+      message = '';
+      fields = getPhyHomeFields(model);
       break;
     default:
       return unknownModel;

@@ -1347,6 +1347,7 @@ anlixDocumentReady.add(function() {
           let ponRXPower = device.pon_rxpower;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
+          let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
           let grantWifiPowerHiddenIpv6Box =
@@ -2630,7 +2631,7 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER', '');
           }
-          if (!isSuperuser && grantWifiInfo <= 1) {
+          if (!grantWifi2ghzEdit || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
           } else {

@@ -47,6 +47,8 @@ const tr069Devices = {
       'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -93,6 +95,8 @@ const tr069Devices = {
       'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -131,6 +135,8 @@ const tr069Devices = {
       'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -169,6 +175,8 @@ const tr069Devices = {
       'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -204,6 +212,8 @@ const tr069Devices = {
       'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -239,6 +249,8 @@ const tr069Devices = {
       '638.112.100.1383': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: false,
       wifi_ax_mode: false,
@@ -275,6 +287,8 @@ const tr069Devices = {
       'V1.2.3': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -315,6 +329,8 @@ const tr069Devices = {
       'V2.2.7': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -351,6 +367,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -387,6 +405,8 @@ const tr069Devices = {
       'v1.0.1': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -422,6 +442,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -456,6 +478,8 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -491,6 +515,8 @@ const tr069Devices = {
       '3FE49127HJII42': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -525,6 +551,8 @@ const tr069Devices = {
       '3FE49025IJHK03': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -557,6 +585,8 @@ const tr069Devices = {
       '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -599,6 +629,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -632,6 +664,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -665,6 +699,8 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -700,6 +736,8 @@ const tr069Devices = {
       'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -738,6 +776,8 @@ const tr069Devices = {
       'V5R020C00S280': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -774,6 +814,8 @@ const tr069Devices = {
       'V5R020C00S060': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: true,
@@ -801,6 +843,8 @@ const tr069Devices = {
       'V3R018C00S128': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -828,6 +872,8 @@ const tr069Devices = {
       '10.0.5.9(C506)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -855,6 +901,8 @@ const tr069Devices = {
       '10.0.5.5(C947)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -885,6 +933,8 @@ const tr069Devices = {
       '2.0.0.315(SP2C947)': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: true,
@@ -915,6 +965,8 @@ const tr069Devices = {
       '10.0.5.29(C947)': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: true,
@@ -942,6 +994,8 @@ const tr069Devices = {
       '3.0.3': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -969,6 +1023,8 @@ const tr069Devices = {
       '3.0.4': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -996,6 +1052,8 @@ const tr069Devices = {
       '3.0.7': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1026,6 +1084,8 @@ const tr069Devices = {
       'V16.03.06.05_multi_BR01': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1053,6 +1113,8 @@ const tr069Devices = {
       '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1083,6 +1145,8 @@ const tr069Devices = {
       'V1.0.8': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1113,6 +1177,8 @@ const tr069Devices = {
       'V3.2.0': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1141,6 +1207,8 @@ const tr069Devices = {
       '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
@@ -1155,6 +1223,34 @@ const tr069Devices = {
       ping_test: true,
       speed_test: true,
       speed_test_limit: 230,
+      stun: false,
+      upnp: false,
+      wps: false,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'P20': {
+    vendor: 'PhyHome',
+    versions_upgrade: {
+      'V6.1.6T1': [],
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: false,
+      lan_read: true,
+      lan_edit: false,
+      port_forward: false,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      pon_signal: true,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
       stun: false,
       upnp: false,
       wps: false,
@@ -2562,6 +2658,14 @@ const grantPortOpenIpv6 = function(version, model) {
   }
 };
 
+const grantWifi2ghzEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wifi_ssid_write;
+  }
+  // Every firmware has this feature
+  return true;
+};
+
 const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return true;
@@ -2998,6 +3102,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
+  result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version, model);
   result.grantWifiBandAuto = grantWifiBandAuto(version, model);
