@@ -1273,6 +1273,8 @@ const tr069Devices = {
       'V1.42(ABXU.1)b6_0118': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
       lan_read: true,
       lan_edit: true,
       wifi_ax_mode: false,
