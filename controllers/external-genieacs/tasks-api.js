@@ -95,12 +95,15 @@ const watchGenieFaults = async function() {
   });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
+    console.log('WARNING: genieacs created a fault'+(doc.device ?
+      ' for device id '+doc.device : '')+' of type \''+doc.code+'\'.');
     let ignoreCodes = [
       'session_terminated', 'timeout', 'cwmp.9002', 'cwmp.9003',
     ];
     if (ignoreCodes.includes(doc.code)) {
       // Ignore session timeout and session terminated errors - no benefit
       // reporting them and clutter flashman
+      faultsCollection.deleteOne({_id: doc._id});
       return;
     }
     let errorMsg = '';
@@ -112,8 +115,6 @@ const watchGenieFaults = async function() {
       errorMsg += JSON.stringify(doc);
     }
     await createNotificationForDevice(errorMsg, doc.device);
-    console.log('WARNING: genieacs created a fault'+(doc.device ?
-      ' for device id '+doc.device : '')+'.');
   });
 };
 
