@@ -1212,7 +1212,7 @@ const tr069Devices = {
       pon_signal: false,
       upnp: false,
       wps: false,
-      stun: false,
+      stun: true,
       speed_test: false,
       speed_test_limit: 0,
       ping_test: false,
