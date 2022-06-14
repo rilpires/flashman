@@ -1709,6 +1709,12 @@ acsDeviceInfoController.updateInfo = async function(
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
+  // The following model does not accept admin as a superuser name
+  // Leave default superuser name
+  if (modelName === 'EMG3524-T10A' &&
+      changes.common.web_admin_username === 'admin') {
+    delete changes.common.web_admin_username;
+  }
   // Some Nokia models have a bug where changing the SSID without changing the
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi

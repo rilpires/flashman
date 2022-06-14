@@ -292,6 +292,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
       if (v[0] == 'description') {
         if (model == 'EC220-G5') {
           v[1][1] = 'Anlix_'+(i+1).toString();
+        } else if (model == 'EMG3524-T10A') {
+          v[1][1] = 'User Define';
         } else {
           v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
         }
