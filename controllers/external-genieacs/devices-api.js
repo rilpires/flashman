@@ -82,8 +82,11 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g';
       } else if (ouiModelStr === 'AC10') return 'bg';
-      else if (ouiModelStr === 'EC220-G5') return 'gn';
-      else if (
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'gn';
+      } else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
         ouiModelStr === 'F670L' ||
@@ -113,8 +116,11 @@ const convertWifiMode = function(mode, oui, model) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'bgn';
-      else if (ouiModelStr === 'EC220-G5') return 'n';
-      else if (
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'n';
+      } else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
         ouiModelStr === 'F670L' ||
@@ -150,6 +156,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
+      else if (ouiModelStr === 'EMG3524-T10A') return 'n';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
@@ -172,8 +179,11 @@ const convertWifiMode = function(mode, oui, model) {
         return 'a/n/ac';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
-      else if (ouiModelStr === 'EC220-G5') return 'ac';
-      else if (
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'ac';
+      } else if (
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
@@ -1049,6 +1059,32 @@ const getHurakallFields = function() {
   return fields;
 };
 
+const getZyxelFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_username = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.UserName';
+  fields.common.web_admin_password = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.Password';
+  fields.wan.rate = 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.4.Stats.X_5067F0_MaxBitRate';
+  fields.wan.duplex = 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.4.Stats.X_5067F0_DuplexMode';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesSent';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
+  fields.port_mapping_values.description = ['PortMappingDescription', 'User Define', 'xsd:string'];
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -1132,6 +1168,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'HG6245D': // Fiberhome AN5506-04-CG
       message = '';
       fields = getDefaultFields();
+      break;
+    case 'EMG3524-T10A': // Zyxel
+    case 'EMG3524%2DT10A': // URI encoded
+      message = '';
+      fields = getZyxelFields();
       break;
     case 'FW323DAC':
       message = '';
