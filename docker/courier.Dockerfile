@@ -14,4 +14,6 @@ RUN chmod +x /docker-entrypoint.d/docker-certs-routine.sh ; \
 	chmod +x /docker-entrypoint.d/init-cron.sh ; \
 	cp /docker-entrypoint.d/docker-certs-routine.sh /etc/periodic/weekly
 
+ENV FLASHMAN_FQDN="flashman.anlix.io"
+
 EXPOSE 2332
