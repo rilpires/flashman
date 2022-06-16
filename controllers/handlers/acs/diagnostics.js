@@ -341,7 +341,8 @@ const startSpeedtestDiagnose = async function(acsID) {
                       [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
                       [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
-  if (device.model == 'HG8121H') {
+  // Special case for models that cannot change number of connections
+  if (!diagnNumConnField) {
     task.parameterValues.splice(1, 1);
   }
   const result = await TasksAPI.addTask(acsID, task);

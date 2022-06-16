@@ -203,7 +203,7 @@ const updateGenieACS = function(upgrades) {
   });
 };
 
-const updateDiagnostics = function() {
+const updateProvisionsPresets = function() {
   return new Promise((resolve, reject) => {
     // Get config from database
     Config.findOne({is_default: true}).then((config)=>{
@@ -223,25 +223,66 @@ const updateDiagnostics = function() {
         waitForProvision = Promise.reject();
       }
 
-      // Update preset json if needed
-      let waitForPreset;
+      // Update preset jsons
+      let waitForBootstrapPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/bootstrap-preset.json',
+        ));
+        console.log('Updating Genie bootstrap-preset...');
+        waitForBootstrapPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForBootstrapPreset = Promise.reject();
+      }
+      let waitForBootPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/boot-preset.json',
+        ));
+        console.log('Updating Genie boot-preset...');
+        waitForBootPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForBootPreset = Promise.reject();
+      }
+      let waitForPeriodicPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/periodic-preset.json',
+        ));
+        console.log('Updating Genie periodic-preset...');
+        waitForPeriodicPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPeriodicPreset = Promise.reject();
+      }
+      let waitForDiagPreset;
       try {
         let preset = JSON.parse(fs.readFileSync(
           './controllers/external-genieacs/diagnostic-preset.json',
         ));
         console.log('Updating Genie diagnostic-preset...');
-        waitForPreset = tasksApi.putPreset(preset);
+        waitForDiagPreset = tasksApi.putPreset(preset);
       } catch (e) {
-        waitForPreset = Promise.reject();
+        waitForDiagPreset = Promise.reject();
       }
 
       // Wait for all promises and check results
-      let promises = [waitForProvision, waitForPreset];
+      let promises = [waitForProvision, waitForBootstrapPreset,
+                      waitForBootPreset, waitForPeriodicPreset,
+                      waitForDiagPreset];
       Promise.allSettled(promises).then((values)=>{
         if (values[0].status !== 'fulfilled') {
           console.log('Error updating Genie diagnostic-provision script!');
         }
         if (values[1].status !== 'fulfilled') {
+          console.log('Error updating Genie bootstrap-preset json!');
+        }
+        if (values[2].status !== 'fulfilled') {
+          console.log('Error updating Genie boot-preset json!');
+        }
+        if (values[3].status !== 'fulfilled') {
+          console.log('Error updating Genie periodic-preset json!');
+        }
+        if (values[4].status !== 'fulfilled') {
           console.log('Error updating Genie diagnostic-preset json!');
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
@@ -380,9 +421,9 @@ updateController.rebootGenie = function(instances) {
         let targetFile = 'controllers/external-genieacs/devices-api.js';
         let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
 
-        // Update genieACS diagnostic's script and preset
-        console.log('Updating genieACS diacnostic\'s script and preset');
-        await updateDiagnostics();
+        // Update genieACS provisions and presets
+        console.log('Updating genieACS provisions and presets');
+        await updateProvisionsPresets();
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');

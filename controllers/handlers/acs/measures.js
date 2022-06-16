@@ -384,6 +384,7 @@ acsMeasuresHandler.convertToDbm = function(model, rxPower) {
       return rxPower;
     }
     case 'IGD':
+    case 'P20':
     case 'FW323DAC':
     case 'F660':
     case 'F670L':

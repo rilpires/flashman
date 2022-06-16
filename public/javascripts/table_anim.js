@@ -1347,6 +1347,7 @@ anlixDocumentReady.add(function() {
           let ponRXPower = device.pon_rxpower;
           let grantWifiBand = device.permissions.grantWifiBand;
           let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
+          let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
           let grantWifiPowerHiddenIpv6Box =
@@ -1354,7 +1355,8 @@ anlixDocumentReady.add(function() {
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantWifiExtendedChannels =
             device.permissions.grantWifiExtendedChannels;
-          let grantLanEdit = device.permissions.grantLanEdit;
+          let grantDeviceLanRead = device.permissions.grantLanRead;
+          let grantDeviceLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
           let grantOpmode = device.permissions.grantOpmode;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
@@ -1459,7 +1461,7 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-validate-wifi-power="'+
             (!device.use_tr069 && grantWifiPowerHiddenIpv6Box &&
               (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-lan="'+grantLanEdit+'"';
+          formAttr += ' data-validate-lan="'+grantDeviceLanRead+'"';
           formAttr += ' data-validate-vlan-access="'+
             (isSuperuser?2:grantVlan)+'"';
           formAttr += ' data-validate-port-forward-asym="'+
@@ -1888,7 +1890,7 @@ anlixDocumentReady.add(function() {
               '</div>'+
             '</div>'+
           '</div>';
-          if (device.bridge_mode_enabled || !grantLanEdit ||
+          if (device.bridge_mode_enabled || !grantDeviceLanEdit ||
               (!isSuperuser && !grantLanEditAccess)
           ) {
             lanTab = lanTab.replace(/\$REPLACE_LAN_EN/g, 'disabled');
@@ -2629,7 +2631,7 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_HIDDEN', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_POWER', '');
           }
-          if (!isSuperuser && grantWifiInfo <= 1) {
+          if (!grantWifi2ghzEdit || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, 'disabled');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, 'disabled');
           } else {
@@ -2858,7 +2860,7 @@ anlixDocumentReady.add(function() {
             '</td>'+
           '</tr>';
           formRow = formRow.replace('$REPLACE_ATTRIBUTES', formAttr);
-          if (grantLanEdit) {
+          if (grantDeviceLanRead) {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', lanEdit);
           } else {
             formRow = formRow.replace('$REPLACE_LAN_EDIT', '');
