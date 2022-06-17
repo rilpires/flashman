@@ -119,21 +119,16 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
-<<<<<<< HEAD
       else if (
         ouiModelStr === 'AC10' ||
         ouiModelStr === 'DM986-414') {
         return 'bgn';
-      } else if (ouiModelStr === 'EC220-G5') return 'n';
-      else if (
-=======
-      else if (ouiModelStr === 'AC10') return 'bgn';
-      else if (ouiModelStr === 'EC220-G5' ||
-               ouiModelStr === 'EMG3524-T10A'
+      } else if (
+        ouiModelStr === 'EC220-G5' ||
+        ouiModelStr === 'EMG3524-T10A'
       ) {
         return 'n';
       } else if (
->>>>>>> development
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
         ouiModelStr === 'F670L' ||
