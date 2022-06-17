@@ -230,9 +230,10 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // This field, when present, means that the next ping/speedtest
-  // result should also be sent to this webhook. This will be set
-  // on specific api calls (i.e., sendCustomPing)
+  // When ping_hosts has at least one value or speedtest_url != '',
+  // the next ping/speedtest result should NOT be sent to the usual
+  // configured traps. Furthermore, if webhook_* fields are set,
+  // send the results to this webhook. Then unset every subfield
   temp_command_trap: {
     ping_hosts: [String],
     speedtest_url: {type: String, default: ''},
