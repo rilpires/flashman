@@ -162,18 +162,18 @@ const initiatePingCommand = async function(device) {
   if (device && device.use_tr069) {
     device.pingtest_results = [];
 
-    if ( device.temp_command_trap.ping_hosts.length > 0) {
-      device.pingtest_results = device.temp_command_trap.ping_hosts
-      .map((item)=>({
-        host: item,
-      }));
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
+      device.pingtest_results =
+        device.temp_command_trap.ping_hosts.map((item) => ({host: item}));
+    } else if (Object.keys(device.ping_hosts).length > 0) {
+      device.pingtest_results =
+        device.ping_hosts.map((h)=>({host: h}));
     }
 
-    if ( device.pingtest_results.length == 0 ) {
-      device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
-    }
-
-    if ( device.pingtest_results.length > 0 ) {
+    if (device.pingtest_results.length > 0) {
       await device.save().catch((err) => {
         console.log('Error saving device after ping command: ' + err);
       });
@@ -1322,8 +1322,12 @@ deviceListController.sendCustomPing = async function(req, res) {
 
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap.ping_hosts.length > 0
-      || device.temp_command_trap.speedtest_url!='') {
+    if (device.temp_command_trap &&
+        ((device.temp_command_trap.ping_hosts &&
+          device.temp_command_trap.ping_hosts.length > 0) ||
+         (device.temp_command_trap.speedtest_url &&
+          device.temp_command_trap.speedtest_url != ''))
+    ) {
       return res.status(200).json({
         success: false,
         message: t('errorOccurredTryAgain'),
@@ -1332,11 +1336,10 @@ deviceListController.sendCustomPing = async function(req, res) {
 
     let inputHosts = [];
 
-    if ( req.body.content &&
-      req.body.content.hosts &&
-      Array.isArray(req.body.content.hosts)
+    if (req.body.content && req.body.content.hosts &&
+        Array.isArray(req.body.content.hosts)
     ) {
-      inputHosts = req.body.content.hosts.filter((h)=>typeof(h)=='string');
+      inputHosts = req.body.content.hosts.filter((h) => typeof(h) == 'string');
     } else {
       return res.status(200).json({
         success: false,
@@ -1345,7 +1348,7 @@ deviceListController.sendCustomPing = async function(req, res) {
     }
 
     let fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
-    let hostFilter = (host)=>host.match(fqdnLengthRegex);
+    let hostFilter = (host) => host.match(fqdnLengthRegex);
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
@@ -1355,18 +1358,18 @@ deviceListController.sendCustomPing = async function(req, res) {
       speedtest_url: '',
       webhook_url: '',
     };
-    if (typeof(req.body.content.webhook)=='object') {
+    if (typeof req.body.content.webhook == 'object') {
       device.temp_command_trap.webhook_url = req.body.content.webhook.url;
-      if ( typeof(req.body.content.webhook.user)=='string'
-      && typeof(req.body.content.webhook.secrete)=='string' ) {
-        device.temp_command_trap.webhook_user
-          = req.body.content.webhook.user;
-        device.temp_command_trap.webhook_secret
-          = req.body.content.webhook.secret;
+      if (typeof req.body.content.webhook.user == 'string' &&
+          typeof req.body.content.webhook.secret == 'string'
+      ) {
+        device.temp_command_trap.webhook_user = req.body.content.webhook.user;
+        device.temp_command_trap.webhook_secret =
+          req.body.content.webhook.secret;
       }
     }
 
-    await device.save().catch( (err)=>{
+    await device.save().catch((err) => {
       return res.status(200).json({
         success: false,
         message: t('cpeSaveError', {errorline: __line}),
@@ -1396,25 +1399,30 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     }
     // We don't want to allow another custom command
     // while there is another running
-    if (device.temp_command_trap.ping_hosts.length > 0
-      || device.temp_command_trap.speedtest_url!='') {
+    if (device.temp_command_trap &&
+      ((device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0) ||
+       (device.temp_command_trap.speedtest_url &&
+        device.temp_command_trap.speedtest_url != ''))
+    ) {
       return res.status(200).json({
         success: false,
         message: t('errorOccurredTryAgain'),
       });
     }
     let validationOk = true;
-    if (typeof(req.body.content)!='object' ||
-    typeof(req.body.content.url)!='string') {
+    if (typeof req.body.content != 'object' ||
+        typeof req.body.content.url != 'string'
+    ) {
       validationOk = false;
-    } else if (typeof(req.body.content.webhook)=='object') {
+    } else if (typeof req.body.content.webhook == 'object') {
       let webhook = req.body.content.webhook;
-      if (typeof(req.body.content.webhook.url)!='string') {
+      if (typeof webhook.url != 'string') {
         validationOk = false;
-      } else if (webhook.user
-        && webhook.secret
-        && typeof(webhook.url)!='string'
-        && typeof(webhook.secret)!='string') {
+      } else if (webhook.user && webhook.secret &&
+                 typeof webhook.user != 'string' &&
+                 typeof webhook.secret != 'string'
+      ) {
         validationOk = false;
       }
     }
@@ -1430,18 +1438,18 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       speedtest_url: req.body.content.url,
       webhook_url: '',
     };
-    if (typeof(req.body.content.webhook)=='object') {
-      device.temp_command_trap.webhook_url = req.body.content.webhook.url;
-      if ( typeof(req.body.content.webhook.user)=='string'
-      && typeof(req.body.content.webhook.secrete)=='string' ) {
-        device.temp_command_trap.webhook_user
-          = req.body.content.webhook.user;
-        device.temp_command_trap.webhook_secret
-          = req.body.content.webhook.secret;
+    if (typeof req.body.content.webhook == 'object') {
+      let webhook = req.body.content.webhook;
+      device.temp_command_trap.webhook_url = webhook.url;
+      if (typeof webhook.user == 'string' &&
+          typeof webhook.secret == 'string'
+      ) {
+        device.temp_command_trap.webhook_user = webhook.user;
+        device.temp_command_trap.webhook_secret = webhook.secret;
       }
     }
 
-    await device.save().catch( (err)=>{
+    await device.save().catch((err)=>{
       return res.status(200).json({
         success: false,
         message: t('cpeSaveError', {errorline: __line}),
@@ -2953,16 +2961,18 @@ deviceListController.getPortForward = function(req, res) {
   });
 };
 
-deviceListController.getPingHostsList = async function(req, res) {
+deviceListController.getPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
+    let device;
+    let responseHosts = [];
+
     if (err) {
       return res.status(200).json({
         success: false,
         message: t('cpeFindError', {errorline: __line}),
       });
     }
-    let device;
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
       device = matchedDevice[0];
     } else {
@@ -2970,9 +2980,11 @@ deviceListController.getPingHostsList = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let responseHosts = [];
 
-    if (device.temp_command_trap.ping_hosts.length > 0) {
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
       responseHosts = device.temp_command_trap.ping_hosts;
       responseHosts = Array.from(new Set(responseHosts));
     } else {
@@ -3259,14 +3271,20 @@ deviceListController.doSpeedTest = function(req, res) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
 
-      let customUrl = matchedDevice.temp_command_trap.speedtest_url;
+      let customUrl = '';
+      if (matchedDevice.temp_command_trap &&
+          matchedDevice.temp_command_trap.speedtest_url &&
+          matchedDevice.temp_command_trap.speedtest_url !== ''
+      ) {
+        customUrl = matchedDevice.temp_command_trap.speedtest_url;
+      }
 
       if (matchedDevice.use_tr069) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
         // When customUrl is defined, we skip 'estimative' stage
         matchedDevice.current_speedtest.stage =
-          (customUrl!='')?('measure'):('estimative');
+          (customUrl !== '') ? 'measure' : 'estimative';
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,
@@ -3276,11 +3294,11 @@ deviceListController.doSpeedTest = function(req, res) {
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
         let url;
-        if (customUrl != '') {
+        if (customUrl !== '') {
           url = customUrl;
         } else {
-          url = matchedConfig.measureServerIP
-            + ':' + matchedConfig.measureServerPort;
+          url = matchedConfig.measureServerIP + ':' +
+                matchedConfig.measureServerPort;
         }
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
