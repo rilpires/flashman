@@ -461,8 +461,12 @@ deviceHandlers.sendPingToTraps = function(id, results) {
 };
 
 const sendSpeedtestResultToCustomTrap = async function(device, result) {
-  if (device.temp_command_trap.speedtest_url=='' ||
-  device.temp_command_trap.webhook_url=='') {
+  if (!device.temp_command_trap ||
+      !device.temp_command_trap.speedtest_url ||
+      !device.temp_command_trap.webhook_url ||
+      device.temp_command_trap.speedtest_url == '' ||
+      device.temp_command_trap.webhook_url == ''
+  ) {
     return;
   }
   let requestOptions = {};
@@ -473,8 +477,9 @@ const sendSpeedtestResultToCustomTrap = async function(device, result) {
     'type': 'device',
     'speedtest_result': result,
   };
-  if (device.temp_command_trap.webhook_user!=''
-  && device.temp_command_trap.webhook_secret!='') {
+  if (device.temp_command_trap.webhook_user != '' &&
+      device.temp_command_trap.webhook_secret != ''
+  ) {
     requestOptions.auth = {
       user: device.temp_command_trap.webhook_user,
       pass: device.temp_command_trap.webhook_secret,
@@ -540,11 +545,15 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     return {success: false, processed: 0};
   }
   if (!device) {
+    if (mutex.isLocked()) mutexRelease();
     return {success: false, processed: 0};
   }
 
   result = formatSpeedtestResult(result);
-  if (device.temp_command_trap.speedtest_url != '') {
+  if (device.temp_command_trap &&
+      device.temp_command_trap.speedtest_url &&
+      device.temp_command_trap.speedtest_url != ''
+  ) {
     // Don't care about waiting here
     sendSpeedtestResultToCustomTrap(device, result);
     device.temp_command_trap.speedtest_url = '';

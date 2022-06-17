@@ -1940,12 +1940,14 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if ( matchedDevice.temp_command_trap.ping_hosts.length > 0) {
+    if (matchedDevice.temp_command_trap &&
+        matchedDevice.temp_command_trap.ping_hosts &&
+        matchedDevice.temp_command_trap.ping_hosts.length > 0
+    ) {
       matchedDevice.temp_command_trap.ping_hosts = [];
-      if (matchedDevice.temp_command_trap.webhook_url!='') {
+      if (matchedDevice.temp_command_trap.webhook_url != '') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
         requestOptions.method = 'PUT';
@@ -1954,8 +1956,9 @@ deviceInfoController.receivePingResult = function(req, res) {
           'type': 'device',
           'ping_results': req.body.results,
         };
-        if (matchedDevice.temp_command_trap.webhook_user
-        && matchedDevice.temp_command_trap.webhook_secret) {
+        if (matchedDevice.temp_command_trap.webhook_user &&
+            matchedDevice.temp_command_trap.webhook_secret
+        ) {
           requestOptions.auth = {
             user: matchedDevice.temp_command_trap.webhook_user,
             pass: matchedDevice.temp_command_trap.webhook_secret,
@@ -1963,7 +1966,7 @@ deviceInfoController.receivePingResult = function(req, res) {
         }
         request(requestOptions);
       }
-      // Not waiting for this save. Does the device care about waiting it?
+      // Not waiting for this save
       matchedDevice.save().catch((err) => {
         console.log('Error saving device after ping command: ' + err);
       });

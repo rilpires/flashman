@@ -46,7 +46,10 @@ const getSpeedtestFile = async function(device) {
     return '';
   }
 
-  if (device.temp_command_trap.speedtest_url) {
+  if (device.temp_command_trap &&
+      device.temp_command_trap.speedtest_url &&
+      device.temp_command_trap.speedtest_url !== ''
+  ) {
     return device.temp_command_trap.speedtest_url;
   }
 
@@ -118,7 +121,10 @@ const calculatePingDiagnostic = async function(
     }
 
     let currentCommandTrap = undefined;
-    if (device.temp_command_trap.ping_hosts.length>0) {
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
       device.temp_command_trap.ping_hosts = [];
       currentCommandTrap = device.temp_command_trap;
     }
@@ -152,8 +158,9 @@ const calculatePingDiagnostic = async function(
         'type': 'device',
         'ping_results': result,
       };
-      if (currentCommandTrap.webhook_user
-      && currentCommandTrap.webook_secret) {
+      if (currentCommandTrap.webhook_user &&
+          currentCommandTrap.webook_secret
+      ) {
         requestOptions.auth = {
           user: currentCommandTrap.webhook_user,
           pass: currentCommandTrap.webhook_secret,
@@ -163,9 +170,6 @@ const calculatePingDiagnostic = async function(
       request(requestOptions);
     } else {
       // Generic ping test
-      await device.save().catch((err) => {
-        console.log('Error saving ping test to database: ' + err);
-      });
       deviceHandlers.sendPingToTraps(device._id, {results: result});
     }
 
