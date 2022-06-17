@@ -838,6 +838,7 @@ const getStavixFields = function(model) {
     case 'DM986-414':
     case 'DM986%2D414':
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_WebUserInfo.UserPassword';
       break;
     case 'MP_G421R':
       break;
