@@ -501,7 +501,7 @@ const formatSpeedtestResult = function(result) {
   if (result && result.downSpeed) {
     if (result.downSpeed.includes('Mbps')) {
       return {
-        down_speed: result.downSpeed,
+        downSpeed: result.downSpeed,
         user: result.user,
         timestamp: formattedDate,
       };
@@ -560,7 +560,11 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   } else if (result.last_speedtest_error) {
     device.last_speedtest_error = result.last_speedtest_error;
   } else {
-    device.speedtest_results.push(result);
+    // We need to change some map keys
+    let resultToStore = util.deepCopyObject(result);
+    resultToStore.down_speed = resultToStore.downSpeed;
+    delete resultToStore.downSpeed;
+    device.speedtest_results.push(resultToStore);
     if (device.speedtest_results.length > 5) {
       device.speedtest_results.shift();
     }
