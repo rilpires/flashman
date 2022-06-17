@@ -1033,6 +1033,32 @@ const tr069Devices = {
       connected_devices: true,
     },
   },
+  'DM986-414': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V4.6.0-210709': [],
+    },
+    port_forward_opts: {
+      'V4.6.0-210709': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 80,
+      block_devices: false,
+      block_wired_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      connected_devices: true,
+    },
+  },
   'EC220-G5': {
     vendor: 'TP-Link',
     versions_upgrade: {
@@ -2629,6 +2655,7 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
+  console.log(model);
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.speed_test_limit;
   }
