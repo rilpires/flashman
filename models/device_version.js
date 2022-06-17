@@ -2948,7 +2948,6 @@ const grantSpeedTest = function(version, model) {
 };
 
 const grantSpeedTestLimit = function(version, model) {
-  console.log(model);
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.speed_test_limit;
   }
