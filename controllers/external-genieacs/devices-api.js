@@ -50,12 +50,11 @@ const getFieldType = function(masterKey, key, model) {
     case 'wifi5-band':
     case 'mesh2-band':
     case 'mesh5-band':
-      if(model === 'EG8145X6' || model === 'HG8121H') {
+      if (model === 'EG8145X6' || model === 'HG8121H') {
         return 'xsd:unsignedInt';
       } else {
         return 'xsd:string';
       }
-    break;
     default:
       return 'xsd:string';
   }
@@ -76,15 +75,22 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') {
+      if (
+        ouiModelStr === 'HG9' ||
+        ouiModelStr === 'DM986-414' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
                                                                  ouiModelStr)) {
         return 'b/g';
       } else if (ouiModelStr === 'AC10') return 'bg';
-      else if (ouiModelStr === 'EC220-G5') return 'gn';
-      else if (
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'gn';
+      } else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
         ouiModelStr === 'F670L' ||
@@ -93,11 +99,16 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bg';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'g-only';
@@ -108,12 +119,21 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
+<<<<<<< HEAD
       else if (
         ouiModelStr === 'AC10' ||
         ouiModelStr === 'DM986-414') {
         return 'bgn';
       } else if (ouiModelStr === 'EC220-G5') return 'n';
       else if (
+=======
+      else if (ouiModelStr === 'AC10') return 'bgn';
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'n';
+      } else if (
+>>>>>>> development
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
         ouiModelStr === 'F670L' ||
@@ -124,11 +144,16 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'G-140W-UD' ||
         ouiModelStr === 'DIR-842' ||
         ouiModelStr === 'DIR-841' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'b,g,n';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'bgn';
       } else return '11bgn';
     case '11na':
@@ -144,17 +169,19 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
+      else if (ouiModelStr === 'EMG3524-T10A') return 'n';
       else if (
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
-        ouiModelStr === 'G-140W-UD'
+        ouiModelStr === 'G-140W-UD' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n';
       } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
         return 'an';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'a,n';
-      } else if (ouiModelStr == 'G-2425G-A') {
+      } else if (ouiModelStr === 'G-2425G-A') {
         return 'a,n,ac';
       } else return '11na';
     case '11ac':
@@ -165,16 +192,20 @@ const convertWifiMode = function(mode, oui, model) {
         return 'a/n/ac';
       } else if (ouiModelStr === 'HG9') return 'gn';
       else if (ouiModelStr === 'AC10') return 'an+ac';
-      else if (ouiModelStr === 'EC220-G5') return 'ac';
-      else if (
+      else if (ouiModelStr === 'EC220-G5' ||
+               ouiModelStr === 'EMG3524-T10A'
+      ) {
+        return 'ac';
+      } else if (
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
-        ouiModelStr == 'G-2425G-A' ||
-        ouiModelStr === 'ST-1001-FL'
+        ouiModelStr === 'G-2425G-A' ||
+        ouiModelStr === 'ST-1001-FL' ||
+        ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n,ac';
       } else if (
@@ -196,7 +227,7 @@ const convertWifiMode = function(mode, oui, model) {
 };
 
 const convertWifiBand = function(band, model, is5ghz=false) {
-  if ((model == 'G-2425G-A') && !is5ghz) {
+  if ((model === 'G-2425G-A') && !is5ghz) {
     return '20MHz';
   }
   switch (band) {
@@ -228,7 +259,7 @@ const convertWifiBand = function(band, model, is5ghz=false) {
         return 'Auto';
       } else if (model === 'AC10') {
         return '2';
-      } else if (model == 'G-2425G-A') {
+      } else if (model === 'G-2425G-A') {
         return '80MHz';
       }
       if (model === 'HG8121H') return '0';
@@ -528,6 +559,10 @@ const getHuaweiFields = function(model, modelName) {
       fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
       fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
     }
+    if (model === 'HG8121H') {
+      // This model can not do number of connections on speedtest
+      delete fields.diagnostics.speedtest.num_of_conn;
+    }
   } else if (model === 'Huawei') {
     fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
     fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
@@ -576,6 +611,15 @@ const getHuaweiFields = function(model, modelName) {
       delete fields.port_mapping_values.lease;
     }
   }
+  return fields;
+};
+
+const getPhyHomeFields = function(model, modelName) {
+  let fields = getDefaultFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
   return fields;
 };
 
@@ -709,7 +753,7 @@ const getNokiaFields = function(model) {
       fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
       break;
     default:
-      break
+      break;
   }
   return fields;
 };
@@ -722,7 +766,57 @@ const getNokiaG2425Fields = function(model) {
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   return fields;
-}
+};
+
+const getGreatekFields = function(model) {
+  let fields = getDefaultFields();
+  for (let [key, value] of Object.entries(fields.wifi2)) {
+    fields.wifi2[key] =
+      value.replace(/WLANConfiguration.1/g, 'WLANConfiguration.2');
+  }
+  for (let [key, value] of Object.entries(fields.wifi5)) {
+    fields.wifi5[key] =
+      value.replace(/WLANConfiguration.5/g, 'WLANConfiguration.1');
+  }
+  for (let [key, value] of Object.entries(fields.mesh2)) {
+    fields.mesh2[key] =
+      value.replace(/WLANConfiguration.2/g, 'WLANConfiguration.4');
+  }
+  for (let [key, value] of Object.entries(fields.mesh5)) {
+    fields.mesh5[key] =
+      value.replace(/WLANConfiguration.6/g, 'WLANConfiguration.3');
+  }
+  fields.wifi2.password = fields.wifi2.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.wifi5.password = fields.wifi5.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.mesh2.password = fields.mesh2.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  fields.mesh5.password = fields.mesh5.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
+  );
+  // This model can not do number of connections on speedtest
+  delete fields.diagnostics.speedtest.num_of_conn;
+  // Port forwarding fields
+  fields.port_mapping_fields.external_port_end =
+    ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.port_mapping_values.protocol =
+    ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
+  // STUN fields
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address =
+    'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port =
+    'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  return fields;
+};
 
 const getStavixFields = function(model) {
   let fields = getDefaultFields();
@@ -985,6 +1079,32 @@ const getHurakallFields = function() {
   return fields;
 };
 
+const getZyxelFields = function() {
+  let fields = getDefaultFields();
+  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.stun = {};
+  fields.stun.address = 'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.web_admin_username = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.UserName';
+  fields.common.web_admin_password = 'InternetGatewayDevice.X_5067F0_Ext.LoginPrivilegeMgmt.1.Password';
+  fields.wan.rate = 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.4.Stats.X_5067F0_MaxBitRate';
+  fields.wan.duplex = 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.4.Stats.X_5067F0_DuplexMode';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesSent';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
+  fields.port_mapping_values.description = ['PortMappingDescription', 'User Define', 'xsd:string'];
+  fields.port_mapping_fields.external_port_end = ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+  fields.wifi2.password = fields.wifi2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.wifi5.password = fields.wifi5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh2.password = fields.mesh2.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  fields.mesh5.password = fields.mesh5.password.replace(/KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase');
+  return fields;
+};
+
 const getModelFieldsFromDevice = function(device) {
   let splitAcsID = device.acs_id.split('-');
   let oui = splitAcsID[0];
@@ -1071,6 +1191,11 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
       message = '';
       fields = getDefaultFields();
       break;
+    case 'EMG3524-T10A': // Zyxel
+    case 'EMG3524%2DT10A': // URI encoded
+      message = '';
+      fields = getZyxelFields();
+      break;
     case 'FW323DAC':
       message = '';
       fields = getFastWirelessFields();
@@ -1090,6 +1215,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
         case 'Archer C6': // TP-Link Archer C6 v3.2
           message = '';
           fields = getTPLinkFields(modelName);
+          break;
+        case 'GWR-1200AC':
+          message = '';
+          fields = getGreatekFields(modelName);
           break;
         default:
           return unknownModel;
@@ -1114,6 +1243,10 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'CDTSNAND128H':
       message = '';
       fields = getHurakallFields();
+      break;
+    case 'P20':
+      message = '';
+      fields = getPhyHomeFields(model);
       break;
     default:
       return unknownModel;
@@ -1273,4 +1406,3 @@ exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
-

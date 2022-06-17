@@ -2,10 +2,6 @@
 	"precondition": true,
 	"configurations": [
 		{
-			"type": "provision",
-			"name": "flashman"
-		},
-		{
 			"type": "value",
 			"name": "InternetGatewayDevice.ManagementServer.PeriodicInformInterval",
 			"value": "300"
