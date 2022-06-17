@@ -76,7 +76,7 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9') {
+      if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
@@ -108,8 +108,11 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
-      else if (ouiModelStr === 'AC10') return 'bgn';
-      else if (ouiModelStr === 'EC220-G5') return 'n';
+      else if (
+        ouiModelStr === 'AC10' ||
+        ouiModelStr === 'DM986-414') {
+        return 'bgn';
+      } else if (ouiModelStr === 'EC220-G5') return 'n';
       else if (
         ouiModelStr === 'IGD' ||
         ouiModelStr === 'FW323DAC' ||
@@ -138,7 +141,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
-      else if (ouiModelStr === 'HG9') return 'n';
+      else if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
       else if (
@@ -174,7 +177,10 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'ST-1001-FL'
       ) {
         return 'a,n,ac';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'DM986-414') {
         return 'anac';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'ac,a,n';
@@ -197,13 +203,13 @@ const convertWifiBand = function(band, model, is5ghz=false) {
     case 'HT20':
     case 'VHT20':
       if (model === 'AC10') return '0';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '1';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '1';
       if (model === 'ST-1001-FL') return '20Mhz';
       return '20MHz';
     case 'HT40':
     case 'VHT40':
       if (model === 'AC10') return '1';
-      if (model === 'EG8145X6'  || model === 'HG8121H') return '2';
+      if (model === 'EG8145X6' || model === 'HG8121H') return '2';
       if (model === 'ST-1001-FL') return '40Mhz';
       if (model === 'DIR-842' || model === 'DIR-841') return '20/40MHz';
       return '40MHz';
@@ -740,6 +746,10 @@ const getStavixFields = function(model) {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
       fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
       break;
+    case 'DM986-414':
+    case 'DM986%2D414':
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+      break;
     case 'MP_G421R':
       break;
   }
@@ -1048,6 +1058,8 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case '121AC': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
     case 'GONUAC002': // Greatek Stavix G421R
+    case 'DM986-414': // Datacom Stavix DM986-414
+    case 'DM986%2D414':
       message = '';
       fields = getStavixFields(model);
       break;
