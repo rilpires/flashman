@@ -15,6 +15,7 @@ const deviceHandlers = require('./handlers/devices');
 const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+const dataCollectingController = require('./data_collecting');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -862,6 +863,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             ping_fqdn: '',
             alarm_fqdn: '',
             ping_packets: 100,
+            burst_loss: false,
+            wifi_devices: false,
+            ping_and_wan: false,
           };
           // for each data_collecting parameter, in config, we copy its value.
           // This also makes the code compatible with a data base with no data
@@ -962,6 +966,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'data_collecting_alarm_fqdn': dataCollecting.alarm_fqdn,
             'data_collecting_ping_fqdn': dataCollecting.ping_fqdn,
             'data_collecting_ping_packets': dataCollecting.ping_packets,
+            'data_collecting_burst_loss': dataCollecting.burst_loss,
+            'data_collecting_wifi_devices': dataCollecting.wifi_devices,
+            'data_collecting_ping_and_wan': dataCollecting.ping_and_wan,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index':
@@ -989,6 +996,19 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'devices_bssid_mesh2': bssids.mesh2,
             'devices_bssid_mesh5': bssids.mesh5,
           };
+
+          // adding all data_collecting parameters to response json.
+          let dcRes = dataCollectingController.mergeConfigs(
+            matchedConfig.data_collecting,
+            matchedDevice.data_collecting,
+            matchedDevice.version,
+          );
+          // eslint-disable-next-line guard-for-in
+          for (let parameter in dcRes) {
+            // console.log('parameter', parameter, dcRes[parameter])
+            resJson['data_collecting_'+parameter] = dcRes[parameter];
+          }
+
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
             resJson.ipv6_enabled = matchedDevice.ipv6_enabled;

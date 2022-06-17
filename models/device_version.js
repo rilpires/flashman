@@ -1385,6 +1385,14 @@ const grantPortOpenIpv6 = function(version, model) {
   }
 };
 
+const grantWifi2ghzEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wifi_ssid_write;
+  }
+  // Every firmware has this feature
+  return true;
+};
+
 const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (DeviceVersion.versionCompare(version,
@@ -1450,6 +1458,15 @@ const grantPingTest = function(version, model) {
   }
 };
 
+const grantLanRead = function(version, model) {
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantLanEdit = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -1459,6 +1476,7 @@ const grantLanEdit = function(version, model) {
   }
 };
 
+// Capability of the LAN Gateway IP being different from the first available IP
 const grantLanGwEdit = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
@@ -1790,6 +1808,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
+  result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version, model);
   result.grantWifiBandAuto = grantWifiBandAuto(version, model);
@@ -1797,6 +1816,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
   result.grantPingTest = grantPingTest(version, model);
+  result.grantLanRead = grantLanRead(version, model);
   result.grantLanEdit = grantLanEdit(version, model);
   result.grantLanGwEdit = grantLanGwEdit(version, model);
   result.grantLanDevices = grantLanDevices(version, model);

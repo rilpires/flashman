@@ -291,6 +291,35 @@ const createRegistry = async function(req, cpe, permissions) {
     doChanges = true;
   }
 
+  let wanMtu;
+  if (hasPPPoE && data.wan.mtu_ppp && data.wan.mtu_ppp.value) {
+    wanMtu = data.wan.mtu_ppp.value;
+  } else if (!hasPPPoE && data.wan.mtu && data.wan.mtu.value) {
+    wanMtu = data.wan.mtu.value;
+  }
+
+  let mode2;
+  let band2;
+  if (data.wifi2.mode && data.wifi2.mode.value) {
+    mode2 = convertWifiMode(data.wifi2.mode.value, true);
+    if (data.wifi2.band && data.wifi2.band.value) {
+      band2 = convertWifiBand(
+        model, data.wifi2.band.value, data.wifi2.mode.value, true,
+      );
+    }
+  }
+
+  let mode5;
+  let band5;
+  if (data.wifi5.mode && data.wifi5.mode.value) {
+    mode5 = convertWifiMode(data.wifi5.mode.value, true);
+    if (data.wifi5.band && data.wifi5.band.value) {
+      band5 = convertWifiBand(
+        model, data.wifi5.band.value, data.wifi5.mode.value, true,
+      );
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -307,36 +336,34 @@ const createRegistry = async function(req, cpe, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
-    wan_vlan_id: (data.wan.vlan) ? data.wan.vlan.value : undefined,
-    wan_mtu: (hasPPPoE) ? data.wan.mtu_ppp.value : data.wan.mtu.value,
+    wan_vlan_id: (data.wan.vlan && data.wan.vlan.value) ?
+      data.wan.vlan.value : undefined,
+    wan_mtu: wanMtu,
     wifi_ssid: ssid,
-    wifi_bssid:
-      (data.wifi2.bssid) ? data.wifi2.bssid.value.toUpperCase() : undefined,
+    wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
+      data.wifi2.bssid.value.toUpperCase() : undefined,
     wifi_channel: wifi2Channel,
-    wifi_mode: (data.wifi2.mode) ?
-      convertWifiMode(data.wifi2.mode.value, false) : undefined,
-    wifi_band: (data.wifi2.band) ?
-      convertWifiBand(model, data.wifi2.band.value, data.wifi2.mode.value, false) :
-       undefined,
-    wifi_state: (data.wifi2.enable.value) ? 1 : 0,
+    wifi_mode: mode2,
+    wifi_band: band2,
+    wifi_state: (data.wifi2.enable && data.wifi2.enable.value) ? 1 : 0,
     wifi_is_5ghz_capable: wifi5Capable,
     wifi_ssid_5ghz: ssid5ghz,
-    wifi_bssid_5ghz:
-      (data.wifi5.bssid) ? data.wifi5.bssid.value.toUpperCase() : undefined,
+    wifi_bssid_5ghz: (data.wifi5.bssid && data.wifi5.bssid.value) ?
+      data.wifi5.bssid.value.toUpperCase() : undefined,
     wifi_channel_5ghz: wifi5Channel,
-    wifi_mode_5ghz: (data.wifi5.mode) ?
-      convertWifiMode(data.wifi5.mode.value, true) : undefined,
-    wifi_band_5ghz: (data.wifi5.band) ?
-      convertWifiBand(model, data.wifi5.band.value, data.wifi5.mode.value, true) :
-       undefined,
-    wifi_state_5ghz: (wifi5Capable && data.wifi5.enable.value) ? 1 : 0,
+    wifi_mode_5ghz: mode5,
+    wifi_band_5ghz: band5,
+    wifi_state_5ghz: (
+      wifi5Capable && data.wifi5.enable && data.wifi5.enable.value
+    ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: (data.wan.rate) ? data.wan.rate.value : undefined,
-    wan_negociated_duplex:
-      (data.wan.duplex) ? data.wan.duplex.value : undefined,
+    wan_negociated_speed: (data.wan.rate && data.wan.rate.value) ?
+      data.wan.rate.value : undefined,
+    wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
+      data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
     created_at: Date.now(),
@@ -1089,8 +1116,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Force a wifi password sync after a hard reset
   if (device.recovering_tr069_reset) {
-    changes.wifi2.password = device.wifi_password.trim();
-    if (device.wifi_is_5ghz_capable) {
+    if (device.wifi_password) {
+      changes.wifi2.password = device.wifi_password.trim();
+    }
+    if (device.wifi_is_5ghz_capable && device.wifi_password_5ghz) {
       changes.wifi5.password = device.wifi_password_5ghz.trim();
     }
     hasChanges = true;
@@ -1567,20 +1596,26 @@ acsDeviceInfoController.updateInfo = async function(
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
+  // The following model does not accept admin as a superuser name
+  // Leave default superuser name
+  if (modelName === 'EMG3524-T10A' &&
+      changes.common.web_admin_username === 'admin') {
+    delete changes.common.web_admin_username;
+  }
   // Some Nokia models have a bug where changing the SSID without changing the
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
   // password resets
-  if (changes.wifi2 && changes.wifi2.ssid) {
+  if (changes.wifi2 && changes.wifi2.ssid && device.wifi_password) {
     changes.wifi2.password = device.wifi_password;
   }
-  if (changes.wifi5 && changes.wifi5.ssid) {
+  if (changes.wifi5 && changes.wifi5.ssid && device.wifi_password_5ghz) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
   // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
   // reset, only the username is fixed by Flashman - force password sync too in
   // those cases
-  if (changes.wan && changes.wan.pppoe_user) {
+  if (changes.wan && changes.wan.pppoe_user && device.pppoe_password) {
     changes.wan.pppoe_pass = device.pppoe_password;
   }
   Object.keys(changes).forEach((masterKey)=>{

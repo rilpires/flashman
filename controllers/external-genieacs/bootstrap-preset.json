@@ -1,0 +1,14 @@
+{
+    "_id": "bootstrap_event",
+    "channel": "Events",
+    "weight": 0,
+    "events": {
+        "0 BOOTSTRAP": true
+    },
+    "precondition": "",
+    "configurations": [{
+        "type": "provision",
+        "name": "flashman",
+        "args": null
+    }]
+}

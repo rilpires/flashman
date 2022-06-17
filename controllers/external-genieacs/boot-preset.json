@@ -1,0 +1,14 @@
+{
+    "_id": "boot_event",
+    "channel": "Events",
+    "weight": 0,
+    "events": {
+        "1 BOOT": true
+    },
+    "precondition": "",
+    "configurations": [{
+        "type": "provision",
+        "name": "flashman",
+        "args": null
+    }]
+}

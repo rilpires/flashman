@@ -234,17 +234,31 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> DC in '+acsID);
     return;
   }
-  // change array size via addObject or deleteObject
+  let currentLength = device.port_mapping.length;
+  // The flag needsToQueueTasks marks the models that need to queue the tasks of
+  // addObject and deleteObject - this happens because they reboot or lose
+  // connection while running the task
+  let needsToQueueTasks = (['GWR-1200AC'].includes(device.model));
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
-    for (i = (device.port_mapping.length + rulesDiffLength);
-        i > device.port_mapping.length;
-        i--) {
-      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + i;
+    for (i = 0; i < rulesDiffLength; i++) {
+      // If, for example, we had 8 rules and now have 5, we need to delete
+      // indexes 6, 7, and 8 (TR-069 starts indexes at 1 rather than 0)
+      let index = i + currentLength + 1;
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.' + index;
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
-        if (!ret || !ret.success || !ret.executed) {
+        // When we're in the last iteration, and we're not going to do a
+        // setParameterValues task, so we need to request the connection
+        // on the last deleteObject task
+        let isLastIter = (i+1 == rulesDiffLength); // Last iteration flag
+        let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
+        let requestConn = ((!needsToQueueTasks) || (noRuleToAdd && isLastIter));
+        ret = await TasksAPI.addTask(
+          acsID, changeEntriesSizeTask, null, 0, requestConn,
+        );
+        // Need to check for executed flag if we sent requestConn flag to true
+        if (!ret || !ret.success || (requestConn && !ret.executed)) {
           return;
         }
       } catch (e) {
@@ -256,8 +270,11 @@ acsPortForwardHandler.changePortForwardRules = async function(
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
-        ret = await TasksAPI.addTask(acsID, changeEntriesSizeTask);
-        if (!ret || !ret.success || !ret.executed) {
+        let requestConn = (!needsToQueueTasks);
+        ret = await TasksAPI.addTask(
+          acsID, changeEntriesSizeTask, null, 0, requestConn);
+        // Need to check for executed flag if we sent requestConn flag to true
+        if (!ret || !ret.success || (requestConn && !ret.executed)) {
           return;
         }
       } catch (e) {
@@ -267,7 +284,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> A('+rulesDiffLength+') in '+acsID);
   }
   // set entries values for respective array in the device
-  for (i = 0; i < device.port_mapping.length; i++) {
+  for (i = 0; i < currentLength; i++) {
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
@@ -278,6 +295,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
       if (v[0] == 'description') {
         if (model == 'EC220-G5') {
           v[1][1] = 'Anlix_'+(i+1).toString();
+        } else if (model == 'EMG3524-T10A') {
+          v[1][1] = 'User Define';
         } else {
           v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
         }
@@ -288,7 +307,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   }
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
-    console.log('[#] -> U in '+acsID);
+    console.log('[#] -> U('+updateTasks.parameterValues.length+') in '+acsID);
     await TasksAPI.addTask(acsID, updateTasks);
   }
 };
