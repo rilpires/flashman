@@ -93,16 +93,6 @@ router.route('/command/:id/:msg').post(
   authController.ensurePermission('grantDeviceActions'),
   deviceListController.sendMqttMsg);
 
-// Send a customized ping command
-router.route('/pingdiagnostic/:id').post(
-  authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendCustomPing);
-
-// Send a customized speedtest command
-router.route('/device/speeddiagnostic/:id').post(
-  authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendCustomSpeedTest);
-
 // For user Interface - Set/Get Port forward
 router.route('/uiportforward/:id').get(
   deviceListController.getPortForward)
