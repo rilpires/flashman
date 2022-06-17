@@ -3218,28 +3218,33 @@ deviceListController.getSpeedtestResults = function(req, res) {
 };
 
 deviceListController.doSpeedTest = function(req, res) {
-  let mac = req.params.id.toUpperCase();
-  const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[mac];
-  });
-  DeviceModel.findById(mac, (err, matchedDevice)=>{
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
     }
-    if (!matchedDevice) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
     }
-    if (!matchedDevice.use_tr069 && !isDevOn) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeNotOnline', {errorline: __line}),
+
+    let mac = matchedDevice._id;
+
+    if (!matchedDevice.use_tr069) {
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[mac];
       });
+      if (!isDevOn) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeNotOnline', {errorline: __line}),
+        });
+      }
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
