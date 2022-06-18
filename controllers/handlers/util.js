@@ -77,10 +77,13 @@ utilHandlers.deepCopyObject = function(objArr) {
 };
 
 const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+utilHandlers.ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
 const ipv6Regex = /^[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}$|^(?:[0-9a-f]{1,4}:){6}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/i;
 // const ipv6Regexp = /^[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}$|^::(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?$|^(?:[0-9a-f]{1,4}:){1,6}:$|^(?:[0-9a-f]{1,4}:)+(?::[0-9a-f]{1,4})+$/i
 const domainNameRegex = /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i;
+utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$/;
+utilHandlers.urlRegex = /^(?:http(s)?:\/\/)[\w.-]+(?:\.[\w\.-]+)+[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]+$/;
+
 const testIPv6 = function(ipv6) {
   if (ipv6 !== undefined && ipv6.constructor !== String) return false;
   let parts = ipv6.split(':');
@@ -106,7 +109,7 @@ const testIPv6 = function(ipv6) {
 // returns true of false if given fully qualified dominion name is valid.
 utilHandlers.isFqdnValid = (fqdn) => fqdn !== undefined &&
   fqdn.constructor === String && (domainNameRegex.test(fqdn) ||
-  ipv4Regex.test(fqdn) || testIPv6(fqdn));
+  utilHandlers.ipv4Regex.test(fqdn) || testIPv6(fqdn));
 
 // returns true if given mac address is valid.
 utilHandlers.isMacValid = (mac) => mac !== undefined &&

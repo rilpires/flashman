@@ -230,11 +230,22 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // Store pinttest results
+  // When ping_hosts has at least one value or speedtest_url != '',
+  // the next ping/speedtest result should NOT be sent to the usual
+  // configured traps. Furthermore, if webhook_* fields are set,
+  // send the results to this webhook. Then unset every subfield
+  temp_command_trap: {
+    ping_hosts: [String],
+    speedtest_url: {type: String, default: ''},
+    webhook_url: {type: String, default: ''},
+    webhook_user: {type: String, default: ''},
+    webhook_secret: {type: String, default: ''},
+  },
+  // Store pingtest results
   pingtest_results: [{
     host: String,
     lat: {type: String, default: '---'},
-    loss: {type: String, default: '--- '},
+    loss: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds

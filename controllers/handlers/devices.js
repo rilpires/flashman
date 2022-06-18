@@ -460,22 +460,82 @@ deviceHandlers.sendPingToTraps = function(id, results) {
   });
 };
 
-deviceHandlers.storeSpeedtestResult = async function(device, result) {
+const sendSpeedtestResultToCustomTrap = async function(device, result) {
+  if (!device.temp_command_trap ||
+      !device.temp_command_trap.speedtest_url ||
+      !device.temp_command_trap.webhook_url ||
+      device.temp_command_trap.speedtest_url == '' ||
+      device.temp_command_trap.webhook_url == ''
+  ) {
+    return;
+  }
+  let requestOptions = {};
+  requestOptions.url = device.temp_command_trap.webhook_url;
+  requestOptions.method = 'PUT';
+  requestOptions.json = {
+    'id': device._id,
+    'type': 'device',
+    'speedtest_result': result,
+  };
+  if (device.temp_command_trap.webhook_user != '' &&
+      device.temp_command_trap.webhook_secret != ''
+  ) {
+    requestOptions.auth = {
+      user: device.temp_command_trap.webhook_user,
+      pass: device.temp_command_trap.webhook_secret,
+    };
+  }
+  // No wait!
+  request(requestOptions);
+};
+
+const formatSpeedtestResult = function(result) {
   let randomString = parseInt(Math.random()*10000000).toString();
   let now = new Date();
   let formattedDate = '' + now.getDate();
+  let errorObj = {
+    downSpeed: 'Error',
+    last_speedtest_error: {
+      unique_id: randomString,
+      error: 'Error',
+    },
+  };
   formattedDate += '/' + (now.getMonth()+1);
   formattedDate += '/' + now.getFullYear();
   formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
   formattedDate += ':' + (''+now.getMinutes()).padStart(2, '0');
 
-  // This function should not have 2 running instances at the same time, since
-  // async database access can lead to no longer valid reads after one instance
-  // writes. This is necessary because mongo does not implement "table locks",
-  // so we may end up marking the same device to update the speedresult array at
-  // the same time.
-  // And so, we use a mutex to lock instances outside database access scope.
-  // In addition, we add a random sleep to spread out requests a bit.
+  if (result && result.downSpeed) {
+    if (result.downSpeed.includes('Mbps')) {
+      return {
+        downSpeed: result.downSpeed,
+        user: result.user,
+        timestamp: formattedDate,
+      };
+    } else if (result.downSpeed.includes('503 Server')) {
+      return {
+        downSpeed: 'Unavailable',
+        last_speedtest_error: {
+          unique_id: randomString,
+          error: 'Unavailable',
+        },
+      };
+    } else {
+      return errorObj;
+    }
+  } else {
+    return errorObj;
+  }
+};
+
+// This function should not have 2 running instances at the same time, since
+// async database access can lead to no longer valid reads after one instance
+// writes. This is necessary because mongo does not implement "table locks",
+// so we may end up marking the same device to update the speedresult array at
+// the same time.
+// And so, we use a mutex to lock instances outside database access scope.
+// In addition, we add a random sleep to spread out requests a bit.
+deviceHandlers.storeSpeedtestResult = async function(device, result) {
   let interval = Math.random() * 500; // scale to seconds, cap at 500ms
   await new Promise((resolve) => setTimeout(resolve, interval));
   mutexRelease = await mutex.acquire();
@@ -488,34 +548,35 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     return {success: false, processed: 0};
   }
   if (!device) {
+    if (mutex.isLocked()) mutexRelease();
     return {success: false, processed: 0};
   }
 
-  if (result && result.downSpeed) {
-    if (result.downSpeed.includes('503 Server')) {
-      result.downSpeed = 'Unavailable';
-      device.last_speedtest_error.unique_id = randomString;
-      device.last_speedtest_error.error = 'Unavailable';
-    } else if (result.downSpeed.includes('Mbps')) {
-      device.speedtest_results.push({
-        down_speed: result.downSpeed,
-        user: result.user,
-        timestamp: formattedDate,
-      });
-      if (device.speedtest_results.length > 5) {
-        device.speedtest_results.shift();
-      }
-      let permissions = DeviceVersion.findByVersion(
-        device.version,
-        device.wifi_is_5ghz_capable,
-        device.model,
-      );
-      result.limit = permissions.grantSpeedTestLimit;
-    }
+  result = formatSpeedtestResult(result);
+  if (device.temp_command_trap &&
+      device.temp_command_trap.speedtest_url &&
+      device.temp_command_trap.speedtest_url != ''
+  ) {
+    // Don't care about waiting here
+    sendSpeedtestResultToCustomTrap(device, result);
+    device.temp_command_trap.speedtest_url = '';
+  } else if (result.last_speedtest_error) {
+    device.last_speedtest_error = result.last_speedtest_error;
   } else {
-    result = {downSpeed: 'Error'};
-    device.last_speedtest_error.unique_id = randomString;
-    device.last_speedtest_error.error = 'Error';
+    // We need to change some map keys
+    let resultToStore = util.deepCopyObject(result);
+    resultToStore.down_speed = resultToStore.downSpeed;
+    delete resultToStore.downSpeed;
+    device.speedtest_results.push(resultToStore);
+    if (device.speedtest_results.length > 5) {
+      device.speedtest_results.shift();
+    }
+    let permissions = DeviceVersion.findByVersion(
+      device.version,
+      device.wifi_is_5ghz_capable,
+      device.model,
+    );
+    result.limit = permissions.grantSpeedTestLimit;
   }
 
   await device.save().catch((err) => {

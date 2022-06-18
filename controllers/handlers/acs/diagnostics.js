@@ -11,6 +11,7 @@ const sio = require('../../../sio');
 const http = require('http');
 const debug = require('debug')('ACS_DIAGNOSTICS');
 const t = require('../../language').i18next.t;
+const request = require('request-promise-native');
 
 let acsDiagnosticsHandler = {};
 
@@ -44,6 +45,14 @@ const getSpeedtestFile = async function(device) {
     console.error('Error creating entry. Config does not exists.');
     return '';
   }
+
+  if (device.temp_command_trap &&
+      device.temp_command_trap.speedtest_url &&
+      device.temp_command_trap.speedtest_url !== ''
+  ) {
+    return device.temp_command_trap.speedtest_url;
+  }
+
   let stage = device.current_speedtest.stage;
   let band = device.current_speedtest.band_estimative;
   let url = 'http://' + matchedConfig.measureServerIP + ':' +
@@ -111,6 +120,15 @@ const calculatePingDiagnostic = async function(
       }
     }
 
+    let currentCommandTrap = undefined;
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
+      device.temp_command_trap.ping_hosts = [];
+      currentCommandTrap = device.temp_command_trap;
+    }
+
     // Always set completed to true to not break recursion on failure
     currentPingTest.completed = true;
 
@@ -118,6 +136,7 @@ const calculatePingDiagnostic = async function(
       console.log('Error saving ping test to database: ' + err);
     });
 
+    // Filling the result object
     device.pingtest_results.map((p) => {
       if (p) {
         result[p.host] = {
@@ -128,7 +147,31 @@ const calculatePingDiagnostic = async function(
       }
     });
 
-    deviceHandlers.sendPingToTraps(device._id, {results: result});
+    // If ping command was sent from a customized api call,
+    // we don't want to propagate it to the generic webhook
+    if (currentCommandTrap && currentCommandTrap.webhook_url) {
+      let requestOptions = {};
+      requestOptions.url = currentCommandTrap.webhook_url;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': device._id,
+        'type': 'device',
+        'ping_results': result,
+      };
+      if (currentCommandTrap.webhook_user &&
+          currentCommandTrap.webook_secret
+      ) {
+        requestOptions.auth = {
+          user: currentCommandTrap.webhook_user,
+          pass: currentCommandTrap.webhook_secret,
+        };
+      }
+      // No wait!
+      request(requestOptions);
+    } else {
+      // Generic ping test
+      deviceHandlers.sendPingToTraps(device._id, {results: result});
+    }
 
     startPingDiagnose(device.acs_id);
     return;
@@ -159,12 +202,6 @@ const calculateSpeedDiagnostic = async function(
   if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
-      if (device.speedtest_results.length > 0) {
-        lastTime = utilHandlers.parseDate(
-          device.speedtest_results[device.speedtest_results.length-1].timestamp,
-        );
-      }
-
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
       let endTime = (new Date(speedKeys.end_time)).valueOf();
       // 10**3 => seconds to miliseconds (because of valueOf() notation)
@@ -248,6 +285,13 @@ const startPingDiagnose = async function(acsID) {
     return {success: false, message: t('cpeFindError', {errorline: __line})};
   }
 
+  let pingHostUrl = getNextPingTest(device);
+  if (!pingHostUrl || pingHostUrl === '') {
+    console.log('Ping results for device ' + acsID
+      + ' completed successfully.');
+    return;
+  }
+
   let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
@@ -255,14 +299,8 @@ const startPingDiagnose = async function(acsID) {
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
-  let pingHostUrl = getNextPingTest(device);
   let timeout = 1000;
 
-  if (!pingHostUrl || pingHostUrl === '') {
-    console.log('Ping results for device ' + acsID
-      + ' completed successfully.');
-    return;
-  }
 
   let task = {
     name: 'setParameterValues',
