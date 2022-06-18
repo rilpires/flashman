@@ -17,6 +17,42 @@ fastwirelessModel.modelPermissions = function() {
   return permissions;
 };
 
+fastwirelessModel.getFieldType = basicCPEModel.getFieldType;
+
+fastwirelessModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+fastwirelessModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+fastwirelessModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+fastwirelessModel.convertField = basicCPEModel.convertField;
+
+fastwirelessModel.getBeaconType = basicCPEModel.getBeaconType;
+
+fastwirelessModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+fastwirelessModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+fastwirelessModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 fastwirelessModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

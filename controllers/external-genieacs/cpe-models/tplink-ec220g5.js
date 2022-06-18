@@ -18,6 +18,38 @@ tplinkModel.modelPermissions = function() {
   return permissions;
 };
 
+tplinkModel.getFieldType = basicCPEModel.getFieldType;
+
+tplinkModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'bg';
+    case '11n':
+      return 'bgn';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'anac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+tplinkModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+tplinkModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+tplinkModel.convertField = basicCPEModel.convertField;
+
+tplinkModel.getBeaconType = basicCPEModel.getBeaconType;
+
+tplinkModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+tplinkModel.convertToDbm = basicCPEModel.convertToDbm;
+
+tplinkModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   Object.keys(fields.wifi5).forEach((k)=>{

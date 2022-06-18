@@ -17,16 +17,89 @@ tendaModel.modelPermissions = function() {
   return permissions;
 };
 
+tendaModel.getFieldType = function(masterKey, key) {
+  return 'xsd:string';
+};
+
+tendaModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'bg';
+    case '11n':
+      return 'bgn';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'an+ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+tendaModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '0';
+    case 'HT40':
+    case 'VHT40':
+      return '1';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return '2';
+    default:
+      return '';
+  }
+};
+
+tendaModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '2':
+      return 'auto';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
+tendaModel.convertField = function(
+  masterKey, key, value, typeFunc, modeFunc, bandFunc,
+) {
+  let fullKey = masterKey + '-' + key;
+  if (fullKey === 'wifi2-enable' || fullKey === 'wifi5-enable') {
+    let result = {value: null, type: tendaModel.getFieldType(masterKey, key)};
+    result.value = (value > 0) ? '1' : '0';
+    return result;
+  }
+  return basicCPEModel.convertField(
+    masterKey, key, value, typeFunc, modeFunc, bandFunc,
+  );
+};
+
+tendaModel.getBeaconType = function() {
+  return 'WPAand11i';
+};
+
+tendaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+tendaModel.convertToDbm = basicCPEModel.convertToDbm;
+
+tendaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
   fields.common.model = 'InternetGatewayDevice.DeviceInfo.ProductClass';
-  fields.stun = {};
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
     'STUNEnable';
-  fields.stun.address = 'InternetGatewayDevice.ManagementServer.' +
-    'STUNServerAddress';
-  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
   fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
     'ManagementServer.UDPConnectionRequestAddress';
   fields.lan.subnet_mask = 'InternetGatewayDevice.LANDevice.1'+

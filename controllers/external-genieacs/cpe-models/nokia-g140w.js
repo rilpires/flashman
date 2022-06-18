@@ -16,6 +16,54 @@ nokiaModel.modelPermissions = function() {
   return permissions;
 };
 
+nokiaModel.getFieldType = basicCPEModel.getFieldType;
+
+nokiaModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+nokiaModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+nokiaModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+nokiaModel.convertField = function(
+  masterKey, key, value, typeFunc, modeFunc, bandFunc,
+) {
+  let fullKey = masterKey + '-' + key;
+  if (fullKey === 'wifi2-enable' || fullKey === 'wifi5-enable') {
+    let result = {value: null, type: nokiaModel.getFieldType(masterKey, key)};
+    result.value = (value > 0) ? 'TRUE' : 'FALSE';
+    return result;
+  }
+  return basicCPEModel.convertField(
+    masterKey, key, value, typeFunc, modeFunc, bandFunc,
+  );
+};
+
+nokiaModel.getBeaconType = function() {
+  return 'WPA/WPA2';
+};
+
+nokiaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+nokiaModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+nokiaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +

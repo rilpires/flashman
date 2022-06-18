@@ -14,6 +14,38 @@ huaweiModel.modelPermissions = function() {
   return permissions;
 };
 
+huaweiModel.getFieldType = basicCPEModel.getFieldType;
+
+huaweiModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b/g';
+    case '11n':
+      return 'b/g/n';
+    case '11na':
+      return 'a/n';
+    case '11ac':
+      return 'a/n/ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+huaweiModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+huaweiModel.convertField = basicCPEModel.convertField;
+
+huaweiModel.getBeaconType = basicCPEModel.getBeaconType;
+
+huaweiModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+huaweiModel.convertToDbm = basicCPEModel.convertToDbm;
+
+huaweiModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +

@@ -22,6 +22,40 @@ intelbrasModel.modelPermissions = function() {
   return permissions;
 };
 
+intelbrasModel.getFieldType = basicCPEModel.getFieldType;
+
+intelbrasModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+intelbrasModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+intelbrasModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+intelbrasModel.convertField = basicCPEModel.convertField;
+
+intelbrasModel.getBeaconType = basicCPEModel.getBeaconType;
+
+intelbrasModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+intelbrasModel.convertToDbm = basicCPEModel.convertToDbm;
+
+intelbrasModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

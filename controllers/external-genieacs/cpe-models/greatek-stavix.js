@@ -23,6 +23,42 @@ greatekModel.modelPermissions = function() {
   return permissions;
 };
 
+greatekModel.getFieldType = basicCPEModel.getFieldType;
+
+greatekModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'bg';
+    case '11n':
+      return 'bgn';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'anac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+greatekModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+greatekModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+greatekModel.convertField = basicCPEModel.convertField;
+
+greatekModel.getBeaconType = function() {
+  return 'WPA2';
+};
+
+greatekModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+greatekModel.convertToDbm = basicCPEModel.convertToDbm;
+
+greatekModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +

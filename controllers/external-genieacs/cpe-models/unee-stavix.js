@@ -18,6 +18,40 @@ uneeModel.modelPermissions = function() {
   return permissions;
 };
 
+uneeModel.getFieldType = basicCPEModel.getFieldType;
+
+uneeModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'bg';
+    case '11n':
+      return 'bgn';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'anac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+uneeModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+uneeModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+uneeModel.convertField = basicCPEModel.convertField;
+
+uneeModel.getBeaconType = basicCPEModel.getBeaconType;
+
+uneeModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+uneeModel.convertToDbm = basicCPEModel.convertToDbm;
+
+uneeModel.isAllowedWebadminUsername = function(name) {
+  return (name !== 'admin');
+};
+
 uneeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+

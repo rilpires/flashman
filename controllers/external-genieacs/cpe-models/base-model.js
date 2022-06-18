@@ -44,12 +44,15 @@ basicCPEModel.modelPermissions = function() {
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
       upnp: false, // will enable upnp configs (to be implemented)
+      wanBytes: true, // will enable wan bytes plot
       wps: false, // will enable wps configs (to be implemented)
     },
     firmwareUpgrades: {
       'v0.0.0': [],
     },
     lan: {
+      configRead: true, // will display current lan configuration
+      configWrite: true, // can change current lan configuration
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
@@ -63,9 +66,11 @@ basicCPEModel.modelPermissions = function() {
     wifi: {
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
+      extended2GhzChannels: true, // allow channels 12 and 13
+      ssidRead: true, // will display current wifi ssid and password
+      ssidWrite: true, // can change current wifi ssid and password
       bandRead: true, // will display current wifi band
       bandWrite: true, // can change current wifi band
-      extended2GhzChannels: true, // allow channels 12 and 13
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
@@ -78,24 +83,6 @@ basicCPEModel.modelPermissions = function() {
     },
     usesStavixXMLConfig: false, // special flag for stavix-like models
   };
-};
-
-// CPEs that use a Stavix XML config file can restrict certain web admin
-// usernames to avoid conflict with other credentials - only WiFiber needs this
-basicCPEModel.allowedXMLWebAdminUsername = function(name) {
-  // No restrictions
-  return true;
-};
-
-// List of allowed firmware upgrades for each known firmware version
-basicCPEModel.allowedFirmwareUpgrades = function(fwVersion) {
-  // No upgrades allowed
-  return [];
-};
-
-// Used when setting up a mesh network
-basicCPEModel.getBeaconType = function() {
-  return '11i';
 };
 
 // Should be tweaked if the tr-069 xml has special types for some fields
@@ -161,34 +148,28 @@ basicCPEModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-// Used on devices that list wifi rate for each connected device
-basicCPEModel.convertWifiRate = function(rate) {
-  return parseInt(rate);
-};
-
-// Conversion from Flashman format to TR-069 format
-basicCPEModel.convertSubnetIntToMask = function(mask) {
-  if (mask === 24) {
-    return '255.255.255.0';
-  } else if (mask === 25) {
-    return '255.255.255.128';
-  } else if (mask === 26) {
-    return '255.255.255.192';
+basicCPEModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case 'auto':
+    case 'Auto':
+    case '20/40MHz Coexistence':
+      return 'auto';
+    case '20MHz':
+    case '20Mhz':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '40MHz':
+    case '40Mhz':
+    case '20/40MHz':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '80MHz':
+    case '80Mhz':
+    case '20/40/80MHz':
+      return (isAC) ? 'VHT80' : undefined;
+    case '160MHz':
+    default:
+      return undefined;
   }
-  return '';
-};
-
-// Used when computing dhcp ranges
-basicCPEModel.convertSubnetMaskToRange = function(mask) {
-  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
-  if (mask === '255.255.255.0' || mask === 24) {
-    return {min: '33', max: '254'};
-  } else if (mask === '255.255.255.128' || mask === 25) {
-    return {min: '161', max: '254'};
-  } else if (mask === '255.255.255.192' || mask === 26) {
-    return {min: '225', max: '254'};
-  }
-  return {};
 };
 
 // Convert values from Flashman format to CPE format
@@ -241,8 +222,13 @@ basicCPEModel.convertField = function(
   return result;
 };
 
+// Used when setting up a mesh network
+basicCPEModel.getBeaconType = function() {
+  return '11i';
+};
+
 // Used to override GenieACS serial in some way, used only on Hurakall for now
-basicCPEModel.convertGenieSerial = function(serial) {
+basicCPEModel.convertGenieSerial = function(serial, mac) {
   // No conversion necessary
   return serial;
 };
@@ -251,6 +237,48 @@ basicCPEModel.convertGenieSerial = function(serial) {
 basicCPEModel.convertToDbm = function(power) {
   // No conversion necessary
   return power;
+};
+
+// CPEs that can customize web admin username can reject certain usernames to
+// avoid conflict with other credentials
+basicCPEModel.isAllowedWebadminUsername = function(name) {
+  return true;
+};
+
+// List of allowed firmware upgrades for each known firmware version
+basicCPEModel.allowedFirmwareUpgrades = function(fwVersion) {
+  // No upgrades allowed
+  return [];
+};
+
+// Used on devices that list wifi rate for each connected device
+basicCPEModel.convertWifiRate = function(rate) {
+  return parseInt(rate);
+};
+
+// Conversion from Flashman format to TR-069 format
+basicCPEModel.convertSubnetIntToMask = function(mask) {
+  if (mask === 24) {
+    return '255.255.255.0';
+  } else if (mask === 25) {
+    return '255.255.255.128';
+  } else if (mask === 26) {
+    return '255.255.255.192';
+  }
+  return '';
+};
+
+// Used when computing dhcp ranges
+basicCPEModel.convertSubnetMaskToRange = function(mask) {
+  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
+  if (mask === '255.255.255.0' || mask === 24) {
+    return {min: '33', max: '254'};
+  } else if (mask === '255.255.255.128' || mask === 25) {
+    return {min: '161', max: '254'};
+  } else if (mask === '255.255.255.192' || mask === 26) {
+    return {min: '225', max: '254'};
+  }
+  return {};
 };
 
 // Since Flashman stores auto channel flag within channel field itself, we
@@ -299,6 +327,14 @@ basicCPEModel.getModelFields = function() {
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
       interval: 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval',
+      // These should only be added whenever they exist, for legacy reasons:
+        // web_admin_user: 'InternetGatewayDevice.User.1.Username',
+        // web_admin_password: 'InternetGatewayDevice.User.1.Password',
+        // stun_enable: 'InternetGatewayDevice.ManagementServer.STUNEnable',
+        // stun_udp_conn_req_addr: 'InternetGatewayDevice.ManagementServer.' +
+        //   'UDPConnectionRequestAddress',
+        // alt_uid: 'InternetGatewayDevice.LANDevice.1.' +
+        //   'LANEthernetInterfaceConfig.1.MACAddress',
     },
     wan: {
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
@@ -331,6 +367,17 @@ basicCPEModel.getModelFields = function() {
         'WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+      // These should only be added whenever they exist, for legacy reasons:
+        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+        //   'GponLinkConfig.VLANIDMark',
+        // pon_rxpower: 'InternetGatewayDevice.WANDevice.1.'+
+        //   'GponInterfaceConfig.RXPower',
+        // pon_txpower: 'InternetGatewayDevice.WANDevice.1.'+
+        //   'GponInterfaceConfig.TXPower',
+        // pon_rxpower_epon: 'InternetGatewayDevice.WANDevice.1.'+
+        //   'EponInterfaceConfig.RXPower',
+        // pon_txpower_epon: 'InternetGatewayDevice.WANDevice.1.'+
+        //   'EponInterfaceConfig.TXPower',
     },
     port_mapping_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.'+
       '*.WANIPConnection.*.PortMapping',
@@ -435,6 +482,16 @@ basicCPEModel.getModelFields = function() {
         'BeaconType',
     },
     log: 'InternetGatewayDevice.DeviceInfo.DeviceLog',
+    stun: {
+      address: 'InternetGatewayDevice.ManagementServer.STUNServerAddress',
+      port: 'InternetGatewayDevice.ManagementServer.STUNServerPort',
+    },
+    access_control: {
+      wifi2: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
+        'AccessControl',
+      wifi5: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
+        'AccessControl',
+    },
     devices: {
       hosts: 'InternetGatewayDevice.LANDevice.1.Hosts',
       hosts_template: 'InternetGatewayDevice.LANDevice.1.Hosts.Host',
@@ -443,7 +500,13 @@ basicCPEModel.getModelFields = function() {
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
       host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
         'Layer2Interface',
-      associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
+      host_rssi: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
+        'AssociatedDevice.*.SignalStrength',
+      host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
+        'AssociatedDevice.*.SignalNoiseRatio',
+      host_rate: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
+        'AssociatedDevice.*.LastDataTransmitRate',
+      associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice',
       assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
         'TotalAssociations',

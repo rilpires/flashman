@@ -15,17 +15,58 @@ dlinkModel.modelPermissions = function() {
   return permissions;
 };
 
+dlinkModel.getFieldType = basicCPEModel.getFieldType;
+
+dlinkModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+dlinkModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '20/40MHz';
+    case 'VHT80':
+      return '20/40/80MHz';
+    case 'auto':
+      return (is5ghz) ? '20/40/80MHz' : '20/40MHz Coexistent';
+    default:
+      return '';
+  }
+};
+
+dlinkModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+dlinkModel.convertField = basicCPEModel.convertField;
+
+dlinkModel.getBeaconType = basicCPEModel.getBeaconType;
+
+dlinkModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+dlinkModel.convertToDbm = basicCPEModel.convertToDbm;
+
+dlinkModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 dlinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wifi5.ssid = fields.wifi5.ssid.replace(/5/g, '3');
-  fields.wifi5.bssid = fields.wifi5.bssid.replace(/5/g, '3');
-  fields.wifi5.password = fields.wifi5.password.replace(/5/g, '3');
-  fields.wifi5.channel = fields.wifi5.channel.replace(/5/g, '3');
-  fields.wifi5.auto = fields.wifi5.auto.replace(/5/g, '3');
-  fields.wifi5.mode = fields.wifi5.mode.replace(/5/g, '3');
-  fields.wifi5.enable = fields.wifi5.enable.replace(/5/g, '3');
-  fields.wifi5.band = fields.wifi5.band.replace(/5/g, '3');
-  fields.wifi5.beacon_type = fields.wifi5.beacon_type.replace(/5/g, '3');
+  Object.keys(fields.wifi2).forEach((k)=>{
+    fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '3');
+  });
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
     'X_DLINK_OperatingChannelBandwidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.' +

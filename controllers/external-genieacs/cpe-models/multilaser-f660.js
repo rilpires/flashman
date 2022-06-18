@@ -22,6 +22,44 @@ multilaserModel.modelPermissions = function() {
   return permissions;
 };
 
+multilaserModel.getFieldType = basicCPEModel.getFieldType;
+
+multilaserModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+multilaserModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+multilaserModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+multilaserModel.convertField = basicCPEModel.convertField;
+
+multilaserModel.getBeaconType = function() {
+  return 'WPAand11i';
+};
+
+multilaserModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+multilaserModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+multilaserModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
@@ -47,7 +85,6 @@ multilaserModel.getModelFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_ZTE-COM_WANPONInterfaceConfig.TXPower';
   fields.port_mapping_values.protocol[1] = 'TCP AND UDP';
-  fields.access_control = {};
   fields.access_control.wifi2 = fields.wifi2.ssid.replace(
     /SSID/g, 'X_ZTE-COM_AccessControl',
   );

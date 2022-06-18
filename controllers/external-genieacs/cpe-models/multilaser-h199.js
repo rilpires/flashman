@@ -25,6 +25,42 @@ multilaserModel.modelPermissions = function() {
   return permissions;
 };
 
+multilaserModel.getFieldType = basicCPEModel.getFieldType;
+
+multilaserModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+multilaserModel.convertWifiBand = basicCPEModel.convertWifiBand;
+
+multilaserModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+multilaserModel.convertField = basicCPEModel.convertField;
+
+multilaserModel.getBeaconType = basicCPEModel.getBeaconType;
+
+multilaserModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+multilaserModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+multilaserModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
@@ -41,13 +77,8 @@ multilaserModel.getModelFields = function() {
   fields.port_mapping_values.protocol[1] = 'BOTH';
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
     'STUNEnable';
-  fields.stun = {};
-  fields.stun.address = 'InternetGatewayDevice.ManagementServer.' +
-    'STUNServerAddress';
-  fields.stun.port = 'InternetGatewayDevice.ManagementServer.STUNServerPort';
   fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
     'ManagementServer.UDPConnectionRequestAddress';
-  fields.access_control = {};
   fields.access_control.wifi2 = fields.wifi2.ssid.replace(
     /SSID/g, 'X_ZTE-COM_AccessControl',
   );

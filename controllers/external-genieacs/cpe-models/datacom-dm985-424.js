@@ -36,11 +36,23 @@ datacomModel.convertWifiMode = function(mode) {
 
 datacomModel.convertWifiBand = basicCPEModel.convertWifiBand;
 
+datacomModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
 datacomModel.convertField = basicCPEModel.convertField;
 
 datacomModel.getBeaconType = function() {
   return 'WPAand11i';
 };
+
+datacomModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+datacomModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+datacomModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
 
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

@@ -14,6 +14,70 @@ hurakallModel.modelPermissions = function() {
   return permissions;
 };
 
+hurakallModel.getFieldType = basicCPEModel.getFieldType;
+
+hurakallModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+hurakallModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20Mhz';
+    case 'HT40':
+    case 'VHT40':
+      return '40Mhz';
+    case 'VHT80':
+      return '80Mhz';
+    case 'auto':
+      return 'Auto';
+    default:
+      return '';
+  }
+};
+
+hurakallModel.convertWifiBandToFlashman =
+  basicCPEModel.convertWifiBandToFlashman;
+
+hurakallModel.convertField = basicCPEModel.convertField;
+
+hurakallModel.getBeaconType = function() {
+  return 'WPAand11i';
+};
+
+hurakallModel.convertGenieSerial = function(serial, mac) {
+  let serialPrefix = serial.substring(0, 8); // 4 chars in base 16
+  let serialSuffix = serial.substring(8); // remaining chars in utf8
+  serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
+  // decode from base16 to utf8
+  serialPrefix = serialPrefix.map((prefix) => {
+    prefix = parseInt(prefix, 16);
+    return String.fromCharCode(prefix);
+  });
+  // join parts in final format
+  return (serialPrefix.join('') + serialSuffix).toUpperCase();
+};
+
+hurakallModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+hurakallModel.isAllowedWebadminUsername =
+  basicCPEModel.isAllowedWebadminUsername;
+
 hurakallModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +

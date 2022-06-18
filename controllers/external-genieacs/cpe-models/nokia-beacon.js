@@ -18,6 +18,53 @@ nokiaModel.modelPermissions = function() {
   return permissions;
 };
 
+nokiaModel.getFieldType = basicCPEModel.getFieldType;
+
+nokiaModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+nokiaModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    case 'auto':
+      return 'Auto';
+    default:
+      return '';
+  }
+};
+
+nokiaModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
+
+nokiaModel.convertField = basicCPEModel.convertField;
+
+nokiaModel.getBeaconType = basicCPEModel.getBeaconType;
+
+nokiaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+nokiaModel.convertToDbm = basicCPEModel.convertToDbm;
+
+nokiaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi2.password = fields.wifi2.password.replace(

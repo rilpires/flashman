@@ -1386,9 +1386,6 @@ const grantPortOpenIpv6 = function(version, model) {
 };
 
 const grantWifi2ghzEdit = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
-    return tr069Devices[model].feature_support.wifi_ssid_write;
-  }
   // Every firmware has this feature
   return true;
 };
@@ -1728,6 +1725,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantPortForward: cpePermissions.features.portForward,
     grantPortForwardAsym: false,
     grantPortOpenIpv6: false,
+    grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiBand: true,
     grantWifiBandAuto: true,
@@ -1735,8 +1733,9 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWifiPowerHiddenIpv6Box: false,
     grantWifiExtendedChannels: cpePermissions.wifi.extended2GhzChannels,
     grantPingTest: cpePermissions.features.pingTest,
-    grantLanEdit: true,
-    grantLanGwEdit: true,
+    grantLanRead: cpePermissions.lan.configRead,
+    grantLanEdit: cpePermissions.lan.configWrite,
+    grantLanGwEdit: cpePermissions.lan.configWrite,
     grantLanDevices: cpePermissions.lan.listLANDevices,
     grantSiteSurvey: false,
     grantUpnp: false,

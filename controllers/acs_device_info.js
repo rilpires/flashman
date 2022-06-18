@@ -78,43 +78,10 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertWifiBand = function(model, band, mode, is5ghz) {
-  let isAC = convertWifiMode(mode, is5ghz) === '11ac';
-  switch (band) {
-    // Number input
-    case '0':
-      if (model === 'EG8145X6' || model === 'HG8121H') return 'auto';
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '1':
-      if (model === 'HG8121H') return 'HT20';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '2':
-      if (model === 'HG8121H') return 'HT40';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
-      return 'auto';
-    case '3':
-      return (isAC) ? 'VHT80' : undefined;
-    // String input
-    case 'auto':
-    case 'Auto':
-    case '20/40MHz Coexistence':
-      return 'auto';
-    case '20MHz':
-    case '20Mhz':
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '40MHz':
-    case '40Mhz':
-    case '20/40MHz':
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '80MHz':
-    case '80Mhz':
-    case '20/40/80MHz':
-      return (isAC) ? 'VHT80' : undefined;
-    case '160MHz':
-    default:
-      return undefined;
-  }
+const convertWifiBand = function(cpe, band, mode, is5ghz) {
+  let convertedMode = convertWifiMode(mode, is5ghz);
+  let isAC = (convertedMode === '11ac' || convertedMode === '11ax');
+  return cpe.convertWifiBandToFlashman(band, isAC);
 };
 
 const processHostFromURL = function(url) {
@@ -253,7 +220,9 @@ const createRegistry = async function(req, cpe, permissions) {
     wanUptime = undefined;
   }
 
-  let serialTR069 = cpe.convertGenieSerial(splitID[splitID.length - 1]);
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], macAddr,
+  );
 
   // Collect PON signal, if available
   let rxPowerPon;
@@ -304,7 +273,7 @@ const createRegistry = async function(req, cpe, permissions) {
     mode2 = convertWifiMode(data.wifi2.mode.value, true);
     if (data.wifi2.band && data.wifi2.band.value) {
       band2 = convertWifiBand(
-        model, data.wifi2.band.value, data.wifi2.mode.value, true,
+        cpe, data.wifi2.band.value, data.wifi2.mode.value, true,
       );
     }
   }
@@ -315,7 +284,7 @@ const createRegistry = async function(req, cpe, permissions) {
     mode5 = convertWifiMode(data.wifi5.mode.value, true);
     if (data.wifi5.band && data.wifi5.band.value) {
       band5 = convertWifiBand(
-        model, data.wifi5.band.value, data.wifi5.mode.value, true,
+        cpe, data.wifi5.band.value, data.wifi5.mode.value, true,
       );
     }
   }
@@ -893,7 +862,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
   // Always update serial info based on ACS ID
-  let serialTR069 = cpe.convertGenieSerial(splitID[splitID.length - 1]);
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], device._id,
+  );
   device.serial_tr069 = serialTR069;
 
   // Update model, if data available
@@ -1201,7 +1172,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(model, data.wifi2.band.value,
+      let band2 = convertWifiBand(cpe, data.wifi2.band.value,
        data.wifi2.mode.value, false);
       if (data.wifi2.band.value && !device.wifi_band) {
         device.wifi_band = band2;
@@ -1219,7 +1190,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(model, data.wifi5.band.value,
+      let band5 = convertWifiBand(cpe, data.wifi5.band.value,
        data.wifi5.mode.value, true);
       if (data.wifi5.band.value && !device.wifi_band_5ghz) {
         device.wifi_band_5ghz = band5;
@@ -1402,7 +1373,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       // web admin user and password
       device.web_admin_username = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
-      if (cpe.allowedXMLWebAdminUsername(config.tr069.web_login)) {
+      if (!cpe.isAllowedWebadminUsername(config.tr069.web_login)) {
         // this model can't have two users as "admin", if this happens you
         // can't access it anymore and will be only using normal user account
         device.web_admin_username = 'root';
@@ -1596,12 +1567,10 @@ acsDeviceInfoController.updateInfo = async function(
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
-  // The following model does not accept admin as a superuser name
-  // Leave default superuser name
-  if (modelName === 'EMG3524-T10A' &&
-      changes.common.web_admin_username === 'admin') {
+  if (!cpe.isAllowedWebadminUsername(changes.common.web_admin_username)) {
     delete changes.common.web_admin_username;
   }
+  // TODO: CONTINUE FROM HERE
   // Some Nokia models have a bug where changing the SSID without changing the
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi

@@ -17,6 +17,74 @@ huaweiModel.modelPermissions = function() {
   return permissions;
 };
 
+huaweiModel.getFieldType = function(masterKey, key) {
+  if ((masterKey === 'wifi2' || masterKey === 'wifi5') && key === 'band') {
+    return 'xsd:unsignedInt';
+  }
+  return basicCPEModel.getFieldType(masterKey, key);
+};
+
+huaweiModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return '11bg';
+    case '11n':
+      return '11bgn';
+    case '11na':
+      return '11na';
+    case '11ac':
+      return '11ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return '0';
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
+huaweiModel.convertField = basicCPEModel.convertField;
+
+huaweiModel.getBeaconType = function() {
+  return 'WPAand11i';
+};
+
+huaweiModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
+
+huaweiModel.convertToDbm = basicCPEModel.convertToDbm;
+
+huaweiModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
