@@ -493,6 +493,13 @@ const formatSpeedtestResult = function(result) {
   let randomString = parseInt(Math.random()*10000000).toString();
   let now = new Date();
   let formattedDate = '' + now.getDate();
+  let errorObj = {
+    downSpeed: 'Error',
+    last_speedtest_error: {
+      unique_id: randomString,
+      error: 'Error',
+    },
+  };
   formattedDate += '/' + (now.getMonth()+1);
   formattedDate += '/' + now.getFullYear();
   formattedDate += ' ' + (''+now.getHours()).padStart(2, '0');
@@ -513,15 +520,11 @@ const formatSpeedtestResult = function(result) {
           error: 'Unavailable',
         },
       };
+    } else {
+      return errorObj;
     }
   } else {
-    return {
-      downSpeed: 'Error',
-      last_speedtest_error: {
-        unique_id: randomString,
-        error: 'Error',
-      },
-    };
+    return errorObj;
   }
 };
 
