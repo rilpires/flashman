@@ -95,6 +95,9 @@ utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]
 utilHandlers.urlRegex = /^(?:http(s)?:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
 // eslint-disable-next-line max-len
 utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}-[a-z]{3})\.(bin)$/;
+// Matches DD/DD/DDDD DD:DD format
+// eslint-disable-next-line max-len
+utilHandlers.dateRegex = /^((\d{2})|(\d{1}))\/((\d{2})|(\d{1}))\/(\d{4}) (\d{2}):(\d{2})$/;
 
 const testIPv6 = function(ipv6) {
   if (ipv6 !== undefined && ipv6.constructor !== String) return false;

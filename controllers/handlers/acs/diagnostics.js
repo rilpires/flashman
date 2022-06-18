@@ -187,6 +187,14 @@ const calculateSpeedDiagnostic = async function(
   let speedValueFullLoad;
   let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
+  // Try to get last speed test timestamp
+  if (Array.isArray(device.speedtest_results)) {
+    let lastTest = device.speedtest_results[device.speedtest_results.length -1];
+    let lastDate =
+      new Date(
+        lastTest.timestamp.replace(utilHandlers.dateRegex, '$7-$4-$1 $8:$9'));
+    if (lastDate != 'Invalid Date') lastTime = lastDate.valueOf();
+  }
 
   try {
     if ('current_speedtest' in device &&

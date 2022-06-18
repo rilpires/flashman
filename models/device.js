@@ -262,7 +262,7 @@ let deviceSchema = new Schema({
     error: String,
   },
   // The object bellow is used to save the user that requested the speedtest
-  // and to indicate what time the speedtest was requested. Te timestamp is
+  // and to indicate what time the speedtest was requested. The timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the
   // speedtest was requested, otherwise, the ping test was requested.
