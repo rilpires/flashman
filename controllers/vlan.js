@@ -174,7 +174,7 @@ vlanController.addVlanProfile = async function(req, res) {
       message: t('vlanIdOutOfRange', {errorline: __line}),
     });
   }
-  if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(newVlanProfile.profile_name) == false) {
+  if (util.vlanNameRegex.test(newVlanProfile.profile_name) == false) {
     return res.json({
       success: false,
       type: 'danger',
@@ -238,7 +238,7 @@ vlanController.editVlanProfile = async function(req, res) {
   });
   if (config && config.vlans_profiles) {
     let exist_vlan_profile = false;
-    if (/^[A-Za-z][A-Za-z\-0-9_]+$/.test(req.body.profilename) == false) {
+    if (util.vlanNameRegex.test(req.body.profilename) == false) {
       return res.json({
         success: false,
         type: 'danger',

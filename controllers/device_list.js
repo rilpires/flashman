@@ -557,7 +557,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (new RegExp(`^${t('noSignal')}$`).test(tag)) {
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = {$exists: false};
-    // } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
     } else if (new RegExp(`^(ipv6) ` +
     `(?:${t('on')}|${t('off')}|${t('unknown')})$`).test(tag)) {
       if (new RegExp(`\\b${t('on')}\\b`).test(tag)) {
@@ -1347,8 +1346,7 @@ deviceListController.sendCustomPing = async function(req, res) {
       });
     }
 
-    let fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
-    let hostFilter = (host) => host.match(fqdnLengthRegex);
+    let hostFilter = (host) => host.match(util.fqdnLengthRegex);
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
@@ -2750,11 +2748,9 @@ deviceListController.setPortForward = function(req, res) {
       let usedAsymPorts = [];
 
       content.forEach((r) => {
-        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-
         if (!r.hasOwnProperty('mac') ||
             !r.hasOwnProperty('dmz') ||
-            !r.mac.match(macRegex)) {
+            !r.mac.match(util.macRegex)) {
           return res.status(200).json({
             success: false,
             message: t('macInvalidInJson'),
@@ -3046,9 +3042,8 @@ deviceListController.setPingHostsList = function(req, res) {
 
     let approvedHosts = [];
     content.hosts.forEach((host) => {
-      let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
       host = host.toLowerCase();
-      if (host.match(fqdnLengthRegex)) {
+      if (host.match(util.fqdnLengthRegex)) {
         approvedHosts.push(host);
       }
     });
