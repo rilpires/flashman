@@ -1426,6 +1426,21 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
         validationOk = false;
       }
     }
+    if (device.use_tr069) {
+      if (!util.urlRegex.test(req.body.content.url)) validationOk = false;
+    } else {
+      // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
+      let urlList = req.body.content.url.split(':');
+      if (!util.ipv4Regex.test(urlList[0])) {
+        validationOk = false;
+      }
+      if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
+        validationOk = false;
+      }
+      if (urlList.length > 2) {
+        validationOk = false;
+      }
+    }
     if (!validationOk) {
       return res.status(200).json({
         success: false,
