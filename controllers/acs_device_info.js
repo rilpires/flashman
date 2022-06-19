@@ -112,13 +112,16 @@ const convertWifiBand = function(model, band, mode, is5ghz) {
     case 'Auto':
     case '20/40MHz Coexistence':
       return 'auto';
+    case '20M':
     case '20MHz':
     case '20Mhz':
       return (isAC) ? 'VHT20' : 'HT20';
+    case '40M':
     case '40MHz':
     case '40Mhz':
     case '20/40MHz':
       return (isAC) ? 'VHT40' : 'HT40';
+    case '80M':
     case '80MHz':
     case '80Mhz':
     case '20/40/80MHz':
