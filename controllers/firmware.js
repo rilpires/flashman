@@ -9,6 +9,7 @@ const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const t = require('./language').i18next.t;
+const util = require('./handlers/util');
 
 const fs = require('fs');
 const fsPromises = fs.promises;
@@ -21,7 +22,7 @@ const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 let firmwareController = {};
 
 let isValidFilename = function(filename) {
-  return /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}\-[a-z]{3})\.(bin)$/.test(filename);
+  return util.flashboxFirmFileRegex.test(filename);
 };
 
 let parseFilename = function(filename) {

@@ -65,6 +65,16 @@ router.route('/device/command/:id/:msg').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.sendMqttMsg);
 
+// Send a customized ping command
+router.route('/device/pingdiagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomPing);
+
+// Send a customized speedtest command
+router.route('/device/speeddiagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomSpeedTest);
+
 // Set/Get Port forward
 router.route('/device/portforward/:id').get(
   authController.ensurePermission('grantAPIAccess'),
