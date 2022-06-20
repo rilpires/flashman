@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let multilaserModel = {};
+let multilaserModel = Object.assign({}, basicCPEModel);
 
 multilaserModel.identifier = 'Multilaser/ZTE H199';
 
@@ -25,8 +25,6 @@ multilaserModel.modelPermissions = function() {
   return permissions;
 };
 
-multilaserModel.getFieldType = basicCPEModel.getFieldType;
-
 multilaserModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -43,23 +41,9 @@ multilaserModel.convertWifiMode = function(mode) {
   }
 };
 
-multilaserModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-multilaserModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-multilaserModel.convertField = basicCPEModel.convertField;
-
-multilaserModel.getBeaconType = basicCPEModel.getBeaconType;
-
-multilaserModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
 multilaserModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
-
-multilaserModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
 
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

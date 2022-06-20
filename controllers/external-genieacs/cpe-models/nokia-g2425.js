@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let nokiaModel = {};
+let nokiaModel = Object.assign({}, basicCPEModel);
 
 nokiaModel.identifier = 'Nokia G-2425';
 
@@ -18,8 +18,6 @@ nokiaModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-nokiaModel.getFieldType = basicCPEModel.getFieldType;
 
 nokiaModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -57,17 +55,9 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-nokiaModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-nokiaModel.convertField = basicCPEModel.convertField;
-
-nokiaModel.getBeaconType = basicCPEModel.getBeaconType;
-
-nokiaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-nokiaModel.convertToDbm = basicCPEModel.convertToDbm;
-
-nokiaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+nokiaModel.sendRoutersOnLANChange = function() {
+  return false;
+};
 
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

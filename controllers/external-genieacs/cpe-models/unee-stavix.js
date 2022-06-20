@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let uneeModel = {};
+let uneeModel = Object.assign({}, basicCPEModel);
 
 uneeModel.identifier = 'Unee Stavix G421R';
 
@@ -18,8 +18,6 @@ uneeModel.modelPermissions = function() {
   return permissions;
 };
 
-uneeModel.getFieldType = basicCPEModel.getFieldType;
-
 uneeModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -35,18 +33,6 @@ uneeModel.convertWifiMode = function(mode) {
       return '';
   }
 };
-
-uneeModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-uneeModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-uneeModel.convertField = basicCPEModel.convertField;
-
-uneeModel.getBeaconType = basicCPEModel.getBeaconType;
-
-uneeModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-uneeModel.convertToDbm = basicCPEModel.convertToDbm;
 
 uneeModel.isAllowedWebadminUsername = function(name) {
   return (name !== 'admin');

@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let huaweiModel = {};
+let huaweiModel = Object.assign({}, basicCPEModel);
 
 huaweiModel.identifier = 'Huawei EG8145V5';
 
@@ -28,8 +28,6 @@ huaweiModel.modelPermissions = function() {
   return permissions;
 };
 
-huaweiModel.getFieldType = basicCPEModel.getFieldType;
-
 huaweiModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -46,21 +44,9 @@ huaweiModel.convertWifiMode = function(mode) {
   }
 };
 
-huaweiModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-huaweiModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-huaweiModel.convertField = basicCPEModel.convertField;
-
 huaweiModel.getBeaconType = function() {
   return 'WPAand11i';
 };
-
-huaweiModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-huaweiModel.convertToDbm = basicCPEModel.convertToDbm;
-
-huaweiModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
 
 huaweiModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

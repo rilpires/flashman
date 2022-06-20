@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let greatekModel = {};
+let greatekModel = Object.assign({}, basicCPEModel);
 
 greatekModel.identifier = 'Greatek Stavix G421R';
 
@@ -23,8 +23,6 @@ greatekModel.modelPermissions = function() {
   return permissions;
 };
 
-greatekModel.getFieldType = basicCPEModel.getFieldType;
-
 greatekModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -41,23 +39,9 @@ greatekModel.convertWifiMode = function(mode) {
   }
 };
 
-greatekModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-greatekModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-greatekModel.convertField = basicCPEModel.convertField;
-
 greatekModel.getBeaconType = function() {
   return 'WPA2';
 };
-
-greatekModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-greatekModel.convertToDbm = basicCPEModel.convertToDbm;
-
-greatekModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
 
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

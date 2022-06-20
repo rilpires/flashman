@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let zyxelModel = {};
+let zyxelModel = Object.assign({}, basicCPEModel);
 
 zyxelModel.identifier = 'Zyxel EMG3524-T10A';
 
@@ -12,8 +12,6 @@ zyxelModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-zyxelModel.getFieldType = basicCPEModel.getFieldType;
 
 zyxelModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -30,18 +28,6 @@ zyxelModel.convertWifiMode = function(mode) {
       return '';
   }
 };
-
-zyxelModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-zyxelModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-zyxelModel.convertField = basicCPEModel.convertField;
-
-zyxelModel.getBeaconType = basicCPEModel.getBeaconType;
-
-zyxelModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-zyxelModel.convertToDbm = basicCPEModel.convertToDbm;
 
 zyxelModel.isAllowedWebadminUsername = function(name) {
   return (name !== 'admin');

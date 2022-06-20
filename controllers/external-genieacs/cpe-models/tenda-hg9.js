@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let tendaModel = {};
+let tendaModel = Object.assign({}, basicCPEModel);
 
 tendaModel.identifier = 'Tenda HG9';
 
@@ -18,8 +18,6 @@ tendaModel.modelPermissions = function() {
   return permissions;
 };
 
-tendaModel.getFieldType = basicCPEModel.getFieldType;
-
 tendaModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -36,23 +34,13 @@ tendaModel.convertWifiMode = function(mode) {
   }
 };
 
-tendaModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-tendaModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-tendaModel.convertField = basicCPEModel.convertField;
-
 tendaModel.getBeaconType = function() {
   return 'WPA2';
 };
 
-tendaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
 tendaModel.convertToDbm = function(power) {
   return parseFloat(power.split(' ')[0]);
 };
-
-tendaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
 
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

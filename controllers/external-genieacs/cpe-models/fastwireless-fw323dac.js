@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let fastwirelessModel = {};
+let fastwirelessModel = Object.assign({}, basicCPEModel);
 
 fastwirelessModel.identifier = 'FastWireless FW323DAC';
 
@@ -16,8 +16,6 @@ fastwirelessModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-fastwirelessModel.getFieldType = basicCPEModel.getFieldType;
 
 fastwirelessModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -35,23 +33,9 @@ fastwirelessModel.convertWifiMode = function(mode) {
   }
 };
 
-fastwirelessModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-fastwirelessModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-fastwirelessModel.convertField = basicCPEModel.convertField;
-
-fastwirelessModel.getBeaconType = basicCPEModel.getBeaconType;
-
-fastwirelessModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
 fastwirelessModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
-
-fastwirelessModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
 
 fastwirelessModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let phyhomeModel = {};
+let phyhomeModel = Object.assign({}, basicCPEModel);
 
 phyhomeModel.identifier = 'PhyHome P20';
 
@@ -11,8 +11,6 @@ phyhomeModel.modelPermissions = function() {
   permissions.wifi.ssidWrite = false;
   return permissions;
 };
-
-phyhomeModel.getFieldType = basicCPEModel.getFieldType;
 
 phyhomeModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -30,23 +28,9 @@ phyhomeModel.convertWifiMode = function(mode) {
   }
 };
 
-phyhomeModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-phyhomeModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-phyhomeModel.convertField = basicCPEModel.convertField;
-
-phyhomeModel.getBeaconType = basicCPEModel.getBeaconType;
-
-phyhomeModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
 phyhomeModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
-
-phyhomeModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
 
 phyhomeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

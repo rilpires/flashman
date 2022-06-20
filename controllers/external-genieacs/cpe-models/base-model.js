@@ -248,6 +248,55 @@ basicCPEModel.isAllowedWebadminUsername = function(name) {
   return true;
 };
 
+// Since Flashman stores auto channel flag within channel field itself, we
+// need to specify how to split them up when sending a task to CPE
+basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
+  let auto = (channel === 'auto');
+  let values = [];
+  values.push([
+    fields[masterKey]['auto'], auto, 'xsd:boolean',
+  ]);
+  if (!auto) {
+    const parsedChannel = parseInt(channel);
+    values.push([
+      fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
+    ]);
+  }
+  return values;
+};
+
+basicCPEModel.sendRoutersOnLANChange = function() {
+  return true;
+};
+
+basicCPEModel.sendDnsOnLANChange = function() {
+  return true;
+};
+
+// Editing the gateway ip or subnet length implies a change to other fields,
+// so we do those here, for the devices that need it
+basicCPEModel.convertLanEditToTask = function(
+  device, fields, sendRouters, sendDns,
+) {
+  let values = [];
+  let dhcpRanges = basicCPEModel.convertSubnetMaskToRange(device.lan_netmask);
+  if (dhcpRanges.min && dhcpRanges.max) {
+    let subnet = device.lan_subnet;
+    let networkPrefix = subnet.split('.').slice(0, 3).join('.');
+    let minIP = networkPrefix + '.' + dhcpRanges.min;
+    let maxIP = networkPrefix + '.' + dhcpRanges.max;
+    if (sendDns) {
+      values.push([fields['lan']['dns_servers'], subnet, 'xsd:string']);
+    }
+    if (sendRouters) {
+      values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
+      values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
+      values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
+    }
+  }
+  return values;
+};
+
 // List of allowed firmware upgrades for each known firmware version
 basicCPEModel.allowedFirmwareUpgrades = function(fwVersion) {
   // No upgrades allowed
@@ -282,40 +331,6 @@ basicCPEModel.convertSubnetMaskToRange = function(mask) {
     return {min: '225', max: '254'};
   }
   return {};
-};
-
-// Since Flashman stores auto channel flag within channel field itself, we
-// need to specify how to split them up when sending a task to CPE
-basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
-  let auto = (channel === 'auto');
-  let values = [];
-  values.push([
-    fields[masterKey]['auto'], auto, 'xsd:boolean',
-  ]);
-  if (!auto) {
-    const parsedChannel = parseInt(channel);
-    values.push([
-      fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
-    ]);
-  }
-  return values;
-};
-
-// Editing the gateway ip or subnet length implies a change to other fields,
-// so we do those here, for the devices that need it
-basicCPEModel.convertLanEditToTask = function(device, fields) {
-  let values = [];
-  let dhcpRanges = basicCPEModel.convertSubnetMaskToRange(device.lan_netmask);
-  if (dhcpRanges.min && dhcpRanges.max) {
-    let subnet = device.lan_subnet;
-    let networkPrefix = subnet.split('.').slice(0, 3).join('.');
-    let minIP = networkPrefix + '.' + dhcpRanges.min;
-    let maxIP = networkPrefix + '.' + dhcpRanges.max;
-    values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
-    values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
-    values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
-  }
-  return values;
 };
 
 // Map TR-069 XML fields to Flashman fields

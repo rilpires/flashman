@@ -1570,7 +1570,6 @@ acsDeviceInfoController.updateInfo = async function(
   if (!cpe.isAllowedWebadminUsername(changes.common.web_admin_username)) {
     delete changes.common.web_admin_username;
   }
-  // TODO: CONTINUE FROM HERE
   // Some Nokia models have a bug where changing the SSID without changing the
   // password as well makes the password reset to default value, so we force the
   // password to be updated as well - this also takes care of any possible wifi
@@ -1594,15 +1593,22 @@ acsDeviceInfoController.updateInfo = async function(
         // Special case since channel relates to 2 fields
         let channel = changes[masterKey][key];
         let values = cpe.convertChannelToTask(channel, fields, masterKey);
-        task.parameterValues.concat(values);
-        hasChanges = true;
+        if (values.length > 0) {
+          task.parameterValues.concat(values);
+          hasChanges = true;
+        }
         return;
       }
       if (
         (key === 'router_ip' || key === 'subnet_mask') && !hasUpdatedDHCPRanges
       ) {
         // Special case for lan ip/mask, we need to update dhcp range and dns
-        let values = cpe.convertLanEditToTask(device, fields);
+        let values = cpe.convertLanEditToTask(
+          device,
+          fields,
+          cpe.sendRoutersOnLANChange(),
+          cpe.sendDnsOnLANChange(),
+        );
         if (values.length > 0) {
           task.parameterValues.concat(values);
           hasUpdatedDHCPRanges = true; // Avoid editing these fields twice

@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let dlinkModel = {};
+let dlinkModel = Object.assign({}, basicCPEModel);
 
 dlinkModel.identifier = 'D-Link DIR-842';
 
@@ -14,8 +14,6 @@ dlinkModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-dlinkModel.getFieldType = basicCPEModel.getFieldType;
 
 dlinkModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -49,18 +47,6 @@ dlinkModel.convertWifiBand = function(band, is5ghz=false) {
       return '';
   }
 };
-
-dlinkModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-dlinkModel.convertField = basicCPEModel.convertField;
-
-dlinkModel.getBeaconType = basicCPEModel.getBeaconType;
-
-dlinkModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-dlinkModel.convertToDbm = basicCPEModel.convertToDbm;
-
-dlinkModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
 
 dlinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

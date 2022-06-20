@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let tplinkModel = {};
+let tplinkModel = Object.assign({}, basicCPEModel);
 
 tplinkModel.identifier = 'TP-Link EC220-G5';
 
@@ -17,8 +17,6 @@ tplinkModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-tplinkModel.getFieldType = basicCPEModel.getFieldType;
 
 tplinkModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -53,17 +51,9 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-tplinkModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-tplinkModel.convertField = basicCPEModel.convertField;
-
-tplinkModel.getBeaconType = basicCPEModel.getBeaconType;
-
-tplinkModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-tplinkModel.convertToDbm = basicCPEModel.convertToDbm;
-
-tplinkModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+tplinkModel.sendDnsOnLANChange = function() {
+  return false;
+};
 
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

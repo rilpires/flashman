@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let nokiaModel = {};
+let nokiaModel = Object.assign({}, basicCPEModel);
 
 nokiaModel.identifier = 'Nokia G-140W-C';
 
@@ -15,8 +15,6 @@ nokiaModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-nokiaModel.getFieldType = basicCPEModel.getFieldType;
 
 nokiaModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -33,10 +31,6 @@ nokiaModel.convertWifiMode = function(mode) {
       return '';
   }
 };
-
-nokiaModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-nokiaModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
 
 nokiaModel.convertField = function(
   masterKey, key, value, typeFunc, modeFunc, bandFunc,
@@ -56,13 +50,9 @@ nokiaModel.getBeaconType = function() {
   return 'WPA/WPA2';
 };
 
-nokiaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
 nokiaModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
-
-nokiaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
 
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

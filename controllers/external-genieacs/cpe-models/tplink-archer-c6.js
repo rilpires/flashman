@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let tplinkModel = {};
+let tplinkModel = Object.assign({}, basicCPEModel);
 
 tplinkModel.identifier = 'TP-Link Archer C6';
 
@@ -14,8 +14,6 @@ tplinkModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-tplinkModel.getFieldType = basicCPEModel.getFieldType;
 
 tplinkModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -32,20 +30,6 @@ tplinkModel.convertWifiMode = function(mode) {
       return '';
   }
 };
-
-tplinkModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-tplinkModel.convertWifiBandToFlashman = basicCPEModel.convertWifiBandToFlashman;
-
-tplinkModel.convertField = basicCPEModel.convertField;
-
-tplinkModel.getBeaconType = basicCPEModel.getBeaconType;
-
-tplinkModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-tplinkModel.convertToDbm = basicCPEModel.convertToDbm;
-
-tplinkModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
 
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

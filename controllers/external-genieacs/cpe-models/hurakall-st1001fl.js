@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let hurakallModel = {};
+let hurakallModel = Object.assign({}, basicCPEModel);
 
 hurakallModel.identifier = 'Hurakall ST-1001-FL';
 
@@ -13,8 +13,6 @@ hurakallModel.modelPermissions = function() {
   };
   return permissions;
 };
-
-hurakallModel.getFieldType = basicCPEModel.getFieldType;
 
 hurakallModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -49,11 +47,6 @@ hurakallModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-hurakallModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-hurakallModel.convertField = basicCPEModel.convertField;
-
 hurakallModel.getBeaconType = function() {
   return 'WPAand11i';
 };
@@ -75,8 +68,17 @@ hurakallModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
-hurakallModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
+hurakallModel.convertChannelToTask = function(channel, fields, masterKey) {
+  if (channel === 'auto') {
+    channel = '0';
+  }
+  let values = [];
+  const parsedChannel = parseInt(channel);
+  values.push([
+    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
+  ]);
+  return values;
+};
 
 hurakallModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

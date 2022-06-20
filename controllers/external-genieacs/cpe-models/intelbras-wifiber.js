@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let intelbrasModel = {};
+let intelbrasModel = Object.assign({}, basicCPEModel);
 
 intelbrasModel.identifier = 'Intelbras WiFiber 121AC';
 
@@ -22,8 +22,6 @@ intelbrasModel.modelPermissions = function() {
   return permissions;
 };
 
-intelbrasModel.getFieldType = basicCPEModel.getFieldType;
-
 intelbrasModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -39,22 +37,6 @@ intelbrasModel.convertWifiMode = function(mode) {
       return '';
   }
 };
-
-intelbrasModel.convertWifiBand = basicCPEModel.convertWifiBand;
-
-intelbrasModel.convertWifiBandToFlashman =
-  basicCPEModel.convertWifiBandToFlashman;
-
-intelbrasModel.convertField = basicCPEModel.convertField;
-
-intelbrasModel.getBeaconType = basicCPEModel.getBeaconType;
-
-intelbrasModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-intelbrasModel.convertToDbm = basicCPEModel.convertToDbm;
-
-intelbrasModel.isAllowedWebadminUsername =
-  basicCPEModel.isAllowedWebadminUsername;
 
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();

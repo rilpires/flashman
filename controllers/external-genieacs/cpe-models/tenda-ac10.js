@@ -1,6 +1,6 @@
 const basicCPEModel = require('./base-model');
 
-let tendaModel = {};
+let tendaModel = Object.assign({}, basicCPEModel);
 
 tendaModel.identifier = 'Tenda AC10';
 
@@ -88,11 +88,19 @@ tendaModel.getBeaconType = function() {
   return 'WPAand11i';
 };
 
-tendaModel.convertGenieSerial = basicCPEModel.convertGenieSerial;
-
-tendaModel.convertToDbm = basicCPEModel.convertToDbm;
-
-tendaModel.isAllowedWebadminUsername = basicCPEModel.isAllowedWebadminUsername;
+tendaModel.convertChannelToTask = function(channel, fields, masterKey) {
+  let auto = (channel === 'auto');
+  let values = [];
+  values.push([
+    fields[masterKey]['auto'], (auto) ? '1' : '0', 'xsd:string',
+  ]);
+  if (!auto) {
+    values.push([
+      fields[masterKey]['channel'], channel, 'xsd:string',
+    ]);
+  }
+  return values;
+};
 
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
