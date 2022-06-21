@@ -1216,6 +1216,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
+          if (!permissions.grantPingTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase(),
@@ -1318,7 +1324,15 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model
+    );
+    if (!permissions.grantPingTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
     // We don't want to allow another custom command
     // while there is another running
     if (device.temp_command_trap &&
@@ -1394,6 +1408,15 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       return res.status(200).json({success: false,
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
+    }
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model
+    );
+    if (!permissions.grantSpeedTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
     }
     // We don't want to allow another custom command
     // while there is another running
