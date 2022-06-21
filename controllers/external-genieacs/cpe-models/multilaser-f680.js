@@ -52,6 +52,10 @@ multilaserModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+multilaserModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +

@@ -12,6 +12,7 @@ greatekModel.modelPermissions = function() {
   permissions.features.stun = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.portForwardQueueTasks = true;
   permissions.wan.speedTestLimit = 300;
   permissions.lan.configWrite = false;
   permissions.firmwareUpgrades = {
@@ -38,6 +39,17 @@ greatekModel.convertWifiMode = function(mode) {
 
 greatekModel.convertGenieSerial = function(serial, mac) {
   return mac;
+};
+
+greatekModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  // Replace 2 with 6 - likely reused some legacy code in tr069 implementation
+  return basicCPEModel.isDeviceConnectedViaWifi(
+    layer2iface,
+    wifi2iface.replace(/2/g, '6'),
+    wifi5iface,
+  );
 };
 
 greatekModel.getModelFields = function() {

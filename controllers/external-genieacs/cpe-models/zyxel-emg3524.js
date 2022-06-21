@@ -33,6 +33,10 @@ zyxelModel.isAllowedWebadminUsername = function(name) {
   return (name !== 'admin');
 };
 
+zyxelModel.getPortForwardRuleName = function(index) {
+  return 'User Define';
+};
+
 zyxelModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +

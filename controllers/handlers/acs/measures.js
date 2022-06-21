@@ -1,3 +1,5 @@
+/* global __line */
+
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');

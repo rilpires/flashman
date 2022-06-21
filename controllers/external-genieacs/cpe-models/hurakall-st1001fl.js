@@ -80,6 +80,10 @@ hurakallModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
+hurakallModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
+
 hurakallModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +

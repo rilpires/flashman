@@ -40,6 +40,15 @@ datacomModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+datacomModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === '802.11') {
+    return 'wifi';
+  }
+  return 'cable';
+};
+
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+

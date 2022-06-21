@@ -43,6 +43,15 @@ greatekModel.getBeaconType = function() {
   return 'WPA2';
 };
 
+greatekModel.convertRssiValue = function(rssiValue) {
+  let result = basicCPEModel.convertRssiValue(rssiValue);
+  // This model sends RSSI as a positive value instead of negative
+  if (typeof result !== 'undefined') {
+    result = -result;
+  }
+  return result;
+};
+
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +

@@ -52,6 +52,10 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+tplinkModel.getPortForwardRuleName = function(index) {
+  return 'Anlix_' + index.toString();
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   Object.keys(fields.wifi5).forEach((k)=>{

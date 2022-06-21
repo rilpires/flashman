@@ -62,6 +62,8 @@ basicCPEModel.modelPermissions = function() {
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
+      pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
+      portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
     },
@@ -84,7 +86,8 @@ basicCPEModel.modelPermissions = function() {
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
       objectExists: false, // special flag for mesh xml object
     },
-    usesStavixXMLConfig: false, // special flag for stavix-like models
+    onlineAfterReset: false, // flag for devices that stay online post reset
+    usesStavixXMLConfig: false, // flag for stavix-like models with xml config
   };
 };
 
@@ -336,6 +339,42 @@ basicCPEModel.useModelAlias = function(fwVersion) {
 // Used on devices that list wifi rate for each connected device
 basicCPEModel.convertWifiRate = function(rate) {
   return parseInt(rate);
+};
+
+// Used when fetching connected devices to identify if device is cable or wifi
+basicCPEModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === wifi2iface || layer2iface === wifi2iface + '.') {
+    return 'wifi2';
+  } else if (layer2iface === wifi5iface || layer2iface === wifi5iface + '.') {
+    return 'wifi5';
+  }
+  return 'cable';
+};
+
+// Used when fetching connected devices' rssi data, it might need conversions
+basicCPEModel.convertRssiValue = function(rssiValue) {
+  // Return undefined in case anything goes wrong
+  let result;
+  if (typeof rssiValue !== 'undefined') {
+    result = rssiValue;
+    // Casts to string if is a number so we can replace 'dBm'
+    if (typeof result === 'number') {
+      result = result.toString();
+    }
+    result = result.replace('dBm', '');
+    // Cast back to number to avoid converting issues
+    result = parseInt(result);
+    if (isNaN(result)) {
+      return undefined;
+    }
+  }
+  return result;
+};
+
+basicCPEModel.getPortForwardRuleName = function(index) {
+  return 'Anlix_PortForwarding_' + index.toString();
 };
 
 // Map TR-069 XML fields to Flashman fields

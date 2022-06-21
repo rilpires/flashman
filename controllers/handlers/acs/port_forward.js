@@ -199,12 +199,12 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // let mac = device._id;
   let acsID = device.acs_id;
   let model = device.model;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   // redirect to config file binding instead of setParametervalues
-  if (acsXMLConfigHandler.xmlConfigModels.includes(model)) {
+  if (cpe.modelPermissions().usesStavixXMLConfig) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
@@ -238,7 +238,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // The flag needsToQueueTasks marks the models that need to queue the tasks of
   // addObject and deleteObject - this happens because they reboot or lose
   // connection while running the task
-  let needsToQueueTasks = (['GWR-1200AC'].includes(device.model));
+  let needsToQueueTasks = cpe.modelPermissions().wan.portForwardQueueTasks;
   if (rulesDiffLength < 0) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
@@ -293,13 +293,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
       if (v[0] == 'description') {
-        if (model == 'EC220-G5') {
-          v[1][1] = 'Anlix_'+(i+1).toString();
-        } else if (model == 'EMG3524-T10A') {
-          v[1][1] = 'User Define';
-        } else {
-          v[1][1] = 'Anlix_PortForwarding_'+(i+1).toString();
-        }
+        let ruleName = cpe.getPortForwardRuleName(i+1);
+        v[1][1] = ruleName;
       }
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);

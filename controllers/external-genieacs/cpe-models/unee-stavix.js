@@ -15,6 +15,7 @@ uneeModel.modelPermissions = function() {
     'V1.2.9': [],
     'V1.3.4': [],
   };
+  permissions.onlineAfterReset = true;
   return permissions;
 };
 

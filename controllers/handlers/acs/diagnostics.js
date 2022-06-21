@@ -87,8 +87,8 @@ const getSpeedtestFile = async function(device) {
 };
 
 const calculatePingDiagnostic = async function(
-    device, data, pingKeys, pingFields,
-  ) {
+    device, cpe, data, pingKeys, pingFields,
+) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
 
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
@@ -111,10 +111,7 @@ const calculatePingDiagnostic = async function(
       currentPingTest.lat = pingKeys.avg_resp_time.toString();
       currentPingTest.loss = loss.toString();
 
-      let model = device.model;
-      if (
-        ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
-      ) {
+      if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
         if (pingKeys.success_count === 1) currentPingTest.loss = '0';
         else currentPingTest.loss = '100';
       }
@@ -442,7 +439,9 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
         if (permissions) {
           if (permissions.grantPingTest) {
             await calculatePingDiagnostic(
-              device, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+              device, cpe, data,
+              diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
