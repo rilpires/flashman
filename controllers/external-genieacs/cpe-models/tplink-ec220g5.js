@@ -9,6 +9,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.lan.sendDnsOnLANChange = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 230;
@@ -49,10 +50,6 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
     default:
       return '';
   }
-};
-
-tplinkModel.sendDnsOnLANChange = function() {
-  return false;
 };
 
 tplinkModel.getModelFields = function() {

@@ -779,10 +779,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
         if (device.use_tr069) {
           let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
             device).cpe;
+          let permissions = cpe.modelPermissions();
           /* get allowed version of upgrade by
             current device version  */
           let allowedVersions = cpe.allowedFirmwareUpgrades(
             device.installed_release,
+            permissions,
           );
           /* filter by allowed version that
             current version can jump to */
@@ -790,16 +792,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
             (release) => allowedVersions.includes(release.id));
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
-          device.isUpgradeEnabled =
-            cpe.modelPermissions().features.firmwareUpgrade;
+          device.isUpgradeEnabled = permissions.features.firmwareUpgrade;
 
-          /* Due to the misleading value of model as IGD
-            in the FastWireless FW323DAC model, check if is
-            IGD, if have that firmware version and send to
-            the table anim the 'right' model */
-          if ((device.model === 'IGD' && device.version === 'V2.0.08-191129') ||
-               device.model === 'FW323DAC') {
-            device.model_alias = 'FW323DAC';
+          // Check for model aliases in case ModelName field is not correct
+          let modelAlias = cpe.useModelAlias(device.version);
+          if (modelAlias !== '') {
+            device.model_alias = modelAlias;
           }
         } else {
           let filteredDevReleases = [];
@@ -2241,7 +2239,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (
-              matchedDevice.model == 'AC10' &&
+              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
               (
                 (
                   matchedDevice.wifi_state == 0 &&

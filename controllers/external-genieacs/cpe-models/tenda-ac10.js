@@ -11,6 +11,7 @@ tendaModel.modelPermissions = function() {
   permissions.lan.needEnableConfig = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.mustBeEnabledToConfigure = true;
   permissions.firmwareUpgrades = {
     'V16.03.06.05_multi_BR01': [],
   };

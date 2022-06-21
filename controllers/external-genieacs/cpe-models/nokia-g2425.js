@@ -10,6 +10,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 850;
@@ -53,10 +54,6 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     default:
       return '';
   }
-};
-
-nokiaModel.sendRoutersOnLANChange = function() {
-  return false;
 };
 
 nokiaModel.getModelFields = function() {

@@ -1604,10 +1604,7 @@ acsDeviceInfoController.updateInfo = async function(
       ) {
         // Special case for lan ip/mask, we need to update dhcp range and dns
         let values = cpe.convertLanEditToTask(
-          device,
-          fields,
-          cpe.sendRoutersOnLANChange(),
-          cpe.sendDnsOnLANChange(),
+          device, fields, cpe.modelPermissions(),
         );
         if (values.length > 0) {
           task.parameterValues.concat(values);

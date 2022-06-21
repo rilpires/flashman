@@ -37,6 +37,14 @@ fastwirelessModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+fastwirelessModel.useModelAlias = function(fwVersion) {
+  // Use this for the firmwares that have IGD as ModelName
+  if (fwVersion === 'V2.0.08-191129') {
+    return 'FW323DAC';
+  }
+  return '';
+};
+
 fastwirelessModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;

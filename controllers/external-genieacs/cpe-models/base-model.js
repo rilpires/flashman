@@ -57,6 +57,8 @@ basicCPEModel.modelPermissions = function() {
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
+      sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
+      sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -74,6 +76,7 @@ basicCPEModel.modelPermissions = function() {
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
+      mustBeEnabledToConfigure: false, // wiill block changes if wifi is down
     },
     mesh: {
       bssidOffsets2Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
@@ -175,6 +178,18 @@ basicCPEModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
+// Conversion from Flashman format to TR-069 format
+const convertSubnetIntToMask = function(mask) {
+  if (mask === 24) {
+    return '255.255.255.0';
+  } else if (mask === 25) {
+    return '255.255.255.128';
+  } else if (mask === 26) {
+    return '255.255.255.192';
+  }
+  return '';
+};
+
 // Convert values from Flashman format to CPE format
 // Expected return example is {value: "mynetwork", type: "xsd:string"}
 // TypeFunc should always be an implementation of getFieldType
@@ -187,7 +202,7 @@ basicCPEModel.convertField = function(
   switch (masterKey+'-'+key) {
     case 'lan-subnet_mask':
       // convert to ip subnet
-      result.value = basicCPEModel.convertSubnetIntToMask(value);
+      result.value = convertSubnetIntToMask(value);
       break;
     case 'wifi2-enable':
     case 'wifi5-enable':
@@ -265,63 +280,8 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
-basicCPEModel.sendRoutersOnLANChange = function() {
-  return true;
-};
-
-basicCPEModel.sendDnsOnLANChange = function() {
-  return true;
-};
-
-// Editing the gateway ip or subnet length implies a change to other fields,
-// so we do those here, for the devices that need it
-basicCPEModel.convertLanEditToTask = function(
-  device, fields, sendRouters, sendDns,
-) {
-  let values = [];
-  let dhcpRanges = basicCPEModel.convertSubnetMaskToRange(device.lan_netmask);
-  if (dhcpRanges.min && dhcpRanges.max) {
-    let subnet = device.lan_subnet;
-    let networkPrefix = subnet.split('.').slice(0, 3).join('.');
-    let minIP = networkPrefix + '.' + dhcpRanges.min;
-    let maxIP = networkPrefix + '.' + dhcpRanges.max;
-    if (sendDns) {
-      values.push([fields['lan']['dns_servers'], subnet, 'xsd:string']);
-    }
-    if (sendRouters) {
-      values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
-      values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
-      values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
-    }
-  }
-  return values;
-};
-
-// List of allowed firmware upgrades for each known firmware version
-basicCPEModel.allowedFirmwareUpgrades = function(fwVersion) {
-  // No upgrades allowed
-  return [];
-};
-
-// Used on devices that list wifi rate for each connected device
-basicCPEModel.convertWifiRate = function(rate) {
-  return parseInt(rate);
-};
-
-// Conversion from Flashman format to TR-069 format
-basicCPEModel.convertSubnetIntToMask = function(mask) {
-  if (mask === 24) {
-    return '255.255.255.0';
-  } else if (mask === 25) {
-    return '255.255.255.128';
-  } else if (mask === 26) {
-    return '255.255.255.192';
-  }
-  return '';
-};
-
 // Used when computing dhcp ranges
-basicCPEModel.convertSubnetMaskToRange = function(mask) {
+const convertSubnetMaskToRange = function(mask) {
   // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
   if (mask === '255.255.255.0' || mask === 24) {
     return {min: '33', max: '254'};
@@ -331,6 +291,51 @@ basicCPEModel.convertSubnetMaskToRange = function(mask) {
     return {min: '225', max: '254'};
   }
   return {};
+};
+
+// Editing the gateway ip or subnet length implies a change to other fields,
+// so we do those here, for the devices that need it
+basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
+  let values = [];
+  let dhcpRanges = convertSubnetMaskToRange(device.lan_netmask);
+  if (dhcpRanges.min && dhcpRanges.max) {
+    let subnet = device.lan_subnet;
+    let networkPrefix = subnet.split('.').slice(0, 3).join('.');
+    let minIP = networkPrefix + '.' + dhcpRanges.min;
+    let maxIP = networkPrefix + '.' + dhcpRanges.max;
+    if (permissions.lan.sendDnsOnLANChange) {
+      values.push([fields['lan']['dns_servers'], subnet, 'xsd:string']);
+    }
+    if (permissions.lan.sendRoutersOnLANChange) {
+      values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
+      values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
+      values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
+    }
+  }
+  return values;
+};
+
+// List of allowed firmware upgrades for each known firmware version
+basicCPEModel.allowedFirmwareUpgrades = function(fwVersion, permissions) {
+  if (
+    permissions.features.firmwareUpgrade &&
+    Array.isArray(permissions.firmwareUpgrades[fwVersion])
+  ) {
+    return permissions.firmwareUpgrades[fwVersion];
+  }
+  // No upgrades allowed
+  return [];
+};
+
+// Used on devices whose ModelName does not match with actual model name
+basicCPEModel.useModelAlias = function(fwVersion) {
+  // No alias
+  return '';
+};
+
+// Used on devices that list wifi rate for each connected device
+basicCPEModel.convertWifiRate = function(rate) {
+  return parseInt(rate);
 };
 
 // Map TR-069 XML fields to Flashman fields
