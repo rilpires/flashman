@@ -167,7 +167,7 @@ const calculatePingDiagnostic = async function(
         };
       }
       // No wait!
-      request(requestOptions);
+      request(requestOptions).then(()=>{}, ()=>{});
     } else {
       // Generic ping test
       deviceHandlers.sendPingToTraps(device._id, {results: result});
