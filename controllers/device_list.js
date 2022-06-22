@@ -1216,6 +1216,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
+          if (!permissions.grantPingTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase(),
@@ -1318,7 +1324,15 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantPingTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
     // We don't want to allow another custom command
     // while there is another running
     if (device.temp_command_trap &&
@@ -1342,7 +1356,7 @@ deviceListController.sendCustomPing = async function(req, res) {
     } else {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
       });
     }
 
@@ -1350,6 +1364,13 @@ deviceListController.sendCustomPing = async function(req, res) {
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
+
+    if (approvedTempHosts.length == 0) {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+      });
+    }
 
     device.temp_command_trap = {
       ping_hosts: approvedTempHosts,
@@ -1395,6 +1416,15 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantSpeedTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
     // We don't want to allow another custom command
     // while there is another running
     if (device.temp_command_trap &&
@@ -1409,40 +1439,50 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       });
     }
     let validationOk = true;
+    let invalidField = '';
     if (typeof req.body.content != 'object' ||
         typeof req.body.content.url != 'string'
     ) {
       validationOk = false;
+      invalidField = 'url';
     } else if (typeof req.body.content.webhook == 'object') {
       let webhook = req.body.content.webhook;
       if (typeof webhook.url != 'string') {
         validationOk = false;
-      } else if (webhook.user && webhook.secret &&
-                 typeof webhook.user != 'string' &&
-                 typeof webhook.secret != 'string'
-      ) {
+        invalidField = 'webhook.url';
+      } else if (webhook.user && typeof webhook.user !== 'string') {
         validationOk = false;
+        invalidField = 'webhook.user';
+      } else if (webhook.secret && typeof webhook.secret !== 'string') {
+        validationOk = false;
+        invalidField = 'webhook.secret';
       }
     }
     if (device.use_tr069) {
-      if (!util.urlRegex.test(req.body.content.url)) validationOk = false;
+      if (!util.urlRegex.test(req.body.content.url)) {
+        validationOk = false;
+        invalidField = 'url';
+      }
     } else {
       // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
       let urlList = req.body.content.url.split(':');
       if (!util.ipv4Regex.test(urlList[0])) {
         validationOk = false;
+        invalidField = 'url';
       }
       if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
         validationOk = false;
+        invalidField = 'url';
       }
       if (urlList.length > 2) {
         validationOk = false;
+        invalidField = 'url';
       }
     }
     if (!validationOk) {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
       });
     }
 

@@ -167,7 +167,7 @@ const calculatePingDiagnostic = async function(
         };
       }
       // No wait!
-      request(requestOptions);
+      request(requestOptions).then(()=>{}, ()=>{});
     } else {
       // Generic ping test
       deviceHandlers.sendPingToTraps(device._id, {results: result});
@@ -188,7 +188,10 @@ const calculateSpeedDiagnostic = async function(
   let rqstTime;
   let lastTime = (new Date(1970, 0, 1)).valueOf();
   // Try to get last speed test timestamp
-  if (Array.isArray(device.speedtest_results)) {
+  if (
+    Array.isArray(device.speedtest_results) &&
+    device.speedtest_results.length > 0
+  ) {
     let lastTest = device.speedtest_results[device.speedtest_results.length -1];
     let lastDate =
       new Date(
