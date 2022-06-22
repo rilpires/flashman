@@ -1567,7 +1567,10 @@ acsDeviceInfoController.updateInfo = async function(
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
-  if (!cpe.isAllowedWebadminUsername(changes.common.web_admin_username)) {
+  if (
+    changes.common && changes.common.web_admin_username &&
+    !cpe.isAllowedWebadminUsername(changes.common.web_admin_username)
+  ) {
     delete changes.common.web_admin_username;
   }
   // Some Nokia models have a bug where changing the SSID without changing the
@@ -1594,7 +1597,7 @@ acsDeviceInfoController.updateInfo = async function(
         let channel = changes[masterKey][key];
         let values = cpe.convertChannelToTask(channel, fields, masterKey);
         if (values.length > 0) {
-          task.parameterValues.concat(values);
+          task.parameterValues = task.parameterValues.concat(values);
           hasChanges = true;
         }
         return;
@@ -1607,7 +1610,7 @@ acsDeviceInfoController.updateInfo = async function(
           device, fields, cpe.modelPermissions(),
         );
         if (values.length > 0) {
-          task.parameterValues.concat(values);
+          task.parameterValues = task.parameterValues.concat(values);
           hasUpdatedDHCPRanges = true; // Avoid editing these fields twice
           hasChanges = true;
         }
