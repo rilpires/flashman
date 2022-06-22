@@ -1450,12 +1450,12 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       if (typeof webhook.url != 'string') {
         validationOk = false;
         invalidField = 'webhook.url';
-      } else if (webhook.user && webhook.secret &&
-                 typeof webhook.user != 'string' &&
-                 typeof webhook.secret != 'string'
-      ) {
+      } else if (webhook.user && typeof webhook.user !== 'string') {
         validationOk = false;
-        invalidField = 'webhook.user/webhook.secret';
+        invalidField = 'webhook.user';
+      } else if (webhook.secret && typeof webhook.secret !== 'string') {
+        validationOk = false;
+        invalidField = 'webhook.secret';
       }
     }
     if (device.use_tr069) {
