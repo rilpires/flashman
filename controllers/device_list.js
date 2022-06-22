@@ -1325,7 +1325,7 @@ deviceListController.sendCustomPing = async function(req, res) {
                                     {errorline: __line})});
     }
     let permissions = DeviceVersion.findByVersion(
-      device.version, device.wifi_is_5ghz_capable, device.model
+      device.version, device.wifi_is_5ghz_capable, device.model,
     );
     if (!permissions.grantPingTest) {
       return res.status(200).json({
@@ -1410,7 +1410,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                     {errorline: __line})});
     }
     let permissions = DeviceVersion.findByVersion(
-      device.version, device.wifi_is_5ghz_capable, device.model
+      device.version, device.wifi_is_5ghz_capable, device.model,
     );
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
