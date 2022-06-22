@@ -34,8 +34,10 @@ let deviceSchema = new Schema({
   data_collecting: {
     is_active: Boolean, // logical AND with config.js value.
     has_latency: Boolean, // logical AND with config.js value.
-    // should use config.js value if this value is falsifiable.
-    ping_fqdn: String,
+    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    burst_loss: Boolean, // logical AND with config.js value.
+    wifi_devices: Boolean, // logical AND with config.js value.
+    ping_and_wan: Boolean, // logical AND with config.js value.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
   pppoe_user: String,
@@ -228,6 +230,24 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
+  // When ping_hosts has at least one value or speedtest_url != '',
+  // the next ping/speedtest result should NOT be sent to the usual
+  // configured traps. Furthermore, if webhook_* fields are set,
+  // send the results to this webhook. Then unset every subfield
+  temp_command_trap: {
+    ping_hosts: [String],
+    speedtest_url: {type: String, default: ''},
+    webhook_url: {type: String, default: ''},
+    webhook_user: {type: String, default: ''},
+    webhook_secret: {type: String, default: ''},
+  },
+  // Store pingtest results
+  pingtest_results: [{
+    host: String,
+    lat: {type: String, default: '---'},
+    loss: {type: String, default: '---'},
+    completed: {type: Boolean, default: false},
+  }],
   sys_up_time: {type: Number, default: 0}, // seconds
   wan_up_time: {type: Number, default: 0}, // seconds
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
@@ -242,7 +262,7 @@ let deviceSchema = new Schema({
     error: String,
   },
   // The object bellow is used to save the user that requested the speedtest
-  // and to indicate what time the speedtest was requested. Te timestamp is
+  // and to indicate what time the speedtest was requested. The timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the
   // speedtest was requested, otherwise, the ping test was requested.
@@ -269,6 +289,9 @@ let deviceSchema = new Schema({
   web_admin_password: String,
   custom_tr069_fields: {
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
+    voip_enabled: {type: Boolean, default: false},
+    ipv6_enabled: {type: Boolean, default: false},
+    ipv6_mode: {type: String, default: ''},
   },
 });
 
@@ -343,8 +366,14 @@ deviceSchema.pre('save', function(callback) {
         let callbackAuthSecret = deviceCrud.secret;
         if (callbackUrl) {
           attrsList.forEach((attr) => {
-            changedAttrs[attr] = device[attr];
+            if (!attr.includes('pingtest_results')) {
+              changedAttrs[attr] = device[attr];
+            }
           });
+          // Nothing to send - don't call trap
+          if (Object.keys(changedAttrs).length === 0) {
+            return Promise.resolve();
+          }
           requestOptions.url = callbackUrl;
           requestOptions.method = 'PUT';
           requestOptions.json = {

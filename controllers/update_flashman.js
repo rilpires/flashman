@@ -10,6 +10,7 @@ const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
 const language = require('./language');
+const util = require('./handlers/util');
 const t = language.i18next.t;
 let Config = require('../models/config');
 let updateController = {};
@@ -203,8 +204,7 @@ updateController.updateGenieACS = function(upgrades) {
   });
 };
 
-updateController.updateDiagnostics = function() {
-  console.log('Updating genieACS diacnostic\'s script and preset');
+const updateProvisionsPresets = function() {
   return new Promise((resolve, reject) => {
     // Get config from database
     Config.findOne({is_default: true}).then((config)=>{
@@ -224,25 +224,66 @@ updateController.updateDiagnostics = function() {
         waitForProvision = Promise.reject();
       }
 
-      // Update preset json if needed
-      let waitForPreset;
+      // Update preset jsons
+      let waitForBootstrapPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/bootstrap-preset.json',
+        ));
+        console.log('Updating Genie bootstrap-preset...');
+        waitForBootstrapPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForBootstrapPreset = Promise.reject();
+      }
+      let waitForBootPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/boot-preset.json',
+        ));
+        console.log('Updating Genie boot-preset...');
+        waitForBootPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForBootPreset = Promise.reject();
+      }
+      let waitForPeriodicPreset;
+      try {
+        let preset = JSON.parse(fs.readFileSync(
+          './controllers/external-genieacs/periodic-preset.json',
+        ));
+        console.log('Updating Genie periodic-preset...');
+        waitForPeriodicPreset = tasksApi.putPreset(preset);
+      } catch (e) {
+        waitForPeriodicPreset = Promise.reject();
+      }
+      let waitForDiagPreset;
       try {
         let preset = JSON.parse(fs.readFileSync(
           './controllers/external-genieacs/diagnostic-preset.json',
         ));
         console.log('Updating Genie diagnostic-preset...');
-        waitForPreset = tasksApi.putPreset(preset);
+        waitForDiagPreset = tasksApi.putPreset(preset);
       } catch (e) {
-        waitForPreset = Promise.reject();
+        waitForDiagPreset = Promise.reject();
       }
 
       // Wait for all promises and check results
-      let promises = [waitForProvision, waitForPreset];
+      let promises = [waitForProvision, waitForBootstrapPreset,
+                      waitForBootPreset, waitForPeriodicPreset,
+                      waitForDiagPreset];
       Promise.allSettled(promises).then((values)=>{
         if (values[0].status !== 'fulfilled') {
           console.log('Error updating Genie diagnostic-provision script!');
         }
         if (values[1].status !== 'fulfilled') {
+          console.log('Error updating Genie bootstrap-preset json!');
+        }
+        if (values[2].status !== 'fulfilled') {
+          console.log('Error updating Genie boot-preset json!');
+        }
+        if (values[3].status !== 'fulfilled') {
+          console.log('Error updating Genie periodic-preset json!');
+        }
+        if (values[4].status !== 'fulfilled') {
           console.log('Error updating Genie diagnostic-preset json!');
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
@@ -380,6 +421,10 @@ updateController.rebootGenie = function(instances) {
         let sedExpr = 's/' + replace + '/' + newText + '/';
         let targetFile = 'controllers/external-genieacs/devices-api.js';
         let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+        // Update genieACS provisions and presets
+        console.log('Updating genieACS provisions and presets');
+        await updateProvisionsPresets();
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
@@ -649,8 +694,7 @@ updateController.setAutoConfig = async function(req, res) {
       config.mqtt_secret_bypass = bypassMqttSecretCheck;
     }
     let measureServerIP = req.body['measure-server-ip'];
-    let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    if (measureServerIP && !measureServerIP.match(ipRegex)) {
+    if (measureServerIP && !measureServerIP.match(util.ipv4Regex)) {
       return res.status(500).json({
         type: 'danger',
         message: t('fieldsInvalid', {errorline: __line}),

@@ -15,6 +15,7 @@ const deviceHandlers = require('./handlers/devices');
 const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
+const dataCollectingController = require('./data_collecting');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -857,6 +858,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             ping_fqdn: '',
             alarm_fqdn: '',
             ping_packets: 100,
+            burst_loss: false,
+            wifi_devices: false,
+            ping_and_wan: false,
           };
           // for each data_collecting parameter, in config, we copy its value.
           // This also makes the code compatible with a data base with no data
@@ -957,6 +961,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'data_collecting_alarm_fqdn': dataCollecting.alarm_fqdn,
             'data_collecting_ping_fqdn': dataCollecting.ping_fqdn,
             'data_collecting_ping_packets': dataCollecting.ping_packets,
+            'data_collecting_burst_loss': dataCollecting.burst_loss,
+            'data_collecting_wifi_devices': dataCollecting.wifi_devices,
+            'data_collecting_ping_and_wan': dataCollecting.ping_and_wan,
             'blocked_devices': serializeBlocked(blockedDevices),
             'named_devices': serializeNamed(namedDevices),
             'forward_index':
@@ -984,6 +991,19 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'devices_bssid_mesh2': bssids.mesh2,
             'devices_bssid_mesh5': bssids.mesh5,
           };
+
+          // adding all data_collecting parameters to response json.
+          let dcRes = dataCollectingController.mergeConfigs(
+            matchedConfig.data_collecting,
+            matchedDevice.data_collecting,
+            matchedDevice.version,
+          );
+          // eslint-disable-next-line guard-for-in
+          for (let parameter in dcRes) {
+            // console.log('parameter', parameter, dcRes[parameter])
+            resJson['data_collecting_'+parameter] = dcRes[parameter];
+          }
+
           // Only answer ipv6 status if flashman knows current state
           if (matchedDevice.ipv6_enabled !== 2) {
             resJson.ipv6_enabled = matchedDevice.ipv6_enabled;
@@ -1920,7 +1940,40 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    deviceHandlers.sendPingToTraps(id, req.body);
+    // If ping command was sent from a customized api call,
+    // we don't want to propagate it to the generic webhook
+    if (matchedDevice.temp_command_trap &&
+        matchedDevice.temp_command_trap.ping_hosts &&
+        matchedDevice.temp_command_trap.ping_hosts.length > 0
+    ) {
+      matchedDevice.temp_command_trap.ping_hosts = [];
+      if (matchedDevice.temp_command_trap.webhook_url != '') {
+        let requestOptions = {};
+        requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': matchedDevice._id,
+          'type': 'device',
+          'ping_results': req.body.results,
+        };
+        if (matchedDevice.temp_command_trap.webhook_user &&
+            matchedDevice.temp_command_trap.webhook_secret
+        ) {
+          requestOptions.auth = {
+            user: matchedDevice.temp_command_trap.webhook_user,
+            pass: matchedDevice.temp_command_trap.webhook_secret,
+          };
+        }
+        request(requestOptions);
+      }
+      // Not waiting for this save
+      matchedDevice.save().catch((err) => {
+        console.log('Error saving device after ping command: ' + err);
+      });
+    } else {
+      // Not a customized ping call, send to generic trap
+      deviceHandlers.sendPingToTraps(id, req.body);
+    }
 
     // We don't need to wait
     return res.status(200).json({processed: 1});

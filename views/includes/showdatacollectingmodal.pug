@@ -35,6 +35,67 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_burst_loss",
+                                               id="data_collecting_service_burst_loss")
+                    label.custom-control-label(for="data_collecting_service_burst_loss")= t('burstCollection')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('usedByAllDevices')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_has_latency",
+                                               id="data_collecting_service_has_latency")
+                    label.custom-control-label(for="data_collecting_service_has_latency")= t('latencyCollecting')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('usedByAllDevices')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_wifi_devices",
+                                               id="data_collecting_service_wifi_devices")
+                    label.custom-control-label(for="data_collecting_service_wifi_devices")= t('wifiCollection')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('usedByAllDevices')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
+            .row
+              .col
+                .input-group(style="align-items: center;")
+                  .custom-control.custom-checkbox
+                    input.custom-control-input(type="checkbox",
+                                               name="data_collecting_service_ping_and_wan",
+                                               id="data_collecting_service_ping_and_wan")
+                    label.custom-control-label(for="data_collecting_service_ping_and_wan")= t('pingAndWanCollection')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('usedByAllDevices')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            hr
             .row
               .col
                 .input-group
@@ -87,6 +148,7 @@
                   )
                     span.input-group-text.md-addon.pr-0
                       .fas.fa-question-circle.fa-lg
+
             .row
               .col.text-center
                 button.btn.btn-primary(type="submit")
@@ -106,15 +168,15 @@
             p.nDevicesWillBeChanged= t('nDevicesWillBeChanged', {count: 0})
           form(method="post",
                action="/data_collecting/massupdate/parameters",
-               name="data_collecting_updateManyForm",
-               id="data_collecting_updateManyForm",
+               name="data_collecting_massUpdateForm",
+               id="data_collecting_massUpdateForm",
                novalidate)
             .row
               .col
                 .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
                     .md-selectfield.form-control
-                      label(for="data_collecting_mass_update_is_active")= t('lossCollection')
+                      label(for="data_collecting_mass_update_is_active")= t('On')
                       select.browser-default.md-select(id="data_collecting_mass_update_is_active")
                         option(value="")= t('doNotChange')
                         option(value="True")= t('Activated')
@@ -128,7 +190,23 @@
             .row
               .col
                 .input-group
-                  .md-form.input-entry(style="flex-grow: 1;").my-1
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_burst_loss")= t('burstCollection')
+                      select.browser-default.md-select(id="data_collecting_mass_update_burst_loss")
+                        option(value="")= t('doNotChange')
+                        option(value="True")= t('Activated')
+                        option(value="False")= t('Deactivated')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('ifCollectingIsOffDeviceWillBehaveAsOff')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
                     .md-selectfield.form-control
                       label(for="data_collecting_mass_update_has_latency")= t('latencyCollecting')
                       select.browser-default.md-select(id="data_collecting_mass_update_has_latency")
@@ -141,6 +219,38 @@
                     )
                       span.input-group-text.md-addon.pr-0
                         .fas.fa-question-circle.fa-lg
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_wifi_devices")= t('wifiCollection')
+                      select.browser-default.md-select(id="data_collecting_mass_update_wifi_devices")
+                        option(value="")= t('doNotChange')
+                        option(value="True")= t('Activated')
+                        option(value="False")= t('Deactivated')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('ifCollectingIsOffDeviceWillBehaveAsOff')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
+            .row
+              .col
+                .input-group
+                  .md-form.input-entry(style="flex-grow: 1;").my-2
+                    .md-selectfield.form-control
+                      label(for="data_collecting_mass_update_ping_and_wan")= t('pingAndWanCollection')
+                      select.browser-default.md-select(id="data_collecting_mass_update_ping_and_wan")
+                        option(value="")= t('doNotChange')
+                        option(value="True")= t('Activated')
+                        option(value="False")= t('Deactivated')
+                  .input-group-append(
+                    data-toggle="tooltip",
+                    title=t('ifCollectingIsOffDeviceWillBehaveAsOff')
+                  )
+                    span.input-group-text.md-addon.pr-0
+                      .fas.fa-question-circle.fa-lg
             .row
               .col
                 .input-group
@@ -191,7 +301,21 @@
                   input.custom-control-input(type="checkbox",
                                              name="data_collecting_device_is_active",
                                              id="data_collecting_device_is_active")
-                  label.custom-control-label(for="data_collecting_device_is_active")= t('lossCollection')
+                  label.custom-control-label(for="data_collecting_device_is_active")= t('On')
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title=t('ifCollectingIsOffThisMeasureWillNotHappen')
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_burst_loss",
+                                             id="data_collecting_device_burst_loss")
+                  label.custom-control-label(for="data_collecting_device_burst_loss")= t('burstCollection')
                 .input-group-append(
                   data-toggle="tooltip",
                   title=t('ifCollectingIsOffThisMeasureWillNotHappen')
@@ -206,6 +330,34 @@
                                              name="data_collecting_device_has_latency",
                                              id="data_collecting_device_has_latency")
                   label.custom-control-label(for="data_collecting_device_has_latency")= t('latencyCollecting')
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title=t('ifCollectingIsOffThisMeasureWillNotHappen')
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_wifi_devices",
+                                             id="data_collecting_device_wifi_devices")
+                  label.custom-control-label(for="data_collecting_device_wifi_devices")= t('wifiCollection')
+                .input-group-append(
+                  data-toggle="tooltip",
+                  title=t('ifCollectingIsOffThisMeasureWillNotHappen')
+                )
+                  span.input-group-text.md-addon.pr-0
+                    .fas.fa-question-circle.fa-lg
+          .row
+            .col
+              .input-group(style="align-items: center;").my-2
+                .custom-control.custom-checkbox
+                  input.custom-control-input(type="checkbox",
+                                             name="data_collecting_device_ping_and_wan",
+                                             id="data_collecting_device_ping_and_wan")
+                  label.custom-control-label(for="data_collecting_device_ping_and_wan")= t('pingAndWanCollection')
                 .input-group-append(
                   data-toggle="tooltip",
                   title=t('ifCollectingIsOffThisMeasureWillNotHappen')

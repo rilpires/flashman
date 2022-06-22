@@ -207,6 +207,6 @@ module.exports = async (app) => {
       'updateProvision': true,
       'updatePreset': true,
     });
-    updater.updateDiagnostics();
+    updater.updateProvisionsPresets();
   }
 };

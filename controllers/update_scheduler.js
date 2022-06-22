@@ -615,7 +615,6 @@ scheduleController.abortSchedule = async function(req, res) {
 };
 
 scheduleController.getDevicesReleases = async function(req, res) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let pageNumber = parseInt(req.body.page_num);
@@ -636,7 +635,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
         await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map(async (line) => {
-          if (!line.field1.match(macRegex)) {
+          if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
             let device = await getDevice(line.field1, true);
@@ -801,8 +800,6 @@ scheduleController.uploadDevicesFile = function(req, res) {
       message: t('noFileSent', {errorline: __line}),
     });
   }
-
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let csvFile = req.files.schedulefile;
 
   csvFile.mv('./tmp/massUpdate.csv', (err)=>{
@@ -814,7 +811,7 @@ scheduleController.uploadDevicesFile = function(req, res) {
     }
     csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv').then((result)=>{
       let promises = result.map(async (line) => {
-        if (!line.field1.match(macRegex)) {
+        if (!line.field1.match(util.macRegex)) {
           return 0;
         } else if (await getDevice(line.field1, true) !== null) {
           return 1;
@@ -833,7 +830,6 @@ scheduleController.uploadDevicesFile = function(req, res) {
 };
 
 scheduleController.startSchedule = async function(req, res) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -859,7 +855,7 @@ scheduleController.startSchedule = async function(req, res) {
         await csvParse({noheader: true}).fromFile('./tmp/massUpdate.csv');
       if (csvContents) {
         let promises = csvContents.map(async (line) => {
-          if (!line.field1.match(macRegex)) {
+          if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
             let device = await getDevice(line.field1, true);
@@ -967,14 +963,13 @@ scheduleController.startSchedule = async function(req, res) {
         config.device_update_schedule.device_count = macList.length;
         config.device_update_schedule.date = Date.now();
         if (hasTimeRestriction) {
-          let hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
           let valid = timeRestrictions.filter((r)=>{
             let startDay = weekDayStrToInt(r.startWeekday);
             let endDay = weekDayStrToInt(r.endWeekday);
             if (startDay < 0) return false;
             if (endDay < 0) return false;
-            if (!r.startTime.match(hourRegex)) return false;
-            if (!r.endTime.match(hourRegex)) return false;
+            if (!r.startTime.match(util.hourRegex)) return false;
+            if (!r.endTime.match(util.hourRegex)) return false;
             if (startDay === endDay && r.startTime === r.endTime) return false;
             return true;
           });

@@ -2,8 +2,8 @@ const util = require('../controllers/handlers/util');
 
 let DeviceVersion = {};
 
-const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
-const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
+const versionRegex = util.flashboxVersionRegex;
+const devVersionRegex = util.flashboxDevVerRegex;
 
 const portForwardNoRanges = {
  simpleSymmetric: true,
@@ -47,6 +47,10 @@ const tr069Devices = {
       'V7.1.10P1N8': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -62,6 +66,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -91,6 +96,10 @@ const tr069Devices = {
       'V1.1.20P3N6B': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -106,6 +115,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -127,6 +137,10 @@ const tr069Devices = {
       'V6.0.10P3N12B': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -142,6 +156,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -163,6 +178,10 @@ const tr069Devices = {
       'V3.0.0C6_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -178,6 +197,7 @@ const tr069Devices = {
       stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -196,6 +216,10 @@ const tr069Devices = {
       'V9.1.0P4N1_MUL': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       upnp: false,
@@ -211,6 +235,7 @@ const tr069Devices = {
       stun: true,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -219,6 +244,44 @@ const tr069Devices = {
     // offset of the leftmost octet, and so forth)
     mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
     mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'GWR-1200AC': {
+    versions_upgrade: {
+      '638.112.100.1383': [],
+    },
+    port_forward_opts: {
+      '638.112.100.1383': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: false,
+      wifi_ax_mode: false,
+      port_forward: true,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 300,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      wan_bytes: true,
+    },
+    wifi2_extended_channels_support: false,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
     mesh_ssid_object_exists: true,
   },
   'GONUAC001': {
@@ -230,6 +293,10 @@ const tr069Devices = {
       'V1.2.3': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -245,6 +312,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -268,6 +336,10 @@ const tr069Devices = {
       'V2.2.7': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -283,6 +355,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -302,6 +375,10 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -317,6 +394,7 @@ const tr069Devices = {
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -336,6 +414,10 @@ const tr069Devices = {
       'v1.0.1': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -351,6 +433,7 @@ const tr069Devices = {
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -369,6 +452,10 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -384,6 +471,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -401,6 +489,10 @@ const tr069Devices = {
     port_forward_opts: {
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -416,6 +508,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -434,6 +527,10 @@ const tr069Devices = {
       '3FE49127HJII42': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false, // no fiber
@@ -447,6 +544,7 @@ const tr069Devices = {
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -466,6 +564,10 @@ const tr069Devices = {
       '3FE49025IJHK03': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -481,6 +583,7 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
       wps: false,
       stun: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: false,
@@ -496,6 +599,10 @@ const tr069Devices = {
       '1.0-210917': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -511,6 +618,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_bssid_offset_hardcoded: true,
@@ -536,6 +644,10 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -551,6 +663,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -567,6 +680,10 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -582,6 +699,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -598,6 +716,10 @@ const tr069Devices = {
       '3FE46343AFIA94': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -612,6 +734,7 @@ const tr069Devices = {
       firmware_upgrade: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: true,
@@ -631,6 +754,10 @@ const tr069Devices = {
       'V3R017C10S100': portForwardNoAsymRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -646,6 +773,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -667,6 +795,10 @@ const tr069Devices = {
       'V5R020C00S280': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -682,6 +814,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: true,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -701,6 +834,10 @@ const tr069Devices = {
       'V5R020C00S060': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: true,
       pon_signal: true,
@@ -716,6 +853,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -726,6 +864,10 @@ const tr069Devices = {
       'V3R018C00S128': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -741,6 +883,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: false,
     mesh_ssid_object_exists: false,
@@ -751,6 +894,10 @@ const tr069Devices = {
       '10.0.5.9(C506)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -766,6 +913,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -776,6 +924,10 @@ const tr069Devices = {
       '10.0.5.5(C947)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -791,6 +943,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -804,6 +957,10 @@ const tr069Devices = {
       '2.0.0.315(SP2C947)': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: false,
       pon_signal: false,
@@ -819,6 +976,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -832,6 +990,10 @@ const tr069Devices = {
       '10.0.5.29(C947)': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: true,
       port_forward: false,
       pon_signal: false,
@@ -847,6 +1009,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -857,6 +1020,10 @@ const tr069Devices = {
       '3.0.3': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -872,6 +1039,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -882,6 +1050,10 @@ const tr069Devices = {
       '3.0.4': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -897,6 +1069,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -907,6 +1080,10 @@ const tr069Devices = {
       '3.0.7': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -922,6 +1099,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -935,6 +1113,10 @@ const tr069Devices = {
       'V16.03.06.05_multi_BR01': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: false,
@@ -950,6 +1132,7 @@ const tr069Devices = {
       stun: true,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -960,6 +1143,10 @@ const tr069Devices = {
       '1.0.14 Build 20211118 rel.43110(5553)': [],
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: false,
@@ -975,6 +1162,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -988,6 +1176,10 @@ const tr069Devices = {
       'V1.0.8': portForwardFullSupport,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
@@ -1003,6 +1195,7 @@ const tr069Devices = {
       stun: false,
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -1016,6 +1209,10 @@ const tr069Devices = {
       'V3.2.0': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: true,
       pon_signal: true,
@@ -1031,6 +1228,7 @@ const tr069Devices = {
       mesh_v2_primary_support: false,
       mesh_v2_secondary_support: false,
       connected_devices: true,
+      wan_bytes: true,
     },
   },
   'EC220-G5': {
@@ -1042,6 +1240,10 @@ const tr069Devices = {
       '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': portForwardNoRanges,
     },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       block_devices: false,
       block_wired_devices: false,
@@ -1057,6 +1259,76 @@ const tr069Devices = {
       stun: false,
       upnp: false,
       wps: false,
+      wan_bytes: true,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+  },
+  'EMG3524-T10A': {
+    vendor: 'Zyxel',
+    versions_upgrade: {
+      'V1.42(ABXU.1)b6_0118': [],
+    },
+    port_forward_opts: {
+      'V1.42(ABXU.1)b6_0118': portForwardFullSupport,
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: false,
+      upnp: false,
+      wps: false,
+      stun: true,
+      speed_test: false,
+      speed_test_limit: 0,
+      ping_test: false,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      wan_bytes: true,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: true,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x6'],
+    mesh5_bssid_offset: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
+  'P20': {
+    vendor: 'PhyHome',
+    versions_upgrade: {
+      'V6.1.6T1': [],
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: false,
+      lan_read: true,
+      lan_edit: false,
+      port_forward: false,
+      wifi_ax_mode: false,
+      pon_signal: true,
+      ping_test: false,
+      speed_test: false,
+      speed_test_limit: 0,
+      stun: false,
+      upnp: false,
+      wps: false,
+      block_devices: false,
+      block_wired_devices: false,
+      connected_devices: true,
+      firmware_upgrade: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      wan_bytes: true,
     },
     wifi2_extended_channels_support: true,
     mesh_bssid_offset_hardcoded: false,
@@ -2461,6 +2733,14 @@ const grantPortOpenIpv6 = function(version, model) {
   }
 };
 
+const grantWifi2ghzEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.wifi_ssid_write;
+  }
+  // Every firmware has this feature
+  return true;
+};
+
 const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return true;
@@ -2548,9 +2828,9 @@ const grantPingTest = function(version, model) {
   }
 };
 
-const grantLanEdit = function(version, model) {
+const grantLanRead = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.lan_read;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
@@ -2560,9 +2840,22 @@ const grantLanEdit = function(version, model) {
   }
 };
 
+const grantLanEdit = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return tr069Devices[model].feature_support.lan_edit;
+  }
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+// Capability of the LAN Gateway IP being different from the first available IP
 const grantLanGwEdit = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
-    return true;
+    return tr069Devices[model].feature_support.lan_edit;
   }
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
@@ -2707,7 +3000,9 @@ const grantVlanSupport = function(version, model) {
 };
 
 const grantWanBytesSupport = function(version, model) {
-  if (Object.keys(tr069Devices).includes(model)) {
+  if (Object.keys(tr069Devices).includes(model) &&
+      tr069Devices[model].feature_support.wan_bytes
+  ) {
     return true;
   }
   if (version.match(versionRegex)) {
@@ -2884,6 +3179,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
+  result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version, model);
   result.grantWifiBandAuto = grantWifiBandAuto(version, model);
@@ -2891,6 +3187,7 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
   result.grantPingTest = grantPingTest(version, model);
+  result.grantLanRead = grantLanRead(version, model);
   result.grantLanEdit = grantLanEdit(version, model);
   result.grantLanGwEdit = grantLanGwEdit(version, model);
   result.grantLanDevices = grantLanDevices(version, model);
