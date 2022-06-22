@@ -1356,7 +1356,7 @@ deviceListController.sendCustomPing = async function(req, res) {
     } else {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
       });
     }
 
@@ -1364,6 +1364,13 @@ deviceListController.sendCustomPing = async function(req, res) {
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
+
+    if (approvedTempHosts.length == 0) {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+      });
+    }
 
     device.temp_command_trap = {
       ping_hosts: approvedTempHosts,
@@ -1432,23 +1439,28 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       });
     }
     let validationOk = true;
+    let invalidField = '';
     if (typeof req.body.content != 'object' ||
         typeof req.body.content.url != 'string'
     ) {
       validationOk = false;
+      invalidField = 'url';
     } else if (typeof req.body.content.webhook == 'object') {
       let webhook = req.body.content.webhook;
       if (typeof webhook.url != 'string') {
         validationOk = false;
+        invalidField = 'webhook.url';
       } else if (webhook.user && webhook.secret &&
                  typeof webhook.user != 'string' &&
                  typeof webhook.secret != 'string'
       ) {
         validationOk = false;
+        invalidField = 'webhook.user/webhook.secret';
       }
     }
     if (device.use_tr069) {
       if (!util.urlRegex.test(req.body.content.url)) validationOk = false;
+      invalidField = 'url';
     } else {
       // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
       let urlList = req.body.content.url.split(':');
@@ -1465,7 +1477,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
     if (!validationOk) {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
       });
     }
 
