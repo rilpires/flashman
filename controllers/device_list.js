@@ -755,6 +755,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    projection: {
+      lan_devices: false, port_mapping: false, ap_survey: false,
+      mesh_routers: false, pingtest_results: false, speedtest_results: false,
+    },
   };
   // Keys to optionally filter returned results
   if ('query_result_filter' in req.body) {
