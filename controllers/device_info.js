@@ -1964,7 +1964,7 @@ deviceInfoController.receivePingResult = function(req, res) {
             pass: matchedDevice.temp_command_trap.webhook_secret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then(()=>{}, ()=>{});
       }
       // Not waiting for this save
       matchedDevice.save().catch((err) => {
