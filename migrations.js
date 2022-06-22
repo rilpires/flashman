@@ -140,10 +140,21 @@ module.exports = (app) => {
     });
     /* Check if not exists indexes and sync them */
     Device.collection.getIndexes({full: true}).then(async (idxs) => {
-       if (idxs.length < 4) {
-         console.log('Creating devices indexes');
-         await Device.syncIndexes();
-       }
+      let neededIndexes = ['_id_', 'serial_tr069_1',
+                           'alt_uid_tr069_1', 'acs_id_1',
+                           'pppoe_user_1', 'external_reference.data_1'];
+      let idxNames = idxs.map((idx) => idx.name);
+      let reloadIndexes = false;
+      for (let neededIdx of neededIndexes) {
+        if (!(idxNames.includes(neededIdx))) {
+          reloadIndexes = true;
+          break;
+        }
+      }
+      if (reloadIndexes) {
+        console.log('Creating devices indexes');
+        await Device.syncIndexes();
+      }
     }).catch(console.error);
 
     // put default values in old config

@@ -24,7 +24,7 @@ let deviceSchema = new Schema({
     // 'kind' will have to be translated according to region.
     // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
     kind: String,
-    data: String,
+    data: {type: String, sparse: true},
   },
   model: String,
   version: {type: String, default: '0.0.0'},
@@ -34,13 +34,13 @@ let deviceSchema = new Schema({
   data_collecting: {
     is_active: Boolean, // logical AND with config.js value.
     has_latency: Boolean, // logical AND with config.js value.
-    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    ping_fqdn: String, // should use config.js val if this value is falsifiable.
     burst_loss: Boolean, // logical AND with config.js value.
     wifi_devices: Boolean, // logical AND with config.js value.
     ping_and_wan: Boolean, // logical AND with config.js value.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
-  pppoe_user: String,
+  pppoe_user: {type: String, sparse: true},
   pppoe_password: String,
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},

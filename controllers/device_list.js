@@ -402,6 +402,8 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
       {_id: queryContentNoCase},
+      {serial_tr069: queryContentNoCase},
+      {alt_uid_tr069: queryContentNoCase},
       {'external_reference.data': queryContentNoCase},
     ];
   } else {
