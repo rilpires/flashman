@@ -1,3 +1,4 @@
+/* eslint-disable no-prototype-builtins */
 /* global __line */
 
 const t = require('../language').i18next.t;
@@ -76,11 +77,28 @@ utilHandlers.deepCopyObject = function(objArr) {
   }
 };
 
-const macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-const ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+utilHandlers.flashboxVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
+utilHandlers.flashboxDevVerRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
+utilHandlers.hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
+utilHandlers.vlanNameRegex = /^[A-Za-z][A-Za-z\-0-9_]+$/;
+utilHandlers.fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
+utilHandlers.macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
+// eslint-disable-next-line max-len
+utilHandlers.ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
+// eslint-disable-next-line max-len
 const ipv6Regex = /^[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}$|^(?:[0-9a-f]{1,4}:){6}(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/i;
-// const ipv6Regexp = /^[0-9a-f]{1,4}(?::[0-9a-f]{1,4}){7}$|^::(?:(?:[0-9a-f]{1,4}:){0,5}[0-9a-f]{1,4})?$|^(?:[0-9a-f]{1,4}:){1,6}:$|^(?:[0-9a-f]{1,4}:)+(?::[0-9a-f]{1,4})+$/i
+// eslint-disable-next-line max-len
 const domainNameRegex = /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i;
+// eslint-disable-next-line max-len
+utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$/;
+// eslint-disable-next-line max-len
+utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
+// eslint-disable-next-line max-len
+utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}-[a-z]{3})\.(bin)$/;
+// Matches DD/DD/DDDD DD:DD format
+// eslint-disable-next-line max-len
+utilHandlers.dateRegex = /^((\d{2})|(\d{1}))\/((\d{2})|(\d{1}))\/(\d{4}) (\d{2}):(\d{2})$/;
+
 const testIPv6 = function(ipv6) {
   if (ipv6 !== undefined && ipv6.constructor !== String) return false;
   let parts = ipv6.split(':');
@@ -106,11 +124,11 @@ const testIPv6 = function(ipv6) {
 // returns true of false if given fully qualified dominion name is valid.
 utilHandlers.isFqdnValid = (fqdn) => fqdn !== undefined &&
   fqdn.constructor === String && (domainNameRegex.test(fqdn) ||
-  ipv4Regex.test(fqdn) || testIPv6(fqdn));
+  utilHandlers.ipv4Regex.test(fqdn) || testIPv6(fqdn));
 
 // returns true if given mac address is valid.
 utilHandlers.isMacValid = (mac) => mac !== undefined &&
-  mac.constructor === String && macRegex.test(mac);
+  mac.constructor === String && utilHandlers.macRegex.test(mac);
 
 utilHandlers.isArrayObject = (val) => val instanceof Array ? true : false;
 

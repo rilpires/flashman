@@ -1940,7 +1940,40 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    deviceHandlers.sendPingToTraps(id, req.body);
+    // If ping command was sent from a customized api call,
+    // we don't want to propagate it to the generic webhook
+    if (matchedDevice.temp_command_trap &&
+        matchedDevice.temp_command_trap.ping_hosts &&
+        matchedDevice.temp_command_trap.ping_hosts.length > 0
+    ) {
+      matchedDevice.temp_command_trap.ping_hosts = [];
+      if (matchedDevice.temp_command_trap.webhook_url != '') {
+        let requestOptions = {};
+        requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': matchedDevice._id,
+          'type': 'device',
+          'ping_results': req.body.results,
+        };
+        if (matchedDevice.temp_command_trap.webhook_user &&
+            matchedDevice.temp_command_trap.webhook_secret
+        ) {
+          requestOptions.auth = {
+            user: matchedDevice.temp_command_trap.webhook_user,
+            pass: matchedDevice.temp_command_trap.webhook_secret,
+          };
+        }
+        request(requestOptions);
+      }
+      // Not waiting for this save
+      matchedDevice.save().catch((err) => {
+        console.log('Error saving device after ping command: ' + err);
+      });
+    } else {
+      // Not a customized ping call, send to generic trap
+      deviceHandlers.sendPingToTraps(id, req.body);
+    }
 
     // We don't need to wait
     return res.status(200).json({processed: 1});
