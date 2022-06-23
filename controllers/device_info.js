@@ -1940,6 +1940,21 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    let result = {};
+    // Filling the result object
+    // Sync with ACS
+    // count in firmware is 100
+    req.body.results.map((p) => {
+      if (p) {
+        result[p.host] = {
+          lat: p.lat,
+          loss: p.loss,
+          count: '100',
+          completed: true,
+        };
+      }
+    });
+
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
     if (matchedDevice.temp_command_trap &&
@@ -1954,7 +1969,7 @@ deviceInfoController.receivePingResult = function(req, res) {
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'ping_results': req.body.results,
+          'ping_results': result,
         };
         if (matchedDevice.temp_command_trap.webhook_user &&
             matchedDevice.temp_command_trap.webhook_secret
@@ -1972,7 +1987,7 @@ deviceInfoController.receivePingResult = function(req, res) {
       });
     } else {
       // Not a customized ping call, send to generic trap
-      deviceHandlers.sendPingToTraps(id, req.body);
+      deviceHandlers.sendPingToTraps(id, {results: result});
     }
 
     // We don't need to wait

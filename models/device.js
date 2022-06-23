@@ -246,6 +246,7 @@ let deviceSchema = new Schema({
     host: String,
     lat: {type: String, default: '---'},
     loss: {type: String, default: '---'},
+    count: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
