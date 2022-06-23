@@ -40,6 +40,7 @@ let roleSchema = new mongoose.Schema({
   // 2 is the complete search mode, 1 is simple search, 0 no search available
   grantSearchLevel: {type: Number, required: true, default: 2},
   grantShowSearchSummary: {type: Boolean, required: true, default: true},
+  grantShowRowsPerPage: {type: Boolean, required: true, default: true},
   grantFirmwareBetaUpgrade: {type: Boolean, default: false},
   grantFirmwareRestrictedUpgrade: {type: Boolean, default: false},
   grantSlaveDisassociate: {type: Boolean, required: true, default: false},
