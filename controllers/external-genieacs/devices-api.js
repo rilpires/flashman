@@ -362,8 +362,7 @@ const getDefaultFields = function() {
       enable: ['PortMappingEnabled', true, 'xsd:boolean'],
       lease: ['PortMappingLeaseDuration', 0, 'xsd:unsignedInt'],
       // hardcoded for every device
-      protocol: ['PortMappingProtocol', '',
-        'xsd:string'],
+      protocol: ['PortMappingProtocol', '', 'xsd:string'],
       description: ['PortMappingDescription', '', 'xsd:string'],
       remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
@@ -839,6 +838,10 @@ const getStavixFields = function(model) {
     case 'DM986%2D414':
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
       fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_WebUserInfo.UserPassword';
+      fields.port_mapping_fields.external_port_end =
+        ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol =
+        ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
       break;
     case 'MP_G421R':
       break;

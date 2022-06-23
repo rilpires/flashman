@@ -1236,10 +1236,11 @@ const tr069Devices = {
     versions_upgrade: {
       'V4.6.0-210709': [],
     },
-    port_forward_opts: {
-      'V4.6.0-210709': portForwardFullSupport,
-    },
     feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
       wifi_ax_mode: false,
       port_forward: false,
       pon_signal: true,
