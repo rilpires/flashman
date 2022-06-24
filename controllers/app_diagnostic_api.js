@@ -142,6 +142,15 @@ const generateSessionCredential = async (user) => {
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
   }
+  // Add onu custom credentials, if present
+  onu_factory_credentials = [
+    {model: 'G-2425G-A', username: 'TESTE1_Username', password: 'TESTE1_Password'},
+    {model: 'TESTE2_Model', username: 'TESTE2_Username', password: 'TESTE2_Password'},
+    {model: 'TESTE3_Model', username: 'TESTE3_Username', password: 'TESTE3_Password'},
+    {model: 'TESTE4_Model', username: 'TESTE4_Username', password: 'TESTE4_Password'},
+    {model: 'TESTE5_Model', username: 'TESTE5_Username', password: 'TESTE5_Password'},
+  ];
+  session.onuFactoryCredentials = onu_factory_credentials;
   return session;
 };
 
@@ -583,7 +592,16 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         onuConfig.onuPonThresholdCriticalHigh =
           config.tr069.pon_signal_threshold_critical_high;
       }
-
+      config.onu_factory_credentials = [
+        {model: 'G-2425G-A', username: 'TESTE1_Username', password: 'TESTE1_Password'},
+        {model: 'TESTE2_Model', username: 'TESTE2_Username', password: 'TESTE2_Password'},
+        {model: 'TESTE3_Model', username: 'TESTE3_Username', password: 'TESTE3_Password'},
+        {model: 'TESTE4_Model', username: 'TESTE4_Username', password: 'TESTE4_Password'},
+        {model: 'TESTE5_Model', username: 'TESTE5_Username', password: 'TESTE5_Password'},
+      ];
+      if (config.onu_factory_credentials) {
+        onuConfig.onuFactoryCredentials = config.onu_factory_credentials;
+      }
       if (!device) {
         return res.status(200).json({
           'success': true,
