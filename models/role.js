@@ -55,7 +55,8 @@ roleSchema.pre('save', function(callback) {
 
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.roles_crud) {
         return callback(err);
@@ -101,7 +102,8 @@ roleSchema.post('remove', function(role, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.role_crud) {
       return callback(err);

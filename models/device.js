@@ -354,7 +354,9 @@ deviceSchema.pre('save', function(callback) {
 
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true},
+                   {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
@@ -406,7 +408,9 @@ deviceSchema.post('remove', function(device, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true},
+                 {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);

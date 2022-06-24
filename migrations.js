@@ -173,7 +173,8 @@ module.exports = (app) => {
     }).catch(console.error);
 
     // put default values in old config
-    Config.findOne({is_default: true}, function(err, config) {
+    Config.findOne({is_default: true}, {device_update_schedule: false},
+    function(err, config) {
       if (!err && config) {
         if (typeof config.isSsidPrefixEnabled === 'undefined') {
           config.isSsidPrefixEnabled = false;
