@@ -209,7 +209,8 @@ const tr069Devices = {
       'V9.1.0P3_MUL': [],
     },
     port_forward_opts: {
-      ' V9.1.0P3_MUL': portForwardNoAsymRanges,
+      'V9.1.0P3_MUL': portForwardNoAsymRanges,
+
     },
     feature_support: {
       wifi_ssid_read: true,
