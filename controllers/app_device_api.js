@@ -1410,7 +1410,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   let config = await Config.findOne(
     {is_default: true}, {tr069: true, ssidPrefix: true},
   ).lean().catch((err)=>{
-    console.err('Error fetching config: ' + err);
+    console.error('Error fetching config: ' + err);
   });
   let configUser;
   let configPassword;
