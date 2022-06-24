@@ -92,6 +92,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F680' ||
         ouiModelStr === 'F660' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -126,6 +127,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -152,6 +154,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ZT199') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
@@ -187,6 +190,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -661,7 +665,7 @@ const getZTEFields = function(model) {
         .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
       fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp
         .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
-      fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
+      // fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
       fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
       fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
       fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
