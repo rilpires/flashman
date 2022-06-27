@@ -63,6 +63,7 @@ mongoose.connect(
    useUnifiedTopology: true,
    useFindAndModify: false,
    useCreateIndex: true,
+   maxPoolSize: 200,
 });
 mongoose.set('useCreateIndex', true);
 

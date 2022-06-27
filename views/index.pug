@@ -130,23 +130,23 @@ block content
                   button.ml-0.btn.btn-primary(type="button", id="btn-data_collecting-modal")
                     .fas.fa-chart-bar
                     span &nbsp; #{t('dataCollecting')}
-
-          .col-12.col-lg-3
-            .md-form.mb-0
-              .input-group
-                .md-selectfield.form-control
-                  label= t('rowsPerPage')
-                  select.browser-default.md-select(id="input-elements-pp")
-                    option(value="" disabled selected)= t('Select...')
-                    option(value=10 selected=(elementsperpage == 10)) 10
-                    option(value=50 selected=(elementsperpage == 50)) 50
-                    option(value=100 selected=(elementsperpage == 100)) 100
-                    option(value=250 selected=(elementsperpage == 250)) 250
-                    option(value=500 selected=(elementsperpage == 500)) 500
-                .input-group-btn
-                  button.btn.btn-primary.mr-0.my-0(
-                    type="button",
-                    id="btn-elements-per-page")= t('Ok')
+          if (superuser || role.grantShowRowsPerPage)
+            .col-12.col-lg-3
+              .md-form.mb-0
+                .input-group
+                  .md-selectfield.form-control
+                    label= t('rowsPerPage')
+                    select.browser-default.md-select(id="input-elements-pp")
+                      option(value="" disabled selected)= t('Select...')
+                      option(value=10 selected=(elementsperpage == 10)) 10
+                      option(value=50 selected=(elementsperpage == 50)) 50
+                      option(value=100 selected=(elementsperpage == 100)) 100
+                      option(value=250 selected=(elementsperpage == 250)) 250
+                      option(value=500 selected=(elementsperpage == 500)) 500
+                  .input-group-btn
+                    button.btn.btn-primary.mr-0.my-0(
+                      type="button",
+                      id="btn-elements-per-page")= t('Ok')
         .card
           .card-body.px-3
             .table-responsive
