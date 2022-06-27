@@ -1863,6 +1863,9 @@ acsDeviceInfoController.updateInfo = async function(
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
+  setTimeout(()=>{
+    TasksAPI.deleteGetParamTasks();
+  }, (60 * 60 * 1000)); // One hour
   return res.status(200).json({
     type: 'success',
     message: t('operationStartSuccessful'),
