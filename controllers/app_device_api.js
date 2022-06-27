@@ -939,7 +939,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     let config;
     try {
-      config = await Config.findOne({is_default: true}).lean();
+      config = await Config.findOne({is_default: true},
+                                    {device_update_schedule: false}).lean();
       if (!config) throw new Error('Config not found');
     } catch (error) {
       console.log(error.message);
