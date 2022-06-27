@@ -671,8 +671,13 @@ const getZTEFields = function(model) {
       fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
       fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
       fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
-      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt'];
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_end', 'xsd:unsignedInt'];
       fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.port_mapping_values.description[0] = 'X_ZTE-COM_Name';
+      fields.port_mapping_values.other_description = ['PortMappingDescription',
+        '', 'xsd:string'];
+      fields.port_mapping_values.zte_remote_host_end = [
+        'X_ZTE-COM_RemoteHostEndRange', '0.0.0.0', 'xsd:string'];
       fields.common.stun_enable =
         'InternetGatewayDevice.ManagementServer.STUNEnable';
       fields.stun = {};
