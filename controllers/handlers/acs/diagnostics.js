@@ -107,13 +107,15 @@ const calculatePingDiagnostic = async function(
       if (isNaN(loss)) {
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
-
+      const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
       currentPingTest.lat = pingKeys.avg_resp_time.toString();
       currentPingTest.loss = loss.toString();
+      currentPingTest.count = count.toString();
 
       if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
         if (pingKeys.success_count === 1) currentPingTest.loss = '0';
         else currentPingTest.loss = '100';
+        currentPingTest.count = '1';
       }
     }
 
@@ -139,6 +141,7 @@ const calculatePingDiagnostic = async function(
         result[p.host] = {
           lat: p.lat,
           loss: p.loss,
+          count: p.count,
           completed: p.completed,
         };
       }
