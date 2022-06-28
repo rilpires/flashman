@@ -261,11 +261,10 @@ let processPassword = function(content, device, rollback, tr069Changes) {
 };
 
 let processBlacklist = function(content, device, rollback, tr069Changes) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
       content.blacklist_device.hasOwnProperty('mac') &&
-      content.blacklist_device.mac.match(macRegex)) {
+      content.blacklist_device.mac.match(util.macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -307,7 +306,7 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
     return true;
   } else if (content.hasOwnProperty('device_configs') &&
            content.device_configs.hasOwnProperty('mac') &&
-           content.device_configs.mac.match(macRegex) &&
+           content.device_configs.mac.match(util.macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
     tr069Changes.changeBlockedDevices = true;
@@ -340,11 +339,10 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
 };
 
 let processWhitelist = function(content, device, rollback, tr069Changes) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
       content.whitelist_device.hasOwnProperty('mac') &&
-      content.whitelist_device.mac.match(macRegex)) {
+      content.whitelist_device.mac.match(util.macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -367,7 +365,7 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
     }
   } else if (content.hasOwnProperty('device_configs') &&
            content.device_configs.hasOwnProperty('mac') &&
-           content.device_configs.mac.match(macRegex) &&
+           content.device_configs.mac.match(util.macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
     tr069Changes.changeBlockedDevices = true;
@@ -391,10 +389,9 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
 };
 
 let processDeviceInfo = function(content, device, rollback, tr069Changes) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('mac') &&
-      content.device_configs.mac.match(macRegex)) {
+      content.device_configs.mac.match(util.macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -440,11 +437,10 @@ let processDeviceInfo = function(content, device, rollback, tr069Changes) {
 };
 
 let processUpnpInfo = function(content, device, rollback, tr069Changes) {
-  let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
   if (content.hasOwnProperty('device_configs') &&
       content.device_configs.hasOwnProperty('upnp_allow') &&
       content.device_configs.hasOwnProperty('mac') &&
-      content.device_configs.mac.match(macRegex)) {
+      content.device_configs.mac.match(util.macRegex)) {
     // Deep copy lan devices for rollback
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
@@ -943,7 +939,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     let config;
     try {
-      config = await Config.findOne({is_default: true}).lean();
+      config = await Config.findOne({is_default: true},
+                                    {device_update_schedule: false}).lean();
       if (!config) throw new Error('Config not found');
     } catch (error) {
       console.log(error.message);
@@ -1414,7 +1411,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   let config = await Config.findOne(
     {is_default: true}, {tr069: true, ssidPrefix: true},
   ).lean().catch((err)=>{
-    console.err('Error fetching config: ' + err);
+    console.error('Error fetching config: ' + err);
   });
   let configUser;
   let configPassword;

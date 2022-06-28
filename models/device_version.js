@@ -2,8 +2,8 @@ const util = require('../controllers/handlers/util');
 
 let DeviceVersion = {};
 
-const versionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
-const devVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
+const versionRegex = util.flashboxVersionRegex;
+const devVersionRegex = util.flashboxDevVerRegex;
 
 const portForwardNoRanges = {
  simpleSymmetric: true,

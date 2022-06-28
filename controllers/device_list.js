@@ -158,6 +158,32 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
+const initiatePingCommand = async function(device) {
+  if (device && device.use_tr069) {
+    device.pingtest_results = [];
+
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
+      device.pingtest_results =
+        device.temp_command_trap.ping_hosts.map((item) => ({host: item}));
+    } else if (Object.keys(device.ping_hosts).length > 0) {
+      device.pingtest_results =
+        device.ping_hosts.map((h)=>({host: h}));
+    }
+
+    if (device.pingtest_results.length > 0) {
+      await device.save().catch((err) => {
+        console.log('Error saving device after ping command: ' + err);
+      });
+    }
+    acsDiagnosticsHandler.firePingDiagnose(device._id.toUpperCase());
+  } else if (device) {
+    mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
+  }
+};
+
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -376,6 +402,8 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
       {_id: queryContentNoCase},
+      {serial_tr069: queryContentNoCase},
+      {alt_uid_tr069: queryContentNoCase},
       {'external_reference.data': queryContentNoCase},
     ];
   } else {
@@ -531,7 +559,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (new RegExp(`^${t('noSignal')}$`).test(tag)) {
       query.use_tr069 = true; // only for ONUs
       query.pon_rxpower = {$exists: false};
-    // } else if (/^(ipv6) (?:on|off|desconhecido)$/.test(tag)) {
     } else if (new RegExp(`^(ipv6) ` +
     `(?:${t('on')}|${t('off')}|${t('unknown')})$`).test(tag)) {
       if (new RegExp(`\\b${t('on')}\\b`).test(tag)) {
@@ -728,6 +755,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    projection: {
+      lan_devices: false, port_mapping: false, ap_survey: false,
+      mesh_routers: false, pingtest_results: false, speedtest_results: false,
+      firstboot_log: false, lastboot_log: false,
+    },
   };
   // Keys to optionally filter returned results
   if ('query_result_filter' in req.body) {
@@ -840,7 +872,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true})
+          Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
@@ -1191,24 +1223,18 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
+          if (!permissions.grantPingTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase(),
             );
           }
-          if (device && device.use_tr069) {
-            device.pingtest_results = [];
-            if (Object.keys(device.ping_hosts).length > 0) {
-              device.pingtest_results = device.ping_hosts.map((h)=>({host: h}));
-
-              await device.save().catch((err) => {
-                console.log('Error saving device ping test: ' + err);
-              });
-            }
-            acsDiagnosticsHandler.firePingDiagnose(req.params.id.toUpperCase());
-          } else if (device) {
-            mqtt.anlixMessageRouterPingTest(req.params.id.toUpperCase());
-          }
+          initiatePingCommand(device);
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1289,6 +1315,211 @@ deviceListController.sendMqttMsg = function(req, res) {
     return res.status(200).json({success: true});
   });
 };
+
+deviceListController.sendCustomPing = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
+    if (err) {
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
+    }
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+    }
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantPingTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
+    // We don't want to allow another custom command
+    // while there is another running
+    if (device.temp_command_trap &&
+        ((device.temp_command_trap.ping_hosts &&
+          device.temp_command_trap.ping_hosts.length > 0) ||
+         (device.temp_command_trap.speedtest_url &&
+          device.temp_command_trap.speedtest_url != ''))
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: t('errorOccurredTryAgain'),
+      });
+    }
+
+    let inputHosts = [];
+
+    if (req.body.content && req.body.content.hosts &&
+        Array.isArray(req.body.content.hosts)
+    ) {
+      inputHosts = req.body.content.hosts.filter((h) => typeof(h) == 'string');
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+      });
+    }
+
+    let hostFilter = (host) => host.match(util.fqdnLengthRegex);
+    let approvedTempHosts = [];
+    approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
+    approvedTempHosts = approvedTempHosts.filter(hostFilter);
+
+    if (approvedTempHosts.length == 0) {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+      });
+    }
+
+    device.temp_command_trap = {
+      ping_hosts: approvedTempHosts,
+      speedtest_url: '',
+      webhook_url: '',
+    };
+    if (typeof req.body.content.webhook == 'object') {
+      device.temp_command_trap.webhook_url = req.body.content.webhook.url;
+      if (typeof req.body.content.webhook.user == 'string' &&
+          typeof req.body.content.webhook.secret == 'string'
+      ) {
+        device.temp_command_trap.webhook_user = req.body.content.webhook.user;
+        device.temp_command_trap.webhook_secret =
+          req.body.content.webhook.secret;
+      }
+    }
+
+    await device.save().catch((err) => {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeSaveError', {errorline: __line}),
+      });
+    });
+
+    initiatePingCommand(device);
+
+    return res.status(200).json({success: true});
+  });
+};
+
+deviceListController.sendCustomSpeedTest = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
+    if (err) {
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
+    }
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+    }
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantSpeedTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
+    // We don't want to allow another custom command
+    // while there is another running
+    if (device.temp_command_trap &&
+      ((device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0) ||
+       (device.temp_command_trap.speedtest_url &&
+        device.temp_command_trap.speedtest_url != ''))
+    ) {
+      return res.status(200).json({
+        success: false,
+        message: t('errorOccurredTryAgain'),
+      });
+    }
+    let validationOk = true;
+    let invalidField = '';
+    if (typeof req.body.content != 'object' ||
+        typeof req.body.content.url != 'string'
+    ) {
+      validationOk = false;
+      invalidField = 'url';
+    } else if (typeof req.body.content.webhook == 'object') {
+      let webhook = req.body.content.webhook;
+      if (typeof webhook.url != 'string') {
+        validationOk = false;
+        invalidField = 'webhook.url';
+      } else if (webhook.user && typeof webhook.user !== 'string') {
+        validationOk = false;
+        invalidField = 'webhook.user';
+      } else if (webhook.secret && typeof webhook.secret !== 'string') {
+        validationOk = false;
+        invalidField = 'webhook.secret';
+      }
+    }
+    if (device.use_tr069) {
+      if (!util.urlRegex.test(req.body.content.url)) {
+        validationOk = false;
+        invalidField = 'url';
+      }
+    } else {
+      // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
+      let urlList = req.body.content.url.split(':');
+      if (!util.ipv4Regex.test(urlList[0])) {
+        validationOk = false;
+        invalidField = 'url';
+      }
+      if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
+        validationOk = false;
+        invalidField = 'url';
+      }
+      if (urlList.length > 2) {
+        validationOk = false;
+        invalidField = 'url';
+      }
+    }
+    if (!validationOk) {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
+      });
+    }
+
+    device.temp_command_trap = {
+      ping_hosts: [],
+      speedtest_url: req.body.content.url,
+      webhook_url: '',
+    };
+    if (typeof req.body.content.webhook == 'object') {
+      let webhook = req.body.content.webhook;
+      device.temp_command_trap.webhook_url = webhook.url;
+      if (typeof webhook.user == 'string' &&
+          typeof webhook.secret == 'string'
+      ) {
+        device.temp_command_trap.webhook_user = webhook.user;
+        device.temp_command_trap.webhook_secret = webhook.secret;
+      }
+    }
+
+    await device.save().catch((err)=>{
+      return res.status(200).json({
+        success: false,
+        message: t('cpeSaveError', {errorline: __line}),
+      });
+    });
+
+    return deviceListController.doSpeedTest(req, res);
+  });
+};
+
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -1547,7 +1778,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true})
+      Config.findOne({is_default: true}, {device_update_schedule: false})
       .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
@@ -2162,7 +2393,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true})
+    Config.findOne({is_default: true}, {device_update_schedule: false})
     .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
@@ -2564,11 +2795,9 @@ deviceListController.setPortForward = function(req, res) {
       let usedAsymPorts = [];
 
       content.forEach((r) => {
-        let macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
-
         if (!r.hasOwnProperty('mac') ||
             !r.hasOwnProperty('dmz') ||
-            !r.mac.match(macRegex)) {
+            !r.mac.match(util.macRegex)) {
           return res.status(200).json({
             success: false,
             message: t('macInvalidInJson'),
@@ -2793,6 +3022,9 @@ deviceListController.getPortForward = function(req, res) {
 deviceListController.getPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
+    let device;
+    let responseHosts = [];
+
     if (err) {
       return res.status(200).json({
         success: false,
@@ -2800,15 +3032,25 @@ deviceListController.getPingHostsList = function(req, res) {
       });
     }
     if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-      matchedDevice = matchedDevice[0];
+      device = matchedDevice[0];
     } else {
       return res.status(200).json({success: false,
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
+
+    if (device.temp_command_trap &&
+        device.temp_command_trap.ping_hosts &&
+        device.temp_command_trap.ping_hosts.length > 0
+    ) {
+      responseHosts = device.temp_command_trap.ping_hosts;
+      responseHosts = Array.from(new Set(responseHosts));
+    } else {
+      responseHosts = device.ping_hosts;
+    }
     return res.status(200).json({
       success: true,
-      ping_hosts_list: matchedDevice.ping_hosts,
+      ping_hosts_list: responseHosts,
     });
   });
 };
@@ -2847,9 +3089,8 @@ deviceListController.setPingHostsList = function(req, res) {
 
     let approvedHosts = [];
     content.hosts.forEach((host) => {
-      let fqdnLengthRegex = /^([0-9A-Za-z]{1,63}\.){0,3}([0-9A-Za-z]{1,62})$/;
       host = host.toLowerCase();
-      if (host.match(fqdnLengthRegex)) {
+      if (host.match(util.fqdnLengthRegex)) {
         approvedHosts.push(host);
       }
     });
@@ -3034,28 +3275,33 @@ deviceListController.getSpeedtestResults = function(req, res) {
 };
 
 deviceListController.doSpeedTest = function(req, res) {
-  let mac = req.params.id.toUpperCase();
-  const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-    return map[mac];
-  });
-  DeviceModel.findById(mac, (err, matchedDevice)=>{
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, matchedDevice) {
     if (err) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
     }
-    if (!matchedDevice) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
     }
-    if (!matchedDevice.use_tr069 && !isDevOn) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeNotOnline', {errorline: __line}),
+
+    let mac = matchedDevice._id;
+
+    if (!matchedDevice.use_tr069) {
+      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[mac];
       });
+      if (!isDevOn) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeNotOnline', {errorline: __line}),
+        });
+      }
     }
     let permissions = DeviceVersion.findByVersion(
       matchedDevice.version,
@@ -3083,15 +3329,24 @@ deviceListController.doSpeedTest = function(req, res) {
           message: t('serviceNotConfiguredByAdmin'),
         });
       }
-      let url = matchedConfig.measureServerIP + ':' +
-                matchedConfig.measureServerPort;
       if (req.sessionID && sio.anlixConnections[req.sessionID]) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
+
+      let customUrl = '';
+      if (matchedDevice.temp_command_trap &&
+          matchedDevice.temp_command_trap.speedtest_url &&
+          matchedDevice.temp_command_trap.speedtest_url !== ''
+      ) {
+        customUrl = matchedDevice.temp_command_trap.speedtest_url;
+      }
+
       if (matchedDevice.use_tr069) {
         matchedDevice.current_speedtest.timestamp = new Date();
         matchedDevice.current_speedtest.user = req.user.name;
-        matchedDevice.current_speedtest.stage = 'estimative';
+        // When customUrl is defined, we skip 'estimative' stage
+        matchedDevice.current_speedtest.stage =
+          (customUrl !== '') ? 'measure' : 'estimative';
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,
@@ -3100,6 +3355,13 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
+        let url;
+        if (customUrl !== '') {
+          url = customUrl;
+        } else {
+          url = matchedConfig.measureServerIP + ':' +
+                matchedConfig.measureServerPort;
+        }
         mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
       return res.status(200).json({

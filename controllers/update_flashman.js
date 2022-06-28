@@ -10,6 +10,7 @@ const controlApi = require('./external-api/control');
 const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
 const language = require('./language');
+const util = require('./handlers/util');
 const t = language.i18next.t;
 let Config = require('../models/config');
 let updateController = {};
@@ -693,8 +694,7 @@ updateController.setAutoConfig = async function(req, res) {
       config.mqtt_secret_bypass = bypassMqttSecretCheck;
     }
     let measureServerIP = req.body['measure-server-ip'];
-    let ipRegex = /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-    if (measureServerIP && !measureServerIP.match(ipRegex)) {
+    if (measureServerIP && !measureServerIP.match(util.ipv4Regex)) {
       return res.status(500).json({
         type: 'danger',
         message: t('fieldsInvalid', {errorline: __line}),

@@ -8,8 +8,8 @@ const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
 const DeviceVersion = require('../models/device_version');
-const acsDeviceInfo = require('./acs_device_info.js');
 const t = require('./language').i18next.t;
+const util = require('./handlers/util');
 
 const fs = require('fs');
 const fsPromises = fs.promises;
@@ -22,7 +22,7 @@ const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 let firmwareController = {};
 
 let isValidFilename = function(filename) {
-  return /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}\-[a-z]{3})\.(bin)$/.test(filename);
+  return util.flashboxFirmFileRegex.test(filename);
 };
 
 let parseFilename = function(filename) {
@@ -90,7 +90,8 @@ firmwareController.index = function(req, res) {
     } else {
       indexContent.superuser = user.is_superuser;
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, {device_update_schedule: false},
+    function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {

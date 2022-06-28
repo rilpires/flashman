@@ -24,7 +24,7 @@ let deviceSchema = new Schema({
     // 'kind' will have to be translated according to region.
     // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
     kind: String,
-    data: String,
+    data: {type: String, sparse: true},
   },
   model: String,
   version: {type: String, default: '0.0.0'},
@@ -34,13 +34,13 @@ let deviceSchema = new Schema({
   data_collecting: {
     is_active: Boolean, // logical AND with config.js value.
     has_latency: Boolean, // logical AND with config.js value.
-    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    ping_fqdn: String, // should use config.js val if this value is falsifiable.
     burst_loss: Boolean, // logical AND with config.js value.
     wifi_devices: Boolean, // logical AND with config.js value.
     ping_and_wan: Boolean, // logical AND with config.js value.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
-  pppoe_user: String,
+  pppoe_user: {type: String, sparse: true},
   pppoe_password: String,
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
@@ -230,11 +230,22 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // Store pinttest results
+  // When ping_hosts has at least one value or speedtest_url != '',
+  // the next ping/speedtest result should NOT be sent to the usual
+  // configured traps. Furthermore, if webhook_* fields are set,
+  // send the results to this webhook. Then unset every subfield
+  temp_command_trap: {
+    ping_hosts: [String],
+    speedtest_url: {type: String, default: ''},
+    webhook_url: {type: String, default: ''},
+    webhook_user: {type: String, default: ''},
+    webhook_secret: {type: String, default: ''},
+  },
+  // Store pingtest results
   pingtest_results: [{
     host: String,
     lat: {type: String, default: '---'},
-    loss: {type: String, default: '--- '},
+    loss: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
@@ -251,7 +262,7 @@ let deviceSchema = new Schema({
     error: String,
   },
   // The object bellow is used to save the user that requested the speedtest
-  // and to indicate what time the speedtest was requested. Te timestamp is
+  // and to indicate what time the speedtest was requested. The timestamp is
   // used to compare which diagnostic was requested.
   // If current_speedtest.timestamp > speedtest_results.timestamp, then the
   // speedtest was requested, otherwise, the ping test was requested.
@@ -343,7 +354,9 @@ deviceSchema.pre('save', function(callback) {
 
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true},
+                   {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
@@ -395,7 +408,9 @@ deviceSchema.post('remove', function(device, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true},
+                 {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);
