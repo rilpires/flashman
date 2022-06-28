@@ -195,8 +195,8 @@ const createRegistry = async function(req, permissions) {
   }
   let splitID = req.body.acs_id.split('-');
 
-  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
-    function(err) {
+  let matchedConfig = await Config.findOne({is_default: true},
+    {device_update_schedule: false}).lean().catch(function(err) {
       console.error('Error creating entry: ' + err);
       return false;
     },
@@ -1684,7 +1684,8 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
 const getSsidPrefixCheck = async function(device) {
   let config;
   try {
-    config = await Config.findOne({is_default: true}).lean();
+    config = await Config.findOne({is_default: true},
+                                  {device_update_schedule: false}).lean();
     if (!config) throw new Error('Config not found');
   } catch (error) {
     console.log(error.message);
@@ -1862,6 +1863,9 @@ acsDeviceInfoController.updateInfo = async function(
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
+  setTimeout(()=>{
+    TasksAPI.deleteGetParamTasks();
+  }, (60 * 60 * 1000)); // One hour
   return res.status(200).json({
     type: 'success',
     message: t('operationStartSuccessful'),

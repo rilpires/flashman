@@ -134,7 +134,9 @@ const createRegistry = async function(req, res) {
     return res.status(400).end();
   }
 
-  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
+  let matchedConfig =
+    await Config.findOne({is_default: true},
+                         {device_update_schedule: false}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return res.status(500).end();
@@ -436,7 +438,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         // validate 2.4GHz because feature of ssid prefix
         let config;
         try {
-          config = await Config.findOne({is_default: true}).lean();
+          config = await Config.findOne({is_default: true},
+                                        {device_update_schedule: false}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
           console.log(error.message);
@@ -847,7 +850,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           },
         );
 
-        Config.findOne({is_default: true}).lean()
+        Config.findOne({is_default: true},
+                       {device_update_schedule: false}).lean()
         .exec(async function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
@@ -1979,7 +1983,7 @@ deviceInfoController.receivePingResult = function(req, res) {
             pass: matchedDevice.temp_command_trap.webhook_secret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then(()=>{}, ()=>{});
       }
       // Not waiting for this save
       matchedDevice.save().catch((err) => {
