@@ -713,6 +713,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
 
         // Parameters *NOT* available to be modified by REST API
+
+        // WAN IPv4
         let sentWanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
         if (sentWanIp !== matchedDevice.wan_ip) {
           deviceSetQuery.wan_ip = sentWanIp;
