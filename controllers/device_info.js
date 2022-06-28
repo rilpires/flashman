@@ -47,6 +47,7 @@ const createRegistry = async function(req, res) {
   let errors = [];
   let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   let wanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
+  let wanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
   let wanSpeed = util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
   let wanDuplex =
     util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
@@ -267,6 +268,7 @@ const createRegistry = async function(req, res) {
       'wifi_state_5ghz': wifiState5ghz,
       'wifi_hidden_5ghz': wifiHidden5ghz,
       'wan_ip': wanIp,
+      'wan_ipv6': wanIpv6,
       'wan_negociated_speed': wanSpeed,
       'wan_negociated_duplex': wanDuplex,
       'ipv6_enabled': wanIpv6Enabled,
@@ -715,6 +717,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         if (sentWanIp !== matchedDevice.wan_ip) {
           deviceSetQuery.wan_ip = sentWanIp;
         }
+
+        // WAN IPv6
+        let sentWanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
+        if (sentWanIpv6 !== matchedDevice.wan_ipv6) {
+          deviceSetQuery.wan_ipv6 = sentWanIpv6;
+        }
+
         let sentWanNegociatedSpeed =
         util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
         if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
