@@ -27,9 +27,10 @@ module.exports = (app) => {
         newSuperUser.save();
       }
     });
-    // Check default role existence
-    Role.find({}, function(err, roles) {
-      if (err || !roles || 0 === roles.length) {
+    // Check roles
+    Role.findOne({}, function(err, role) {
+      // Check default role existence
+      if (err || !role) {
         let managerRole = new Role({
           name: 'Gerente',
           grantWifiInfo: 2,
@@ -58,6 +59,20 @@ module.exports = (app) => {
           grantFirmwareRestrictedUpgrade: true,
         });
         managerRole.save();
+      }
+    });
+    // Use lean to check missing fields
+    Role.find({}).lean().exec(function(err, roles) {
+      if (!err && roles) {
+        for (let idx = 0; idx < roles.length; idx++) {
+          if (typeof roles[idx].grantShowRowsPerPage == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantShowRowsPerPage: true}, (err) => {
+                console.log('Role updated');
+              });
+          }
+        }
       }
     });
     // Check migration for devices checked for upgrade
@@ -140,14 +155,26 @@ module.exports = (app) => {
     });
     /* Check if not exists indexes and sync them */
     Device.collection.getIndexes({full: true}).then(async (idxs) => {
-       if (idxs.length < 4) {
-         console.log('Creating devices indexes');
-         await Device.syncIndexes();
-       }
+      let neededIndexes = ['_id_', 'serial_tr069_1',
+                           'alt_uid_tr069_1', 'acs_id_1',
+                           'pppoe_user_1', 'external_reference.data_1'];
+      let idxNames = idxs.map((idx) => idx.name);
+      let reloadIndexes = false;
+      for (let neededIdx of neededIndexes) {
+        if (!(idxNames.includes(neededIdx))) {
+          reloadIndexes = true;
+          break;
+        }
+      }
+      if (reloadIndexes) {
+        console.log('Creating devices indexes');
+        await Device.syncIndexes();
+      }
     }).catch(console.error);
 
     // put default values in old config
-    Config.findOne({is_default: true}, function(err, config) {
+    Config.findOne({is_default: true}, {device_update_schedule: false},
+    function(err, config) {
       if (!err && config) {
         if (typeof config.isSsidPrefixEnabled === 'undefined') {
           config.isSsidPrefixEnabled = false;

@@ -474,7 +474,7 @@ const sendSpeedtestResultToCustomTrap = async function(device, result) {
     };
   }
   // No wait!
-  request(requestOptions);
+  request(requestOptions).then(()=>{}, ()=>{});
 };
 
 const formatSpeedtestResult = function(result) {

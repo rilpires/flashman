@@ -90,7 +90,8 @@ firmwareController.index = function(req, res) {
     } else {
       indexContent.superuser = user.is_superuser;
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, {device_update_schedule: false},
+    function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {

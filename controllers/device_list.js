@@ -402,6 +402,8 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
       {_id: queryContentNoCase},
+      {serial_tr069: queryContentNoCase},
+      {alt_uid_tr069: queryContentNoCase},
       {'external_reference.data': queryContentNoCase},
     ];
   } else {
@@ -753,6 +755,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    projection: {
+      lan_devices: false, port_mapping: false, ap_survey: false,
+      mesh_routers: false, pingtest_results: false, speedtest_results: false,
+      firstboot_log: false, lastboot_log: false,
+    },
   };
   // Keys to optionally filter returned results
   if ('query_result_filter' in req.body) {
@@ -862,7 +869,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true})
+          Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
@@ -1211,6 +1218,12 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
         } else if (msgtype === 'ping') {
+          if (!permissions.grantPingTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForPingTestNotification(
               req.sessionID, req.params.id.toUpperCase(),
@@ -1313,7 +1326,15 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantPingTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
     // We don't want to allow another custom command
     // while there is another running
     if (device.temp_command_trap &&
@@ -1337,7 +1358,7 @@ deviceListController.sendCustomPing = async function(req, res) {
     } else {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
       });
     }
 
@@ -1345,6 +1366,13 @@ deviceListController.sendCustomPing = async function(req, res) {
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
+
+    if (approvedTempHosts.length == 0) {
+      return res.status(200).json({
+        success: false,
+        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+      });
+    }
 
     device.temp_command_trap = {
       ping_hosts: approvedTempHosts,
@@ -1390,6 +1418,15 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
+    let permissions = DeviceVersion.findByVersion(
+      device.version, device.wifi_is_5ghz_capable, device.model,
+    );
+    if (!permissions.grantSpeedTest) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutCommand'),
+      });
+    }
     // We don't want to allow another custom command
     // while there is another running
     if (device.temp_command_trap &&
@@ -1404,40 +1441,50 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       });
     }
     let validationOk = true;
+    let invalidField = '';
     if (typeof req.body.content != 'object' ||
         typeof req.body.content.url != 'string'
     ) {
       validationOk = false;
+      invalidField = 'url';
     } else if (typeof req.body.content.webhook == 'object') {
       let webhook = req.body.content.webhook;
       if (typeof webhook.url != 'string') {
         validationOk = false;
-      } else if (webhook.user && webhook.secret &&
-                 typeof webhook.user != 'string' &&
-                 typeof webhook.secret != 'string'
-      ) {
+        invalidField = 'webhook.url';
+      } else if (webhook.user && typeof webhook.user !== 'string') {
         validationOk = false;
+        invalidField = 'webhook.user';
+      } else if (webhook.secret && typeof webhook.secret !== 'string') {
+        validationOk = false;
+        invalidField = 'webhook.secret';
       }
     }
     if (device.use_tr069) {
-      if (!util.urlRegex.test(req.body.content.url)) validationOk = false;
+      if (!util.urlRegex.test(req.body.content.url)) {
+        validationOk = false;
+        invalidField = 'url';
+      }
     } else {
       // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
       let urlList = req.body.content.url.split(':');
       if (!util.ipv4Regex.test(urlList[0])) {
         validationOk = false;
+        invalidField = 'url';
       }
       if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
         validationOk = false;
+        invalidField = 'url';
       }
       if (urlList.length > 2) {
         validationOk = false;
+        invalidField = 'url';
       }
     }
     if (!validationOk) {
       return res.status(200).json({
         success: false,
-        message: t('fieldInvalid', {errorline: __line}),
+        message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
       });
     }
 
@@ -1726,7 +1773,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true})
+      Config.findOne({is_default: true}, {device_update_schedule: false})
       .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
@@ -2341,7 +2388,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true})
+    Config.findOne({is_default: true}, {device_update_schedule: false})
     .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');

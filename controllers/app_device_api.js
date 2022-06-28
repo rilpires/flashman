@@ -940,7 +940,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     let config;
     try {
-      config = await Config.findOne({is_default: true}).lean();
+      config = await Config.findOne({is_default: true},
+                                    {device_update_schedule: false}).lean();
       if (!config) throw new Error('Config not found');
     } catch (error) {
       console.log(error.message);
@@ -1403,7 +1404,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   let config = await Config.findOne(
     {is_default: true}, {tr069: true, ssidPrefix: true},
   ).lean().catch((err)=>{
-    console.err('Error fetching config: ' + err);
+    console.error('Error fetching config: ' + err);
   });
   let configUser;
   let configPassword;
