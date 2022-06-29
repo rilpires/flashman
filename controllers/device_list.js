@@ -2182,7 +2182,14 @@ deviceListController.setDeviceReg = function(req, res) {
                 matchedDevice.external_reference.data =
                   content.external_reference.data;
               } else {
-                hasPermissionError = true;
+                // Its possible that default value might be undefined
+                // In this case there is no permission error
+                if ((typeof matchedDevice.external_reference.kind !==
+                     'undefined') &&
+                    (typeof matchedDevice.external_reference.data !==
+                     'undefined')) {
+                  hasPermissionError = true;
+                }
               }
             }
             if (content.hasOwnProperty('bridgeEnabled') &&
