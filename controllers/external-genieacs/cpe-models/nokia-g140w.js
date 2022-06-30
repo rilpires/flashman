@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = Object.assign({}, basicCPEModel);
 
-nokiaModel.identifier = 'Nokia G-140W-C';
+nokiaModel.identifier = {vendor: 'Nokia', model: 'G-140W-C'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let multilaserModel = Object.assign({}, basicCPEModel);
 
-multilaserModel.identifier = 'Multilaser/ZTE F670L';
+multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F670L'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

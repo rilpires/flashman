@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let zyxelModel = Object.assign({}, basicCPEModel);
 
-zyxelModel.identifier = 'Zyxel EMG3524-T10A';
+zyxelModel.identifier = {vendor: 'Zyxel', model: 'EMG3524-T10A'};
 
 zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

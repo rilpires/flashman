@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let phyhomeModel = Object.assign({}, basicCPEModel);
 
-phyhomeModel.identifier = 'PhyHome P20';
+phyhomeModel.identifier = {vendor: 'PhyHome', model: 'P20'};
 
 phyhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

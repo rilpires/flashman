@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let fastwirelessModel = Object.assign({}, basicCPEModel);
 
-fastwirelessModel.identifier = 'FastWireless FW323DAC';
+fastwirelessModel.identifier = {vendor: 'FastWireless', model: 'FW323DAC'};
 
 fastwirelessModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

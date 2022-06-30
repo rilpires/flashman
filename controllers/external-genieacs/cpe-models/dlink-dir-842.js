@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let dlinkModel = Object.assign({}, basicCPEModel);
 
-dlinkModel.identifier = 'D-Link DIR-842';
+dlinkModel.identifier = {vendor: 'D-Link', model: 'DIR-842'};
 
 dlinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

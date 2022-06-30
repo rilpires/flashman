@@ -59,8 +59,9 @@ const getTR069UpgradeableModels = function() {
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
     if (!permissions.features.firmwareUpgrade) return;
-    ret.models.push(cpe.identifier);
-    ret.versions[cpe.identifier] = Object.keys(permissions.firmwareUpgrades);
+    let identifier = cpe.identifier.vendor + ' ' + cpe.identifier.model;
+    ret.models.push(identifier);
+    ret.versions[identifier] = Object.keys(permissions.firmwareUpgrades);
   });
   return ret;
 };

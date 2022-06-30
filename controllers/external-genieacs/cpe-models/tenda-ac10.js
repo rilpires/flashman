@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let tendaModel = Object.assign({}, basicCPEModel);
 
-tendaModel.identifier = 'Tenda AC10';
+tendaModel.identifier = {vendor: 'Tenda', model: 'AC10'};
 
 tendaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

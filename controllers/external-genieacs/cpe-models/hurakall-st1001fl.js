@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let hurakallModel = Object.assign({}, basicCPEModel);
 
-hurakallModel.identifier = 'Hurakall ST-1001-FL';
+hurakallModel.identifier = {vendor: 'Hurakall', model: 'ST-1001-FL'};
 
 hurakallModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

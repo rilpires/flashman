@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let greatekModel = Object.assign({}, basicCPEModel);
 
-greatekModel.identifier = 'Greatek Stavix G421R';
+greatekModel.identifier = {vendor: 'Greatek', model: 'Stavix G421RQ'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
