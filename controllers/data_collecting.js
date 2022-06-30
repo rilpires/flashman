@@ -365,7 +365,8 @@ dataCollectingController.updateDeviceParameters = function(req, res) {
 
 // returns data_collecting object inside Config in a format used by routers.
 dataCollectingController.getConfig = function(req, res) {
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
+  Config.findOne({is_default: true}, {data_collecting: true},
+  function(err, matchedConfig) {
     if (!err && matchedConfig) {
       return res.status(200).json({
         data_collecting_is_active: matchedConfig.data_collecting.is_active,
