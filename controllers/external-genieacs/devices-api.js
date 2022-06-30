@@ -49,6 +49,7 @@ const tr069Models = {
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
@@ -163,6 +164,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'HC220-G5') {
+    // TP-Link HC220-G5
+    return {success: true, cpe: tr069Models.tplinkHC220G5Model};
   } else if (modelName === 'MP-G421R') {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
