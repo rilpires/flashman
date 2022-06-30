@@ -300,11 +300,7 @@ meshHandlers.validateMeshMode = async function(
     }
   }
 
-  const permissions = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  );
+  const permissions = DeviceVersion.devicePermissions(device);
   const isMeshV1Compatible = permissions.grantMeshMode;
   const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
 

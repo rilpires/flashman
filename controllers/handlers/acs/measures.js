@@ -1,3 +1,5 @@
+/* global __line */
+
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
@@ -20,7 +22,8 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
@@ -85,7 +88,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let rxPowerFieldEpon = '';
@@ -178,7 +182,8 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let upTimeField1 = fields.wan.uptime.replace('*', 1);
   let upTimeField2 = fields.wan.uptime.replace('*', 2);
   let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
@@ -371,39 +376,6 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);
     return original;
-  }
-};
-
-acsMeasuresHandler.convertToDbm = function(model, rxPower) {
-  switch (model) {
-    case 'HG9': {
-      rxPower = parseFloat(rxPower.split(' ')[0]);
-      if (isNaN(rxPower)) {
-        debug('rxPower is not an number!!!');
-      }
-      return rxPower;
-    }
-    case 'IGD':
-    case 'P20':
-    case 'FW323DAC':
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL':
-    case 'G-140W-C':
-    case 'G-140W-CS':
-    case 'G-140W-UD':
-    case 'DM985-424 HW3': {
-      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
-      if (isNaN(rxPower)) {
-        debug('rxPower is not a number!!!');
-      }
-      return rxPower;
-    }
-    case 'GONUAC001':
-    case 'GONUAC002':
-    default:
-      return rxPower;
   }
 };
 

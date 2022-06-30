@@ -1,5 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
+const DevicesAPI = require('./external-genieacs/devices-api');
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
@@ -939,7 +940,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
   DeviceModel.findById(req.body.id).lean().exec(async (err, matchedDevice) => {
     let config;
     try {
-      config = await Config.findOne({is_default: true}).lean();
+      config = await Config.findOne({is_default: true},
+                                    {device_update_schedule: false}).lean();
       if (!config) throw new Error('Config not found');
     } catch (error) {
       console.log(error.message);
@@ -1028,11 +1030,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     }
 
     // Fetch permissions and wifi configuration from database
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
@@ -1141,11 +1139,7 @@ appDeviceAPIController.appGetVersion = function(req, res) {
         t('appUnauthorized', {errorline: __line})});
     }
 
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     return res.status(200).json({
       permissions: permissions,
     });
@@ -1410,7 +1404,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   let config = await Config.findOne(
     {is_default: true}, {tr069: true, ssidPrefix: true},
   ).lean().catch((err)=>{
-    console.err('Error fetching config: ' + err);
+    console.error('Error fetching config: ' + err);
   });
   let configUser;
   let configPassword;
@@ -1676,8 +1670,8 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset =
-      acsXMLConfigHandler.onlineAfterReset.includes(device.model);
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    let onlineReset = cpe.modelPermissions().onlineAfterReset;
 
     if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure
@@ -1726,8 +1720,8 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
-    let onlineReset =
-      acsXMLConfigHandler.onlineAfterReset.includes(device.model);
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    let onlineReset = cpe.modelPermissions().onlineAfterReset;
 
     if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
       // Device is online, no need to reconfigure

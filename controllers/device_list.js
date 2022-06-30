@@ -402,6 +402,8 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
       {_id: queryContentNoCase},
+      {serial_tr069: queryContentNoCase},
+      {alt_uid_tr069: queryContentNoCase},
       {'external_reference.data': queryContentNoCase},
     ];
   } else {
@@ -753,6 +755,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    projection: {
+      lan_devices: false, port_mapping: false, ap_survey: false,
+      mesh_routers: false, pingtest_results: false, speedtest_results: false,
+      firstboot_log: false, lastboot_log: false,
+    },
   };
   // Keys to optionally filter returned results
   if ('query_result_filter' in req.body) {
@@ -777,26 +784,27 @@ deviceListController.searchDeviceReg = async function(req, res) {
         let devReleases = releases.filter(
           (release) => release.model === model);
         if (device.use_tr069) {
+          let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
+            device).cpe;
+          let permissions = cpe.modelPermissions();
           /* get allowed version of upgrade by
             current device version  */
-          let allowedVersions = DeviceVersion
-            .getFirmwaresUpgradesByVersion(model,
-              device.installed_release);
+          let allowedVersions = cpe.allowedFirmwareUpgrades(
+            device.installed_release,
+            permissions,
+          );
           /* filter by allowed version that
             current version can jump to */
           devReleases = devReleases.filter(
             (release) => allowedVersions.includes(release.id));
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
-          device.isUpgradeEnabled = DeviceVersion.isUpgradeSupport(model);
+          device.isUpgradeEnabled = permissions.features.firmwareUpgrade;
 
-          /* Due to the misleading value of model as IGD
-            in the FastWireless FW323DAC model, check if is
-            IGD, if have that firmware version and send to
-            the table anim the 'right' model */
-          if ((device.model === 'IGD' && device.version === 'V2.0.08-191129') ||
-               device.model === 'FW323DAC') {
-            device.model_alias = 'FW323DAC';
+          // Check for model aliases in case ModelName field is not correct
+          let modelAlias = cpe.useModelAlias(device.version);
+          if (modelAlias !== '') {
+            device.model_alias = modelAlias;
           }
         } else {
           let filteredDevReleases = [];
@@ -833,11 +841,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         device.status_color = deviceColor;
 
         // Device permissions
-        device.permissions = DeviceVersion.findByVersion(
-          device.version,
-          device.wifi_is_5ghz_capable,
-          device.model,
-        );
+        device.permissions = DeviceVersion.devicePermissions(device);
 
         // amount ports a device have
         device.qtdPorts = DeviceVersion.getPortsQuantity(device.model);
@@ -865,7 +869,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true})
+          Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
@@ -1082,9 +1086,7 @@ deviceListController.sendMqttMsg = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(device.version,
-                                                  device.wifi_is_5ghz_capable,
-                                                  device.model);
+    let permissions = DeviceVersion.devicePermissions(device);
 
     let emitMsg = true;
     switch (msgtype) {
@@ -1771,7 +1773,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true})
+      Config.findOne({is_default: true}, {device_update_schedule: false})
       .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
@@ -1902,6 +1904,8 @@ deviceListController.setDeviceReg = function(req, res) {
             if (!role && req.user.is_superuser) {
               superuserGrant = true;
             }
+            let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
+              matchedDevice).cpe;
             let changes = {wan: {}, lan: {}, wifi2: {},
                            wifi5: {}, mesh2: {}, mesh5: {}};
 
@@ -2015,8 +2019,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi2.enable = wifiState;
                 // When enabling Wi-Fi set beacon type
                 if (wifiState) {
-                  changes.wifi2.beacon_type =
-                    DevicesAPI.getBeaconTypeByModel(model);
+                  changes.wifi2.beacon_type = cpe.getBeaconType();
                 }
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
@@ -2101,8 +2104,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 changes.wifi5.enable = wifiState5ghz;
                 // When enabling Wi-Fi set beacon type
                 if (wifiState5ghz) {
-                  changes.wifi5.beacon_type =
-                    DevicesAPI.getBeaconTypeByModel(model);
+                  changes.wifi5.beacon_type = cpe.getBeaconType();
                 }
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
@@ -2284,7 +2286,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (
-              matchedDevice.model == 'AC10' &&
+              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
               (
                 (
                   matchedDevice.wifi_state == 0 &&
@@ -2386,7 +2388,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true})
+    Config.findOne({is_default: true}, {device_update_schedule: false})
     .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');
@@ -2698,10 +2700,9 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     return ret;
   }
   // check compatibility in mode of port mapping
-  if (deviceListController.checkIncompatibility(rules,
-        DeviceVersion.getPortForwardTr069Compatibility(device.model,
-                                                       device.version))
-  ) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  let portForwardOpts = permissions.grantPortForwardOpts;
+  if (deviceListController.checkIncompatibility(rules, portForwardOpts)) {
     ret.success = false;
     ret.message = t('incompatibleRulesError');
     return ret;
@@ -2744,9 +2745,7 @@ deviceListController.setPortForward = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model);
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -2952,9 +2951,7 @@ deviceListController.getPortForward = function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version, matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model);
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantPortForward) {
       return res.status(200).json({
         success: false,
@@ -2966,9 +2963,7 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
-        compatibility:
-          DeviceVersion.getPortForwardTr069Compatibility(matchedDevice.model,
-                                                         matchedDevice.version),
+        compatibility: permissions.grantPortForwardOpts,
       });
     }
 
@@ -3253,11 +3248,7 @@ deviceListController.getSpeedtestResults = function(req, res) {
       });
     }
 
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     return res.status(200).json({
       success: true,
@@ -3296,11 +3287,7 @@ deviceListController.doSpeedTest = function(req, res) {
         });
       }
     }
-    let permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
@@ -3652,7 +3639,8 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     }
     let mac = matchedDevice._id;
     let acsID = matchedDevice.acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(matchedDevice).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+    let fields = cpe.getModelFields();
     let rxPowerField = fields.wan.pon_rxpower;
     let txPowerField = fields.wan.pon_txpower;
     let taskParameterNames = [rxPowerField, txPowerField];

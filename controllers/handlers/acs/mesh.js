@@ -8,7 +8,8 @@ let acsMeshDeviceHandler = {};
 const checkMeshObjsCreated = function(device) {
   return new Promise((resolve, reject) => {
     let acsID = device.acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    let fields = cpe.getModelFields();
     let query = {_id: acsID};
     let projection = `${fields.mesh2.ssid}, ${fields.mesh5.ssid}`;
     let path =
@@ -55,7 +56,8 @@ const checkMeshObjsCreated = function(device) {
 const fetchMeshBSSID = function(device, meshMode) {
   return new Promise((resolve, reject) => {
     let acsID = device.acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    let fields = cpe.getModelFields();
     let query = {_id: acsID};
     let projection = '';
     if (meshMode === 2 || meshMode === 4) {
@@ -121,7 +123,8 @@ const fetchMeshBSSID = function(device, meshMode) {
 acsMeshDeviceHandler.createVirtualAPObjects = async function(device) {
   let acsID = device.acs_id;
   // We have to check if the virtual AP object has been created already
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   const meshField = fields.mesh2.ssid.replace('.SSID', '');
   const meshField5 = fields.mesh5.ssid.replace('.SSID', '');
   const getObjTask = {
@@ -217,7 +220,8 @@ acsMeshDeviceHandler.createVirtualAPObjects = async function(device) {
 acsMeshDeviceHandler.getMeshBSSIDFromGenie = async function(device, meshMode) {
   let acsID = device.acs_id;
   // We have to check if the virtual AP object has been created already
-  const fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   const bssidField2 = fields.mesh2.bssid;
   const bssidField5 = fields.mesh5.bssid;
   const getObjTask = {
@@ -250,6 +254,40 @@ acsMeshDeviceHandler.getMeshBSSIDFromGenie = async function(device, meshMode) {
     bssid_mesh2: bssidsStatus.mesh2.toUpperCase(),
     bssid_mesh5: bssidsStatus.mesh5.toUpperCase(),
   };
+};
+
+acsMeshDeviceHandler.getMeshBSSIDs = async function(cpe, mac) {
+  let meshBSSIDs = {mesh2: '', mesh5: ''};
+  let permissions = cpe.modelPermissions();
+  if (
+    permissions.features.mesh &&
+    permissions.mesh.bssidOffsets2Ghz &&
+    permissions.mesh.bssidOffsets5Ghz
+  ) {
+    let macOctets2 = mac.split(':');
+    let macOctets5 = mac.split(':');
+    for (let i = 0; i < macOctets2.length; i++) {
+      macOctets2[i] = (
+        parseInt(`0x${macOctets2[i]}`) +
+        parseInt(permissions.mesh.bssidOffsets2Ghz)
+      ).toString(16).toUpperCase();
+      // We need the second hex digit for BSSID addresses
+      if (macOctets2[i].length === 1) {
+        macOctets2[i] = `0${macOctets2[i]}`;
+      }
+      macOctets5[i] = (
+        parseInt(`0x${macOctets5[i]}`) +
+        parseInt(permissions.mesh.bssidOffsets5Ghz)
+      ).toString(16).toUpperCase();
+      // We need the second hex digit for BSSID addresses
+      if (macOctets5[i].length === 1) {
+        macOctets5[i] = `0${macOctets5[i]}`;
+      }
+    }
+    meshBSSIDs.mesh2 = macOctets2.join(':');
+    meshBSSIDs.mesh5 = macOctets5.join(':');
+  }
+  return meshBSSIDs;
 };
 
 module.exports = acsMeshDeviceHandler;

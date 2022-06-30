@@ -310,7 +310,7 @@
 	"Search...": "Search...",
 	"useCommasToCombineFilters": "Use commas to combine the desired filters. (Example: TP-Link, 0001-aix)",
 	"specialFilters": "Special Filters",
-	"searchForMacIdPppoeUser": "Search by MAC, ID or PPPoE user...",
+	"searchForMacIdPppoeUser": "Search by MAC, Serial ID, User ID or PPPoE user...",
 	"addNewCpe": "Add new CPE",
 	"editColumns": "Edit columns",
 	"wanIp": "WAN IP",

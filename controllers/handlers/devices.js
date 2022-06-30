@@ -146,11 +146,7 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
   setTimeout(()=>{
     DeviceModel.findById(mac, function(err, matchedDevice) {
       if (err || !matchedDevice) return;
-      let permissions = DeviceVersion.findByVersion(
-        matchedDevice.version,
-        matchedDevice.wifi_is_5ghz_capable,
-        matchedDevice.model,
-      );
+      let permissions = DeviceVersion.devicePermissions(matchedDevice);
       if (timeoutType === 'update' && !permissions.grantUpdateAck) return;
       if (matchedDevice.do_update_status === targetStatus) {
         // Ack expected but not received after timeout - assume error and cancel
@@ -175,11 +171,7 @@ deviceHandlers.timeoutUpdateAck = function(mac, timeoutType) {
 
 // Check if secondary device in mesh v1 has support in mesh v2
 const isSlaveInV1CompatibleInV2 = function(slave) {
-  const slavePermissions = DeviceVersion.findByVersion(
-    slave.version,
-    slave.wifi_is_5ghz_capable,
-    slave.model,
-  );
+  const slavePermissions = DeviceVersion.devicePermissions(slave);
   if (!slavePermissions.grantMeshV2SecondaryModeUpgrade) {
     return false;
   }
@@ -188,11 +180,7 @@ const isSlaveInV1CompatibleInV2 = function(slave) {
 
 // Check if primary device in mesh v1 has support in mesh v2
 const isMasterInV1CompatibleInV2 = function(master) {
-  const masterPermissions = DeviceVersion.findByVersion(
-    master.version,
-    master.wifi_is_5ghz_capable,
-    master.model,
-  );
+  const masterPermissions = DeviceVersion.devicePermissions(master);
   if (!masterPermissions.grantMeshV2PrimaryModeUpgrade) {
     return false;
   }
@@ -571,11 +559,7 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     if (device.speedtest_results.length > 5) {
       device.speedtest_results.shift();
     }
-    let permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(device);
     result.limit = permissions.grantSpeedTestLimit;
   }
 
