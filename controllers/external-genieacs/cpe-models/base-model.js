@@ -248,6 +248,18 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
+basicCPEModel.convertIGDtoDevice = function(fields) {
+  Object.keys(fields).forEach((k) => {
+    if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {
+      return basicCPEModel.convertIGDtoDevice(fields[k]);
+    } else if (!Array.isArray(fields[k])) {
+      fields[k] = fields[k].replace(/InternetGatewayDevice/g, 'Device');
+    }
+  });
+
+  return fields;
+};
+
 // Used to override GenieACS serial in some way, used only on Hurakall for now
 basicCPEModel.convertGenieSerial = function(serial, mac) {
   // No conversion necessary
