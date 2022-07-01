@@ -75,7 +75,11 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9' || ouiModelStr === 'P20') {
+      if (
+        ouiModelStr === 'HG9' ||
+        ouiModelStr === 'DM986-414' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
@@ -116,9 +120,13 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
-      else if (ouiModelStr === 'AC10') return 'bgn';
-      else if (ouiModelStr === 'EC220-G5' ||
-               ouiModelStr === 'EMG3524-T10A'
+      else if (
+        ouiModelStr === 'AC10' ||
+        ouiModelStr === 'DM986-414') {
+        return 'bgn';
+      } else if (
+        ouiModelStr === 'EC220-G5' ||
+        ouiModelStr === 'EMG3524-T10A'
       ) {
         return 'n';
       } else if (
@@ -156,7 +164,7 @@ const convertWifiMode = function(mode, oui, model) {
       else if (ouiModelStr === 'F680') return 'a,n';
       else if (ouiModelStr === 'ZT199') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
-      else if (ouiModelStr === 'HG9') return 'n';
+      else if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
       else if (ouiModelStr === 'EMG3524-T10A') return 'n';
@@ -199,7 +207,10 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n,ac';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'DM986-414') {
         return 'anac';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'ac,a,n';
@@ -359,8 +370,7 @@ const getDefaultFields = function() {
       enable: ['PortMappingEnabled', true, 'xsd:boolean'],
       lease: ['PortMappingLeaseDuration', 0, 'xsd:unsignedInt'],
       // hardcoded for every device
-      protocol: ['PortMappingProtocol', '',
-        'xsd:string'],
+      protocol: ['PortMappingProtocol', '', 'xsd:string'],
       description: ['PortMappingDescription', '', 'xsd:string'],
       remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
@@ -863,6 +873,15 @@ const getStavixFields = function(model) {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
       fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
       break;
+    case 'DM986-414':
+    case 'DM986%2D414':
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_WebUserInfo.UserPassword';
+      fields.port_mapping_fields.external_port_end =
+        ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol =
+        ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
+      break;
     case 'MP_G421R':
       break;
   }
@@ -1198,6 +1217,8 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case '121AC': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
     case 'GONUAC002': // Greatek Stavix G421R
+    case 'DM986-414': // Datacom Stavix DM986-414
+    case 'DM986%2D414':
       message = '';
       fields = getStavixFields(model);
       break;
@@ -1424,4 +1445,3 @@ exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
-
