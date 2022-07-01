@@ -1276,6 +1276,9 @@ const tr069Devices = {
     versions_upgrade: {
       'V4.6.0-210709': [],
     },
+    port_forward_opts: {
+      'V4.6.0-210709': portForwardNoRanges,
+    },
     feature_support: {
       wifi_ssid_read: true,
       wifi_ssid_write: true,
@@ -1288,7 +1291,7 @@ const tr069Devices = {
       wps: false,
       ping_test: true,
       speed_test: true,
-      speed_test_limit: 80,
+      speed_test_limit: 200,
       block_devices: false,
       block_wired_devices: false,
       firmware_upgrade: false,
