@@ -854,25 +854,23 @@ updateController.setAutoConfig = async function(req, res) {
         // setting inform interval in genie for all devices and in preset.
         await updatePeriodicInformInGenieAcs(tr069InformInterval);
       }
-      config.tr069 = { // create a new tr069 config with received values.
-        server_url: tr069ServerURL,
-        web_login: onuWebLogin,
-        web_password: onuWebPassword,
-        remote_access: onuRemote,
-        // transforming from seconds to milliseconds.
-        inform_interval: tr069InformInterval*1000,
-        sync_interval: tr069SyncInterval*1000,
-        recovery_threshold: tr069RecoveryThreshold,
-        offline_threshold: tr069OfflineThreshold,
-        pon_signal_threshold: ponSignalThreshold,
-        pon_signal_threshold_critical: ponSignalThresholdCritical,
-        pon_signal_threshold_critical_high: ponSignalThresholdCriticalHigh,
-        stun_enable: STUNEnable,
-        insecure_enable: insecureEnable,
-        has_never_enabled_insecure: (
-          config.tr069.has_never_enabled_insecure && !insecureEnable
-        ),
-      };
+      config.tr069.server_url = tr069ServerURL;
+      config.tr069.web_login = onuWebLogin;
+      config.tr069.web_password = onuWebPassword;
+      config.tr069.remote_access = onuRemote;
+      // transforming from seconds to milliseconds.
+      config.tr069.inform_interval = tr069InformInterval*1000;
+      config.tr069.sync_interval = tr069SyncInterval*1000;
+      config.tr069.recovery_threshold = tr069RecoveryThreshold;
+      config.tr069.offline_threshold = tr069OfflineThreshold;
+      config.tr069.pon_signal_threshold = ponSignalThreshold;
+      config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
+      config.tr069.pon_signal_threshold_critical_high =
+        ponSignalThresholdCriticalHigh;
+      config.tr069.stun_enable = STUNEnable;
+      config.tr069.insecure_enable = insecureEnable;
+      config.tr069.has_never_enabled_insecure =
+        (config.tr069.has_never_enabled_insecure && !insecureEnable);
     } else { // if one single rule doesn't pass the test.
       // respond error without much explanation.
       return res.status(500).json({

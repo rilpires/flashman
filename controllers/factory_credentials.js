@@ -1,91 +1,135 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
+const t = require('./language').i18next.t;
 const ConfigModel = require('../models/config');
+const DevicesAPI = require('./external-genieacs/devices-api');
 
 const factoryCredentialsController = {};
 
 // TODO: Usar esse objeto para compor os dropdowns na tela de adição de preset
-factoryCredentialsController.credentialsDropdownObj = {
-  'D-Link': ['DIR-841', 'DIR-842'],
-  'FastWireless': ['FW323DAC'],
-  'Greatek': ['Stavix G421RQ'],
-  'Huawei': [
-    'EG8145V5', 'EG8145X6', 'HG8245Q2',
-    'WS5200', 'WS7001 / AX2', 'WS7100 / AX3',
-  ],
-  'Hurakall': ['ST-1001-FL'],
-  'Intelbras': ['WiFiber 121 AC'],
-  'Multilaser / ZTE': ['F660', 'F670L', 'F680', 'H198A', 'H199A'],
-  'Nokia': ['BEACON HA-020W-B', 'G-140W-C', 'G-2425G-A'],
-  'Tenda': ['AC10', 'HG9'],
-  'TP-Link': ['Archer C6 v3.2', 'EC220-G5 v2'],
-  'UNEE': ['Stavix MPG421R'],
-  'ZTE': ['F670L'],
-};
-
-// TODO: remove this
-factoryCredentialsController.onuFactoryCredentials = {
-  timestamp: new Date(),
-  credentials: [
-    {vendor: 'D-Link', model: 'DIR-841', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'D-Link', model: 'DIR-842', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'FastWireless', model: 'FW323DAC', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Greatek', model: 'Stavix G421RQ', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'EG8145V5', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'EG8145X6', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'HG8245Q2', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'WS5200', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'WS7001 / AX2', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Huawei', model: 'WS7100 / AX3', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Hurakall', model: 'ST-1001-FL', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Intelbras', model: 'WiFiber 121 AC', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Multilaser / ZTE', model: 'F660', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Multilaser / ZTE', model: 'F670L', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Multilaser / ZTE', model: 'F680', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Multilaser / ZTE', model: 'H198A', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Multilaser / ZTE', model: 'H199A', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Nokia', model: 'BEACON HA-020W-B', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Nokia', model: 'G-140W-C', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Nokia', model: 'G-2425G-A', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Tenda', model: 'AC10', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'Tenda', model: 'HG9', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'TP-Link', model: 'Archer C6 v3.2', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'TP-Link', model: 'EC220-G5 v2', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'UNEE', model: 'Stavix MPG421R', username: 'admin', password: 'A@Nlix123'},
-    {vendor: 'ZTE', model: 'F670L', username: 'admin', password: 'A@Nlix123'},
-  ],
-};
+factoryCredentialsController.TR069Models = DevicesAPI.getTR069Models();
 
 factoryCredentialsController.getVendorList = function() {
-  return Array.from(factoryCredentialsController.credentialsDropdownObj.keys());
+  return Array.from(factoryCredentialsController.TR069Models.keys());
 };
 
 factoryCredentialsController.getModelListByVendor = function(vendor) {
-  return factoryCredentialsController.credentialsDropdownObj[vendor];
+  return factoryCredentialsController.TR069Models[vendor];
 };
 
 
 factoryCredentialsController.getCredentialsAtConfig = async function() {
-  let config = await ConfigModel.findOne(
-    {is_default: true},
-    {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
-  ).lean().catch((err) => (err));
-  // TODO: remove this
-  // ).catch((err) => (err));
+  // TODO: editar esse firmwaresFindError para um
+  // genericFactoryCredentialsFindError
+  let message = t('firmwaresFindError', {errorline: __line});
+  const config = await ConfigModel.findOne(
+    {is_default: true}, {tr069: true},
+  ).lean().catch(function(err) {
+    // TODO: editar esse firmwaresFindError para um
+    // factoryCredentialsFindExceptionError
+    message = t('firmwaresFindError', {errorline: __line});
+  });
   // Get onu credentials inside config, if present
-  console.log('config', config);
   if (config && config.tr069) {
-    // TODO: remove this
-    // config.tr069.onu_factory_credentials =
-    //   factoryCredentialsController.onuFactoryCredentials;
-    // await config.save();
-    if (config.tr069.onu_factory_credentials) {
-      const onuFactoryCredentials = config.tr069.onu_factory_credentials;
-      if (onuFactoryCredentials.timestamp &&
-          onuFactoryCredentials.credentials) {
-        return onuFactoryCredentials;
-      }
+    if (config.tr069.onu_factory_credentials &&
+        config.tr069.onu_factory_credentials.timestamp &&
+        config.tr069.onu_factory_credentials.credentials) {
+      return {
+        success: true, credentials: config.tr069.onu_factory_credentials,
+      };
     }
   }
-  return {};
+  return {success: false, message: message};
+};
+
+// Routes functions
+// Get credentials data
+factoryCredentialsController.getCredentialsData = async function(req, res) {
+  const getCredentials =
+    await factoryCredentialsController.getCredentialsAtConfig();
+  if (getCredentials.success) {
+    return res.json(getCredentials);
+  } else {
+    return res.json({
+      success: false, type: 'danger', message: getCredentials.message,
+    });
+  }
+};
+
+// Set credentials data
+factoryCredentialsController.setCredentialsData = async function(req, res) {
+  if (!req.body.credentials) {
+    return res.json({
+      success: false, type: 'danger',
+      // TODO: editar esse firmwaresFindError para um
+      // factoryCredentialsSetError
+      message: t('firmwaresFindError', {errorline: __line}),
+    });
+  }
+  let credentials = req.body.credentials;
+  credentials.forEach((cpe) => {
+    if (!cpe.vendor ||
+        !(cpe.vendor in factoryCredentialsController.TR069Models)) {
+      return res.json({
+        success: false, type: 'danger',
+        // TODO: editar esse firmwaresFindError para um
+        // factoryCredentialsInvalidVendor
+        message: t('firmwaresFindError', {errorline: __line}),
+      });
+    }
+    let vendor = factoryCredentialsController.TR069Models[cpe.vendor];
+    if (!cpe.model || !vendor.includes(cpe.model)) {
+      return res.json({
+        success: false, type: 'danger',
+        // TODO: editar esse firmwaresFindError para um
+        // factoryCredentialsInvalidModel
+        message: t('firmwaresFindError', {errorline: __line}),
+      });
+    }
+    if (!cpe.username || cpe.username.length == 0) {
+      return res.json({
+        success: false, type: 'danger',
+        // TODO: editar esse firmwaresFindError para um
+        // factoryCredentialsInvalidUsername
+        message: t('firmwaresFindError', {errorline: __line}),
+      });
+    }
+    if (!cpe.password || cpe.password.length == 0) {
+      return res.json({
+        success: false, type: 'danger',
+        // TODO: editar esse firmwaresFindError para um
+        // factoryCredentialsInvalidPassword
+        message: t('firmwaresFindError', {errorline: __line}),
+      });
+    }
+  });
+  // TODO: editar esse firmwaresFindError para um
+  // genericFactoryCredentialsSetError
+  let message = t('firmwaresFindError', {errorline: __line});
+  const config = await ConfigModel.findOne(
+    {is_default: true}, {tr069: true},
+  ).catch(function(err) {
+    // TODO: editar esse firmwaresFindError para um
+    // factoryCredentialsSetExceptionError
+    message = t('firmwaresFindError', {errorline: __line});
+  });
+  // Get onu credentials inside config, if present
+  if (config && config.tr069) {
+    // TODO: remove this
+    config.tr069.onu_factory_credentials = {
+      timestamp: new Date(),
+      credentials: credentials,
+    };
+    config.save().then(function() {
+      return res.json({success: true, type: 'success',
+                       message: t('operationSuccessful')});
+    }).catch(function(rej) {
+      return res.json({success: false, type: 'danger',
+        message: t('configSaveError', {errorline: __line})});
+    });
+  }
+  return {success: false, message: message};
 };
 
 module.exports = factoryCredentialsController;
