@@ -24,7 +24,8 @@ controlController.checkPubKey = async function(app) {
   try {
     let pubKeyUrl = controlApiAddr + '/flashman/pubkey/register';
     // Check default config
-    let matchedConfig = await Config.findOne({is_default: true});
+    let matchedConfig = await Config.findOne({is_default: true},
+                                             {auth_privkey: true});
     // Check config existence and create one if not found
     if (!matchedConfig) {
       await newConfig.save().catch((err) => {
@@ -51,7 +52,8 @@ controlController.getMessageConfig = async function(app) {
   let matchedConfig = null;
 
   try {
-    matchedConfig = await Config.findOne({is_default: true});
+    matchedConfig = await Config.findOne({is_default: true},
+                                         {messaging_configs: true});
     if (!matchedConfig) {
       console.error('Error obtaining message config');
       return;
@@ -272,7 +274,8 @@ controlController.meshLicenseCredit = async function(slaveId) {
   let matchedConfig = null;
 
   try {
-    matchedConfig = await Config.findOne({is_default: true});
+    matchedConfig = await Config.findOne({is_default: true},
+      {company: true, licenseApiSecret: true});
     if (!matchedConfig) {
       console.error('Error obtaining message config');
       return {success: false, message:

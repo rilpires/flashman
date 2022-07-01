@@ -211,6 +211,12 @@ block content
                     select.browser-default.md-select(name="grant-search-summary")
                       option(value="false")= t('cannotView')
                       option(value="true")= t('View')
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label= t('rowsPerPage')
+                    select.browser-default.md-select(name="grant-rows-per-page")
+                      option(value="false")= t('cannotView')
+                      option(value="true")= t('View')
               .col-12.col-lg-6
                 .md-form
                   .md-selectfield.form-control.my-0

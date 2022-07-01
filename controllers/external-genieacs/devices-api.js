@@ -96,6 +96,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F680' ||
         ouiModelStr === 'F660' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -134,6 +135,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -160,6 +162,7 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ZT199') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
       else if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
@@ -195,6 +198,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -665,6 +669,37 @@ const getZTEFields = function(model) {
       fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
+      break;
+    case 'ZT199':
+      fields.wan.wan_ip = fields.wan.wan_ip
+        .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
+      fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp
+        .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
+      // fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
+      fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
+      fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
+      fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
+      fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.port_mapping_values.description[0] = 'X_ZTE-COM_Name';
+      fields.port_mapping_values.other_description = ['PortMappingDescription',
+        '', 'xsd:string'];
+      fields.port_mapping_values.zte_remote_host_end = [
+        'X_ZTE-COM_RemoteHostEndRange', '0.0.0.0', 'xsd:string'];
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
+      fields.stun.address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.stun.port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
       break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
@@ -1156,6 +1191,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
+    case 'ZT199': // Multilaser ZT199 Space Series
       message = '';
       fields = getZTEFields(model);
       break;
