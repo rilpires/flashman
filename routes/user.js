@@ -54,10 +54,10 @@ router.route('/get/one/:id').get(
   userController.getUserById);
 
 router.route('/new').post(
-  userController.postUser)
+  userController.postUser);
 
 router.route('/del').post(
-  userController.deleteUser)
+  userController.deleteUser);
 
 router.route('/role/get/all').get(
   userController.getRoles);
