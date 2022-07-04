@@ -1,0 +1,97 @@
+#laninfo-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+
+      //- Header of the modal
+      .modal-header
+        p.heading.lead
+
+          //- File Icon
+          span.fas.fa-file-alt.fa-lg
+
+          //- Tittle
+          strong &nbsp; #{t('lanInfoOf')}&nbsp;
+
+          //- Device ID
+          strong(name="laninfo-visual" id="laninfo-visual")
+
+        //- Close button
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      #frame-laninfo-modal-alert
+
+      //- Body of the modal
+      .modal-body#laninfo-canvas
+
+        //- Refresh icon and text
+        #laninfo-loading-section.row.pt-3
+          .col
+            h2.text-center.grey-text.mb-3
+              //- Icon
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              //- Title
+              span= t('updatingInformations...')
+
+        //- No information
+        #laninfo-no-information-section.row
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-network-wired.fa-4x
+              br
+              br
+              span= t('noExtraInformation')
+
+        //- Information items
+        //- Prefix Delegation
+        #prefix-delegation-information.row
+          .col
+            //- Prefix Delegation Title
+            .row
+              h2.text-center.grey-text.mb-3#logs-placeholder
+                span #{t('prefixDelegationInfoTitle')}
+            
+            .row
+              .col-6
+                //- Prefix Delegation (Address)
+                #prefix-delegation.md-form.input-entry
+                  label.active #{t('ipv6PrefixDelegation')}
+                  input#prefix-delegation-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+              .col-6
+                //- Prefix Delegation Mask
+                #prefix-delegation-mask.md-form.input-entry
+                  label.active #{t('ipv6PrefixDelegationMask')}
+                  input#prefix-delegation-mask-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+            .row
+              .col-6
+                //- Prefix Delegation local address
+                #prefix-delegation-local-address.md-form.input-entry
+                  label.active #{t('ipv6PrefixDelegationLocal')}
+                  input#prefix-delegation-local-address-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+      //- Footer of the modal
+      .modal-footer
+        .col.text-left
+
+          //- Update button
+          button#btn-laninfo-update.btn.btn-primary.btn-sm
+            i#btn-laninfo-ipdate-icon.fas.fa-sync-alt.fa-lg
+            span &nbsp; #{t('Update')}
