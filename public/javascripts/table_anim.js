@@ -1400,6 +1400,9 @@ anlixDocumentReady.add(function() {
             device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
+          // WAN and LAN Information
+          let grantWanLanInformation =
+            device.permissions.grantWanLanInformation;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1865,7 +1868,7 @@ anlixDocumentReady.add(function() {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', '');
           }
 
-          if (!isTR069) {
+          if (grantWanLanInformation) {
             wanTab = wanTab.replace(
               '$REPLACE_WAN_INFO',
               buildMoreInfo(index, 'wan'),
@@ -1940,7 +1943,7 @@ anlixDocumentReady.add(function() {
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
           lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
 
-          if (!isTR069) {
+          if (grantWanLanInformation) {
             lanTab = lanTab.replace(
               '$REPLACE_LAN_INFO',
               buildMoreInfo(index, 'lan'),

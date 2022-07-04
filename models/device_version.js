@@ -2971,6 +2971,21 @@ const grantUpnp = function(version, model) {
   }
 };
 
+
+// WAN and LAN Information
+const grantWanLanInformation = function(version, model) {
+  if (Object.keys(tr069Devices).includes(model)) {
+    return false;
+  }
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.34.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
+
 const grantSpeedTest = function(version, model) {
   if (Object.keys(tr069Devices).includes(model)) {
     return tr069Devices[model].feature_support.speed_test;
@@ -3288,6 +3303,8 @@ DeviceVersion.findByVersion = function(version, is5ghzCapable, model) {
     result.grantPortForwardOpts =
       DeviceVersion.getPortForwardTr069Compatibility(model, version);
   }
+  // WAN and LAN Information
+  result.grantWanLanInformation = grantWanLanInformation(model, version);
   return result;
 };
 
