@@ -252,6 +252,14 @@ let deviceSchema = new Schema({
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
   wan_up_time: {type: Number, default: 0}, // seconds
+  default_gateway_v4: String,
+  default_gateway_v6: String,
+  dns_server: String,
+  pppoe_mac: String,
+  pppoe_ip: String,
+  prefix_delegation_addr: String,
+  prefix_delegation_mask: String,
+  prefix_delegation_local: String,
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
