@@ -366,6 +366,39 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   }
 };
 
+
+// WAN Information
+mqtts.anlixMessageRouterWanInfo = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: false,
+      payload: 'waninfo',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message WANINFO to ' + id);
+  }
+};
+
+
+// LAN Information
+mqtts.anlixMessageRouterLanInfo = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: false,
+      payload: 'laninfo',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message LANINFO to ' + id);
+  }
+};
+
+
 mqtts.anlixMessageRouterSiteSurvey = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {
