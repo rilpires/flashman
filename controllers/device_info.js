@@ -2151,6 +2151,62 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
   });
 };
 
+
+// WAN Information
+deviceInfoController.receiveWanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Default Gateway IPv4
+    let defaultGatewayV4 = util.returnObjOrEmptyStr(req.body.default_gateway_v4)
+      .trim();
+    matchedDevice.default_gateway_v4 = defaultGatewayV4;
+
+    // Default Gateway IPv6
+    let defaultGatewayV6 = util.returnObjOrEmptyStr(req.body.default_gateway_v6)
+      .trim();
+    matchedDevice.default_gateway_v6 = defaultGatewayV6;
+
+    // DNS Server
+    let dnsServer = util.returnObjOrEmptyStr(req.body.dns_server).trim();
+    matchedDevice.dns_server = dnsServer;
+
+    // PPPoE MAC
+    let pppoeMac = util.returnObjOrEmptyStr(req.body.pppoe_mac).trim();
+    matchedDevice.pppoe_mac = pppoeMac;
+
+    // PPPoE IP
+    let pppoeIp = util.returnObjOrEmptyStr(req.body.pppoe_ip).trim();
+    matchedDevice.pppoe_ip = pppoeIp;
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendWanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
 deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
