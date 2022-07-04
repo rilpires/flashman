@@ -1489,6 +1489,10 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
       {alt_uid_tr069: serial},
     ],
   };
+  let altSerial = req.body.content.alt_serial;
+  if (altSerial) {
+    query['$or'].push({serial_tr069: altSerial});
+  }
   DeviceModel.find(query).exec(async function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message':

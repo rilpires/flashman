@@ -75,7 +75,11 @@ const convertWifiMode = function(mode, oui, model) {
   let ouiModelStr = model;
   switch (mode) {
     case '11g':
-      if (ouiModelStr === 'HG9' || ouiModelStr === 'P20') {
+      if (
+        ouiModelStr === 'HG9' ||
+        ouiModelStr === 'DM986-414' ||
+        ouiModelStr === 'P20'
+      ) {
         return 'g';
       } else if (ouiModelStr === 'HG8245Q2') return '11bg';
       else if (['WS7001-40', 'WS7100-30', 'WS5200-21', 'WS5200-40'].includes(
@@ -92,6 +96,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F680' ||
         ouiModelStr === 'F660' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -115,9 +120,13 @@ const convertWifiMode = function(mode, oui, model) {
                                                                  ouiModelStr)) {
         return 'b/g/n';
       } else if (ouiModelStr === 'HG9') return 'gn';
-      else if (ouiModelStr === 'AC10') return 'bgn';
-      else if (ouiModelStr === 'EC220-G5' ||
-               ouiModelStr === 'EMG3524-T10A'
+      else if (
+        ouiModelStr === 'AC10' ||
+        ouiModelStr === 'DM986-414') {
+        return 'bgn';
+      } else if (
+        ouiModelStr === 'EC220-G5' ||
+        ouiModelStr === 'EMG3524-T10A'
       ) {
         return 'n';
       } else if (
@@ -126,6 +135,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -152,8 +162,9 @@ const convertWifiMode = function(mode, oui, model) {
       } else if (ouiModelStr === 'F670L') return 'a,n';
       else if (ouiModelStr === 'F660') return 'a,n';
       else if (ouiModelStr === 'F680') return 'a,n';
+      else if (ouiModelStr === 'ZT199') return 'a,n';
       else if (ouiModelStr === 'ST-1001-FL') return 'a,n';
-      else if (ouiModelStr === 'HG9') return 'n';
+      else if (ouiModelStr === 'HG9' || ouiModelStr === 'DM986-414') return 'n';
       else if (ouiModelStr === 'AC10') return 'an+ac';
       else if (ouiModelStr === 'EC220-G5') return 'nac';
       else if (ouiModelStr === 'EMG3524-T10A') return 'n';
@@ -187,6 +198,7 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'F670L' ||
         ouiModelStr === 'F660' ||
         ouiModelStr === 'F680' ||
+        ouiModelStr === 'ZT199' ||
         ouiModelStr === 'G-140W-C' ||
         ouiModelStr === 'G-140W-CS' ||
         ouiModelStr === 'G-140W-UD' ||
@@ -195,7 +207,10 @@ const convertWifiMode = function(mode, oui, model) {
         ouiModelStr === 'GWR-1200AC'
       ) {
         return 'a,n,ac';
-      } else if (ouiModelStr === 'GONUAC001' || ouiModelStr === 'GONUAC002') {
+      } else if (
+        ouiModelStr === 'GONUAC001' ||
+        ouiModelStr === 'GONUAC002' ||
+        ouiModelStr === 'DM986-414') {
         return 'anac';
       } else if (ouiModelStr === 'DIR-842' || ouiModelStr === 'DIR-841') {
         return 'ac,a,n';
@@ -355,8 +370,7 @@ const getDefaultFields = function() {
       enable: ['PortMappingEnabled', true, 'xsd:boolean'],
       lease: ['PortMappingLeaseDuration', 0, 'xsd:unsignedInt'],
       // hardcoded for every device
-      protocol: ['PortMappingProtocol', '',
-        'xsd:string'],
+      protocol: ['PortMappingProtocol', '', 'xsd:string'],
       description: ['PortMappingDescription', '', 'xsd:string'],
       remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
@@ -656,6 +670,37 @@ const getZTEFields = function(model) {
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
       fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
       break;
+    case 'ZT199':
+      fields.wan.wan_ip = fields.wan.wan_ip
+        .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
+      fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp
+        .replace(/1.ExternalIPAddress/, '*.ExternalIPAddress');
+      // fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
+      fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
+      fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
+      fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_ZTE-COM_BandWidth');
+      fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
+      fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
+      fields.port_mapping_fields.internal_port_end = ['X_ZTE-COM_InternalPortEndRange', 'internal_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol[1] = 'BOTH';
+      fields.port_mapping_values.description[0] = 'X_ZTE-COM_Name';
+      fields.port_mapping_values.other_description = ['PortMappingDescription',
+        '', 'xsd:string'];
+      fields.port_mapping_values.zte_remote_host_end = [
+        'X_ZTE-COM_RemoteHostEndRange', '0.0.0.0', 'xsd:string'];
+      fields.common.stun_enable =
+        'InternetGatewayDevice.ManagementServer.STUNEnable';
+      fields.stun = {};
+      fields.stun.address =
+        'InternetGatewayDevice.ManagementServer.STUNServerAddress';
+      fields.stun.port =
+        'InternetGatewayDevice.ManagementServer.STUNServerPort';
+      fields.common.stun_udp_conn_req_addr =
+      'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+      fields.access_control = {};
+      fields.access_control.wifi2 = fields.wifi2.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      fields.access_control.wifi5 = fields.wifi5.ssid.replace(/SSID/g, 'X_ZTE-COM_AccessControl');
+      break;
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
@@ -827,6 +872,15 @@ const getStavixFields = function(model) {
       fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
       fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
       fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
+      break;
+    case 'DM986-414':
+    case 'DM986%2D414':
+      fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+      fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_WebUserInfo.UserPassword';
+      fields.port_mapping_fields.external_port_end =
+        ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];
+      fields.port_mapping_values.protocol =
+        ['PortMappingProtocol', 'TCPandUDP', 'xsd:string'];
       break;
     case 'MP_G421R':
       break;
@@ -1137,6 +1191,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case 'F660': // Multilaser ZTE F660
     case 'F670L': // Multilaser ZTE F670L
     case 'F680': // Multilaser ZTE F680
+    case 'ZT199': // Multilaser ZT199 Space Series
       message = '';
       fields = getZTEFields(model);
       break;
@@ -1162,6 +1217,8 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     case '121AC': // Intelbras WiFiber (is a Stavix clone)
     case 'GONUAC001': // Greatek Stavix G421R
     case 'GONUAC002': // Greatek Stavix G421R
+    case 'DM986-414': // Datacom Stavix DM986-414
+    case 'DM986%2D414':
       message = '';
       fields = getStavixFields(model);
       break;
@@ -1388,4 +1445,3 @@ exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.convertWifiMode = convertWifiMode;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
-
