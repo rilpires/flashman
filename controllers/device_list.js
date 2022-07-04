@@ -1170,6 +1170,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'wanbytes':
+      case 'waninfo':
+      case 'laninfo':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1268,6 +1270,38 @@ deviceListController.sendMqttMsg = function(req, res) {
             acsDeviceInfo.requestWanBytes(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+          }
+
+        // WAN Informations
+        } else if (msgtype === 'waninfo') {
+          // Wait notification, only wait if is not TR069
+          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+            !device.use_tr069) {
+            sio.anlixWaitForWanInfoNotification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+          }
+
+          // If does not use TR069 call the mqtt function
+          if (device && !device.use_tr069) {
+            mqtt.anlixMessageRouterWanInfo(req.params.id.toUpperCase());
+          }
+
+        // LAN Informations
+        } else if (msgtype === 'laninfo') {
+          // Wait notification, only wait if is not TR069
+          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+            !device.use_tr069) {
+            sio.anlixWaitForLanInfoNotification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+          }
+
+          // If does not use TR069 call the mqtt function
+          if (device && !device.use_tr069) {
+            mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
