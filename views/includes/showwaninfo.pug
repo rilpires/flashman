@@ -1,0 +1,136 @@
+#waninfo-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+
+      //- Header of the modal
+      .modal-header
+        p.heading.lead
+
+          //- File Icon
+          span.fas.fa-file-alt.fa-lg
+
+          //- Tittle
+          strong &nbsp; #{t('wanInfoOf')}&nbsp;
+
+          //- Device ID
+          strong(name="waninfo-visual" id="waninfo-visual")
+
+        //- Close button
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      #frame-waninfo-modal-alert
+
+      //- Body of the modal
+      .modal-body#waninfo-canvas
+
+        //- Refresh icon and text
+        #waninfo-loading-section.row.pt-3
+          .col
+            h2.text-center.grey-text.mb-3
+              //- Icon
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              //- Title
+              span= t('updatingInformations...')
+
+        //- No information
+        #waninfo-no-information-section.row
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-network-wired.fa-4x
+              br
+              br
+              span= t('noExtraInformation')
+
+        //- Information items
+        //- PPPoE
+        #pppoe-information.row
+          .col
+            //- PPPoE Title
+            .row
+              h2.text-center.grey-text.mb-3#logs-placeholder
+                span #{t('pppoeInfoTitle')}
+            
+            .row
+              .col-6
+                //- MAC Address of PPPoE
+                #pppoe-mac.md-form.input-entry
+                  label.active #{t('pppoeMac')}
+                  input#pppoe-mac-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+              .col-6
+                //- IP Address of PPPoE
+                #pppoe-ip.md-form.input-entry
+                  label.active #{t('pppoeIp')}
+                  input#pppoe-ip-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+        //- Default Gateway
+        #default-gateway-information.row
+          .col
+            //- Default Gateway Title
+            .row
+              h2.text-center.grey-text.mb-3#logs-placeholder
+                span #{t('defaultGatewayInfoTitle')}
+            
+            .row
+              .col-6
+                //- IPv4 Default Gateway
+                #ipv4-default-gateway.md-form.input-entry
+                  label.active #{t('ipv4DefaultGateway')}
+                  input#ipv4-default-gateway-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+              .col-6
+                //- IPv6 Default Gateway
+                #ipv6-default-gateway.md-form.input-entry
+                  label.active #{t('ipv6DefaultGateway')}
+                  input#ipv6-default-gateway-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+        //- DNS Server
+        #dns-server-information.row
+          .col
+            //- DNS Server Title
+            .row
+              h2.text-center.grey-text.mb-3#logs-placeholder
+                span #{t('dnsServerInfoTitle')}
+            
+            .row
+              .col-6
+                //- DNS Server Address
+                #dns-server-address.md-form.input-entry
+                  label.active #{t('dnsServerAddress')}
+                  input#dns-server-address-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+      //- Footer of the modal
+      .modal-footer
+        .col.text-left
+
+          //- Update button
+          button#btn-waninfo-update.btn.btn-primary.btn-sm
+            i#btn-waninfo-ipdate-icon.fas.fa-sync-alt.fa-lg
+            span &nbsp; #{t('Update')}
