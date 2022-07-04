@@ -327,6 +327,7 @@
 	"Status": "Status",
 	"rowsPerPage": "Registros por página",
 	"greenRedGrayLegendTooltip": "Verde: Online<br>Vermelho: Instável. Sem resposta imediata<br>Cinza: Sem resposta por mais de 1 hora",
+	"wanIpTooltip": "IPv4 na parte superior.<br>IPv6 na parte inferior.",
 	"exportCsv": "Exportar CSV",
 	"userWithoutPermissionToVisualizeInformation": "Usuário sem permissão para visualizar as informações",
 	"notificationsAndAlerts": "Notificações e alertas",
