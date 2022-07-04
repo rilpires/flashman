@@ -21,6 +21,7 @@ const request = require('request');
 const tr069Models = {
   basicCPEModel: require('./cpe-models/base-model'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
+  datacomDM986Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
@@ -50,6 +51,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
+  zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
@@ -77,6 +79,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   if (modelName === 'DM985-424') {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
+  } else if (modelName === 'DM986-414') {
+    // Datacom DM986-414
+    return {success: true, cpe: tr069Models.datacomDM986Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
     return {success: true, cpe: tr069Models.dlinkDir615Model};
@@ -166,6 +171,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'MP-G421R') {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
+  } else if (modelName === 'ZT199') {
+    // ZTE ZT199
+    return {success: true, cpe: tr069Models.zteZT199Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};
