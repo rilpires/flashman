@@ -3742,6 +3742,59 @@ deviceListController.getWanInfo = async function(request, response) {
 };
 
 
+// Returns the informations about the LAN for firmware devices
+deviceListController.getLanInfo = async function(request, response) {
+  let deviceId = request.params.id.toUpperCase();
+
+  DeviceModel.findById(deviceId, function(error, matchedDevice) {
+    // If an error occurred while finding the device
+    if (error) {
+      return request.status(400).json({
+        processed: 0,
+        success: false,
+      });
+    }
+
+    // If could not find the device
+    if (!matchedDevice) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+    // If it is TR069
+    if (matchedDevice.use_tr069) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+
+    // Get the parameters
+    let prefixDelegationAddr = matchedDevice.prefix_delegation_addr;
+    let prefixDelegationMask = matchedDevice.prefix_delegation_mask;
+    let prefixDelegationLocal = matchedDevice.prefix_delegation_local;
+
+
+    // Fill the request
+    // Fields undefined is returned as blank
+    return response.status(200).json({
+      success: true,
+      prefix_delegation_addr: (prefixDelegationAddr ?
+        prefixDelegationAddr : ''),
+
+      prefix_delegation_mask: (prefixDelegationMask ?
+        prefixDelegationMask : ''),
+
+      prefix_delegation_local: (prefixDelegationLocal ?
+        prefixDelegationLocal : ''),
+    });
+  });
+};
+
+
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');
 
