@@ -726,23 +726,34 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           deviceSetQuery.wan_ipv6 = sentWanIpv6;
         }
 
+        // WAN Negociated Speed
         let sentWanNegociatedSpeed =
         util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
         if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
           deviceSetQuery.wan_negociated_speed = sentWanNegociatedSpeed;
         }
+
+        // WAN Negociated Transference
         let sentWanNegociatedDuplex =
         util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
         if (sentWanNegociatedDuplex !== matchedDevice.wan_negociated_duplex) {
           deviceSetQuery.wan_negociated_duplex = sentWanNegociatedDuplex;
         }
+
+        // IP
         if (matchedDevice.ip !== ip) {
           deviceSetQuery.ip = ip;
         }
+
+        // System Uptime
         let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
         deviceSetQuery.sys_up_time = sysUpTime;
+
+        // WAN Uptime
         let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
         deviceSetQuery.wan_up_time = wanUpTime;
+
+        // WPS State
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
@@ -2116,13 +2127,21 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
+
+    // System Uptime
     let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
     matchedDevice.sys_up_time = sysUpTime;
+
+    // Wan Uptime
     let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
     matchedDevice.wan_up_time = wanUpTime;
+
+    // Wan Bytes
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
+
+    // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});
     });
