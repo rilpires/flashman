@@ -3685,6 +3685,63 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
   });
 };
 
+
+// Returns the informations about the WAN for firmware devices
+deviceListController.getWanInfo = async function(request, response) {
+  let deviceId = request.params.id.toUpperCase();
+
+  DeviceModel.findById(deviceId, function(error, matchedDevice) {
+    // If an error occurred while finding the device
+    if (error) {
+      return request.status(400).json({
+        processed: 0,
+        success: false,
+      });
+    }
+
+    // If could not find the device
+    if (!matchedDevice) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+    // If it is TR069
+    if (matchedDevice.use_tr069) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+
+    // Get the parameters
+    let connectionType = matchedDevice.connection_type;
+    let defaultGatewayV4 = matchedDevice.default_gateway_v4;
+    let defaultGatewayV6 = matchedDevice.default_gateway_v6;
+    let dnsServer = matchedDevice.dns_server;
+    let pppoeMac = matchedDevice.pppoe_mac;
+    let pppoeIp = matchedDevice.pppoe_ip;
+
+
+    // Fill the request
+    // Fields undefined is returned as blank
+    return response.status(200).json({
+      success: true,
+      wan_conn_type: connectionType,
+      default_gateway_v4: (defaultGatewayV4 ? defaultGatewayV4 : ''),
+      default_gateway_v6: (defaultGatewayV6 ? defaultGatewayV6 : ''),
+      dns_server: (dnsServer ? dnsServer : ''),
+      pppoe_mac: (connectionType === 'pppoe' && pppoeMac ?
+        pppoeMac : ''),
+      pppoe_ip: (connectionType === 'pppoe' && pppoeIp ?
+        pppoeIp : ''),
+    });
+  });
+};
+
+
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');
 
