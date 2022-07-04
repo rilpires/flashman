@@ -2207,6 +2207,59 @@ deviceInfoController.receiveWanInfo = function(req, res) {
 };
 
 
+// LAN Information
+deviceInfoController.receiveLanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+
+    // Prefix Delegation Address
+    let prefixDelegationAddr = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_addr)
+      .trim();
+    matchedDevice.prefix_delegation_addr = prefixDelegationAddr;
+
+    // Prefix Delegation Mask
+    let prefixDelegationMask = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_mask)
+      .trim();
+    matchedDevice.prefix_delegation_mask = prefixDelegationMask;
+
+    // Prefix Delegation Local Address
+    let prefixDelegationLocal = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_local)
+      .trim();
+    matchedDevice.prefix_delegation_local = prefixDelegationLocal;
+
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendLanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
 deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
