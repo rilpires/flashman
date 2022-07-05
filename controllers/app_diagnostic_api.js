@@ -170,10 +170,8 @@ diagAppAPIController.sessionLogin = (req, res) => {
       let session = await generateSessionCredential(user.name);
       const factoryCredentials =
         await onuFactoryCredentials.getCredentialsAtConfig();
-      console.log(factoryCredentials);
       if (factoryCredentials.success) {
         session.onuFactoryCredentials = factoryCredentials.credentials;
-        console.log(session.onuFactoryCredentials);
       }
       session.success = true;
       return res.status(200).json(session);
@@ -593,10 +591,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       }
       const factoryCredentials =
         await onuFactoryCredentials.getCredentialsAtConfig();
-      console.log(factoryCredentials);
       if (factoryCredentials.success) {
         onuConfig.onuFactoryCredentials = factoryCredentials.credentials;
-        console.log(onuConfig.onuFactoryCredentials);
       }
       if (!device) {
         return res.status(200).json({
