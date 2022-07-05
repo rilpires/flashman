@@ -1962,7 +1962,7 @@ deviceInfoController.receivePingResult = function(req, res) {
     Object.keys(req.body.results).map((k) => {
       let p = req.body.results[k];
       if (p) {
-        result[p.host] = {
+        result[k] = {
           lat: p.lat,
           loss: p.loss,
           count: '100',
