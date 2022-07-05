@@ -1959,7 +1959,8 @@ deviceInfoController.receivePingResult = function(req, res) {
     // Filling the result object
     // Sync with ACS
     // count in firmware is 100
-    req.body.results.map((p) => {
+    Object.keys(req.body.results).map((k) => {
+      let p = req.body.results[k];
       if (p) {
         result[p.host] = {
           lat: p.lat,
