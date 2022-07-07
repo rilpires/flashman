@@ -23,13 +23,16 @@ factoryCredentialsController.getCredentialsAtConfig = async function() {
   // TODO: editar esse firmwaresFindError para um
   // genericFactoryCredentialsFindError
   let message = t('firmwaresFindError', {errorline: __line});
-  const config = await ConfigModel.findOne(
-    {is_default: true}, {tr069: true},
-  ).lean().catch(function(err) {
+  let config = {};
+  try {
+    config = await ConfigModel.findOne(
+      {is_default: true}, {tr069: true},
+    ).lean();
+  } catch (err) {
     // TODO: editar esse firmwaresFindError para um
     // factoryCredentialsFindExceptionError
     message = t('firmwaresFindError', {errorline: __line});
-  });
+  }
   // Get onu credentials inside config, if present
   if (config && config.tr069) {
     if (config.tr069.onu_factory_credentials &&
@@ -37,6 +40,7 @@ factoryCredentialsController.getCredentialsAtConfig = async function() {
         config.tr069.onu_factory_credentials.credentials) {
       return {
         success: true, credentials: config.tr069.onu_factory_credentials,
+        vendors_info: factoryCredentialsController.TR069Models,
       };
     }
   }
@@ -49,10 +53,12 @@ factoryCredentialsController.getCredentialsData = async function(req, res) {
   const getCredentials =
     await factoryCredentialsController.getCredentialsAtConfig();
   if (getCredentials.success) {
-    return res.json(getCredentials);
+    getCredentials.type = 'success';
+    getCredentials.message = t('operationSuccessful');
+    return res.status(200).json(getCredentials);
   } else {
-    return res.json({
-      success: false, type: 'danger', message: getCredentials.message,
+    return res.status(200).json({
+      success: false, type: 'error', message: getCredentials.message,
     });
   }
 };
@@ -60,76 +66,109 @@ factoryCredentialsController.getCredentialsData = async function(req, res) {
 // Set credentials data
 factoryCredentialsController.setCredentialsData = async function(req, res) {
   if (!req.body.credentials) {
-    return res.json({
-      success: false, type: 'danger',
+    return res.status(200).json({
+      success: false, type: 'error',
       // TODO: editar esse firmwaresFindError para um
       // factoryCredentialsSetError
       message: t('firmwaresFindError', {errorline: __line}),
     });
   }
   let credentials = req.body.credentials;
-  credentials.forEach((cpe) => {
-    if (!cpe.vendor ||
-        !(cpe.vendor in factoryCredentialsController.TR069Models)) {
-      return res.json({
-        success: false, type: 'danger',
+  for (let i = 0; i < credentials.length; i++) {
+    if (!credentials[i].vendor ||
+        !(credentials[i].vendor in factoryCredentialsController.TR069Models)) {
+      return res.status(200).json({
+        success: false, type: 'error',
         // TODO: editar esse firmwaresFindError para um
         // factoryCredentialsInvalidVendor
         message: t('firmwaresFindError', {errorline: __line}),
       });
     }
-    let vendor = factoryCredentialsController.TR069Models[cpe.vendor];
-    if (!cpe.model || !vendor.includes(cpe.model)) {
-      return res.json({
-        success: false, type: 'danger',
+    let vendor =
+      factoryCredentialsController.TR069Models[credentials[i].vendor];
+    if (!credentials[i].model || !vendor.includes(credentials[i].model)) {
+      return res.status(200).json({
+        success: false, type: 'error',
         // TODO: editar esse firmwaresFindError para um
         // factoryCredentialsInvalidModel
         message: t('firmwaresFindError', {errorline: __line}),
       });
     }
-    if (!cpe.username || cpe.username.length == 0) {
-      return res.json({
-        success: false, type: 'danger',
+    if (!credentials[i].username || credentials[i].username.length == 0) {
+      return res.status(200).json({
+        success: false, type: 'error',
         // TODO: editar esse firmwaresFindError para um
         // factoryCredentialsInvalidUsername
         message: t('firmwaresFindError', {errorline: __line}),
       });
     }
-    if (!cpe.password || cpe.password.length == 0) {
-      return res.json({
-        success: false, type: 'danger',
+    if (!credentials[i].password || credentials[i].password.length == 0) {
+      return res.status(200).json({
+        success: false, type: 'error',
         // TODO: editar esse firmwaresFindError para um
         // factoryCredentialsInvalidPassword
         message: t('firmwaresFindError', {errorline: __line}),
       });
     }
-  });
+    let hasDuplicate = credentials.reduce((acc, cur, index) => {
+      // "acc" is sended to the next iteration, so, if we have
+      // a duplicated credentials config at the iteration i,
+      // then "acc" will be true in the iteration i+1.
+      // If "acc" is true at the beginning of the (i+1) loop,
+      // we have a duplicated, so we must to exit the reduce
+      // returning true.
+      if (acc) return true;
+      for (let i = index+1; i < credentials.length; i++) {
+        if (credentials[i].model == cur.model) return true;
+      }
+      return false;
+    }, false);
+    // If the user has already defined a preset for the selected model,
+    // then we must not allow the user to set a new preset for this model
+    if (hasDuplicate) {
+      return res.status(200).json({
+        success: false, type: 'error',
+        // TODO: editar esse firmwaresFindError para um
+        // factoryCredentialsInvalidPassword
+        message: 'O modelo ' + credentials[i].model +
+                 ' já tem credenciais configuradas',
+      });
+    }
+  }
   // TODO: editar esse firmwaresFindError para um
   // genericFactoryCredentialsSetError
-  let message = t('firmwaresFindError', {errorline: __line});
-  const config = await ConfigModel.findOne(
-    {is_default: true}, {tr069: true},
-  ).catch(function(err) {
+  let config = {};
+  try {
+    config = await ConfigModel.findOne(
+      {is_default: true}, {tr069: true},
+    );
+  } catch (err) {
     // TODO: editar esse firmwaresFindError para um
     // factoryCredentialsSetExceptionError
-    message = t('firmwaresFindError', {errorline: __line});
-  });
+    return res.status(200).json({
+      success: false, type: 'error',
+      message: t('firmwaresFindError', {errorline: __line}),
+    });
+  }
   // Get onu credentials inside config, if present
   if (config && config.tr069) {
-    // TODO: remove this
     config.tr069.onu_factory_credentials = {
       timestamp: new Date(),
       credentials: credentials,
     };
-    config.save().then(function() {
-      return res.json({success: true, type: 'success',
-                       message: t('operationSuccessful')});
-    }).catch(function(rej) {
-      return res.json({success: false, type: 'danger',
-        message: t('configSaveError', {errorline: __line})});
-    });
+    try {
+      await config.save();
+    } catch (err) {
+      return res.status(200).json({
+        success: false, type: 'error',
+        message: t('configSaveError', {errorline: __line}),
+      });
+    }
   }
-  return {success: false, message: message};
+  return res.status(200).json({
+    success: true, type: 'success',
+    message: t('operationSuccessful'),
+  });
 };
 
 module.exports = factoryCredentialsController;
