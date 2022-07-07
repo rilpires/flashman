@@ -14,7 +14,7 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.wan.speedTestLimit = 150;
+  permissions.wan.speedTestLimit = 250;
   permissions.mesh.bssidOffsets2Ghz = [
     '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
   ];

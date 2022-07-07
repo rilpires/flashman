@@ -68,6 +68,9 @@ const getTR069UpgradeableModels = function() {
 };
 
 const instantiateCPEByModelFromDevice = function(device) {
+  if (!device.acs_id) {
+    return {success: false, cpe: tr069Models.basicCPEModel};
+  }
   let splitID = device.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let modelName = device.model;
