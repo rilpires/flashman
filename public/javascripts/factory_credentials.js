@@ -1,8 +1,13 @@
+/* eslint-disable no-prototype-builtins */
+/* global __line */
+
 import {anlixDocumentReady} from '../src/common.index.js';
 import {
   setFactoryCredentialsStorage,
   getFactoryCredentialsStorage,
 } from './session_storage.js';
+
+const t = i18next.t;
 
 const getCallback = function(event) {
   $.ajax({
@@ -120,14 +125,14 @@ anlixDocumentReady.add(function() {
         // Show a modal warning
         swal({
           type: 'error',
-          title: 'Usuário não pode ser um campo vazio',
+          title: t('emptyUserError'),
           confirmButtonColor: '#4db6ac',
         });
       } else if (!password || password == '') {
         // Show a modal warning
         swal({
           type: 'error',
-          title: 'Senha não pode ser um campo vazio',
+          title: t('emptyPasswordError'),
           confirmButtonColor: '#4db6ac',
         });
       } else if (
@@ -138,8 +143,7 @@ anlixDocumentReady.add(function() {
         // Show a modal warning
         swal({
           type: 'error',
-          title: 'O modelo ' + selectedModel +
-                 ' já tem credenciais configuradas',
+          title: t('duplicatedCredentials', {model: selectedModel}),
           confirmButtonColor: '#4db6ac',
         });
       } else {
@@ -216,7 +220,7 @@ const buildTableLine = function(credential) {
         .append(
           $('<span>')
           .css('display', 'block')
-          .html('<b>Usuário:</b> ' + credential.username),
+          .html('<b>'+ t('User') +':</b> '+ credential.username),
         ),
         // Password column
         $('<td>')
@@ -224,7 +228,7 @@ const buildTableLine = function(credential) {
         .append(
           $('<span>')
           .css('display', 'block')
-          .html('<b>Senha:</b> ' + credential.password),
+          .html('<b>'+ t('Password') +':</b> ' + credential.password),
         ),
         // Remove entry column
         $('<td>')

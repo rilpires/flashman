@@ -58,6 +58,8 @@
 	"Error": "Erro",
 	"unknownUser": "Usuário desconhecido",
 	"invalidPassword": "Senha inválida",
+	"emptyPasswordError": "O campo de senha não pode ser vazio",
+	"emptyUserError": "O campo de usuário não pode ser vazio",
 	"userNotFound": "Usuário não encontrado ({{errorline}})",
 	"bodyNotObject": "Body recebido, na requisição, não é um objeto ({{errorline}})",
 	"idInvalidInUrlParams": "ID '{{-id}}' recebido nos parametros da url é inválido ({{errorline}})",
@@ -322,6 +324,7 @@
 	"opticalSignalState": "Estado do sinal óptico",
 	"Save": "Salvar",
 	"removeMany": "Remover vários",
+	"removeAll": "Remover todos",
 	"dataCollecting": "Coleta de dados",
 	"Select...": "Selecione...",
 	"Status": "Status",
@@ -970,5 +973,11 @@
 	"arrayElementNotFound": "Não foi encontrado nenhum elemento para o índice passado",
 	"alert": "alerta",
 	"alertFilterDescription": "Use este filtro para retornar somente os CPEs que possuem alerta.",
-	"flashmanUnavailable": "Flashman inacessível"
+	"flashmanUnavailable": "Flashman inacessível",
+	"factoryCredentialsPresetLabel": "Configuração de credenciais web personalizadas",
+	"factoryCredentialsNotFound": "Não foram encontradas configurações válidas de credenciais web personalizadas",
+	"factoryCredentialsGenericError": "Ocorreu um erro ao obter as configurações de credenciais web personalizadas",
+	"duplicatedCredentials": "O modelo {{-model}} já tem credenciais configuradas",
+	"invalidModel": "Modelo inválido",
+	"invalidManufacturer": "Fabricante inválido"
 }
