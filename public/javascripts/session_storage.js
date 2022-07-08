@@ -36,6 +36,10 @@ const setFirmwareStorage = function(key, val) {
   setCommonStorage('firmware', key, val);
 };
 
+const setFactoryCredentialsStorage = function(key, val) {
+  setCommonStorage('factoryCredentials', key, val);
+};
+
 const getPortForwardStorage = function(key) {
   return getCommonStorage('portForwardTr069', key);
 };
@@ -46,6 +50,10 @@ const getConfigStorage = function(key) {
 
 const getFirmwareStorage = function(key) {
   return getCommonStorage('firmware', key);
+};
+
+const getFactoryCredentialsStorage = function(key) {
+  return getCommonStorage('factoryCredentials', key);
 };
 
 const deletePortForwardStorage = function() {
@@ -60,12 +68,19 @@ const deleteFirmwareStorage = function() {
   deleteCommonStorage('firmware');
 };
 
+const deleteFactoryCredentialsStorage = function() {
+  deleteCommonStorage('factoryCredentials');
+};
+
 export {setPortForwardStorage,
         setConfigStorage,
         setFirmwareStorage,
         getPortForwardStorage,
+        setFactoryCredentialsStorage,
         getConfigStorage,
         getFirmwareStorage,
+        getFactoryCredentialsStorage,
         deletePortForwardStorage,
         deleteConfigStorage,
-        deleteFirmwareStorage};
+        deleteFirmwareStorage,
+        deleteFactoryCredentialsStorage};
