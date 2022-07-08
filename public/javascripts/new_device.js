@@ -1,4 +1,4 @@
-import {anlixDocumentReady} from '../src/common.index.js';
+import {anlixDocumentReady, displayAlertMsg} from '../src/common.index.js';
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
@@ -133,6 +133,8 @@ let validateNewDevice = function() {
             keyToError[key].messages.push(pair[key]);
           });
           renderDeviceErrors(errors);
+        } else if ('success' in resp && !resp.success) {
+          displayAlertMsg({type: 'danger', message: resp.message});
         }
       },
     });
