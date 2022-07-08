@@ -2194,6 +2194,24 @@ deviceInfoController.receiveWanInfo = function(req, res) {
     let pppoeIp = util.returnObjOrEmptyStr(req.body.pppoe_ip).trim();
     matchedDevice.pppoe_ip = pppoeIp;
 
+    // IPv4 Address
+    let ipv4Address = util.returnObjOrEmptyStr(req.body.ipv4_address).trim();
+    matchedDevice.wan_ip = ipv4Address;
+
+    // IPv4 Mask
+    // Assigns 0, if mask is not valid
+    let ipv4Mask = parseInt(util.returnObjOrNum(req.body.ipv4_mask, 0));
+    matchedDevice.wan_ipv4_mask = ipv4Mask;
+
+    // IPv6 Address
+    let ipv6Address = util.returnObjOrEmptyStr(req.body.ipv6_address).trim();
+    matchedDevice.wan_ipv6 = ipv6Address;
+
+    // IPv6 Mask
+    // Assigns 0, if mask is not valid
+    let ipv6Mask = parseInt(util.returnObjOrNum(req.body.ipv6_mask, 0));
+    matchedDevice.wan_ipv6_mask = ipv6Mask;
+
     // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});

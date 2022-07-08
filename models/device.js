@@ -171,6 +171,8 @@ let deviceSchema = new Schema({
   bridge_mode_dns: String,
   wan_ip: String,
   wan_ipv6: String,
+  wan_ipv4_mask: {type: Number, default: 0},
+  wan_ipv6_mask: {type: Number, default: 0},
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
   ipv6_enabled: {type: Number, default: 2, enum: [

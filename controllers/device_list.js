@@ -3754,9 +3754,16 @@ deviceListController.getWanInfo = async function(request, response) {
     let connectionType = matchedDevice.connection_type;
     let defaultGatewayV4 = matchedDevice.default_gateway_v4;
     let defaultGatewayV6 = matchedDevice.default_gateway_v6;
+
     let dnsServer = matchedDevice.dns_server;
+
     let pppoeMac = matchedDevice.pppoe_mac;
     let pppoeIp = matchedDevice.pppoe_ip;
+
+    let ipv4Address = matchedDevice.wan_ip;
+    let ipv4Mask = matchedDevice.wan_ipv4_mask;
+    let ipv6Address = matchedDevice.wan_ipv6;
+    let ipv6Mask = matchedDevice.wan_ipv6_mask;
 
 
     // Fill the request
@@ -3764,13 +3771,21 @@ deviceListController.getWanInfo = async function(request, response) {
     return response.status(200).json({
       success: true,
       wan_conn_type: connectionType,
+
       default_gateway_v4: (defaultGatewayV4 ? defaultGatewayV4 : ''),
       default_gateway_v6: (defaultGatewayV6 ? defaultGatewayV6 : ''),
+
       dns_server: (dnsServer ? dnsServer : ''),
+
       pppoe_mac: (connectionType === 'pppoe' && pppoeMac ?
         pppoeMac : ''),
       pppoe_ip: (connectionType === 'pppoe' && pppoeIp ?
         pppoeIp : ''),
+
+      ipv4_address: (ipv4Address ? ipv4Address : ''),
+      ipv4_mask: (ipv4Mask ? ipv4Mask : ''),
+      ipv6_address: (ipv6Address ? ipv6Address : ''),
+      ipv6_mask: (ipv6Mask ? ipv6Mask : ''),
     });
   });
 };
