@@ -44,6 +44,60 @@
               span= t('noExtraInformation')
 
         //- Information items
+        //- Network
+        #ip-network-information.row
+          .col
+            //- Network Title
+            .row
+              h2.text-center.grey-text.mb-3#logs-placeholder
+                span #{t('ipNetworkInfoTitle')}
+            
+            .row
+              .col-6
+                //- IPv4 Address and Mask
+                #ipv4-address-mask.md-form.input-entry
+                  label.active #{t('ipv4AddressMask')}
+                  input#ipv4-address-mask-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+              .col-6
+                //- IPv6 Address and Mask
+                #ipv6-address-mask.md-form.input-entry
+                  label.active #{t('ipv6AddressMask')}
+                  input#ipv6-address-mask-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+            .row
+              .col-6
+                //- IPv4 Masked Address
+                #ipv4-masked-address.md-form.input-entry
+                  label.active #{t('ipv4MaskedAddress')}
+                  input#ipv4-masked-address-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
+              .col-6
+                //- IPv6 Masked Address
+                #ipv6-masked-address.md-form.input-entry
+                  label.active #{t('ipv6MaskedAddress')}
+                  input#ipv6-masked-address-input.form-control(
+                    type="text",
+                    maxlength=32,
+                    value=" ",
+                    disabled=""
+                  )
+
         //- PPPoE
         #pppoe-information.row
           .col
