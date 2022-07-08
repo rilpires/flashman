@@ -4,12 +4,19 @@ import {socket} from './common_actions.js';
 // Sections
 const UPDATING_INFO_SECTION = '#waninfo-loading-section';
 const NO_EXTRA_INFO_SECTION = '#waninfo-no-information-section';
+const IP_NETWORK_SECTION = '#ip-network-information';
 const PPPOE_SECTION = '#pppoe-information';
 const DEFAULT_GATEWAY_SECTION = '#default-gateway-information';
 const DNS_SERVER_SECTION = '#dns-server-information';
 
 
 // Inputs
+// IP Network
+const IPV4_ADDRESS_AND_MASK_INPUT = '#ipv4-address-mask-input';
+const IPV6_ADDRESS_AND_MASK_INPUT = '#ipv6-address-mask-input';
+const IPV4_MASKED_ADDRESS_INPUT = '#ipv4-masked-address-input';
+const IPV6_MASKED_ADDRESS_INPUT = '#ipv6-masked-address-input';
+
 // PPPoE
 const PPPOE_MAC_INPUT = '#pppoe-mac-input';
 const PPPOE_IP_INPUT = '#pppoe-ip-input';
@@ -101,6 +108,7 @@ const setUpdatingAnimation = function(updating) {
   // Enable update animation
   if (updating) {
     // Hide sections
+    $(IP_NETWORK_SECTION).hide();
     $(PPPOE_SECTION).hide();
     $(DEFAULT_GATEWAY_SECTION).hide();
     $(DNS_SERVER_SECTION).hide();
@@ -116,6 +124,7 @@ const setUpdatingAnimation = function(updating) {
   // Disable update animation
   } else {
     // Show sections
+    $(IP_NETWORK_SECTION).show();
     $(PPPOE_SECTION).show();
     $(DEFAULT_GATEWAY_SECTION).show();
     $(DNS_SERVER_SECTION).show();
@@ -144,6 +153,7 @@ const setNoInfoModal = function(hasInfo) {
     $(NO_EXTRA_INFO_SECTION).hide();
 
     // Show the rest
+    $(IP_NETWORK_SECTION).show();
     $(PPPOE_SECTION).show();
     $(DEFAULT_GATEWAY_SECTION).show();
 
@@ -154,6 +164,7 @@ const setNoInfoModal = function(hasInfo) {
 
     // Hide the rest
     $(UPDATING_INFO_SECTION).hide();
+    $(IP_NETWORK_SECTION).hide();
     $(PPPOE_SECTION).hide();
     $(DEFAULT_GATEWAY_SECTION).hide();
     $(DNS_SERVER_SECTION).hide();
@@ -201,6 +212,10 @@ const validateValues = function(deviceId, message) {
 
     // Check if any is empty, if so, ask for update
     if (
+      message.ipv4_address === '' ||
+      message.ipv4_mask === '' ||
+      message.ipv6_address === '' ||
+      message.ipv6_mask === '' ||
       message.default_gateway_v4 === '' ||
       message.default_gateway_v6 === '' ||
       message.dns_server === ''
@@ -232,6 +247,100 @@ const validateValues = function(deviceId, message) {
 };
 
 
+// Calculates the ipv4 with the mask
+const calculateMaskIpv4 = function(ip, mask) {
+  let bytes = ip.split('.', 4);
+  let ipMasked = '';
+
+  for (let index = 0; index < 4; index++) {
+    bytes[index] = parseFloat(bytes[index]);
+
+    // If the byte is not valid, return empty string
+    if (isNaN(bytes[index])) {
+      return '';
+    }
+
+    // Apply the mask by putting at the right bits
+    // and zeroing least signficant bits, then undo
+    bytes[index] = (bytes[index] << ((3 - index)*8)) >>> (32 - mask);
+    bytes[index] = (bytes[index] << (32 - mask)) >>> ((3 - index)*8);
+
+    // Concatenate
+    if (!index) {
+      ipMasked += bytes[index];
+    } else {
+      ipMasked += '.' + bytes[index];
+    }
+  }
+
+  // Return the masked ip
+  return ipMasked;
+};
+
+
+// Calculates the ipv6 with the mask
+const calculateMaskIpv6 = function(ip, mask) {
+  let ipMasked = '';
+  let bytes = new Array(8).fill(0);
+
+
+  // Create the array
+  let separated = ip.split('::', 2);
+  let octets = separated[0].split(':', 8);
+
+  // If missing values, fill with the rest or 0
+  if (octets.length < 8) {
+    let octets2 = separated[1].split(':');
+    octets = octets.concat(Array(8 - (octets.length + octets2.length)).fill(0));
+
+    if (octets2[0] === '') {
+      octets = octets.concat([0]);
+    } else {
+      octets = octets.concat(octets2);
+    }
+  }
+
+
+  // Apply mask
+  for (let index = 0; index < 8; index++) {
+    bytes[index] = Number('0x' + octets[index]);
+
+    if (mask > 0) {
+    mask = 16 - mask;
+      bytes[index] = bytes[index] & (0xffff << (mask > 0 ? mask : 0));
+      mask = -mask;
+    } else {
+      bytes[index] = 0;
+    }
+  }
+
+
+  // Concatenate
+  for (let index = 0; index < 8; index++) {
+    if (!index) {
+      ipMasked += bytes[index].toString(16);
+
+    // If there is no value in the array
+    } else if (
+      !bytes
+      .slice(index, bytes.length)
+      .some((item) => item !==0) &&
+      index <= 6
+    ) {
+      console.log(bytes.slice(index, bytes.length));
+      ipMasked += '::';
+      return ipMasked;
+    } else {
+      ipMasked += ':' + bytes[index].toString(16);
+    }
+  }
+
+
+  // Return the masked ip
+  return ipMasked;
+};
+
+
 // Update all values
 //  message - Response message to change values
 const updateValues = function(message) {
@@ -260,12 +369,43 @@ const updateValues = function(message) {
 
 
   // Change other values
+  $(IPV4_ADDRESS_AND_MASK_INPUT).val((
+    (message.ipv4_address === '' ||
+    message.ipv4_mask <= 0 ||
+    message.ipv4_mask > 32) ?
+
+    ' ' : message.ipv4_address + '/' + message.ipv4_mask
+  ));
+  $(IPV6_ADDRESS_AND_MASK_INPUT).val((
+    (message.ipv6_address === '' ||
+    message.ipv6_mask <= 0 ||
+    message.ipv6_mask > 128) ?
+
+    ' ' : message.ipv6_address + '/' + message.ipv6_mask
+  ));
+  $(IPV4_MASKED_ADDRESS_INPUT).val((
+    (message.ipv4_address === '' ||
+    message.ipv4_mask <= 0 ||
+    message.ipv4_mask > 32) ?
+
+    ' ' : calculateMaskIpv4(message.ipv4_address, message.ipv4_mask)
+  ));
+  $(IPV6_MASKED_ADDRESS_INPUT).val((
+    (message.ipv6_address === '' ||
+    message.ipv6_mask <= 0 ||
+    message.ipv6_mask > 128) ?
+
+    ' ' : calculateMaskIpv6(message.ipv6_address, message.ipv6_mask)
+  ));
+
+
   $(DEFAULT_GATEWAY_IPV4_INPUT).val((
     message.default_gateway_v4 === '' ? ' ' : message.default_gateway_v4
   ));
   $(DEFAULT_GATEWAY_IPV6_INPUT).val((
     message.default_gateway_v6 === '' ? ' ' : message.default_gateway_v6
   ));
+
 
   $(DNS_SERVER_ADDRESS_INPUT).val((
     message.dns_server === '' ? ' ' : message.dns_server
@@ -276,6 +416,11 @@ const updateValues = function(message) {
 // Shows the showwaninfo.pug modal
 const showModal = async function(event) {
   // Reset fields
+  $(IPV4_ADDRESS_AND_MASK_INPUT).val(' ');
+  $(IPV6_ADDRESS_AND_MASK_INPUT).val(' ');
+  $(IPV4_MASKED_ADDRESS_INPUT).val(' ');
+  $(IPV6_MASKED_ADDRESS_INPUT).val(' ');
+
   $(PPPOE_MAC_INPUT).val(' ');
   $(PPPOE_IP_INPUT).val(' ');
 
