@@ -4,7 +4,7 @@ const Role = require('./models/role');
 const Device = require('./models/device');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
-let DeviceVersion = require('./models/device_version');
+const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
 
 
@@ -141,7 +141,7 @@ module.exports = (app) => {
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
-            let meshBSSIDs = DeviceVersion.getMeshBSSIDs(
+            let meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(
               devices[idx].model, devices[idx]._id);
             devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
             devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
