@@ -145,12 +145,12 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
+          ponSignal.rxpower = cpe.convertToDbm(
             deviceEdit.model, ponSignal.rxpower,
           );
         }
         if (ponSignal.txpower) {
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
+          ponSignal.txpower = cpe.convertToDbm(
             deviceEdit.model, ponSignal.txpower,
           );
         }
@@ -284,12 +284,13 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
+
         if (successRxPower) {
           // covert rx and tx signal
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
+          ponSignal.rxpower = cpe.convertToDbm(
             deviceEdit.model, ponSignal.rxpower,
           );
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
+          ponSignal.txpower = cpe.convertToDbm(
             deviceEdit.model, ponSignal.txpower,
           );
           // send then
