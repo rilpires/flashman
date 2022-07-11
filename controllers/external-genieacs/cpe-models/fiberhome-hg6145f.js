@@ -48,7 +48,7 @@ fiberhomeModel.getBeaconType = function() {
 };
 
 fiberhomeModel.convertToDbm = function(power) {
-  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+  return parseFloat(power).toFixed(3);
 };
 
 fiberhomeModel.convertWifiRate = function(rate) {
