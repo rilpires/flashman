@@ -216,7 +216,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 device.snr = utilHandlers.getFromNestedKey(
                   data, snrKey+'._value',
                 );
-              } else if (fields.devices.host_rssi && device.rssi) {
+              }
+              if (!device.snr && fields.devices.host_rssi && device.rssi) {
                 device.snr = parseInt(device.rssi)+95;
                 if (isNaN(parseInt(device.rssi))) {
                   debug(`device.rssi is NaN beware!!!`);
