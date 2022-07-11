@@ -26,6 +26,7 @@ const tr069Models = {
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
+  fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
@@ -99,6 +100,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   ) {
     // FastWireless FW323DAC
     return {success: true, cpe: tr069Models.fastwirelessFW323DACModel};
+  } else if (modelName === 'HG6145F') {
+    // Fiberhome HG6145F
+    return {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
   } else if (modelName === 'GWR-1200AC') {
     // Greatek GWR1200
     return {success: true, cpe: tr069Models.greatekGwr1200Model};
