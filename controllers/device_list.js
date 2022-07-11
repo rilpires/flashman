@@ -1326,9 +1326,7 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      device.version, device.wifi_is_5ghz_capable, device.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(device)
     if (!permissions.grantPingTest) {
       return res.status(200).json({
         success: false,
@@ -1418,9 +1416,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.findByVersion(
-      device.version, device.wifi_is_5ghz_capable, device.model,
-    );
+    let permissions = DeviceVersion.devicePermissions(device)
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
