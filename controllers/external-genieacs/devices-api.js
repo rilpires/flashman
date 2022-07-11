@@ -53,6 +53,7 @@ const tr069Models = {
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
+  tkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
 };
 
 const getTR069UpgradeableModels = function() {
@@ -180,6 +181,8 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};
+  } else if (modelName === 'TK-ONU-AC-D') {
+    return {success: true, cpe: tr069Models.basicCPEModel};
   }
   return {success: false, cpe: tr069Models.basicCPEModel};
 };
