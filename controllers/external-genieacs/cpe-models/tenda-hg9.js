@@ -40,7 +40,7 @@ tendaModel.getBeaconType = function() {
 };
 
 tendaModel.convertToDbm = function(power) {
-  return parseFloat(power.split(' ')[0]);
+  return parseFloat(power.split(' ')[0]).toFixed(3);
 };
 
 tendaModel.getModelFields = function() {
