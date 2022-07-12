@@ -15,6 +15,7 @@ fiberhomeModel.modelPermissions = function() {
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.axWiFiMode = true;
   permissions.mesh.bssidOffsets2Ghz = [
     '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
   ];
