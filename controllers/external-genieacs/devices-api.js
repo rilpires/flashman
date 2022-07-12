@@ -182,7 +182,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};
   } else if (modelName === 'TK-ONU-AC-D') {
-    return {success: true, cpe: tr069Models.basicCPEModel};
+    return {success: true, cpe: tr069Models.tkOnuAcDModel};
   }
   return {success: false, cpe: tr069Models.basicCPEModel};
 };
