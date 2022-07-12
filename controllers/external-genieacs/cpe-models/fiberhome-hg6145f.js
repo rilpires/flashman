@@ -28,7 +28,7 @@ fiberhomeModel.modelPermissions = function() {
   return permissions;
 };
 
-fiberhomeModel.convertWifiMode = function(mode) { // VERIFY
+fiberhomeModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return 'bg';
@@ -39,6 +39,7 @@ fiberhomeModel.convertWifiMode = function(mode) { // VERIFY
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+      return 'ax';
     default:
       return '';
   }
@@ -70,6 +71,7 @@ fiberhomeModel.getModelFields = function() {
   );
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'WANPPPConnection.*.X_ZTE-COM_VLANID';
+
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' + // VERIFY
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' + // VERIFY
