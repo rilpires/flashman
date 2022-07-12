@@ -12,6 +12,7 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
+  permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.mesh.bssidOffsets2Ghz = [
