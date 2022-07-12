@@ -7,22 +7,20 @@ fiberhomeModel.identifier = 'Fiberhome HG6145F';
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true;
+  permissions.features.mesh = true; // VERIFY
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
-  permissions.lan.blockLANDevices = true;
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
+    basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.axWiFiMode = true;
-  permissions.mesh.bssidOffsets2Ghz = [
+  permissions.mesh.bssidOffsets2Ghz = [ // VERIFY
     '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
   ];
-  permissions.mesh.bssidOffsets5Ghz = [
+  permissions.mesh.bssidOffsets5Ghz = [ // VERIFY
     '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
   ];
-  permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'RP2930': [],
   };
@@ -73,24 +71,16 @@ fiberhomeModel.getModelFields = function() {
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'WANPPPConnection.*.X_ZTE-COM_VLANID';
 
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' + // VERIFY
-    'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' + // VERIFY
-    'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_SNR';
-  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' + // VERIFY
-    'WLANConfiguration.*.AssociatedDevice.*.LastDataTransmitRate';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceTxRate';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.TXPower';
-  fields.port_mapping_values.protocol[1] = 'TCP AND UDP'; // VERIFY
-  fields.access_control.wifi2 = fields.wifi2.ssid.replace( // VERIFY
-    /SSID/g, 'X_ZTE-COM_AccessControl',
-  );
-  fields.access_control.wifi5 = fields.wifi5.ssid.replace( // VERIFY
-    /SSID/g, 'X_ZTE-COM_AccessControl',
-  );
-  fields.port_mapping_fields.external_port_end = [ // VERIFY
+  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];
   fields.wifi2.password = fields.wifi2.password.replace(
