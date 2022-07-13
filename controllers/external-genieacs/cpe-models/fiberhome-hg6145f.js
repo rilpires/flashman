@@ -7,7 +7,6 @@ fiberhomeModel.identifier = 'Fiberhome HG6145F';
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true; // VERIFY
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -15,12 +14,6 @@ fiberhomeModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.axWiFiMode = true;
-  permissions.mesh.bssidOffsets2Ghz = [ // VERIFY
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [ // VERIFY
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
-  ];
   permissions.firmwareUpgrades = {
     'RP2930': [],
   };
