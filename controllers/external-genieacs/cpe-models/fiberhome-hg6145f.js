@@ -52,6 +52,18 @@ fiberhomeModel.convertToDbm = function(power) {
   return parseFloat(power).toFixed(3);
 };
 
+fiberhomeModel.convertChannelToTask = function(channel, fields, masterKey) {
+  if (channel === 'auto') {
+    channel = '0';
+  }
+  let values = [];
+  const parsedChannel = parseInt(channel);
+  values.push([
+    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
+  ]);
+  return values;
+};
+
 fiberhomeModel.convertWifiRate = function(rate) {
   return parseInt(rate) / 1000;
 };
@@ -69,8 +81,7 @@ fiberhomeModel.getModelFields = function() {
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.X_ZTE-COM_VLANID';
-
+    'WANPPPConnection.*.VLANID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
