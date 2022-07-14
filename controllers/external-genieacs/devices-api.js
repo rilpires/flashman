@@ -79,7 +79,8 @@ const instantiateCPEByModelFromDevice = function(device) {
 };
 
 const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
-  if (modelName === 'DM985-424') {
+  console.log(modelSerial, modelName, fwVersion);
+  if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
   } else if (modelName === 'DM986-414') {
