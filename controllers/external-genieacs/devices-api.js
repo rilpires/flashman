@@ -63,6 +63,14 @@ const getTR069Models = function() {
     }
   });
   delete ret['NoVendor'];
+  // Removing DIR-841, DIR-842, WS5200, AX2 and AX3 from models that can use
+  // custom credentials from presets
+  ret['D-Link'] = ret['D-Link'].filter((model) => {
+    return !(['DIR-841', 'DIR-842'].includes(model));
+  });
+  ret['Huawei'] = ret['Huawei'].filter((model) => {
+    return !(['WS5200', 'WS7001 / AX2', 'WS7100 / AX3'].includes(model));
+  });
   return ret;
 };
 
