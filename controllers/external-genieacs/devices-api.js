@@ -183,6 +183,7 @@ const getModelFields = function(oui, model, modelName, firmwareVersion) {
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
+    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -209,6 +210,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 
