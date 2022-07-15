@@ -172,7 +172,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
-  } else if (modelName === 'MP-G421R') {
+  } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
   } else if (modelName === 'ZT199') {
