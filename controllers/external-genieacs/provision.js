@@ -29,14 +29,19 @@ Command to update provision on genie:
 
 const now = Date.now();
 
-const updateConfiguration = function(fields) {
+const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   // Request field updates from the CPE
   let result = {};
   Object.keys(fields).forEach((key)=>{
     let resp = declare(fields[key], {value: now, writable: now});
     if (resp.value) {
-      let value = resp.value[0];
-      result[key] = {value: value, writable: resp.writable};
+      let target = resp;
+      if (useLastIndexOnWildcard) {
+        for (let i of resp) {
+          target = i;
+        }
+      }
+      result[key] = {value: target.value[0], writable: target.writable[0]};
     }
   });
   return result;
@@ -45,8 +50,15 @@ const updateConfiguration = function(fields) {
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
-let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+let modelName;
+let firmwareVersion;
+if (modelClass === 'Device2') {
+  modelName = declare('Device.DeviceInfo.ModelName', {value: 1}).value[0];
+  firmwareVersion = declare('Device.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+} else {
+  modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
+  firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+}
 
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 
@@ -73,13 +85,13 @@ if (!result.measure) {
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
 let data = {
-  common: updateConfiguration(fields.common),
-  wan: updateConfiguration(fields.wan),
-  lan: updateConfiguration(fields.lan),
-  wifi2: updateConfiguration(fields.wifi2),
-  wifi5: updateConfiguration(fields.wifi5),
-  mesh2: updateConfiguration(fields.mesh2),
-  mesh5: updateConfiguration(fields.mesh5),
+  common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
+  wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
+  lan: updateConfiguration(fields.lan, result.useLastIndexOnWildcard),
+  wifi2: updateConfiguration(fields.wifi2, result.useLastIndexOnWildcard),
+  wifi5: updateConfiguration(fields.wifi5, result.useLastIndexOnWildcard),
+  mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
+  mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 args = {acs_id: genieID, data: data};
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
