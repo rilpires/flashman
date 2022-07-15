@@ -88,6 +88,7 @@ basicCPEModel.modelPermissions = function() {
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     usesStavixXMLConfig: false, // flag for stavix-like models with xml config
+    useLastIndexOnWildcard: false, // flag for devices that uses last index
   };
 };
 
