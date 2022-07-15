@@ -1333,19 +1333,6 @@ deviceListController.sendCustomPing = async function(req, res) {
         message: t('cpeWithoutCommand'),
       });
     }
-    // We don't want to allow another custom command
-    // while there is another running
-    if (device.temp_command_trap &&
-        ((device.temp_command_trap.ping_hosts &&
-          device.temp_command_trap.ping_hosts.length > 0) ||
-         (device.temp_command_trap.speedtest_url &&
-          device.temp_command_trap.speedtest_url != ''))
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: t('errorOccurredTryAgain'),
-      });
-    }
 
     let inputHosts = [];
 
@@ -1423,19 +1410,6 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       return res.status(200).json({
         success: false,
         message: t('cpeWithoutCommand'),
-      });
-    }
-    // We don't want to allow another custom command
-    // while there is another running
-    if (device.temp_command_trap &&
-      ((device.temp_command_trap.ping_hosts &&
-        device.temp_command_trap.ping_hosts.length > 0) ||
-       (device.temp_command_trap.speedtest_url &&
-        device.temp_command_trap.speedtest_url != ''))
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: t('errorOccurredTryAgain'),
       });
     }
     let validationOk = true;
@@ -3335,11 +3309,16 @@ deviceListController.doSpeedTest = function(req, res) {
       }
 
       if (matchedDevice.use_tr069) {
-        matchedDevice.current_speedtest.timestamp = new Date();
-        matchedDevice.current_speedtest.user = req.user.name;
         // When customUrl is defined, we skip 'estimative' stage
-        matchedDevice.current_speedtest.stage =
-          (customUrl !== '') ? 'measure' : 'estimative';
+        // and also doesn't save timestamp. We must assure that
+        // stage is 'measure', though
+        if (customUrl !== '') {
+          matchedDevice.current_speedtest.stage = 'measure';
+        } else {
+          matchedDevice.current_speedtest.timestamp = new Date();
+          matchedDevice.current_speedtest.user = req.user.name;
+          matchedDevice.current_speedtest.stage = 'estimative';
+        }
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,
