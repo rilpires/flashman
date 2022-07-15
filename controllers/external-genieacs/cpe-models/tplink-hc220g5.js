@@ -8,7 +8,7 @@ tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.wan.speedTestLimit = 999;
+  permissions.wan.speedTestLimit = 410;
   permissions.features.stun = true;
   permissions.firmwareUpgrades = {
     '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
@@ -46,9 +46,8 @@ tplinkModel.getModelFields = function() {
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.DHCPv4.Client.1.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
-  // Nao tem uptime
-  fields.wan.uptime = 'Device.PPP.Interface.*.IdleDisconnectTime';
-  fields.wan.uptime_ppp = 'Device.PPP.Interface.*.IdleDisconnectTime';
+  delete fields.wan.uptime;
+  delete fields.wan.uptime_ppp;
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
