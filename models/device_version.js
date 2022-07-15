@@ -203,6 +203,46 @@ const tr069Devices = {
     mesh_bssid_offset_hardcoded: false,
     mesh_ssid_object_exists: true,
   },
+  'ZT199': {
+    vendor: 'Multilaser',
+    versions_upgrade: {
+      'V9.1.0P3_MUL': [],
+    },
+    port_forward_opts: {
+      'V9.1.0P3_MUL': portForwardNoAsymRanges,
+
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
+      wifi_ax_mode: false,
+      port_forward: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 550,
+      block_devices: true,
+      block_wired_devices: false,
+      connected_devices: true,
+      pon_signal: false,
+      firmware_upgrade: false,
+      stun: true,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      wan_bytes: true,
+    },
+    wifi2_extended_channels_support: true,
+    mesh_bssid_offset_hardcoded: false,
+    // offset of each BSSID octet in relation
+    // to the MAC address (first element corresponds to
+    // offset of the leftmost octet, and so forth)
+    mesh2_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x0'],
+    mesh5_bssid_offset: ['0x2', '0x0', '0x0', '-0x20', '0x0', '0x1'],
+    mesh_ssid_object_exists: true,
+  },
   'ZXHN H199A': {
     vendor: 'Multilaser',
     versions_upgrade: {
@@ -1229,6 +1269,36 @@ const tr069Devices = {
       mesh_v2_secondary_support: false,
       connected_devices: true,
       wan_bytes: true,
+    },
+  },
+  'DM986-414': {
+    vendor: 'Datacom',
+    versions_upgrade: {
+      'V4.6.0-210709': [],
+    },
+    port_forward_opts: {
+      'V4.6.0-210709': portForwardNoRanges,
+    },
+    feature_support: {
+      wifi_ssid_read: true,
+      wifi_ssid_write: true,
+      lan_read: true,
+      lan_edit: true,
+      wifi_ax_mode: false,
+      port_forward: false,
+      pon_signal: true,
+      upnp: false,
+      wps: false,
+      ping_test: true,
+      speed_test: true,
+      speed_test_limit: 200,
+      block_devices: false,
+      block_wired_devices: false,
+      firmware_upgrade: false,
+      stun: false,
+      mesh_v2_primary_support: false,
+      mesh_v2_secondary_support: false,
+      connected_devices: true,
     },
   },
   'EC220-G5': {

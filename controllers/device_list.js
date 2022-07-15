@@ -402,6 +402,8 @@ deviceListController.simpleSearchDeviceQuery = function(queryContents) {
     finalQuery.$or = [
       {pppoe_user: queryContentNoCase},
       {_id: queryContentNoCase},
+      {serial_tr069: queryContentNoCase},
+      {alt_uid_tr069: queryContentNoCase},
       {'external_reference.data': queryContentNoCase},
     ];
   } else {
@@ -753,6 +755,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    projection: {
+      lan_devices: false, port_mapping: false, ap_survey: false,
+      mesh_routers: false, pingtest_results: false, speedtest_results: false,
+      firstboot_log: false, lastboot_log: false,
+    },
   };
   // Keys to optionally filter returned results
   if ('query_result_filter' in req.body) {
@@ -865,7 +872,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
       .then(function(extra) {
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          Config.findOne({is_default: true})
+          Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
@@ -1745,7 +1752,7 @@ deviceListController.setDeviceReg = function(req, res) {
         }
       };
 
-      Config.findOne({is_default: true})
+      Config.findOne({is_default: true}, {device_update_schedule: false})
       .lean().exec(async function(err, matchedConfig) {
         if (err || !matchedConfig) {
           console.log('Error returning default config');
@@ -2149,7 +2156,14 @@ deviceListController.setDeviceReg = function(req, res) {
                 matchedDevice.external_reference.data =
                   content.external_reference.data;
               } else {
-                hasPermissionError = true;
+                // Its possible that default value might be undefined
+                // In this case there is no permission error
+                if ((typeof matchedDevice.external_reference.kind !==
+                     'undefined') &&
+                    (typeof matchedDevice.external_reference.data !==
+                     'undefined')) {
+                  hasPermissionError = true;
+                }
               }
             }
             if (content.hasOwnProperty('bridgeEnabled') &&
@@ -2360,7 +2374,7 @@ deviceListController.createDeviceReg = function(req, res) {
       }
     };
 
-    Config.findOne({is_default: true})
+    Config.findOne({is_default: true}, {device_update_schedule: false})
     .lean().exec(async function(err, matchedConfig) {
       if (err || !matchedConfig) {
         console.log('Error searching default config');

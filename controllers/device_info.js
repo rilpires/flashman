@@ -47,6 +47,7 @@ const createRegistry = async function(req, res) {
   let errors = [];
   let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   let wanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
+  let wanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
   let wanSpeed = util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
   let wanDuplex =
     util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
@@ -134,7 +135,9 @@ const createRegistry = async function(req, res) {
     return res.status(400).end();
   }
 
-  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
+  let matchedConfig =
+    await Config.findOne({is_default: true},
+                         {device_update_schedule: false}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return res.status(500).end();
@@ -265,6 +268,7 @@ const createRegistry = async function(req, res) {
       'wifi_state_5ghz': wifiState5ghz,
       'wifi_hidden_5ghz': wifiHidden5ghz,
       'wan_ip': wanIp,
+      'wan_ipv6': wanIpv6,
       'wan_negociated_speed': wanSpeed,
       'wan_negociated_duplex': wanDuplex,
       'ipv6_enabled': wanIpv6Enabled,
@@ -436,7 +440,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         // validate 2.4GHz because feature of ssid prefix
         let config;
         try {
-          config = await Config.findOne({is_default: true}).lean();
+          config = await Config.findOne({is_default: true},
+                                        {device_update_schedule: false}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
           console.log(error.message);
@@ -708,10 +713,19 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
 
         // Parameters *NOT* available to be modified by REST API
+
+        // WAN IPv4
         let sentWanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
         if (sentWanIp !== matchedDevice.wan_ip) {
           deviceSetQuery.wan_ip = sentWanIp;
         }
+
+        // WAN IPv6
+        let sentWanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
+        if (sentWanIpv6 !== matchedDevice.wan_ipv6) {
+          deviceSetQuery.wan_ipv6 = sentWanIpv6;
+        }
+
         let sentWanNegociatedSpeed =
         util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
         if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
@@ -847,7 +861,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           },
         );
 
-        Config.findOne({is_default: true}).lean()
+        Config.findOne({is_default: true},
+                       {device_update_schedule: false}).lean()
         .exec(async function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
@@ -1940,6 +1955,22 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    let result = {};
+    // Filling the result object
+    // Sync with ACS
+    // count in firmware is 100
+    Object.keys(req.body.results).map((k) => {
+      let p = req.body.results[k];
+      if (p) {
+        result[k] = {
+          lat: p.lat,
+          loss: p.loss,
+          count: '100',
+          completed: true,
+        };
+      }
+    });
+
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
     if (matchedDevice.temp_command_trap &&
@@ -1954,7 +1985,7 @@ deviceInfoController.receivePingResult = function(req, res) {
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'ping_results': req.body.results,
+          'ping_results': result,
         };
         if (matchedDevice.temp_command_trap.webhook_user &&
             matchedDevice.temp_command_trap.webhook_secret
@@ -1964,7 +1995,7 @@ deviceInfoController.receivePingResult = function(req, res) {
             pass: matchedDevice.temp_command_trap.webhook_secret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then(()=>{}, ()=>{});
       }
       // Not waiting for this save
       matchedDevice.save().catch((err) => {
@@ -1972,7 +2003,7 @@ deviceInfoController.receivePingResult = function(req, res) {
       });
     } else {
       // Not a customized ping call, send to generic trap
-      deviceHandlers.sendPingToTraps(id, req.body);
+      deviceHandlers.sendPingToTraps(id, {results: result});
     }
 
     // We don't need to wait

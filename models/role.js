@@ -40,6 +40,7 @@ let roleSchema = new mongoose.Schema({
   // 2 is the complete search mode, 1 is simple search, 0 no search available
   grantSearchLevel: {type: Number, required: true, default: 2},
   grantShowSearchSummary: {type: Boolean, required: true, default: true},
+  grantShowRowsPerPage: {type: Boolean, required: true, default: true},
   grantFirmwareBetaUpgrade: {type: Boolean, default: false},
   grantFirmwareRestrictedUpgrade: {type: Boolean, default: false},
   grantSlaveDisassociate: {type: Boolean, required: true, default: false},
@@ -54,7 +55,8 @@ roleSchema.pre('save', function(callback) {
 
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.roles_crud) {
         return callback(err);
@@ -100,7 +102,8 @@ roleSchema.post('remove', function(role, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.role_crud) {
       return callback(err);

@@ -509,6 +509,19 @@ anlixDocumentReady.add(function() {
                         ),
                       ),
                     ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
+                        .text(t('rowsPerPage')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-rows-per-page').append(
+                          $('<option>').val(false).text(t('cannotView')),
+                          $('<option>').val(true).text(t('View')),
+                        ),
+                      ),
+                    ),
                   ),
                   $('<div>').addClass('col-12 col-lg-4').append(
                     $('<div>').addClass('md-form').append(
@@ -744,6 +757,9 @@ anlixDocumentReady.add(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-search-summary] option[value=' +
           roleObj.grantShowSearchSummary + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-rows-per-page] option[value=' +
+          roleObj.grantShowRowsPerPage + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-beta-upgrade] option[value=' +
           roleObj.grantFirmwareBetaUpgrade + ']')

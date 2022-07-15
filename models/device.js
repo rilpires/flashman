@@ -24,7 +24,7 @@ let deviceSchema = new Schema({
     // 'kind' will have to be translated according to region.
     // In 'pt' language will be 'CPF', 'CNPJ' or 'Outros'.
     kind: String,
-    data: String,
+    data: {type: String, sparse: true},
   },
   model: String,
   version: {type: String, default: '0.0.0'},
@@ -34,13 +34,13 @@ let deviceSchema = new Schema({
   data_collecting: {
     is_active: Boolean, // logical AND with config.js value.
     has_latency: Boolean, // logical AND with config.js value.
-    ping_fqdn: String, // should use config.js value if this value is falsifiable.
+    ping_fqdn: String, // should use config.js val if this value is falsifiable.
     burst_loss: Boolean, // logical AND with config.js value.
     wifi_devices: Boolean, // logical AND with config.js value.
     ping_and_wan: Boolean, // logical AND with config.js value.
   },
   connection_type: {type: String, enum: ['pppoe', 'dhcp']},
-  pppoe_user: String,
+  pppoe_user: {type: String, sparse: true},
   pppoe_password: String,
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
@@ -170,6 +170,7 @@ let deviceSchema = new Schema({
   bridge_mode_gateway: String,
   bridge_mode_dns: String,
   wan_ip: String,
+  wan_ipv6: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
   ipv6_enabled: {type: Number, default: 2, enum: [
@@ -246,6 +247,7 @@ let deviceSchema = new Schema({
     host: String,
     lat: {type: String, default: '---'},
     loss: {type: String, default: '---'},
+    count: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
@@ -354,7 +356,9 @@ deviceSchema.pre('save', function(callback) {
 
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true},
+                   {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
@@ -406,7 +410,9 @@ deviceSchema.post('remove', function(device, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true},
+                 {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.device_crud) {
       return callback(err);

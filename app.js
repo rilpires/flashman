@@ -17,6 +17,7 @@ const md5File = require('md5-file');
 const utilHandlers = require('./controllers/handlers/util');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const TasksAPI = require('./controllers/external-genieacs/tasks-api');
 
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
@@ -63,6 +64,7 @@ mongoose.connect(
    useUnifiedTopology: true,
    useFindAndModify: false,
    useCreateIndex: true,
+   maxPoolSize: 200,
 });
 mongoose.set('useCreateIndex', true);
 
@@ -279,20 +281,6 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       updater.updateAppPersonalization(app);
       updater.updateLicenseApiSecret(app);
     });
-
-    acsDeviceController.reportOnuDevices(app);
-    userController.checkAccountIsBlocked(app);
-    updater.updateAppPersonalization(app);
-    updater.updateLicenseApiSecret(app);
-    // Restart genieacs service whenever Flashman is restarted
-    if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
-      updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
-    } else {
-      updater.rebootGenie(process.env.instances);
-    }
-    // Force an update check to alert user on app startup
-    updater.checkUpdate();
-
     let early4amRule = new schedule.RecurrenceRule();
     early4amRule.hour = 4;
     early4amRule.minute = 0;
@@ -302,6 +290,30 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       // out best fix available...
       acsDeviceController.pingOfflineDevices();
     });
+    let early5amRule = new schedule.RecurrenceRule();
+    early5amRule.hour = 5;
+    early5amRule.minute = 0;
+    schedule.scheduleJob(early5amRule, function() {
+      // After issuing a command to offline ONUs to try and fix exp. backoff bug
+      // its necessary to clean tasks that will not be effective. Lots of
+      // tasks generated a great mongoDB CPU overhead
+      TasksAPI.deleteGetParamTasks();
+    });
+
+    /* Routines to execute on each startup/reload of main flashman proccess */
+    acsDeviceController.reportOnuDevices(app);
+    userController.checkAccountIsBlocked(app);
+    updater.updateAppPersonalization(app);
+    updater.updateLicenseApiSecret(app);
+    updater.updateLicenseApiSecret(app);
+    // Restart genieacs service whenever Flashman is restarted
+    if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
+      updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
+    } else {
+      updater.rebootGenie(process.env.instances);
+    }
+    // Force an update check to alert user on app startup
+    updater.checkUpdate();
   });
 }
 
