@@ -29,6 +29,7 @@ const tr069Models = {
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
@@ -133,6 +134,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
     return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+  } else if (modelName === 'ACtion RG1200') {
+    // Intelbras RG-1200
+    return {success: true, cpe: tr069Models.intelbrasRG1200Model};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
