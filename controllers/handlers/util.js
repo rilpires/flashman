@@ -18,7 +18,6 @@ utilHandlers.checkForNestedKey = function(data, key, useLastIndexOnWildcard=fals
             lastIndex = k;
           }
         });
-        splitKey[i] = lastIndex;
       }
       splitKey[i] = lastIndex;
     }
@@ -45,7 +44,6 @@ utilHandlers.getFromNestedKey = function(data, key, useLastIndexOnWildcard=false
             lastIndex = k;
           }
         });
-        splitKey[i] = lastIndex;
       }
       splitKey[i] = lastIndex;
     }
