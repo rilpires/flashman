@@ -80,7 +80,8 @@ const instantiateCPEByModelFromDevice = function(device) {
 };
 
 const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
-  if (modelName === 'DM985-424') {
+  console.log(modelSerial, modelName, fwVersion);
+  if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
   } else if (modelName === 'DM986-414') {
@@ -163,7 +164,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'P20') {
     // Phyhome P20
     return {success: true, cpe: tr069Models.phyhomeP20Model};
-  } else if (modelName === 'AC10') {
+  } else if (modelSerial === 'AC10') {
     // Tenda AC10
     return {success: true, cpe: tr069Models.tendaAC10Model};
   } else if (modelName === 'HG9') {
@@ -175,7 +176,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
-  } else if (modelName === 'MP-G421R') {
+  } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
   } else if (modelName === 'ZT199') {
