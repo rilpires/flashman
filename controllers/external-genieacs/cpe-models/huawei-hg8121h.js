@@ -112,6 +112,7 @@ huaweiModel.getModelFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
   );
+  delete fields.diagnostics.speedtest.num_of_conn;
   fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.mesh2.password = fields.mesh2.password.replace(
