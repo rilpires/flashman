@@ -22,7 +22,8 @@ acsDeviceLogsHandler.fetchLogFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let logField = cpe.getModelFields().log;
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+logField;
   let options = {
