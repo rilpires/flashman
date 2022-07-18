@@ -309,6 +309,7 @@ const startPingDiagnose = async function(acsID) {
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
+  let diagnInterfaceField = fields.diagnostics.ping.interface;
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
@@ -322,6 +323,17 @@ const startPingDiagnose = async function(acsID) {
                       [diagnURLField, pingHostUrl, 'xsd:string'],
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
+  if (cpe.modelPermissions().wan.pingTestSetInterface) {
+    let interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANPPPConnection.1.';
+    if (device.connection_type === 'dhcp') {
+      interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANIPConnection.1.';
+    }
+    task.parameterValues.push(
+      [diagnInterfaceField, interfaceVal, 'xsd:string'],
+    );
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting ping diagnose for ' + acsID);
