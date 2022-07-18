@@ -22,13 +22,13 @@ fiberhomeModel.modelPermissions = function() {
 fiberhomeModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'bg';
+      return 'g';
     case '11n':
-      return 'bgn';
+      return 'n';
     case '11na':
       return 'an';
     case '11ac':
-      return 'a,n,ac';
+      return 'ac';
     case '11ax':
     default:
       return '';
@@ -43,6 +43,9 @@ fiberhomeModel.convertToDbm = function(power) {
   return parseFloat(power).toFixed(3);
 };
 
+// *************************************
+// ** NEED TO REVIEW IF ITS NECESSARY **
+// *************************************
 fiberhomeModel.convertChannelToTask = function(channel, fields, masterKey) {
   if (channel === 'auto') {
     channel = '0';
