@@ -56,6 +56,7 @@ basicCPEModel.modelPermissions = function() {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
+      listLANDevicesSNR: false, // has explicit SNR field on connected devices
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
