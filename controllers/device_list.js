@@ -3304,7 +3304,10 @@ deviceListController.doSpeedTest = function(req, res) {
           message: t('configFindError', {errorline: __line}),
         });
       }
-      if (!matchedConfig.measureServerIP) {
+      if (
+        req.path.indexOf('/speeddiagnostic')==-1 && 
+        !matchedConfig.measureServerIP
+      ) {
         return res.status(200).json({
           success: false,
           message: t('serviceNotConfiguredByAdmin'),
