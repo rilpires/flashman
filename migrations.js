@@ -86,13 +86,14 @@ module.exports = (app) => {
       {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
       {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
       {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
+      {wifi_mode: {$nin: ['11g', '11n']}},
     ]},
     {installed_release: true, do_update: true,
      do_update_status: true, release: true,
      mesh_key: true, mesh_id: true,
      bridge_mode_enabled: true, connection_type: true,
      pppoe_user: true, pppoe_password: true,
-     isSsidPrefixEnabled: true, bssid_mesh2: true,
+     isSsidPrefixEnabled: true, bssid_mesh2: true, wifi_mode: true,
      bssid_mesh5: true, use_tr069: true, _id: true, model: true},
     function(err, devices) {
       if (!err && devices) {
@@ -127,6 +128,12 @@ module.exports = (app) => {
           ) {
             devices[idx].pppoe_user = '';
             devices[idx].pppoe_password = '';
+            saveDevice = true;
+          }
+          // Fix bugged wifi mode for TR-069 devices - createRegistry had 5ghz
+          // flag set for both networks instead of just 5ghz
+          if (!['11n', '11g'].includes(devices[idx].wifi_mode)) {
+            devices[idx].wifi_mode = '11n';
             saveDevice = true;
           }
           /*
