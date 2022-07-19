@@ -18,13 +18,13 @@ dlinkModel.modelPermissions = function() {
 dlinkModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'b,g';
+      return 'g-only';
     case '11n':
       return 'b,g,n';
     case '11na':
       return 'a,n';
     case '11ac':
-      return 'a,n,ac';
+      return 'ac,a,n';
     case '11ax':
     default:
       return '';

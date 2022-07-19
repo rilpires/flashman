@@ -193,10 +193,8 @@ meshHandlers.buildTR069Changes = function(
   meshChannel5,
   populateSSIDObjects,
 ) {
-  let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  const beaconType = DevicesAPI.getBeaconTypeByModel(model);
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  const beaconType = cpe.getBeaconType();
   let changes = {mesh2: {}, mesh5: {}, wifi2: {}, wifi5: {}};
   switch (targetMode) {
     case 0:

@@ -1,25 +1,24 @@
 const basicCPEModel = require('./base-model');
 
-let tendaModel = Object.assign({}, basicCPEModel);
+let datacomModel = Object.assign({}, basicCPEModel);
 
-tendaModel.identifier = {vendor: 'Tenda', model: 'HG9'};
+datacomModel.identifier = 'Datacom DM986-414';
 
-tendaModel.modelPermissions = function() {
+datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
-  permissions.wan.pingTestSingleAttempt = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.usesStavixXMLConfig = true;
+    basicCPEModel.portForwardPermissions.noRanges;
   permissions.firmwareUpgrades = {
-    'v1.0.1': [],
+    'V4.6.0-210709': [],
   };
   return permissions;
 };
 
-tendaModel.convertWifiMode = function(mode) {
+datacomModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return 'bg';
@@ -35,26 +34,26 @@ tendaModel.convertWifiMode = function(mode) {
   }
 };
 
-tendaModel.getBeaconType = function() {
-  return 'WPA2';
-};
-
-tendaModel.convertToDbm = function(power) {
-  return parseFloat(power.split(' ')[0]).toFixed(3);
-};
-
-tendaModel.getModelFields = function() {
+datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_TDTC_VLAN';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANGponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANGponInterfaceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+    'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_WebUserInfo.UserPassword';
+  fields.port_mapping_fields.external_port_end = [
+    'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
+  ];
+  fields.port_mapping_values.protocol = [
+    'PortMappingProtocol', 'TCPandUDP', 'xsd:string',
+  ];
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_GponInterafceConfig.TXPower';
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
@@ -66,4 +65,4 @@ tendaModel.getModelFields = function() {
   return fields;
 };
 
-module.exports = tendaModel;
+module.exports = datacomModel;

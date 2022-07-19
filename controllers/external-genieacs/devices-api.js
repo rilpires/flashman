@@ -21,10 +21,12 @@ const request = require('request');
 const tr069Models = {
   basicCPEModel: require('./cpe-models/base-model'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
+  datacomDM986Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
+  fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
@@ -50,6 +52,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
+  zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
@@ -88,6 +91,9 @@ const getTR069UpgradeableModels = function() {
 };
 
 const instantiateCPEByModelFromDevice = function(device) {
+  if (!device.acs_id) {
+    return {success: false, cpe: tr069Models.basicCPEModel};
+  }
   let splitID = device.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
   let modelName = device.model;
@@ -96,9 +102,12 @@ const instantiateCPEByModelFromDevice = function(device) {
 };
 
 const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
-  if (modelName === 'DM985-424') {
+  if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
+  } else if (modelName === 'DM986-414') {
+    // Datacom DM986-414
+    return {success: true, cpe: tr069Models.datacomDM986Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
     return {success: true, cpe: tr069Models.dlinkDir615Model};
@@ -113,6 +122,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   ) {
     // FastWireless FW323DAC
     return {success: true, cpe: tr069Models.fastwirelessFW323DACModel};
+  } else if (modelName === 'HG6145F') {
+    // Fiberhome HG6145F
+    return {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
   } else if (modelName === 'GWR-1200AC') {
     // Greatek GWR1200
     return {success: true, cpe: tr069Models.greatekGwr1200Model};
@@ -173,7 +185,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'P20') {
     // Phyhome P20
     return {success: true, cpe: tr069Models.phyhomeP20Model};
-  } else if (modelName === 'AC10') {
+  } else if (modelSerial === 'AC10') {
     // Tenda AC10
     return {success: true, cpe: tr069Models.tendaAC10Model};
   } else if (modelName === 'HG9') {
@@ -185,9 +197,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
-  } else if (modelName === 'MP-G421R') {
+  } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
+  } else if (modelName === 'ZT199') {
+    // ZTE ZT199
+    return {success: true, cpe: tr069Models.zteZT199Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};

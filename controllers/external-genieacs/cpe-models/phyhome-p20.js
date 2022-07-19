@@ -8,6 +8,7 @@ phyhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.ponSignal = true;
   permissions.lan.configWrite = false;
+  permissions.wifi.dualBand = false;
   permissions.wifi.ssidWrite = false;
   return permissions;
 };

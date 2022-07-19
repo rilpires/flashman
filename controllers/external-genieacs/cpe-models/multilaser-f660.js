@@ -11,6 +11,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
+  permissions.lan.listLANDevicesSNR = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.dualBand = false;

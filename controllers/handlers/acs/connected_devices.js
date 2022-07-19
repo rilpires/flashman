@@ -209,8 +209,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 );
                 device.rssi = cpe.convertRssiValue(rssiValue);
               }
-              // Collect snr, if available
-              if (fields.devices.host_snr) {
+              // Collect explicit snr, if available - fallback on rssi value
+              if (cpe.modelPermissions().lan.listLANDevicesSNR) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = utilHandlers.getFromNestedKey(
