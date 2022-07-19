@@ -7,14 +7,11 @@ tkOnuAcDModel.identifier = 'Think TK-ONU-AC-D';
 tkOnuAcDModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = false;
-  permissions.features.pingTest = true;
-  permissions.features.speedTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.wan.speedTestLimit = 2000;
-  permissions.wan.pingTestSingleAttempt = true;
+  permissions.wan.portForwardQueueTasks = true;
   permissions.firmwareUpgrades = {
     'V1.0.9': [],
   };
@@ -80,6 +77,9 @@ tkOnuAcDModel.convertWifiRate = function(rate) {
 
 tkOnuAcDModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  // Does not have the field for syncing web admin username
+  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+
+    'X_CT-COM_TeleComAccount.Password';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice'+
     '.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
@@ -94,6 +94,22 @@ tkOnuAcDModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesSent';
   fields.common.alt_uid = 'InternetGatewayDevice.LANDevice.1.' +
     'LANEthernetInterfaceConfig.1.MACAddress';
+  fields.port_mapping_values.protocol[0] = 'Protocol';
+  fields.port_mapping_values.protocol[1] = 'BOTH';
+  fields.port_mapping_values.enable[0] = 'Enabled';
+  fields.port_mapping_values.description[0] = 'Name';
+  fields.port_mapping_values.remote_host[0] = 'RemoteHostStart';
+  fields.port_mapping_values.remote_host_end = ['RemoteHostEnd',
+    '0.0.0.0', 'xsd:string'];
+  fields.port_mapping_values.lease[0] = 'LeaseDuration';
+  fields.port_mapping_fields.external_port_start[0] = 'ExternalPortStart';
+  fields.port_mapping_fields.external_port_end = [
+    'ExternalPortEnd', 'external_port_end', 'xsd:unsignedInt',
+  ];
+  fields.port_mapping_fields.internal_port_start[0] = 'InternalPortStart';
+  fields.port_mapping_fields.internal_port_end = [
+    'InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt',
+  ];
   return fields;
 };
 
