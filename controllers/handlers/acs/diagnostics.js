@@ -221,9 +221,7 @@ const calculateSpeedDiagnostic = async function(
     customSpeedTestInProgress = true;
   }
 
-  if ( !device.current_speedtest.timestamp
-    || normalSpeedTestInProgress
-    || customSpeedTestInProgress ) {
+  if (normalSpeedTestInProgress || customSpeedTestInProgress) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
