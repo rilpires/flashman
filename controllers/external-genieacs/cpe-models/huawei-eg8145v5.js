@@ -12,6 +12,7 @@ huaweiModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.lan.listLANDevicesSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
@@ -42,6 +43,39 @@ huaweiModel.convertWifiMode = function(mode) {
     case '11ax':
     default:
       return '';
+  }
+};
+
+huaweiModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return (is5ghz) ? '3' : '0';
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
   }
 };
 
@@ -83,6 +117,8 @@ huaweiModel.getModelFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
   );
+  fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
+  fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.mesh2.password = fields.mesh2.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
   );

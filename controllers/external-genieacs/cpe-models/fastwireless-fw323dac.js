@@ -10,6 +10,7 @@ fastwirelessModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 250;
+  permissions.wifi.rebootAfterWiFi2SSIDChange = true;
   permissions.usesStavixXMLConfig = true;
   permissions.firmwareUpgrades = {
     'V2.0.08-191129': [],
