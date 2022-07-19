@@ -36,18 +36,6 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
-const convertSubnetMaskToRange = function(mask) {
-  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
-  if (mask === '255.255.255.0' || mask === 24) {
-    return {min: '33', max: '254'};
-  } else if (mask === '255.255.255.128' || mask === 25) {
-    return {min: '161', max: '254'};
-  } else if (mask === '255.255.255.192' || mask === 26) {
-    return {min: '225', max: '254'};
-  }
-  return {};
-};
-
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -58,6 +46,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'bg':
     case 'b,g':
     case 'b/g':
+    case 'g-only':
       return '11g';
     case '11bgn':
     case '11a':
@@ -80,6 +69,8 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a,n,ac':
     case 'a/n/ac':
     case 'ac,n,a':
+    case 'ac,a,n':
+    case 'ac,n':
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
@@ -90,64 +81,10 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertWifiBand = function(model, band, mode, is5ghz) {
-  let isAC = convertWifiMode(mode, is5ghz) === '11ac';
-  switch (band) {
-    // Number input
-    case '0':
-      if (model === 'EG8145X6' || model === 'HG8121H') return 'auto';
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '1':
-      if (model === 'HG8121H') return 'HT20';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '2':
-      if (model === 'HG8121H') return 'HT40';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
-      return 'auto';
-    case '3':
-      return (isAC) ? 'VHT80' : undefined;
-    // String input
-    case 'auto':
-    case 'Auto':
-    case '20/40MHz Coexistence':
-      return 'auto';
-    case '20M':
-    case '20MHz':
-    case '20Mhz':
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '40M':
-    case '40MHz':
-    case '40Mhz':
-    case '20/40MHz':
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '80M':
-    case '80MHz':
-    case '80Mhz':
-    case '20/40/80MHz':
-      return (isAC) ? 'VHT80' : undefined;
-    case '160MHz':
-    default:
-      return undefined;
-  }
-};
-
-const extractGreatekCredentials = function(config) {
-  let usernameRegex = /SUSER_NAME(.+?)\//g;
-  let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
-  let usernameMatches = config.match(usernameRegex);
-  let passwordMatches = config.match(passwordRegex);
-  let username;
-  let password;
-  if (usernameMatches.length > 0) {
-    username = usernameMatches[0].split('=')[1];
-    username = username.substring(1, username.length - 2);
-  }
-  if (passwordMatches.length > 0) {
-    password = passwordMatches[0].split('=')[1];
-    password = password.substring(1, password.length - 2);
-  }
-  return {username: username, password: password};
+const convertWifiBand = function(cpe, band, mode, is5ghz) {
+  let convertedMode = convertWifiMode(mode, is5ghz);
+  let isAC = (convertedMode === '11ac' || convertedMode === '11ax');
+  return cpe.convertWifiBandToFlashman(band, isAC);
 };
 
 const processHostFromURL = function(url) {
@@ -166,7 +103,7 @@ const processHostFromURL = function(url) {
   return hostAndPort.split(':')[0];
 };
 
-const createRegistry = async function(req, permissions) {
+const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
@@ -207,10 +144,7 @@ const createRegistry = async function(req, permissions) {
   }
   let macAddr = data.common.mac.value.toUpperCase();
   let model = (data.common.model) ? data.common.model.value : '';
-  let wifi5Capable = false;
-  if (data.wifi5.ssid && data.wifi5.ssid.value) {
-    wifi5Capable = true;
-  }
+  let wifi5Capable = cpe.modelPermissions().wifi.dualBand;
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
@@ -239,17 +173,6 @@ const createRegistry = async function(req, permissions) {
     altUid = data.common.alt_uid.value;
   }
 
-  // Greatek does not expose these fields normally, only under this config file,
-  // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config && data.common.greatek_config.value) {
-    let webCredentials = extractGreatekCredentials(
-      data.common.greatek_config.value);
-    data.common.web_admin_username = {};
-    data.common.web_admin_password = {};
-    data.common.web_admin_username.value = webCredentials.username;
-    data.common.web_admin_password.value = webCredentials.password;
-  }
-
   let newMeshId = meshHandlers.genMeshID();
   let newMeshKey = meshHandlers.genMeshKey();
 
@@ -268,7 +191,7 @@ const createRegistry = async function(req, permissions) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     }
   } else {
-    meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
+    meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(cpe, macAddr);
   }
 
   // Get channel information here to avoid ternary mess
@@ -296,50 +219,26 @@ const createRegistry = async function(req, permissions) {
   // Remove DHCP uptime for Archer C6
   let wanUptime = (hasPPPoE) ?
     data.wan.uptime_ppp.value : data.wan.uptime.value;
-  if (!hasPPPoE && model == 'Archer C6') {
+  if (!hasPPPoE && !cpe.modelPermissions().wan.dhcpUptime) {
     wanUptime = undefined;
   }
 
-  let serialTR069 = splitID[splitID.length - 1];
-  // Convert Hurakall serial information
-  if (model === 'ST-1001-FL') {
-    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
-    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
-    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
-    // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((prefix) => {
-      prefix = parseInt(prefix, 16);
-      if (isNaN(prefix)) {
-        debug('prefix on serialPrefix is not an number');
-      }
-      return String.fromCharCode(prefix);
-    });
-    // join parts in final format
-    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
-  } else if (model === 'GWR-1200AC') {
-    serialTR069 = macAddr;
-  }
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], macAddr,
+  );
 
   // Collect PON signal, if available
   let rxPowerPon;
   let txPowerPon;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    rxPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_rxpower.value,
-    );
+    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower.value);
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    rxPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_rxpower_epon.value,
-    );
+    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    txPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_txpower.value,
-    );
+    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower.value);
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    txPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_txpower_epon.value,
-    );
+    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
   }
 
   // Force a web credentials sync
@@ -377,7 +276,7 @@ const createRegistry = async function(req, permissions) {
     mode2 = convertWifiMode(data.wifi2.mode.value, true);
     if (data.wifi2.band && data.wifi2.band.value) {
       band2 = convertWifiBand(
-        model, data.wifi2.band.value, data.wifi2.mode.value, true,
+        cpe, data.wifi2.band.value, data.wifi2.mode.value, true,
       );
     }
   }
@@ -388,7 +287,7 @@ const createRegistry = async function(req, permissions) {
     mode5 = convertWifiMode(data.wifi5.mode.value, true);
     if (data.wifi5.band && data.wifi5.band.value) {
       band5 = convertWifiBand(
-        model, data.wifi5.band.value, data.wifi5.mode.value, true,
+        cpe, data.wifi5.band.value, data.wifi5.mode.value, true,
       );
     }
   }
@@ -489,10 +388,7 @@ const createRegistry = async function(req, permissions) {
     changes.stun.port = 3478;
     doChanges = true;
   }
-  /* For Tenda AC10 model is mandatory to set
-   LANHostConfigManagement.DHCPServerConfigurable field
-   to be allowed to change CPE IP and Subnet Mask */
-  if (model == 'AC10') {
+  if (cpe.modelPermissions().lan.needEnableConfig) {
     changes.lan.enable_config = '1';
   }
   if (doChanges) {
@@ -591,12 +487,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 // Builds and sends getParameterValues task to cpe - should only ask for
 // parameters that make sense in this cpe's context
 const requestSync = async function(device) {
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let permissions = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  );
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let permissions = DeviceVersion.devicePermissions(device);
   let dataToFetch = {
     basic: false,
     alt_uid: false,
@@ -888,9 +781,7 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
       if (!device || !device.use_tr069) {
         return;
       }
-      let permissions = DeviceVersion.findByVersion(
-        device.version, device.wifi_is_5ghz_capable, device.model,
-      );
+      let permissions = DeviceVersion.devicePermissions(device);
       syncDeviceData(acsID, device, acsData, permissions);
     });
   });
@@ -908,6 +799,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: t('fieldNameMissing', {name: 'mac', errorline: __line}),
     });
   }
+  let splitID = req.body.acs_id.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
   // Convert mac field from - to : if necessary
   if (data.common.mac.value.includes('-')) {
     data.common.mac.value = data.common.mac.value.replace(/-/g, ':');
@@ -916,17 +809,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   // Fetch functionalities of CPE
   let permissions = null;
   if (!device && data.common.version && data.common.model) {
-    permissions = DeviceVersion.findByVersion(
-      data.common.version.value,
-      (data.wifi5.ssid ? true : false),
-      data.common.model.value,
+    permissions = DeviceVersion.devicePermissionsNotRegistered(
+      model, data.common.model.value, data.common.version.value,
     );
   } else {
-    permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
+    permissions = DeviceVersion.devicePermissions(device);
   }
   if (!permissions) {
     return res.status(500).json({
@@ -935,7 +822,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     });
   }
   if (!device) {
-    if (await createRegistry(req, permissions)) {
+    let cpe = DevicesAPI.instantiateCPEByModel(
+      model, data.common.model.value, data.common.version.value,
+    ).cpe;
+    if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
     } else {
       return res.status(500).json({
@@ -970,30 +860,14 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let hasChanges = false;
   let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
   // Always update serial info based on ACS ID
-  let serialTR069 = splitID[splitID.length - 1];
-  if (device.model === 'ST-1001-FL') {
-    // Convert Hurakall serial information
-    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
-    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
-    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
-    // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((prefix) => {
-      prefix = parseInt(prefix, 16);
-      if (isNaN(prefix)) {
-        debug('prefix on serialPrefix are not an number');
-      }
-      return String.fromCharCode(prefix);
-    });
-    // join parts in final format
-    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
-  } else if (device.model === 'GWR-1200AC') {
-    serialTR069 = device._id;
-  }
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], device._id,
+  );
   device.serial_tr069 = serialTR069;
 
   // Update model, if data available
@@ -1024,17 +898,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.common.alt_uid && data.common.alt_uid.value) {
     let altUid = data.common.alt_uid.value;
     device.alt_uid_tr069 = altUid;
-  }
-
-  // Greatek does not expose these fields normally, only under this config file,
-  // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config && data.common.greatek_config.value) {
-    let webCredentials =
-      extractGreatekCredentials(data.common.greatek_config.value);
-    data.common.web_admin_username = {};
-    data.common.web_admin_password = {};
-    data.common.web_admin_username.value = webCredentials.username;
-    data.common.web_admin_password.value = webCredentials.password;
   }
 
   // Process CPE IP information
@@ -1120,7 +983,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
     // Do not store DHCP uptime for Archer C6
     if (
-      data.wan.uptime && data.wan.uptime.value && device.model != 'Archer C6'
+      data.wan.uptime && data.wan.uptime.value &&
+      cpe.modelPermissions().wan.dhcpUptime
     ) {
       device.wan_up_time = data.wan.uptime.value;
     }
@@ -1173,7 +1037,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       changes.wifi2.enable = device.wifi_state;
       // When enabling Wi-Fi set beacon type
       if (device.wifi_state) {
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        changes.wifi2.beacon_type = cpe.getBeaconType();
       }
       hasChanges = true;
     }
@@ -1190,7 +1054,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       changes.wifi5.enable = device.wifi_state_5ghz;
       // When enabling Wi-Fi set beacon type
       if (device.wifi_state_5ghz) {
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        changes.wifi5.beacon_type = cpe.getBeaconType();
       }
       hasChanges = true;
     }
@@ -1311,7 +1175,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(model, data.wifi2.band.value,
+      let band2 = convertWifiBand(cpe, data.wifi2.band.value,
        data.wifi2.mode.value, false);
       if (data.wifi2.band.value && !device.wifi_band) {
         device.wifi_band = band2;
@@ -1329,7 +1193,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       hasChanges = true;
     }
     if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(model, data.wifi5.band.value,
+      let band5 = convertWifiBand(cpe, data.wifi5.band.value,
        data.wifi5.mode.value, true);
       if (data.wifi5.band.value && !device.wifi_band_5ghz) {
         device.wifi_band_5ghz = band5;
@@ -1362,7 +1226,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (permissions.grantMeshV2HardcodedBssid &&
     (!device.bssid_mesh2 || !device.bssid_mesh5)) {
-    const meshBSSIDs = DeviceVersion.getMeshBSSIDs(device.model, device._id);
+    const meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(cpe, device._id);
     device.bssid_mesh2 = meshBSSIDs.mesh2.toUpperCase();
     device.bssid_mesh5 = meshBSSIDs.mesh5.toUpperCase();
   }
@@ -1381,25 +1245,17 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let isPonRxValOk = false;
   let isPonTxValOk = false;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_rxpower.value,
-    );
+    device.pon_rxpower = cpe.convertToDbm(data.wan.pon_rxpower.value);
     isPonRxValOk = true;
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_rxpower_epon.value,
-    );
+    device.pon_rxpower = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
     isPonRxValOk = true;
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_txpower.value,
-    );
+    device.pon_txpower = cpe.convertToDbm(data.wan.pon_txpower.value);
     isPonTxValOk = true;
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_txpower_epon.value,
-    );
+    device.pon_txpower = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
     isPonTxValOk = true;
   }
   if (isPonRxValOk && isPonTxValOk) {
@@ -1492,7 +1348,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
+      if (cpe.modelPermissions().usesStavixXMLConfig) {
         xmlTargets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -1515,12 +1371,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
+    if (cpe.modelPermissions().usesStavixXMLConfig) {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin_username = config.tr069.web_login;
       device.web_admin_password = config.tr069.web_password;
-      if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
+      if (!cpe.isAllowedWebadminUsername(config.tr069.web_login)) {
         // this model can't have two users as "admin", if this happens you
         // can't access it anymore and will be only using normal user account
         device.web_admin_username = 'root';
@@ -1591,7 +1447,8 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let task = {
     name: 'getParameterValues',
     parameterNames: [
@@ -1607,7 +1464,8 @@ acsDeviceInfoController.requestLogs = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let logField = cpe.getModelFields().log;
   let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
@@ -1619,7 +1477,8 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let task = {
@@ -1636,7 +1495,8 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let task = {
     name: 'getParameterValues',
     parameterNames: [
@@ -1649,9 +1509,7 @@ acsDeviceInfoController.requestUpStatus = function(device) {
   } else if (device.connection_type === 'dhcp') {
     task.parameterNames.push(fields.wan.uptime);
   }
-  let permissions = DeviceVersion.findByVersion(
-    device.version, device.wifi_is_5ghz_capable, device.model,
-  );
+  let permissions = DeviceVersion.devicePermissions(device);
   if (permissions.grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
     task.parameterNames.push(fields.wan.pon_txpower);
@@ -1667,7 +1525,8 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   let totalAssocField = fields.devices.assoc_total;
@@ -1703,20 +1562,19 @@ acsDeviceInfoController.updateInfo = async function(
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let modelName = device.model;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let rebootAfterUpdate = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
   let ssidPrefix = ssidPrefixObj.prefix;
-  // The following model does not accept admin as a superuser name
-  // Leave default superuser name
-  if (modelName === 'EMG3524-T10A' &&
-      changes.common.web_admin_username === 'admin') {
+  if (
+    changes.common && changes.common.web_admin_username &&
+    !cpe.isAllowedWebadminUsername(changes.common.web_admin_username)
+  ) {
     delete changes.common.web_admin_username;
   }
   // Some Nokia models have a bug where changing the SSID without changing the
@@ -1741,75 +1599,23 @@ acsDeviceInfoController.updateInfo = async function(
       if (key === 'channel') {
         // Special case since channel relates to 2 fields
         let channel = changes[masterKey][key];
-        let auto = channel === 'auto';
-        if (model == 'AC10') {
-          // Special case - fields are treated as strings
-          task.parameterValues.push([
-            fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
-          ]);
-          if (!auto) {
-            task.parameterValues.push([
-              fields[masterKey][key], channel, 'xsd:string',
-            ]);
-          }
-        } else if (model === 'ST-1001-FL') {
-          // Special case - there is no auto field, use channel 0
-          if (auto) channel = '0';
-          const parsedChannel = parseInt(channel);
-          // this should never happen if auto is true
-          if (isNaN(parsedChannel)) {
-            debug('Wrong channel, auto but not an number!!!');
-          }
-          task.parameterValues.push([
-            fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
-          ]);
-        } else {
-          task.parameterValues.push([
-            fields[masterKey]['auto'], auto, 'xsd:boolean',
-          ]);
-          if (!auto) {
-            const parsedChannel = parseInt(channel);
-            if (isNaN(parsedChannel)) {
-              debug('Wrong channel, not auto but not an number!!!');
-            }
-            task.parameterValues.push([
-              fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
-            ]);
-          }
+        let values = cpe.convertChannelToTask(channel, fields, masterKey);
+        if (values.length > 0) {
+          task.parameterValues = task.parameterValues.concat(values);
+          hasChanges = true;
         }
-        hasChanges = true;
         return;
       }
-      if ((key === 'router_ip' || key === 'subnet_mask') &&
-          !hasUpdatedDHCPRanges) {
-        // Special case for lan ip/mask since we need to update dhcp range
-        let dhcpRanges = convertSubnetMaskToRange(device.lan_netmask);
-        if (dhcpRanges.min && dhcpRanges.max) {
-          let subnet = device.lan_subnet;
-          let networkPrefix = subnet.split('.').slice(0, 3).join('.');
-          let minIP = networkPrefix + '.' + dhcpRanges.min;
-          let maxIP = networkPrefix + '.' + dhcpRanges.max;
-          // We must not set this field for these models in order to keep the
-          // LAN configuration properly working.
-          if (modelName != 'EC220-G5') {
-            task.parameterValues.push([
-              fields['lan']['dns_servers'], subnet, 'xsd:string',
-            ]);
-          }
-          // These models automaticaly updates these fields, so they can't be
-          // modified.
-          if (modelName != 'G-2425G-A') {
-            task.parameterValues.push([
-              fields['lan']['ip_routers'], subnet, 'xsd:string',
-            ]);
-            task.parameterValues.push([
-              fields['lan']['lease_min_ip'], minIP, 'xsd:string',
-            ]);
-            task.parameterValues.push([
-              fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
-            ]);
-          }
-          hasUpdatedDHCPRanges = true; // Avoid editing this field twice
+      if (
+        (key === 'router_ip' || key === 'subnet_mask') && !hasUpdatedDHCPRanges
+      ) {
+        // Special case for lan ip/mask, we need to update dhcp range and dns
+        let values = cpe.convertLanEditToTask(
+          device, fields, cpe.modelPermissions(),
+        );
+        if (values.length > 0) {
+          task.parameterValues = task.parameterValues.concat(values);
+          hasUpdatedDHCPRanges = true; // Avoid editing these fields twice
           hasChanges = true;
         }
       }
@@ -1820,13 +1626,19 @@ acsDeviceInfoController.updateInfo = async function(
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
-        // In IGD aka FW323DAC, need reboot when change 2.4GHz wifi settings
-        if (masterKey === 'wifi2' && model === 'IGD' && modelName === 'IGD') {
+        if (
+          masterKey === 'wifi2' &&
+          cpe.modelPermissions().wifi.rebootAfterWiFi2SSIDChange
+        ) {
           rebootAfterUpdate = true;
         }
       }
-      let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], modelName, changes[masterKey][key],
+      let convertedValue = cpe.convertField(
+        masterKey, key, // key to be changed, eg: wifi2, ssid
+        changes[masterKey][key], // new value
+        cpe.getFieldType, // convert type function
+        cpe.convertWifiMode, // convert wifi mode function
+        cpe.convertWifiBand, // convert wifi band function
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
@@ -1896,7 +1708,8 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   // Issue a task for every offline device to try and force it to reconnect
   for (let i = 0; i < offlineDevices.length; i++) {
     let id = offlineDevices[i].acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(offlineDevices[i]).cpe;
+    let fields = cpe.getModelFields();
     let task = {
       name: 'getParameterValues',
       parameterNames: [fields.common.uptime],
@@ -1981,11 +1794,8 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
   const meshChannel = 7;
   const meshChannel5GHz = 40; // Value has better results on some routers
 
-  const hasMeshVAPObject = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  ).grantMeshVAPObject;
+  let permissions = DeviceVersion.devicePermissions(device);
+  const hasMeshVAPObject = permissions.grantMeshVAPObject;
   /*
     If device doesn't have SSID Object by default, then
     we need to check if it has been created already.

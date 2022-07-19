@@ -87,8 +87,8 @@ const getSpeedtestFile = async function(device) {
 };
 
 const calculatePingDiagnostic = async function(
-    device, data, pingKeys, pingFields,
-  ) {
+    device, cpe, data, pingKeys, pingFields,
+) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
 
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
@@ -112,10 +112,7 @@ const calculatePingDiagnostic = async function(
       currentPingTest.loss = loss.toString();
       currentPingTest.count = count.toString();
 
-      let model = device.model;
-      if (
-        ['HG8245Q2', 'EG8145V5', 'HG8121H', 'EG8145X6', 'HG9'].includes(model)
-      ) {
+      if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
         if (pingKeys.success_count === 1) currentPingTest.loss = '0';
         else currentPingTest.loss = '100';
         currentPingTest.count = '1';
@@ -306,10 +303,13 @@ const startPingDiagnose = async function(acsID) {
     return;
   }
 
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
+  let diagnInterfaceField = fields.diagnostics.ping.interface;
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
@@ -323,6 +323,17 @@ const startPingDiagnose = async function(acsID) {
                       [diagnURLField, pingHostUrl, 'xsd:string'],
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
+  if (cpe.modelPermissions().wan.pingTestSetInterface) {
+    let interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANPPPConnection.1.';
+    if (device.connection_type === 'dhcp') {
+      interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANIPConnection.1.';
+    }
+    task.parameterValues.push(
+      [diagnInterfaceField, interfaceVal, 'xsd:string'],
+    );
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting ping diagnose for ' + acsID);
@@ -340,7 +351,8 @@ const startSpeedtestDiagnose = async function(acsID) {
     return {success: false, message: t('cpeFindError', {errorline: __line})};
   }
 
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let diagnStateField = fields.diagnostics.speedtest.diag_state;
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
@@ -405,7 +417,8 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
     },
   };
 
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
 
   for (let masterKey in diagNecessaryKeys) {
     if (
@@ -440,15 +453,13 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
       let body = Buffer.concat(chunks);
       try {
         let data = JSON.parse(body)[0];
-        let permissions = DeviceVersion.findByVersion(
-          device.version,
-          device.wifi_is_5ghz_capable,
-          device.model,
-        );
+        let permissions = DeviceVersion.devicePermissions(device);
         if (permissions) {
           if (permissions.grantPingTest) {
             await calculatePingDiagnostic(
-              device, data, diagNecessaryKeys.ping, fields.diagnostics.ping,
+              device, cpe, data,
+              diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
             );
           }
           if (permissions.grantSpeedTest) {
@@ -483,7 +494,8 @@ acsDiagnosticsHandler.firePingDiagnose = async function(mac) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let diagnIPPingDiagnostics = fields.diagnostics.ping.root;
   // We need to update the parameter values before we fire the ping test
   let task = {
@@ -514,7 +526,8 @@ acsDiagnosticsHandler.fireSpeedDiagnose = async function(mac) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let diagnSpeedtestDiagnostics = fields.diagnostics.speedtest.root;
   // We need to update the parameter values before we fire the speedtest
   let task = {

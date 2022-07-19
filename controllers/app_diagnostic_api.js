@@ -606,11 +606,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         grant: checkResponse.enablePrefix,
       };
 
-      let permissions = DeviceVersion.findByVersion(
-        device.version,
-        device.wifi_is_5ghz_capable,
-        device.model,
-      );
+      let permissions = DeviceVersion.devicePermissions(device);
 
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {
@@ -913,11 +909,8 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.errcode = 'notfound-mac-secondary';
     return res.status(404).json(response);
   }
-  const isMeshV2Compatible = DeviceVersion.findByVersion(
-    matchedSlave.version,
-    matchedSlave.wifi_is_5ghz_capable,
-    matchedSlave.model,
-  ).grantMeshV2SecondaryMode;
+  let slavePermissions = DeviceVersion.devicePermissions(matchedSlave);
+  const isMeshV2Compatible = slavePermissions.grantMeshV2SecondaryMode;
   if (!isMeshV2Compatible) {
     response.message = t('secondaryCandidateCpeNotCompatibleWithMeshV2',
       {errorline: __line});

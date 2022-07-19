@@ -183,8 +183,9 @@ const createRegistry = async function(req, res) {
   genericValidate(channel, validator.validateChannel,
                   'channel', null, errors);
 
-  let permissions = DeviceVersion.findByVersion(version, is5ghzCapable,
-                                                model);
+  let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
+    version, is5ghzCapable, model,
+  );
   if (permissions.grantWifiBand) {
     genericValidate(band, validator.validateBand,
                     'band', null, errors);
@@ -579,10 +580,14 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         if (matchedDevice.version != sentVersion) {
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
-          let permissionsSentVersion = DeviceVersion.findByVersion(
-            sentVersion, is5ghzCapable, (bodyModel + bodyModelVer));
-          let permissionsCurrVersion = DeviceVersion.findByVersion(
-            matchedDevice.version, is5ghzCapable, matchedDevice.model);
+          let permissionsSentVersion =
+          DeviceVersion.devicePermissionsNotRegisteredFirmware(
+            sentVersion, is5ghzCapable, (bodyModel + bodyModelVer),
+          );
+          let permissionsCurrVersion =
+          DeviceVersion.devicePermissionsNotRegisteredFirmware(
+            matchedDevice.version, is5ghzCapable, matchedDevice.model,
+          );
 
           if ( permissionsSentVersion.grantWifiBand &&
               !permissionsCurrVersion.grantWifiBand) {
@@ -1472,11 +1477,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
     let outData = [];
     let routersData = undefined;
 
-    const permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    const permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // In mesh v2 there is a new layout of the flashbox response
     const meshV2 = (permissions.grantMeshV2PrimaryMode ||
