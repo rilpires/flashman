@@ -2,6 +2,7 @@ const controlApi = require('./controllers/external-api/control');
 const User = require('./models/user');
 const Role = require('./models/role');
 const Device = require('./models/device');
+const DevicesAPI = require('./controllers/external-genieacs/devices-api');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
 const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
@@ -141,8 +142,10 @@ module.exports = (app) => {
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
+            let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
+              devices[idx]).cpe;
             let meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(
-              devices[idx].model, devices[idx]._id);
+              cpe, devices[idx]._id);
             devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
             devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
             saveDevice = true;
