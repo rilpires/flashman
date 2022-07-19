@@ -7,27 +7,6 @@ const debug = require('debug')('ACS_CONNECTED_DEVICES');
 
 let acsConnDevicesHandler = {};
 
-const convertWifiRate = function(model, rate) {
-  switch (model) {
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL': {
-      rate = parseInt(rate) / 1000;
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-      return rate;
-    }
-    default: {
-      rate = parseInt(rate);
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-    }
-  }
-};
-
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
@@ -80,7 +59,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let mac = device._id;
   let splitID = acsID.split('-');
   let model = device.model;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
   assocField = assocField.split('.').slice(0, -2).join('.');
@@ -157,22 +137,12 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = utilHandlers.getFromNestedKey(data, ifaceKey+'._value');
-          if (model === 'DM985-424 HW3') {
-            if (l2iface === '802.11') {
-              device.wifi = true;
-            }
-          } else {
-            let cmpIface2 = iface2;
-            if (model === 'GWR-1200AC') {
-              // For some reason it uses index 6 instead of 2 here
-              cmpIface2 = iface2.replace(/2/g, '6');
-            }
-            // Some models leave the dot in the layer2 interface name
-            if (l2iface === cmpIface2 || l2iface === cmpIface2 + '.') {
-              device.wifi = true;
+          let status = cpe.isDeviceConnectedViaWifi(l2iface, iface2, iface5);
+          if (status.includes('wifi')) {
+            device.wifi = true;
+            if (status === 'wifi2') {
               device.wifi_freq = 2.4;
-            } else if (l2iface === iface5 || l2iface === iface5 + '.') {
-              device.wifi = true;
+            } else if (status === 'wifi5') {
               device.wifi_freq = 5;
             }
           }
@@ -192,11 +162,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           ));
           interfaces = interfaces.filter((i)=>i[0]!='_');
           if (fields.devices.associated_5) {
-            if (model == 'AC10') {
-              interfaces.push('2');
-            } else {
-              interfaces.push('5');
-            }
+            let splitField = fields.devices.associated_5.split('.');
+            interfaces.push(splitField[splitField.length - 2]);
           }
           interfaces.forEach((iface) => {
             // Get active indexes, filter metadata fields
@@ -237,28 +204,13 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               if (fields.devices.host_rssi) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
-                device.rssi = utilHandlers.getFromNestedKey(
+                let rssiValue = utilHandlers.getFromNestedKey(
                   data, rssiKey+'._value',
                 );
-                if (typeof device.rssi !== 'undefined') {
-                  // Casts to string if is a number so we can replace 'dBm'
-                  if (typeof device.rssi === 'number') {
-                    device.rssi = device.rssi.toString();
-                  }
-                  device.rssi = device.rssi.replace('dBm', '');
-                  // Cast back to number to avoid converting issues
-                  device.rssi = parseInt(device.rssi);
-                  if (isNaN(parseInt(device.rssi))) {
-                    debug(`device.rssi is NaN beware!!!`);
-                  }
-                  // Convert wrong positive values to negative for Greatek
-                  if (model == 'GONUAC002' && device.rssi > 0) {
-                    device.rssi = -device.rssi;
-                  }
-                }
+                device.rssi = cpe.convertRssiValue(rssiValue);
               }
-              // Collect snr, if available
-              if (fields.devices.host_snr) {
+              // Collect explicit snr, if available - fallback on rssi value
+              if (cpe.modelPermissions().lan.listLANDevicesSNR) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = utilHandlers.getFromNestedKey(
@@ -292,7 +244,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 device.rate = utilHandlers.getFromNestedKey(
                   data, rateKey+'._value',
                 );
-                device.rate = convertWifiRate(model, device.rate);
+                device.rate = cpe.convertWifiRate(device.rate);
               }
               if (device.mac == device.name &&
                 fields.devices.alt_host_name) {
