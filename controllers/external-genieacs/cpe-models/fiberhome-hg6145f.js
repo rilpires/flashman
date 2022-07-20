@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let fiberhomeModel = Object.assign({}, basicCPEModel);
 
-fiberhomeModel.identifier = {vendor: 'FastWireless', model: 'HG6145F'};
+fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6145F'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
