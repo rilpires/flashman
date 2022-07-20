@@ -10,12 +10,12 @@ router.use( // all paths will use these middlewares.
 );
 
 router.route('/get').get(
-  authController.ensurePermission('superuser'),
+  authController.ensurePermission('grantFlashmanManage'),
   onuFactoryCredentialsController.getCredentialsData,
 );
 
 router.route('/set').post(
-  authController.ensurePermission('superuser'),
+  authController.ensurePermission('grantFlashmanManage'),
   onuFactoryCredentialsController.setCredentialsData,
 );
 
