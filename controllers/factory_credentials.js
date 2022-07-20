@@ -9,15 +9,6 @@ const factoryCredentialsController = {};
 
 const allowedCustomFactoryModels = DevicesAPI.getTR069CustomFactoryModels();
 
-factoryCredentialsController.getVendorList = function() {
-  return Array.from(allowedCustomFactoryModels.keys());
-};
-
-factoryCredentialsController.getModelListByVendor = function(vendor) {
-  return allowedCustomFactoryModels[vendor];
-};
-
-
 factoryCredentialsController.getCredentialsAtConfig = async function() {
   let message = t('factoryCredentialsGenericError', {errorline: __line});
   let config = {};
