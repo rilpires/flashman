@@ -966,10 +966,10 @@
 	"alert": "alert",
 	"alertFilterDescription": "Use this filters to return only CPEs that have an alert.",
 	"flashmanUnavailable": "Flashman unavailable",
-	"factoryCredentialsPresetLabel": "Customized web credentials configuration",
-	"factoryCredentialsNotFound": "Could not found a valid customized web credentials configuration",
-	"factoryCredentialsGenericError": "An error has occurred while searching for a customized web credentials configuration",
-	"duplicatedCredentials": "The model {{-model}} already has a customized web credentials configuration",
+	"factoryCredentialsPresetLabel": "Custom web credentials configuration",
+	"factoryCredentialsNotFound": "Could not find a valid custom web credentials configuration",
+	"factoryCredentialsGenericError": "An error has occurred while searching for the custom web credentials configuration",
+	"duplicatedCredentials": "The model {{-model}} already has a custom web credentials configuration",
 	"invalidModel": "Invalid model",
 	"invalidManufacturer": "Invalid manufacturer"
 }
