@@ -23,7 +23,6 @@ factoryCredentialsController.getCredentialsAtConfig = async function() {
   // Get onu credentials inside config, if present
   if (
     config && config.tr069 && config.tr069.onu_factory_credentials &&
-    config.tr069.onu_factory_credentials.timestamp &&
     config.tr069.onu_factory_credentials.credentials
   ) {
     return {
