@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let datacomModel = Object.assign({}, basicCPEModel);
 
-datacomModel.identifier = 'Datacom DM986-414';
+datacomModel.identifier = {vendor: 'Datacom', model: 'DM986-414'};
 
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
