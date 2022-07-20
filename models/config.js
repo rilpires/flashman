@@ -31,7 +31,7 @@ let configSchema = new mongoose.Schema({
     insecure_enable: {type: Boolean, default: false},
     has_never_enabled_insecure: {type: Boolean, default: true},
     onu_factory_credentials: {
-      timestamp: {type: Date, default: new Date()},
+      timestamp: {type: Date},
       credentials: [{
         vendor: {type: String},
         model: {type: String},
