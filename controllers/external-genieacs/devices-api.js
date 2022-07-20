@@ -56,7 +56,7 @@ const tr069Models = {
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
-const getTR069Models = function() {
+const getTR069CustomFactoryModels = function() {
   let ret = new Map();
   Object.values(tr069Models).forEach((cpe) => {
     if (ret[cpe.identifier.vendor]) {
@@ -331,4 +331,4 @@ exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
-exports.getTR069Models = getTR069Models;
+exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;

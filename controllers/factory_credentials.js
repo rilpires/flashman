@@ -7,14 +7,14 @@ const DevicesAPI = require('./external-genieacs/devices-api');
 
 const factoryCredentialsController = {};
 
-factoryCredentialsController.TR069Models = DevicesAPI.getTR069Models();
+const allowedCustomFactoryModels = DevicesAPI.getTR069CustomFactoryModels();
 
 factoryCredentialsController.getVendorList = function() {
-  return Array.from(factoryCredentialsController.TR069Models.keys());
+  return Array.from(allowedCustomFactoryModels.keys());
 };
 
 factoryCredentialsController.getModelListByVendor = function(vendor) {
-  return factoryCredentialsController.TR069Models[vendor];
+  return allowedCustomFactoryModels[vendor];
 };
 
 
@@ -35,7 +35,7 @@ factoryCredentialsController.getCredentialsAtConfig = async function() {
         config.tr069.onu_factory_credentials.credentials) {
       return {
         success: true, credentials: config.tr069.onu_factory_credentials,
-        vendors_info: factoryCredentialsController.TR069Models,
+        vendors_info: allowedCustomFactoryModels,
       };
     }
   }
@@ -69,14 +69,13 @@ factoryCredentialsController.setCredentialsData = async function(req, res) {
   let credentials = req.body.credentials;
   for (let i = 0; i < credentials.length; i++) {
     if (!credentials[i].vendor ||
-        !(credentials[i].vendor in factoryCredentialsController.TR069Models)) {
+        !(credentials[i].vendor in allowedCustomFactoryModels)) {
       return res.status(200).json({
         success: false, type: 'error',
         message: t('invalidManufacturer', {errorline: __line}),
       });
     }
-    let vendor =
-      factoryCredentialsController.TR069Models[credentials[i].vendor];
+    let vendor = allowedCustomFactoryModels[credentials[i].vendor];
     if (!credentials[i].model || !vendor.includes(credentials[i].model)) {
       return res.status(200).json({
         success: false, type: 'error',
