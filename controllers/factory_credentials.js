@@ -2,6 +2,7 @@
 /* global __line */
 
 const t = require('./language').i18next.t;
+const util = require('./handlers/util');
 const ConfigModel = require('../models/config');
 const DevicesAPI = require('./external-genieacs/devices-api');
 
@@ -51,6 +52,12 @@ factoryCredentialsController.getCredentialsData = async function(req, res) {
 
 // Set credentials data
 factoryCredentialsController.setCredentialsData = async function(req, res) {
+  if (!util.isJSONObject(req.body)) {
+    return res.status(200).json({
+      success: false, type: 'error',
+      message: t('jsonError', {errorline: __line}),
+    });
+  }
   if (!req.body.credentials) {
     return res.status(200).json({
       success: false, type: 'error',
