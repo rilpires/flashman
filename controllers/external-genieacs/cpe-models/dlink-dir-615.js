@@ -6,6 +6,7 @@ dlinkModel.identifier = {vendor: 'D-Link', model: 'DIR-615'};
 
 dlinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.wifi.dualBand = false;
   permissions.firmwareUpgrades = {

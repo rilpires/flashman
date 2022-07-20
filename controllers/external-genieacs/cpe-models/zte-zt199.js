@@ -6,6 +6,7 @@ zteModel.identifier = 'ZTE ZT199';
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.mesh = true;
   permissions.features.pingTest = true;
