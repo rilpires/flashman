@@ -21,15 +21,15 @@ factoryCredentialsController.getCredentialsAtConfig = async function() {
     message = t('configFindError', {errorline: __line});
   }
   // Get onu credentials inside config, if present
-  if (config && config.tr069) {
-    if (config.tr069.onu_factory_credentials &&
-        config.tr069.onu_factory_credentials.timestamp &&
-        config.tr069.onu_factory_credentials.credentials) {
-      return {
-        success: true, credentials: config.tr069.onu_factory_credentials,
-        vendors_info: allowedCustomFactoryModels,
-      };
-    }
+  if (
+    config && config.tr069 && config.tr069.onu_factory_credentials &&
+    config.tr069.onu_factory_credentials.timestamp &&
+    config.tr069.onu_factory_credentials.credentials
+  ) {
+    return {
+      success: true, credentials: config.tr069.onu_factory_credentials,
+      vendors_info: allowedCustomFactoryModels,
+    };
   }
   return {success: false, message: message};
 };
@@ -92,16 +92,13 @@ factoryCredentialsController.setCredentialsData = async function(req, res) {
         message: t('emptyPasswordError', {errorline: __line}),
       });
     }
-    let hasDuplicate = credentials.reduce((acc, cur, index) => {
-      // "acc" is sended to the next iteration, so, if we have
-      // a duplicated credentials config at the iteration i,
-      // then "acc" will be true in the iteration i+1.
-      // If "acc" is true at the beginning of the (i+1) loop,
-      // we have a duplicated, so we must to exit the reduce
-      // returning true.
-      if (acc) return true;
+    let hasDuplicate = credentials.reduce((result, current, index) => {
+      // "result" is sent to the next iteration, so, if we have
+      // a duplicate credential config at the i-th iteration,
+      // then "result" will be true in every next iteration.
+      if (result) return true;
       for (let i = index+1; i < credentials.length; i++) {
-        if (credentials[i].model == cur.model) return true;
+        if (credentials[i].model == current.model) return true;
       }
       return false;
     }, false);
@@ -118,9 +115,7 @@ factoryCredentialsController.setCredentialsData = async function(req, res) {
   }
   let config = {};
   try {
-    config = await ConfigModel.findOne(
-      {is_default: true}, {tr069: true},
-    );
+    config = await ConfigModel.findOne({is_default: true}, {tr069: true});
   } catch (err) {
     return res.status(200).json({
       success: false, type: 'error',
