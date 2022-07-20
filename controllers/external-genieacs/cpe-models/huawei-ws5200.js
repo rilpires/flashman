@@ -6,6 +6,7 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'WS5200'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.firmwareUpgrades = {
     '10.0.5.9(C506)': [],

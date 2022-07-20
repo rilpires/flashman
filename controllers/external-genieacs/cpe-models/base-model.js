@@ -36,6 +36,7 @@ basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
+      customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
       mesh: false, // can create a mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog

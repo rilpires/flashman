@@ -16,10 +16,10 @@ const API_URL = 'http://localhost:$PORT/acs/';
 const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
 
 const request = require('request');
+const basicCPEModel = require('./cpe-models/base-model');
 
 // Import each and every model
 const tr069Models = {
-  basicCPEModel: require('./cpe-models/base-model'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
   datacomDM986Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
@@ -59,20 +59,13 @@ const tr069Models = {
 const getTR069CustomFactoryModels = function() {
   let ret = new Map();
   Object.values(tr069Models).forEach((cpe) => {
-    if (ret[cpe.identifier.vendor]) {
-      ret[cpe.identifier.vendor].push(cpe.identifier.model);
-    } else {
-      ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
+    if (cpe.modelPermissions().features.customAppPassword) {
+      if (ret[cpe.identifier.vendor]) {
+        ret[cpe.identifier.vendor].push(cpe.identifier.model);
+      } else {
+        ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
+      }
     }
-  });
-  delete ret['NoVendor'];
-  // Removing DIR-841, DIR-842, WS5200, AX2 and AX3 from models that can use
-  // custom credentials from presets
-  ret['D-Link'] = ret['D-Link'].filter((model) => {
-    return !(['DIR-841', 'DIR-842'].includes(model));
-  });
-  ret['Huawei'] = ret['Huawei'].filter((model) => {
-    return !(['WS5200', 'WS7001 / AX2', 'WS7100 / AX3'].includes(model));
   });
   return ret;
 };
@@ -92,7 +85,7 @@ const getTR069UpgradeableModels = function() {
 
 const instantiateCPEByModelFromDevice = function(device) {
   if (!device.acs_id) {
-    return {success: false, cpe: tr069Models.basicCPEModel};
+    return {success: false, cpe: basicCPEModel};
   }
   let splitID = device.acs_id.split('-');
   let model = splitID.slice(1, splitID.length-1).join('-');
@@ -207,7 +200,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};
   }
-  return {success: false, cpe: tr069Models.basicCPEModel};
+  return {success: false, cpe: basicCPEModel};
 };
 
 const getModelFields = function(oui, model, modelName, firmwareVersion) {
