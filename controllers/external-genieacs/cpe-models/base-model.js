@@ -66,6 +66,7 @@ basicCPEModel.modelPermissions = function() {
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
+      hasUptimeField: true, // flag to handle devices that don't have uptime
     },
     wifi: {
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
