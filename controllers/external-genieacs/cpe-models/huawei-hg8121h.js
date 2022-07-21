@@ -2,10 +2,11 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = 'Huawei HG8121H';
+huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8121H'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;

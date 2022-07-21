@@ -2,10 +2,11 @@ const basicCPEModel = require('./base-model');
 
 let dlinkModel = Object.assign({}, basicCPEModel);
 
-dlinkModel.identifier = 'D-Link DIR-841';
+dlinkModel.identifier = {vendor: 'D-Link', model: 'DIR-841'};
 
 dlinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 180;

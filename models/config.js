@@ -30,6 +30,15 @@ let configSchema = new mongoose.Schema({
     stun_enable: {type: Boolean, default: false},
     insecure_enable: {type: Boolean, default: false},
     has_never_enabled_insecure: {type: Boolean, default: true},
+    onu_factory_credentials: {
+      timestamp: {type: Date},
+      credentials: [{
+        vendor: {type: String},
+        model: {type: String},
+        username: {type: String},
+        password: {type: String},
+      }],
+    },
   },
   certification: {
     // WAN steps required here are:
