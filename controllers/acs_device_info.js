@@ -729,14 +729,12 @@ const fetchSyncResult =
         acsData.wan.wan_ip_ppp = getFieldFromGenieData(
           data, wan.wan_ip_ppp, useLastIndexOnWildcard,
         );
-        if (cpe.modelPermissions().wan.hasUptimeField) {
-          acsData.wan.uptime = getFieldFromGenieData(
-            data, wan.uptime, useLastIndexOnWildcard,
-          );
-          acsData.wan.uptime_ppp = getFieldFromGenieData(
-            data, wan.uptime_ppp, useLastIndexOnWildcard,
-          );
-        }
+        acsData.wan.uptime = getFieldFromGenieData(
+          data, wan.uptime, useLastIndexOnWildcard,
+        );
+        acsData.wan.uptime_ppp = getFieldFromGenieData(
+          data, wan.uptime_ppp, useLastIndexOnWildcard,
+        );
         acsData.wan.mtu = getFieldFromGenieData(
           data, wan.mtu, useLastIndexOnWildcard,
         );
