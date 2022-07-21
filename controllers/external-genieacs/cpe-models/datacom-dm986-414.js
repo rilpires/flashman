@@ -1,29 +1,25 @@
 const basicCPEModel = require('./base-model');
 
-let greatekModel = Object.assign({}, basicCPEModel);
+let datacomModel = Object.assign({}, basicCPEModel);
 
-greatekModel.identifier = {vendor: 'Greatek', model: 'Stavix G421RQ'};
+datacomModel.identifier = {vendor: 'Datacom', model: 'DM986-414'};
 
-greatekModel.modelPermissions = function() {
+datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.wan.speedTestLimit = 250;
-  permissions.usesStavixXMLConfig = true;
+    basicCPEModel.portForwardPermissions.noRanges;
   permissions.firmwareUpgrades = {
-    'V1.2.3': [],
-    'V2.2.0': [],
-    'V2.2.3': [],
-    'V2.2.7': [],
+    'V4.6.0-210709': [],
   };
   return permissions;
 };
 
-greatekModel.convertWifiMode = function(mode) {
+datacomModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return 'bg';
@@ -39,25 +35,18 @@ greatekModel.convertWifiMode = function(mode) {
   }
 };
 
-greatekModel.getBeaconType = function() {
-  return 'WPA2';
-};
-
-greatekModel.convertRssiValue = function(rssiValue) {
-  let result = basicCPEModel.convertRssiValue(rssiValue);
-  // This model sends RSSI as a positive value instead of negative
-  if (typeof result !== 'undefined') {
-    result = -result;
-  }
-  return result;
-};
-
-greatekModel.getModelFields = function() {
+datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_RTK_WANGponLinkConfig.VLANIDMark';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
+    'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_WebUserInfo.UserPassword';
+  fields.port_mapping_fields.external_port_end = [
+    'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
+  ];
+  fields.port_mapping_values.protocol = [
+    'PortMappingProtocol', 'TCPandUDP', 'xsd:string',
+  ];
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -77,4 +66,4 @@ greatekModel.getModelFields = function() {
   return fields;
 };
 
-module.exports = greatekModel;
+module.exports = datacomModel;

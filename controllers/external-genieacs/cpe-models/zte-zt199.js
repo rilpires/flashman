@@ -1,11 +1,12 @@
 const basicCPEModel = require('./base-model');
 
-let multilaserModel = Object.assign({}, basicCPEModel);
+let zteModel = Object.assign({}, basicCPEModel);
 
-multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'H199A'};
+zteModel.identifier = {vendor: 'ZTE', model: 'ZT199'};
 
-multilaserModel.modelPermissions = function() {
+zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.mesh = true;
   permissions.features.pingTest = true;
@@ -25,7 +26,7 @@ multilaserModel.modelPermissions = function() {
   return permissions;
 };
 
-multilaserModel.convertWifiMode = function(mode) {
+zteModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return 'b,g';
@@ -41,24 +42,38 @@ multilaserModel.convertWifiMode = function(mode) {
   }
 };
 
-multilaserModel.convertToDbm = function(power) {
-  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
-};
-
-multilaserModel.getModelFields = function() {
+zteModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_ZTE-COM_AdminAccount.Username';
-  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_ZTE-COM_AdminAccount.Password';
+  fields.wan.wan_ip = fields.wan.wan_ip.replace(
+    /1.ExternalIPAddress/, '*.ExternalIPAddress',
+  );
+  fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp.replace(
+    /1.ExternalIPAddress/, '*.ExternalIPAddress',
+  );
+  fields.wifi2.band = fields.wifi2.band.replace(
+    /BandWidth/g, 'X_ZTE-COM_BandWidth',
+  );
+  fields.wifi5.band = fields.wifi5.band.replace(
+    /BandWidth/g, 'X_ZTE-COM_BandWidth',
+  );
+  fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
+  fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
+  fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
+  fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.AssociatedDevice';
   fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.5.AssociatedDevice';
   fields.port_mapping_fields.internal_port_end = [
-    'X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt',
+    'X_ZTE-COM_InternalPortEndRange', 'internal_port_end', 'xsd:unsignedInt',
   ];
+  fields.port_mapping_values.description[0] = 'X_ZTE-COM_Name';
+  fields.port_mapping_values.other_description = ['PortMappingDescription',
+    '', 'xsd:string'];
   fields.port_mapping_values.protocol[1] = 'BOTH';
+  fields.port_mapping_values.zte_remote_host_end = [
+    'X_ZTE-COM_RemoteHostEndRange', '0.0.0.0', 'xsd:string',
+  ];
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
     'STUNEnable';
   fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
@@ -91,4 +106,4 @@ multilaserModel.getModelFields = function() {
   return fields;
 };
 
-module.exports = multilaserModel;
+module.exports = zteModel;

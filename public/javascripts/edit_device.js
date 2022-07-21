@@ -365,6 +365,9 @@ let validateEditDevice = function(event) {
           renderEditErrors(errors);
           openErrorSwal(resp.message);
           switchSubmitButton(index);
+        } else if ('success' in resp && !resp.success) {
+          openErrorSwal(resp.message);
+          switchSubmitButton(index);
         }
       },
     });

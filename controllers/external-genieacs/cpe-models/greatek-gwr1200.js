@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let greatekModel = Object.assign({}, basicCPEModel);
 
-greatekModel.identifier = 'Greatek GWR1200';
+greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -67,6 +67,7 @@ greatekModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+  delete fields.diagnostics.speedtest.num_of_conn;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =
     ['ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt'];

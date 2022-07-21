@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let tendaModel = Object.assign({}, basicCPEModel);
 
-tendaModel.identifier = 'Tenda HG9';
+tendaModel.identifier = {vendor: 'Tenda', model: 'HG9'};
 
 tendaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -40,7 +40,7 @@ tendaModel.getBeaconType = function() {
 };
 
 tendaModel.convertToDbm = function(power) {
-  return parseFloat(power.split(' ')[0]);
+  return parseFloat(power.split(' ')[0]).toFixed(3);
 };
 
 tendaModel.getModelFields = function() {

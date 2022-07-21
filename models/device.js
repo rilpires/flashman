@@ -170,6 +170,7 @@ let deviceSchema = new Schema({
   bridge_mode_gateway: String,
   bridge_mode_dns: String,
   wan_ip: String,
+  wan_ipv6: String,
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
   ipv6_enabled: {type: Number, default: 2, enum: [
@@ -246,6 +247,7 @@ let deviceSchema = new Schema({
     host: String,
     lat: {type: String, default: '---'},
     loss: {type: String, default: '---'},
+    count: {type: String, default: '---'},
     completed: {type: Boolean, default: false},
   }],
   sys_up_time: {type: Number, default: 0}, // seconds

@@ -515,7 +515,14 @@ anlixDocumentReady.add(function() {
         row.find('.device-status').removeClass('green-text red-text grey-text')
                                   .addClass(res.status_color + '-text');
         let wanip = res.wan_ip;
-        row.find('.device-wan-ip').html(wanip);
+        let wanipv6 = res.wan_ipv6;
+
+        // Assign both ipv4 and ipv6 to row
+        row.find('.device-wan-ip').html(
+          wanip +
+          (wanipv6 ? '<br>' + wanipv6 : ''),
+        );
+
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
         row.find('.device-pppoe-user').html(res.pppoe_user);
@@ -842,6 +849,7 @@ anlixDocumentReady.add(function() {
         uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
+        (device.wan_ipv6 ? '<br>' + device.wan_ipv6 : '') +
       '</td><td class="text-center device-ip">'+
         device.ip+
       '</td><td class="text-center device-installed-release">'+

@@ -107,13 +107,15 @@ const calculatePingDiagnostic = async function(
       if (isNaN(loss)) {
         debug('calculatePingDiagnostic loss is not an number!!!');
       }
-
+      const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
       currentPingTest.lat = pingKeys.avg_resp_time.toString();
       currentPingTest.loss = loss.toString();
+      currentPingTest.count = count.toString();
 
       if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
         if (pingKeys.success_count === 1) currentPingTest.loss = '0';
         else currentPingTest.loss = '100';
+        currentPingTest.count = '1';
       }
     }
 
@@ -139,6 +141,7 @@ const calculatePingDiagnostic = async function(
         result[p.host] = {
           lat: p.lat,
           loss: p.loss,
+          count: p.count,
           completed: p.completed,
         };
       }
@@ -306,6 +309,7 @@ const startPingDiagnose = async function(acsID) {
   let diagnStateField = fields.diagnostics.ping.diag_state;
   let diagnNumRepField = fields.diagnostics.ping.num_of_rep;
   let diagnURLField = fields.diagnostics.ping.host;
+  let diagnInterfaceField = fields.diagnostics.ping.interface;
   let diagnTimeoutField = fields.diagnostics.ping.timeout;
 
   let numberOfRep = 10;
@@ -319,6 +323,17 @@ const startPingDiagnose = async function(acsID) {
                       [diagnURLField, pingHostUrl, 'xsd:string'],
                       [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
+  if (cpe.modelPermissions().wan.pingTestSetInterface) {
+    let interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANPPPConnection.1.';
+    if (device.connection_type === 'dhcp') {
+      interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANIPConnection.1.';
+    }
+    task.parameterValues.push(
+      [diagnInterfaceField, interfaceVal, 'xsd:string'],
+    );
+  }
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting ping diagnose for ' + acsID);

@@ -150,14 +150,10 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.rxpower,
-          );
+          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
         }
         if (ponSignal.txpower) {
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.txpower,
-          );
+          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
         }
         ponSignal = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
@@ -293,14 +289,11 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
+
         if (successRxPower) {
           // covert rx and tx signal
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.rxpower,
-          );
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.txpower,
-          );
+          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
           // send then
           let config = await Config.findOne(
             {is_default: true}, {tr069: true},

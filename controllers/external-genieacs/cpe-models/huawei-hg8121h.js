@@ -2,13 +2,15 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = 'Huawei HG8121H';
+huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8121H'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
+  permissions.lan.listLANDevicesSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.speedTestLimit = 150;
   permissions.wifi.dualBand = false;
@@ -112,6 +114,7 @@ huaweiModel.getModelFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
   );
+  delete fields.diagnostics.speedtest.num_of_conn;
   fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.mesh2.password = fields.mesh2.password.replace(

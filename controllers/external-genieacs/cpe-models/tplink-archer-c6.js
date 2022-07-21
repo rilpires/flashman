@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = Object.assign({}, basicCPEModel);
 
-tplinkModel.identifier = 'TP-Link Archer C6';
+tplinkModel.identifier = {vendor: 'TP-Link', model: 'Archer C6 v3.2'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
