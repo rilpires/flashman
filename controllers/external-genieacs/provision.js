@@ -41,7 +41,7 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
           target = i;
         }
       }
-      result[key] = {value: target.value[0], writable: target.writable[0]};
+      result[key] = {value: target.value[0], writable: target.writable};
     }
   });
   return result;
@@ -52,7 +52,8 @@ let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 let modelName;
 let firmwareVersion;
-if (modelClass === 'Device2') {
+// Replaces IGD for Device on devices that use the new TR-069 standard
+if (modelClass === 'Device2') { // TP Link HC220 G5
   modelName = declare('Device.DeviceInfo.ModelName', {value: 1}).value[0];
   firmwareVersion = declare('Device.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
 } else {
