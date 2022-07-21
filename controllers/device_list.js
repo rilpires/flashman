@@ -3274,6 +3274,14 @@ deviceListController.doSpeedTest = function(req, res) {
     let projection = {measureServerIP: true, measureServerPort: true};
     Config.findOne({is_default: true}, projection)
     .lean().exec(async function(err, matchedConfig) {
+      
+      let customUrl = '';
+      if (matchedDevice.temp_command_trap &&
+          matchedDevice.temp_command_trap.speedtest_url &&
+          matchedDevice.temp_command_trap.speedtest_url !== ''
+      ) {
+        customUrl = matchedDevice.temp_command_trap.speedtest_url;
+      }
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
@@ -3281,8 +3289,7 @@ deviceListController.doSpeedTest = function(req, res) {
         });
       }
       if (
-        req.path.indexOf('/speeddiagnostic')==-1 && 
-        !matchedConfig.measureServerIP
+        customUrl=='' && !matchedConfig.measureServerIP
       ) {
         return res.status(200).json({
           success: false,
@@ -3293,13 +3300,6 @@ deviceListController.doSpeedTest = function(req, res) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
 
-      let customUrl = '';
-      if (matchedDevice.temp_command_trap &&
-          matchedDevice.temp_command_trap.speedtest_url &&
-          matchedDevice.temp_command_trap.speedtest_url !== ''
-      ) {
-        customUrl = matchedDevice.temp_command_trap.speedtest_url;
-      }
 
       if (matchedDevice.use_tr069) {
         // When customUrl is defined, we skip 'estimative' stage
