@@ -29,13 +29,14 @@ basicCPEModel.portForwardPermissions = {
 };
 
 // Must be changed for every model, used when importing firmwares
-basicCPEModel.identifier = 'NoVendor NoName';
+basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 
 // Must be tweaked by models to reflect their features and permissions
 // IF YOU NEED A NEW KEY, ADD IT TO THIS BASE MODEL AS WELL!
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
+      customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
       mesh: false, // can create a mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog
@@ -56,6 +57,7 @@ basicCPEModel.modelPermissions = function() {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
+      listLANDevicesSNR: false, // has explicit SNR field on connected devices
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
@@ -63,6 +65,7 @@ basicCPEModel.modelPermissions = function() {
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
+      pingTestSetInterface: false, // pingtest will set device interface
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
@@ -582,6 +585,7 @@ basicCPEModel.getModelFields = function() {
         failure_count: 'InternetGatewayDevice.IPPingDiagnostics.FailureCount',
         success_count: 'InternetGatewayDevice.IPPingDiagnostics.SuccessCount',
         host: 'InternetGatewayDevice.IPPingDiagnostics.Host',
+        interface: 'InternetGatewayDevice.IPPingDiagnostics.Interface',
         num_of_rep: 'InternetGatewayDevice.IPPingDiagnostics.'+
           'NumberOfRepetitions',
         avg_resp_time: 'InternetGatewayDevice.IPPingDiagnostics.'+

@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = 'Huawei EG8145X6';
+huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145X6'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -10,6 +10,7 @@ huaweiModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.lan.listLANDevicesSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

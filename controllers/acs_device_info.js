@@ -46,6 +46,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'bg':
     case 'b,g':
     case 'b/g':
+    case 'g-only':
       return '11g';
     case '11bgn':
     case '11a':
@@ -68,6 +69,8 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a,n,ac':
     case 'a/n/ac':
     case 'ac,n,a':
+    case 'ac,a,n':
+    case 'ac,n':
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
     case 'ax':
@@ -270,7 +273,7 @@ const createRegistry = async function(req, cpe, permissions) {
   let mode2;
   let band2;
   if (data.wifi2.mode && data.wifi2.mode.value) {
-    mode2 = convertWifiMode(data.wifi2.mode.value, true);
+    mode2 = convertWifiMode(data.wifi2.mode.value, false);
     if (data.wifi2.band && data.wifi2.band.value) {
       band2 = convertWifiBand(
         cpe, data.wifi2.band.value, data.wifi2.mode.value, true,
