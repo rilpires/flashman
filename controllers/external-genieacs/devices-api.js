@@ -45,6 +45,7 @@ const tr069Models = {
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
+  nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
@@ -172,6 +173,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(modelName)) {
     // Nokia G-140W-C and family
     return {success: true, cpe: tr069Models.nokiaG140WCModel};
+  } else if (modelName === 'G-140W-H') {
+    // Nokia G-140W-H
+    return {success: true, cpe: tr069Models.nokiaG140WHModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     return {success: true, cpe: tr069Models.nokiaG2425Model};
