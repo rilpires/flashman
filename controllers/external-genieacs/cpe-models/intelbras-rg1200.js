@@ -21,8 +21,6 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.speedTest = true; // will enable speed test dialogs
   // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 80;
-  // will automatically apply stun configurations if configured
-  permissions.features.stun = true;
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
 
