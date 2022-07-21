@@ -94,7 +94,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let rxPowerFieldEpon = '';
@@ -184,7 +185,7 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   }
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let fields = cpe.getModelFields();
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
   let upTimeField1;
@@ -378,39 +379,6 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);
     return original;
-  }
-};
-
-acsMeasuresHandler.convertToDbm = function(model, rxPower) {
-  switch (model) {
-    case 'HG9': {
-      rxPower = parseFloat(rxPower.split(' ')[0]);
-      if (isNaN(rxPower)) {
-        debug('rxPower is not an number!!!');
-      }
-      return rxPower;
-    }
-    case 'IGD':
-    case 'P20':
-    case 'FW323DAC':
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL':
-    case 'G-140W-C':
-    case 'G-140W-CS':
-    case 'G-140W-UD':
-    case 'DM985-424 HW3': {
-      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
-      if (isNaN(rxPower)) {
-        debug('rxPower is not a number!!!');
-      }
-      return rxPower;
-    }
-    case 'GONUAC001':
-    case 'GONUAC002':
-    default:
-      return rxPower;
   }
 };
 
