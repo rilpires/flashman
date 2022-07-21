@@ -15,34 +15,23 @@ intelbrasModel.identifier = 'Intelbras RG1200';
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
 
-  // wifi permissions
   permissions.wifi.modeRead = true;
   permissions.wifi.modeWrite = false;
-
-  // features permissions
-  permissions.features.pingTest = true; // will enable ping test dialog
+  permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
+  // speedtest limit, values above show as "limit+ Mbps"
+  permissions.wan.speedTestLimit = 80;
   // will automatically apply stun configurations if configured
-  permissions.features.stun = false; // TODO: testar com true
+  permissions.features.stun = true;
+  permissions.lan.listLANDevices = false;
+  permissions.lan.configWrite = false;
 
   // firmware upgrade permissions
   permissions.firmwareUpgrades = {
     '2.1.4': [],
   };
 
-  // diagnostic permissions
-  // pingtest will ignore test count and use 1
-  permissions.wan.pingTestSingleAttempt = false; // TODO: testar com true
-  // queue tasks and only send request on last
-  permissions.wan.portForwardQueueTasks = false; // TODO: testar port forward
-  // TODO: mudar para aquele padrão de fullSupport... etc
-  permissions.wan.portForwardPermissions = null; // specifies range/asym support
-  // speedtest limit, values above show as "limit+ Mbps"
-  // TODO: testar limites do teste de velocidade
-  permissions.wan.speedTestLimit = 85;
-
   // flag for devices that stay online post reset
-  permissions.onlineAfterReset = false; // TODO: testar essa flag de reset
   return permissions;
 };
 
@@ -105,6 +94,16 @@ intelbrasModel.convertWifiBandToFlashman = function(band, isAC) {
 
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  // stun fields:
+  // These should only be added whenever they exist, for legacy reasons:
+  fields.common.web_admin_user = 'InternetGatewayDevice.User.1.Username';
+  fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.common.stun_udp_conn_req_addr =
+    'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+  fields.common.alt_uid =
+    'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.MACAddress';
   // wifi fields:
   fields.wifi2.band = // modes: "20M", "40M", "Auto20M40M"
     'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.FrequencyWidth';
@@ -115,7 +114,6 @@ intelbrasModel.getModelFields = function() {
   delete fields.diagnostics.speedtest.down_transports;
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
-
   return fields;
 };
 
