@@ -1511,7 +1511,7 @@ const grantUpnp = function(version, model) {
 };
 
 // WAN and LAN Information
-const grantWanLanInformation = function(version, model) {
+const grantWanLanInformation = function(version) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.34.0') >= 0);
   } else {
@@ -1853,7 +1853,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWpsFunction = grantWpsFunction(version, model);
   result.grantSTUN = hasSTUNSupport(model);
   result.grantWiFiAXSupport = grantWiFiAXSupport(model);
-  result.grantWanLanInformation = grantWanLanInformation(model, version);
+  result.grantWanLanInformation = grantWanLanInformation(version);
   return result;
 };
 
