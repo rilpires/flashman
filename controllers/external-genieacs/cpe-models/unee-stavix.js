@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let uneeModel = Object.assign({}, basicCPEModel);
 
-uneeModel.identifier = 'Unee Stavix G421R';
+uneeModel.identifier = {vendor: 'UNEE', model: 'Stavix MPG421R'};
 
 uneeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
