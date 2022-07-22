@@ -57,6 +57,18 @@ utilHandlers.getFromNestedKey = function(data, key, useLastIndexOnWildcard=false
   return current;
 };
 
+utilHandlers.getLastIndexOfNestedKey = function(data, key, useLastIndexOnWildcard=false) {
+  let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
+  let lastIndex = 0;
+  Object.keys(tree).forEach((k) => {
+    if (!k.includes('_')) {
+      lastIndex = k;
+    }
+  });
+  return (lastIndex)? {success: true, lastIndex: lastIndex} :
+                      {success: false, lastIndex: undefined};
+};
+
 utilHandlers.isJSONObject = function(val) {
   return val instanceof Object ? true : false;
 };
