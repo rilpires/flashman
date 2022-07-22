@@ -37,8 +37,8 @@ const tr069Models = {
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
-  intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
+  intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -149,12 +149,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     return {success: true, cpe: tr069Models.hurakallST1001FLModel};
-  } else if (modelName === '121AC') {
-    // Intelbras WiFiber 121AC
-    return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
   } else if (modelName === 'ACtion RG1200') {
     // Intelbras RG-1200
     return {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (modelName === '121AC') {
+    // Intelbras WiFiber 121AC
+    return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
