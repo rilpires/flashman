@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let tkOnuAcDModel = Object.assign({}, basicCPEModel);
 
-tkOnuAcDModel.identifier = 'Think TK-ONU-AC-D';
+tkOnuAcDModel.identifier = {vendor: 'Think', model: 'TK-ONU-AC-D'};
 
 tkOnuAcDModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
