@@ -50,6 +50,7 @@ const tr069Models = {
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
+  tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
@@ -184,6 +185,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'HG9') {
     // Tenda HG9
     return {success: true, cpe: tr069Models.tendaHG9Model};
+  } else if (modelSerial === 'IGD' && modelName === 'Archer C5') {
+    // TP-Link Archer C5
+    return {success: true, cpe: tr069Models.tplinkArcherC5};
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     return {success: true, cpe: tr069Models.tplinkArcherC6};
