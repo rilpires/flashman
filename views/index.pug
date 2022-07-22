@@ -15,6 +15,8 @@ block content
   include includes/showupgradescheduler
   include includes/showrebootmesh
   include includes/showdatacollectingmodal
+  include includes/showwaninfo
+  include includes/showlaninfo
 
   if (superuser || (role.grantSearchLevel >= 1))
     if (superuser || (role.grantSearchLevel == 2))
@@ -167,6 +169,11 @@ block content
                       a#sort-mac-addr= t('uniqueIdentifier')
                     th.text-center
                       a#sort-wan-ip= t('wanIp')
+                      span &ensp;
+                      a.fas.fa-question-circle(
+                        data-toggle="tooltip",
+                        title=t('wanIpTooltip'),
+                      )
                     th.text-center
                       a#sort-public-ip= t('publicIp')
                     th.text-center

@@ -1,0 +1,167 @@
+#waninfo-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+
+      //- Header of the modal
+      .modal-header
+        p.heading.lead
+
+          //- File Icon
+          span.fas.fa-file-alt.fa-lg
+
+          //- Tittle
+          strong &nbsp; #{t('wanInfoOf')}&nbsp;
+
+          //- Device ID
+          strong(name="waninfo-visual" id="waninfo-visual")
+
+        //- Close button
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      #frame-waninfo-modal-alert
+
+      //- Body of the modal
+      .modal-body.pt-2#waninfo-canvas
+
+        //- Update button
+        .row
+          .col.p-0.text-right
+            button#btn-waninfo-update.btn.btn-primary.btn-sm.m-1
+              i#btn-waninfo-ipdate-icon.fas.fa-sync-alt.fa-lg
+              span &nbsp; #{t('Update')}
+
+        //- Refresh icon and text
+        #waninfo-loading-section.row.pt-3
+          .col
+            h2.text-center.grey-text.mb-3
+              //- Icon
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              //- Title
+              span= t('updatingInformations...')
+
+        //- No information
+        #waninfo-no-information-section.row.pt-3
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-network-wired.fa-4x
+              br
+              br
+              span= t('noExtraInformation')
+
+        //- Information items
+        //- Network
+        #ip-network-information.row
+          .col.p-0
+            //- Network Title
+            h5.text-muted.m-0= t('ipNetworkInfoTitle')
+            hr.my-1
+
+            .row.pt-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- IPv4 Address and Mask
+                .row.pt-2#ipv4-address-mask
+                  .col
+                    .span #{t('ipv4AddressMask')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-address-mask-input
+
+              .col.ml-1.grey.lighten-4
+                //- IPv6 Address and Mask
+                .row.pt-2#ipv6-address-mask
+                  .col
+                    .span #{t('ipv6AddressMask')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-address-mask-input
+
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- IPv4 Masked Address
+                .row.pt-2#ipv4-masked-address
+                  .col
+                    .span #{t('ipv4MaskedAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-masked-address-input
+
+              .col.ml-1.grey.lighten-4
+                //- IPv6 Masked Address
+                .row.pt-2#ipv6-masked-address
+                  .col
+                    .span #{t('ipv6MaskedAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-masked-address-input
+
+        //- PPPoE
+        #pppoe-information.row.pt-2
+          .col.p-0
+            //- PPPoE Title
+            h5.text-muted.m-0= t('pppoeInfoTitle')
+            hr.my-1
+
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- MAC Address of PPPoE
+                .row.pt-2#pppoe-mac
+                  .col
+                    .span #{t('pppoeMac')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#pppoe-mac-input
+
+              .col.ml-1.grey.lighten-4
+                //- IP Address of PPPoE
+                .row.pt-2#pppoe-ip
+                  .col
+                    .span #{t('pppoeIp')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#pppoe-ip-input
+
+        //- Default Gateway
+        #default-gateway-information.row.pt-2
+          .col.p-0
+            //- Default Gateway Title
+            h5.text-muted.m-0= t('defaultGatewayInfoTitle')
+            hr.my-1
+
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- IPv4 Default Gateway
+                .row.pt-2#ipv4-default-gateway
+                  .col
+                    .span #{t('ipv4DefaultGateway')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-default-gateway-input
+
+              .col.ml-1.grey.lighten-4
+                //- IPv6 Default Gateway
+                .row.pt-2#ipv6-default-gateway
+                  .col
+                    .span #{t('ipv6DefaultGateway')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-default-gateway-input
+
+        //- DNS Server
+        #dns-server-information.row.pt-2
+          .col.p-0
+            //- DNS Server Title
+            h5.text-muted.m-0= t('dnsServerInfoTitle')
+            hr.my-1
+            
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- DNS Server Address
+                .row.pt-2#dns-server-address
+                  .col
+                    .span #{t('dnsServerAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#dns-server-address-input
+

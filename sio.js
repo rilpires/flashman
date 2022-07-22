@@ -21,6 +21,8 @@ const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
+const SIO_NOTIFICATION_WAN_INFO = 'WANINFO';
+const SIO_NOTIFICATION_LAN_INFO = 'LANINFO';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
@@ -261,6 +263,61 @@ sio.anlixSendWanBytesNotification = function(macaddr, upStatusData) {
                                macaddr, upStatusData, macaddr);
   return found;
 };
+
+
+// WAN Information
+sio.anlixWaitForWanInfoNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+
+  if (!macaddr) {
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_WAN_INFO, macaddr);
+
+  return true;
+};
+
+sio.anlixSendWanInfoNotification = function(macaddr, wanInfoData) {
+  if (!macaddr) {
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_WAN_INFO,
+                               macaddr, wanInfoData, macaddr);
+
+  return found;
+};
+
+
+// LAN Information
+sio.anlixWaitForLanInfoNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+
+  if (!macaddr) {
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_LAN_INFO, macaddr);
+
+  return true;
+};
+
+sio.anlixSendLanInfoNotification = function(macaddr, lanInfoData) {
+  if (!macaddr) {
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_LAN_INFO,
+                               macaddr, lanInfoData, macaddr);
+
+  return found;
+};
+
 
 sio.anlixWaitForPonSignalNotification = function(session, macaddr) {
   if (!session) {
