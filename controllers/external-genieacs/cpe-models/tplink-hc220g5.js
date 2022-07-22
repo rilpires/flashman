@@ -10,7 +10,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.speedTest = true;
-  permissions.features.stun = true;
+  permissions.features.stun = false;
   permissions.wan.speedTestLimit = 410;
   permissions.wan.hasUptimeField = false;
   permissions.firmwareUpgrades = {
