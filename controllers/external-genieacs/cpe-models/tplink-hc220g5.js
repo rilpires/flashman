@@ -74,6 +74,9 @@ tplinkModel.getModelFields = function() {
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];
+  fields.port_mapping_fields_interface_root = 'Device.IP.Interface';
+  fields.port_mapping_fields_interface_key =
+    'Device.NAT.PortMapping.1.Interface';
 
   // Lan
   fields.lan.router_ip = 'Device.IP.Interface.1.IPv4Address.1.IPAddress';

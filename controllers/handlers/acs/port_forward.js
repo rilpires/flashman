@@ -190,11 +190,10 @@ acsPortForwardHandler.checkPortForwardRules = async function(device) {
   }
 };
 
-acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rulesDiffLength) {
+acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rulesDiffLength, key) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let query = {_id: acsID};
-  let key = 'Device.IP.Interface';
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+key;
   let options = {
     method: 'GET',
@@ -225,7 +224,7 @@ acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rule
       }
       if (success && lastIndex) {
         return acsPortForwardHandler.changePortForwardRules(
-          device, rulesDiffLength, lastIndex,
+          device, rulesDiffLength, key + '.' + lastIndex + '.',
         );
       }
     });
@@ -233,15 +232,14 @@ acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rule
   req.end();
 };
 
-acsPortForwardHandler.getIPInterface = async function(device, rulesDiffLength) {
+acsPortForwardHandler.getIPInterface = async function(device, rulesDiffLength, key) {
   let acsID = device.acs_id;
-  let interf = 'Device.IP.Interface';
   let task = {
     name: 'getParameterValues',
-    parameterNames: [interf],
+    parameterNames: [key],
   };
   let cback=(acsID)=>acsPortForwardHandler.getLastIndexInterface(
-    device, acsID, rulesDiffLength,
+    device, acsID, rulesDiffLength, key,
   );
   let result = await TasksAPI.addTask(acsID, task, cback);
   if (!result || !result.success) {
@@ -250,7 +248,7 @@ acsPortForwardHandler.getIPInterface = async function(device, rulesDiffLength) {
 };
 
 acsPortForwardHandler.changePortForwardRules = async function(
-  device, rulesDiffLength, interf = null,
+  device, rulesDiffLength, interfaceValue = null,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -260,6 +258,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let acsID = device.acs_id;
   let model = device.model;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
+  let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
   if (cpe.modelPermissions().usesStavixXMLConfig) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
@@ -268,8 +268,10 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // For TP Link HC220 G5 device, it is necessary to pass the
   // last index interface tree
   if (cpe.modelPermissions().needInterfaceInPortFoward &&
-  interf === null) {
-    acsPortForwardHandler.getIPInterface(device, rulesDiffLength);
+      interfaceValue === null) {
+    acsPortForwardHandler.getIPInterface(
+      device, rulesDiffLength, interfaceRoot,
+    );
     return;
   }
   let fields = cpe.getModelFields();
@@ -366,10 +368,10 @@ acsPortForwardHandler.changePortForwardRules = async function(
       updateTasks.parameterValues.push([
         iterateTemplate+v[1][0], v[1][1], v[1][2]]);
     });
-    if (cpe.modelPermissions().needInterfaceInPortFoward && interf) {
+    if (cpe.modelPermissions().needInterfaceInPortFoward && interfaceValue) {
         updateTasks.parameterValues.push([
-          'Device.NAT.PortMapping.1.Interface',
-          `Device.IP.Interface.${interf}.`,
+          interfaceKey,
+          interfaceValue,
           'xsd:string',
         ]);
     }
