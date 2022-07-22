@@ -21,7 +21,14 @@
       #frame-waninfo-modal-alert
 
       //- Body of the modal
-      .modal-body#waninfo-canvas
+      .modal-body.pt-2#waninfo-canvas
+
+        //- Update button
+        .row
+          .col.p-0.text-right
+            button#btn-waninfo-update.btn.btn-primary.btn-sm.m-1
+              i#btn-waninfo-ipdate-icon.fas.fa-sync-alt.fa-lg
+              span &nbsp; #{t('Update')}
 
         //- Refresh icon and text
         #waninfo-loading-section.row.pt-3
@@ -35,7 +42,7 @@
               span= t('updatingInformations...')
 
         //- No information
-        #waninfo-no-information-section.row
+        #waninfo-no-information-section.row.pt-3
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-network-wired.fa-4x
@@ -46,145 +53,115 @@
         //- Information items
         //- Network
         #ip-network-information.row
-          .col
+          .col.p-0
             //- Network Title
-            .row
-              h2.text-center.grey-text.mb-3#logs-placeholder
-                span #{t('ipNetworkInfoTitle')}
-            
-            .row
-              .col-6
+            h5.text-muted.m-0= t('ipNetworkInfoTitle')
+            hr.my-1
+
+            .row.pt-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
                 //- IPv4 Address and Mask
-                #ipv4-address-mask.md-form.input-entry
-                  label.active #{t('ipv4AddressMask')}
-                  input#ipv4-address-mask-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#ipv4-address-mask
+                  .col
+                    .span #{t('ipv4AddressMask')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-address-mask-input
 
-              .col-6
+              .col.ml-1.grey.lighten-4
                 //- IPv6 Address and Mask
-                #ipv6-address-mask.md-form.input-entry
-                  label.active #{t('ipv6AddressMask')}
-                  input#ipv6-address-mask-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#ipv6-address-mask
+                  .col
+                    .span #{t('ipv6AddressMask')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-address-mask-input
 
-            .row
-              .col-6
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
                 //- IPv4 Masked Address
-                #ipv4-masked-address.md-form.input-entry
-                  label.active #{t('ipv4MaskedAddress')}
-                  input#ipv4-masked-address-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#ipv4-masked-address
+                  .col
+                    .span #{t('ipv4MaskedAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-masked-address-input
 
-              .col-6
+              .col.ml-1.grey.lighten-4
                 //- IPv6 Masked Address
-                #ipv6-masked-address.md-form.input-entry
-                  label.active #{t('ipv6MaskedAddress')}
-                  input#ipv6-masked-address-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#ipv6-masked-address
+                  .col
+                    .span #{t('ipv6MaskedAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-masked-address-input
 
         //- PPPoE
-        #pppoe-information.row
-          .col
+        #pppoe-information.row.pt-2
+          .col.p-0
             //- PPPoE Title
-            .row
-              h2.text-center.grey-text.mb-3#logs-placeholder
-                span #{t('pppoeInfoTitle')}
-            
-            .row
-              .col-6
-                //- MAC Address of PPPoE
-                #pppoe-mac.md-form.input-entry
-                  label.active #{t('pppoeMac')}
-                  input#pppoe-mac-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+            h5.text-muted.m-0= t('pppoeInfoTitle')
+            hr.my-1
 
-              .col-6
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- MAC Address of PPPoE
+                .row.pt-2#pppoe-mac
+                  .col
+                    .span #{t('pppoeMac')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#pppoe-mac-input
+
+              .col.ml-1.grey.lighten-4
                 //- IP Address of PPPoE
-                #pppoe-ip.md-form.input-entry
-                  label.active #{t('pppoeIp')}
-                  input#pppoe-ip-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#pppoe-ip
+                  .col
+                    .span #{t('pppoeIp')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#pppoe-ip-input
 
         //- Default Gateway
-        #default-gateway-information.row
-          .col
+        #default-gateway-information.row.pt-2
+          .col.p-0
             //- Default Gateway Title
-            .row
-              h2.text-center.grey-text.mb-3#logs-placeholder
-                span #{t('defaultGatewayInfoTitle')}
-            
-            .row
-              .col-6
-                //- IPv4 Default Gateway
-                #ipv4-default-gateway.md-form.input-entry
-                  label.active #{t('ipv4DefaultGateway')}
-                  input#ipv4-default-gateway-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+            h5.text-muted.m-0= t('defaultGatewayInfoTitle')
+            hr.my-1
 
-              .col-6
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
+                //- IPv4 Default Gateway
+                .row.pt-2#ipv4-default-gateway
+                  .col
+                    .span #{t('ipv4DefaultGateway')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv4-default-gateway-input
+
+              .col.ml-1.grey.lighten-4
                 //- IPv6 Default Gateway
-                #ipv6-default-gateway.md-form.input-entry
-                  label.active #{t('ipv6DefaultGateway')}
-                  input#ipv6-default-gateway-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#ipv6-default-gateway
+                  .col
+                    .span #{t('ipv6DefaultGateway')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#ipv6-default-gateway-input
 
         //- DNS Server
-        #dns-server-information.row
-          .col
+        #dns-server-information.row.pt-2
+          .col.p-0
             //- DNS Server Title
-            .row
-              h2.text-center.grey-text.mb-3#logs-placeholder
-                span #{t('dnsServerInfoTitle')}
+            h5.text-muted.m-0= t('dnsServerInfoTitle')
+            hr.my-1
             
-            .row
-              .col-6
+            .row.pt-2.pb-2.pl-3.pr-3
+              .col.mr-1.grey.lighten-4
                 //- DNS Server Address
-                #dns-server-address.md-form.input-entry
-                  label.active #{t('dnsServerAddress')}
-                  input#dns-server-address-input.form-control(
-                    type="text",
-                    maxlength=32,
-                    value=" ",
-                    disabled=""
-                  )
+                .row.pt-2#dns-server-address
+                  .col
+                    .span #{t('dnsServerAddress')}
+                .row.pt-2.pb-2
+                  .col
+                    .span#dns-server-address-input
 
-      //- Footer of the modal
-      .modal-footer
-        .col.text-left
-
-          //- Update button
-          button#btn-waninfo-update.btn.btn-primary.btn-sm
-            i#btn-waninfo-ipdate-icon.fas.fa-sync-alt.fa-lg
-            span &nbsp; #{t('Update')}

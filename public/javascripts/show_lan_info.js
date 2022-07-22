@@ -200,15 +200,17 @@ const updateValues = function(message) {
   setUpdatingAnimation(false);
 
   // Change  values
-  $(PREFIX_DELEGATION_ADDRESS_INPUT).val((
-    message.prefix_delegation_addr === '' ? ' ' : message.prefix_delegation_addr
+  $(PREFIX_DELEGATION_ADDRESS_INPUT).text((
+    message.prefix_delegation_addr === '' ?
+      'N/D' : message.prefix_delegation_addr
   ));
-  $(PREFIX_DELEGATION_MASK_INPUT).val((
-    message.prefix_delegation_mask === '' ? ' ' : message.prefix_delegation_mask
+  $(PREFIX_DELEGATION_MASK_INPUT).text((
+    message.prefix_delegation_mask === '' ?
+      'N/D' : message.prefix_delegation_mask
   ));
-  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).val((
+  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).text((
     message.prefix_delegation_local === '' ?
-      ' ' : message.prefix_delegation_local
+      'N/D' : message.prefix_delegation_local
   ));
 };
 
@@ -216,9 +218,9 @@ const updateValues = function(message) {
 // Shows the showlaninfo.pug modal
 const showModal = async function(event) {
   // Reset fields
-  $(PREFIX_DELEGATION_ADDRESS_INPUT).val(' ');
-  $(PREFIX_DELEGATION_MASK_INPUT).val(' ');
-  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).val(' ');
+  $(PREFIX_DELEGATION_ADDRESS_INPUT).text('N/D');
+  $(PREFIX_DELEGATION_MASK_INPUT).text('N/D');
+  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).text('N/D');
 
 
   // Set updating animations

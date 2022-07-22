@@ -346,7 +346,6 @@ const calculateMaskIpv6 = function(ip, mask) {
 const updateValues = function(message) {
   // When update, cancel the animation
   setUpdatingAnimation(false);
-
   // Check PPPoE
   if (message.wan_conn_type === 'pppoe') {
     // Enable the PPPoE field
@@ -354,11 +353,11 @@ const updateValues = function(message) {
 
 
     // Change values
-    $(PPPOE_MAC_INPUT).val((
-      message.pppoe_mac === '' ? ' ' : message.pppoe_mac.toUpperCase()
+    $(PPPOE_MAC_INPUT).text((
+      message.pppoe_mac === '' ? 'N/D' : message.pppoe_mac.toUpperCase()
     ));
-    $(PPPOE_IP_INPUT).val((
-      message.pppoe_ip === '' ? ' ' : message.pppoe_ip
+    $(PPPOE_IP_INPUT).text((
+      message.pppoe_ip === '' ? 'N/D' : message.pppoe_ip
     ));
 
 
@@ -367,48 +366,43 @@ const updateValues = function(message) {
     $(PPPOE_SECTION).hide();
   }
 
-
   // Change other values
-  $(IPV4_ADDRESS_AND_MASK_INPUT).val((
+  $(IPV4_ADDRESS_AND_MASK_INPUT).text((
     (message.ipv4_address === '' ||
     message.ipv4_mask <= 0 ||
     message.ipv4_mask > 32) ?
 
-    ' ' : message.ipv4_address + '/' + message.ipv4_mask
+    'N/D' : message.ipv4_address + '/' + message.ipv4_mask
   ));
-  $(IPV6_ADDRESS_AND_MASK_INPUT).val((
+  $(IPV6_ADDRESS_AND_MASK_INPUT).text((
     (message.ipv6_address === '' ||
     message.ipv6_mask <= 0 ||
     message.ipv6_mask > 128) ?
 
-    ' ' : message.ipv6_address + '/' + message.ipv6_mask
+    'N/D' : message.ipv6_address + '/' + message.ipv6_mask
   ));
-  $(IPV4_MASKED_ADDRESS_INPUT).val((
+  $(IPV4_MASKED_ADDRESS_INPUT).text((
     (message.ipv4_address === '' ||
     message.ipv4_mask <= 0 ||
     message.ipv4_mask > 32) ?
 
-    ' ' : calculateMaskIpv4(message.ipv4_address, message.ipv4_mask)
+    'N/D' : calculateMaskIpv4(message.ipv4_address, message.ipv4_mask)
   ));
-  $(IPV6_MASKED_ADDRESS_INPUT).val((
+  $(IPV6_MASKED_ADDRESS_INPUT).text((
     (message.ipv6_address === '' ||
     message.ipv6_mask <= 0 ||
     message.ipv6_mask > 128) ?
 
-    ' ' : calculateMaskIpv6(message.ipv6_address, message.ipv6_mask)
+    'N/D' : calculateMaskIpv6(message.ipv6_address, message.ipv6_mask)
   ));
-
-
-  $(DEFAULT_GATEWAY_IPV4_INPUT).val((
-    message.default_gateway_v4 === '' ? ' ' : message.default_gateway_v4
+  $(DEFAULT_GATEWAY_IPV4_INPUT).text((
+    message.default_gateway_v4 === '' ? 'N/D' : message.default_gateway_v4
   ));
-  $(DEFAULT_GATEWAY_IPV6_INPUT).val((
-    message.default_gateway_v6 === '' ? ' ' : message.default_gateway_v6
+  $(DEFAULT_GATEWAY_IPV6_INPUT).text((
+    message.default_gateway_v6 === '' ? 'N/D' : message.default_gateway_v6
   ));
-
-
-  $(DNS_SERVER_ADDRESS_INPUT).val((
-    message.dns_server === '' ? ' ' : message.dns_server
+  $(DNS_SERVER_ADDRESS_INPUT).text((
+    message.dns_server === '' ? 'N/D' : message.dns_server
   ));
 };
 
@@ -416,16 +410,16 @@ const updateValues = function(message) {
 // Shows the showwaninfo.pug modal
 const showModal = async function(event) {
   // Reset fields
-  $(IPV4_ADDRESS_AND_MASK_INPUT).val(' ');
-  $(IPV6_ADDRESS_AND_MASK_INPUT).val(' ');
-  $(IPV4_MASKED_ADDRESS_INPUT).val(' ');
-  $(IPV6_MASKED_ADDRESS_INPUT).val(' ');
+  $(IPV4_ADDRESS_AND_MASK_INPUT).text('');
+  $(IPV6_ADDRESS_AND_MASK_INPUT).text('');
+  $(IPV4_MASKED_ADDRESS_INPUT).text('');
+  $(IPV6_MASKED_ADDRESS_INPUT).text('');
 
-  $(PPPOE_MAC_INPUT).val(' ');
-  $(PPPOE_IP_INPUT).val(' ');
+  $(PPPOE_MAC_INPUT).text('');
+  $(PPPOE_IP_INPUT).text('');
 
-  $(DEFAULT_GATEWAY_IPV4_INPUT).val(' ');
-  $(DEFAULT_GATEWAY_IPV6_INPUT).val(' ');
+  $(DEFAULT_GATEWAY_IPV4_INPUT).text('');
+  $(DEFAULT_GATEWAY_IPV6_INPUT).text('');
 
 
   // Set updating animations
