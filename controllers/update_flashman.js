@@ -133,7 +133,8 @@ const updateGenieRepo = function(ref) {
 
 const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
-    let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
+    let field1='InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
+    let field2='Device.ManagementServer.PeriodicInformInterval';
     Config.findOne({is_default: true}).then((config)=>{
       if (!config) {
         console.log('Error reading configs from database in update GenieACS!');
@@ -171,7 +172,8 @@ const updateGenieACS = function(upgrades) {
           ));
           // Alter the periodic inform interval based on database config
           let interval = '' + parseInt(config.tr069.inform_interval / 1000);
-          preset.configurations.find((c) => c.name === field).value = interval;
+          preset.configurations.find((c) => c.name === field1).value = interval;
+          preset.configurations.find((c) => c.name === field2).value = interval;
           preset._id = 'inform';
           console.log('Updating GenieACS preset...');
           waitForPreset = tasksApi.putPreset(preset);
