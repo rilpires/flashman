@@ -1360,7 +1360,7 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.devicePermissions(device)
+    let permissions = DeviceVersion.devicePermissions(device);
     if (!permissions.grantPingTest) {
       return res.status(200).json({
         success: false,
@@ -1450,7 +1450,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.devicePermissions(device)
+    let permissions = DeviceVersion.devicePermissions(device);
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
@@ -1938,14 +1938,6 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice).cpe;
             let changes = {wan: {}, lan: {}, wifi2: {},
                            wifi5: {}, mesh2: {}, mesh5: {}};
-
-            let model;
-
-            if (matchedDevice.use_tr069) {
-              const acsID = matchedDevice.acs_id;
-              const splitID = acsID.split('-');
-              model = splitID.slice(1, splitID.length-1).join('-');
-            }
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
