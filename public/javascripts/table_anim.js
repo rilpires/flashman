@@ -889,6 +889,20 @@ anlixDocumentReady.add(function() {
     '</button>';
   };
 
+  const buildMoreInfo = function(index, name) {
+    return '<div class="row">'+
+      '<div class="col text-right">'+
+        '<button class="btn btn-primary mx-0 more-info-' +
+            name +
+            '-button" type="button">'+
+          '<i class="fas fa-file-alt fa-lg"></i><span>&nbsp; '+
+            t('MoreInfo')+
+          '</span>'+
+        '</button>'+
+      '</div>'+
+    '</div>';
+  };
+
   const buildFormSubmit = function(index, mesh) {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
@@ -1386,6 +1400,9 @@ anlixDocumentReady.add(function() {
             device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
+          // WAN and LAN Information
+          let grantWanLanInformation =
+            device.permissions.grantWanLanInformation;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1808,6 +1825,7 @@ anlixDocumentReady.add(function() {
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
+            '$REPLACE_WAN_INFO'+
           '</div>';
           if (device.connection_type &&
               device.connection_type.toUpperCase() === 'PPPOE'
@@ -1848,6 +1866,15 @@ anlixDocumentReady.add(function() {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', pppoeForm);
           } else {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', '');
+          }
+
+          if (grantWanLanInformation) {
+            wanTab = wanTab.replace(
+              '$REPLACE_WAN_INFO',
+              buildMoreInfo(index, 'wan'),
+            );
+          } else {
+            wanTab = wanTab.replace('$REPLACE_WAN_INFO', '');
           }
 
           let lanTab = '<div class="edit-tab d-none" id="tab_lan-'+index+'">'+
@@ -1897,6 +1924,7 @@ anlixDocumentReady.add(function() {
                 '</div>'+
               '</div>'+
             '</div>'+
+            '$REPLACE_LAN_INFO'+
           '</div>';
           if (device.bridge_mode_enabled || !grantDeviceLanEdit ||
               (!isSuperuser && !grantLanEditAccess)
@@ -1914,6 +1942,15 @@ anlixDocumentReady.add(function() {
           let selectTarget = '$REPLACE_SELECTED_' + device.lan_netmask;
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
           lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
+
+          if (grantWanLanInformation) {
+            lanTab = lanTab.replace(
+              '$REPLACE_LAN_INFO',
+              buildMoreInfo(index, 'lan'),
+            );
+          } else {
+            lanTab = lanTab.replace('$REPLACE_LAN_INFO', '');
+          }
 
           let meshForm = '<div class="md-form">'+
             '<div class="input-group">'+
