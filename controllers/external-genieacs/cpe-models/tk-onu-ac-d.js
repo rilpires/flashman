@@ -22,7 +22,7 @@ tkOnuAcDModel.modelPermissions = function() {
 tkOnuAcDModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'g';
+      return 'b,g';
     case '11n':
       return 'b,g,n';
     case '11na':
