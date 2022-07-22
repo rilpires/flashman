@@ -731,23 +731,34 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           deviceSetQuery.wan_ipv6 = sentWanIpv6;
         }
 
+        // WAN Negociated Speed
         let sentWanNegociatedSpeed =
         util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
         if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
           deviceSetQuery.wan_negociated_speed = sentWanNegociatedSpeed;
         }
+
+        // WAN Negociated Transference
         let sentWanNegociatedDuplex =
         util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
         if (sentWanNegociatedDuplex !== matchedDevice.wan_negociated_duplex) {
           deviceSetQuery.wan_negociated_duplex = sentWanNegociatedDuplex;
         }
+
+        // IP
         if (matchedDevice.ip !== ip) {
           deviceSetQuery.ip = ip;
         }
+
+        // System Uptime
         let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
         deviceSetQuery.sys_up_time = sysUpTime;
+
+        // WAN Uptime
         let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
         deviceSetQuery.wan_up_time = wanUpTime;
+
+        // WPS State
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
@@ -2118,13 +2129,21 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
+
+    // System Uptime
     let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
     matchedDevice.sys_up_time = sysUpTime;
+
+    // Wan Uptime
     let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
     matchedDevice.wan_up_time = wanUpTime;
+
+    // Wan Bytes
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
+
+    // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});
     });
@@ -2133,6 +2152,133 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     return res.status(200).json({processed: 1});
   });
 };
+
+
+// WAN Information
+deviceInfoController.receiveWanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Default Gateway IPv4
+    let defaultGatewayV4 = util.returnObjOrEmptyStr(req.body.default_gateway_v4)
+      .trim();
+    matchedDevice.default_gateway_v4 = defaultGatewayV4;
+
+    // Default Gateway IPv6
+    let defaultGatewayV6 = util.returnObjOrEmptyStr(req.body.default_gateway_v6)
+      .trim();
+    matchedDevice.default_gateway_v6 = defaultGatewayV6;
+
+    // DNS Server
+    let dnsServer = util.returnObjOrEmptyStr(req.body.dns_server).trim();
+    matchedDevice.dns_server = dnsServer;
+
+    // PPPoE MAC
+    let pppoeMac = util.returnObjOrEmptyStr(req.body.pppoe_mac).trim();
+    matchedDevice.pppoe_mac = pppoeMac;
+
+    // PPPoE IP
+    let pppoeIp = util.returnObjOrEmptyStr(req.body.pppoe_ip).trim();
+    matchedDevice.pppoe_ip = pppoeIp;
+
+    // IPv4 Address
+    let ipv4Address = util.returnObjOrEmptyStr(req.body.ipv4_address).trim();
+    matchedDevice.wan_ip = ipv4Address;
+
+    // IPv4 Mask
+    // Assigns 0, if mask is not valid
+    let ipv4Mask = parseInt(util.returnObjOrNum(req.body.ipv4_mask, 0));
+    matchedDevice.wan_ipv4_mask = ipv4Mask;
+
+    // IPv6 Address
+    let ipv6Address = util.returnObjOrEmptyStr(req.body.ipv6_address).trim();
+    matchedDevice.wan_ipv6 = ipv6Address;
+
+    // IPv6 Mask
+    // Assigns 0, if mask is not valid
+    let ipv6Mask = parseInt(util.returnObjOrNum(req.body.ipv6_mask, 0));
+    matchedDevice.wan_ipv6_mask = ipv6Mask;
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendWanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
+// LAN Information
+deviceInfoController.receiveLanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+
+    // Prefix Delegation Address
+    let prefixDelegationAddr = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_addr)
+      .trim();
+    matchedDevice.prefix_delegation_addr = prefixDelegationAddr;
+
+    // Prefix Delegation Mask
+    let prefixDelegationMask = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_mask)
+      .trim();
+    matchedDevice.prefix_delegation_mask = prefixDelegationMask;
+
+    // Prefix Delegation Local Address
+    let prefixDelegationLocal = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_local)
+      .trim();
+    matchedDevice.prefix_delegation_local = prefixDelegationLocal;
+
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendLanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
 
 deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
