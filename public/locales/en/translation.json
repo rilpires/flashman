@@ -58,6 +58,8 @@
 	"Error": "Error",
 	"unknownUser": "Unknown User",
 	"invalidPassword": "Invalid password",
+	"emptyPasswordError": "Password field cannot be empty",
+	"emptyUserError": "User field cannot be empty",
 	"userNotFound": "User not found ({{errorline}})",
 	"bodyNotObject": "Body received, in the request, is not an object ({{errorline}})",
 	"idInvalidInUrlParams": "ID '{{-id}}' received in url parameters is invalid ({{errorline}})",
@@ -339,6 +341,7 @@
 	"opticalSignalState": "Optical signal status",
 	"Save": "Save",
 	"removeMany": "Remove multiple",
+	"removeAll": "Remove all",
 	"dataCollecting": "Data collect",
 	"Select...": "Select...",
 	"Status": "Status",
@@ -985,5 +988,11 @@
 	"arrayElementNotFound": "No element found for the given index",
 	"alert": "alert",
 	"alertFilterDescription": "Use this filters to return only CPEs that have an alert.",
-	"flashmanUnavailable": "Flashman unavailable"
+	"flashmanUnavailable": "Flashman unavailable",
+	"factoryCredentialsPresetLabel": "Custom web credentials configuration",
+	"factoryCredentialsNotFound": "Could not find a valid custom web credentials configuration",
+	"factoryCredentialsGenericError": "An error has occurred while searching for the custom web credentials configuration",
+	"duplicatedCredentials": "The model {{-model}} already has a custom web credentials configuration",
+	"invalidModel": "Invalid model",
+	"invalidManufacturer": "Invalid manufacturer"
 }

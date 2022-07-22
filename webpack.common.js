@@ -52,6 +52,7 @@ module.exports = {
     settings: [
       './public/src/common.index.js',
       './public/javascripts/settings_actions.js',
+      './public/javascripts/factory_credentials.js',
     ],
     index: [
       './public/src/common.index.js',

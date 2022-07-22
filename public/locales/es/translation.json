@@ -58,6 +58,8 @@
 	"Error": "Error",
 	"unknownUser": "Usuario desconocido",
 	"invalidPassword": "Contraseña invalida",
+	"emptyPasswordError": "El campo de contraseña no puede estar en blanco",
+	"emptyUserError": "El campo de usuario no puede estar en blanco",
 	"userNotFound": "Usuario no encontrado ({{errorline}})",
 	"bodyNotObject": "Body recibido, en la solicitud, no es un objeto ({{errorline}})",
 	"idInvalidInUrlParams": "El ID '{{-id}}' recibido en los parámetros de URL no es válido ({{errorline}})",
@@ -339,6 +341,7 @@
 	"opticalSignalState": "Estado de la señal óptica",
 	"Save": "Ahorrar",
 	"removeMany": "Eliminar varios",
+	"removeAll": "Eliminar todos",
 	"dataCollecting": "Recolección de datos",
 	"Select...": "Seleccione...",
 	"Status": "Estado",
@@ -798,7 +801,7 @@
 	"lang": "es",
 	"Authentication": "Autenticación",
 	"User": "Usuario",
-	"Password": "Clave",
+	"Password": "Contraseña",
 	"SignIn": "Iniciar sesión",
 	"Profile": "Perfil",
 	"changePassword": "Cambiar contraseña",
@@ -993,5 +996,11 @@
 	"arrayElementNotFound": "No se encontró ningún elemento para el índice dado",
 	"alert": "alerta",
 	"alertFilterDescription": "Utilice esto filtro para devolver solo los CPE que tienen una alerta.",
-	"flashmanUnavailable": "Flashman inaccesible"
+	"flashmanUnavailable": "Flashman inaccesible",
+	"factoryCredentialsPresetLabel": "Configuración de credenciales web personalizadas",
+	"factoryCredentialsNotFound": "No se encontró ninguna configuración de credenciales web personalizadas",
+	"factoryCredentialsGenericError": "Ocurrió un error al intentar obtener las configuraciones de credenciales web personalizadas",
+	"duplicatedCredentials": "El modelo {{-model}} ya tiene las credenciales configuradas",
+	"invalidModel": "Modelo no valido",
+	"invalidManufacturer": "Fabricante no valido"
 }
