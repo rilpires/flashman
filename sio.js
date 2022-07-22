@@ -280,13 +280,13 @@ sio.anlixWaitForWanInfoNotification = function(session, macaddr) {
   return true;
 };
 
-sio.anlixSendWanInfoNotification = function(macaddr, upStatusData) {
+sio.anlixSendWanInfoNotification = function(macaddr, wanInfoData) {
   if (!macaddr) {
     return false;
   }
 
   let found = emitNotification(SIO_NOTIFICATION_WAN_INFO,
-                               macaddr, upStatusData, macaddr);
+                               macaddr, wanInfoData, macaddr);
 
   return found;
 };
@@ -307,13 +307,13 @@ sio.anlixWaitForLanInfoNotification = function(session, macaddr) {
   return true;
 };
 
-sio.anlixSendLanInfoNotification = function(macaddr, upStatusData) {
+sio.anlixSendLanInfoNotification = function(macaddr, lanInfoData) {
   if (!macaddr) {
     return false;
   }
 
   let found = emitNotification(SIO_NOTIFICATION_LAN_INFO,
-                               macaddr, upStatusData, macaddr);
+                               macaddr, lanInfoData, macaddr);
 
   return found;
 };
