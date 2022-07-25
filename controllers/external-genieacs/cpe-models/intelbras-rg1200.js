@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = 'Intelbras RG1200';
+intelbrasModel.identifier = {vendor: 'Intelbras', model: 'RG1200'};
 
 // Wifi possible channels:
 // 2.4Ghz: 1,2,3,4,5,6,7,8,9,10,11,12,13
@@ -14,15 +14,15 @@ intelbrasModel.identifier = 'Intelbras RG1200';
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-
-  permissions.wifi.modeRead = true;
-  permissions.wifi.modeWrite = false;
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
-  // speedtest limit, values above show as "limit+ Mbps"
-  permissions.wan.speedTestLimit = 80;
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
+  // speedtest limit, values above show as "limit+ Mbps"
+  permissions.wan.speedTestLimit = 80;
+  permissions.wifi.modeRead = true;
+  permissions.wifi.modeWrite = false;
 
   // firmware upgrade permissions
   permissions.firmwareUpgrades = {
