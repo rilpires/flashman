@@ -65,9 +65,9 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.device.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
-  fields.device.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
