@@ -10,7 +10,6 @@ tplinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.portForward = false;
-  permissions.features.stun = true;
   permissions.wan.dhcpUptime = false;
   permissions.wan.speedTestLimit = 100;
   permissions.lan.configWrite = false;
@@ -56,10 +55,6 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
 
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
-    'STUNEnable';
-  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
-    'ManagementServer.UDPConnectionRequestAddress';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1'+
   '.WANEthernetInterfaceConfig.Stats.BytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1'+
