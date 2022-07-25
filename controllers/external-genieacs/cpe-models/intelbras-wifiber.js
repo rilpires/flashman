@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = 'Intelbras WiFiber 121AC';
+intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 121 AC'};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

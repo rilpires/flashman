@@ -12,6 +12,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const acsDeviceInfo = require('./acs_device_info.js');
 const deviceList = require('./device_list.js');
+const onuFactoryCredentials = require('./factory_credentials.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
@@ -167,6 +168,11 @@ diagAppAPIController.sessionLogin = (req, res) => {
         });
       }
       let session = await generateSessionCredential(user.name);
+      const factoryCredentials =
+        await onuFactoryCredentials.getCredentialsAtConfig();
+      if (factoryCredentials.success) {
+        session.onuFactoryCredentials = factoryCredentials.credentials;
+      }
       session.success = true;
       return res.status(200).json(session);
     });
@@ -583,7 +589,11 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         onuConfig.onuPonThresholdCriticalHigh =
           config.tr069.pon_signal_threshold_critical_high;
       }
-
+      const factoryCredentials =
+        await onuFactoryCredentials.getCredentialsAtConfig();
+      if (factoryCredentials.success) {
+        onuConfig.onuFactoryCredentials = factoryCredentials.credentials;
+      }
       if (!device) {
         return res.status(200).json({
           'success': true,

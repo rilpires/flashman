@@ -2,10 +2,11 @@ const basicCPEModel = require('./base-model');
 
 let zyxelModel = Object.assign({}, basicCPEModel);
 
-zyxelModel.identifier = 'Zyxel EMG3524-T10A';
+zyxelModel.identifier = {vendor: 'Zyxel', model: 'EMG3524-T10A'};
 
 zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.stun = true;
   permissions.firmwareUpgrades = {
     'V1.42(ABXU.1)b6_0118': [],

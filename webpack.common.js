@@ -52,6 +52,7 @@ module.exports = {
     settings: [
       './public/src/common.index.js',
       './public/javascripts/settings_actions.js',
+      './public/javascripts/factory_credentials.js',
     ],
     index: [
       './public/src/common.index.js',
@@ -72,6 +73,8 @@ module.exports = {
       './public/javascripts/show_data_collecting_actions.js',
       './public/javascripts/show_pon_signal_actions.js',
       './public/javascripts/show_vlan_actions.js',
+      './public/javascripts/show_wan_info.js',
+      './public/javascripts/show_lan_info.js',
       './public/javascripts/update_device.js',
       './public/javascripts/table_anim.js',
     ],

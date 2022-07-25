@@ -171,6 +171,8 @@ let deviceSchema = new Schema({
   bridge_mode_dns: String,
   wan_ip: String,
   wan_ipv6: String,
+  wan_ipv4_mask: {type: Number, default: 0},
+  wan_ipv6_mask: {type: Number, default: 0},
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
   ipv6_enabled: {type: Number, default: 2, enum: [
@@ -252,6 +254,14 @@ let deviceSchema = new Schema({
   }],
   sys_up_time: {type: Number, default: 0}, // seconds
   wan_up_time: {type: Number, default: 0}, // seconds
+  default_gateway_v4: String,
+  default_gateway_v6: String,
+  dns_server: String,
+  pppoe_mac: String,
+  pppoe_ip: String,
+  prefix_delegation_addr: String,
+  prefix_delegation_mask: String,
+  prefix_delegation_local: String,
   // Wan Bytes Format: {epoch: [down bytes, up bytes]} Bytes are cumulative
   wan_bytes: Object,
   speedtest_results: [{
