@@ -40,6 +40,36 @@ datacomModel.convertWifiMode = function(mode) {
   }
 };
 
+datacomModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '0';
+    case 'HT40':
+    case 'VHT40':
+      return '1';
+    case 'VHT80':
+      return '2';
+    case 'auto':
+    default:
+      return '';
+  }
+};
+
+datacomModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '2':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
