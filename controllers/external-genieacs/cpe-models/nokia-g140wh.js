@@ -6,13 +6,14 @@ nokiaModel.identifier = {vendor: 'Nokia', model: 'G-140W-H'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
+    basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 650;
   permissions.firmwareUpgrades = {
     '3FE48077HJIJ86': [],
@@ -51,6 +52,10 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     default:
       return '';
   }
+};
+
+nokiaModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
 };
 
 nokiaModel.getModelFields = function() {
