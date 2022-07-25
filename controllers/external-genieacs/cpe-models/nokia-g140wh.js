@@ -13,7 +13,7 @@ nokiaModel.modelPermissions = function() {
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.speedTestLimit = 850;
+  permissions.wan.speedTestLimit = 650;
   permissions.firmwareUpgrades = {
     '3FE48077HJIJ86': [],
   };
