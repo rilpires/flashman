@@ -37,9 +37,6 @@ nokiaModel.convertWifiMode = function(mode) {
 };
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
-  if (!is5ghz) {
-    return '20MHz';
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -50,7 +47,7 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      return '80MHz';
+      return 'Auto';
     default:
       return '';
   }
@@ -68,8 +65,10 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+  fields.device.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
+  fields.device.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
