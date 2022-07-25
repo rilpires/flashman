@@ -37,6 +37,7 @@ const tr069Models = {
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
+  intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
@@ -51,6 +52,7 @@ const tr069Models = {
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
+  thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
@@ -150,6 +152,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     return {success: true, cpe: tr069Models.hurakallST1001FLModel};
+  } else if (modelName === 'ACtion RG1200') {
+    // Intelbras RG-1200
+    return {success: true, cpe: tr069Models.intelbrasRG1200Model};
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
     return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
@@ -192,6 +197,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'HG9') {
     // Tenda HG9
     return {success: true, cpe: tr069Models.tendaHG9Model};
+  } else if (modelName === 'TK-ONU-AC-D') {
+    // Think TK-ONU-AC-D
+    return {success: true, cpe: tr069Models.thinkTkOnuAcDModel};
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     return {success: true, cpe: tr069Models.tplinkArcherC6};
