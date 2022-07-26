@@ -20,7 +20,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
   // speedtest limit, values above show as "limit+ Mbps"
-  permissions.wan.speedTestLimit = 80;
+  permissions.wan.speedTestLimit = 120;
   permissions.wifi.modeRead = true;
   permissions.wifi.modeWrite = false;
 
