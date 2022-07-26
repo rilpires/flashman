@@ -17,6 +17,7 @@ nokiaModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 650;
   permissions.firmwareUpgrades = {
     '3FE48077HJIJ86': [],
+    '3FE48077HJIL96': [],
   };
   return permissions;
 };
