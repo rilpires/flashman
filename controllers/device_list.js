@@ -780,12 +780,17 @@ deviceListController.searchDeviceReg = async function(req, res) {
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
-        const model = device.model.replace('N/', '');
-        let devReleases = releases.filter(
-          (release) => release.model === model);
+        const dbModel = device.model.replace('N/', '');
+        let devReleases;
         if (device.use_tr069) {
           let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
             device).cpe;
+          let fancyModel = cpe.identifier.model;
+          // Necessary to check both because of legacy cases that have already
+          // been uploaded
+          devReleases = releases.filter(
+            (release) => ([fancyModel, dbModel].includes(release.model)),
+          );
           let permissions = cpe.modelPermissions();
           /* get allowed version of upgrade by
             current device version  */
@@ -807,6 +812,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
             device.model_alias = modelAlias;
           }
         } else {
+          devReleases = releases.filter(
+            (release) => release.model === dbModel,
+          );
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
             const isAllowed = deviceHandlers.isUpgradePossible(
