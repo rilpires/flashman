@@ -214,7 +214,7 @@ const calculateSpeedDiagnostic = async function(
   let customSpeedTestInProgress = false;
   if (device.temp_command_trap
     && device.temp_command_trap.speedtest_url
-    && device.temp_command_trap.speedtest_url!='') {
+    && device.temp_command_trap.speedtest_url !== '') {
     customSpeedTestInProgress = true;
   }
 

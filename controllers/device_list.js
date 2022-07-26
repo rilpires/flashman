@@ -3308,7 +3308,6 @@ deviceListController.doSpeedTest = function(req, res) {
     let projection = {measureServerIP: true, measureServerPort: true};
     Config.findOne({is_default: true}, projection)
     .lean().exec(async function(err, matchedConfig) {
-      
       let customUrl = '';
       if (matchedDevice.temp_command_trap &&
           matchedDevice.temp_command_trap.speedtest_url &&
@@ -3323,7 +3322,7 @@ deviceListController.doSpeedTest = function(req, res) {
         });
       }
       if (
-        customUrl=='' && !matchedConfig.measureServerIP
+        customUrl == '' && !matchedConfig.measureServerIP
       ) {
         return res.status(200).json({
           success: false,
