@@ -13,7 +13,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymRanges; // VALIDATE ************
+    basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 850; // VALIDATE ***************
   permissions.firmwareUpgrades = {
     '3FE49568IJIJ23': [],
@@ -52,7 +52,11 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      return '80MHz'; // VALIDATE ***********************
+      if (is5ghz) {
+        return '80MHz';
+      } else {
+        return '20MHz';
+      }
     default:
       return '';
   }
@@ -77,12 +81,14 @@ nokiaModel.getModelFields = function() {
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate'; // VALIDATE *
+    'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.OperatingStandard';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.Password';
-  fields.port_mapping_values.protocol[1] = 'TCPorUDP'; // VALIDATE *******
+  fields.port_mapping_values.protocol[1] = 'TCPorUDP';
   fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',

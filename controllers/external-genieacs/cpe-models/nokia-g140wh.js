@@ -75,6 +75,8 @@ nokiaModel.getModelFields = function() {
     'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.OperatingStandard';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
