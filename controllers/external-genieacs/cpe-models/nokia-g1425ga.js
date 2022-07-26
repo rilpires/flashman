@@ -6,16 +6,18 @@ nokiaModel.identifier = {vendor: 'Nokia', model: 'G-1425G-A'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.speedTestLimit = 850;
+    basicCPEModel.portForwardPermissions.noAsymRanges; // VALIDATE ************
+  permissions.wan.speedTestLimit = 850; // VALIDATE ***************
   permissions.firmwareUpgrades = {
     '3FE49568IJIJ23': [],
+    '3FE49568HJIL97': [],
   };
   return permissions;
 };
@@ -50,10 +52,14 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      return '80MHz';
+      return '80MHz'; // VALIDATE ***********************
     default:
       return '';
   }
+};
+
+nokiaModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
 };
 
 nokiaModel.getModelFields = function() {
@@ -68,13 +74,15 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate'; // VALIDATE *
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.Password';
-  fields.port_mapping_values.protocol[1] = 'TCPorUDP';
+  fields.port_mapping_values.protocol[1] = 'TCPorUDP'; // VALIDATE *******
   fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
