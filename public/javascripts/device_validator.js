@@ -35,6 +35,67 @@
 
     let Validator = function() {};
 
+    Validator.prototype.validateExtReference = function(extReference) {
+      let sizeIsValid = (extReference.data.length < 256);
+      if (!sizeIsValid) {
+        return {
+          valid: false,
+          err: [t(
+            'thisFieldCannotHaveMoreThanMaxChars',
+            {max: 256},
+          )],
+        };
+      }
+
+      let sizeIsExpected = false;
+      let regexIsValid = false;
+      let kindIsValid = true;
+      let expectedMask = '';
+      let expectedRegex = new RegExp(/.{0,256}/);
+      let expectedLenght = 256;
+
+      switch (extReference.kind) {
+        case t('personIdentificationSystem'):
+          expectedRegex = new RegExp(t('personIdentificationRegex'));
+          expectedMask = t('personIdentificationMask');
+          expectedLenght = expectedMask.length;
+        break;
+        case t('enterpriseIdentificationSystem'):
+          expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
+          expectedMask = t('enterpriseIdentificationMask');
+          expectedLenght = expectedMask.length;
+        break;
+        case t('Other'):
+        break;
+        default:
+          kindIsValid = false;
+      }
+
+      if (extReference.data.length === 0 && kindIsValid) return {valid: true};
+
+      sizeIsExpected = (
+        extReference.kind === t('Other') ||
+        extReference.data.length === expectedLenght);
+      regexIsValid = expectedRegex.test(extReference.data);
+
+      let errors = [];
+      if (!kindIsValid) {
+        errors.push(t('invalidContractNumberKind', {kind: extReference.kind}));
+      }
+      if (!sizeIsExpected) {
+        errors.push(t('invalidContractNumberDataLength',
+          {kind: extReference.kind, length: expectedLenght}));
+      }
+      if (!regexIsValid) {
+        errors.push(t('invalidContractNumberData',
+          {kind: extReference.kind, mask: expectedMask}));
+      }
+      return {
+        valid: (kindIsValid && sizeIsExpected && regexIsValid),
+        err: errors,
+      };
+    };
+
     Validator.prototype.validateMac = function(mac) {
       return {
         valid: mac.match(/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/),

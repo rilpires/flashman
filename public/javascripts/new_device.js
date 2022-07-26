@@ -56,6 +56,7 @@ let validateNewDevice = function() {
     channel: {field: '#new_wifi_channel'},
     band: {field: '#new_wifi_band'},
     mode: {field: '#new_wifi_mode'},
+    ext_reference: {field: '#new_external_reference'},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -82,6 +83,8 @@ let validateNewDevice = function() {
   genericValidate(channel, validator.validateChannel, errors.channel);
   genericValidate(band, validator.validateBand, errors.band);
   genericValidate(mode, validator.validateMode, errors.mode);
+  genericValidate({kind: externalReferenceType, data: externalReferenceData},
+    validator.validateExtReference, errors.ext_reference);
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;

@@ -1748,6 +1748,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixDNS =
         util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
+      let extReference = util.returnObjOrFalse(content.external_reference);
       let slaveCustomConfigs = [];
       try {
         slaveCustomConfigs = JSON.parse(content.slave_custom_configs);
@@ -1868,6 +1869,10 @@ deviceListController.setDeviceReg = function(req, res) {
                           'bridge_fixed_gateway');
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
+        }
+        if (extReference) {
+          genericValidate(extReference, validator.validateExtReference,
+            'external_reference');
         }
         // We must enable Wi-Fi corresponding to mesh radio we're using
         // Some models have this restriction.
@@ -2161,17 +2166,14 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if (content.hasOwnProperty('external_reference') &&
-                (content.external_reference.kind !==
-                 matchedDevice.external_reference.kind ||
-                 content.external_reference.data !==
-                 matchedDevice.external_reference.data)
+            if ((extReference) &&
+                (extReference.kind !== matchedDevice.external_reference.kind ||
+                 extReference.data !== matchedDevice.external_reference.data)
             ) {
               if (superuserGrant || role.grantDeviceId) {
-                matchedDevice.external_reference.kind =
-                  content.external_reference.kind;
-                matchedDevice.external_reference.data =
-                  content.external_reference.data;
+                matchedDevice.external_reference.kind = extReference.kind;
+                matchedDevice.external_reference.data = extReference.data;
+                updateParameters = true;
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
@@ -2364,7 +2366,6 @@ deviceListController.createDeviceReg = function(req, res) {
   if (util.isJSONObject(req.body.content)) {
     const content = req.body.content;
     const macAddr = content.mac_address.trim().toUpperCase();
-    const extReference = content.external_reference;
     const validator = new Validator();
 
     let errors = [];
@@ -2378,6 +2379,7 @@ deviceListController.createDeviceReg = function(req, res) {
     let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
     let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
     let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+    const extReference = util.returnObjOrFalse(content.external_reference);
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -2431,6 +2433,8 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
       genericValidate(mode, validator.validateMode, 'mode');
+      genericValidate(extReference, validator.validateExtReference,
+        'external_reference');
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {

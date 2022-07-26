@@ -178,6 +178,7 @@ let validateEditDevice = function(event) {
       field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
     mesh_mode: {field: '#edit_meshMode-' + index.toString()},
+    ext_reference: {field: '#edit_external_reference-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -253,6 +254,8 @@ let validateEditDevice = function(event) {
     genericValidate(bridgeFixDNS, validator.validateIP,
                     errors.bridge_fixed_dns);
   }
+  genericValidate({kind: externalReferenceType, data: externalReferenceData},
+    validator.validateExtReference, errors.ext_reference);
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;

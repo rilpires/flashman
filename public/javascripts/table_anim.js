@@ -854,7 +854,7 @@ anlixDocumentReady.add(function() {
         device.ip+
       '</td><td class="text-center device-installed-release">'+
         device.installed_release+
-      '</td><td class="text-center">'+
+      '</td><td class="text-center device-external-reference">'+
         (device.external_reference ? device.external_reference.data : '')+
       '</td><td class="text-center device-sys-up-time">'+
         (device.sys_up_time && device.status_color !== 'grey-text' ?
@@ -964,7 +964,7 @@ anlixDocumentReady.add(function() {
           '<input class="form-control py-0 added-margin" type="text" '+
             'id="edit_external_reference-'+idIndex+
             '" placeholder="'+t('clientIdOptional')+'" '+
-            'maxlength="64" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
+            'maxlength="256" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
