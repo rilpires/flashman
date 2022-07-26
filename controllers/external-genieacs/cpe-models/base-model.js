@@ -61,6 +61,8 @@ basicCPEModel.modelPermissions = function() {
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
+      skipIfNoWifiMode: false, // will skip devices with no host mode info
+                               // (developed for Nokia models)
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
