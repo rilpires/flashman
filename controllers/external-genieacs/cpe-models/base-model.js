@@ -265,6 +265,12 @@ basicCPEModel.convertToDbm = function(power) {
   return power;
 };
 
+// Some CPEs inform WAN transmit rate in different scales
+basicCPEModel.convertWanRate = function(rate) {
+  // No conversion necessary
+  return rate;
+};
+
 // CPEs that can customize web admin username can reject certain usernames to
 // avoid conflict with other credentials
 basicCPEModel.isAllowedWebadminUsername = function(name) {

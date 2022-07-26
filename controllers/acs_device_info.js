@@ -270,6 +270,12 @@ const createRegistry = async function(req, cpe, permissions) {
     wanMtu = data.wan.mtu.value;
   }
 
+  // Collect WAN max transmit rate, if available
+  let wanRate;
+  if (data.wan.rate && data.wan.rate.value) {
+    wanRate = cpe.convertWanRate(data.wan.rate.value);
+  }
+
   let mode2;
   let band2;
   if (data.wifi2.mode && data.wifi2.mode.value) {
@@ -332,8 +338,7 @@ const createRegistry = async function(req, cpe, permissions) {
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: (data.wan.rate && data.wan.rate.value) ?
-      data.wan.rate.value : undefined,
+    wan_negociated_speed: wanRate,
     wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
       data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
@@ -1001,7 +1006,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.wan_vlan_id = data.wan.vlan.value;
   }
   if (data.wan.rate && data.wan.rate.value) {
-    device.wan_negociated_speed = data.wan.rate.value;
+    device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }
   if (data.wan.duplex && data.wan.duplex.value) {
     device.wan_negociated_duplex = data.wan.duplex.value;

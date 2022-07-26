@@ -61,6 +61,10 @@ nokiaModel.convertWifiRate = function(rate) {
   return parseInt(rate) / 1000;
 };
 
+nokiaModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000000;
+};
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi2.password = fields.wifi2.password.replace(
@@ -95,6 +99,8 @@ nokiaModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
     'RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
