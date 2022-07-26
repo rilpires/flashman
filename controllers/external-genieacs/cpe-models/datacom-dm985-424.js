@@ -2,10 +2,11 @@ const basicCPEModel = require('./base-model');
 
 let datacomModel = Object.assign({}, basicCPEModel);
 
-datacomModel.identifier = 'Datacom DM985-424';
+datacomModel.identifier = {vendor: 'Datacom', model: 'DM985-424'};
 
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
   permissions.features.ponSignal = true;
   permissions.wan.portForwardPermissions =

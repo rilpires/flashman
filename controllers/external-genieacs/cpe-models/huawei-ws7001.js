@@ -2,10 +2,11 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = 'Huawei WS7001';
+huaweiModel.identifier = {vendor: 'Huawei', model: 'WS7001 / AX2'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.wifi.axWiFiMode = true;
   permissions.firmwareUpgrades = {

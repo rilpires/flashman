@@ -780,12 +780,17 @@ deviceListController.searchDeviceReg = async function(req, res) {
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
-        const model = device.model.replace('N/', '');
-        let devReleases = releases.filter(
-          (release) => release.model === model);
+        const dbModel = device.model.replace('N/', '');
+        let devReleases;
         if (device.use_tr069) {
           let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
             device).cpe;
+          let fancyModel = cpe.identifier.model;
+          // Necessary to check both because of legacy cases that have already
+          // been uploaded
+          devReleases = releases.filter(
+            (release) => ([fancyModel, dbModel].includes(release.model)),
+          );
           let permissions = cpe.modelPermissions();
           /* get allowed version of upgrade by
             current device version  */
@@ -807,6 +812,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
             device.model_alias = modelAlias;
           }
         } else {
+          devReleases = releases.filter(
+            (release) => release.model === dbModel,
+          );
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
             const isAllowed = deviceHandlers.isUpgradePossible(
@@ -1165,6 +1173,8 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'ping':
       case 'upstatus':
       case 'wanbytes':
+      case 'waninfo':
+      case 'laninfo':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1264,6 +1274,38 @@ deviceListController.sendMqttMsg = function(req, res) {
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
+
+        // WAN Informations
+        } else if (msgtype === 'waninfo') {
+          // Wait notification, only wait if is not TR069
+          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+            !device.use_tr069) {
+            sio.anlixWaitForWanInfoNotification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+          }
+
+          // If does not use TR069 call the mqtt function
+          if (device && !device.use_tr069) {
+            mqtt.anlixMessageRouterWanInfo(req.params.id.toUpperCase());
+          }
+
+        // LAN Informations
+        } else if (msgtype === 'laninfo') {
+          // Wait notification, only wait if is not TR069
+          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+            !device.use_tr069) {
+            sio.anlixWaitForLanInfoNotification(
+              req.sessionID,
+              req.params.id.toUpperCase(),
+            );
+          }
+
+          // If does not use TR069 call the mqtt function
+          if (device && !device.use_tr069) {
+            mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
@@ -1326,7 +1368,7 @@ deviceListController.sendCustomPing = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.devicePermissions(device)
+    let permissions = DeviceVersion.devicePermissions(device);
     if (!permissions.grantPingTest) {
       return res.status(200).json({
         success: false,
@@ -1403,7 +1445,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
                                    message: t('cpeNotFound',
                                     {errorline: __line})});
     }
-    let permissions = DeviceVersion.devicePermissions(device)
+    let permissions = DeviceVersion.devicePermissions(device);
     if (!permissions.grantSpeedTest) {
       return res.status(200).json({
         success: false,
@@ -1878,14 +1920,6 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice).cpe;
             let changes = {wan: {}, lan: {}, wifi2: {},
                            wifi5: {}, mesh2: {}, mesh5: {}};
-
-            let model;
-
-            if (matchedDevice.use_tr069) {
-              const acsID = matchedDevice.acs_id;
-              const splitID = acsID.split('-');
-              model = splitID.slice(1, splitID.length-1).join('-');
-            }
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
@@ -3643,6 +3677,131 @@ deviceListController.receivePonSignalMeasure = async function(req, res) {
     TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
   });
 };
+
+
+// Returns the informations about the WAN for firmware devices
+deviceListController.getWanInfo = async function(request, response) {
+  let deviceId = request.params.id.toUpperCase();
+
+  DeviceModel.findById(deviceId, function(error, matchedDevice) {
+    // If an error occurred while finding the device
+    if (error) {
+      return request.status(400).json({
+        processed: 0,
+        success: false,
+      });
+    }
+
+    // If could not find the device
+    if (!matchedDevice) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+    // If it is TR069
+    if (matchedDevice.use_tr069) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+
+    // Get the parameters
+    let connectionType = matchedDevice.connection_type;
+    let defaultGatewayV4 = matchedDevice.default_gateway_v4;
+    let defaultGatewayV6 = matchedDevice.default_gateway_v6;
+
+    let dnsServer = matchedDevice.dns_server;
+
+    let pppoeMac = matchedDevice.pppoe_mac;
+    let pppoeIp = matchedDevice.pppoe_ip;
+
+    let ipv4Address = matchedDevice.wan_ip;
+    let ipv4Mask = matchedDevice.wan_ipv4_mask;
+    let ipv6Address = matchedDevice.wan_ipv6;
+    let ipv6Mask = matchedDevice.wan_ipv6_mask;
+
+
+    // Fill the request
+    // Fields undefined is returned as blank
+    return response.status(200).json({
+      success: true,
+      wan_conn_type: connectionType,
+
+      default_gateway_v4: (defaultGatewayV4 ? defaultGatewayV4 : ''),
+      default_gateway_v6: (defaultGatewayV6 ? defaultGatewayV6 : ''),
+
+      dns_server: (dnsServer ? dnsServer : ''),
+
+      pppoe_mac: (connectionType === 'pppoe' && pppoeMac ?
+        pppoeMac : ''),
+      pppoe_ip: (connectionType === 'pppoe' && pppoeIp ?
+        pppoeIp : ''),
+
+      ipv4_address: (ipv4Address ? ipv4Address : ''),
+      ipv4_mask: (ipv4Mask ? ipv4Mask : ''),
+      ipv6_address: (ipv6Address ? ipv6Address : ''),
+      ipv6_mask: (ipv6Mask ? ipv6Mask : ''),
+    });
+  });
+};
+
+
+// Returns the informations about the LAN for firmware devices
+deviceListController.getLanInfo = async function(request, response) {
+  let deviceId = request.params.id.toUpperCase();
+
+  DeviceModel.findById(deviceId, function(error, matchedDevice) {
+    // If an error occurred while finding the device
+    if (error) {
+      return request.status(400).json({
+        processed: 0,
+        success: false,
+      });
+    }
+
+    // If could not find the device
+    if (!matchedDevice) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+    // If it is TR069
+    if (matchedDevice.use_tr069) {
+      return request.status(404).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+
+
+    // Get the parameters
+    let prefixDelegationAddr = matchedDevice.prefix_delegation_addr;
+    let prefixDelegationMask = matchedDevice.prefix_delegation_mask;
+    let prefixDelegationLocal = matchedDevice.prefix_delegation_local;
+
+
+    // Fill the request
+    // Fields undefined is returned as blank
+    return response.status(200).json({
+      success: true,
+      prefix_delegation_addr: (prefixDelegationAddr ?
+        prefixDelegationAddr : ''),
+
+      prefix_delegation_mask: (prefixDelegationMask ?
+        prefixDelegationMask : ''),
+
+      prefix_delegation_local: (prefixDelegationLocal ?
+        prefixDelegationLocal : ''),
+    });
+  });
+};
+
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

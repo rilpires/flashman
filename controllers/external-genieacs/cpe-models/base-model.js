@@ -29,13 +29,14 @@ basicCPEModel.portForwardPermissions = {
 };
 
 // Must be changed for every model, used when importing firmwares
-basicCPEModel.identifier = 'NoVendor NoName';
+basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 
 // Must be tweaked by models to reflect their features and permissions
 // IF YOU NEED A NEW KEY, ADD IT TO THIS BASE MODEL AS WELL!
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
+      customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
       mesh: false, // can create a mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog

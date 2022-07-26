@@ -52,16 +52,25 @@ block content
                                                   name="firmwaretr069form",
                                                   novalidate)
             .row.pl-0
-              .col-md-3.col-12.md-form
+              .col-md-2.col-12.md-form
+                .md-selectfield.form-control
+                  label
+                    | #{t('Manufacturer')}
+                  select#select-productvendor.custom-select.md-select(
+                    name="productvendor", onchange="updateModels(this)",
+                      data-json=tr069Infos, required)
+                    option(value='')
+                  .invalid-feedback= t('selectAnyVendor')
+              .col-md-2.col-12.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Model')}
                   select#select-productclass.custom-select.md-select(
                     name="productclass", onchange="updateVersions(this)",
-                      data-json=tr069Infos, required)
+                      required)
                     option(value='')
                   .invalid-feedback= t('selectAnyModel')
-              .col-md-3.col-12.md-form
+              .col-md-2.col-12.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Version')}

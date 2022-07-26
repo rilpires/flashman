@@ -135,4 +135,12 @@ router.route('/export').get(
 router.route('/ponsignal/:deviceId').get(
   deviceListController.receivePonSignalMeasure);
 
+// WAN Informations
+router.route('/waninfo/:id').get(
+  deviceListController.getWanInfo);
+
+// LAN Informations
+router.route('/laninfo/:id').get(
+  deviceListController.getLanInfo);
+
 module.exports = router;
