@@ -75,14 +75,21 @@ const getTR069CustomFactoryModels = function() {
 };
 
 const getTR069UpgradeableModels = function() {
-  let ret = {models: [], versions: {}};
+  let ret = {vendors: {}, versions: {}};
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
     if (!permissions.features.firmwareUpgrade) return;
-    let identifier = cpe.identifier.vendor + ' ' + cpe.identifier.model;
-    ret.models.push(identifier);
-    ret.versions[identifier] = Object.keys(permissions.firmwareUpgrades);
+    let vendor = cpe.identifier.vendor;
+    let model = cpe.identifier.model;
+    let fullID = vendor + ' ' + model;
+    if (ret.vendors[vendor]) {
+      ret.vendors[vendor].push(model);
+      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+    } else {
+      ret.vendors[vendor] = Array.from([model]);
+      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+    }
   });
   return ret;
 };

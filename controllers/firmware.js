@@ -268,8 +268,8 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields = parseFilename(firmwarefile.name);
   } else if (isTR069) {
     fnameFields = {};
-    fnameFields.vendor = req.body.productclass.split(' ')[0];
-    fnameFields.model = req.body.productclass.split(' ').splice(1).join(' ');
+    fnameFields.vendor = req.body.productvendor;
+    fnameFields.model = req.body.productclass;
     fnameFields.version = req.body.version;
     fnameFields.release = req.body.version;
     fnameFields.cpe_type = 'tr069';
