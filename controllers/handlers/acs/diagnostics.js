@@ -90,7 +90,6 @@ const calculatePingDiagnostic = async function(
     device, cpe, data, pingKeys, pingFields,
 ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
-
   if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
     let result = {};
 
@@ -100,7 +99,8 @@ const calculatePingDiagnostic = async function(
 
     if (
       pingKeys.diag_state === 'Complete' ||
-      pingKeys.diag_state === 'Complete\n'
+      pingKeys.diag_state === 'Complete\n' ||
+      pingKeys.diag_state === 'Completed'
     ) {
       const loss = parseInt(pingKeys.failure_count * 100 /
         (pingKeys.success_count + pingKeys.failure_count));
