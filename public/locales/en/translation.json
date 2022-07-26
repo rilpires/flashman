@@ -308,6 +308,7 @@
 	"Type": "Type",
 	"File...": "File...",
 	"Upload": "Upload",
+	"selectAnyVendor": "Select some vendor",
 	"selectAnyModel": "Select some model",
 	"Version": "Version",
 	"selectAnyVersion": "Select some version",
