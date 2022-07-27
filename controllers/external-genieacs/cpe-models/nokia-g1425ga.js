@@ -17,6 +17,11 @@ nokiaModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 750;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+  ];
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '3FE49568IJIJ23': ['3FE49568HJIL97'],
     '3FE49568HJIL97': [],
@@ -41,9 +46,6 @@ nokiaModel.convertWifiMode = function(mode) {
 };
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
-  if (!is5ghz) {
-    return '20MHz';
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -54,11 +56,7 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      if (is5ghz) {
-        return '80MHz';
-      } else {
-        return '20MHz';
-      }
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }

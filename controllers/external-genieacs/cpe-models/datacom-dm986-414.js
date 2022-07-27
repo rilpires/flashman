@@ -51,6 +51,7 @@ datacomModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '2';
     case 'auto':
+      return (is5ghz) ? '2' : '1';
     default:
       return '';
   }
