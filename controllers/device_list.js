@@ -780,12 +780,17 @@ deviceListController.searchDeviceReg = async function(req, res) {
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
-        const model = device.model.replace('N/', '');
-        let devReleases = releases.filter(
-          (release) => release.model === model);
+        const dbModel = device.model.replace('N/', '');
+        let devReleases;
         if (device.use_tr069) {
           let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
             device).cpe;
+          let fancyModel = cpe.identifier.model;
+          // Necessary to check both because of legacy cases that have already
+          // been uploaded
+          devReleases = releases.filter(
+            (release) => ([fancyModel, dbModel].includes(release.model)),
+          );
           let permissions = cpe.modelPermissions();
           /* get allowed version of upgrade by
             current device version  */
@@ -807,6 +812,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
             device.model_alias = modelAlias;
           }
         } else {
+          devReleases = releases.filter(
+            (release) => release.model === dbModel,
+          );
           let filteredDevReleases = [];
           for (let i = 0; i < devReleases.length; i++) {
             const isAllowed = deviceHandlers.isUpgradePossible(
@@ -1367,19 +1375,6 @@ deviceListController.sendCustomPing = async function(req, res) {
         message: t('cpeWithoutCommand'),
       });
     }
-    // We don't want to allow another custom command
-    // while there is another running
-    if (device.temp_command_trap &&
-        ((device.temp_command_trap.ping_hosts &&
-          device.temp_command_trap.ping_hosts.length > 0) ||
-         (device.temp_command_trap.speedtest_url &&
-          device.temp_command_trap.speedtest_url != ''))
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: t('errorOccurredTryAgain'),
-      });
-    }
 
     let inputHosts = [];
 
@@ -1455,19 +1450,6 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       return res.status(200).json({
         success: false,
         message: t('cpeWithoutCommand'),
-      });
-    }
-    // We don't want to allow another custom command
-    // while there is another running
-    if (device.temp_command_trap &&
-      ((device.temp_command_trap.ping_hosts &&
-        device.temp_command_trap.ping_hosts.length > 0) ||
-       (device.temp_command_trap.speedtest_url &&
-        device.temp_command_trap.speedtest_url != ''))
-    ) {
-      return res.status(200).json({
-        success: false,
-        message: t('errorOccurredTryAgain'),
       });
     }
     let validationOk = true;
@@ -3326,13 +3308,22 @@ deviceListController.doSpeedTest = function(req, res) {
     let projection = {measureServerIP: true, measureServerPort: true};
     Config.findOne({is_default: true}, projection)
     .lean().exec(async function(err, matchedConfig) {
+      let customUrl = '';
+      if (matchedDevice.temp_command_trap &&
+          matchedDevice.temp_command_trap.speedtest_url &&
+          matchedDevice.temp_command_trap.speedtest_url !== ''
+      ) {
+        customUrl = matchedDevice.temp_command_trap.speedtest_url;
+      }
       if (err || !matchedConfig) {
         return res.status(200).json({
           success: false,
           message: t('configFindError', {errorline: __line}),
         });
       }
-      if (!matchedConfig.measureServerIP) {
+      if (
+        customUrl == '' && !matchedConfig.measureServerIP
+      ) {
         return res.status(200).json({
           success: false,
           message: t('serviceNotConfiguredByAdmin'),
@@ -3342,20 +3333,18 @@ deviceListController.doSpeedTest = function(req, res) {
         sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
       }
 
-      let customUrl = '';
-      if (matchedDevice.temp_command_trap &&
-          matchedDevice.temp_command_trap.speedtest_url &&
-          matchedDevice.temp_command_trap.speedtest_url !== ''
-      ) {
-        customUrl = matchedDevice.temp_command_trap.speedtest_url;
-      }
 
       if (matchedDevice.use_tr069) {
-        matchedDevice.current_speedtest.timestamp = new Date();
-        matchedDevice.current_speedtest.user = req.user.name;
         // When customUrl is defined, we skip 'estimative' stage
-        matchedDevice.current_speedtest.stage =
-          (customUrl !== '') ? 'measure' : 'estimative';
+        // and also doesn't save timestamp. We must assure that
+        // stage is 'measure', though
+        if (customUrl !== '') {
+          matchedDevice.current_speedtest.stage = 'measure';
+        } else {
+          matchedDevice.current_speedtest.timestamp = new Date();
+          matchedDevice.current_speedtest.user = req.user.name;
+          matchedDevice.current_speedtest.stage = 'estimative';
+        }
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,

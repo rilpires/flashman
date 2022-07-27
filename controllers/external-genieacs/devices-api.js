@@ -46,6 +46,8 @@ const tr069Models = {
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
+  nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
+  nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
@@ -73,14 +75,21 @@ const getTR069CustomFactoryModels = function() {
 };
 
 const getTR069UpgradeableModels = function() {
-  let ret = {models: [], versions: {}};
+  let ret = {vendors: {}, versions: {}};
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
     if (!permissions.features.firmwareUpgrade) return;
-    let identifier = cpe.identifier.vendor + ' ' + cpe.identifier.model;
-    ret.models.push(identifier);
-    ret.versions[identifier] = Object.keys(permissions.firmwareUpgrades);
+    let vendor = cpe.identifier.vendor;
+    let model = cpe.identifier.model;
+    let fullID = vendor + ' ' + model;
+    if (ret.vendors[vendor]) {
+      ret.vendors[vendor].push(model);
+      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+    } else {
+      ret.vendors[vendor] = Array.from([model]);
+      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+    }
   });
   return ret;
 };
@@ -177,6 +186,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(modelName)) {
     // Nokia G-140W-C and family
     return {success: true, cpe: tr069Models.nokiaG140WCModel};
+  } else if (modelName === 'G-140W-H') {
+    // Nokia G-140W-H
+    return {success: true, cpe: tr069Models.nokiaG140WHModel};
+  } else if (modelName === 'G-1425G-A') {
+    // Nokia G-1425G-A
+    return {success: true, cpe: tr069Models.nokiaG1425GAModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     return {success: true, cpe: tr069Models.nokiaG2425Model};
