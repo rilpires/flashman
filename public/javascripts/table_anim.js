@@ -1367,8 +1367,12 @@ anlixDocumentReady.add(function() {
           }
           let isTR069 = device.use_tr069;
           let ponRXPower = device.pon_rxpower;
-          let grantWifiBand = device.permissions.grantWifiBand;
-          let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
+          let grantWifiModeRead = device.permissions.grantWifiModeRead;
+          let grantWifiModeEdit = device.permissions.grantWifiModeEdit;
+          let grantWifiBandRead = device.permissions.grantWifiBandRead;
+          let grantWifiBandEdit = device.permissions.grantWifiBandEdit;
+          let grantWifiBandAuto2 = device.permissions.grantWifiBandAuto2;
+          let grantWifiBandAuto5 = device.permissions.grantWifiBandAuto5;
           let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
@@ -1479,8 +1483,10 @@ anlixDocumentReady.add(function() {
             (isSuperuser || grantPPPoEInfo >= 1)+'"';
           formAttr += ' data-validate-ipv6-enabled="'+
             grantWifiPowerHiddenIpv6Box+'"';
+          formAttr += ' data-validate-wifi-mode="'+
+            (grantWifiModeEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-band="'+
-            (grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
+            (grantWifiBandEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+
             (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+
@@ -2341,61 +2347,71 @@ anlixDocumentReady.add(function() {
                 '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">'+t('bandwidth')+'</label>'+
-                      '<select class="browser-default md-select" '+
-                        'id="edit_wifi5_band-'+index+'" '+
-                        '$REPLACE_WIFI5_EN>'+
-                        (grantWifiBandAuto ?
-                          '<option value="auto" $REPLACE_SELECTED_BAND5_auto$>'+
-                            t('auto')+
-                          '</option>' :
-                          ''
-                        )+
-                        '<option value="VHT80" $REPLACE_SELECTED_BAND5_VHT80$>'+
-                          '80 MHz'+
-                        '</option>'+
-                        '<option value="VHT40" $REPLACE_SELECTED_BAND5_VHT40$>'+
-                          '40 MHz'+
-                        '</option>'+
-                        '<option value="VHT20" $REPLACE_SELECTED_BAND5_VHT20$>'+
-                          '20 MHz'+
-                        '</option>'+
-                      '</select>'+
-                      '<small class="text-muted" '+
-                        '$AUTO_BAND_SELECTED_VISIBILITY5$>'+
-                          (device.wifi_last_band_5ghz ?
-                            t('bandwidthChoosenByAuto',
-                              {x: device.wifi_last_band_5ghz}) :
+                (grantWifiBandRead ?
+                  '<div class="md-form">'+
+                    '<div class="input-group">'+
+                      '<div class="md-selectfield form-control my-0">'+
+                        '<label class="active">'+t('bandwidth')+'</label>'+
+                        '<select class="browser-default md-select" '+
+                          'id="edit_wifi5_band-'+index+'" '+
+                          '$REPLACE_WIFI5_BAND_EN>'+
+                          (grantWifiBandAuto5 ?
+                            '<option value="auto" ' +
+                              '$REPLACE_SELECTED_BAND5_auto$>'+
+                              t('auto')+
+                            '</option>' :
                             ''
                           )+
-                      '</small>'+
+                          '<option value="VHT80" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT80$>'+
+                            '80 MHz'+
+                          '</option>'+
+                          '<option value="VHT40" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT40$>'+
+                            '40 MHz'+
+                          '</option>'+
+                          '<option value="VHT20" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT20$>'+
+                            '20 MHz'+
+                          '</option>'+
+                        '</select>'+
+                        '<small class="text-muted" '+
+                          '$AUTO_BAND_SELECTED_VISIBILITY5$>'+
+                            (device.wifi_last_band_5ghz ?
+                              t('bandwidthChoosenByAuto',
+                                {x: device.wifi_last_band_5ghz}) :
+                              ''
+                            )+
+                        '</small>'+
+                      '</div>'+
                     '</div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">'+
-                        t('operationMode')+
-                      '</label>'+
-                      '<select class="browser-default md-select" '+
-                        'id="edit_wifi5_mode-'+index+'" '+
-                        '$REPLACE_WIFI5_BAND_EN'+
-                      '>'+
-                        '$REPLACE_WIFI5_AX_MODE' +
-                        '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
-                          'AC'+
-                        '</option>'+
-                        '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>'+
-                          'N'+
-                        '</option>'+
-                      '</select>'+
+                  '</div>' :
+                  ''
+                ) +
+                (grantWifiModeRead ?
+                  '<div class="md-form">'+
+                    '<div class="input-group">'+
+                      '<div class="md-selectfield form-control my-0">'+
+                        '<label class="active">'+
+                          t('operationMode')+
+                        '</label>'+
+                        '<select class="browser-default md-select" '+
+                          'id="edit_wifi5_mode-'+index+'" '+
+                          '$REPLACE_WIFI5_MODE_EN'+
+                        '>'+
+                          '$REPLACE_WIFI5_AX_MODE' +
+                          '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
+                            'AC'+
+                          '</option>'+
+                          '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>'+
+                            'N'+
+                          '</option>'+
+                        '</select>'+
+                      '</div>'+
                     '</div>'+
-                  '</div>'+
-                '</div>'+
+                  '</div>' :
+                  ''
+                ) +
                 '$REPLACE_WIFI5_POWER'+
               '</div>'+
             '</div>';
@@ -2538,60 +2554,67 @@ anlixDocumentReady.add(function() {
                       '$REPLACE_WIFI2_HIDDEN'+
                     '</div>'+
                     '<div class="col-6">'+
-                      '<div class="md-form">'+
-                        '<div class="input-group">'+
-                          '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">'+t('bandwidth')+'</label>'+
-                            '<select class="browser-default md-select" '+
-                              'id="edit_wifi_band-'+index+'" '+
-                              '$REPLACE_WIFI_EN'+
-                            '>'+
-                              (grantWifiBandAuto ?
-                                '<option value="auto" '+
-                                  '$REPLACE_SELECTED_BAND_auto$>'+
-                                  'auto'+
-                                '</option>':
-                                ''
-                              )+
-                              '<option value="HT40" '+
-                                '$REPLACE_SELECTED_BAND_HT40$>'+
-                                  '40 MHz'+
-                              '</option>'+
-                              '<option value="HT20" '+
-                                '$REPLACE_SELECTED_BAND_HT20$>'+
-                                  '20 MHz'+
-                              '</option>'+
-                            '</select>'+
-                            '<small class="text-muted" '+
-                              '$AUTO_BAND_SELECTED_VISIBILITY$>'+
-                                (device.wifi_last_band ?
-                                  t('bandwidthChoosenByAuto',
-                                    {x: device.wifi_last_band}) :
+                      (grantWifiBandRead ?
+                        '<div class="md-form">'+
+                          '<div class="input-group">'+
+                            '<div class="md-selectfield form-control my-0">'+
+                              '<label class="active">'+t('bandwidth')+
+                              '</label>'+
+                              '<select class="browser-default md-select" '+
+                                'id="edit_wifi_band-'+index+'" '+
+                                '$REPLACE_WIFI_BAND_EN'+
+                              '>'+
+                                (grantWifiBandAuto2 ?
+                                  '<option value="auto" '+
+                                    '$REPLACE_SELECTED_BAND_auto$>'+
+                                    'auto'+
+                                  '</option>':
                                   ''
                                 )+
-                            '</small>'+
-                          '</div>'+
-                        '</div>'+
-                      '</div>'+
-                      '<div class="md-form">'+
-                        '<div class="input-group">'+
-                          '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">'+
-                              t('operationMode')+
-                            '</label>'+
-                            '<select class="browser-default md-select" '+
-                              'id="edit_wifi_mode-'+index+'" '+
-                              '$REPLACE_WIFI_BAND_EN>'+
-                                '<option value="11n" '+
-                                  '$REPLACE_SELECTED_MODE_11n$>BGN'+
+                                '<option value="HT40" '+
+                                  '$REPLACE_SELECTED_BAND_HT40$>'+
+                                    '40 MHz'+
                                 '</option>'+
-                                '<option value="11g" '+
-                                  '$REPLACE_SELECTED_MODE_11g$>G'+
+                                '<option value="HT20" '+
+                                  '$REPLACE_SELECTED_BAND_HT20$>'+
+                                    '20 MHz'+
                                 '</option>'+
-                            '</select>'+
+                              '</select>'+
+                              '<small class="text-muted" '+
+                                '$AUTO_BAND_SELECTED_VISIBILITY$>'+
+                                  (device.wifi_last_band ?
+                                    t('bandwidthChoosenByAuto',
+                                      {x: device.wifi_last_band}) :
+                                    ''
+                                  )+
+                              '</small>'+
+                            '</div>'+
                           '</div>'+
-                        '</div>'+
-                      '</div>'+
+                        '</div>' :
+                        ''
+                      ) +
+                      (grantWifiModeRead ?
+                        '<div class="md-form">'+
+                          '<div class="input-group">'+
+                            '<div class="md-selectfield form-control my-0">'+
+                              '<label class="active">'+
+                                t('operationMode')+
+                              '</label>'+
+                              '<select class="browser-default md-select" '+
+                                'id="edit_wifi_mode-'+index+'" '+
+                                '$REPLACE_WIFI_MODE_EN>'+
+                                  '<option value="11n" '+
+                                    '$REPLACE_SELECTED_MODE_11n$>BGN'+
+                                  '</option>'+
+                                  '<option value="11g" '+
+                                    '$REPLACE_SELECTED_MODE_11g$>G'+
+                                  '</option>'+
+                              '</select>'+
+                            '</div>'+
+                          '</div>'+
+                        '</div>' :
+                        ''
+                      ) +
                       '$REPLACE_WIFI2_POWER'+
                     '</div>'+
                   '</div>'+
@@ -2689,7 +2712,14 @@ anlixDocumentReady.add(function() {
           } else {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g, '');
           }
-          if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiModeEdit || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
+          }
+          if (!grantWifiBandEdit || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
           } else {

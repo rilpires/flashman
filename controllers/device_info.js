@@ -186,11 +186,13 @@ const createRegistry = async function(req, res) {
   let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
     version, is5ghzCapable, model,
   );
-  if (permissions.grantWifiBand) {
-    genericValidate(band, validator.validateBand,
-                    'band', null, errors);
+  if (permissions.grantWifiModeEdit) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
+  }
+  if (permissions.grantWifiBandEdit) {
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
   }
   if (permissions.grantWifiPowerHiddenIpv6Box) {
     genericValidate(power, validator.validatePower,
@@ -203,15 +205,19 @@ const createRegistry = async function(req, res) {
                     'password5ghz', null, errors);
     genericValidate(channel5ghz, validator.validateChannel,
                     'channel5ghz', null, errors);
-    genericValidate(band5ghz, validator.validateBand,
-                    'band5ghz', null, errors);
+    if (permissions.grantWifiBandEdit) {
+      genericValidate(band5ghz, validator.validateBand,
+                      'band5ghz', null, errors);
+    }
 
     // Fix for devices that uses 11a as 11ac mode
     if (mode5ghz == '11a') {
       mode5ghz = '11ac';
     }
-    genericValidate(mode5ghz, validator.validateMode,
-                    'mode5ghz', null, errors);
+    if (permissions.grantWifiModeEdit) {
+      genericValidate(mode5ghz, validator.validateMode,
+                      'mode5ghz', null, errors);
+    }
     if (permissions.grantWifiPowerHiddenIpv6Box) {
       genericValidate(power5ghz, validator.validatePower,
                       'power5ghz', null, errors);
@@ -589,8 +595,10 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             matchedDevice.version, is5ghzCapable, matchedDevice.model,
           );
 
-          if ( permissionsSentVersion.grantWifiBand &&
-              !permissionsCurrVersion.grantWifiBand) {
+          if (
+            permissionsSentVersion.grantWifiBandEdit &&
+            !permissionsCurrVersion.grantWifiBandEdit
+          ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();
             let mode =

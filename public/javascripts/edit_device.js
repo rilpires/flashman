@@ -77,6 +77,7 @@ let validateEditDevice = function(event) {
   let mac = row.data('deviceid');
   let isTR069 = row.data('is-tr069');
   let validateWifi = row.data('validateWifi');
+  let validateWifiMode = row.data('validate-wifi-mode');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
@@ -211,9 +212,11 @@ let validateEditDevice = function(event) {
       validator.validateSSID, errors.ssid);
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
+  if (validateWifiMode) {
+    genericValidate(mode, validator.validateMode, errors.mode);
+  }
   if (validateWifiBand) {
     genericValidate(band, validator.validateBand, errors.band);
-    genericValidate(mode, validator.validateMode, errors.mode);
   }
   if (validateWifiPower) {
     genericValidate(power, validator.validatePower, errors.power);
@@ -228,10 +231,14 @@ let validateEditDevice = function(event) {
                     validator.validateSSID, errors.ssid5ghz);
     genericValidate(channel5ghz,
                     validator.validateChannel, errors.channel5ghz);
-    genericValidate(band5ghz,
-                    validator.validateBand, errors.band5ghz);
-    genericValidate(mode5ghz,
-                    validator.validateMode, errors.mode5ghz);
+    if (validateWifiBand) {
+      genericValidate(band5ghz,
+                      validator.validateBand, errors.band5ghz);
+    }
+    if (validateWifiMode) {
+      genericValidate(mode5ghz,
+                      validator.validateMode, errors.mode5ghz);
+    }
     if (validateWifiPower) {
       genericValidate(power5ghz, validator.validatePower, errors.power5ghz);
     }
