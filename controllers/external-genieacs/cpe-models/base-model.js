@@ -61,6 +61,8 @@ basicCPEModel.modelPermissions = function() {
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
+      skipIfNoWifiMode: false, // will skip devices with no host mode info
+                               // (developed for Nokia models)
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -261,6 +263,12 @@ basicCPEModel.convertGenieSerial = function(serial, mac) {
 basicCPEModel.convertToDbm = function(power) {
   // No conversion necessary
   return power;
+};
+
+// Some CPEs inform WAN transmit rate in different scales
+basicCPEModel.convertWanRate = function(rate) {
+  // No conversion necessary
+  return rate;
 };
 
 // CPEs that can customize web admin username can reject certain usernames to
