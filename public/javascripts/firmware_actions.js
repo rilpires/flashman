@@ -43,32 +43,63 @@ const fetchLocalFirmwares = function(firmwaresTable) {
 
 const fetchModels = function(tr069Infos) {
   deleteFirmwareStorage();
-  setFirmwareStorage('versions', tr069Infos.versions);
+  setFirmwareStorage('infos', tr069Infos);
+  $('#select-productvendor option').remove();
+  $('#select-productvendor').append(
+    $('<option>')
+      .attr('value', '')
+      .text(''),
+  );
+  Object.keys(tr069Infos.vendors).forEach((v) => {
+    $('#select-productvendor').append(
+      $('<option>')
+        .attr('value', v)
+        .text(v),
+    );
+  });
+};
+
+window.updateModels = function(input) {
+  let tr069Infos = getFirmwareStorage('infos');
   $('#select-productclass option').remove();
   $('#select-productclass').append(
     $('<option>')
       .attr('value', '')
       .text(''),
   );
-  tr069Infos.models.forEach((pc) => {
-    $('#select-productclass').append(
-      $('<option>')
-        .attr('value', pc)
-        .text(pc),
-    );
-  });
-};
-
-window.updateVersions = function(input) {
-  let versionsByModel = getFirmwareStorage('versions');
   $('#select-version option').remove();
   $('#select-version').append(
     $('<option>')
       .attr('value', '')
       .text(''),
   );
-  if (versionsByModel[input.value]) {
-    versionsByModel[input.value].forEach((v) => {
+  let chosenVendor = input.value;
+  if (tr069Infos.vendors[chosenVendor]) {
+    tr069Infos.vendors[chosenVendor].forEach((model) => {
+      $('#select-productclass').append(
+        $('<option>')
+          .attr('value', model)
+          .text(model),
+      );
+    });
+  }
+};
+
+window.updateVersions = function(input) {
+  let tr069Infos = getFirmwareStorage('infos');
+  $('#select-version option').remove();
+  $('#select-version').append(
+    $('<option>')
+      .attr('value', '')
+      .text(''),
+  );
+  let chosenVendor = $('#select-productvendor option:selected').text();
+  let chosenModel = input.value;
+  let fullID = chosenVendor + ' ' + chosenModel;
+  console.log(fullID);
+  console.log(tr069Infos);
+  if (tr069Infos.versions[fullID]) {
+    tr069Infos.versions[fullID].forEach((v) => {
       $('#select-version').append(
         $('<option>')
           .attr('value', v)
@@ -100,7 +131,7 @@ anlixDocumentReady.add(function() {
   let selectedItensDel = [];
   let selectedItensAdd = [];
   let selectedItensRestrict = [];
-  fetchModels($('#select-productclass').data('json'));
+  fetchModels($('#select-productvendor').data('json'));
 
   let firmwaresTable = $('#firmware-table').DataTable({
     'paging': true,
