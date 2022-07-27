@@ -18,7 +18,7 @@ nokiaModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 750;
   permissions.firmwareUpgrades = {
-    '3FE49568IJIJ23': [],
+    '3FE49568IJIJ23': ['3FE49568HJIL97'],
     '3FE49568HJIL97': [],
   };
   return permissions;
