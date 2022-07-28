@@ -210,7 +210,15 @@ const calculateSpeedDiagnostic = async function(
     return;
   }
 
-  if (!device.current_speedtest.timestamp || (rqstTime > lastTime)) {
+  let normalSpeedTestInProgress = (rqstTime > lastTime);
+  let customSpeedTestInProgress = false;
+  if (device.temp_command_trap
+    && device.temp_command_trap.speedtest_url
+    && device.temp_command_trap.speedtest_url !== '') {
+    customSpeedTestInProgress = true;
+  }
+
+  if (normalSpeedTestInProgress || customSpeedTestInProgress) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
