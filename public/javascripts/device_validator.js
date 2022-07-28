@@ -47,8 +47,8 @@
         };
       }
 
-      let sizeIsExpected = false;
-      let regexIsValid = false;
+      let sizeIsCorrect = false;
+      let regexMatches = false;
       let kindIsValid = true;
       let expectedMask = '';
       let expectedRegex = new RegExp(/.{0,256}/);
@@ -73,25 +73,25 @@
 
       if (extReference.data.length === 0 && kindIsValid) return {valid: true};
 
-      sizeIsExpected = (
+      sizeIsCorrect = (
         extReference.kind === t('Other') ||
         extReference.data.length === expectedLength);
-      regexIsValid = expectedRegex.test(extReference.data);
+      regexMatches = expectedRegex.test(extReference.data);
 
       let errors = [];
       if (!kindIsValid) {
         errors.push(t('invalidContractNumberKind', {kind: extReference.kind}));
       }
-      if (!sizeIsExpected) {
+      if (!sizeIsCorrect) {
         errors.push(t('invalidContractNumberDataLength',
           {kind: extReference.kind, length: expectedLength}));
       }
-      if (!regexIsValid) {
+      if (!regexMatches) {
         errors.push(t('invalidContractNumberData',
           {kind: extReference.kind, mask: expectedMask}));
       }
       return {
-        valid: (kindIsValid && sizeIsExpected && regexIsValid),
+        valid: (kindIsValid && sizeIsCorrect && regexMatches),
         err: errors,
       };
     };
