@@ -83,6 +83,7 @@ basicCPEModel.modelPermissions = function() {
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
       mustBeEnabledToConfigure: false, // wiill block changes if wifi is down
+      canTrustActive: false, // flag to handle devices that can trust Active
     },
     mesh: {
       bssidOffsets2Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
@@ -579,7 +580,8 @@ basicCPEModel.getModelFields = function() {
       host_name: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName',
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
       host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
-        'Layer2Interface',
+      'Layer2Interface',
+      host_active: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Active',
       host_rssi: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalStrength',
       host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +

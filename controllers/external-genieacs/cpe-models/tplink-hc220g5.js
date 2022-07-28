@@ -6,13 +6,15 @@ tplinkModel.identifier = 'TP-Link HC220-G5';
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.speedTest = true;
   permissions.features.stun = false;
-  permissions.wan.speedTestLimit = 410;
+  permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
+  permissions.wifi.canTrustActive = true;
   permissions.firmwareUpgrades = {
     '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
   };
@@ -116,8 +118,11 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_mac = 'Device.Hosts.Host.*.PhysAddress';
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
-  fields.devices.associated = 'Device.WiFi.AccessPoint.*.AssociatedDevice';
-  fields.devices.assoc_mac = 'Device.WiFi.AccessPoint.*.MaxAssociatedDevices';
+  fields.devices.associated =
+    'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice';
+  fields.devices.assoc_mac =
+    'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice.*.MACAddress';
+  fields.devices.host_active = 'Device.Hosts.Host.*.Active';
 
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {
