@@ -5,6 +5,11 @@ const t = require('../language').i18next.t;
 
 let utilHandlers = {};
 
+// TODO: create a handler that pattens the data based on kind
+utilHandlers.getExternalRefPattern = function(kind, data) {
+  return '';
+};
+
 utilHandlers.checkForNestedKey = function(data, key) {
   if (!data) return false;
   let current = data;

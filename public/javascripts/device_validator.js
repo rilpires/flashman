@@ -36,8 +36,13 @@
     let Validator = function() {};
 
     Validator.prototype.validateExtReference = function(extReference) {
-      let sizeIsValid = (extReference.data.length < 256);
-      if (!sizeIsValid) {
+      let expectedRegex = new RegExp(/^.{0,256}$/);
+      let expectedMask;
+      let regexIsValid = false;
+      let kindIsValid = true;
+
+      // Size is not valid
+      if (!(expectedRegex.test(extReference.data))) {
         return {
           valid: false,
           err: [t(
@@ -47,51 +52,38 @@
         };
       }
 
-      let sizeIsCorrect = false;
-      let regexMatches = false;
-      let kindIsValid = true;
-      let expectedMask = '';
-      let expectedRegex = new RegExp(/.{0,256}/);
-      let expectedLength = 256;
-
+      // Dinamically checking king and getting the expected regex by language
       switch (extReference.kind) {
         case t('personIdentificationSystem'):
           expectedRegex = new RegExp(t('personIdentificationRegex'));
           expectedMask = t('personIdentificationMask');
-          expectedLength = expectedMask.length;
         break;
         case t('enterpriseIdentificationSystem'):
           expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
           expectedMask = t('enterpriseIdentificationMask');
-          expectedLength = expectedMask.length;
         break;
         case t('Other'):
-        break;
+          // In case of valid kind ("Other") and valid size (tested rigth above)
+          // then we can return the validator as valid
+          return {valid: true};
         default:
           kindIsValid = false;
       }
 
-      if (extReference.data.length === 0 && kindIsValid) return {valid: true};
-
-      sizeIsCorrect = (
-        extReference.kind === t('Other') ||
-        extReference.data.length === expectedLength);
-      regexMatches = expectedRegex.test(extReference.data);
+      // After we get the expected regex for each identification system by
+      // language, we can validate the regex
+      regexIsValid = expectedRegex.test(extReference.data);
 
       let errors = [];
       if (!kindIsValid) {
         errors.push(t('invalidContractNumberKind', {kind: extReference.kind}));
       }
-      if (!sizeIsCorrect) {
-        errors.push(t('invalidContractNumberDataLength',
-          {kind: extReference.kind, length: expectedLength}));
-      }
-      if (!regexMatches) {
+      if (!regexIsValid && expectedMask) {
         errors.push(t('invalidContractNumberData',
           {kind: extReference.kind, mask: expectedMask}));
       }
       return {
-        valid: (kindIsValid && sizeIsCorrect && regexMatches),
+        valid: (kindIsValid && regexIsValid),
         err: errors,
       };
     };

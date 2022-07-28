@@ -1703,6 +1703,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
+      let needsToUpdateExtRef = false;
       let validator = new Validator();
 
       let errors = [];
@@ -1886,9 +1887,12 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
         }
-        if (extReference) {
+        if ((content.hasOwnProperty('external_reference')) &&
+            (extReference.kind !== matchedDevice.external_reference.kind ||
+             extReference.data !== matchedDevice.external_reference.data)) {
           genericValidate(extReference, validator.validateExtReference,
             'external_reference');
+          needsToUpdateExtRef = true;
         }
         // We must enable Wi-Fi corresponding to mesh radio we're using
         // Some models have this restriction.
@@ -2174,14 +2178,13 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if ((extReference) &&
-                (extReference.kind !== matchedDevice.external_reference.kind ||
-                 extReference.data !== matchedDevice.external_reference.data)
-            ) {
+            if (needsToUpdateExtRef) {
               if (superuserGrant || role.grantDeviceId) {
                 matchedDevice.external_reference.kind = extReference.kind;
                 matchedDevice.external_reference.data = extReference.data;
                 updateParameters = true;
+                // TODO: Pattern the data with an handler that needs to be
+                // created
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
@@ -2476,6 +2479,11 @@ deviceListController.createDeviceReg = function(req, res) {
               'do_update_parameters': false,
               'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
+            // TODO: Pattern the data with an handler that needs to be
+            // created
+            // extRefPattern = ...
+            // newDeviceModel.external_reference.kind = extRefPattern.kind;
+            // newDeviceModel.external_reference.data = extRefPattern.data;
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
             }
