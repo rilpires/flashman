@@ -11,7 +11,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.portForward = false;
   permissions.wan.dhcpUptime = false;
-  permissions.wan.speedTestLimit = 100;
+  permissions.wan.speedTestLimit = 200;
   permissions.lan.configWrite = false;
   permissions.firmwareUpgrades = {
     '3.16.0 0.9.1 v600c.0 Build 200427 Rel.33156n': [],
