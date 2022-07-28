@@ -1055,33 +1055,14 @@ anlixDocumentReady.add(function() {
                     '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>'+
                       t('auto')+
                     '</option>'+
-                    '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
-                      '36'+
-                    '</option>'+
-                    '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
-                      '40'+
-                    '</option>'+
-                    '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
-                      '44'+
-                    '</option>'+
-                    '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
-                      '48'+
-                    '</option>'+
-                    '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
-                      '149'+
-                    '</option>'+
-                    '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
-                      '153'+
-                    '</option>'+
-                    '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
-                      '157'+
-                    '</option>'+
-                    '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
-                      '161'+
-                    '</option>'+
-                    '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
-                      '165'+
-                    '</option>'+
+                    device.permissions.grantWifi5ChannelList.reduce(
+                      (result, channel)=>result+(
+                        '<option value="' + channel +
+                          '" $REPLACE_SELECTED_CHANNEL5_' + channel + '$>' +
+                          channel +
+                        '</option>'),
+                      '',
+                    )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -2271,33 +2252,14 @@ anlixDocumentReady.add(function() {
                           '$REPLACE_SELECTED_CHANNEL5_auto$>'+
                           t('auto')+
                         '</option>'+
-                        '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
-                          '36'+
-                        '</option>'+
-                        '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
-                          '40'+
-                        '</option>'+
-                        '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
-                          '44'+
-                        '</option>'+
-                        '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
-                          '48'+
-                        '</option>'+
-                        '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
-                          '149'+
-                        '</option>'+
-                        '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
-                          '153'+
-                        '</option>'+
-                        '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
-                          '157'+
-                        '</option>'+
-                        '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
-                          '161'+
-                        '</option>'+
-                        '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
-                          '165'+
-                        '</option>'+
+                        device.permissions.grantWifi5ChannelList.reduce(
+                          (result, channel)=>result+(
+                            '<option value="' + channel +
+                              '" $REPLACE_SELECTED_CHANNEL5_' + channel + '$>' +
+                              channel +
+                            '</option>'),
+                          '',
+                        ) +
                       '</select>'+
                       '<small class="text-muted" '+
                         '$AUTO_CHANNEL_SELECTED_VISIBILITY5$>'+
