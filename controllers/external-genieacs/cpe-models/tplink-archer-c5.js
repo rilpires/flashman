@@ -9,7 +9,9 @@ tplinkModel.modelPermissions = function() {
   permissions.features.firmwareUpgrade = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
-  permissions.features.portForward = false;
+  permissions.features.portForward = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.dhcpUptime = false;
   permissions.wan.speedTestLimit = 200;
   permissions.lan.configWrite = false;
@@ -80,6 +82,8 @@ tplinkModel.getModelFields = function() {
     'internal_port_start', 'xsd:unsignedInt'];
   fields.port_mapping_values.protocol[1] = 'TCP or UDP';
   fields.port_mapping_values.description[0] = 'ServiceName';
+  // This model has problems when the service name is sent
+  fields.port_mapping_values.description[1] = '';
   delete fields.port_mapping_values.remote_host;
   delete fields.port_mapping_values.lease;
   return fields;
