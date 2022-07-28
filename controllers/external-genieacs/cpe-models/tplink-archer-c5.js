@@ -76,14 +76,21 @@ tplinkModel.getModelFields = function() {
   fields.wifi5.band = fields.wifi5.band.replace(
     /BandWidth/g, 'X_TP_Bandwidth',
   );
-  fields.port_mapping_fields.external_port_end = ['X_TP_ExternalPortEnd',
-    'external_port_start', 'xsd:unsignedInt'];
-  fields.port_mapping_fields.internal_port_end = ['X_TP_InternalPortEnd',
-    'internal_port_start', 'xsd:unsignedInt'];
+  fields.port_mapping_fields.external_port_start = [
+    'ExternalPort', 'external_port_start', 'xsd:string',
+  ];
+  fields.port_mapping_fields.external_port_end = [
+    'X_TP_ExternalPortEnd', 'external_port_end', 'xsd:string',
+  ];
+  fields.port_mapping_fields.internal_port_start = [
+    'InternalPort', 'internal_port_start', 'xsd:string',
+  ];
+  fields.port_mapping_fields.internal_port_end = [
+    'X_TP_InternalPortEnd', 'internal_port_end', 'xsd:string',
+  ];
   fields.port_mapping_values.protocol[1] = 'TCP or UDP';
-  fields.port_mapping_values.description[0] = 'ServiceName';
   // This model has problems when the service name is sent
-  fields.port_mapping_values.description[1] = '';
+  delete fields.port_mapping_values.description;
   delete fields.port_mapping_values.remote_host;
   delete fields.port_mapping_values.lease;
   return fields;
