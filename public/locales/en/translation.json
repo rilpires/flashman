@@ -244,7 +244,7 @@
 	"configuredMeshMode": "Mesh mode configured",
 	"contractNumber": "SSN/EIN/Other",
 	"invalidContractNumberKind": "{{kind}} is not a valid identification type",
-	"invalidContractNumberDataGreatherThan256": "{{kind}} cannot be greater than 256 characters!",
+	"invalidContractNumberDataGreatherThan256": "{{kind}} cannot be longer than 256 characters!",
 	"invalidContractNumberDataLength": "{{kind}} must have {{length}} characters!",
 	"invalidContractNumberData": "{{kind}} cannot be different from the pattern \"{{mask}}\"!",
 	"observations": "Comments",
