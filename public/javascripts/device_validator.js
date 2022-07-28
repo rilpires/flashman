@@ -52,18 +52,18 @@
       let kindIsValid = true;
       let expectedMask = '';
       let expectedRegex = new RegExp(/.{0,256}/);
-      let expectedLenght = 256;
+      let expectedLength = 256;
 
       switch (extReference.kind) {
         case t('personIdentificationSystem'):
           expectedRegex = new RegExp(t('personIdentificationRegex'));
           expectedMask = t('personIdentificationMask');
-          expectedLenght = expectedMask.length;
+          expectedLength = expectedMask.length;
         break;
         case t('enterpriseIdentificationSystem'):
           expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
           expectedMask = t('enterpriseIdentificationMask');
-          expectedLenght = expectedMask.length;
+          expectedLength = expectedMask.length;
         break;
         case t('Other'):
         break;
@@ -75,7 +75,7 @@
 
       sizeIsExpected = (
         extReference.kind === t('Other') ||
-        extReference.data.length === expectedLenght);
+        extReference.data.length === expectedLength);
       regexIsValid = expectedRegex.test(extReference.data);
 
       let errors = [];
@@ -84,7 +84,7 @@
       }
       if (!sizeIsExpected) {
         errors.push(t('invalidContractNumberDataLength',
-          {kind: extReference.kind, length: expectedLenght}));
+          {kind: extReference.kind, length: expectedLength}));
       }
       if (!regexIsValid) {
         errors.push(t('invalidContractNumberData',
