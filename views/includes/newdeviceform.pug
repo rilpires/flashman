@@ -1,22 +1,21 @@
 
 form.needs-validation(id="deviceForm", novalidate)
-  .input-entry
-    .md-form.input-group
-      .input-group-btn
-        button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
-          type="button",
-          data-toggle="dropdown"
-        )
-          span#new_ext_ref_type_selected.selected=t('personIdentificationSystem')
-        .ext-ref-type.dropdown-menu
-          a.dropdown-item.text-center.primary-color.active= t('personIdentificationSystem')
-          a.dropdown-item.text-center= t('enterpriseIdentificationSystem')
-          a.dropdown-item.text-center= t('Other')
-      input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
-          type="text",id="new_external_reference",
-          placeholder=t('clientIdentificationOptional'), maxlength="256"
-        )
-      .invalid-feedback
+  .md-form.input-group.input-entry
+    .input-group-btn
+      button.btn.btn-primary.dropdown-toggle.ml-0.my-0(
+        type="button",
+        data-toggle="dropdown"
+      )
+        span#new_ext_ref_type_selected.selected=t('personIdentificationSystem')
+      .ext-ref-type.dropdown-menu
+        a.dropdown-item.text-center.primary-color.active= t('personIdentificationSystem')
+        a.dropdown-item.text-center= t('enterpriseIdentificationSystem')
+        a.dropdown-item.text-center= t('Other')
+    input.col-xs-10.form-control.py-0.added-margin.ext-ref-input(
+        type="text",id="new_external_reference",
+        placeholder=t('clientIdentificationOptional'), maxlength="256"
+      )
+    .invalid-feedback
   .md-form.input-entry
     label(for="new_mac")= t('macAddress')
     input.form-control(type="text", id="new_mac")
