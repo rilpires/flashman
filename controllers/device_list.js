@@ -2433,8 +2433,10 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
       genericValidate(mode, validator.validateMode, 'mode');
-      genericValidate(extReference, validator.validateExtReference,
-        'external_reference');
+      if (extReference) {
+        genericValidate(extReference, validator.validateExtReference,
+          'external_reference');
+      }
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -2451,7 +2453,7 @@ deviceListController.createDeviceReg = function(req, res) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
               'created_at': new Date(),
-              'external_reference': extReference,
+              'external_reference': extReference ? extReference : {},
               'model': '',
               'release': release,
               'pppoe_user': pppoeUser,
