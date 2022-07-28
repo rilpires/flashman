@@ -61,7 +61,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -108,6 +108,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         let iface5 = fields.wifi5.ssid.replace('.SSID', '');
         let devices = [];
         hostKeys.forEach((i)=>{
+          console.log(i);
           let device = {};
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
@@ -144,8 +145,19 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = 5;
             }
           }
-          // Push basic device information
-          devices.push(device);
+          // If the active host can be trusted, just push the device's basic
+          // information. Otherwise, always push basic device information
+          if (cpe.modelPermissions().lan.canTrustActive) {
+            let activeKey = fields.devices.host_active.replace('*', i);
+            let hostActive = utilHandlers.getFromNestedKey(
+              data, activeKey+'._value',
+            );
+            if (hostActive) {
+              devices.push(device);
+            }
+          } else {
+            devices.push(device);
+          }
         });
 
         if (fields.devices.host_rssi || fields.devices.host_snr) {
@@ -169,7 +181,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
-            let assocIndexes = utilHandlers.getFromNestedKey(data, assocField);
+            let assocIndexes = utilHandlers.getFromNestedKey(
+              data, assocField,
+            );
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
             } else {
