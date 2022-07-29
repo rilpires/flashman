@@ -63,6 +63,7 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
       skipIfNoWifiMode: false, // will skip devices with no host mode info
                                // (developed for Nokia models)
+      canTrustActive: false, // flag to handle devices that can trust Active
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -85,7 +86,6 @@ basicCPEModel.modelPermissions = function() {
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
       mustBeEnabledToConfigure: false, // wiill block changes if wifi is down
-      canTrustActive: false, // flag to handle devices that can trust Active
     },
     mesh: {
       bssidOffsets2Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
@@ -598,8 +598,6 @@ basicCPEModel.getModelFields = function() {
         'AssociatedDevice.*.LastDataTransmitRate',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice',
-      assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
-        'TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
         'AssociatedDevice.*.AssociatedDeviceMACAddress',
     },

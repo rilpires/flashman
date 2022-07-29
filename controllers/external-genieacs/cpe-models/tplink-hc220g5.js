@@ -14,9 +14,10 @@ tplinkModel.modelPermissions = function() {
   permissions.features.stun = false;
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
-  permissions.wifi.canTrustActive = true;
+  permissions.lan.canTrustActive = true;
   permissions.firmwareUpgrades = {
     '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
+    '0.12.0 2.0.0 v605e.0 Build 220629 Rel.75194n': [],
   };
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
@@ -118,10 +119,9 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_mac = 'Device.Hosts.Host.*.PhysAddress';
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
-  fields.devices.associated =
-    'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice';
+  fields.devices.associated = 'Device.WiFi.AccessPoint.*.AssociatedDevice';
   fields.devices.assoc_mac =
-    'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice.*.MACAddress';
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.MACAddress';
   fields.devices.host_active = 'Device.Hosts.Host.*.Active';
 
   // Ping

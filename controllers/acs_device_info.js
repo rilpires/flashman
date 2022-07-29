@@ -1634,10 +1634,9 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  let totalAssocField = fields.devices.assoc_total;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [hostsField, assocField, totalAssocField],
+    parameterNames: [hostsField, assocField],
   };
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
