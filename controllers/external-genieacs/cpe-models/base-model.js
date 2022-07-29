@@ -38,7 +38,8 @@ basicCPEModel.modelPermissions = function() {
     features: {
       customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
-      mesh: false, // can create a mesh network with Anlix firmwares
+      meshCable: true, // can create a cable mesh network with Anlix firmwares
+      meshWifi: false, // can create a wifi mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs

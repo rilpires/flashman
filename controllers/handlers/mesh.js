@@ -300,7 +300,8 @@ meshHandlers.validateMeshMode = async function(
 
   const permissions = DeviceVersion.devicePermissions(device);
   const isMeshV1Compatible = permissions.grantMeshMode;
-  const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
+  const isMeshV2Compatible = permissions.grantMeshV2PrimaryModeCable ||
+    permissions.grantMeshV2PrimaryModeWifi;
 
   if (!isMeshV1Compatible && !isMeshV2Compatible && targetMode > 0) {
     errors.push(t('cpeNotCompatibleWithMesh', {errorline: __line}));

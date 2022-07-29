@@ -1395,7 +1395,10 @@ anlixDocumentReady.add(function() {
           let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
-          let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
+          let grantMeshV2PrimModeCable = device.permissions
+            .grantMeshV2PrimaryModeCable;
+          let grantMeshV2PrimModeWifi = device.permissions
+            .grantMeshV2PrimaryModeWifi;
           let grantBlockWiredDevices =
             device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
@@ -1967,6 +1970,7 @@ anlixDocumentReady.add(function() {
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>'+
                     t('Cable')+
                   '</option>'+
+                  (grantMeshV2PrimModeWifi ?
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>'+
                     t('cableAndWifiXGhz', {x: 2.4})+
                   '</option>'+
@@ -1976,9 +1980,8 @@ anlixDocumentReady.add(function() {
                     '</option>'+
                     '<option value="4" $REPLACE_SELECTED_MESH_4$>'+
                       t('cableAndBothWifi')+
-                    '</option>' :
-                    ''
-                  )+
+                    '</option>' : ''
+                  ) : '') +
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -2162,7 +2165,8 @@ anlixDocumentReady.add(function() {
                                           'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          if (grantMeshMode || grantMeshV2PrimMode) {
+          if (grantMeshMode || grantMeshV2PrimModeCable
+              || grantMeshV2PrimModeWifi) {
             selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
             meshForm = meshForm.replace(selectTarget, 'selected="selected"');
             meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
@@ -2683,7 +2687,8 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
           }
-          if (device.mesh_mode > 1 && grantMeshV2PrimMode) {
+          if (device.mesh_mode > 1 && (grantMeshV2PrimModeCable ||
+            grantMeshV2PrimModeWifi)) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g,
                                       'disabled');
           } else {
@@ -2697,8 +2702,8 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
-              (device.mesh_mode > 1 && grantMeshV2PrimMode)
-          ) {
+              (device.mesh_mode > 1 && (grantMeshV2PrimModeCable ||
+              grantMeshV2PrimModeWifi))) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN',
@@ -2965,7 +2970,7 @@ anlixDocumentReady.add(function() {
                 } else {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
                 }
-                if (grantMeshV2PrimMode) {
+                if (grantMeshV2PrimModeCable || grantMeshV2PrimModeWifi) {
                   let disassocSlaveButton = '<td></td>';
                   if (isSuperuser || grantSlaveDisassociate) {
                     disassocSlaveButton = '<td>' +
