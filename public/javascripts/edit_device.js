@@ -229,8 +229,22 @@ let validateEditDevice = function(event) {
     }
     genericValidate(ssidPrefix+ssid5ghz,
                     validator.validateSSID, errors.ssid5ghz);
-    genericValidate(channel5ghz,
-                    validator.validateChannel, errors.channel5ghz);
+    // There is no bulletproof way of validating the 5GHz channel on the front
+    // end. The user could maliciously alter the html in ways to break our
+    // validation, since each device has a different 5ghz channel list that
+    // would need to be stored somewhere client side. So we leave the validation
+    // to the backend, and simply check for the union of all valid 5ghz channels
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(
+        ch, [
+          '36', '40', '44', '48', '52', '56', '60', '64', '100', '104', '108',
+          '112', '116', '120', '124', '128', '132', '136', '140', '144', '149',
+          '153', '157', '161', '165',
+        ],
+      ),
+      errors.channel5ghz,
+    );
     if (validateWifiBand) {
       genericValidate(band5ghz,
                       validator.validateBand, errors.band5ghz);

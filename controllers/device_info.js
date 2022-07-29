@@ -203,8 +203,11 @@ const createRegistry = async function(req, res) {
                     'ssid5ghz', null, errors);
     genericValidate(password5ghz, validator.validateWifiPassword,
                     'password5ghz', null, errors);
-    genericValidate(channel5ghz, validator.validateChannel,
-                    'channel5ghz', null, errors);
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
+      'channel5ghz', null, errors,
+    );
     if (permissions.grantWifiBandEdit) {
       genericValidate(band5ghz, validator.validateBand,
                       'band5ghz', null, errors);
@@ -637,6 +640,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
+            genericValidate(
+              channel5ghz,
+              (ch)=>validator.validateChannel(
+                ch, permissionsSentVersion.grantWifi5ChannelList,
+              ),
+              'channel5ghz', null, errors,
+            );
             genericValidate(channel5ghz, validator.validateChannel,
                             'channel5ghz', null, errors);
             genericValidate(band5ghz, validator.validateBand,
