@@ -588,7 +588,7 @@ basicCPEModel.getModelFields = function() {
       host_name: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName',
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
       host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
-      'Layer2Interface',
+        'Layer2Interface',
       host_active: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Active',
       host_rssi: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalStrength',
