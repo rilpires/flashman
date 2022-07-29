@@ -51,6 +51,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case '11bgn':
     case '11a':
     case '11na':
+    case '11n':
     case 'a':
     case 'n':
     case 'g,n':
@@ -73,6 +74,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'ac,n':
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
+    case '11ax':
     case 'ax':
     case 'a/n/ac/ax':
       return (is5ghz) ? '11ax' : undefined;
@@ -1176,16 +1178,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode) {
       device.wifi_mode = mode2;
     } else if (device.wifi_mode !== mode2) {
-      changes.wifi2.mode = device.wifi_mode;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi2.mode = device.wifi_mode;
+        hasChanges = true;
+      } else {
+        device.wifi_mode = mode2;
+      }
     }
-    if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(cpe, data.wifi2.band.value,
-       data.wifi2.mode.value, false);
-      if (data.wifi2.band.value && !device.wifi_band) {
-        device.wifi_band = band2;
-      } else if (device.wifi_band !== band2) {
+  }
+  if (data.wifi2.band && data.wifi2.band.value) {
+    let mode2 = (device.wifi_mode) ? device.wifi_mode : '11n';
+    let band2 = convertWifiBand(cpe, data.wifi2.band.value, mode2, false);
+    if (
+      !device.wifi_band ||
+      // Special legacy case - remove auto from database if no longer supported
+      (device.wifi_band === 'auto' && !permissions.grantWifiBandAuto2)
+    ) {
+      device.wifi_band = band2;
+    } else if (device.wifi_band !== band2) {
+      if (permissions.grantWifiBandEdit) {
         changes.wifi2.band = device.wifi_band;
+        hasChanges = true;
+      } else {
+        device.wifi_band = band2;
       }
     }
   }
@@ -1194,16 +1209,28 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode_5ghz) {
       device.wifi_mode_5ghz = mode5;
     } else if (device.wifi_mode_5ghz !== mode5) {
-      changes.wifi5.mode = device.wifi_mode_5ghz;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi5.mode = device.wifi_mode_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_mode_5ghz = mode5;
+      }
     }
-    if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(cpe, data.wifi5.band.value,
-       data.wifi5.mode.value, true);
-      if (data.wifi5.band.value && !device.wifi_band_5ghz) {
-        device.wifi_band_5ghz = band5;
-      } else if (device.wifi_band_5ghz !== band5) {
+  }
+  if (data.wifi5.band && data.wifi5.band.value) {
+    let mode5 = (device.wifi_mode_5ghz) ? device.wifi_mode_5ghz : '11ac';
+    let band5 = convertWifiBand(cpe, data.wifi5.band.value, mode5, true);
+    if (
+      !device.wifi_band_5ghz ||
+      (device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5)
+    ) {
+      device.wifi_band_5ghz = band5;
+    } else if (device.wifi_band_5ghz !== band5) {
+      if (permissions.grantWifiBandEdit) {
         changes.wifi5.band = device.wifi_band_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_band_5ghz = band5;
       }
     }
   }
