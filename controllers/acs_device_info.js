@@ -509,6 +509,8 @@ const requestSync = async function(device) {
     lan: false,
     wifi2: false,
     wifi5: false,
+    wifiMode: false,
+    wifiBand: false,
     mesh2: false,
     mesh5: false,
     port_forward: false,
@@ -572,10 +574,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  if (fields.wifi2.mode) {
+  if (fields.wifi2.mode && permissions.grantWifiModeRead) {
+    dataToFetch.wifiMode = true;
     parameterNames.push(fields.wifi2.mode);
   }
-  if (fields.wifi2.band) {
+  if (fields.wifi2.band && permissions.grantWifiBandRead) {
+    dataToFetch.wifiBand = true;
     parameterNames.push(fields.wifi2.band);
   }
   if (device.wifi_is_5ghz_capable) {
@@ -586,10 +590,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    if (fields.wifi5.mode) {
+    if (fields.wifi5.mode && permissions.grantWifiModeRead) {
+      dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead) {
+      dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
   }
@@ -737,8 +743,12 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
         acsData.wifi2.password = getFieldFromGenieData(data, wifi2.password);
         acsData.wifi2.channel = getFieldFromGenieData(data, wifi2.channel);
         acsData.wifi2.auto = getFieldFromGenieData(data, wifi2.auto);
-        acsData.wifi2.mode = getFieldFromGenieData(data, wifi2.mode);
-        acsData.wifi2.band = getFieldFromGenieData(data, wifi2.band);
+        if (dataToFetch.wifiMode) {
+          acsData.wifi2.mode = getFieldFromGenieData(data, wifi2.mode);
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi2.band = getFieldFromGenieData(data, wifi2.band);
+        }
       }
       if (dataToFetch.wifi5) {
         let wifi5 = fields.wifi5;
@@ -748,8 +758,12 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
         acsData.wifi5.password = getFieldFromGenieData(data, wifi5.password);
         acsData.wifi5.channel = getFieldFromGenieData(data, wifi5.channel);
         acsData.wifi5.auto = getFieldFromGenieData(data, wifi5.auto);
-        acsData.wifi5.mode = getFieldFromGenieData(data, wifi5.mode);
-        acsData.wifi5.band = getFieldFromGenieData(data, wifi5.band);
+        if (dataToFetch.wifiMode) {
+          acsData.wifi5.mode = getFieldFromGenieData(data, wifi5.mode);
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi5.band = getFieldFromGenieData(data, wifi5.band);
+        }
       }
       if (dataToFetch.mesh2) {
         let mesh2 = fields.mesh2;
