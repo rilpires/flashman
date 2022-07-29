@@ -47,7 +47,6 @@ tplinkModel.getModelFields = function() {
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
-
   // Wan
   fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
@@ -62,7 +61,6 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
-
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
@@ -80,7 +78,6 @@ tplinkModel.getModelFields = function() {
   fields.port_mapping_fields_interface_root = 'Device.IP.Interface';
   fields.port_mapping_fields_interface_key =
     'Device.NAT.PortMapping.1.Interface';
-
   // Lan
   fields.lan.router_ip = 'Device.IP.Interface.1.IPv4Address.1.IPAddress';
   fields.lan.subnet_mask = 'Device.DHCPv4.Server.Pool.1.SubnetMask';
@@ -88,7 +85,6 @@ tplinkModel.getModelFields = function() {
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';
   fields.lan.ip_routers = 'Device.DHCPv4.Server.Pool.1.IPRouters';
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
-
   // Wifi
   fields.wifi2.ssid = 'Device.WiFi.SSID.1.SSID';
   fields.wifi2.bssid = 'Device.WiFi.SSID.1.BSSID';
@@ -108,11 +104,9 @@ tplinkModel.getModelFields = function() {
   fields.wifi5.enable = 'Device.WiFi.SSID.2.Enable';
   delete fields.wifi5.beacon_type;
   fields.wifi5.band = 'Device.WiFi.Radio.2.CurrentOperatingChannelBandwidth';
-
   // Mesh
   fields.mesh2 = {};
   fields.mesh5 = {};
-
   // Devices
   fields.devices.hosts = 'Device.Hosts';
   fields.devices.hosts_template = 'Device.Hosts.Host';
@@ -123,13 +117,11 @@ tplinkModel.getModelFields = function() {
   fields.devices.assoc_mac =
     'Device.WiFi.AccessPoint.*.AssociatedDevice.*.MACAddress';
   fields.devices.host_active = 'Device.Hosts.Host.*.Active';
-
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {
     fields.diagnostics.ping[k] = fields.diagnostics.ping[k].replace(
       'IPPingDiagnostics', 'IP.Diagnostics.IPPing');
   });
-
   // Speedtest
   Object.keys(fields.diagnostics.speedtest).forEach((k) => {
     fields.diagnostics.speedtest[k] = fields.diagnostics.speedtest[k].replace(

@@ -145,8 +145,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = 5;
             }
           }
-          // If the host active field can be trusted, push the device's basic
-          // information. Otherwise, always push basic device information
+          // Push basic device information only if host active field can be
+          // trusted. Otherwise, push without further verifications
           if (cpe.modelPermissions().lan.canTrustActive) {
             let activeKey = fields.devices.host_active.replace('*', i);
             let hostActive = utilHandlers.getFromNestedKey(
