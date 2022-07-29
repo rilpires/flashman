@@ -324,4 +324,8 @@ anlixDocumentReady.add(function() {
       $('#ssid-prefix-div').removeClass('d-block').addClass('d-none');
     }
   });
+
+  $('#factory-credentials-button').on('click', function(event) {
+    $('#factory-credentials-modal').modal('show');
+  });
 });

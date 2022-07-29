@@ -2,19 +2,21 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = Object.assign({}, basicCPEModel);
 
-tplinkModel.identifier = {vendor: 'TP-Link', model: 'EC220-G5 v2'};
+tplinkModel.identifier = {vendor: 'TP-Link', model: 'Archer C5 v4'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = false;
   permissions.features.pingTest = true;
-  permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.lan.sendDnsOnLANChange = false;
+  permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.speedTestLimit = 230;
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.dhcpUptime = false;
+  permissions.wan.speedTestLimit = 200;
+  permissions.lan.configWrite = false;
   permissions.firmwareUpgrades = {
-    '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+    '3.16.0 0.9.1 v600c.0 Build 200427 Rel.33156n': [],
   };
   return permissions;
 };
@@ -22,19 +24,20 @@ tplinkModel.modelPermissions = function() {
 tplinkModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'bg';
+      return 'gn';
     case '11n':
-      return 'bgn';
+      return 'n';
     case '11na':
-      return 'an';
+      return 'nac';
     case '11ac':
-      return 'anac';
+      return 'ac';
     case '11ax':
     default:
       return '';
   }
 };
 
+// Conversion from Flashman format to CPE format
 tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
@@ -52,17 +55,15 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-tplinkModel.getPortForwardRuleName = function(index) {
-  return 'Anlix_' + index.toString();
-};
-
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1'+
+  '.WANEthernetInterfaceConfig.Stats.BytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1'+
+  '.WANEthernetInterfaceConfig.Stats.BytesSent';
   Object.keys(fields.wifi5).forEach((k)=>{
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '2');
   });
-  fields.common.web_admin_password = 'InternetGatewayDevice.X_TP_UserCfg.'+
-    'UserPwd';
   fields.wifi2.password = fields.wifi2.password.replace(
     /KeyPassphrase/g, 'X_TP_PreSharedKey',
   );
@@ -75,24 +76,23 @@ tplinkModel.getModelFields = function() {
   fields.wifi5.band = fields.wifi5.band.replace(
     /BandWidth/g, 'X_TP_Bandwidth',
   );
+  fields.port_mapping_fields.external_port_start = [
+    'ExternalPort', 'external_port_start', 'xsd:string',
+  ];
   fields.port_mapping_fields.external_port_end = [
-    'X_TP_ExternalPortEnd', 'external_port_end', 'xsd:unsignedInt',
+    'X_TP_ExternalPortEnd', 'external_port_end', 'xsd:string',
+  ];
+  fields.port_mapping_fields.internal_port_start = [
+    'InternalPort', 'internal_port_start', 'xsd:string',
   ];
   fields.port_mapping_fields.internal_port_end = [
-    'X_TP_InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt',
+    'X_TP_InternalPortEnd', 'internal_port_end', 'xsd:string',
   ];
-  fields.port_mapping_values.description[0] = 'ServiceName';
   fields.port_mapping_values.protocol[1] = 'TCP or UDP';
+  // This model has problems when the service name is sent
+  delete fields.port_mapping_values.description;
   delete fields.port_mapping_values.remote_host;
   delete fields.port_mapping_values.lease;
-  // is needless to set this parameter
-  delete fields.lan.dns_servers;
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaSignalStrength';
-  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaStandard';
-  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1'+
-    '.WLANConfiguration.*.AssociatedDevice.*.X_TP_StaConnectionSpeed';
   return fields;
 };
 

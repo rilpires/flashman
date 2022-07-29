@@ -15,6 +15,7 @@ router.use('/notification', require('./notification'));
 router.use('/api', require('./api/api'));
 router.use('/acs', require('./genieacs'));
 router.use('/vlan', require('./vlan'));
+router.use('/factory_credentials', require('./factory_credentials'));
 
 router.get('/', function(req, res) {
   res.redirect('/devicelist');

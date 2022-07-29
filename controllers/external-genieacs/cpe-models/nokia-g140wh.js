@@ -2,20 +2,24 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = Object.assign({}, basicCPEModel);
 
-nokiaModel.identifier = {vendor: 'Nokia', model: 'G-2425G-A'};
+nokiaModel.identifier = {vendor: 'Nokia', model: 'G-140W-H'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
+  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.skipIfNoWifiMode = true;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.speedTestLimit = 850;
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.speedTestLimit = 650;
   permissions.firmwareUpgrades = {
-    '3FE49025IJHK03': [],
+    '3FE48077HJIJ86': ['3FE48077HJIL96'],
+    '3FE48077HJIL96': [],
   };
   return permissions;
 };
@@ -37,9 +41,6 @@ nokiaModel.convertWifiMode = function(mode) {
 };
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
-  if (!is5ghz) {
-    return '20MHz';
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -50,10 +51,18 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      return '80MHz';
+      return 'Auto';
     default:
       return '';
   }
+};
+
+nokiaModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
+
+nokiaModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000000;
 };
 
 nokiaModel.getModelFields = function() {
@@ -68,8 +77,12 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.OperatingStandard';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
@@ -86,6 +99,8 @@ nokiaModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
     'RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +

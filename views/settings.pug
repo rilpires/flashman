@@ -1,6 +1,8 @@
 extends layout
 
 block content
+  include includes/showfactorycredentials
+
   form#config-flashman-form.needs-validation(
     method="post",
     action="/upgrade/config",
@@ -244,6 +246,11 @@ block content
                     )
                       a.md-addon.fas.fa-question-circle
                     .invalid-feedback= t('insertValidPassword')
+                  .row
+                      #factory-credentials-button.button.btn.btn-primary.mt-4.mx-auto
+                        .fas.fa-key.fa-lg
+                        span &nbsp; #{t('factoryCredentialsPresetLabel')}
+                  span &nbsp;
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(
                       name="onu_web_remote",
