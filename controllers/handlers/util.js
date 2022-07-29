@@ -6,7 +6,7 @@ const t = require('../language').i18next.t;
 let utilHandlers = {};
 
 utilHandlers.checkForNestedKey = function(data, key, useLastIndexOnWildcard=false) {
-  if (!data) return undefined;
+  if (!data) return false;
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
