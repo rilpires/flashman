@@ -2184,7 +2184,6 @@ deviceListController.setDeviceReg = function(req, res) {
                   util.getExtRefPattern(extReference.kind, extReference.data);
                 matchedDevice.external_reference.kind = extReference.kind;
                 matchedDevice.external_reference.data = extRefData;
-                updateParameters = true;
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
