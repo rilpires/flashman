@@ -1,6 +1,8 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 
+const t = i18next.t;
+
 // Sections
 const UPDATING_INFO_SECTION = '#waninfo-loading-section';
 const NO_EXTRA_INFO_SECTION = '#waninfo-no-information-section';
@@ -354,10 +356,10 @@ const updateValues = function(message) {
 
     // Change values
     $(PPPOE_MAC_INPUT).text((
-      message.pppoe_mac === '' ? 'N/D' : message.pppoe_mac.toUpperCase()
+      message.pppoe_mac === '' ? t('N/A') : message.pppoe_mac.toUpperCase()
     ));
     $(PPPOE_IP_INPUT).text((
-      message.pppoe_ip === '' ? 'N/D' : message.pppoe_ip
+      message.pppoe_ip === '' ? t('N/A') : message.pppoe_ip
     ));
 
 
@@ -372,37 +374,37 @@ const updateValues = function(message) {
     message.ipv4_mask <= 0 ||
     message.ipv4_mask > 32) ?
 
-    'N/D' : message.ipv4_address + '/' + message.ipv4_mask
+    t('N/A') : message.ipv4_address + '/' + message.ipv4_mask
   ));
   $(IPV6_ADDRESS_AND_MASK_INPUT).text((
     (message.ipv6_address === '' ||
     message.ipv6_mask <= 0 ||
     message.ipv6_mask > 128) ?
 
-    'N/D' : message.ipv6_address + '/' + message.ipv6_mask
+    t('N/A') : message.ipv6_address + '/' + message.ipv6_mask
   ));
   $(IPV4_MASKED_ADDRESS_INPUT).text((
     (message.ipv4_address === '' ||
     message.ipv4_mask <= 0 ||
     message.ipv4_mask > 32) ?
 
-    'N/D' : calculateMaskIpv4(message.ipv4_address, message.ipv4_mask)
+    t('N/A') : calculateMaskIpv4(message.ipv4_address, message.ipv4_mask)
   ));
   $(IPV6_MASKED_ADDRESS_INPUT).text((
     (message.ipv6_address === '' ||
     message.ipv6_mask <= 0 ||
     message.ipv6_mask > 128) ?
 
-    'N/D' : calculateMaskIpv6(message.ipv6_address, message.ipv6_mask)
+    t('N/A') : calculateMaskIpv6(message.ipv6_address, message.ipv6_mask)
   ));
   $(DEFAULT_GATEWAY_IPV4_INPUT).text((
-    message.default_gateway_v4 === '' ? 'N/D' : message.default_gateway_v4
+    message.default_gateway_v4 === '' ? t('N/A') : message.default_gateway_v4
   ));
   $(DEFAULT_GATEWAY_IPV6_INPUT).text((
-    message.default_gateway_v6 === '' ? 'N/D' : message.default_gateway_v6
+    message.default_gateway_v6 === '' ? t('N/A') : message.default_gateway_v6
   ));
   $(DNS_SERVER_ADDRESS_INPUT).text((
-    message.dns_server === '' ? 'N/D' : message.dns_server
+    message.dns_server === '' ? t('N/A') : message.dns_server
   ));
 };
 
