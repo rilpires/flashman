@@ -99,12 +99,16 @@
       return ret;
     };
 
-    Validator.prototype.validateSSID = function(ssid) {
+    Validator.prototype.validateSSID = function(ssid, accentedChars) {
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
         t('acceptableCharsAre0-9a-zA-Z .-ul'),
       ];
+      if (accentedChars) {
+        // Remove diacritics before applying the regex test
+        ssid = ssid.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
       let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
@@ -124,12 +128,16 @@
       return ret;
     };
 
-    Validator.prototype.validateWifiPassword = function(pass) {
+    Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
       ];
+      if (accentedChars) {
+        // Remove diacritics before applying the regex test
+        pass = pass.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
       let ret = validateRegex(pass, 8, 64,
                               /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
