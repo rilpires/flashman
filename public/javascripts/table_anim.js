@@ -3242,19 +3242,25 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '.btn-trash', function(event) {
+    console.log(event);
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     swal.fire({
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: 'Deletar e bloquear licença',
+      confirmButtonText: 'Remover e bloquear licença',
       confirmButtonColor: '#4db6ac',
       cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
+      denyButtonText: 'Apenas remover',
+      denyButtonColor: '#f2ab63',
       showCancelButton: true,
+      // TODO: based on permission
+      showDenyButton: true,
+      footer: '<p>'+'Ao bloquear a licença ... lorem ipsum'+'</p>',
     }).then((result)=>{
-      if (result.value) {
+      if (result.isConfirmed || result.isDenied) {
         $.ajax({
           url: '/devicelist/delete',
           type: 'post',
@@ -3263,11 +3269,35 @@ anlixDocumentReady.add(function() {
           success: function(res) {
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-input').val();
+            let deleteAndBlockResult = res;
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
+            if (res.success && result.isConfirmed) {
+              console.log('DELETAR E BLOQUEAR');
+              let devicesToBlock = [];
+              devicesToBlock.push(id);
+              $.ajax({
+                // TODO: checar a rota certa do change a qual podemos mandar um
+                // booleano. a rota '/devicelist/license' só muda o booleado
+                // fazendo status_da_licensa = !status_da_licensa
+                url: '/devicelist/license',
+                type: 'post',
+                traditional: true,
+                data: {block: true, id: devicesToBlock},
+                // TODO: lidar com as respostas
+                success: function(res) {
+                  deleteAndBlockResult = res;
+                },
+                error: function(err) {
+                  deleteAndBlockResult = err;
+                },
+              }).then((result)=>{
+                console.log(deleteAndBlockResult);
+              });
+            }
             swal.fire({
-              icon: res.type,
-              title: res.message,
+              icon: deleteAndBlockResult.type,
+              title: deleteAndBlockResult.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
