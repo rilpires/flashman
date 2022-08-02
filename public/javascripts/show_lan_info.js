@@ -1,6 +1,8 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
 
+const t = i18next.t;
+
 // Sections
 const UPDATING_INFO_SECTION = '#laninfo-loading-section';
 const NO_EXTRA_INFO_SECTION = '#laninfo-no-information-section';
@@ -202,15 +204,15 @@ const updateValues = function(message) {
   // Change  values
   $(PREFIX_DELEGATION_ADDRESS_INPUT).text((
     message.prefix_delegation_addr === '' ?
-      'N/D' : message.prefix_delegation_addr
+    t('N/A') : message.prefix_delegation_addr
   ));
   $(PREFIX_DELEGATION_MASK_INPUT).text((
     message.prefix_delegation_mask === '' ?
-      'N/D' : message.prefix_delegation_mask
+    t('N/A') : message.prefix_delegation_mask
   ));
   $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).text((
     message.prefix_delegation_local === '' ?
-      'N/D' : message.prefix_delegation_local
+    t('N/A') : message.prefix_delegation_local
   ));
 };
 
@@ -218,9 +220,9 @@ const updateValues = function(message) {
 // Shows the showlaninfo.pug modal
 const showModal = async function(event) {
   // Reset fields
-  $(PREFIX_DELEGATION_ADDRESS_INPUT).text('N/D');
-  $(PREFIX_DELEGATION_MASK_INPUT).text('N/D');
-  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).text('N/D');
+  $(PREFIX_DELEGATION_ADDRESS_INPUT).text(t('N/A'));
+  $(PREFIX_DELEGATION_MASK_INPUT).text(t('N/A'));
+  $(PREFIX_DELEGATION_LOCAL_ADDRESS_INPUT).text(t('N/A'));
 
 
   // Set updating animations
