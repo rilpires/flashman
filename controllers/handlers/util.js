@@ -7,31 +7,13 @@ let utilHandlers = {};
 
 // Patterns external reference data based on actual language and ext. ref. kind
 utilHandlers.getExtRefPattern = function(kind, data) {
-  let langAndKind = require('../language').i18next.language + kind;
-  switch (langAndKind) {
-    case ('es' + t('personIdentificationSystem')):
-      return data.replace((/^([0-9]{7})[-]{0,1}([A-Za-z]{1})$/), '$1-$2')
-      .toUpperCase();
-    case ('es' + t('enterpriseIdentificationSystem')):
-      return data.replace(
-        (/^([A-Za-z]{1})[-]{0,1}([0-9]{7})[-]{0,1}([A-Za-z]{1})$/), '$1-$2-$3')
-      .toUpperCase();
-    case ('en' + t('personIdentificationSystem')):
-      return data.replace(
-        (/^([0-9]{3})[-]{0,1}([0-9]{2})[-]{0,1}([0-9]{4})$/), '$1-$2-$3')
-      .toUpperCase();
-    case ('en' + t('enterpriseIdentificationSystem')):
-      return data.replace((/^([0-9]{2})[-]{0,1}([0-9]{7})$/), '$1-$2')
-      .toUpperCase();
-    case ('pt-BR' + t('personIdentificationSystem')):
-      return data.replace((
-        RegExp('^([0-9]{3})[.]{0,1}([0-9]{3})[.]{0,1}'+
-          '([0-9]{3})[-]{0,1}([0-9]{2})$')), '$1.$2.$3-$4').toUpperCase();
-    case ('pt-BR' + t('enterpriseIdentificationSystem')):
-      return data.replace((
-        RegExp('^([0-9]{2})[.]{0,1}([0-9]{3})[.]{0,1}([0-9]{3})'+
-        '[\\/]{0,1}([0-9]{4})[-]{0,1}([0-9]{2})$')), '$1.$2.$3/$4-$5')
-      .toUpperCase();
+  switch (kind) {
+    case (t('personIdentificationSystem')):
+      return data.replace(new RegExp(t('personIdentificationPattern')),
+        t('personIdentificationPatternGroups')).toUpperCase();
+    case (t('enterpriseIdentificationSystem')):
+      return data.replace(new RegExp(t('enterpriseIdentificationPattern')),
+        t('enterpriseIdentificationPatternGroups')).toUpperCase();
     default:
       return data;
   }
