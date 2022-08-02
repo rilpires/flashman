@@ -34,8 +34,8 @@ const getCallback = function(event) {
         }
       } else {
         // Show a modal warning
-        swal({
-          type: res.type,
+        swal.fire({
+          icon: res.type,
           title: res.message,
           confirmButtonColor: '#4db6ac',
         });
@@ -55,8 +55,8 @@ const setCallback = function(event) {
     contentType: 'application/json',
     success: function(res) {
       // Show a modal warning
-      swal({
-        type: res.type,
+      swal.fire({
+        icon: res.type,
         title: res.message,
         confirmButtonColor: '#4db6ac',
       });
@@ -123,15 +123,15 @@ anlixDocumentReady.add(function() {
 
       if (!username || username == '') {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('emptyUserError'),
           confirmButtonColor: '#4db6ac',
         });
       } else if (!password || password == '') {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('emptyPasswordError'),
           confirmButtonColor: '#4db6ac',
         });
@@ -141,8 +141,8 @@ anlixDocumentReady.add(function() {
         credentialsInfo.filter((item) => item.model == selectedModel).length > 0
       ) {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('duplicatedCredentials', {model: selectedModel}),
           confirmButtonColor: '#4db6ac',
         });

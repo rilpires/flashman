@@ -299,8 +299,8 @@ anlixDocumentReady.add(function() {
     if (
       input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
     ) {
-      swal({
-        type: 'warning',
+      swal.fire({
+        icon: 'warning',
         title: t('Attention!'),
         html: t('enablingTr069HttpCommunicationMustReadAndAgreeConditions'),
         confirmButtonText: t('Enable'),

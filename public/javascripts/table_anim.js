@@ -106,7 +106,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
       alertLink.removeClass('d-none');
       alertLink.off('click').click(function(event) {
         let options = {
-          type: 'warning',
+          icon: 'warning',
           confirmButtonText: data.action_title,
           confirmButtonColor: '#4db6ac',
           cancelButtonText: t('Cancel'),
@@ -121,7 +121,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
         } else {
           options.text = data.message;
         }
-        swal(options).then(function(result) {
+        swal.fire(options).then(function(result) {
           if (result.value) {
             let deleteNotification = function() {
               $.ajax({type: 'POST', url: '/notification/del',
@@ -3244,11 +3244,11 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-trash', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
+      confirmButtonText: 'Deletar e bloquear licença',
       confirmButtonColor: '#4db6ac',
       cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
@@ -3265,8 +3265,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: res.type,
+            swal.fire({
+              icon: res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3278,8 +3278,8 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
       confirmButtonText: t('OK'),
@@ -3300,8 +3300,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: res.type,
+            swal.fire({
+              icon: res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3328,8 +3328,8 @@ anlixDocumentReady.add(function() {
         abortMsg = t('factoryResetAbortMessage');
       }
     }
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('thisCpeWillLoseAllItsConfigurations'),
       confirmButtonText: t('OK'),
@@ -3339,15 +3339,15 @@ anlixDocumentReady.add(function() {
       showCancelButton: true,
     }).then((result)=>{
       if (abort) {
-        swal({
-          type: 'warning',
+        swal.fire({
+          icon: 'warning',
           title: t('Attention!'),
           text: abortMsg,
           confirmButtonColor: '#4db6ac',
           confirmButtonText: t('OK'),
         });
       } else if (result.value) {
-        swal({
+        swal.fire({
           title: t('gettingStockFirmwareReady...'),
           onOpen: () => {
             swal.showLoading();
@@ -3362,8 +3362,8 @@ anlixDocumentReady.add(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.close();
-            swal({
-              type: 'success',
+            swal.fire({
+              icon: 'success',
               title: t('processSuccessfullyStarted'),
               text: t('factoryResetRebootInstructions'),
               confirmButtonColor: '#4db6ac',
@@ -3372,8 +3372,8 @@ anlixDocumentReady.add(function() {
           },
           error: function(err) {
             swal.close();
-            swal({
-              type: 'error',
+            swal.fire({
+              icon: 'error',
               title: t('errorOccurred'),
               text: t('couldnotRestoreStockFirmwareTryAgain'),
               confirmButtonColor: '#4db6ac',
@@ -3388,8 +3388,8 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-disassoc', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('routerDisassociateMeshConfirmation'),
       confirmButtonText: t('OK'),
@@ -3409,8 +3409,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: (res.success ? 'success':'error'),
+            swal.fire({
+              icon: (res.success ? 'success':'error'),
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3421,8 +3421,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: 'error',
+            swal.fire({
+              icon: 'error',
               title: t('internalError'),
               text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',

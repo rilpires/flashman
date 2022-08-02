@@ -17,8 +17,8 @@ let updateDevice = function(event) {
     'procedimento. Comunique seu usuário antes de prosseguir.';
   }
 
-  swal({
-    type: 'warning',
+  swal.fire({
+    icon: 'warning',
     title: 'Atenção!',
     text: warningText,
     confirmButtonText: 'Prosseguir',
@@ -96,8 +96,8 @@ let cancelDeviceUpdate = function(event) {
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
         if (slaveCount > 0) {
-          swal({
-            type: 'warning',
+          swal.fire({
+            icon: 'warning',
             title: 'Atenção!',
             text: 'O processo de atualização da rede mesh foi interrompido. '+
               'Não recomendamos deixar os CPEs mesh da mesma rede em '+
@@ -146,8 +146,8 @@ $(function() {
         } else {
           msg = 'Houve um erro ao validar a topologia dos dispositivos. ';
         }
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: 'Erro',
           text: msg + 'Cancele o procedimento e tente novamente.',
           confirmButtonText: 'Cancelar',
@@ -160,8 +160,8 @@ $(function() {
         });
       } else {
         let errorMac = errorAnchor.data('mac');
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: 'Erro',
           text: 'Houve um erro ao realizar a transferência do firmware do ' +
             'CPE com o MAC ' + errorMac + '. Por favor tente ' +
@@ -192,8 +192,8 @@ $(function() {
         });
       }
     } else {
-      swal({
-        type: 'error',
+      swal.fire({
+        icon: 'error',
         title: 'Erro',
         text: 'Houve um erro ao realizar a transferência do firmware. ' +
         'Cancele o procedimento e tente novamente.',
