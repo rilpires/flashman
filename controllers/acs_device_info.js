@@ -1801,6 +1801,7 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   let permissions = DeviceVersion.devicePermissions(device);
   const hasMeshVAPObject = permissions.grantMeshVAPObject;
+  const hasMeshV2ModeWifi = permissions.grantMeshV2PrimaryModeWifi;
   /*
     If device doesn't have SSID Object by default, then
     we need to check if it has been created already.
@@ -1810,25 +1811,26 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     objects don't exist yet this will cause an error!
   */
   let createOk = {populate: false};
-  if (!hasMeshVAPObject && targetMode > 0) {
+  if (!hasMeshVAPObject && hasMeshV2ModeWifi
+     && targetMode > 1) {
     createOk = await acsMeshDeviceHandler.createVirtualAPObjects(device);
     if (!createOk.success) {
       return {success: false, msg: createOk.msg};
     }
-  }
-  // Set the mesh parameters on the TR-069 fields
-  let changes = meshHandlers.buildTR069Changes(
-    device,
-    targetMode,
-    wifiRadioState,
-    meshChannel,
-    meshChannel5GHz,
-    createOk.populate,
-  );
-  const updated =
-    await acsDeviceInfoController.updateInfo(device, changes, true);
-  if (!updated) {
-    return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
+    // Set the mesh parameters on the TR-069 fields
+    let changes = meshHandlers.buildTR069Changes(
+      device,
+      targetMode,
+      wifiRadioState,
+      meshChannel,
+      meshChannel5GHz,
+      createOk.populate,
+    );
+    const updated =
+      await acsDeviceInfoController.updateInfo(device, changes, true);
+    if (!updated) {
+      return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
+    }
   }
   return {success: true};
 };
