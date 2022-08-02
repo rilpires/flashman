@@ -1699,6 +1699,7 @@ deviceListController.setDeviceReg = function(req, res) {
       return res.status(404).json({success: false,
         message: t('cpeNotFound', {errorline: __line}), errors: []});
     }
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
@@ -1823,14 +1824,22 @@ deviceListController.setDeviceReg = function(req, res) {
         let ssidPrefix = checkResponse.prefix;
 
         if (content.hasOwnProperty('wifi_ssid')) {
-          genericValidate(ssidPrefix+ssid,
-            validator.validateSSID, 'ssid');
+          genericValidate(
+            ssidPrefix+ssid,
+            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            'ssid',
+          );
         }
         if (content.hasOwnProperty('wifi_password')) {
           if (!matchedDevice.use_tr069 || password) {
             // Do not validate this field if a TR069 device left it blank
-            genericValidate(password,
-                            validator.validateWifiPassword, 'password');
+            genericValidate(
+              password,
+              (p)=>validator.validateWifiPassword(
+                p, permissions.grantDiacritics,
+              ),
+              'password',
+            );
           }
         }
         if (content.hasOwnProperty('wifi_channel')) {
@@ -1846,14 +1855,22 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(power, validator.validatePower, 'power');
         }
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
-          genericValidate(ssidPrefix+ssid5ghz,
-            validator.validateSSID, 'ssid5ghz');
+          genericValidate(
+            ssidPrefix+ssid5ghz,
+            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            'ssid5ghz',
+          );
         }
         if (content.hasOwnProperty('wifi_password_5ghz')) {
           if (!matchedDevice.use_tr069 || password5ghz) {
             // Do not validate this field if a TR069 device left it blank
-            genericValidate(password5ghz,
-                          validator.validateWifiPassword, 'password5ghz');
+            genericValidate(
+              password5ghz,
+              (p)=>validator.validateWifiPassword(
+                p, permissions.grantDiacritics,
+              ),
+              'password5ghz',
+            );
           }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
