@@ -57,8 +57,6 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let splitID = acsID.split('-');
-  let model = device.model;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
@@ -89,7 +87,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
       let success = true;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
-      // Make sure we have a host count and assodicated devices fields
+      // Make sure we have a host count and associated devices fields
       if (utilHandlers.checkForNestedKey(data, hostCountField) &&
           utilHandlers.checkForNestedKey(data, assocField)) {
         utilHandlers.getFromNestedKey(data, hostCountField);
@@ -165,7 +163,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             let splitField = fields.devices.associated_5.split('.');
             interfaces.push(splitField[splitField.length - 2]);
           }
-          interfaces.forEach((iface) => {
+          for (let iface of interfaces) {
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
@@ -178,7 +176,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               assocIndexes = [];
             }
             assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
-            assocIndexes.forEach((index) => {
+            for (let index of assocIndexes) {
               // Collect associated mac
               let macKey = fields.devices.assoc_mac;
               macKey = macKey.replace('*', iface).replace('*', index);
@@ -189,10 +187,10 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 macVal = macVal.toUpperCase();
               } else {
                 // MAC is mandatory
-                return;
+                continue;
               }
               let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
-              if (!device) return;
+              if (!device) continue;
               // Mark device as a wifi device
               device.wifi = true;
               if (iface == iface2) {
@@ -236,6 +234,15 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 } else if (modeVal.includes('g')) {
                   device.wifi_mode = 'G';
                 }
+                // Skip this device when following flag is enable
+                if (cpe.modelPermissions().lan.skipIfNoWifiMode) {
+                  // Skip this device if mode value is empty
+                  if (modeVal == '') {
+                    const devIdx = devices.indexOf(device);
+                    devices.splice(devIdx, 1);
+                    continue;
+                  }
+                }
               }
               // Collect connection speed, if available
               if (fields.devices.host_rate) {
@@ -254,8 +261,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                   data, nameKey+'._value',
                 );
               }
-            });
-          });
+            }
+          }
         }
         await saveDeviceData(mac, devices).catch(debug);
       }

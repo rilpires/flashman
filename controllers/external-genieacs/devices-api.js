@@ -46,12 +46,15 @@ const tr069Models = {
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
+  nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
+  nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
+  tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
@@ -184,6 +187,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(modelName)) {
     // Nokia G-140W-C and family
     return {success: true, cpe: tr069Models.nokiaG140WCModel};
+  } else if (modelName === 'G-140W-H') {
+    // Nokia G-140W-H
+    return {success: true, cpe: tr069Models.nokiaG140WHModel};
+  } else if (modelName === 'G-1425G-A') {
+    // Nokia G-1425G-A
+    return {success: true, cpe: tr069Models.nokiaG1425GAModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     return {success: true, cpe: tr069Models.nokiaG2425Model};
@@ -199,6 +208,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'TK-ONU-AC-D') {
     // Think TK-ONU-AC-D
     return {success: true, cpe: tr069Models.thinkTkOnuAcDModel};
+  } else if (modelSerial === 'IGD' && modelName === 'Archer C5') {
+    // TP-Link Archer C5
+    return {success: true, cpe: tr069Models.tplinkArcherC5};
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     return {success: true, cpe: tr069Models.tplinkArcherC6};

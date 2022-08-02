@@ -26,7 +26,8 @@ anlixDocumentReady.add(function() {
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          $('#btn-wan-bytes-refresh > i').addClass('animated rotateOut infinite');
+          $('#btn-wan-bytes-refresh > i')
+            .addClass('animated rotateOut infinite');
           if ($('#wan-bytes-graphs').is(':hidden')) {
             $('#wan-bytes-placeholder-ready').hide();
             $('#wan-bytes-placeholder-progress').show();
@@ -114,7 +115,8 @@ anlixDocumentReady.add(function() {
       }
       // Adjust modal content
       $('#btn-wan-bytes-refresh').prop('disabled', false);
-      $('#btn-wan-bytes-refresh > i').removeClass('animated rotateOut infinite');
+      $('#btn-wan-bytes-refresh > i')
+        .removeClass('animated rotateOut infinite');
       $('#wan-bytes-placeholder-ready').hide();
       $('#wan-bytes-placeholder-progress').hide();
       $('#wan-bytes-placeholder-none').hide();

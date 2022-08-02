@@ -217,10 +217,21 @@ const createRegistry = async function(req, cpe, permissions) {
   }
 
   // Remove DHCP uptime for Archer C6
-  let wanUptime = (hasPPPoE) ?
-    data.wan.uptime_ppp.value : data.wan.uptime.value;
+  let wanUptime;
+  if (hasPPPoE && data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
+    wanUptime = data.wan.uptime_ppp.value;
+  } else if (data.wan.uptime && data.wan.uptime.value) {
+    wanUptime = data.wan.uptime.value;
+  }
   if (!hasPPPoE && !cpe.modelPermissions().wan.dhcpUptime) {
     wanUptime = undefined;
+  }
+
+  let wanIP;
+  if (hasPPPoE && data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
+    wanIP = data.wan.wan_ip_ppp.value;
+  } else if (data.wan.wan_ip && data.wan.wan_ip.value) {
+    wanIP = data.wan.wan_ip.value;
   }
 
   let serialTR069 = cpe.convertGenieSerial(
@@ -268,6 +279,12 @@ const createRegistry = async function(req, cpe, permissions) {
     wanMtu = data.wan.mtu_ppp.value;
   } else if (!hasPPPoE && data.wan.mtu && data.wan.mtu.value) {
     wanMtu = data.wan.mtu.value;
+  }
+
+  // Collect WAN max transmit rate, if available
+  let wanRate;
+  if (data.wan.rate && data.wan.rate.value) {
+    wanRate = cpe.convertWanRate(data.wan.rate.value);
   }
 
   let mode2;
@@ -331,9 +348,8 @@ const createRegistry = async function(req, cpe, permissions) {
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
-    wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: (data.wan.rate && data.wan.rate.value) ?
-      data.wan.rate.value : undefined,
+    wan_ip: wanIP,
+    wan_negociated_speed: wanRate,
     wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
       data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
@@ -1001,7 +1017,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.wan_vlan_id = data.wan.vlan.value;
   }
   if (data.wan.rate && data.wan.rate.value) {
-    device.wan_negociated_speed = data.wan.rate.value;
+    device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }
   if (data.wan.duplex && data.wan.duplex.value) {
     device.wan_negociated_duplex = data.wan.duplex.value;
