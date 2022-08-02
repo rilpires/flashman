@@ -583,11 +583,11 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         onuConfig.onuUserLogin = config.tr069.web_login_user || '';
         onuConfig.onuUserPassword = config.tr069.web_password_user || '';
         onuConfig.onuRemote = config.tr069.remote_access;
-        onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold;
+        onuConfig.onuPonThreshold = config.tr069.pon_signal_threshold || '';
         onuConfig.onuPonThresholdCritical =
-          config.tr069.pon_signal_threshold_critical;
+          config.tr069.pon_signal_threshold_critical || '';
         onuConfig.onuPonThresholdCriticalHigh =
-          config.tr069.pon_signal_threshold_critical_high;
+          config.tr069.pon_signal_threshold_critical_high || '';
       }
       const factoryCredentials =
         await onuFactoryCredentials.getCredentialsAtConfig();
