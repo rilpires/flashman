@@ -1882,8 +1882,6 @@ deviceListController.setDeviceReg = function(req, res) {
             ),
             'channel5ghz',
           );
-          genericValidate(channel5ghz,
-                          validator.validateChannel, 'channel5ghz');
         }
         if (content.hasOwnProperty('wifi_band_5ghz')) {
           genericValidate(band5ghz, validator.validateBand, 'band5ghz');
