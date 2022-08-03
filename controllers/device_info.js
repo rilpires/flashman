@@ -472,6 +472,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let checkResponse = deviceHandlers.checkSsidPrefix(
           config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
           matchedDevice.isSsidPrefixEnabled);
+        const is5ghzCapable =
+          (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
         let permissionsCurrVersion =
           DeviceVersion.devicePermissionsNotRegisteredFirmware(
             matchedDevice.version, is5ghzCapable, matchedDevice.model,
@@ -600,8 +602,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
 
         // Store if device has dual band capability
-        const is5ghzCapable =
-          (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
         if (is5ghzCapable != matchedDevice.wifi_is_5ghz_capable) {
           deviceSetQuery.wifi_is_5ghz_capable = is5ghzCapable;
         }
