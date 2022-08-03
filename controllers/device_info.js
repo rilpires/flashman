@@ -164,6 +164,9 @@ const createRegistry = async function(req, res) {
   ssid = checkResponse.ssid2;
   ssid5ghz = checkResponse.ssid5;
 
+  let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
+    version, is5ghzCapable, model,
+  );
   // Validate fields
   genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
   if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
@@ -176,16 +179,19 @@ const createRegistry = async function(req, res) {
     genericValidate(pppoePassword, validator.validatePassword,
                     'pppoe_password', matchedConfig.pppoePassLength, errors);
   }
-  genericValidate(ssidPrefix + ssid, validator.validateSSID,
-                  'ssid', null, errors);
-  genericValidate(password, validator.validateWifiPassword,
-                  'password', null, errors);
+  genericValidate(
+    ssidPrefix + ssid,
+    (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+    'ssid', null, errors,
+  );
+  genericValidate(
+    password,
+    (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
+    'password', null, errors,
+  );
   genericValidate(channel, validator.validateChannel,
                   'channel', null, errors);
 
-  let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
-    version, is5ghzCapable, model,
-  );
   if (permissions.grantWifiModeEdit) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
@@ -199,10 +205,16 @@ const createRegistry = async function(req, res) {
                     'power', null, errors);
   }
   if (permissions.grantWifi5ghz) {
-    genericValidate(ssidPrefix + ssid5ghz, validator.validateSSID,
-                    'ssid5ghz', null, errors);
-    genericValidate(password5ghz, validator.validateWifiPassword,
-                    'password5ghz', null, errors);
+    genericValidate(
+      ssidPrefix + ssid5ghz,
+      (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+      'ssid5ghz', null, errors,
+    );
+    genericValidate(
+      password5ghz,
+      (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
+      'password5ghz', null, errors,
+    );
     genericValidate(
       channel5ghz,
       (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
@@ -460,14 +472,23 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let checkResponse = deviceHandlers.checkSsidPrefix(
           config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
           matchedDevice.isSsidPrefixEnabled);
+        let permissionsCurrVersion =
+          DeviceVersion.devicePermissionsNotRegisteredFirmware(
+            matchedDevice.version, is5ghzCapable, matchedDevice.model,
+          );
         matchedDevice.wifi_ssid = checkResponse.ssid2;
         matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
         matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
         let ssidPrefix = checkResponse.prefix;
         const validator = new Validator();
         let ssid2ghz = util.returnObjOrEmptyStr(matchedDevice.wifi_ssid);
-        genericValidate(ssidPrefix + ssid2ghz, validator.validateSSID,
-                        'ssid', null, errors);
+        genericValidate(
+          ssidPrefix + ssid2ghz,
+          (s)=>validator.validateSSID(
+            s, permissionsCurrVersion.grantDiacritics,
+          ),
+          'ssid', null, errors,
+        );
 
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
@@ -592,10 +613,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           let permissionsSentVersion =
           DeviceVersion.devicePermissionsNotRegisteredFirmware(
             sentVersion, is5ghzCapable, (bodyModel + bodyModelVer),
-          );
-          let permissionsCurrVersion =
-          DeviceVersion.devicePermissionsNotRegisteredFirmware(
-            matchedDevice.version, is5ghzCapable, matchedDevice.model,
           );
 
           if (

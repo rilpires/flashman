@@ -76,8 +76,9 @@ let validateEditDevice = function(event) {
   // Get form values
   let mac = row.data('deviceid');
   let isTR069 = row.data('is-tr069');
-  let validateWifi = row.data('validateWifi');
+  let validateWifi = row.data('validate-wifi');
   let validateWifiMode = row.data('validate-wifi-mode');
+  let validateWifiDiacritics = row.data('validate-wifi-diacritics');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
@@ -205,11 +206,17 @@ let validateEditDevice = function(event) {
   if (validateWifi) {
     if (!isTR069 || password) {
       // Do not validate this field if a TR069 device left it blank
-      genericValidate(password,
-                      validator.validateWifiPassword, errors.password);
+      genericValidate(
+        password,
+        (p)=>validator.validateWifiPassword(p, validateWifiDiacritics),
+        errors.password,
+      );
     }
-    genericValidate(ssidPrefix+ssid,
-      validator.validateSSID, errors.ssid);
+    genericValidate(
+      ssidPrefix+ssid,
+      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      errors.ssid,
+    );
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
   if (validateWifiMode) {
@@ -224,11 +231,17 @@ let validateEditDevice = function(event) {
   if (validateWifi5ghz) {
     if (!isTR069 || password5ghz) {
       // Do not validate this field if a TR069 device left it blank
-      genericValidate(password5ghz,
-                      validator.validateWifiPassword, errors.password5ghz);
+      genericValidate(
+        password5ghz,
+        (p)=>validator.validateWifiPassword(p, validateWifiDiacritics),
+        errors.password5ghz,
+      );
     }
-    genericValidate(ssidPrefix+ssid5ghz,
-                    validator.validateSSID, errors.ssid5ghz);
+    genericValidate(
+      ssidPrefix+ssid5ghz,
+      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      errors.ssid5ghz,
+    );
     // There is no bulletproof way of validating the 5GHz channel on the front
     // end. The user could maliciously alter the html in ways to break our
     // validation, since each device has a different 5ghz channel list that
