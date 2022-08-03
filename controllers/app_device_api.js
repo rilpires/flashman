@@ -8,7 +8,6 @@ const DeviceVersion = require('../models/device_version');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
-const acsXMLConfigHandler = require('./handlers/acs/xmlconfig');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
