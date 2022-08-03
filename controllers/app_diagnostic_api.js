@@ -1,4 +1,5 @@
 /* global __line */
+const Validator = require('../public/javascripts/device_validator');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
@@ -284,9 +285,9 @@ diagAppAPIController.configureWifi = async function(req, res) {
       }
       if (content.wifi_channel_5ghz) {
         // discard change to invalid 5ghz channel for this model
-        if (
-          permissions.grantWifi5ChannelList.includes(content.wifi_channel_5ghz)
-        ) {
+        if (Validator.validateChannel(
+          content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
+        )) {
           device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
           changes.wifi5.channel = content.wifi_channel_5ghz.trim();
           updateParameters = true;

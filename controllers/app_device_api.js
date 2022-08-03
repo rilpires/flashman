@@ -1,5 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
+const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
@@ -236,7 +237,9 @@ let processWifi = function(content, device, rollback, tr069Changes) {
   }
   if (content.wifi_channel_5ghz) {
     // discard change to invalid 5ghz channel for this model
-    if (permissions.grantWifi5ChannelList.includes(content.wifi_channel_5ghz)) {
+    if (Validator.validateChannel(
+      content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
+    )) {
       rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
       device.wifi_channel_5ghz = content.wifi_channel_5ghz;
       tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
