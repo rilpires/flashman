@@ -175,6 +175,7 @@ let appSet = function(req, res, processFunction) {
 };
 
 let processWifi = function(content, device, rollback, tr069Changes) {
+  let permissions = DeviceVersion.devicePermissions(device);
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
@@ -218,31 +219,40 @@ let processWifi = function(content, device, rollback, tr069Changes) {
     tr069Changes.wifi2.channel = content.wifi_channel;
     updateParameters = true;
   }
-  if (content.wifi_band) {
-    rollback.wifi_band = device.wifi_band;
-    device.wifi_band = content.wifi_band;
-    tr069Changes.wifi2.band = content.wifi_band;
-    updateParameters = true;
+  if (content.wifi_band && permissions.grantWifiBandEdit) {
+    // discard change to auto when model doesnt support it
+    if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
+      rollback.wifi_band = device.wifi_band;
+      device.wifi_band = content.wifi_band;
+      tr069Changes.wifi2.band = content.wifi_band;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_mode) {
+  if (content.wifi_mode && permissions.grantWifiModeEdit) {
     rollback.wifi_mode = device.wifi_mode;
     device.wifi_mode = content.wifi_mode;
     tr069Changes.wifi2.mode = content.wifi_mode;
     updateParameters = true;
   }
   if (content.wifi_channel_5ghz) {
-    rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
-    device.wifi_channel_5ghz = content.wifi_channel_5ghz;
-    tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
-    updateParameters = true;
+    // discard change to invalid 5ghz channel for this model
+    if (permissions.grantWifi5ChannelList.includes(content.wifi_channel_5ghz)) {
+      rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
+      device.wifi_channel_5ghz = content.wifi_channel_5ghz;
+      tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_band_5ghz) {
-    rollback.wifi_band_5ghz = device.wifi_band_5ghz;
-    device.wifi_band_5ghz = content.wifi_band_5ghz;
-    tr069Changes.wifi5.band = content.wifi_band_5ghz;
-    updateParameters = true;
+  if (content.wifi_band_5ghz && permissions.grantWifiBandEdit) {
+    // discard change to auto when model doesnt support it
+    if (content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5) {
+      rollback.wifi_band_5ghz = device.wifi_band_5ghz;
+      device.wifi_band_5ghz = content.wifi_band_5ghz;
+      tr069Changes.wifi5.band = content.wifi_band_5ghz;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_mode_5ghz) {
+  if (content.wifi_mode_5ghz && permissions.grantWifiModeEdit) {
     rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
     device.wifi_mode_5ghz = content.wifi_mode_5ghz;
     tr069Changes.wifi5.mode = content.wifi_mode_5ghz;
