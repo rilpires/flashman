@@ -1728,6 +1728,10 @@ const grantMeshVAPObject = function(model) {
   return false;
 };
 
+const grantDiacritics = function(model) {
+  return false;
+};
+
 const convertTR069Permissions = function(cpePermissions) {
   let permissions = {
     grantViewLogs: false,
@@ -1735,6 +1739,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantPortForward: cpePermissions.features.portForward,
     grantPortForwardAsym: false,
     grantPortOpenIpv6: false,
+    grantDiacritics: cpePermissions.wifi.allowDiacritics,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiBand: true,
@@ -1820,6 +1825,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantPortForward = grantPortForward(version, model);
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
+  result.grantDiacritics = grantDiacritics(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiBand = grantWifiBand(version, model);
