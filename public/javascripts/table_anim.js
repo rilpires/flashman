@@ -854,7 +854,7 @@ anlixDocumentReady.add(function() {
         device.ip+
       '</td><td class="text-center device-installed-release">'+
         device.installed_release+
-      '</td><td class="text-center device-external-reference">'+
+      '</td><td class="text-center">'+
         (device.external_reference ? device.external_reference.data : '')+
       '</td><td class="text-center device-sys-up-time">'+
         (device.sys_up_time && device.status_color !== 'grey-text' ?

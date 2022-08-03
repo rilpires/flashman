@@ -72,7 +72,12 @@
 
       // After we get the expected regex for each identification system by
       // language, we can validate the regex
-      regexIsValid = expectedRegex.test(extReference.data);
+      if (extReference.data.length > 0) {
+        regexIsValid = expectedRegex.test(extReference.data);
+      } else {
+        // Nothing to validate if data is empty
+        regexIsValid = true;
+      }
 
       let errors = [];
       if (!kindIsValid) {

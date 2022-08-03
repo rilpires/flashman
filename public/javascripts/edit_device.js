@@ -359,12 +359,14 @@ let validateEditDevice = function(event) {
             mesh_mode: errors.mesh_mode,
             external_reference: errors.external_reference,
           };
+          let errorMsgs = '';
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
+            errorMsgs += pair[key];
           });
           renderEditErrors(errors);
-          openErrorSwal(t('someCpeFormFieldAreInvalid'));
+          openErrorSwal(errorMsgs);
           switchSubmitButton(index);
         } else if ('success' in resp && !resp.success) {
           openErrorSwal(resp.message);

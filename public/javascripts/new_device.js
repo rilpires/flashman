@@ -1,4 +1,5 @@
-import {anlixDocumentReady, displayAlertMsg} from '../src/common.index.js';
+import {anlixDocumentReady} from '../src/common.index.js';
+import {displayAlertMsg} from './common_actions.js';
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
