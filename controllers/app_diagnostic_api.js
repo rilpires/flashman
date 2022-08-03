@@ -287,7 +287,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         // discard change to invalid 5ghz channel for this model
         if (Validator.validateChannel(
           content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
-        )) {
+        ).valid) {
           device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
           changes.wifi5.channel = content.wifi_channel_5ghz.trim();
           updateParameters = true;
