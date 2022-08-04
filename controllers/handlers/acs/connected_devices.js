@@ -58,7 +58,6 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   }
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let needToCalculateRSSI = cpe.modelPermissions().needToCalculateRSSI;
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
@@ -220,9 +219,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 let rssiValue = utilHandlers.getFromNestedKey(
                   data, rssiKey+'._value',
                 );
-                device.rssi = cpe.convertRssiValue(
-                  rssiValue, needToCalculateRSSI,
-                );
+                device.rssi = cpe.convertRssiValue(rssiValue);
               }
               // Collect explicit snr, if available - fallback on rssi value
               if (cpe.modelPermissions().lan.listLANDevicesSNR) {

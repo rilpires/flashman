@@ -21,7 +21,6 @@ tplinkModel.modelPermissions = function() {
   };
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
-  permissions.needToCalculateRSSI = true;
   return permissions;
 };
 
@@ -37,6 +36,10 @@ tplinkModel.convertWifiMode = function(mode) {
     default:
       return '';
   }
+};
+
+tplinkModel.convertRssiValue = function(rssiValue) {
+  return (rssiValue/2) - 110;
 };
 
 tplinkModel.getModelFields = function() {

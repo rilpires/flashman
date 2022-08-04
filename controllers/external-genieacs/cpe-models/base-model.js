@@ -384,7 +384,7 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
 };
 
 // Used when fetching connected devices' rssi data, it might need conversions
-basicCPEModel.convertRssiValue = function(rssiValue, needToCalculateRSSI = false) {
+basicCPEModel.convertRssiValue = function(rssiValue) {
   // Return undefined in case anything goes wrong
   let result;
   if (typeof rssiValue !== 'undefined') {
@@ -399,11 +399,6 @@ basicCPEModel.convertRssiValue = function(rssiValue, needToCalculateRSSI = false
     if (isNaN(result)) {
       return undefined;
     }
-  }
-  // Some devices need to apply a formula to calculate RSSI
-  // RSSI = (SignalStrength/2) -110
-  if (needToCalculateRSSI) {
-    result = (result/2) -110;
   }
   return result;
 };
