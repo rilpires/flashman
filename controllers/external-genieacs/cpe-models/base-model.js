@@ -97,6 +97,8 @@ basicCPEModel.modelPermissions = function() {
     usesStavixXMLConfig: false, // flag for stavix-like models with xml config
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
     needInterfaceInPortFoward: false, // flag for devices that need interf tree
+    needToCalculateRSSI: false, // flag for devices that need to apply formula
+                                // to calculate RSSI
   };
 };
 
@@ -381,7 +383,7 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
 };
 
 // Used when fetching connected devices' rssi data, it might need conversions
-basicCPEModel.convertRssiValue = function(rssiValue) {
+basicCPEModel.convertRssiValue = function(rssiValue, needToCalculateRSSI = false) {
   // Return undefined in case anything goes wrong
   let result;
   if (typeof rssiValue !== 'undefined') {
@@ -396,6 +398,11 @@ basicCPEModel.convertRssiValue = function(rssiValue) {
     if (isNaN(result)) {
       return undefined;
     }
+  }
+  // Some devices need to apply a formula to calculate RSSI
+  // RSSI = (SignalStrength/2) -110
+  if (needToCalculateRSSI) {
+    result = (result/2) -110;
   }
   return result;
 };
