@@ -2996,15 +2996,29 @@ anlixDocumentReady.add(function() {
                     slaveDev.external_reference.kind ===
                     t('personIdentificationSystem')
                 ) {
-                  $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask(t('personIdentificationMask')).keyup();
+                  $(document).on(
+                    'keyup',
+                    '#edit_external_reference-' + index + '_' + slaveIdx,
+                    (event) => {
+                      $(event.target).mask(t('personIdentificationMask'));
+                    },
+                  );
+                  $('#edit_external_reference-' + index + '_' + slaveIdx)
+                    .trigger('keyup');
                 } else if (
                   slaveDev.external_reference &&
                   slaveDev.external_reference.kind ===
                   t('enterpriseIdentificationSystem')
                 ) {
-                  $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask(t('enterpriseIdentificationMask')).keyup();
+                  $(document).on(
+                    'keyup',
+                    '#edit_external_reference-' + index + '_' + slaveIdx,
+                    (event) => {
+                      $(event.target).mask(t('enterpriseIdentificationMask'));
+                    },
+                  );
+                  $('#edit_external_reference-' + index + '_' + slaveIdx)
+                    .trigger('keyup');
                 }
               }
               slaveIdx++;
@@ -3066,15 +3080,21 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $('#edit_external_reference-' + index)
-            .mask(t('personIdentificationMask')).keyup();
+            $(document).on('keyup',
+                           '#edit_external_reference-' + index, (event) => {
+              $(event.target).mask(t('personIdentificationMask'));
+            });
+            $('#edit_external_reference-' + index).trigger('keyup');
           } else if (
             device.external_reference &&
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $('#edit_external_reference-' + index)
-            .mask(t('enterpriseIdentificationMask')).keyup();
+            $(document).on('keyup',
+                           '#edit_external_reference-' + index, (event) => {
+              $(event.target).mask(t('enterpriseIdentificationMask'));
+            });
+            $('#edit_external_reference-' + index).trigger('keyup');
           }
 
           index += 1;
