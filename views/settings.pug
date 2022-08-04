@@ -2,6 +2,7 @@ extends layout
 
 block content
   include includes/showfactorycredentials
+  include includes/showdefaulthostsconfig
 
   form#config-flashman-form.needs-validation(
     method="post",
@@ -62,6 +63,10 @@ block content
                       option(value="en") 🇬🇧 English
                       option(value="es") 🇪🇸 Español
                       option(value="pt-BR") 🇧🇷 Português brasileiro
+                .row
+                  #default-hosts-config-button.button.btn.btn-primary.mt-2.mx-auto
+                    .fas.fa-key.fa-lg
+                    span &nbsp; #{t('defaultHostsConfig')}
                 #is-ssid-prefix-enabled-col.d-none
                   .alert.alert-info
                     .fas.fa-info-circle.fa-lg

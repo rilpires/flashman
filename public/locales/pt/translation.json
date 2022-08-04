@@ -1012,6 +1012,9 @@
 	"factoryCredentialsNotFound": "Não foram encontradas configurações válidas de credenciais web personalizadas",
 	"factoryCredentialsGenericError": "Ocorreu um erro ao obter as configurações de credenciais web personalizadas",
 	"duplicatedCredentials": "O modelo {{-model}} já tem credenciais configuradas",
+	"defaultHostsConfig": "Configuração de destinos em massa para testes de latencia",
+	"defaultHostsConfigWarning": "Cuidado! Este procedimento irá sobrescrever os destinos de teste de latência para todos os dispositivos cadastrados na base.",
+	"defaultHosts": "Endereços padrão de destino",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido"
 }
