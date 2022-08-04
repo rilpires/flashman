@@ -2180,10 +2180,10 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (needsToUpdateExtRef) {
               if (superuserGrant || role.grantDeviceId) {
-                let extRefData =
+                let extRef =
                   util.getExtRefPattern(extReference.kind, extReference.data);
-                matchedDevice.external_reference.kind = extReference.kind;
-                matchedDevice.external_reference.data = extRefData;
+                matchedDevice.external_reference.kind = extRef.kind;
+                matchedDevice.external_reference.data = extRef.data;
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
@@ -2479,10 +2479,10 @@ deviceListController.createDeviceReg = function(req, res) {
               'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
             if (extReference) {
-              let extRefData =
+              let extRef =
                 util.getExtRefPattern(extReference.kind, extReference.data);
-              newDeviceModel.external_reference.kind = extReference.kind;
-              newDeviceModel.external_reference.data = extRefData;
+              newDeviceModel.external_reference.kind = extRef.kind;
+              newDeviceModel.external_reference.data = extRef.data;
             }
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;

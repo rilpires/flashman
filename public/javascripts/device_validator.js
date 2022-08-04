@@ -53,16 +53,16 @@
       }
 
       // Dinamically checking king and getting the expected regex by language
-      switch (extReference.kind) {
-        case t('personIdentificationSystem'):
+      switch (extReference.kind.toLowerCase()) {
+        case t('personIdentificationSystem').toLowerCase():
           expectedRegex = new RegExp(t('personIdentificationRegex'));
           expectedMask = t('personIdentificationMask');
         break;
-        case t('enterpriseIdentificationSystem'):
+        case t('enterpriseIdentificationSystem').toLowerCase():
           expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
           expectedMask = t('enterpriseIdentificationMask');
         break;
-        case t('Other'):
+        case t('Other').toLowerCase():
           // In case of valid kind ("Other") and valid size (tested rigth above)
           // then we can return the validator as valid
           return {valid: true};
