@@ -5,6 +5,33 @@ const t = require('../language').i18next.t;
 
 let utilHandlers = {};
 
+// Patterns external reference obj based on actual language and ext. ref. kind
+utilHandlers.getExtRefPattern = function(kind, data) {
+  switch (kind.toLowerCase()) {
+    case (t('personIdentificationSystem').toLowerCase()):
+      return {
+        kind: t('personIdentificationSystem'),
+        data: data.replace(
+          new RegExp(t('personIdentificationPattern')),
+          t('personIdentificationPatternGroups'),
+        ).toUpperCase(),
+      };
+    case (t('enterpriseIdentificationSystem').toLowerCase()):
+      return {
+        kind: t('enterpriseIdentificationSystem'),
+        data: data.replace(
+          new RegExp(t('enterpriseIdentificationPattern')),
+          t('enterpriseIdentificationPatternGroups'),
+        ).toUpperCase(),
+      };
+    default:
+      return {
+        kind: t('Other'),
+        data: data,
+      };
+  }
+};
+
 utilHandlers.checkForNestedKey = function(data, key, useLastIndexOnWildcard=false) {
   if (!data) return false;
   let current = data;

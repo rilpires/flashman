@@ -35,6 +35,64 @@
 
     let Validator = function() {};
 
+    Validator.prototype.validateExtReference = function(extReference) {
+      let expectedRegex = new RegExp(/^.{0,256}$/);
+      let expectedMask;
+      let regexIsValid = false;
+      let kindIsValid = true;
+
+      // Size is not valid
+      if (!(expectedRegex.test(extReference.data))) {
+        return {
+          valid: false,
+          err: [t(
+            'thisFieldCannotHaveMoreThanMaxChars',
+            {max: 256},
+          )],
+        };
+      }
+
+      // Dinamically checking king and getting the expected regex by language
+      switch (extReference.kind.toLowerCase()) {
+        case t('personIdentificationSystem').toLowerCase():
+          expectedRegex = new RegExp(t('personIdentificationRegex'));
+          expectedMask = t('personIdentificationMask');
+        break;
+        case t('enterpriseIdentificationSystem').toLowerCase():
+          expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
+          expectedMask = t('enterpriseIdentificationMask');
+        break;
+        case t('Other').toLowerCase():
+          // In case of valid kind ("Other") and valid size (tested rigth above)
+          // then we can return the validator as valid
+          return {valid: true};
+        default:
+          kindIsValid = false;
+      }
+
+      // After we get the expected regex for each identification system by
+      // language, we can validate the regex
+      if (extReference.data.length > 0) {
+        regexIsValid = expectedRegex.test(extReference.data);
+      } else {
+        // Nothing to validate if data is empty
+        regexIsValid = true;
+      }
+
+      let errors = [];
+      if (!kindIsValid) {
+        errors.push(t('invalidContractNumberKind', {kind: extReference.kind}));
+      }
+      if (!regexIsValid && expectedMask) {
+        errors.push(t('invalidContractNumberData',
+          {kind: extReference.kind, mask: expectedMask}));
+      }
+      return {
+        valid: (kindIsValid && regexIsValid),
+        err: errors,
+      };
+    };
+
     Validator.prototype.validateMac = function(mac) {
       return {
         valid: mac.match(/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/),
@@ -99,12 +157,16 @@
       return ret;
     };
 
-    Validator.prototype.validateSSID = function(ssid) {
+    Validator.prototype.validateSSID = function(ssid, accentedChars) {
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
         t('acceptableCharsAre0-9a-zA-Z .-ul'),
       ];
+      if (accentedChars) {
+        // Remove diacritics before applying the regex test
+        ssid = ssid.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
       let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
@@ -124,12 +186,16 @@
       return ret;
     };
 
-    Validator.prototype.validateWifiPassword = function(pass) {
+    Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
       ];
+      if (accentedChars) {
+        // Remove diacritics before applying the regex test
+        pass = pass.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      }
       let ret = validateRegex(pass, 8, 64,
                               /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);

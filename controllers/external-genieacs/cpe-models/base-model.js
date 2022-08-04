@@ -75,6 +75,7 @@ basicCPEModel.modelPermissions = function() {
       hasUptimeField: true, // flag to handle devices that don't have uptime
     },
     wifi: {
+      allowDiacritics: false, // allows accented chars for ssid and password
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13

@@ -76,7 +76,8 @@ let validateEditDevice = function(event) {
   // Get form values
   let mac = row.data('deviceid');
   let isTR069 = row.data('is-tr069');
-  let validateWifi = row.data('validateWifi');
+  let validateWifi = row.data('validate-wifi');
+  let validateWifiDiacritics = row.data('validate-wifi-diacritics');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
@@ -121,6 +122,8 @@ let validateEditDevice = function(event) {
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
+  let externalReference = {kind: externalReferenceType,
+                           data: externalReferenceData};
   let validateBridge =
     $('#edit_opmode-' + index.toString()).val() === 'bridge_mode';
   let bridgeEnabled = validateBridge;
@@ -178,6 +181,7 @@ let validateEditDevice = function(event) {
       field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
     mesh_mode: {field: '#edit_meshMode-' + index.toString()},
+    external_reference: {field: '#edit_external_reference-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -204,11 +208,17 @@ let validateEditDevice = function(event) {
   if (validateWifi) {
     if (!isTR069 || password) {
       // Do not validate this field if a TR069 device left it blank
-      genericValidate(password,
-                      validator.validateWifiPassword, errors.password);
+      genericValidate(
+        password,
+        (p)=>validator.validateWifiPassword(p, validateWifiDiacritics),
+        errors.password,
+      );
     }
-    genericValidate(ssidPrefix+ssid,
-      validator.validateSSID, errors.ssid);
+    genericValidate(
+      ssidPrefix+ssid,
+      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      errors.ssid,
+    );
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
   if (validateWifiBand) {
@@ -221,11 +231,17 @@ let validateEditDevice = function(event) {
   if (validateWifi5ghz) {
     if (!isTR069 || password5ghz) {
       // Do not validate this field if a TR069 device left it blank
-      genericValidate(password5ghz,
-                      validator.validateWifiPassword, errors.password5ghz);
+      genericValidate(
+        password5ghz,
+        (p)=>validator.validateWifiPassword(p, validateWifiDiacritics),
+        errors.password5ghz,
+      );
     }
-    genericValidate(ssidPrefix+ssid5ghz,
-                    validator.validateSSID, errors.ssid5ghz);
+    genericValidate(
+      ssidPrefix+ssid5ghz,
+      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      errors.ssid5ghz,
+    );
     genericValidate(channel5ghz,
                     validator.validateChannel, errors.channel5ghz);
     genericValidate(band5ghz,
@@ -262,10 +278,7 @@ let validateEditDevice = function(event) {
     // If no errors present, send to backend
     let data = {'content': {
       'connection_type': (pppoe) ? 'pppoe' : 'dhcp',
-      'external_reference': {
-        kind: externalReferenceType,
-        data: externalReferenceData,
-      },
+      'external_reference': externalReference,
       'slave_custom_configs': JSON.stringify(slaveCustomConfigs),
     }};
     if (validatePppoe) {
@@ -357,13 +370,16 @@ let validateEditDevice = function(event) {
             mode5ghz: errors.mode5ghz,
             power5ghz: errors.power5ghz,
             mesh_mode: errors.mesh_mode,
+            external_reference: errors.external_reference,
           };
+          let errorMsgs = '';
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
+            errorMsgs += pair[key];
           });
           renderEditErrors(errors);
-          openErrorSwal(resp.message);
+          openErrorSwal(errorMsgs);
           switchSubmitButton(index);
         } else if ('success' in resp && !resp.success) {
           openErrorSwal(resp.message);

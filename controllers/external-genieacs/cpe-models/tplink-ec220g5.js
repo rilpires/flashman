@@ -13,6 +13,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 230;
+  permissions.wifi.allowDiacritics = true;
   permissions.firmwareUpgrades = {
     '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
   };
