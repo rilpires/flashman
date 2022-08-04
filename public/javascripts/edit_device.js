@@ -122,6 +122,8 @@ let validateEditDevice = function(event) {
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
+  let externalReference = {kind: externalReferenceType,
+                           data: externalReferenceData};
   let validateBridge =
     $('#edit_opmode-' + index.toString()).val() === 'bridge_mode';
   let bridgeEnabled = validateBridge;
@@ -179,6 +181,7 @@ let validateEditDevice = function(event) {
       field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
     mesh_mode: {field: '#edit_meshMode-' + index.toString()},
+    external_reference: {field: '#edit_external_reference-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -275,10 +278,7 @@ let validateEditDevice = function(event) {
     // If no errors present, send to backend
     let data = {'content': {
       'connection_type': (pppoe) ? 'pppoe' : 'dhcp',
-      'external_reference': {
-        kind: externalReferenceType,
-        data: externalReferenceData,
-      },
+      'external_reference': externalReference,
       'slave_custom_configs': JSON.stringify(slaveCustomConfigs),
     }};
     if (validatePppoe) {
@@ -370,13 +370,16 @@ let validateEditDevice = function(event) {
             mode5ghz: errors.mode5ghz,
             power5ghz: errors.power5ghz,
             mesh_mode: errors.mesh_mode,
+            external_reference: errors.external_reference,
           };
+          let errorMsgs = '';
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
+            errorMsgs += pair[key];
           });
           renderEditErrors(errors);
-          openErrorSwal(resp.message);
+          openErrorSwal(errorMsgs);
           switchSubmitButton(index);
         } else if ('success' in resp && !resp.success) {
           openErrorSwal(resp.message);
