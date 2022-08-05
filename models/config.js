@@ -64,6 +64,15 @@ let configSchema = new mongoose.Schema({
     wifi_devices: Boolean,
     ping_and_wan: Boolean,
   },
+  default_ping_hosts: {
+    type: [String],
+    default: [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ],
+  },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
     is_aborted: {type: Boolean, default: false},
