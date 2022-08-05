@@ -3242,62 +3242,60 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '.btn-trash', function(event) {
-    console.log(event);
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     swal.fire({
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: 'Remover e bloquear licença',
-      confirmButtonColor: '#4db6ac',
+      confirmButtonText: 'Remover e bloquear',
+      confirmButtonColor: '#ff3547', // vermelho
       cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
-      denyButtonText: 'Apenas remover',
-      denyButtonColor: '#f2ab63',
+      cancelButtonColor: '#4db6ac', // verdinho
+      denyButtonText: 'Remover',
+      denyButtonColor: '#f2ab63', // laranjinha
       showCancelButton: true,
       // TODO: based on permission
       showDenyButton: true,
       footer: '<p>'+'Ao bloquear a licença ... lorem ipsum'+'</p>',
     }).then((result)=>{
-      if (result.isConfirmed || result.isDenied) {
+      if (result.isConfirmed) {
+        // block and delete...
         $.ajax({
+          url: '/devicelist/deleteandblock',
+          type: 'POST',
+          traditional: true,
+          dataType: 'json',
+          data: {'block': true, 'ids': [id]},
+        }).always(function(res) {
+          $('#btn-trash-multiple').addClass('disabled');
+          let pageNum = parseInt($('#curr-page-link').html());
+          let filterList = $('#devices-search-input').val();
+          filterList += ',' + columnToSort + ',' + columnSortType;
+          loadDevicesTable(pageNum, filterList);
+          swal.fire({
+            icon: res.type,
+            title: res.message,
+            confirmButtonColor: '#4db6ac',
+            confirmButtonText: t('OK'),
+          });
+        });
+      } else if (result.isDenied) {
+        // just delete...
+        $.ajax({
+          type: 'POST',
           url: '/devicelist/delete',
-          type: 'post',
           traditional: true,
           data: {ids: [id]},
           success: function(res) {
+            $('#btn-trash-multiple').addClass('disabled');
             let pageNum = parseInt($('#curr-page-link').html());
             let filterList = $('#devices-search-input').val();
-            let deleteAndBlockResult = res;
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            if (res.success && result.isConfirmed) {
-              console.log('DELETAR E BLOQUEAR');
-              let devicesToBlock = [];
-              devicesToBlock.push(id);
-              $.ajax({
-                // TODO: checar a rota certa do change a qual podemos mandar um
-                // booleano. a rota '/devicelist/license' só muda o booleado
-                // fazendo status_da_licensa = !status_da_licensa
-                url: '/devicelist/license',
-                type: 'post',
-                traditional: true,
-                data: {block: true, id: devicesToBlock},
-                // TODO: lidar com as respostas
-                success: function(res) {
-                  deleteAndBlockResult = res;
-                },
-                error: function(err) {
-                  deleteAndBlockResult = err;
-                },
-              }).then((result)=>{
-                console.log(deleteAndBlockResult);
-              });
-            }
             swal.fire({
-              icon: deleteAndBlockResult.type,
-              title: deleteAndBlockResult.message,
+              icon: res.type,
+              title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
@@ -3312,13 +3310,40 @@ anlixDocumentReady.add(function() {
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
-      confirmButtonColor: '#4db6ac',
+      confirmButtonText: 'Remover e bloquear',
+      confirmButtonColor: '#ff3547', // vermelho
       cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
+      cancelButtonColor: '#4db6ac', // verdinho
+      denyButtonText: 'Remover',
+      denyButtonColor: '#f2ab63', // laranjinha
       showCancelButton: true,
+      // TODO: based on permission
+      showDenyButton: true,
+      footer: '<p>'+'Ao bloquear a licença ... lorem ipsum'+'</p>',
     }).then((result)=>{
-      if (result.value) {
+      if (result.isConfirmed) {
+        // block and delete...
+        $.ajax({
+          url: '/devicelist/deleteandblock',
+          type: 'POST',
+          traditional: true,
+          dataType: 'json',
+          data: {'block': true, 'ids': selectedDevices},
+        }).always(function(res) {
+          $('#btn-trash-multiple').addClass('disabled');
+          let pageNum = parseInt($('#curr-page-link').html());
+          let filterList = $('#devices-search-input').val();
+          filterList += ',' + columnToSort + ',' + columnSortType;
+          loadDevicesTable(pageNum, filterList);
+          swal.fire({
+            icon: res.type,
+            title: res.message,
+            confirmButtonColor: '#4db6ac',
+            confirmButtonText: t('OK'),
+          });
+        });
+      } else if (result.isDenied) {
+        // just delete...
         $.ajax({
           type: 'POST',
           url: '/devicelist/delete',
