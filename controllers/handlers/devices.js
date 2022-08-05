@@ -229,42 +229,64 @@ deviceHandlers.isUpgradePossible = function(device, nextVersion) {
   }
 };
 
-deviceHandlers.removeDeviceFromDatabase = function(device) {
+deviceHandlers.removeDeviceFromDatabase = async function(device) {
   let meshMaster = device.mesh_master;
   let meshSlaves = device.mesh_slaves;
+  if (meshSlaves && meshSlaves.length > 0) {
+  // This is a mesh master. Must trow an error, beacuse we can not remove
+  // mesh masters without disassociate mesh slaves
+    return {success: false};
+  }
   // Use this .remove method so middleware post hook receives object info
-  device.remove();
+  await device.remove().catch((err) => {
+    console.log('Error saving device remove operation: ' + err);
+    return {success: false};
+  });
+  let mesh = {success: true};
   if (meshMaster) {
     // This is a mesh slave. Remove master registration
-    DeviceModel.findById(meshMaster, function(err, masterDevice) {
-      if (!err && masterDevice) {
+    await DeviceModel.findById(meshMaster, async function(err, masterDevice) {
+      if (err) {
+        console.log('Error searching mesh master: ' + err);
+        mesh = {success: false};
+      } else if (masterDevice) {
         let index = masterDevice.mesh_slaves.indexOf(device._id.toUpperCase());
         if (index > -1) {
           masterDevice.mesh_slaves.splice(index, 1);
         }
-        masterDevice.save().catch((err) => {
+        await masterDevice.save().catch((err) => {
           console.log('Error saving mesh slave remove operation: ' + err);
+          mesh = {success: false};
         });
         console.log('Slave ' + device._id.toUpperCase() +
           ' removed from Master ' + meshMaster + ' successfully.');
       }
     });
   }
-  if (meshSlaves && meshSlaves.length > 0) {
-    // This is a mesh master. Remove master registration for each slave found
-    for (let meshSlaveMac of meshSlaves) {
-      DeviceModel.findById(meshSlaveMac, {mesh_master: true},
-        function(err, slaveDevice) {
-          if (!err && slaveDevice && slaveDevice.mesh_master) {
-            slaveDevice.mesh_master = undefined;
-            slaveDevice.save().catch((err) => {
-              console.log('Error saving mesh master remove operation: ' + err);
-            });
-          }
-        },
-      );
-    }
-  }
+  // if (meshSlaves && meshSlaves.length > 0) {
+  //   // This is a mesh master. Remove master registration for each slave found
+  //   for (let meshSlaveMac of meshSlaves) {
+  //     await DeviceModel.findById(meshSlaveMac, {mesh_master: true},
+  //       async function(err, slaveDevice) {
+  //         if (err) {
+  //           console.log('Error searching mesh slave: ' + err);
+  //           mesh = {success: false};
+  //         } else if (slaveDevice && slaveDevice.mesh_master) {
+  //           slaveDevice.mesh_master = undefined;
+  //           await slaveDevice.save().catch((err) => {
+  //             console.log('Error saving mesh master remove operation: ' + err);
+  //             mesh = {success: false};
+  //           });
+  //           console.log('Master ' + device._id.toUpperCase() +
+  //             ' desassociated from Slave ' + slaveDevice._id.toUpperCase() +
+  //             ' successfully.');
+  //         }
+  //       },
+  //     );
+  //   }
+  // }
+  if (!mesh.success) return mesh;
+  return {success: true};
 };
 
 /*

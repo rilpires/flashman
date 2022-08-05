@@ -954,7 +954,7 @@ deviceListController.delDeviceReg = async function(req, res) {
     } else {
       removeList = req.body.ids;
     }
-    let devices = await DeviceModel.findByMacOrSerial(removeList).exec();
+    let devices = await DeviceModel.findByMacOrSerial(removeList);
     if (devices.length === 0) {
       return res.json({
         success: false,
@@ -963,13 +963,22 @@ deviceListController.delDeviceReg = async function(req, res) {
       });
     }
     for (let device of devices) {
-      deviceHandlers.removeDeviceFromDatabase(device);
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        return res.json({
+          success: false,
+          type: 'danger',
+          message: t('cantDeleteMeshWithSecondaries', {errorline: __line}),
+        });
+      }
+      let removal = await deviceHandlers.removeDeviceFromDatabase(device);
+      if (!removal.success) {
+        return res.json({
+          success: false,
+          type: 'danger',
+          message: t('operationUnsuccessful', {errorline: __line}),
+        });
+      }
     }
-    return res.json({
-      success: true,
-      type: 'success',
-      message: t('operationSuccessful'),
-    });
   } catch (err) {
     console.error('Erro na remoção: ' + err);
     return res.json({
@@ -978,6 +987,11 @@ deviceListController.delDeviceReg = async function(req, res) {
       message: t('operationUnsuccessful', {errorline: __line}),
     });
   }
+  return res.json({
+    success: true,
+    type: 'success',
+    message: t('operationSuccessful'),
+  });
 };
 
 const downloadStockFirmware = async function(model) {
@@ -3587,7 +3601,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
 
 deviceListController.changeLicenseStatus = async function(req, res) {
   if (!('ids' in req.body) || !('block' in req.body)) {
-    return res.status(500).json({success: false,
+    return res.status(500).json({success: false, type: 'error',
       message: t('jsonInvalidFormat', {errorline: __line})});
   }
   try {
@@ -3605,9 +3619,8 @@ deviceListController.changeLicenseStatus = async function(req, res) {
       ]},
       {_id: true, serial_tr069: true, use_tr069: true,
        alt_uid_tr069: true, is_license_active: true});
-
     if (matchedDevices.length === 0) {
-      return res.status(500).json({success: false,
+      return res.status(500).json({success: false, type: 'error',
                                    message: t('cpesNotFound',
                                    {errorline: __line})});
     }
@@ -3627,15 +3640,85 @@ deviceListController.changeLicenseStatus = async function(req, res) {
         device.is_license_active = !newBlockStatus;
         await device.save();
       }
-      return res.json({success: true});
+      return res.json({success: true, type: 'success',
+                       message: t('operationSuccessful')});
     } else {
-      return res.json({success: false, message: retObj.message});
+      return res.json({success: false, type: 'error', message: retObj.message});
     }
   } catch (err) {
-    return res.status(500).json({success: false,
+    return res.status(500).json({success: false, type: 'error',
                                  message: t('serverError',
                                  {errorline: __line})});
   }
+};
+
+deviceListController.getDeviceId = function(device) {
+  if (device.use_tr069 && device.alt_uid_tr069) {
+    return device.alt_uid_tr069;
+  } else if (device.use_tr069) {
+    return device.serial_tr069;
+  } else {
+    return device._id;
+  }
+};
+
+deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
+  // Check request body
+  if (!('ids' in req.body) || !('block' in req.body)) {
+    return res.status(500).json({success: false, type: 'error',
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    // Get new block status
+    const newBlockStatus =
+      (req.body.block === true || req.body.block === 'true');
+    let devIds = req.body.ids;
+    // Check devices array
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
+    // Get devices from ids
+    let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
+      // Use projection
+      {_id: true, serial_tr069: true, use_tr069: true,
+       alt_uid_tr069: true, is_license_active: true},
+    );
+    // Check if get at least one device
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({success: false, type: 'error',
+                                   message: t('cpesNotFound',
+                                   {errorline: __line})});
+    }
+    // Try to remove all devices
+    for (let device of matchedDevices) {
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        return res.status(500).json({success: false, type: 'danger',
+                                     message: t('cantDeleteMeshWithSecondaries',
+                                     {errorline: __line})});
+      }
+      let removal = await deviceHandlers.removeDeviceFromDatabase(device);
+      // return unsuccessful message
+      if (!removal.success) {
+        return res.status(500).json({success: false, type: 'danger',
+                                     message: t('operationUnsuccessful',
+                                     {errorline: __line})});
+      }
+    }
+    // Try to block all licenses
+    let retObj =
+      await controlApi.changeLicenseStatus(req.app, newBlockStatus, devIds);
+    if (!retObj.success) {
+      return res.status(500).json({success: false, type: 'danger',
+                                   message: t('operationUnsuccessful',
+                                   {errorline: __line})});
+    }
+  } catch (err) {
+    return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
+  }
+  return res.status(200).json({success: true, type: 'success',
+                               message: t('operationSuccessful')});
 };
 
 deviceListController.receivePonSignalMeasure = async function(req, res) {
