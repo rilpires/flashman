@@ -245,6 +245,9 @@ const createRegistry = async function(req, res) {
     }
   }
 
+  // Get default_ping_hosts to fill ping_hosts on a new registry
+  let defaultPingHosts = await util.getDefaultPingHosts();
+
   if (errors.length < 1) {
     let newMeshId = meshHandlers.genMeshID();
     let newMeshKey = meshHandlers.genMeshKey();
@@ -303,6 +306,7 @@ const createRegistry = async function(req, res) {
       'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
+      'ping_hosts': defaultPingHosts,
     };
     if (vlanParsed !== undefined) {
       deviceObj.vlan = vlanParsed;

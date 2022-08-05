@@ -2,6 +2,8 @@
 /* global __line */
 
 const t = require('../language').i18next.t;
+const Config = require('../../models/config');
+const debug = require('debug')('ACS_DEVICE_INFO');
 
 let utilHandlers = {};
 
@@ -52,6 +54,18 @@ utilHandlers.getFromNestedKey = function(data, key) {
     current = current[splitKey[i]];
   }
   return current;
+};
+
+utilHandlers.getDefaultPingHosts = async function() {
+  let query = {is_default: true};
+  let projection = {default_ping_hosts: 1};
+  let matchedConfig = await Config.findOne(query, projection).lean()
+  .catch((err) => {
+    debug(err);
+    return null;
+  });
+  if (!matchedConfig) return;
+  return matchedConfig.default_ping_hosts;
 };
 
 utilHandlers.isJSONObject = function(val) {
