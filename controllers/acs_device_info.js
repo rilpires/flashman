@@ -309,9 +309,6 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
-  // Get default_ping_hosts to fill ping_hosts on a new registry
-  let defaultPingHosts = await utilHandlers.getDefaultPingHosts();
-
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -368,7 +365,7 @@ const createRegistry = async function(req, cpe, permissions) {
     mesh_id: newMeshId,
     bssid_mesh2: meshBSSIDs.mesh2,
     bssid_mesh5: meshBSSIDs.mesh5,
-    ping_hosts: defaultPingHosts,
+    ping_hosts: matchedConfig.default_ping_hosts,
   });
   try {
     await newDevice.save();
