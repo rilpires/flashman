@@ -3601,7 +3601,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
 
 deviceListController.changeLicenseStatus = async function(req, res) {
   if (!('ids' in req.body) || !('block' in req.body)) {
-    return res.status(500).json({success: false, type: 'error',
+    return res.status(500).json({success: false,
       message: t('jsonInvalidFormat', {errorline: __line})});
   }
   try {
@@ -3619,8 +3619,9 @@ deviceListController.changeLicenseStatus = async function(req, res) {
       ]},
       {_id: true, serial_tr069: true, use_tr069: true,
        alt_uid_tr069: true, is_license_active: true});
+
     if (matchedDevices.length === 0) {
-      return res.status(500).json({success: false, type: 'error',
+      return res.status(500).json({success: false,
                                    message: t('cpesNotFound',
                                    {errorline: __line})});
     }
@@ -3640,13 +3641,12 @@ deviceListController.changeLicenseStatus = async function(req, res) {
         device.is_license_active = !newBlockStatus;
         await device.save();
       }
-      return res.json({success: true, type: 'success',
-                       message: t('operationSuccessful')});
+      return res.json({success: true});
     } else {
-      return res.json({success: false, type: 'error', message: retObj.message});
+      return res.json({success: false, message: retObj.message});
     }
   } catch (err) {
-    return res.status(500).json({success: false, type: 'error',
+    return res.status(500).json({success: false,
                                  message: t('serverError',
                                  {errorline: __line})});
   }
