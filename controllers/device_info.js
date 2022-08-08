@@ -2297,6 +2297,34 @@ deviceInfoController.receiveLanInfo = function(req, res) {
 };
 
 
+// Traceroute
+deviceInfoController.receiveTraceroute = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Send socket IO notification
+    sio.anlixSendTracerouteNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
 deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
