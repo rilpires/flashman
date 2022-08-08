@@ -2303,11 +2303,10 @@ deviceListController.setDeviceReg = function(req, res) {
                   ) {
                     delete changes.wifi5.channel;
                   }
-                } else {
-                  meshHandlers.setMeshMode(
-                    matchedDevice, meshMode,
-                  );
                 }
+                meshHandlers.setMeshMode(
+                  matchedDevice, meshMode,
+                );
                 updateParameters = true;
               } else {
                 hasPermissionError = true;

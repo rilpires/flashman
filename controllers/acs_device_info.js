@@ -1828,20 +1828,20 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     if (!createOk.success) {
       return {success: false, msg: createOk.msg};
     }
-    // Set the mesh parameters on the TR-069 fields
-    let changes = meshHandlers.buildTR069Changes(
-      device,
-      targetMode,
-      wifiRadioState,
-      meshChannel,
-      meshChannel5GHz,
-      createOk.populate,
-    );
-    const updated =
-      await acsDeviceInfoController.updateInfo(device, changes, true);
-    if (!updated) {
-      return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
-    }
+  }
+  // Set the mesh parameters on the TR-069 fields
+  let changes = meshHandlers.buildTR069Changes(
+    device,
+    targetMode,
+    wifiRadioState,
+    meshChannel,
+    meshChannel5GHz,
+    createOk.populate,
+  );
+  const updated =
+    await acsDeviceInfoController.updateInfo(device, changes, true);
+  if (!updated) {
+    return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }
   return {success: true};
 };

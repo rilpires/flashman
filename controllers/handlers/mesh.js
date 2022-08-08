@@ -201,6 +201,16 @@ meshHandlers.buildTR069Changes = function(
     case 1:
       changes.mesh2.enable = false;
       changes.mesh5.enable = false;
+      changes.wifi2.beacon_type = beaconType;
+      changes.wifi5.beacon_type = beaconType;
+      if (cpe.getEncryptionMode() != '') {
+        changes.wifi2.encryption = cpe.getEncryptionMode();
+        changes.wifi5.encryption = cpe.getEncryptionMode();
+      }
+      if (cpe.getEncryption2Mode() != '') {
+        changes.wifi2.encryption2 = cpe.getEncryption2Mode();
+        changes.wifi5.encryption2 = cpe.getEncryption2Mode();
+      }
       break;
     case 2:
       changes.mesh2 =
