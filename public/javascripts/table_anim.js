@@ -1387,6 +1387,7 @@ anlixDocumentReady.add(function() {
           let grantResetDevices = device.permissions.grantResetDevices;
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
+          let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
@@ -1596,6 +1597,11 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', t('dataCollecting'));
 
+          let tracerouteAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-traceroute-test-modal')
+          .replace('$REPLACE_ICON', 'fa-list')
+          .replace('$REPLACE_TEXT', t('tracerouteTest'));
+
           let idxMenu = 0;
           let sideMenu = [];
           sideMenu[0] = '<div>'+
@@ -1659,6 +1665,10 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (grantTraceroute) {
+            sideMenu[idxMenu] += tracerouteAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 &&
