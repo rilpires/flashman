@@ -399,6 +399,24 @@ mqtts.anlixMessageRouterLanInfo = function(id) {
 };
 
 
+// Traceroute
+mqtts.anlixMessageRouterTraceroute = function(
+  id,
+  route,
+  maxHops,
+  numberProbes,
+  maxTime,
+) {
+  const payload = 'traceroute ' +
+    route + ' ' +
+    maxHops + ' ' +
+    numberProbes + ' ' +
+    maxTime;
+
+  mqtts.commonPublishPacket(id, 2, false, payload);
+};
+
+
 mqtts.anlixMessageRouterSiteSurvey = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {
