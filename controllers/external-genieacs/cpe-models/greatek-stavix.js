@@ -43,6 +43,14 @@ greatekModel.getBeaconType = function() {
   return 'WPA2';
 };
 
+greatekModel.getEncryptionMode = function() {
+  return 'AESEncryption';
+};
+
+greatekModel.getEncryption2Mode = function() {
+  return 'TKIPEncryption';
+};
+
 greatekModel.convertRssiValue = function(rssiValue) {
   let result = basicCPEModel.convertRssiValue(rssiValue);
   // This model sends RSSI as a positive value instead of negative
@@ -70,6 +78,14 @@ greatekModel.getModelFields = function() {
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
   });
+  fields.wifi2.encryption = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.6.WPAEncryptionModes';
+  fields.wifi5.encryption = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.1.WPAEncryptionModes';
+  fields.wifi2.encryption2 = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.6.IEEE11iEncryptionModes';
+  fields.wifi5.encryption2 = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.1.IEEE11iEncryptionModes';
   Object.keys(fields.mesh2).forEach((k)=>{
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');

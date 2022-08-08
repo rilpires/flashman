@@ -255,6 +255,14 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
+basicCPEModel.getEncryptionMode = function() {
+  return '';
+};
+
+basicCPEModel.getEncryption2Mode = function() {
+  return '';
+};
+
 // Used to override GenieACS serial in some way, used only on Hurakall for now
 basicCPEModel.convertGenieSerial = function(serial, mac) {
   // No conversion necessary
