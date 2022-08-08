@@ -25,6 +25,11 @@ router.route('/receive/waninfo').post(
   deviceInfoController.receiveWanInfo);
   router.route('/receive/laninfo').post(
     deviceInfoController.receiveLanInfo);
+
+// Traceroute
+router.route('/receive/traceroute').post(
+  deviceInfoController.receiveTraceroute);
+
 router.route('/receive/wps').post(
   deviceInfoController.receiveWpsResult);
 router.route('/receive/speedtestresult').post(
