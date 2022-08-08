@@ -266,7 +266,23 @@ mqtts.authenticate = function(client, username, password, cb) {
 
 // TODO: Refactor functions bellow.
 // All those functions have the same code.
-// Create a common publish function.
+// Use this common publish function to avoiding repeating code.
+mqtts.commonPublishPacket = function(id, qos, retain, payload) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: qos,
+      retain: retain,
+      payload: payload,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message ' + payload + ' to ' + id);
+  }
+
+  return serverId === null;
+};
+
 
 mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   const serverId = findServerId(id);
