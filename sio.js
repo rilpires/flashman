@@ -23,6 +23,7 @@ const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
 const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
 const SIO_NOTIFICATION_WAN_INFO = 'WANINFO';
 const SIO_NOTIFICATION_LAN_INFO = 'LANINFO';
+const SIO_NOTIFICATION_TRACEROUTE = 'TRACEROUTE';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
@@ -314,6 +315,33 @@ sio.anlixSendLanInfoNotification = function(macaddr, lanInfoData) {
 
   let found = emitNotification(SIO_NOTIFICATION_LAN_INFO,
                                macaddr, lanInfoData, macaddr);
+
+  return found;
+};
+
+
+// Traceroute
+sio.anlixWaitForTracerouteNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+
+  if (!macaddr) {
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_TRACEROUTE, macaddr);
+
+  return true;
+};
+
+sio.anlixSendTracerouteNotification = function(macaddr, tracerouteData) {
+  if (!macaddr) {
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_TRACEROUTE,
+                               macaddr, tracerouteData, macaddr);
 
   return found;
 };
