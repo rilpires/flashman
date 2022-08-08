@@ -235,6 +235,8 @@ deviceHandlers.removeDeviceFromDatabase = async function(device) {
   if (meshSlaves && meshSlaves.length > 0) {
   // This is a mesh master. Must trow an error, beacuse we can not remove
   // mesh masters without disassociate mesh slaves
+    console.log('Error saving device remove operation: This device is a Mesh' +
+      ' Master, and could not be deleted.');
     return {success: false};
   }
   // Use this .remove method so middleware post hook receives object info
@@ -263,28 +265,6 @@ deviceHandlers.removeDeviceFromDatabase = async function(device) {
       }
     });
   }
-  // if (meshSlaves && meshSlaves.length > 0) {
-  //   // This is a mesh master. Remove master registration for each slave found
-  //   for (let meshSlaveMac of meshSlaves) {
-  //     await DeviceModel.findById(meshSlaveMac, {mesh_master: true},
-  //       async function(err, slaveDevice) {
-  //         if (err) {
-  //           console.log('Error searching mesh slave: ' + err);
-  //           mesh = {success: false};
-  //         } else if (slaveDevice && slaveDevice.mesh_master) {
-  //           slaveDevice.mesh_master = undefined;
-  //           await slaveDevice.save().catch((err) => {
-  //             console.log('Error saving mesh master remove operation: ' + err);
-  //             mesh = {success: false};
-  //           });
-  //           console.log('Master ' + device._id.toUpperCase() +
-  //             ' desassociated from Slave ' + slaveDevice._id.toUpperCase() +
-  //             ' successfully.');
-  //         }
-  //       },
-  //     );
-  //   }
-  // }
   if (!mesh.success) return mesh;
   return {success: true};
 };

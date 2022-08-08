@@ -977,6 +977,12 @@ deviceListController.delDeviceReg = async function(req, res) {
           type: 'danger',
           message: t('operationUnsuccessful', {errorline: __line}),
         });
+      } else {
+        return res.json({
+          success: true,
+          type: 'success',
+          message: t('operationSuccessful'),
+        });
       }
     }
   } catch (err) {
@@ -987,11 +993,6 @@ deviceListController.delDeviceReg = async function(req, res) {
       message: t('operationUnsuccessful', {errorline: __line}),
     });
   }
-  return res.json({
-    success: true,
-    type: 'success',
-    message: t('operationSuccessful'),
-  });
 };
 
 const downloadStockFirmware = async function(model) {
@@ -3680,8 +3681,7 @@ deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
     // Get devices from ids
     let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
       // Use projection
-      {_id: true, serial_tr069: true, use_tr069: true,
-       alt_uid_tr069: true, is_license_active: true},
+      {_id: true, mesh_master: true, mesh_slaves: true},
     );
     // Check if get at least one device
     if (matchedDevices.length === 0) {
@@ -3711,14 +3711,15 @@ deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
       return res.status(500).json({success: false, type: 'danger',
                                    message: t('operationUnsuccessful',
                                    {errorline: __line})});
+    } else {
+      return res.status(200).json({success: true, type: 'success',
+                                  message: t('operationSuccessful')});
     }
   } catch (err) {
     return res.status(500).json({success: false, type: 'danger',
                                  message: t('operationUnsuccessful',
                                  {errorline: __line})});
   }
-  return res.status(200).json({success: true, type: 'success',
-                               message: t('operationSuccessful')});
 };
 
 deviceListController.receivePonSignalMeasure = async function(req, res) {
