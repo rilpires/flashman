@@ -520,9 +520,12 @@
 	"latencyAndBidirectionalLossFor": "Bidirectional latency and loss for",
 	"targetAddresses": "Destination Addresses",
 	"targetAddressesTooltip": "Destination addresses can be websites on the Internet or valid IP addresses",
+	"targetAddress": "Destination Address",
+	"targetAddressTooltip": "Destination address can be a website on the Internet or a valid IP address",
 	"saveSuccessful": "Saved successfully",
 	"errorSaving": "Error saving",
 	"addAddressesAndClickToStart": "Add addresses and click start",
+	"chooseAddressAndClickToStart": "Choose the address and click start",
 	"forTr069OnlyFirstAddressWillBeTested": "For TR-069 devices only the first destination address will be tested",
 	"startTest": "Start Test",
 	"%LostPackets": "% lost packets",
@@ -995,5 +998,7 @@
 	"factoryCredentialsGenericError": "An error has occurred while searching for the custom web credentials configuration",
 	"duplicatedCredentials": "The model {{-model}} already has a custom web credentials configuration",
 	"invalidModel": "Invalid model",
-	"invalidManufacturer": "Invalid manufacturer"
+	"invalidManufacturer": "Invalid manufacturer",
+	"tracerouteTest": "Trace route",
+	"tracerouteTestFor": "Trace route from"
 }

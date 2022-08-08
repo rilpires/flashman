@@ -525,9 +525,12 @@
 	"latencyAndBidirectionalLossFor": "Latência e perda bidirecional para",
 	"targetAddresses": "Endereços de destino",
 	"targetAddressesTooltip": "Os endereços de destino podem ser sites na Internet ou endereços IP válidos",
+	"targetAddress": "Endereço de destino",
+	"targetAddressTooltip": "O endereço de destino pode ser um site na Internet ou um endereço IP válido",
 	"saveSuccessful": "Salvo com sucesso",
 	"errorSaving": "Erro ao salvar",
 	"addAddressesAndClickToStart": "Adicione os endereços e clique em iniciar",
+	"chooseAddressAndClickToStart": "Escolha o endereço e clique em iniciar",
 	"forTr069OnlyFirstAddressWillBeTested": "Para dispositivos TR-069 apenas o primeiro endereço de destino será testado",
 	"startTest": "Iniciar teste",
 	"%LostPackets": "% pacotes perdidos",
@@ -1003,5 +1006,7 @@
 	"factoryCredentialsGenericError": "Ocorreu um erro ao obter as configurações de credenciais web personalizadas",
 	"duplicatedCredentials": "O modelo {{-model}} já tem credenciais configuradas",
 	"invalidModel": "Modelo inválido",
-	"invalidManufacturer": "Fabricante inválido"
+	"invalidManufacturer": "Fabricante inválido",
+	"tracerouteTest": "Traçar rota",
+	"tracerouteTestFor": "Traçar rota a partir de"
 }
