@@ -1,0 +1,100 @@
+
+#traceroute-test-modal.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+
+      //- Header of the modal
+      .modal-header
+        p.heading.lead
+
+          //- List Icon
+          span.fas.fa-list.fa-lg
+
+          //- Tittle
+          strong &nbsp;#{t('tracerouteTestFor')}&nbsp;
+
+            //- Device ID
+            label(name="traceroute-test-hlabel" id="traceroute-test-device-id")
+
+        //- Close button
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+
+      //- Body of the modal
+      .modal-body
+
+        //- Address Header
+        .row
+          .col
+
+            //- Address Tittle
+            span #{t('targetAddress')} &nbsp;
+
+            //- Address Tooltip
+            //- Using # in href moves the page to begin
+            //- Using javascript:void(0) does not have this problem
+            a.fas.fa-question-circle(
+              href="javascript:void(0)",
+              data-toggle="tooltip",
+              title=t('targetAddressTooltip')
+            )
+        
+        //- Address Field
+        .row.mt-1
+          .col
+            //- Address list
+            select.form-control#traceroute-host-selector
+
+            //- Save successful
+            .valid-feedback.text-right.mt-0
+              .fas.fa-check
+              span &nbsp; #{t('saveSuccessful')}
+
+            //- Error saving
+            .invalid-feedback.text-right.mt-0
+              .fas.fa-times
+              span &nbsp;
+              span#traceroute-route-invalid-feedback= t('saveError')
+
+        //- Tests Section
+        .row.mt-4
+          .col
+
+            //- Info
+            h2.text-center.grey-text.mb-3#traceroute-test-section
+              i.fas.fa-list.fa-4x
+              br
+              br
+              span= t('chooseAddressAndClickToStart')
+
+            //- Refresh icon and text
+            #traceroute-loading-section.row.pt-3
+              .col
+                h2.text-center.grey-text.mb-3
+                  //- Icon
+                  i.fas.fa-spinner.fa-pulse.fa-4x
+                  br
+                  br
+                  //- Title
+                  span= t('updatingInformations...')
+            
+            //- Error
+            #traceroute-error-section.row.pt-3
+              .col
+                h2.text-center.grey-text.mb-3
+                  i.fas.fa-times.fa-4x
+                  br
+                  br
+                  span= t('unexpectedErrorHappened')
+            
+            //- Traceroute results
+            #traceroute-test-results-section(style="display: none;")
+              ul#traceroute-test-results-table.list-group.list-group-flush
+
+      //- Footer
+      .modal-footer
+        .col.p-0.text-right
+
+          //- Start Test Button
+          button.btn.btn-primary.btn-sm.btn-start-traceroute-test(type="button")
+            span &nbsp; #{t('startTest')}
