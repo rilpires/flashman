@@ -18,15 +18,7 @@
       
       //- Modal body
       .modal-body#default-hosts-config-modal-canvas
-        .row.justify-content-start.align-items-center.flexwrap
-          .col
-            span #{t('defaultHosts')} &nbsp;
-            a.fas.fa-question-circle(
-              href="#",
-              data-toggle="tooltip",
-              title=t('targetAddressesTooltip')
-            )
-        .row.mt-1
+        .row.mt-1.justify-content-center.align-items-center.flexwrap
           //- Host input
           .col
             .md-form.input-entry
@@ -35,21 +27,21 @@
                 type="text",
               )#default-hosts-config-input
               .invalid-feedback Endereço inválido
-        .row.justify-content-center.align-items-center.flexwrap
-            //- Apply button
-            #default-hosts-config-add-button.button.btn.btn-primary(
-              type="button",
-            )
-              .fas.fa-plus.fa-lg
-              span &nbsp; #{t('Add')}
+        .row.mt-1.justify-content-center.align-items-center.flexwrap
+          //- Apply button
+          #default-hosts-config-add-button.button.btn.btn-primary(
+            type="button",
+          )
+            .fas.fa-plus.fa-lg
+            span &nbsp; #{t('Add')}
         
         //- Hosts table
-        .row.col.table-responsive
+        .table-responsive
           table.table
             //- Table head
             thead
               tr
-                //- Devices column header
+                //- Default hosts column header
                 th.text-left #{t('defaultHosts')}
 
                 //- Delete all button
@@ -65,20 +57,18 @@
 
             //- Table body
             tbody#default-hosts-config-table
-
-        .row.mt-4.justify-content-start.align-items-center.flexwrap
-          .col
+      
+        hr
+        .row.justify-content-center.align-items-center.flexwrap
+          .col-md-9
             //- Alert
             .alert.alert-danger
               .fas.fa-exclamation-triangle.fa-lg
               span &nbsp; #{t('defaultHostsConfigWarning')}
-      
-      //- Footer of the modal
-      .modal-footer
-        //- Apply button
-        #default-hosts-config-submit-button.button.btn.btn-primary(
-          type="button",
-        )
-          .fas.fa-check.fa-lg
-          span &nbsp; #{t('Apply')}
-    
+          .col-md-3
+            //- Apply button
+            #default-hosts-config-submit-button.button.btn.btn-primary(
+              type="button",
+            )
+              .fas.fa-check.fa-lg
+              span &nbsp; #{t('Apply')}

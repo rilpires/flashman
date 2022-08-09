@@ -40,6 +40,10 @@ const setFactoryCredentialsStorage = function(key, val) {
   setCommonStorage('factoryCredentials', key, val);
 };
 
+const setDefaultPingHostsList = function(key, val) {
+  setCommonStorage('defaultPingHosts', key, val);
+};
+
 const getPortForwardStorage = function(key) {
   return getCommonStorage('portForwardTr069', key);
 };
@@ -54,6 +58,10 @@ const getFirmwareStorage = function(key) {
 
 const getFactoryCredentialsStorage = function(key) {
   return getCommonStorage('factoryCredentials', key);
+};
+
+const getDefaultPingHostsList = function(key) {
+  return getCommonStorage('defaultPingHosts', key);
 };
 
 const deletePortForwardStorage = function() {
@@ -72,15 +80,22 @@ const deleteFactoryCredentialsStorage = function() {
   deleteCommonStorage('factoryCredentials');
 };
 
+const deleteDefaultPingHostsList = function() {
+  deleteCommonStorage('defaultPingHosts');
+};
+
 export {setPortForwardStorage,
         setConfigStorage,
         setFirmwareStorage,
-        getPortForwardStorage,
+        setDefaultPingHostsList,
         setFactoryCredentialsStorage,
+        getPortForwardStorage,
         getConfigStorage,
         getFirmwareStorage,
         getFactoryCredentialsStorage,
+        getDefaultPingHostsList,
         deletePortForwardStorage,
         deleteConfigStorage,
         deleteFirmwareStorage,
-        deleteFactoryCredentialsStorage};
+        deleteFactoryCredentialsStorage,
+        deleteDefaultPingHostsList};

@@ -3085,6 +3085,36 @@ deviceListController.getPingHostsList = function(req, res) {
   });
 };
 
+deviceListController.getDefaultPingHostsAtConfig = async function() {
+  let message = t('configGenericError', {errorline: __line});
+  let config = {};
+  try {
+    config = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true},
+    ).lean();
+  } catch (err) {
+    message = t('configFindError', {errorline: __line});
+  }
+  if (config && config.default_ping_hosts) {
+    return {success: true, hosts: config.default_ping_hosts};
+  }
+  return {success: false, message: message};
+};
+
+deviceListController.getDefaultPingHosts = async function(req, res) {
+  const getDefaultPingHosts =
+    await deviceListController.getDefaultPingHostsAtConfig();
+  if (getDefaultPingHosts.success) {
+    return res.status(200).json({
+      success: true,
+      default_ping_hosts_list: getDefaultPingHosts.hosts,
+    });
+  }
+  return res.status(200).json({
+    success: false, message: getDefaultPingHosts.message,
+  });
+};
+
 deviceListController.setPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
