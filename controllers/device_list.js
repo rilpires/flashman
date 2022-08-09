@@ -1503,27 +1503,12 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
         invalidField = 'webhook.secret';
       }
     }
-    if (device.use_tr069) {
-      if (!util.urlRegex.test(req.body.content.url)) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-    } else {
-      // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
-      let urlList = req.body.content.url.split(':');
-      if (!util.ipv4Regex.test(urlList[0])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length > 2) {
-        validationOk = false;
-        invalidField = 'url';
-      }
+
+    if (!util.urlRegex.test(req.body.content.url)) {
+      validationOk = false;
+      invalidField = 'url';
     }
+
     if (!validationOk) {
       return res.status(200).json({
         success: false,
@@ -3401,14 +3386,13 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
-        let url;
         if (customUrl !== '') {
-          url = customUrl;
+          mqtt.anlixMessageRouterSpeedTestRaw(mac, customUrl, req.user);
         } else {
-          url = matchedConfig.measureServerIP + ':' +
+          let url = matchedConfig.measureServerIP + ':' +
                 matchedConfig.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
         }
-        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
       return res.status(200).json({
         success: true,

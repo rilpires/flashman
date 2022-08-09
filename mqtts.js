@@ -533,6 +533,23 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
   }
 };
 
+
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, ip, user) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const name = user.name.replace(/ /g, '_');
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'rawspeedtest ' + ip + ' ' + name + ' 3 15',
+      // Fix Timeout to 15 seconds
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message SPEEDTEST to ' + id);
+  }
+};
+
 mqtts.anlixMessageRouterWpsButton = function(id, state) {
   let wpsState = '1';
   if (state) {
