@@ -3288,7 +3288,7 @@ anlixDocumentReady.add(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.fire({
-              icon: res.type,
+              icon: (res.type === 'danger') ? 'warning' : res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3323,7 +3323,7 @@ anlixDocumentReady.add(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.fire({
-              icon: res.type,
+              icon: (res.type === 'danger') ? 'warning' : res.type,
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3432,7 +3432,7 @@ anlixDocumentReady.add(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.fire({
-              icon: (res.success ? 'success':'error'),
+              icon: (res.success) ? 'success' : 'error',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),

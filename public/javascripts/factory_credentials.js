@@ -35,7 +35,7 @@ const getCallback = function(event) {
       } else {
         // Show a modal warning
         swal.fire({
-          icon: res.type,
+          icon: (res.type === 'danger') ? 'warning' : res.type,
           title: res.message,
           confirmButtonColor: '#4db6ac',
         });
@@ -56,7 +56,7 @@ const setCallback = function(event) {
     success: function(res) {
       // Show a modal warning
       swal.fire({
-        icon: res.type,
+        icon: (res.type === 'danger') ? 'warning' : res.type,
         title: res.message,
         confirmButtonColor: '#4db6ac',
       });
