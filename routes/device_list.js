@@ -131,8 +131,9 @@ router.route('/license').post(
 
 // Set license status of desired CPEs
 router.route('/deleteandblock').post(
-  // TODO: adicionar permissão criando uma nova para bloquear licensas
-  deviceListController.deleteAndChangeLicenseStatus,
+  authController.ensurePermission('grantDeviceRemoval'),
+  authController.ensurePermission('grantDeviceLicenseBlock'),
+  deviceListController.delDeviceAndBlockLicense,
 );
 
 router.route('/export').get(
