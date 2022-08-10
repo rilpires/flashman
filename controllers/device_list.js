@@ -948,11 +948,22 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
 deviceListController.delDeviceReg = async function(req, res) {
   try {
+    let matchedConfig = await Config.findOne().lean();
+    let mustBlockAtRemoval =
+      ('blockLicenseAtDeviceRemoval' in matchedConfig) ?
+        matchedConfig.blockLicenseAtDeviceRemoval : false;
     let removeList = [];
     if (req.params.id) {
       removeList = [req.params.id];
     } else {
       removeList = req.body.ids;
+    }
+    // If mustBlockAtRemoval flag is true, then we must change the flow of
+    // delDeviceReg to do the license block with delDeviceAndBlockLicense
+    if (mustBlockAtRemoval) {
+      req.body.ids = removeList;
+      req.body.block = true;
+      return await deviceListController.delDeviceAndBlockLicense(req, res);
     }
     let devices = await DeviceModel.findByMacOrSerial(removeList);
     if (devices.length === 0) {
@@ -3654,16 +3665,12 @@ deviceListController.changeLicenseStatus = async function(req, res) {
 };
 
 deviceListController.getDeviceId = function(device) {
-  if (device.use_tr069 && device.alt_uid_tr069) {
-    return device.alt_uid_tr069;
-  } else if (device.use_tr069) {
-    return device.serial_tr069;
-  } else {
-    return device._id;
-  }
+  if (device.use_tr069) {
+    if (device.serial_tr069) return device.serial_tr069;
+  } else return device._id;
 };
 
-deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
+deviceListController.delDeviceAndBlockLicense = async function(req, res) {
   // Check request body
   if (!('ids' in req.body) || !('block' in req.body)) {
     return res.status(500).json({success: false, type: 'error',
@@ -3681,7 +3688,8 @@ deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
     // Get devices from ids
     let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
       // Use projection
-      {_id: true, mesh_master: true, mesh_slaves: true},
+      {_id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
+        mesh_master: true, mesh_slaves: true},
     );
     // Check if get at least one device
     if (matchedDevices.length === 0) {
@@ -3689,6 +3697,7 @@ deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
                                    message: t('cpesNotFound',
                                    {errorline: __line})});
     }
+    devIds = [];
     // Try to remove all devices
     for (let device of matchedDevices) {
       if (device.mesh_slaves && device.mesh_slaves.length > 0) {
@@ -3703,6 +3712,7 @@ deviceListController.deleteAndChangeLicenseStatus = async function(req, res) {
                                      message: t('operationUnsuccessful',
                                      {errorline: __line})});
       }
+      devIds.push(deviceListController.getDeviceId(device));
     }
     // Try to block all licenses
     let retObj =
