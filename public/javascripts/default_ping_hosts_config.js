@@ -33,6 +33,25 @@ const getDefaultPingHosts = function(event) {
   });
 };
 
+const setDefaultPingHosts = function(event) {
+  $.ajax({
+    type: 'POST',
+    url: '/devicelist/defaultpinghostslist',
+    dataType: 'json',
+    data: JSON.stringify({
+      default_ping_hosts_list: getDefaultPingHostsList('defaultPingHostsInfo'),
+    }),
+    contentType: 'application/json',
+    success: function(res) {
+      swal({
+        type: res.type,
+        title: res.message,
+        confirmButtonColor: '#4db6ac',
+      });
+    },
+  });
+};
+
 let buildHostsTable = function() {
   $('#default-hosts-config-table').empty();
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
@@ -74,7 +93,6 @@ const buildTableLine = function(host) {
 };
 
 window.removeHostFromTable = function(input) {
-  console.log('ola');
   let hostsTable = $('#default-hosts-config-table');
   let host = input.dataset['id'];
   let newDefaultPingHostsInfo =
@@ -82,11 +100,48 @@ window.removeHostFromTable = function(input) {
     .filter(
       (item) => (item != host),
     );
-    setDefaultPingHostsList('defaultPingHostsInfo', newDefaultPingHostsInfo);
-    hostsTable.find('[data-id="' + host + '"]').remove();
+  setDefaultPingHostsList('defaultPingHostsInfo', newDefaultPingHostsInfo);
+  hostsTable.find('[data-id="' + host + '"]').remove();
+};
+
+const addNewDefaultHost = function(event) {
+  let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
+  const newHost = $('#default-hosts-config-input').val();
+  if (!newHost || newHost == '') {
+    swal({
+      type: 'error',
+      title: t('emptyHostError'),
+      confirmButtonColor: '#4db6ac',
+    });
+  }
+  if (defaultPingHostsInfo.filter((item) => item == newHost).length > 0) {
+    swal({
+      type: 'error',
+      title: t('duplicatedHost', {host: newHost}),
+      confirmButtonColor: '#4db6ac',
+    });
+  } else {
+    buildTableLine(newHost);
+    defaultPingHostsInfo.push(newHost);
+    setDefaultPingHostsList('defaultPingHostsInfo', defaultPingHostsInfo);
+  }
 };
 
 anlixDocumentReady.add(function() {
+  // Lists the default hosts when the button that opens the modal is clicked
   $(document).on('click', '#default-hosts-config-button', (event) =>
-  getDefaultPingHosts(event));
+    getDefaultPingHosts(event));
+  // Submit button to apply changes
+  $(document).on('click', '#default-hosts-config-submit-button', (event) =>
+    setDefaultPingHosts(event));
+  // Remove all hosts from table
+  $(document).on('click', '#default-hosts-config-remove-all', function(event) {
+    setDefaultPingHostsList('defaultPingHostsInfo', []);
+    $('#default-hosts-config-table').empty();
+  });
+  // Add a new default host
+  $(document).on('click', '#default-hosts-config-add-button', function(event) {
+    addNewDefaultHost(event);
+    $('#default-hosts-config-input').val('');
+  });
 });

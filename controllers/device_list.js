@@ -3085,36 +3085,6 @@ deviceListController.getPingHostsList = function(req, res) {
   });
 };
 
-deviceListController.getDefaultPingHostsAtConfig = async function() {
-  let message = t('configGenericError', {errorline: __line});
-  let config = {};
-  try {
-    config = await Config.findOne(
-      {is_default: true}, {default_ping_hosts: true},
-    ).lean();
-  } catch (err) {
-    message = t('configFindError', {errorline: __line});
-  }
-  if (config && config.default_ping_hosts) {
-    return {success: true, hosts: config.default_ping_hosts};
-  }
-  return {success: false, message: message};
-};
-
-deviceListController.getDefaultPingHosts = async function(req, res) {
-  const getDefaultPingHosts =
-    await deviceListController.getDefaultPingHostsAtConfig();
-  if (getDefaultPingHosts.success) {
-    return res.status(200).json({
-      success: true,
-      default_ping_hosts_list: getDefaultPingHosts.hosts,
-    });
-  }
-  return res.status(200).json({
-    success: false, message: getDefaultPingHosts.message,
-  });
-};
-
 deviceListController.setPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   function(err, matchedDevice) {
@@ -3168,6 +3138,82 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     });
   });
+};
+
+deviceListController.getDefaultPingHostsAtConfig = async function() {
+  let message = t('configGenericError', {errorline: __line});
+  let config = {};
+  try {
+    config = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true},
+    ).lean();
+  } catch (err) {
+    message = t('configFindError', {errorline: __line});
+  }
+  if (config && config.default_ping_hosts) {
+    return {success: true, hosts: config.default_ping_hosts};
+  }
+  return {success: false, type: 'error', message: message};
+};
+
+deviceListController.getDefaultPingHosts = async function(req, res) {
+  const getDefaultPingHosts =
+    await deviceListController.getDefaultPingHostsAtConfig();
+  if (getDefaultPingHosts.success) {
+    return res.status(200).json({
+      success: true,
+      default_ping_hosts_list: getDefaultPingHosts.hosts,
+    });
+  }
+  return res.status(200).json({
+    success: false, message: getDefaultPingHosts.message,
+  });
+};
+
+deviceListController.setDefaultPingHosts = async function(req, res) {
+  Config.findOne({is_default: true}, {default_ping_hosts: true}).exec(
+    function(err, matchedConfig) {
+      console.log(matchedConfig);
+      if (err) {
+        return res.status(200).json({
+          success: false, type: 'error',
+          message: t('configFindError', {errorline: __line}),
+        });
+      }
+      if (!util.isJSONObject(req.body)) {
+        return res.status(200).json({
+          success: false, type: 'error',
+          message: t('jsonError', {errorline: __line}),
+        });
+      }
+      if (!req.body.default_ping_hosts_list) {
+        return res.status(200).json({
+          success: false, type: 'error',
+          message: t('configNotFound', {errorline: __line}),
+        });
+      }
+      let hosts = req.body.default_ping_hosts_list;
+      let approvedHosts = [];
+      hosts.forEach((host) => {
+        host = host.toLowerCase();
+        if (host.match(util.fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedConfig.default_ping_hosts = approvedHosts;
+      matchedConfig.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false, type: 'error',
+            message: t('configSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true, type: 'success',
+          message: t('operationSuccessful'),
+        });
+      });
+    });
 };
 
 deviceListController.getLanDevices = async function(req, res) {
