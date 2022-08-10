@@ -199,7 +199,7 @@ anlixDocumentReady.add(function() {
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
-  let mustBlockAtRemoval = false;
+  let mustBlockLicenseAtRemoval = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -1272,6 +1272,8 @@ anlixDocumentReady.add(function() {
           displayAlertMsg(res);
           return;
         }
+        setConfigStorage(
+          'mustBlockLicenseAtRemoval', res.mustBlockLicenseAtRemoval);
         setConfigStorage('ssidPrefix', res.ssidPrefix);
         setConfigStorage('isSsidPrefixEnabled', res.isSsidPrefixEnabled);
         // ssid prefix in new device form
@@ -3245,16 +3247,15 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '.btn-trash', function(event) {
-    // TODO: checar o porque disso não estar funcionando
-    mustBlockAtRemoval = (
-      getConfigStorage('blockLicenseAtDeviceRemoval') === true ||
-      getConfigStorage('blockLicenseAtDeviceRemoval') === 'true'
+    mustBlockLicenseAtRemoval = (
+      getConfigStorage('mustBlockLicenseAtRemoval') === true ||
+      getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
     ) ? true : false;
 
     let willShowDeleteAndBlock =
-      !mustBlockAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
+      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
     let willShowDelete =
-      mustBlockAtRemoval || (isSuperuser || grantDeviceRemoval);
+      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceRemoval);
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     swal.fire({
@@ -3274,7 +3275,7 @@ anlixDocumentReady.add(function() {
       cancelButtonColor: '#4db6ac', // verdinho
       showCancelButton: true,
       // helper
-      footer: mustBlockAtRemoval ?
+      footer: mustBlockLicenseAtRemoval ?
         '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
         'ter suas licenças bloqueadas.'+'</p>' :
         '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
@@ -3327,16 +3328,15 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
-    // TODO: checar o porque disso não estar funcionando
-    mustBlockAtRemoval = (
-      getConfigStorage('blockLicenseAtDeviceRemoval') === true ||
-      getConfigStorage('blockLicenseAtDeviceRemoval') === 'true'
+    mustBlockLicenseAtRemoval = (
+      getConfigStorage('mustBlockLicenseAtRemoval') === true ||
+      getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
     ) ? true : false;
 
     let willShowDeleteAndBlock =
-      !mustBlockAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
+      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
     let willShowDelete =
-      mustBlockAtRemoval || (isSuperuser || grantDeviceRemoval);
+      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceRemoval);
     swal.fire({
       icon: 'warning',
       title: t('Attention!'),
@@ -3354,7 +3354,7 @@ anlixDocumentReady.add(function() {
       cancelButtonColor: '#4db6ac', // verdinho
       showCancelButton: true,
       // helper
-      footer: mustBlockAtRemoval ?
+      footer: mustBlockLicenseAtRemoval ?
         '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
         'ter suas licenças bloqueadas.'+'</p>' :
         '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
