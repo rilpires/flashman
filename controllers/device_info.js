@@ -1917,7 +1917,7 @@ deviceInfoController.getPingHosts = function(req, res) {
       }
     });
   } else {
-    console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+    console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
       'failed: Client Secret not match!');
     return res.status(401).json({success: false});
   }
