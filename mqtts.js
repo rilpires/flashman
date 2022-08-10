@@ -534,7 +534,7 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
 };
 
 
-mqtts.anlixMessageRouterSpeedTestRaw = function(id, ip, user) {
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, user) {
   const serverId = findServerId(id);
   if (serverId !== null) {
     const name = user.name.replace(/ /g, '_');
@@ -542,8 +542,8 @@ mqtts.anlixMessageRouterSpeedTestRaw = function(id, ip, user) {
       id: id,
       qos: 2,
       retain: true,
-      payload: 'rawspeedtest ' + ip + ' ' + name + ' 3 15',
-      // Fix Timeout to 15 seconds
+      payload: 'rawspeedtest ' + ' ' + name + ' 3 15',
+      // Fix parallel connections to 3 and timeout to 15 seconds
     };
     toPublishPacket(serverId, packet);
     debug('MQTT SEND Message SPEEDTEST to ' + id);
