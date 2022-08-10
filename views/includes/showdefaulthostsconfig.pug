@@ -27,6 +27,12 @@
                 type="text",
               )#default-hosts-config-input
               .invalid-feedback Endereço inválido
+          //- Toggle tip
+          .row-md-1
+            a.fas.fa-question-circle.mr-4(
+                data-toggle="tooltip",
+                title=t('targetAddressesTooltip'),
+              )
         .row.mt-1.justify-content-center.align-items-center.flexwrap
           //- Apply button
           #default-hosts-config-add-button.button.btn.btn-primary(
@@ -37,7 +43,7 @@
         
         //- Hosts table
         .table-responsive
-          table.table
+          table.table.mb-1
             //- Table head
             thead
               tr
@@ -58,11 +64,11 @@
             //- Table body
             tbody#default-hosts-config-table
       
-        hr
+        hr.mt-0
         .row.justify-content-center.align-items-center.flexwrap
           .col-md-9
             //- Alert
-            .alert.alert-danger
+            .alert.alert-danger.mb-0
               .fas.fa-exclamation-triangle.fa-lg
               span &nbsp; #{t('defaultHostsConfigWarning')}
           .col-md-3
