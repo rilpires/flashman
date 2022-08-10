@@ -3265,19 +3265,19 @@ anlixDocumentReady.add(function() {
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      // remove and block
+      // Remove and block button
       confirmButtonText: t('removeAndBlock'),
-      confirmButtonColor: '#ff3547', // vermelho
+      confirmButtonColor: '#ff3547',
       showConfirmButton: willShowDeleteAndBlock,
-      // just remove
+      // Just remove button
       denyButtonText: t('Remove'),
-      denyButtonColor: '#f2ab63', // laranjinha
+      denyButtonColor: '#f2ab63',
       showDenyButton: willShowDelete,
-      // cancel
+      // Cancel button
       cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#4db6ac', // verdinho
+      cancelButtonColor: '#4db6ac',
       showCancelButton: true,
-      // helper
+      // Helper at footer
       footer: mustBlockLicenseAtRemoval ?
         '<p>'+t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning')+'</p>' :
         '<p>'+singleOrMultipleWarning+'</p>',
@@ -3289,7 +3289,7 @@ anlixDocumentReady.add(function() {
     let id = row.data('deviceid');
     swal.fire(deviceRemovalSwal(false)).then((result)=>{
       if (result.isConfirmed) {
-        // block and delete...
+        // Block and delete...
         $.ajax({
           url: '/devicelist/deleteandblock',
           type: 'POST',
@@ -3310,7 +3310,7 @@ anlixDocumentReady.add(function() {
           });
         });
       } else if (result.isDenied) {
-        // just delete...
+        // Just delete...
         $.ajax({
           type: 'POST',
           url: '/devicelist/delete',
@@ -3337,7 +3337,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#btn-trash-multiple', function(event) {
     swal.fire(deviceRemovalSwal(true)).then((result)=>{
       if (result.isConfirmed) {
-        // block and delete...
+        // Block and delete...
         $.ajax({
           url: '/devicelist/deleteandblock',
           type: 'POST',
@@ -3358,7 +3358,7 @@ anlixDocumentReady.add(function() {
           });
         });
       } else if (result.isDenied) {
-        // just delete...
+        // Just delete...
         $.ajax({
           type: 'POST',
           url: '/devicelist/delete',

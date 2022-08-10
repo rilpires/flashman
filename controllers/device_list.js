@@ -3717,9 +3717,10 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
                                      message: t('operationUnsuccessful',
                                      {errorline: __line})});
       }
+      // Pushing device's real id (at license control) to devIds array
       devIds.push(deviceListController.getDeviceId(device));
     }
-    // Try to block all licenses
+    // Try to block all licenses of devices inside devIds
     let retObj =
       await controlApi.changeLicenseStatus(req.app, newBlockStatus, devIds);
     if (!retObj.success) {
