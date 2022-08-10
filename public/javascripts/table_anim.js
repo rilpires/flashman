@@ -3246,7 +3246,7 @@ anlixDocumentReady.add(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  $(document).on('click', '.btn-trash', function(event) {
+  let deviceRemovalSwal = function(isMultiple = false) {
     mustBlockLicenseAtRemoval = (
       getConfigStorage('mustBlockLicenseAtRemoval') === true ||
       getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
@@ -3256,18 +3256,21 @@ anlixDocumentReady.add(function() {
       !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
     let willShowDelete =
       mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceRemoval);
-    let row = $(event.target).parents('tr');
-    let id = row.data('deviceid');
-    swal.fire({
+
+    let singleOrMultipleWarning = (isMultiple) ?
+      t('removeDevicesAndBlockLicensesWarning') :
+      t('removeDeviceAndBlockLicenseWarning');
+
+    return {
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
       // remove and block
-      confirmButtonText: 'Remover e bloquear',
+      confirmButtonText: t('removeAndBlock'),
       confirmButtonColor: '#ff3547', // vermelho
       showConfirmButton: willShowDeleteAndBlock,
       // just remove
-      denyButtonText: 'Remover',
+      denyButtonText: t('Remove'),
       denyButtonColor: '#f2ab63', // laranjinha
       showDenyButton: willShowDelete,
       // cancel
@@ -3276,11 +3279,15 @@ anlixDocumentReady.add(function() {
       showCancelButton: true,
       // helper
       footer: mustBlockLicenseAtRemoval ?
-        '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
-        'ter suas licenças bloqueadas.'+'</p>' :
-        '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
-        'a CPE, sua licença também sera bloqueada'+'</p>',
-    }).then((result)=>{
+        '<p>'+t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning')+'</p>' :
+        '<p>'+singleOrMultipleWarning+'</p>',
+    };
+  };
+
+  $(document).on('click', '.btn-trash', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    swal.fire(deviceRemovalSwal(false)).then((result)=>{
       if (result.isConfirmed) {
         // block and delete...
         $.ajax({
@@ -3328,38 +3335,7 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
-    mustBlockLicenseAtRemoval = (
-      getConfigStorage('mustBlockLicenseAtRemoval') === true ||
-      getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
-    ) ? true : false;
-
-    let willShowDeleteAndBlock =
-      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
-    let willShowDelete =
-      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceRemoval);
-    swal.fire({
-      icon: 'warning',
-      title: t('Attention!'),
-      text: t('sureYouWantToRemoveRegister?'),
-      // remove and block
-      confirmButtonText: 'Remover e bloquear',
-      confirmButtonColor: '#ff3547', // vermelho
-      showConfirmButton: willShowDeleteAndBlock,
-      // just remove
-      denyButtonText: 'Remover',
-      denyButtonColor: '#f2ab63', // laranjinha
-      showDenyButton: willShowDelete,
-      // cancel
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#4db6ac', // verdinho
-      showCancelButton: true,
-      // helper
-      footer: mustBlockLicenseAtRemoval ?
-        '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
-        'ter suas licenças bloqueadas.'+'</p>' :
-        '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
-        'a CPE, sua licença também sera bloqueada'+'</p>',
-    }).then((result)=>{
+    swal.fire(deviceRemovalSwal(true)).then((result)=>{
       if (result.isConfirmed) {
         // block and delete...
         $.ajax({
