@@ -3270,7 +3270,7 @@ anlixDocumentReady.add(function() {
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: 'Deletar e bloquear licença',
+      confirmButtonText: t('OK'),
       confirmButtonColor: '#4db6ac',
       cancelButtonText: t('Cancel'),
       cancelButtonColor: '#f2ab63',
