@@ -189,6 +189,7 @@ anlixDocumentReady.add(function() {
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
+  let grantDeviceLicenseBlock = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
@@ -198,6 +199,7 @@ anlixDocumentReady.add(function() {
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
+  let mustBlockAtRemoval = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -222,6 +224,7 @@ anlixDocumentReady.add(function() {
     grantSiteSurveyAccess = role.grantSiteSurvey;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
+    grantDeviceLicenseBlock = role.grantDeviceLicenseBlock;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
@@ -3242,22 +3245,40 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '.btn-trash', function(event) {
+    // TODO: checar o porque disso não estar funcionando
+    mustBlockAtRemoval = (
+      getConfigStorage('blockLicenseAtDeviceRemoval') === true ||
+      getConfigStorage('blockLicenseAtDeviceRemoval') === 'true'
+    ) ? true : false;
+
+    let willShowDeleteAndBlock =
+      !mustBlockAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
+    let willShowDelete =
+      mustBlockAtRemoval || (isSuperuser || grantDeviceRemoval);
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     swal.fire({
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
+      // remove and block
       confirmButtonText: 'Remover e bloquear',
       confirmButtonColor: '#ff3547', // vermelho
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#4db6ac', // verdinho
+      showConfirmButton: willShowDeleteAndBlock,
+      // just remove
       denyButtonText: 'Remover',
       denyButtonColor: '#f2ab63', // laranjinha
+      showDenyButton: willShowDelete,
+      // cancel
+      cancelButtonText: t('Cancel'),
+      cancelButtonColor: '#4db6ac', // verdinho
       showCancelButton: true,
-      // TODO: based on permission
-      showDenyButton: true,
-      footer: '<p>'+'Ao bloquear a licença ... lorem ipsum'+'</p>',
+      // helper
+      footer: mustBlockAtRemoval ?
+        '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
+        'ter suas licenças bloqueadas.'+'</p>' :
+        '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
+        'a CPE, sua licença também sera bloqueada'+'</p>',
     }).then((result)=>{
       if (result.isConfirmed) {
         // block and delete...
@@ -3306,20 +3327,38 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
+    // TODO: checar o porque disso não estar funcionando
+    mustBlockAtRemoval = (
+      getConfigStorage('blockLicenseAtDeviceRemoval') === true ||
+      getConfigStorage('blockLicenseAtDeviceRemoval') === 'true'
+    ) ? true : false;
+
+    let willShowDeleteAndBlock =
+      !mustBlockAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
+    let willShowDelete =
+      mustBlockAtRemoval || (isSuperuser || grantDeviceRemoval);
     swal.fire({
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
+      // remove and block
       confirmButtonText: 'Remover e bloquear',
       confirmButtonColor: '#ff3547', // vermelho
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#4db6ac', // verdinho
+      showConfirmButton: willShowDeleteAndBlock,
+      // just remove
       denyButtonText: 'Remover',
       denyButtonColor: '#f2ab63', // laranjinha
+      showDenyButton: willShowDelete,
+      // cancel
+      cancelButtonText: t('Cancel'),
+      cancelButtonColor: '#4db6ac', // verdinho
       showCancelButton: true,
-      // TODO: based on permission
-      showDenyButton: true,
-      footer: '<p>'+'Ao bloquear a licença ... lorem ipsum'+'</p>',
+      // helper
+      footer: mustBlockAtRemoval ?
+        '<p>'+'O administrador definiu que todas as CPEs removidas devem '+
+        'ter suas licenças bloqueadas.'+'</p>' :
+        '<p>'+'Ao selecionar a opção "Remover e bloquear", além de remover '+
+        'a CPE, sua licença também sera bloqueada'+'</p>',
     }).then((result)=>{
       if (result.isConfirmed) {
         // block and delete...

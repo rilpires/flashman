@@ -291,6 +291,16 @@ anlixDocumentReady.add(function() {
       }
       $(`select[name=selected-language] option[value=${resp.language}]`)
         .attr('selected', '');
+      if (resp.blockLicenseAtDeviceRemoval) {
+        let blockLicenseAtRemoval = (
+          resp.blockLicenseAtDeviceRemoval === true ||
+          resp.blockLicenseAtDeviceRemoval === 'true'
+        ) ? true : false;
+        $(`select[name=must-block-license-at-removal] `+
+          `option[value=${blockLicenseAtRemoval}]`)
+        .attr('selected', 'selected');
+        setConfigStorage('blockLicenseAtDeviceRemoval', blockLicenseAtRemoval);
+      }
     },
   });
 
