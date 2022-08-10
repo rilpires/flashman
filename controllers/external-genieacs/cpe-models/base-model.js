@@ -73,6 +73,7 @@ basicCPEModel.modelPermissions = function() {
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
     },
     wifi: {
+      allowDiacritics: false, // allows accented chars for ssid and password
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13
