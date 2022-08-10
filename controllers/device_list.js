@@ -3386,7 +3386,7 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
-        if (customUrl !== '') {
+        if (customUrl !== '' && permissions.grantRawSpeedTest) {
           mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
         } else {
           let url = matchedConfig.measureServerIP + ':' +
