@@ -69,6 +69,10 @@ router.route('/receive/wps').post(
 // SpeedTest
 router.route('/receive/speedtestresult').post(
   deviceInfoController.receiveSpeedtestResult);
+
+// SpeedTest Hosts
+router.route('/get/speedtesthost').post(deviceInfoController.getSpeedtestHost);
+
 router.use('/app', require('./app_api'));
 
 module.exports = router;

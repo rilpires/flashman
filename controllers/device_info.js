@@ -1923,6 +1923,49 @@ deviceInfoController.getPingHosts = function(req, res) {
   }
 };
 
+
+// Return the speedtest host
+deviceInfoController.getSpeedtestHost = function(request, response) {
+  // Verify secret and find device
+  if (request.body.secret == request.app.locals.secret) {
+    DeviceModel.findById(request.body.id, function(err, matchedDevice) {
+      // Error trying to find the device
+      if (err) {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: Cant get device profile.');
+        return response.status(400).json({success: false});
+      }
+
+      // Could not find the device
+      if (!matchedDevice) {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: No device found.');
+        return response.status(404).json({success: false});
+      }
+
+      // Check and send the URL
+      if (matchedDevice.temp_command_trap.speedtest_url) {
+        return response.status(200).json({
+          'success': true,
+          'host': matchedDevice.temp_command_trap.speedtest_url,
+        });
+
+      // Empty URL
+      } else {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: No host found.');
+        return response.status(404).json({success: false});
+      }
+    });
+
+  // Invalid secret
+  } else {
+    console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+      'failed: Client Secret not match!');
+    return response.status(401).json({success: false});
+  }
+};
+
 deviceInfoController.getUpnpDevsPerm = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
