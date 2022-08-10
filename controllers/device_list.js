@@ -909,6 +909,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     device.isSsidPrefixEnabled == true);
                 });
 
+                let mustBlockLicenseAtRemoval = (
+                  matchedConfig.blockLicenseAtDeviceRemoval === true
+                ) ? true : false;
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -922,6 +926,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  mustBlockLicenseAtRemoval: mustBlockLicenseAtRemoval,
                   ponConfig: {
                     ponSignalThreshold:
                       matchedConfig.tr069.pon_signal_threshold,
