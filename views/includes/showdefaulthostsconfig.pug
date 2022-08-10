@@ -7,7 +7,7 @@
         p.heading.lead
 
           //- Icon
-          span.fas.fa-key.fa-lg
+          span.fas.fa-stethoscope.fa-lg
 
           //- Tittle
           strong &nbsp; #{t('defaultHostsConfig')}
@@ -28,7 +28,7 @@
               )#default-hosts-config-input
               .invalid-feedback Endereço inválido
           //- Toggle tip
-          .row-md-1
+          .row-md-1.black-text
             a.fas.fa-question-circle.mr-4(
                 data-toggle="tooltip",
                 title=t('targetAddressesTooltip'),
@@ -42,7 +42,7 @@
             span &nbsp; #{t('Add')}
         
         //- Hosts table
-        .table-responsive
+        .table-responsive#default-hosts-table-show
           table.table.mb-1
             //- Table head
             thead
@@ -60,9 +60,15 @@
                     type='button',
                   )#default-hosts-config-remove-all
                     .fas.fa-trash.fa-lg
-
+                    
             //- Table body
             tbody#default-hosts-config-table
+        
+        //- Empty default_hosts_list message
+        .row.my-3#default-hosts-config-table-hide
+          .col
+            h5.text-center
+              span= t('noDefaultAddressesConfigured')
       
         hr.mt-0
         .row.justify-content-center.align-items-center.flexwrap

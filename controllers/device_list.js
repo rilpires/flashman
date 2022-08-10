@@ -3203,11 +3203,13 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
           message = t('configSaveError', {errorline: __line});
         }
       });
-      const overwritePingHosts =
-        await deviceListController.overwritePingHosts(approvedHosts);
-      if (!overwritePingHosts.success) {
-        success = false; type = 'error';
-        message = t('deviceSaveError', {errorline: __line});
+      if (approvedHosts.length) {
+        const overwritePingHosts =
+          await deviceListController.overwritePingHosts(approvedHosts);
+        if (!overwritePingHosts.success) {
+          success = false; type = 'error';
+          message = t('deviceSaveError', {errorline: __line});
+        }
       }
     });
     return res.status(200).json({
