@@ -2316,21 +2316,19 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if (
-              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
-              (
-                (
-                  matchedDevice.wifi_state == 0 &&
-                  JSON.stringify(changes.wifi2) != '{}' &&
-                  JSON.stringify(changes.wifi2) != '{"enable":0}'
-                ) ||
-                (
-                  matchedDevice.wifi_state_5ghz == 0 &&
-                  JSON.stringify(changes.wifi5) != '{}' &&
-                  JSON.stringify(changes.wifi5) != '{"enable":0}'
-                )
-              )
-            ) {
+            let isWifi2DisabledAndChangingSomething = (
+              matchedDevice.wifi_state == 0 &&
+              JSON.stringify(changes.wifi2) != '{}' &&
+              JSON.stringify(changes.wifi2) != '{"enable":0}'
+            );
+            let isWifi5DisabledAndChangingSomething = (
+              matchedDevice.wifi_state_5ghz == 0 &&
+              JSON.stringify(changes.wifi5) != '{}' &&
+              JSON.stringify(changes.wifi5) != '{"enable":0}'
+            );
+            if (cpe.modelPermissions().wifi.mustBeEnabledToConfigure
+              && (isWifi2DisabledAndChangingSomething ||
+                  isWifi5DisabledAndChangingSomething)) {
               return res.status(500).json({
                 success: false,
                 message: t('enabledToModifyFields',
