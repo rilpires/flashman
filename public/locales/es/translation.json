@@ -70,6 +70,7 @@
 	"meshSecondaryUpdateError": "Este CPE es secundario en una red mesh, su actualización debe hacerse desde el CPE principal de esa red",
 	"functionToSetSlaveToUpdate": "Esta función solo debe usarse para marcar un CPE secundario para actualizar, no para cancelar la actualización",
 	"firmwareDownloadStockError": "Error al descargar el firmware de fábrica",
+	"firmwareDownloadError": "Error al descargar el firmware",
 	"commandOnlyWorksInsideSession": "¡Este comando solo funciona en una sesión!",
 	"connectionTypeShouldBePppoeDhcp": "El tipo de conexión debe ser \"pppoe\" o \"dhcp\"",
 	"enableWifiToConfigureMesh": "Para configurar este tipo de mesh es necesario habilitar todas las Wi-Fi",
@@ -158,9 +159,11 @@
 	"searchingTopology": "Busucando topología",
 	"downloadingFirmware": "Descargando firmware",
 	"updatingCpe": "Actualizando CPE",
+	"updatingCpes": "Actualizando CPEs",
 	"updatedSuccessfully": "Actualizado exitosamente",
 	"errorDuringUpdate": "Hubo un error al actualizar",
 	"errorDuringTopologyValidation": "Ocurrió un error al validar la topología",
+	"errorDuringTopologyCollect": "Ocurrió un error al recolectar la topología",
 	"updateStartFailedMeshNetwork": "Error al iniciar la actualización de la red mesh",
 	"updateAborted": "Actualización abortada",
 	"updateAbortedCpeOffline": "Actualización cancelada: CPE estaba offline",
@@ -1013,5 +1016,9 @@
 	"factoryCredentialsGenericError": "Ocurrió un error al intentar obtener las configuraciones de credenciales web personalizadas",
 	"duplicatedCredentials": "El modelo {{-model}} ya tiene las credenciales configuradas",
 	"invalidModel": "Modelo no valido",
-	"invalidManufacturer": "Fabricante no valido"
+	"invalidManufacturer": "Fabricante no valido",
+	"updateSingleDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos. El CPE no debe apagarse durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
+	"updateSlaveDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos para cada CPE. Esta actualización afectará a todos los {{slaveCount}} enrutadores de la red en malla y tardará unos {{slaveCount3}} minutos en total. No se debe apagar ningún CPE durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
+	"updateDeviceMeshError": "El proceso de actualización de la red en malla se interrumpió. No recomendamos dejar los CPE de malla de la misma red en diferentes versiones, así que asegúrese de que esta actualización se reanude pronto.",
+	"updateDeviceFirmwareErrorWithMAC": "Ocurrió un error al descargar el firmware de CPE con MAC {{errorMac}}. Vuelva a intentarlo o cancele el procedimiento."
 }
