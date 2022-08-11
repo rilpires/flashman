@@ -1812,6 +1812,7 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   let permissions = DeviceVersion.devicePermissions(device);
   const hasMeshVAPObject = permissions.grantMeshVAPObject;
+  const hasMeshV2ModeWifi = permissions.grantMeshV2PrimaryModeWifi;
   /*
     If device doesn't have SSID Object by default, then
     we need to check if it has been created already.
@@ -1821,7 +1822,8 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     objects don't exist yet this will cause an error!
   */
   let createOk = {populate: false};
-  if (!hasMeshVAPObject && targetMode > 0) {
+  if (!hasMeshVAPObject && hasMeshV2ModeWifi
+     && targetMode > 1) {
     createOk = await acsMeshDeviceHandler.createVirtualAPObjects(device);
     if (!createOk.success) {
       return {success: false, msg: createOk.msg};
