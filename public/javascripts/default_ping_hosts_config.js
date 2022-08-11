@@ -22,6 +22,7 @@ const getDefaultPingHosts = function(event) {
           );
         }
         buildHostsTable();
+        defaultHostsTableToggle();
       } else {
         swal({
           type: res.type,
@@ -31,6 +32,17 @@ const getDefaultPingHosts = function(event) {
       }
     },
   });
+};
+
+const defaultHostsTableToggle = function(addingNewDevice = false) {
+  if (getDefaultPingHostsList('defaultPingHostsInfo').length > 0 ||
+      addingNewDevice) {
+    $('#default-hosts-config-table-hide').hide();
+    $('#default-hosts-config-table').show();
+  } else if (getDefaultPingHostsList('defaultPingHostsInfo').length == 0) {
+    $('#default-hosts-config-table-hide').show();
+    $('#default-hosts-config-table').hide();
+  }
 };
 
 const setDefaultPingHosts = function(event) {
@@ -102,9 +114,11 @@ window.removeHostFromTable = function(input) {
     );
   setDefaultPingHostsList('defaultPingHostsInfo', newDefaultPingHostsInfo);
   hostsTable.find('[data-id="' + host + '"]').remove();
+  defaultHostsTableToggle();
 };
 
 const addNewDefaultHost = function(event) {
+  defaultHostsTableToggle(true);
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
   const newHost = $('#default-hosts-config-input').val();
   if (!newHost || newHost == '') {
@@ -137,6 +151,7 @@ anlixDocumentReady.add(function() {
   // Remove all hosts from table
   $(document).on('click', '#default-hosts-config-remove-all', function(event) {
     setDefaultPingHostsList('defaultPingHostsInfo', []);
+    defaultHostsTableToggle();
     $('#default-hosts-config-table').empty();
   });
   // Add a new default host

@@ -1015,6 +1015,7 @@
 	"defaultHostsConfig": "Configuração de destinos padrão para testes de latencia",
 	"defaultHostsConfigWarning": "Cuidado! Este procedimento irá sobrescrever os destinos de teste de latência para todos os dispositivos cadastrados na base.",
 	"defaultHosts": "Endereços padrão de destino",
+	"noDefaultAddressesConfigured": "Nenhum endereço padrão configurado",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido"
 }
