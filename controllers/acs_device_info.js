@@ -309,13 +309,15 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
-  // Add hard coded default hosts in a new record
-  let defaultPingHosts = [
-    'www.google.com',
-    'www.youtube.com',
-    'www.facebook.com',
-    'www.instagram.com',
-  ];
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  if (defaultPingHosts.length === 0 || defaultPingHosts == undefined) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
+  }
 
   let newDevice = new DeviceModel({
     _id: macAddr,
