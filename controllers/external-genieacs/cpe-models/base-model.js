@@ -264,10 +264,6 @@ basicCPEModel.convertPPPoEEnable = function(pppoe) {
   return pppoe;
 };
 
-// Iterate over the objects inside "fields" until reaches a key (String type).
-// If reaches an Array, do nothing, because the Strings inside the Arrays
-// are the last part of the key, the default value for the key and the
-// datatype of the key, respectivetly.
 basicCPEModel.convertIGDtoDevice = function(fields) {
   Object.keys(fields).forEach((k) => {
     if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {
