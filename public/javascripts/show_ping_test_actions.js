@@ -32,11 +32,10 @@ const removeHost = function(hostList, editedHostList) {
   let deletedHost = hostList.filter((x) => !editedHostList.includes(x));
   let defaultHostList = getDefaultPingHostsList('defaultPingHostsInfo');
   if (defaultHostList.some((r) => deletedHost.includes(r))) {
-    let errorMessage = t('Não é possível remover um endereço padrão');
     $('#hosts-list')[0].selectize.addOption(
       {value: deletedHost, text: deletedHost});
     $('#hosts-list')[0].selectize.addItem(deletedHost);
-    $('#hosts-list-invalid-feedback').html(errorMessage);
+    $('#hosts-list-invalid-feedback').html(t('unableToRemoveADefaultHost'));
     $('#hosts-list').removeClass('is-valid').addClass('is-invalid');
   } else {
     setPingHostsList('pingHostsInfo', editedHostList);

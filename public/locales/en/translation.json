@@ -294,7 +294,7 @@
 	"cpeWithoutFunction": "CPE does not have this function! ({{errorline}})",
 	"cpeNotOnline": "CPE is not online! ({{errorline}})",
 	"configFindError": "Error fetching configuration ({{errorline}})",
-	"configNotFoud": "Configuration not found ({{errorline}})",
+	"configNotFound": "Configuration not found ({{errorline}})",
 	"configSaveError": "Error saving configuration ({{errorline}})",
 	"configUpdateError": "Error saving settings ({{errorline}})",
 	"acRuleLimits": "The device limit blocked for this CPE has been reached. ({{errorline}})",

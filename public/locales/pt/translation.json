@@ -294,7 +294,8 @@
 	"cpeWithoutFunction": "CPE não possui essa função! ({{errorline}})",
 	"cpeNotOnline": "CPE não está online! ({{errorline}})",
 	"configFindError": "Erro ao buscar configuração ({{errorline}})",
-	"configNotFoud": "Configuração não encontrada ({{errorline}})",
+	"configGenericError": "Ocorreu um erro ao obter as configurações do usuário ({{errorline}})",
+	"configNotFound": "Configuração não encontrada ({{errorline}})",
 	"configSaveError": "Erro ao salvar configuração ({{errorline}})",
 	"configUpdateError": "Erro salvando configurações ({{errorline}})",
 	"acRuleLimits": "O limite de dispositivos bloqueados para essa CPE foi atingido. ({{errorline}})",
@@ -1015,7 +1016,9 @@
 	"defaultHostsConfig": "Configuração de destinos padrão para testes de latencia",
 	"defaultHostsConfigWarning": "Cuidado! Este procedimento irá sobrescrever os destinos de teste de latência para todos os dispositivos cadastrados na base.",
 	"defaultHosts": "Endereços padrão de destino",
-	"noDefaultAddressesConfigured": "Nenhum endereço padrão configurado",
+	"noDefaultHostsConfigured": "Nenhum endereço padrão configurado",
+	"unableToRemoveADefaultHost": "Não é possível remover um endereço padrão",
+	"hostListMustContainDefaultHosts": "A lista de endereços deve conter os endereços padrão {{-hosts}}",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido"
 }
