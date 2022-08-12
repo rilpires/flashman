@@ -3087,7 +3087,7 @@ deviceListController.getPingHostsList = function(req, res) {
 
 deviceListController.setPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  function(err, matchedDevice) {
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
         success: false,
@@ -3124,6 +3124,19 @@ deviceListController.setPingHostsList = function(req, res) {
         approvedHosts.push(host);
       }
     });
+
+    // Check if approved hosts contains default hosts if configured
+    const getDefaultPingHosts =
+      await deviceListController.getDefaultPingHostsAtConfig();
+    if (getDefaultPingHosts.success &&
+        getDefaultPingHosts.hosts.length > 0 &&
+        !getDefaultPingHosts.hosts.some((x) => approvedHosts.includes(x))) {
+      return res.status(200).json({
+        success: false,
+        message: t('hostListMustContainDefaultHosts',
+          {hosts: getDefaultPingHosts.hosts, errorline: __line}),
+      });
+    }
     matchedDevice.ping_hosts = approvedHosts;
     matchedDevice.save(function(err) {
       if (err) {
@@ -3208,7 +3221,7 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
           await deviceListController.overwritePingHosts(approvedHosts);
         if (!overwritePingHosts.success) {
           success = false; type = 'error';
-          message = t('deviceSaveError', {errorline: __line});
+          message = t('cpeSaveError', {errorline: __line});
         }
       }
     });
@@ -3223,7 +3236,7 @@ deviceListController.overwritePingHosts = async function(approvedHosts) {
     devices = await DeviceModel.find();
   } catch (err) {
     return {success: false, type: 'error',
-      message: t('deviceFindError', {errorline: __line})};
+      message: t('cpeFindError', {errorline: __line})};
   }
   for (let device of devices) {
     device.ping_hosts = approvedHosts;
@@ -3231,7 +3244,7 @@ deviceListController.overwritePingHosts = async function(approvedHosts) {
       device.save();
     } catch (err) {
       return {success: false, type: 'error',
-        message: t('deviceSaveError', {errorline: __line})};
+        message: t('cpeSaveError', {errorline: __line})};
     }
   }
   return {success: true};
