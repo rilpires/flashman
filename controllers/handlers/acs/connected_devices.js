@@ -108,7 +108,6 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         let iface5 = fields.wifi5.ssid.replace('.SSID', '');
         let devices = [];
         hostKeys.forEach((i)=>{
-          console.log(i);
           let device = {};
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);

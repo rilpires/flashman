@@ -190,7 +190,9 @@ acsPortForwardHandler.checkPortForwardRules = async function(device) {
   }
 };
 
-acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rulesDiffLength, key) {
+acsPortForwardHandler.getLastIndexInterface = async function(
+  device, acsID, rulesDiffLength, key,
+) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let query = {_id: acsID};
@@ -232,16 +234,18 @@ acsPortForwardHandler.getLastIndexInterface = async function(device, acsID, rule
   req.end();
 };
 
-acsPortForwardHandler.getIPInterface = async function(device, rulesDiffLength, key) {
+acsPortForwardHandler.getIPInterface = async function(
+  device, rulesDiffLength, key,
+) {
   let acsID = device.acs_id;
   let task = {
     name: 'getParameterValues',
     parameterNames: [key],
   };
-  let cback=(acsID)=>acsPortForwardHandler.getLastIndexInterface(
+  let callback = (acsID) => acsPortForwardHandler.getLastIndexInterface(
     device, acsID, rulesDiffLength, key,
   );
-  let result = await TasksAPI.addTask(acsID, task, cback);
+  let result = await TasksAPI.addTask(acsID, task, callback);
   if (!result || !result.success) {
     return;
   }

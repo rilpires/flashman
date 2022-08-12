@@ -32,7 +32,9 @@ utilHandlers.getExtRefPattern = function(kind, data) {
   }
 };
 
-utilHandlers.checkForNestedKey = function(data, key, useLastIndexOnWildcard=false) {
+utilHandlers.checkForNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return false;
   let current = data;
   let splitKey = key.split('.');
@@ -58,7 +60,9 @@ utilHandlers.checkForNestedKey = function(data, key, useLastIndexOnWildcard=fals
   return true;
 };
 
-utilHandlers.getFromNestedKey = function(data, key, useLastIndexOnWildcard=false) {
+utilHandlers.getFromNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return undefined;
   let current = data;
   let splitKey = key.split('.');
@@ -84,7 +88,9 @@ utilHandlers.getFromNestedKey = function(data, key, useLastIndexOnWildcard=false
   return current;
 };
 
-utilHandlers.getLastIndexOfNestedKey = function(data, key, useLastIndexOnWildcard=false) {
+utilHandlers.getLastIndexOfNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
   let lastIndex = 0;
   Object.keys(tree).forEach((k) => {
