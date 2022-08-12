@@ -268,7 +268,6 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
   }
-  console.log(data.common);
   if (
     data.common.web_admin_password &&
     data.common.web_admin_password.writable &&
@@ -453,7 +452,6 @@ const createRegistry = async function(req, cpe, permissions) {
 // signal that GenieACS needs to collect information manually. For registered
 // CPEs, it calls requestSync to check for fields that need syncing.
 acsDeviceInfoController.informDevice = async function(req, res) {
-  console.log(req.body.acs_id);
   let dateNow = Date.now();
   let id = req.body.acs_id;
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
@@ -643,7 +641,6 @@ const requestSync = async function(device) {
     parameterNames.push(fields.common.stun_enable);
     parameterNames.push(fields.common.stun_udp_conn_req_addr);
   }
-  console.log(parameterNames);
   // Send task to GenieACS
   let task = {name: 'getParameterValues', parameterNames: parameterNames};
   let cback = (acsID)=>fetchSyncResult(acsID, dataToFetch, parameterNames, cpe);
