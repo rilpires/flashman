@@ -142,6 +142,10 @@ const generateSessionCredential = async (user) => {
     session.onuUserLogin = trConf.web_login_user || '';
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
+    session.onuPonThreshold = trConf.pon_signal_threshold;
+    session.onuPonThresholdCritical = trConf.pon_signal_threshold_critical;
+    session.onuPonThresholdCriticalHigh =
+      trConf.pon_signal_threshold_critical_high;
   }
   return session;
 };
