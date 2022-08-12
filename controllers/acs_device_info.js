@@ -652,6 +652,7 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
   if (typeof field === 'undefined') return {};
   let obj = utilHandlers.getFromNestedKey(data, field, useLastIndexOnWildcard);
   if (typeof obj === 'undefined') return {};
+  if (!('_value' in obj) || !('_writable' in obj)) return {};
   return {value: obj['_value'], writable: obj['_writable']};
 };
 
