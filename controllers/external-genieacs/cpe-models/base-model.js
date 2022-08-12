@@ -260,6 +260,10 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
+basicCPEModel.convertPPPoEEnable = function(pppoe) {
+  return pppoe;
+};
+
 basicCPEModel.convertIGDtoDevice = function(fields) {
   Object.keys(fields).forEach((k) => {
     if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {

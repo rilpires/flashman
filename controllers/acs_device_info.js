@@ -109,6 +109,8 @@ const createRegistry = async function(req, cpe, permissions) {
   let doChanges = false;
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    data.wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
     if (typeof data.wan.pppoe_enable.value === 'string') {
       hasPPPoE = (utilHandlers.isTrueValueString(data.wan.pppoe_enable.value));
     } else if (typeof data.wan.pppoe_enable.value === 'number') {
@@ -1044,6 +1046,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Process wan connection type, but only if data sent
   let hasPPPoE = null;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    data.wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
     if (typeof data.wan.pppoe_enable.value === 'string') {
       hasPPPoE = utilHandlers.isTrueValueString(data.wan.pppoe_enable.value);
     } else if (typeof data.wan.pppoe_enable.value === 'number') {

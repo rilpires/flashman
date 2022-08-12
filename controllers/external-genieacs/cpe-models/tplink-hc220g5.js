@@ -42,6 +42,10 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (rssiValue/2) - 110;
 };
 
+tplinkModel.convertPPPoEEnable = function(pppoe) {
+  return (pppoe.toLowerCase() === 'up') ? true : false;
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields = basicCPEModel.convertIGDtoDevice(fields);
@@ -52,7 +56,7 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
