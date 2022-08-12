@@ -32,9 +32,9 @@ const validateEditDeviceMesh = function(event) {
 };
 
 const openErrorSwal = function(message) {
-  swal({
-    type: 'error',
+  swal.fire({
     title: t('Error'),
+    icon: 'error',
     text: message,
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',

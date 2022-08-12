@@ -736,25 +736,25 @@ anlixDocumentReady.add(function() {
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
-          swal({
+          swal.fire({
             title: t('Success!'),
-            type: 'success',
+            icon: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
-          swal({
+          swal.fire({
             title: t('failedToApplyPortOpenning'),
             text: res.message,
-            type: 'error',
+            icon: 'error',
             confirmButtonColor: '#4db6ac',
           });
         }
       },
       error: function(xhr, status, error) {
-        swal({
+        swal.fire({
           title: t('failedToApplyPortOpenning'),
           text: error,
-          type: 'error',
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
       },
