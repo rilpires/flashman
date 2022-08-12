@@ -121,7 +121,7 @@ const addNewDefaultHost = function(event) {
   defaultHostsTableToggle(true);
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
   const newHost = $('#default-hosts-config-input').val();
-  if (!newHost || newHost == '') {
+  if (!newHost || newHost === '') {
     swal({
       type: 'error',
       title: t('emptyHostError'),
