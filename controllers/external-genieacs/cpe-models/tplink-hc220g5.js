@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = Object.assign({}, basicCPEModel);
 
-tplinkModel.identifier = 'TP-Link HC220-G5';
+tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
