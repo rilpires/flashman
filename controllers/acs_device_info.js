@@ -1455,7 +1455,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Bypass if recovering from hard reset
     let acceptLocalChanges = false;
     if (wasRecoveringHardReset || !acceptLocalChanges) {
-      // await acsDeviceInfoController.updateInfo(device, changes);
+      await acsDeviceInfoController.updateInfo(device, changes);
     }
   }
 
