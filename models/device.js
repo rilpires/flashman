@@ -233,17 +233,7 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  // When ping_hosts has at least one value or speedtest_url != '',
-  // the next ping/speedtest result should NOT be sent to the usual
-  // configured traps. Furthermore, if webhook_* fields are set,
-  // send the results to this webhook. Then unset every subfield
-  temp_command_trap: {
-    ping_hosts: [String],
-    speedtest_url: {type: String, default: ''},
-    webhook_url: {type: String, default: ''},
-    webhook_user: {type: String, default: ''},
-    webhook_secret: {type: String, default: ''},
-  },
+  
   // Store pingtest results
   pingtest_results: [{
     host: String,
@@ -273,16 +263,21 @@ let deviceSchema = new Schema({
     unique_id: String,
     error: String,
   },
-  // The object bellow is used to save the user that requested the speedtest
-  // and to indicate what time the speedtest was requested. The timestamp is
-  // used to compare which diagnostic was requested.
-  // If current_speedtest.timestamp > speedtest_results.timestamp, then the
-  // speedtest was requested, otherwise, the ping test was requested.
-  current_speedtest: {
-    user: String,
-    timestamp: Date,
-    stage: {type: String, default: ''},
-    band_estimative: {type: Number, default: 0},
+  current_diagnostic: {
+    type: {
+      type: String,
+      enum:['speedtest','ping','traceroute'],
+    },
+    stage: {type: String},
+    customized: {type: Boolean},
+    in_progress: {type: Boolean},
+    started_at: {type: Date},
+    last_modified_at: {type: Date},
+    targets: [String],
+    user: {type: String},
+    webhook_url: {type: String, default: ''},
+    webhook_user: {type: String, default: ''},
+    webhook_secret: {type: String, default: ''},
   },
   latitude: {type: Number, default: 0},
   longitude: {type: Number, default: 0},
