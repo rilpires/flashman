@@ -3138,8 +3138,7 @@ deviceListController.setPingHostsList = function(req, res) {
     });
 
     // Check if approved hosts contains default hosts if configured
-    const getDefaultPingHosts =
-      await deviceListController.getDefaultPingHostsAtConfig();
+    const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
     if (getDefaultPingHosts.success &&
         getDefaultPingHosts.hosts.length > 0 &&
         !getDefaultPingHosts.hosts.some((x) => approvedHosts.includes(x))) {
@@ -3165,7 +3164,7 @@ deviceListController.setPingHostsList = function(req, res) {
   });
 };
 
-deviceListController.getDefaultPingHostsAtConfig = async function() {
+const getDefaultPingHostsAtConfig = async function() {
   let message = t('configGenericError', {errorline: __line});
   let config = {};
   try {
@@ -3182,8 +3181,7 @@ deviceListController.getDefaultPingHostsAtConfig = async function() {
 };
 
 deviceListController.getDefaultPingHosts = async function(req, res) {
-  const getDefaultPingHosts =
-    await deviceListController.getDefaultPingHostsAtConfig();
+  const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
   if (getDefaultPingHosts.success) {
     return res.status(200).json({
       success: true,
