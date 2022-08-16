@@ -2052,9 +2052,6 @@ deviceInfoController.receivePingResult = function(req, res) {
         matchedDevice.current_diagnostic.customized &&
         matchedDevice.current_diagnostic.in_progress
     ) {
-      matchedDevice.current_diagnostic.stage = 'done';
-      matchedDevice.current_diagnostic.in_progress = false;
-      matchedDevice.current_diagnostic.last_modified_at = new Date();
       if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
@@ -2074,14 +2071,20 @@ deviceInfoController.receivePingResult = function(req, res) {
         }
         request(requestOptions).then(()=>{}, ()=>{});
       }
-      // Not waiting for this save
-      matchedDevice.save().catch((err) => {
-        console.log('Error saving device after ping command: ' + err);
-      });
     } else {
       // Not a customized ping call, send to generic trap
       deviceHandlers.sendPingToTraps(id, {results: result});
     }
+
+    // Clearing out diagnostic fields
+    matchedDevice.current_diagnostic.stage = 'done';
+    matchedDevice.current_diagnostic.in_progress = false;
+    matchedDevice.current_diagnostic.last_modified_at = new Date();
+
+    // Not waiting for this save
+    matchedDevice.save().catch((err) => {
+      console.log('Error saving device after ping command: ' + err);
+    });
 
     // We don't need to wait
     return res.status(200).json({processed: 1});

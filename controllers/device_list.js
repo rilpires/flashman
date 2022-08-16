@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 
@@ -159,27 +160,28 @@ const getOnlineCountMesh = function(query, lastHour) {
 };
 
 const initiatePingCommand = async function(device) {
-  if (device && device.use_tr069) {
+  if (device.use_tr069) {
     device.pingtest_results = [];
 
-    if (device.current_diagnostic.type == 'ping' &&
-        device.current_diagnostic.customized &&
-        device.current_diagnostic.in_progress
-    ) {
+    if (device.current_diagnostic.customized) {
       device.pingtest_results =
         device.current_diagnostic.targets.map((item) => ({host: item}));
     } else if (Object.keys(device.ping_hosts).length > 0) {
       device.pingtest_results =
         device.ping_hosts.map((h)=>({host: h}));
     }
-
-    if (device.pingtest_results.length > 0) {
-      await device.save().catch((err) => {
-        console.log('Error saving device after ping command: ' + err);
-      });
+    if (device.pingtest_results.length == 0) {
+      device.current_diagnostic.stage = 'done';
+      device.current_diagnostic.last_modified_at = new Date();
+      device.current_diagnostic.in_progress = false;
     }
-    acsDiagnosticsHandler.firePingDiagnose(device._id.toUpperCase());
-  } else if (device) {
+    await device.save().catch((err) => {
+      console.log('Error saving device after ping command: ' + err);
+    });
+    if (device.pingtest_results.length > 0) {
+      acsDiagnosticsHandler.firePingDiagnose(device);
+    }
+  } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
   }
 };
@@ -1167,16 +1169,39 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         break;
+      // Do NOT break out from these cases! This is a common pre-requisite
+      // for commands
+      case 'traceroute':
+      case 'ping':
+      case 'speedtest': {
+        if (!device) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeNotFound', {errorline: __line}),
+          });
+        }
+        const msSinceLastModified =
+          new Date() - device.current_diagnostic.last_modified_at;
+        const timeoutThresholdMs = 2 * 60 * 1000; // 2 minutes;
+        if (!isNaN(msSinceLastModified) &&
+            msSinceLastModified<timeoutThresholdMs &&
+            device.current_diagnostic.in_progress
+        ) {
+          return res.status(200).json({
+            success: false,
+            message: t('diagnosticInProgress'),
+          });
+        }
+      }
+      // Do not break out!
+      // eslint-disable-next-line no-fallthrough
       case 'log':
       case 'boot':
       case 'onlinedevs':
-      case 'ping':
       case 'upstatus':
       case 'wanbytes':
       case 'waninfo':
       case 'laninfo':
-      case 'traceroute':
-      case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
         if (device && !device.use_tr069) {
@@ -1190,8 +1215,80 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          if (device) {
-            return deviceListController.doSpeedTest(req, res);
+          if (!permissions.grantSpeedTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+          let now = new Date();
+          device.current_diagnostic = {
+            type: 'speedtest',
+            stage: 'initiating',
+            customized: false,
+            in_progress: true,
+            started_at: now,
+            last_modified_at: now,
+            targets: [],
+            user: req.user,
+            webhook_url: '',
+            webhook_user: '',
+            webhook_secret: '',
+          };
+          return deviceListController.doSpeedTest(req, res);
+        } else if (msgtype === 'ping') {
+          if (!permissions.grantPingTest) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPingTestNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+          let now = new Date();
+          device.current_diagnostic = {
+            type: 'ping',
+            stage: 'initiating',
+            customized: false,
+            in_progress: true,
+            started_at: now,
+            last_modified_at: now,
+            targets: [],
+            user: req.user,
+            webhook_url: '',
+            webhook_user: '',
+            webhook_secret: '',
+          };
+          initiatePingCommand(device);
+        } else if (msgtype === 'traceroute') {
+          if (!permissions.grantTraceroute) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForTracerouteNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+
+          // Start Traceroute
+          if (device && device.use_tr069) {
+            // Preparation for TR069
+          } else {
+            mqtt.anlixMessageRouterTraceroute(
+              device._id,
+              device.traceroute_route,
+              device.traceroute_max_hops,
+              device.traceroute_numberProbes,
+              device.traceroute_max_wait,
+            );
           }
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
@@ -1228,19 +1325,6 @@ deviceListController.sendMqttMsg = function(req, res) {
               req.sessionID, req.params.id.toUpperCase());
           }
           mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
-        } else if (msgtype === 'ping') {
-          if (!permissions.grantPingTest) {
-            return res.status(200).json({
-              success: false,
-              message: t('cpeWithoutCommand'),
-            });
-          }
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForPingTestNotification(
-              req.sessionID, req.params.id.toUpperCase(),
-            );
-          }
-          initiatePingCommand(device);
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1306,36 +1390,6 @@ deviceListController.sendMqttMsg = function(req, res) {
           // If does not use TR069 call the mqtt function
           if (device && !device.use_tr069) {
             mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
-          }
-
-        // Traceroute
-        } else if (msgtype === 'traceroute') {
-          // Check for permission
-          if (!permissions.grantTraceroute) {
-            return res.status(200).json({
-              success: false,
-              message: t('cpeWithoutCommand'),
-            });
-          }
-
-          // Wait for notification
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForTracerouteNotification(
-              req.sessionID, req.params.id.toUpperCase(),
-            );
-          }
-
-          // Start Traceroute
-          if (device && device.use_tr069) {
-            // Preparation for TR069
-          } else {
-            mqtt.anlixMessageRouterTraceroute(
-              device._id,
-              device.traceroute_route,
-              device.traceroute_max_hops,
-              device.traceroute_numberProbes,
-              device.traceroute_max_wait,
-            );
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
@@ -3353,13 +3407,6 @@ deviceListController.doSpeedTest = function(req, res) {
         });
       }
     }
-    let permissions = DeviceVersion.devicePermissions(matchedDevice);
-    if (!permissions.grantSpeedTest) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeWithoutCommand'),
-      });
-    }
     let projection = {measureServerIP: true, measureServerPort: true};
     Config.findOne({is_default: true}, projection)
     .lean().exec(async function(err, matchedConfig) {
@@ -3389,7 +3436,7 @@ deviceListController.doSpeedTest = function(req, res) {
 
       if (matchedDevice.use_tr069) {
         // When customUrl is defined, we skip 'estimative' stage
-        if (customUrl !== '') {
+        if (customUrl) {
           matchedDevice.current_diagnostic.stage = 'measure';
         } else {
           matchedDevice.current_diagnostic.stage = 'estimative';
@@ -3402,9 +3449,9 @@ deviceListController.doSpeedTest = function(req, res) {
             message: t('cpeSaveError', {errorline: __line}),
           });
         });
-        acsDiagnosticsHandler.fireSpeedDiagnose(mac);
+        acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice);
       } else {
-        if (customUrl !== '' && permissions.grantRawSpeedTest) {
+        if (customUrl) {
           mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
         } else {
           let url = matchedConfig.measureServerIP + ':' +

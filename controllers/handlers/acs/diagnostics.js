@@ -89,92 +89,92 @@ const calculatePingDiagnostic = async function(
     device, cpe, data, pingKeys, pingFields,
 ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
+  let diagState = pingKeys.diag_state;
 
-  if (pingKeys.diag_state !== 'Requested' && pingKeys.diag_state !== 'None') {
-    let result = {};
+  if (['Requested', 'None'].includes(diagState)) return;
 
-    let currentPingTest = device.pingtest_results.find(
-      (e) => e.host === pingKeys.host,
-    );
+  let result = {};
+  let currentPingTest = device.pingtest_results.find(
+    (e) => e.host === pingKeys.host,
+  );
 
-    if (
-      pingKeys.diag_state === 'Complete' ||
-      pingKeys.diag_state === 'Complete\n'
-    ) {
-      const loss = parseInt(pingKeys.failure_count * 100 /
-        (pingKeys.success_count + pingKeys.failure_count));
-      if (isNaN(loss)) {
-        debug('calculatePingDiagnostic loss is not an number!!!');
-      }
-      const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
-      currentPingTest.lat = pingKeys.avg_resp_time.toString();
-      currentPingTest.loss = loss.toString();
-      currentPingTest.count = count.toString();
-
-      if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
-        if (pingKeys.success_count === 1) currentPingTest.loss = '0';
-        else currentPingTest.loss = '100';
-        currentPingTest.count = '1';
-      }
+  if (['Complete', 'Complete\n'].includes(diagState)) {
+    const loss = parseInt(pingKeys.failure_count * 100 /
+      (pingKeys.success_count + pingKeys.failure_count));
+    if (isNaN(loss)) {
+      debug('calculatePingDiagnostic loss is not an number!!!');
     }
+    const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
+    currentPingTest.lat = pingKeys.avg_resp_time.toString();
+    currentPingTest.loss = loss.toString();
+    currentPingTest.count = count.toString();
 
-    // Always set completed to true to not break recursion on failure
-    currentPingTest.completed = true;
-
-    await device.save().catch((err) => {
-      console.log('Error saving ping test to database: ' + err);
-    });
-
-    // Filling the result object
-    device.pingtest_results.map((p) => {
-      if (p) {
-        result[p.host] = {
-          lat: p.lat,
-          loss: p.loss,
-          count: p.count,
-          completed: p.completed,
-        };
-      }
-    });
-
-    // If ping command was sent from a customized api call,
-    // we don't want to propagate it to the generic webhook,
-    // so we send it to the customized webhook
-    if (device.current_diagnostic.type=='ping' &&
-        device.current_diagnostic.customized &&
-        device.current_diagnostic.in_progress
-    ) {
-      if (device.current_diagnostic.webhook_url) {
-        let requestOptions = {};
-        requestOptions.url = device.current_diagnostic.webhook_url;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': device._id,
-          'type': 'device',
-          'ping_results': result,
-        };
-        if (device.current_diagnostic.webhook_user &&
-            device.current_diagnostic.webook_secret
-        ) {
-          requestOptions.auth = {
-            user: device.current_diagnostic.webhook_user,
-            pass: device.current_diagnostic.webhook_secret,
-          };
-        }
-        // No wait!
-        request(requestOptions).then(()=>{}, ()=>{});
-      }
-      device.current_diagnostic.stage = 'done';
-      device.current_diagnostic.in_progress = false;
-      device.current_diagnostic.last_modified_at = new Date();
-    } else {
-      // Generic ping test -> generic trap
-      deviceHandlers.sendPingToTraps(device._id, {results: result});
+    if (cpe.modelPermissions().wan.pingTestSingleAttempt) {
+      if (pingKeys.success_count === 1) currentPingTest.loss = '0';
+      else currentPingTest.loss = '100';
+      currentPingTest.count = '1';
     }
-
-    startPingDiagnose(device.acs_id);
-    return;
   }
+
+  // Always set completed to true to not break recursion on failure
+  currentPingTest.completed = true;
+
+  // Filling the result object
+  device.pingtest_results.map((p) => {
+    result[p.host] = {
+      lat: p.lat,
+      loss: p.loss,
+      count: p.count,
+      completed: p.completed,
+    };
+  });
+
+  // If ping command was sent from a customized api call,
+  // we don't want to propagate it to the generic webhook,
+  // so we send it to the customized webhook
+  if (device.current_diagnostic.type=='ping' &&
+      device.current_diagnostic.customized &&
+      device.current_diagnostic.in_progress
+  ) {
+    if (device.current_diagnostic.webhook_url) {
+      let requestOptions = {};
+      requestOptions.url = device.current_diagnostic.webhook_url;
+      requestOptions.method = 'PUT';
+      requestOptions.json = {
+        'id': device._id,
+        'type': 'device',
+        'ping_results': result,
+      };
+      if (device.current_diagnostic.webhook_user &&
+          device.current_diagnostic.webook_secret
+      ) {
+        requestOptions.auth = {
+          user: device.current_diagnostic.webhook_user,
+          pass: device.current_diagnostic.webhook_secret,
+        };
+      }
+      // No wait!
+      request(requestOptions).then(()=>{}, ()=>{});
+    }
+  } else {
+    // Generic ping test -> generic trap
+    deviceHandlers.sendPingToTraps(device._id, {results: result});
+  }
+
+
+  device.current_diagnostic.last_modified_at = new Date();
+  if (!getNextPingTest(device)) {
+    device.current_diagnostic.stage = 'done';
+    device.current_diagnostic.in_progress = false;
+  }
+  await device.save().catch((err) => {
+    console.log('Error saving ping test to database: ' + err);
+  });
+
+  if (device.current_diagnostic.in_progress) {
+    startPingDiagnose(device.acs_id);
+  }
+  return;
 };
 
 
@@ -218,7 +218,7 @@ const calculateSpeedDiagnostic = async function(
       if (device.current_diagnostic.stage == 'estimative') {
         device.current_diagnostic.stage = 'measure';
         await device.save().catch((err) => {
-          console.log('Error saving speed test est to database: ' + err);
+          console.log('Error saving speed test to database: ' + err);
         });
         await sio.anlixSendSpeedTestNotifications(device._id, {
           stage: 'estimative_finished',
@@ -280,9 +280,8 @@ const startPingDiagnose = async function(acsID) {
   }
 
   let pingHostUrl = getNextPingTest(device);
-  if (!pingHostUrl || pingHostUrl === '') {
-    console.log('Ping results for device ' + acsID
-      + ' completed successfully.');
+  // We don't expect it to be empty here
+  if (!pingHostUrl) {
     return;
   }
 
@@ -466,15 +465,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
   request.end();
 };
 
-acsDiagnosticsHandler.firePingDiagnose = async function(mac) {
-  let device;
-  try {
-    device = await DeviceModel.findById(mac).lean();
-  } catch (e) {
-    console.log('Error:', e);
-    return {success: false,
-            message: t('cpeFindError', {errorline: __line})};
-  }
+acsDiagnosticsHandler.firePingDiagnose = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) {
     return {success: false,
             message: t('cpeFindError', {errorline: __line})};
@@ -498,15 +489,7 @@ acsDiagnosticsHandler.firePingDiagnose = async function(mac) {
   }
 };
 
-acsDiagnosticsHandler.fireSpeedDiagnose = async function(mac) {
-  let device;
-  try {
-    device = await DeviceModel.findById(mac).lean();
-  } catch (e) {
-    console.log('Error:', e);
-    return {success: false,
-            message: t('cpeFindError', {errorline: __line})};
-  }
+acsDiagnosticsHandler.fireSpeedDiagnose = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) {
     return {success: false,
             message: t('cpeFindError', {errorline: __line})};

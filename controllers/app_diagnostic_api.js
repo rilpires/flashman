@@ -1300,7 +1300,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
           matchedDevice.current_diagnostic.stage = 'estimative';
           try {
             await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice);
           } catch (err) {
             console.log('Error saving speed test estimative: ' + err);
           }

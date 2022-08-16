@@ -541,9 +541,6 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     if (device.current_diagnostic.webhook_url) {
       sendSpeedtestResultToCustomTrap(device, result);
     }
-    device.current_diagnostic.stage = 'done';
-    device.current_diagnostic.in_progress = false;
-    device.current_diagnostic.last_modified_at = new Date();
   } else if (result.last_speedtest_error) {
     device.last_speedtest_error = result.last_speedtest_error;
   } else {
@@ -558,6 +555,10 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     let permissions = DeviceVersion.devicePermissions(device);
     result.limit = permissions.grantSpeedTestLimit;
   }
+
+  device.current_diagnostic.stage = 'done';
+  device.current_diagnostic.in_progress = false;
+  device.current_diagnostic.last_modified_at = new Date();
 
   await device.save().catch((err) => {
     console.log('Error saving device speedtest: ' + err);

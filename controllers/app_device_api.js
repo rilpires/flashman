@@ -908,7 +908,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
           };
           try {
             await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
+            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice);
           } catch (err) {
             console.log('Error speed test procedure: ' + err);
           }
