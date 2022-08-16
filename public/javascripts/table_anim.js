@@ -3275,9 +3275,9 @@ anlixDocumentReady.add(function() {
     ) ? true : false;
 
     let willShowDeleteAndBlock =
-      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceLicenseBlock);
+      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceLicenseBlock);
     let willShowDelete =
-      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceRemoval);
+      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceRemoval);
 
     let singleOrMultipleWarning = (isMultiple) ?
       t('removeDevicesAndBlockLicensesWarning') :
@@ -3318,19 +3318,29 @@ anlixDocumentReady.add(function() {
           traditional: true,
           dataType: 'json',
           data: {'block': true, 'ids': [id]},
-        }).always(function(res) {
-          $('#btn-trash-multiple').addClass('disabled');
-          let pageNum = parseInt($('#curr-page-link').html());
-          let filterList = $('#devices-search-input').val();
-          filterList += ',' + columnToSort + ',' + columnSortType;
-          loadDevicesTable(pageNum, filterList);
-          swal.fire({
-            icon: res.type,
-            title: res.message,
-            confirmButtonColor: '#4db6ac',
-            confirmButtonText: t('OK'),
-          });
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       } else if (result.isDenied) {
         // Just delete...
         $.ajax({
@@ -3338,20 +3348,29 @@ anlixDocumentReady.add(function() {
           url: '/devicelist/delete',
           traditional: true,
           data: {ids: [id]},
-          success: function(res) {
-            $('#btn-trash-multiple').addClass('disabled');
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
+          success: (res) => {
             swal.fire({
-              icon: (res.type === 'danger') ? 'warning' : res.type,
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
     });
   });
@@ -3366,19 +3385,29 @@ anlixDocumentReady.add(function() {
           traditional: true,
           dataType: 'json',
           data: {'block': true, 'ids': selectedDevices},
-        }).always(function(res) {
-          $('#btn-trash-multiple').addClass('disabled');
-          let pageNum = parseInt($('#curr-page-link').html());
-          let filterList = $('#devices-search-input').val();
-          filterList += ',' + columnToSort + ',' + columnSortType;
-          loadDevicesTable(pageNum, filterList);
-          swal.fire({
-            icon: res.type,
-            title: res.message,
-            confirmButtonColor: '#4db6ac',
-            confirmButtonText: t('OK'),
-          });
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       } else if (result.isDenied) {
         // Just delete...
         $.ajax({
@@ -3386,21 +3415,31 @@ anlixDocumentReady.add(function() {
           url: '/devicelist/delete',
           traditional: true,
           data: {ids: selectedDevices},
-          success: function(res) {
-            $('#btn-trash-multiple').addClass('disabled');
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
+          success: (res) => {
             swal.fire({
-              icon: (res.type === 'danger') ? 'warning' : res.type,
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
+      selectedDevices = [];
     });
   });
 
