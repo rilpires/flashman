@@ -38,7 +38,8 @@ basicCPEModel.modelPermissions = function() {
     features: {
       customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
-      mesh: false, // can create a mesh network with Anlix firmwares
+      meshCable: true, // can create a cable mesh network with Anlix firmwares
+      meshWifi: false, // can create a wifi mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs
@@ -94,6 +95,7 @@ basicCPEModel.modelPermissions = function() {
       bssidOffsets5Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
       objectExists: false, // special flag for mesh xml object
+      setEncryptionForCable: false, // special flag for cable mesh
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     usesStavixXMLConfig: false, // flag for stavix-like models with xml config
@@ -255,6 +257,14 @@ basicCPEModel.convertField = function(
 // Used when setting up a mesh network
 basicCPEModel.getBeaconType = function() {
   return '11i';
+};
+
+basicCPEModel.getWPAEncryptionMode = function() {
+  return '';
+};
+
+basicCPEModel.getIeeeEncryptionMode = function() {
+  return '';
 };
 
 // Used to override GenieACS serial in some way, used only on Hurakall for now

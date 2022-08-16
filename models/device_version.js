@@ -1763,13 +1763,15 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
-    grantOpmode: cpePermissions.features.mesh,
+    grantOpmode: cpePermissions.features.meshCable ||
+      cpePermissions.features.meshWifi,
     grantVlanSupport: false,
     grantWanBytesSupport: true,
     grantPonSignalSupport: cpePermissions.features.ponSignal,
     grantMeshMode: false,
     grantMeshV2PrimaryModeUpgrade: false,
-    grantMeshV2PrimaryMode: cpePermissions.features.mesh,
+    grantMeshV2PrimaryModeCable: cpePermissions.features.meshCable,
+    grantMeshV2PrimaryModeWifi: cpePermissions.features.meshWifi,
     grantMeshV2SecondaryModeUpgrade: false,
     grantMeshV2SecondaryMode: false,
     grantMeshV2HardcodedBssid: cpePermissions.mesh.hardcodedBSSIDOffset,
@@ -1859,7 +1861,8 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantMeshMode = grantMeshV1Mode(version, model);
   result.grantMeshV2PrimaryModeUpgrade =
     grantMeshV2PrimaryModeUpgrade(version, model);
-  result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2PrimaryModeCable = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2PrimaryModeWifi = result.grantMeshV2PrimaryModeCable;
   result.grantMeshV2SecondaryModeUpgrade =
     grantMeshV2SecondaryModeUpgrade(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);

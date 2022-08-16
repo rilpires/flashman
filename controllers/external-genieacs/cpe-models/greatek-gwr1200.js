@@ -73,6 +73,8 @@ greatekModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   delete fields.diagnostics.speedtest.num_of_conn;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =

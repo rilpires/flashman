@@ -6,7 +6,7 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8245Q2'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;

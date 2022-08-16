@@ -1524,7 +1524,8 @@ deviceInfoController.receiveDevices = async function(req, res) {
     const permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // In mesh v2 there is a new layout of the flashbox response
-    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+    const meshV2 = (permissions.grantMeshV2PrimaryModeCable ||
+      permissions.grantMeshV2PrimaryModeWifi ||
       permissions.grantMeshV2SecondaryMode);
 
     if ('mesh_routers' in req.body) {

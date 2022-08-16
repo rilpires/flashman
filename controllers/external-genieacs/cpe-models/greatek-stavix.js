@@ -10,6 +10,7 @@ greatekModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.mesh.setEncryptionForCable = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 250;
@@ -79,6 +80,14 @@ greatekModel.getBeaconType = function() {
   return 'WPA2';
 };
 
+greatekModel.getWPAEncryptionMode = function() {
+  return 'AESEncryption';
+};
+
+greatekModel.getIeeeEncryptionMode = function() {
+  return 'TKIPEncryption';
+};
+
 greatekModel.convertRssiValue = function(rssiValue) {
   let result = basicCPEModel.convertRssiValue(rssiValue);
   // This model sends RSSI as a positive value instead of negative
@@ -110,6 +119,14 @@ greatekModel.getModelFields = function() {
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
   });
+  fields.wifi2.encryption = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.6.WPAEncryptionModes';
+  fields.wifi5.encryption = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.1.WPAEncryptionModes';
+  fields.wifi2.encryptionIeee = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.6.IEEE11iEncryptionModes';
+  fields.wifi5.encryptionIeee = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.1.IEEE11iEncryptionModes';
   Object.keys(fields.mesh2).forEach((k)=>{
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
