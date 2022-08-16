@@ -1875,7 +1875,6 @@ deviceListController.setDeviceReg = function(req, res) {
             );
           }
         }
-        let permissions = DeviceVersion.devicePermissions(matchedDevice);
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
           genericValidate(
             channel5ghz,
