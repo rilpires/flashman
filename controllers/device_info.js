@@ -255,7 +255,8 @@ const createRegistry = async function(req, res) {
   }
 
   let defaultPingHosts = matchedConfig.default_ping_hosts;
-  if (defaultPingHosts.length === 0 || defaultPingHosts == undefined) {
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
     defaultPingHosts = [
       'www.google.com',
       'www.youtube.com',
