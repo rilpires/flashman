@@ -12,6 +12,9 @@ tkOnuAcDModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.portForwardQueueTasks = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
+  ];
   permissions.firmwareUpgrades = {
     'V1.0.9': [],
   };
