@@ -201,15 +201,20 @@ meshHandlers.buildTR069Changes = function(
     case 1:
       changes.mesh2.enable = false;
       changes.mesh5.enable = false;
-      changes.wifi2.beacon_type = beaconType;
-      changes.wifi5.beacon_type = beaconType;
-      if (cpe.getEncryptionMode() != '') {
-        changes.wifi2.encryption = cpe.getEncryptionMode();
-        changes.wifi5.encryption = cpe.getEncryptionMode();
-      }
-      if (cpe.getEncryption2Mode() != '') {
-        changes.wifi2.encryption2 = cpe.getEncryption2Mode();
-        changes.wifi5.encryption2 = cpe.getEncryption2Mode();
+      // Set the parameters below to improve hand-off with custom Anlix firmware
+      if (cpe.modelPermissions().mesh.setEncryptionForCable) {
+        changes.wifi2.beacon_type = beaconType;
+        changes.wifi5.beacon_type = beaconType;
+        const wpaMode = cpe.getWPAEncryptionMode();
+        const ieeeMode = cpe.getIeeeEncryptionMode();
+        if (wpaMode != '') {
+          changes.wifi2.encryption = wpaMode;
+          changes.wifi5.encryption = wpaMode;
+        }
+        if (ieeeMode != '') {
+          changes.wifi2.encryption2 = ieeeMode;
+          changes.wifi5.encryption2 = ieeeMode;
+        }
       }
       break;
     case 2:

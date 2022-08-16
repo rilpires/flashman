@@ -94,6 +94,7 @@ basicCPEModel.modelPermissions = function() {
       bssidOffsets5Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
       objectExists: false, // special flag for mesh xml object
+      setEncryptionForCable: false, // special flag for cable mesh
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     usesStavixXMLConfig: false, // flag for stavix-like models with xml config
@@ -261,10 +262,6 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
-basicCPEModel.convertPPPoEEnable = function(pppoe) {
-  return pppoe;
-};
-
 basicCPEModel.convertIGDtoDevice = function(fields) {
   Object.keys(fields).forEach((k) => {
     if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {
@@ -277,11 +274,11 @@ basicCPEModel.convertIGDtoDevice = function(fields) {
   return fields;
 };
 
-basicCPEModel.getEncryptionMode = function() {
+basicCPEModel.getWPAEncryptionMode = function() {
   return '';
 };
 
-basicCPEModel.getEncryption2Mode = function() {
+basicCPEModel.getIeeeEncryptionMode = function() {
   return '';
 };
 
