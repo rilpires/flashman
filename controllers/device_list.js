@@ -186,6 +186,7 @@ const initiatePingCommand = async function(device) {
   }
 };
 
+
 // Main page
 deviceListController.index = function(req, res) {
   let indexContent = {};
@@ -1620,6 +1621,10 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
   });
 };
 
+
+deviceListController.sendCustomTraceRoute = async function(req, res) {
+  /*TO-DO*/
+};
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
