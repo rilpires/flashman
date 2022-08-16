@@ -534,26 +534,27 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
 
   result = formatSpeedtestResult(result);
   if (device.current_diagnostic.type=='speedtest' &&
-      device.current_diagnostic.customized &&
       device.current_diagnostic.in_progress
   ) {
-    // Don't care about waiting on sending to custom trap
-    if (device.current_diagnostic.webhook_url) {
-      sendSpeedtestResultToCustomTrap(device, result);
+    if (result.last_speedtest_error) {
+      device.last_speedtest_error = result.last_speedtest_error;
+    } else if (device.current_diagnostic.customized ) {
+      // Don't care about waiting on sending to custom trap
+      if (device.current_diagnostic.webhook_url) {
+        sendSpeedtestResultToCustomTrap(device, result);
+      }
+    } else {
+      // We need to change some map keys
+      let resultToStore = util.deepCopyObject(result);
+      resultToStore.down_speed = resultToStore.downSpeed;
+      delete resultToStore.downSpeed;
+      device.speedtest_results.push(resultToStore);
+      if (device.speedtest_results.length > 5) {
+        device.speedtest_results.shift();
+      }
+      let permissions = DeviceVersion.devicePermissions(device);
+      result.limit = permissions.grantSpeedTestLimit;
     }
-  } else if (result.last_speedtest_error) {
-    device.last_speedtest_error = result.last_speedtest_error;
-  } else {
-    // We need to change some map keys
-    let resultToStore = util.deepCopyObject(result);
-    resultToStore.down_speed = resultToStore.downSpeed;
-    delete resultToStore.downSpeed;
-    device.speedtest_results.push(resultToStore);
-    if (device.speedtest_results.length > 5) {
-      device.speedtest_results.shift();
-    }
-    let permissions = DeviceVersion.devicePermissions(device);
-    result.limit = permissions.grantSpeedTestLimit;
   }
 
   device.current_diagnostic.stage = 'done';
