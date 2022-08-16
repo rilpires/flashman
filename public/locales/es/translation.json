@@ -1015,6 +1015,7 @@
 	"factoryCredentialsNotFound": "No se encontró ninguna configuración de credenciales web personalizadas",
 	"factoryCredentialsGenericError": "Ocurrió un error al intentar obtener las configuraciones de credenciales web personalizadas",
 	"duplicatedCredentials": "El modelo {{-model}} ya tiene las credenciales configuradas",
+	"noFactoryCredentialConfigured": "No hay credenciales web personalizadas configuradas",
 	"invalidModel": "Modelo no valido",
 	"invalidManufacturer": "Fabricante no valido",
 	"updateSingleDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos. El CPE no debe apagarse durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
