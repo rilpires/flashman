@@ -106,7 +106,7 @@
         '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
       ];
       if (list5ghz) {
-        validChannels.concat(list5ghz.map((ch)=>ch.toString()));
+        validChannels = validChannels.concat(list5ghz.map((ch)=>ch.toString()));
       }
       return {
         valid: validChannels.includes(channel),
