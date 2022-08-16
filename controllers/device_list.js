@@ -3174,7 +3174,7 @@ const getDefaultPingHostsAtConfig = async function() {
   } catch (err) {
     message = t('configFindError', {errorline: __line});
   }
-  if (config && config.default_ping_hosts) {
+  if (config && Array.isArray(config.default_ping_hosts)) {
     return {success: true, hosts: config.default_ping_hosts};
   }
   return {success: false, type: 'error', message: message};
