@@ -7,9 +7,7 @@ const t = require('../language').i18next.t;
 
 let Config = require('../../models/config');
 
-// TODO: voltar o endereço da API para o localhost
-// let controlApiAddr = 'http://localhost:9000/api';
-let controlApiAddr = 'https://controle.anlix.io/api';
+let controlApiAddr = 'http://localhost:9000/api';
 if (process.env.production === 'true' || process.env.production === true) {
   controlApiAddr = 'https://controle.anlix.io/api';
 }
