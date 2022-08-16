@@ -1214,11 +1214,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.wifi2.band && data.wifi2.band.value) {
     let mode2 = (device.wifi_mode) ? device.wifi_mode : '11n';
     let band2 = convertWifiBand(cpe, data.wifi2.band.value, mode2, false);
-    if (
-      !device.wifi_band ||
-      // Special legacy case - remove auto from database if no longer supported
-      (device.wifi_band === 'auto' && !permissions.grantWifiBandAuto2)
-    ) {
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band === 'auto' && !permissions.grantWifiBandAuto2
+    );
+    if (band2 && (!device.wifi_band || autoWithNoPermission)) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
       if (permissions.grantWifiBandEdit) {
@@ -1245,10 +1245,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.wifi5.band && data.wifi5.band.value) {
     let mode5 = (device.wifi_mode_5ghz) ? device.wifi_mode_5ghz : '11ac';
     let band5 = convertWifiBand(cpe, data.wifi5.band.value, mode5, true);
-    if (
-      !device.wifi_band_5ghz ||
-      (device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5)
-    ) {
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5
+    );
+    if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
       if (permissions.grantWifiBandEdit) {
