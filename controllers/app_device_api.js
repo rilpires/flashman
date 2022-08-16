@@ -891,10 +891,21 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
       }
 
       if (config && config.measureServerIP) {
-         if (matchedDevice.use_tr069) {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = 'App_Cliente';
-          matchedDevice.current_speedtest.stage = 'estimative';
+        if (matchedDevice.use_tr069) {
+          let now = new Date();
+          matchedDevice.current_diagnostic = {
+            type: 'speedtest',
+            stage: 'estimative',
+            customized: false,
+            in_progress: true,
+            started_at: now,
+            last_modified_at: now,
+            targets: [config.measureServerIP],
+            user: 'App_Cliente',
+            webhook_url: '',
+            webhook_user: '',
+            webhook_secret: '',
+          };
           try {
             await matchedDevice.save();
             acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);

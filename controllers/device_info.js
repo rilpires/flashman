@@ -1925,42 +1925,45 @@ deviceInfoController.getPingHosts = function(req, res) {
 
 
 // Return the speedtest host
-deviceInfoController.getSpeedtestHost = function(request, response) {
+deviceInfoController.getCustomSpeedtestHost = function(request, response) {
   // Verify secret and find device
   if (request.body.secret == request.app.locals.secret) {
     DeviceModel.findById(request.body.id, function(err, matchedDevice) {
       // Error trying to find the device
       if (err) {
-        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
           'failed: Cant get device profile.');
         return response.status(400).json({success: false});
       }
 
       // Could not find the device
       if (!matchedDevice) {
-        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
           'failed: No device found.');
         return response.status(404).json({success: false});
       }
 
       // Check and send the URL
-      if (matchedDevice.temp_command_trap.speedtest_url) {
+      if (matchedDevice.current_diagnostic.type=='speedtest' &&
+          matchedDevice.current_diagnostic.in_progress &&
+          matchedDevice.current_diagnostic.customized
+      ) {
         return response.status(200).json({
           'success': true,
-          'host': matchedDevice.temp_command_trap.speedtest_url,
+          'host': matchedDevice.current_diagnostic.targets[0],
         });
 
       // Empty URL
       } else {
-        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
-          'failed: No host found.');
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost '
+        + 'failed: Device isn\'t running a custom speedtest');
         return response.status(404).json({success: false});
       }
     });
 
   // Invalid secret
   } else {
-    console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+    console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
       'failed: Client Secret not match!');
     return response.status(401).json({success: false});
   }
@@ -2045,26 +2048,28 @@ deviceInfoController.receivePingResult = function(req, res) {
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.temp_command_trap &&
-        matchedDevice.temp_command_trap.ping_hosts &&
-        matchedDevice.temp_command_trap.ping_hosts.length > 0
+    if (matchedDevice.current_diagnostic.type=='ping' &&
+        matchedDevice.current_diagnostic.customized &&
+        matchedDevice.current_diagnostic.in_progress
     ) {
-      matchedDevice.temp_command_trap.ping_hosts = [];
-      if (matchedDevice.temp_command_trap.webhook_url != '') {
+      matchedDevice.current_diagnostic.stage = 'done';
+      matchedDevice.current_diagnostic.in_progress = false;
+      matchedDevice.current_diagnostic.last_modified_at = new Date();
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
-        requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
+        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
         requestOptions.method = 'PUT';
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
           'ping_results': result,
         };
-        if (matchedDevice.temp_command_trap.webhook_user &&
-            matchedDevice.temp_command_trap.webhook_secret
+        if (matchedDevice.current_diagnostic.webhook_user &&
+            matchedDevice.current_diagnostic.webhook_secret
         ) {
           requestOptions.auth = {
-            user: matchedDevice.temp_command_trap.webhook_user,
-            pass: matchedDevice.temp_command_trap.webhook_secret,
+            user: matchedDevice.current_diagnostic.webhook_user,
+            pass: matchedDevice.current_diagnostic.webhook_secret,
           };
         }
         request(requestOptions).then(()=>{}, ()=>{});

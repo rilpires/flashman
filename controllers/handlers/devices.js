@@ -449,28 +449,20 @@ deviceHandlers.sendPingToTraps = function(id, results) {
 };
 
 const sendSpeedtestResultToCustomTrap = async function(device, result) {
-  if (!device.temp_command_trap ||
-      !device.temp_command_trap.speedtest_url ||
-      !device.temp_command_trap.webhook_url ||
-      device.temp_command_trap.speedtest_url == '' ||
-      device.temp_command_trap.webhook_url == ''
-  ) {
-    return;
-  }
   let requestOptions = {};
-  requestOptions.url = device.temp_command_trap.webhook_url;
+  requestOptions.url = device.current_diagnostic.webhook_url;
   requestOptions.method = 'PUT';
   requestOptions.json = {
     'id': device._id,
     'type': 'device',
     'speedtest_result': result,
   };
-  if (device.temp_command_trap.webhook_user != '' &&
-      device.temp_command_trap.webhook_secret != ''
+  if (device.current_diagnostic.webhook_user != '' &&
+      device.current_diagnostic.webhook_secret != ''
   ) {
     requestOptions.auth = {
-      user: device.temp_command_trap.webhook_user,
-      pass: device.temp_command_trap.webhook_secret,
+      user: device.current_diagnostic.webhook_user,
+      pass: device.current_diagnostic.webhook_secret,
     };
   }
   // No wait!
@@ -541,13 +533,17 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   }
 
   result = formatSpeedtestResult(result);
-  if (device.temp_command_trap &&
-      device.temp_command_trap.speedtest_url &&
-      device.temp_command_trap.speedtest_url != ''
+  if (device.current_diagnostic.type=='speedtest' &&
+      device.current_diagnostic.customized &&
+      device.current_diagnostic.in_progress
   ) {
-    // Don't care about waiting here
-    sendSpeedtestResultToCustomTrap(device, result);
-    device.temp_command_trap.speedtest_url = '';
+    // Don't care about waiting on sending to custom trap
+    if (device.current_diagnostic.webhook_url) {
+      sendSpeedtestResultToCustomTrap(device, result);
+    }
+    device.current_diagnostic.stage = 'done';
+    device.current_diagnostic.in_progress = false;
+    device.current_diagnostic.last_modified_at = new Date();
   } else if (result.last_speedtest_error) {
     device.last_speedtest_error = result.last_speedtest_error;
   } else {

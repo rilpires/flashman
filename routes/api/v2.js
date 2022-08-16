@@ -75,6 +75,11 @@ router.route('/device/speeddiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.sendCustomSpeedTest);
 
+// Send a customized traceroute command
+router.route('/device/tracediagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomTraceRoute);
+
 // Set/Get Port forward
 router.route('/device/portforward/:id').get(
   authController.ensurePermission('grantAPIAccess'),

@@ -1295,9 +1295,9 @@ diagAppAPIController.doSpeedTest = function(req, res) {
 
       if (config && config.measureServerIP) {
         if (matchedDevice.use_tr069) {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = req.user.name;
-          matchedDevice.current_speedtest.stage = 'estimative';
+          matchedDevice.current_diagnostic.last_modified_at = new Date();
+          matchedDevice.current_diagnostic.user = req.user.name;
+          matchedDevice.current_diagnostic.stage = 'estimative';
           try {
             await matchedDevice.save();
             acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);

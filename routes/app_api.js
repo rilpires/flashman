@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 let express = require('express');
 
 let router = express.Router();

@@ -162,12 +162,12 @@ const initiatePingCommand = async function(device) {
   if (device && device.use_tr069) {
     device.pingtest_results = [];
 
-    if (device.temp_command_trap &&
-        device.temp_command_trap.ping_hosts &&
-        device.temp_command_trap.ping_hosts.length > 0
+    if (device.current_diagnostic.type == 'ping' &&
+        device.current_diagnostic.customized &&
+        device.current_diagnostic.in_progress
     ) {
       device.pingtest_results =
-        device.temp_command_trap.ping_hosts.map((item) => ({host: item}));
+        device.current_diagnostic.targets.map((item) => ({host: item}));
     } else if (Object.keys(device.ping_hosts).length > 0) {
       device.pingtest_results =
         device.ping_hosts.map((h)=>({host: h}));
@@ -1409,9 +1409,7 @@ deviceListController.sendCustomPing = async function(req, res) {
 
     let inputHosts = [];
 
-    if (req.body.content && req.body.content.hosts &&
-        Array.isArray(req.body.content.hosts)
-    ) {
+    if (req.body.content && Array.isArray(req.body.content.hosts) ) {
       inputHosts = req.body.content.hosts.filter((h) => typeof(h) == 'string');
     } else {
       return res.status(200).json({
@@ -1424,6 +1422,7 @@ deviceListController.sendCustomPing = async function(req, res) {
     let approvedTempHosts = [];
     approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
     approvedTempHosts = approvedTempHosts.filter(hostFilter);
+    approvedTempHosts = Array.from(new Set(approvedTempHosts));
 
     if (approvedTempHosts.length == 0) {
       return res.status(200).json({
@@ -1432,18 +1431,30 @@ deviceListController.sendCustomPing = async function(req, res) {
       });
     }
 
-    device.temp_command_trap = {
-      ping_hosts: approvedTempHosts,
-      speedtest_url: '',
+    let now = new Date();
+    device.current_diagnostic = {
+      type: 'ping',
+      stage: 'initiating',
+      customized: true,
+      in_progress: true,
+      started_at: now,
+      last_modified_at: now,
+      targets: approvedTempHosts,
+      user: 'asd',
       webhook_url: '',
+      webhook_user: '',
+      webhook_secret: '',
     };
-    if (typeof req.body.content.webhook == 'object') {
-      device.temp_command_trap.webhook_url = req.body.content.webhook.url;
+
+    if (typeof req.body.content.webhook == 'object' &&
+        typeof(device.current_diagnostic.webhook_url) == 'string'
+    ) {
+      device.current_diagnostic.webhook_url = req.body.content.webhook.url;
       if (typeof req.body.content.webhook.user == 'string' &&
           typeof req.body.content.webhook.secret == 'string'
       ) {
-        device.temp_command_trap.webhook_user = req.body.content.webhook.user;
-        device.temp_command_trap.webhook_secret =
+        device.current_diagnostic.webhook_user = req.body.content.webhook.user;
+        device.current_diagnostic.webhook_secret =
           req.body.content.webhook.secret;
       }
     }
@@ -1516,19 +1527,31 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       });
     }
 
-    device.temp_command_trap = {
-      ping_hosts: [],
-      speedtest_url: req.body.content.url,
+    let now = new Date();
+    device.current_diagnostic = {
+      type: 'speedtest',
+      stage: 'initiating',
+      customized: true,
+      in_progress: true,
+      started_at: now,
+      last_modified_at: now,
+      targets: [req.body.content.url],
+      user: 'asd',
       webhook_url: '',
+      webhook_user: '',
+      webhook_secret: '',
     };
-    if (typeof req.body.content.webhook == 'object') {
+
+    if (typeof req.body.content.webhook == 'object' &&
+        typeof device.current_diagnostic.webhook_url == 'string'
+    ) {
       let webhook = req.body.content.webhook;
-      device.temp_command_trap.webhook_url = webhook.url;
+      device.current_diagnostic.webhook_url = webhook.url;
       if (typeof webhook.user == 'string' &&
           typeof webhook.secret == 'string'
       ) {
-        device.temp_command_trap.webhook_user = webhook.user;
-        device.temp_command_trap.webhook_secret = webhook.secret;
+        device.current_diagnostic.webhook_user = webhook.user;
+        device.current_diagnostic.webhook_secret = webhook.secret;
       }
     }
 
@@ -3071,12 +3094,11 @@ deviceListController.getPingHostsList = function(req, res) {
                                     {errorline: __line})});
     }
 
-    if (device.temp_command_trap &&
-        device.temp_command_trap.ping_hosts &&
-        device.temp_command_trap.ping_hosts.length > 0
+    if (device.current_diagnostic.type=='ping' &&
+        device.current_diagnostic.customized &&
+        device.current_diagnostic.in_progress
     ) {
-      responseHosts = device.temp_command_trap.ping_hosts;
-      responseHosts = Array.from(new Set(responseHosts));
+      responseHosts = device.current_diagnostic.targets;
     } else {
       responseHosts = device.ping_hosts;
     }
@@ -3342,11 +3364,11 @@ deviceListController.doSpeedTest = function(req, res) {
     Config.findOne({is_default: true}, projection)
     .lean().exec(async function(err, matchedConfig) {
       let customUrl = '';
-      if (matchedDevice.temp_command_trap &&
-          matchedDevice.temp_command_trap.speedtest_url &&
-          matchedDevice.temp_command_trap.speedtest_url !== ''
+      if (matchedDevice.current_diagnostic.type=='speedtest' &&
+          matchedDevice.current_diagnostic.customized &&
+          matchedDevice.current_diagnostic.in_progress
       ) {
-        customUrl = matchedDevice.temp_command_trap.speedtest_url;
+        customUrl = matchedDevice.current_diagnostic.targets[0];
       }
       if (err || !matchedConfig) {
         return res.status(200).json({
@@ -3354,9 +3376,7 @@ deviceListController.doSpeedTest = function(req, res) {
           message: t('configFindError', {errorline: __line}),
         });
       }
-      if (
-        customUrl == '' && !matchedConfig.measureServerIP
-      ) {
+      if (!customUrl && !matchedConfig.measureServerIP) {
         return res.status(200).json({
           success: false,
           message: t('serviceNotConfiguredByAdmin'),
@@ -3369,15 +3389,13 @@ deviceListController.doSpeedTest = function(req, res) {
 
       if (matchedDevice.use_tr069) {
         // When customUrl is defined, we skip 'estimative' stage
-        // and also doesn't save timestamp. We must assure that
-        // stage is 'measure', though
         if (customUrl !== '') {
-          matchedDevice.current_speedtest.stage = 'measure';
+          matchedDevice.current_diagnostic.stage = 'measure';
         } else {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = req.user.name;
-          matchedDevice.current_speedtest.stage = 'estimative';
+          matchedDevice.current_diagnostic.stage = 'estimative';
         }
+        matchedDevice.current_diagnostic.last_modified_at = new Date();
+        matchedDevice.current_diagnostic.user = req.user.name;
         await matchedDevice.save().catch((err) => {
           return res.status(200).json({
             success: false,

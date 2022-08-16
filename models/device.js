@@ -223,7 +223,8 @@ let deviceSchema = new Schema({
   blocked_devices_index: String,
   // For upnp devices permissions
   upnp_devices_index: String,
-  // Store hosts to measure against
+  // Store hosts to measure against.
+  // These are only used by the generic 'ping' command.
   ping_hosts: {
     type: [String],
     default: [
@@ -233,7 +234,6 @@ let deviceSchema = new Schema({
       'www.instagram.com',
     ],
   },
-  
   // Store pingtest results
   pingtest_results: [{
     host: String,
@@ -266,9 +266,12 @@ let deviceSchema = new Schema({
   current_diagnostic: {
     type: {
       type: String,
-      enum:['speedtest','ping','traceroute'],
+      enum: ['speedtest', 'ping', 'traceroute'],
     },
-    stage: {type: String},
+    stage: {
+      type: String,
+      enum: ['', 'estimative', 'measure', 'initiating', 'error'],
+    },
     customized: {type: Boolean},
     in_progress: {type: Boolean},
     started_at: {type: Date},

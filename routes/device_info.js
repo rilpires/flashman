@@ -1,3 +1,4 @@
+/* eslint-disable new-cap */
 
 let express = require('express');
 
@@ -71,7 +72,8 @@ router.route('/receive/speedtestresult').post(
   deviceInfoController.receiveSpeedtestResult);
 
 // SpeedTest Hosts
-router.route('/get/speedtesthost').post(deviceInfoController.getSpeedtestHost);
+router.route('/get/speedtesthost').post(
+  deviceInfoController.getCustomSpeedtestHost);
 
 router.use('/app', require('./app_api'));
 

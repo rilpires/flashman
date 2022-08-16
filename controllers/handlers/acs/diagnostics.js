@@ -32,7 +32,7 @@ const getNextPingTest = function(device) {
   return (found) ? found.host : '';
 };
 
-const getSpeedtestFile = async function(device) {
+const getSpeedtestFile = async function(device, bandEstimative) {
   let matchedConfig = await Config.findOne(
     {is_default: true}, {measureServerIP: true, measureServerPort: true},
   ).lean().catch(
@@ -46,15 +46,14 @@ const getSpeedtestFile = async function(device) {
     return '';
   }
 
-  if (device.temp_command_trap &&
-      device.temp_command_trap.speedtest_url &&
-      device.temp_command_trap.speedtest_url !== ''
+  if (device.current_diagnostic.type=='speedtest' &&
+      device.current_diagnostic.in_progress &&
+      device.current_diagnostic.customized
   ) {
-    return device.temp_command_trap.speedtest_url;
+    return device.current_diagnostic.targets[0];
   }
 
-  let stage = device.current_speedtest.stage;
-  let band = device.current_speedtest.band_estimative;
+  let stage = device.current_diagnostic.stage;
   let url = 'http://' + matchedConfig.measureServerIP + ':' +
                   matchedConfig.measureServerPort + '/measure/tr069/';
   if (stage) {
@@ -62,23 +61,23 @@ const getSpeedtestFile = async function(device) {
       return url + 'file_1920KB.bin';
     }
     if (stage == 'measure') {
-      if (band >= 500) {
+      if (bandEstimative >= 500) {
         return url + 'file_640000KB.bin'; // Max time to download: 10s
-      } else if (band >= 300) {
+      } else if (bandEstimative >= 300) {
         return url + 'file_448000KB.bin'; // Max time to download: 12s, Min: 7s
-      } else if (band >= 150) {
+      } else if (bandEstimative >= 150) {
         return url + 'file_320000KB.bin'; // Max time to download: 17s, Min: 8s
-      } else if (band >= 70) {
+      } else if (bandEstimative >= 70) {
         return url + 'file_192000KB.bin'; // Max time to download: 22s, Min: 10s
-      } else if (band >= 30) {
+      } else if (bandEstimative >= 30) {
         return url + 'file_64000KB.bin'; // Max time to download: 17s, Min: 7s
-      } else if (band >= 15) {
+      } else if (bandEstimative >= 15) {
         return url + 'file_32000KB.bin'; // Max time to download: 17s, Min: 9s
-      } else if (band >= 9) {
+      } else if (bandEstimative >= 9) {
         return url + 'file_19200KB.bin'; // Max time to download: 17s, Min: 11s
-      } else if (band >= 3) {
+      } else if (bandEstimative >= 3) {
         return url + 'file_6400KB.bin'; // Max time to download: 17s, Min: 6s
-      } else if (band < 3) {
+      } else if (bandEstimative < 3) {
         return url + 'file_1920KB.bin'; // Max time to download: 15s, Min: 7s
       }
     }
@@ -119,15 +118,6 @@ const calculatePingDiagnostic = async function(
       }
     }
 
-    let currentCommandTrap = undefined;
-    if (device.temp_command_trap &&
-        device.temp_command_trap.ping_hosts &&
-        device.temp_command_trap.ping_hosts.length > 0
-    ) {
-      device.temp_command_trap.ping_hosts = [];
-      currentCommandTrap = device.temp_command_trap;
-    }
-
     // Always set completed to true to not break recursion on failure
     currentPingTest.completed = true;
 
@@ -148,28 +138,37 @@ const calculatePingDiagnostic = async function(
     });
 
     // If ping command was sent from a customized api call,
-    // we don't want to propagate it to the generic webhook
-    if (currentCommandTrap && currentCommandTrap.webhook_url) {
-      let requestOptions = {};
-      requestOptions.url = currentCommandTrap.webhook_url;
-      requestOptions.method = 'PUT';
-      requestOptions.json = {
-        'id': device._id,
-        'type': 'device',
-        'ping_results': result,
-      };
-      if (currentCommandTrap.webhook_user &&
-          currentCommandTrap.webook_secret
-      ) {
-        requestOptions.auth = {
-          user: currentCommandTrap.webhook_user,
-          pass: currentCommandTrap.webhook_secret,
+    // we don't want to propagate it to the generic webhook,
+    // so we send it to the customized webhook
+    if (device.current_diagnostic.type=='ping' &&
+        device.current_diagnostic.customized &&
+        device.current_diagnostic.in_progress
+    ) {
+      if (device.current_diagnostic.webhook_url) {
+        let requestOptions = {};
+        requestOptions.url = device.current_diagnostic.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'ping_results': result,
         };
+        if (device.current_diagnostic.webhook_user &&
+            device.current_diagnostic.webook_secret
+        ) {
+          requestOptions.auth = {
+            user: device.current_diagnostic.webhook_user,
+            pass: device.current_diagnostic.webhook_secret,
+          };
+        }
+        // No wait!
+        request(requestOptions).then(()=>{}, ()=>{});
       }
-      // No wait!
-      request(requestOptions).then(()=>{}, ()=>{});
+      device.current_diagnostic.stage = 'done';
+      device.current_diagnostic.in_progress = false;
+      device.current_diagnostic.last_modified_at = new Date();
     } else {
-      // Generic ping test
+      // Generic ping test -> generic trap
       deviceHandlers.sendPingToTraps(device._id, {results: result});
     }
 
@@ -178,6 +177,14 @@ const calculatePingDiagnostic = async function(
   }
 };
 
+
+const calculateTraceDiagnostic = async function(
+  device, cpe, data, pingKeys, pingFields,
+) {
+  // TO-DO !!!
+};
+
+
 const calculateSpeedDiagnostic = async function(
   device, data, speedKeys, speedFields,
 ) {
@@ -185,40 +192,9 @@ const calculateSpeedDiagnostic = async function(
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
-  let rqstTime;
-  let lastTime = (new Date(1970, 0, 1)).valueOf();
-  // Try to get last speed test timestamp
-  if (
-    Array.isArray(device.speedtest_results) &&
-    device.speedtest_results.length > 0
+  if (device.current_diagnostic.type=='speedtest' &&
+      device.current_diagnostic.in_progress
   ) {
-    let lastTest = device.speedtest_results[device.speedtest_results.length -1];
-    let lastDate =
-      new Date(
-        lastTest.timestamp.replace(utilHandlers.dateRegex, '$7-$4-$1 $8:$9'));
-    if (lastDate != 'Invalid Date') lastTime = lastDate.valueOf();
-  }
-
-  try {
-    if ('current_speedtest' in device &&
-        'timestamp' in device.current_speedtest &&
-        device.current_speedtest.timestamp) {
-      rqstTime = device.current_speedtest.timestamp.valueOf();
-    }
-  } catch (e) {
-    console.log('Error at TR-069 speedtest:', e);
-    return;
-  }
-
-  let normalSpeedTestInProgress = (rqstTime > lastTime);
-  let customSpeedTestInProgress = false;
-  if (device.temp_command_trap
-    && device.temp_command_trap.speedtest_url
-    && device.temp_command_trap.speedtest_url !== '') {
-    customSpeedTestInProgress = true;
-  }
-
-  if (normalSpeedTestInProgress || customSpeedTestInProgress) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
@@ -239,22 +215,21 @@ const calculateSpeedDiagnostic = async function(
       }
 
       // Speedtest's estimative / real measure step
-      if (device.current_speedtest.stage == 'estimative') {
-        device.current_speedtest.band_estimative = speedValueBasic;
-        device.current_speedtest.stage = 'measure';
+      if (device.current_diagnostic.stage == 'estimative') {
+        device.current_diagnostic.stage = 'measure';
         await device.save().catch((err) => {
           console.log('Error saving speed test est to database: ' + err);
         });
         await sio.anlixSendSpeedTestNotifications(device._id, {
           stage: 'estimative_finished',
-          user: device.current_speedtest.user,
+          user: device.current_diagnostic.user,
         });
-        acsDiagnosticsHandler.fireSpeedDiagnose(device._id);
+        startSpeedtestDiagnose(device.acs_id, speedValueBasic);
         return;
-      } else if (device.current_speedtest.stage == 'measure') {
+      } else if (device.current_diagnostic.stage == 'measure') {
         result = {
           downSpeed: '',
-          user: device.current_speedtest.user,
+          user: device.current_diagnostic.user,
         };
         if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
           result.downSpeed = parseInt(speedValueFullLoad).toString() + ' Mbps';
@@ -279,12 +254,12 @@ const calculateSpeedDiagnostic = async function(
           console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
           result = {
             downSpeed: '503 Server',
-            user: device.current_speedtest.user,
+            user: device.current_diagnostic.user,
           };
           break;
         default:
           result = {
-            user: device.current_speedtest.user,
+            user: device.current_diagnostic.user,
           };
       }
       deviceHandlers.storeSpeedtestResult(device, result);
@@ -348,7 +323,7 @@ const startPingDiagnose = async function(acsID) {
   }
 };
 
-const startSpeedtestDiagnose = async function(acsID) {
+const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
@@ -366,7 +341,7 @@ const startSpeedtestDiagnose = async function(acsID) {
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
   let numberOfCon = 3;
-  let speedtestHostUrl = await getSpeedtestFile(device);
+  let speedtestHostUrl = await getSpeedtestFile(device, bandEstimative);
 
   if (!speedtestHostUrl || speedtestHostUrl === '') {
     console.log('No valid speedtest URL found for ' + acsID);
@@ -462,22 +437,25 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
       try {
         let data = JSON.parse(body)[0];
         let permissions = DeviceVersion.devicePermissions(device);
-        if (permissions) {
-          if (permissions.grantPingTest) {
-            await calculatePingDiagnostic(
-              device, cpe, data,
-              diagNecessaryKeys.ping,
-              fields.diagnostics.ping,
-            );
-          }
-          if (permissions.grantSpeedTest) {
-            await calculateSpeedDiagnostic(
-              device, data, diagNecessaryKeys.speedtest,
-              fields.diagnostics.speedtest,
-            );
-          }
-        } else {
+        let diagType = device.current_diagnostic.type;
+        if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
+        } else if (!device.current_diagnostic.in_progress) {
+          console.log('Genie diagnostic received but ' +
+          'current_diagnostic.in_progress==false');
+        } else if (permissions.grantPingTest && diagType=='ping') {
+          await calculatePingDiagnostic(
+            device, cpe, data,
+            diagNecessaryKeys.ping,
+            fields.diagnostics.ping,
+          );
+        } else if (permissions.grantSpeedTest && diagType=='speedtest') {
+          await calculateSpeedDiagnostic(
+            device, data, diagNecessaryKeys.speedtest,
+            fields.diagnostics.speedtest,
+          );
+        } else if (permissions.grantTraceTest && diagType=='traceroute') {
+          await calculateTraceDiagnostic(/*to-do*/);
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
