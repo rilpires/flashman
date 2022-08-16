@@ -1007,6 +1007,7 @@
 	"factoryCredentialsNotFound": "Could not find a valid custom web credentials configuration",
 	"factoryCredentialsGenericError": "An error has occurred while searching for the custom web credentials configuration",
 	"duplicatedCredentials": "The model {{-model}} already has a custom web credentials configuration",
+	"noFactoryCredentialConfigured": "No custom web credentials configured",
 	"invalidModel": "Invalid model",
 	"invalidManufacturer": "Invalid manufacturer",
 	"updateSingleDeviceTimeWarning": "The firmware update takes approximately 3 minutes. The CPE should not be turned off during this procedure. Inform your customer before proceeding.",
