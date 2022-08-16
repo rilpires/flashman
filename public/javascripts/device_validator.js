@@ -100,11 +100,16 @@
       };
     };
 
-    Validator.prototype.validateChannel = function(channel) {
+    Validator.prototype.validateChannel = function(channel, list5ghz) {
+      let validChannels = [
+        'auto',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+      ];
+      if (list5ghz) {
+        validChannels.concat(list5ghz.map((ch)=>ch.toString()));
+      }
       return {
-        valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                '12', '13', '36', '40', '44', '48', '149', '153', '157',
-                '161', '165', 'auto'].includes(channel),
+        valid: validChannels.includes(channel),
         err: [t('invalidSelectedChannel')],
       };
     };

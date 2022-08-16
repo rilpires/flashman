@@ -77,6 +77,7 @@ let validateEditDevice = function(event) {
   let mac = row.data('deviceid');
   let isTR069 = row.data('is-tr069');
   let validateWifi = row.data('validate-wifi');
+  let validateWifiMode = row.data('validate-wifi-mode');
   let validateWifiDiacritics = row.data('validate-wifi-diacritics');
   let validateWifiBand = row.data('validate-wifi-band');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
@@ -221,9 +222,11 @@ let validateEditDevice = function(event) {
     );
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
+  if (validateWifiMode) {
+    genericValidate(mode, validator.validateMode, errors.mode);
+  }
   if (validateWifiBand) {
     genericValidate(band, validator.validateBand, errors.band);
-    genericValidate(mode, validator.validateMode, errors.mode);
   }
   if (validateWifiPower) {
     genericValidate(power, validator.validatePower, errors.power);
@@ -242,12 +245,30 @@ let validateEditDevice = function(event) {
       (s)=>validator.validateSSID(s, validateWifiDiacritics),
       errors.ssid5ghz,
     );
-    genericValidate(channel5ghz,
-                    validator.validateChannel, errors.channel5ghz);
-    genericValidate(band5ghz,
-                    validator.validateBand, errors.band5ghz);
-    genericValidate(mode5ghz,
-                    validator.validateMode, errors.mode5ghz);
+    // There is no bulletproof way of validating the 5GHz channel on the front
+    // end. The user could maliciously alter the html in ways to break our
+    // validation, since each device has a different 5ghz channel list that
+    // would need to be stored somewhere client side. So we leave the validation
+    // to the backend, and simply check for the union of all valid 5ghz channels
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(
+        ch, [
+          '36', '40', '44', '48', '52', '56', '60', '64', '100', '104', '108',
+          '112', '116', '120', '124', '128', '132', '136', '140', '144', '149',
+          '153', '157', '161', '165',
+        ],
+      ),
+      errors.channel5ghz,
+    );
+    if (validateWifiBand) {
+      genericValidate(band5ghz,
+                      validator.validateBand, errors.band5ghz);
+    }
+    if (validateWifiMode) {
+      genericValidate(mode5ghz,
+                      validator.validateMode, errors.mode5ghz);
+    }
     if (validateWifiPower) {
       genericValidate(power5ghz, validator.validatePower, errors.power5ghz);
     }

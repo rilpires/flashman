@@ -8,6 +8,16 @@ huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+    149, 153, 157, 161,
+  ];
+  permissions.wifi.bandRead = false;
+  permissions.wifi.bandWrite = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '10.0.5.9(C506)': [],
     '10.0.5.5(C947)': [],

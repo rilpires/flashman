@@ -16,6 +16,12 @@ multilaserModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 100;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
+    149, 153, 157, 161, 165,
+  ];
+  permissions.wifi.bandAuto5 = false;
   permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'V3.0.0C5_MUL': ['V3.0.0C6_MUL'],
@@ -35,6 +41,23 @@ multilaserModel.convertWifiMode = function(mode) {
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+    default:
+      return '';
+  }
+};
+
+multilaserModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    case 'auto':
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }
@@ -83,6 +106,14 @@ multilaserModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
+    '.X_ZTE-COM_WlanStandard';
+  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
+    '.X_ZTE-COM_WlanStandard';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
+    '.X_ZTE-COM_BandWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
+    '.X_ZTE-COM_BandWidth';
   return fields;
 };
 
