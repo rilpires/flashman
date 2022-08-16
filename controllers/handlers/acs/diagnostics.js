@@ -217,6 +217,7 @@ const calculateSpeedDiagnostic = async function(
       // Speedtest's estimative / real measure step
       if (device.current_diagnostic.stage == 'estimative') {
         device.current_diagnostic.stage = 'measure';
+        device.current_diagnostic.last_modified_at = new Date();
         await device.save().catch((err) => {
           console.log('Error saving speed test to database: ' + err);
         });
