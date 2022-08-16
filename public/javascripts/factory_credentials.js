@@ -65,13 +65,12 @@ const setCallback = function(event) {
   });
 };
 
-const factoryCredentialsTableToggle = function(addingNewRow = false) {
-  if (getFactoryCredentialsStorage('credentialsInfo').length > 0 ||
-      addingNewRow) {
-    $('#factory-credentials-table-hide').hide();
+const factoryCredentialsTableToggle = function() {
+  if (getFactoryCredentialsStorage('credentialsInfo').length > 0) {
+    $('#factory-credentials-table-none').hide();
     $('#factory-credentials-table').show();
   } else if (getFactoryCredentialsStorage('credentialsInfo').length == 0) {
-    $('#factory-credentials-table-hide').show();
+    $('#factory-credentials-table-none').show();
     $('#factory-credentials-table').hide();
   }
 };
@@ -122,7 +121,6 @@ anlixDocumentReady.add(function() {
   // front-end table
   $(document).on('click', '#factory-credentials-add-button',
     function(event) {
-      factoryCredentialsTableToggle(true);
       let selectedVendor = $('#factory-credentials-vendor-entries').val();
       let selectedModel = $('#factory-credentials-model-entries').val();
 
@@ -173,6 +171,7 @@ anlixDocumentReady.add(function() {
         // Clear inputs
         $('#factory-credentials-user-input').val('');
         $('#factory-credentials-password-input').val('');
+        factoryCredentialsTableToggle();
       }
     },
   );
