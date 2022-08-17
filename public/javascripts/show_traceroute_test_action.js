@@ -403,6 +403,10 @@ anlixDocumentReady.add(function() {
     // Start the animation
     setUpdatingAnimation(true);
 
+    // Clear the result section and events
+    $(TRACEROUTE_RESULTS_TABLE).text('');
+    $(TRACEROUTE_RESULTS_TABLE).off();
+
     // Send the command to send the traceroute request
     sendRequest(
       '/devicelist/command/' + deviceId + '/traceroute',
@@ -416,15 +420,14 @@ anlixDocumentReady.add(function() {
       },
       onRequisitionError,
     );
+  });
 
-
-    // Assign a socket IO
-    socket.on(SIO_NOTIFICATION_TRACEROUTE, function(macaddr, data) {
-      // Check if it is the current device
-      if ($(DEVICE_ID_MODAL).text() === macaddr) {
-        // Update values
-        updateValues(data);
-      }
-    });
+  // Assign a socket IO
+  socket.on(SIO_NOTIFICATION_TRACEROUTE, function(macaddr, data) {
+    // Check if it is the current device
+    if ($(DEVICE_ID_MODAL).text() === macaddr) {
+      // Update values
+      updateValues(data);
+    }
   });
 });
