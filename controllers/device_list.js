@@ -1331,7 +1331,6 @@ deviceListController.sendMqttMsg = function(req, res) {
           } else {
             mqtt.anlixMessageRouterTraceroute(
               device._id,
-              device.traceroute_route,
               device.traceroute_max_hops,
               device.traceroute_numberProbes,
               device.traceroute_max_wait,

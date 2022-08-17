@@ -418,7 +418,6 @@ mqtts.anlixMessageRouterLanInfo = function(id) {
 // Traceroute
 mqtts.anlixMessageRouterTraceroute = function(
   id,
-  route,
   maxHops,
   numberProbes,
   maxTime,
