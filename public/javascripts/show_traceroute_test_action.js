@@ -345,34 +345,35 @@ const showModal = async function(event) {
 
   // Send the command to get the route from database
   sendRequest(
-    '/devicelist/traceroute/' + deviceId,
+    '/devicelist/pinghostslist/' + deviceId,
     'GET',
     deviceId,
     function(id, data) {
-      let tracerouteRoute = DEFAULT_TRACEROUTE_SERVER;
-
       // If happened an error
       if (!data.success) {
         onRequisitionError();
         return;
       }
 
-      // Check if empty or null
-      if (data.traceroute_route !== '' ||
-          data.traceroute_route !== null) {
-        tracerouteRoute = data.traceroute_route;
-      }
+      // Get the list from ping
+      let hostslist = data.ping_hosts_list;
 
-      initialized = false;
+      // Assign each route
+      $.each(hostslist, function(idx, address) {
+        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize
+          .addOption({
+            value: address,
+            text: address,
+          });
 
-      // Assign the route
-      $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize
-        .addOption({
-          value: tracerouteRoute,
-          text: tracerouteRoute,
-        });
-        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.addItem(tracerouteRoute);
-        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
+        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.addItem(address);
+      });
+
+      // Update items
+      $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
+
+      // Update completed
+      initialized = true;
     },
     onRequisitionError,
   );
@@ -387,6 +388,9 @@ anlixDocumentReady.add(function() {
 
   // Assign Traceroute Show Modal Button
   $(document).on('click', '.btn-traceroute-test-modal', async function(event) {
+    // Do not save the routes when adding then
+    initialized = false;
+
     showModal(event);
   });
 
