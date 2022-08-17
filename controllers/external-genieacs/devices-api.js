@@ -50,6 +50,7 @@ const tr069Models = {
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
+  raisecomModel: require('./cpe-models/raisecom-ht803g-rev-t'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
@@ -199,6 +200,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'P20') {
     // Phyhome P20
     return {success: true, cpe: tr069Models.phyhomeP20Model};
+  } else if (modelName === 'HT803G-WS2') {
+    // Raisecom HT803G-WS2
+    return {success: true, cpe: tr069Models.raisecomModel};
   } else if (modelSerial === 'AC10') {
     // Tenda AC10
     return {success: true, cpe: tr069Models.tendaAC10Model};
