@@ -24,8 +24,8 @@ const getDefaultPingHosts = function(event) {
         buildHostsTable();
         defaultHostsTableToggle();
       } else {
-        swal({
-          type: res.type,
+        swal.fire({
+          icon: res.type,
           title: res.message,
           confirmButtonColor: '#4db6ac',
         });
@@ -55,8 +55,8 @@ const setDefaultPingHosts = function(event) {
     }),
     contentType: 'application/json',
     success: function(res) {
-      swal({
-        type: res.type,
+      swal.fire({
+        icon: res.type,
         title: res.message,
         confirmButtonColor: '#4db6ac',
       });
@@ -122,15 +122,15 @@ const addNewDefaultHost = function(event) {
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
   const newHost = $('#default-hosts-config-input').val();
   if (!newHost || newHost === '') {
-    swal({
-      type: 'error',
+    swal.fire({
+      icon: 'error',
       title: t('emptyHostError'),
       confirmButtonColor: '#4db6ac',
     });
   }
   if (defaultPingHostsInfo.filter((item) => item == newHost).length > 0) {
-    swal({
-      type: 'error',
+    swal.fire({
+      icon: 'error',
       title: t('duplicatedHost', {host: newHost}),
       confirmButtonColor: '#4db6ac',
     });
