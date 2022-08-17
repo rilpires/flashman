@@ -32,6 +32,9 @@ const SIO_NOTIFICATION_TRACEROUTE = 'TRACEROUTE';
 
 
 // HTMLs
+const TRACEROUTE_HTML_ARROW_NAME = 'traceroute-item-arrow-';
+const TRACEROUTE_HTML_RESULT_NAME = 'traceroute-item-result-';
+
 const RESULT_TABLE_ITEM_HTML = $('<li>')
   .addClass('list-group-item')
   .addClass('d-flex')
@@ -50,6 +53,29 @@ const SELECTIZE_ADDRESS_HTML = function(data, escape) {
       t('Add') + ':',
       $('<strong>').html(escape(data.input)),
     );
+};
+
+// Return the HTML of the collapsible item
+const resultTableRouteCollapsibleHtml = function(route, number) {
+  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+
+            // Arrow portion of the header of the collapsible item
+            '<div class="col-1">' +
+              // Arrow
+              '<div id="' + TRACEROUTE_HTML_ARROW_NAME + number +
+              '" class="fas fa-chevron-down fa-lg mt-1"></div>' +
+            '</div>' +
+
+            // Text portion of the header
+            '<div class="col-11">' +
+              '<h5>' + encodeURIComponent(route) + '</h5>' +
+            '</div>' +
+          '</div>' +
+
+          // Result of the item
+          '<div id="' + TRACEROUTE_HTML_RESULT_NAME + number +
+          '" class="pl-2 pr-2 grey lighten-5 border" style="display: none;">' +
+          '</div>');
 };
 
 
