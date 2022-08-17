@@ -1045,6 +1045,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
+    // Add legacy permissions for backwards compatibility with old apps
+    permissions.grantWifiBand = (
+      permissions.grantWifiModeEdit || permissions.grantWifiBandEdit
+    );
+
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
       permissions.grantPortForward = false;
