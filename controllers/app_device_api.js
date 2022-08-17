@@ -1035,7 +1035,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
           matchedDeviceEdit.last_location_date = new Date();
         }
         try {
-          await matchedDevice.save();
+          await matchedDeviceEdit.save();
         } catch (err) {
           console.log('Error saving location or FCM: ' + err);
         }
