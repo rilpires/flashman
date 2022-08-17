@@ -307,7 +307,6 @@ let deviceSchema = new Schema({
   },
 
   // Traceroute
-  traceroute_route: {type: String, default: 'www.google.com'},
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 30},
   traceroute_numberProbes: {type: Number, min: 1, max: 10, default: 3},
   traceroute_max_wait: {type: Number, min: 1, max: 5, default: 3},

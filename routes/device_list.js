@@ -143,15 +143,4 @@ router.route('/waninfo/:id').get(
 router.route('/laninfo/:id').get(
   deviceListController.getLanInfo);
 
-// Traceroute
-router.route('/traceroute/:id')
-  .get(
-    authController.ensurePermission('grantMeasureDevices', 2),
-    deviceListController.getTracerouteAddress,
-  )
-  .post(
-    authController.ensurePermission('grantMeasureDevices', 2),
-    deviceListController.setTracerouteAddress,
-);
-
 module.exports = router;
