@@ -4,6 +4,7 @@ import 'selectize';
 
 const t = i18next.t;
 let initialized = false;
+let itemIndex = 0;
 
 
 // Modals
@@ -260,8 +261,37 @@ const updateValues = function(message) {
     return;
   }
 
-  // Clear previous results
-  $(TRACEROUTE_RESULTS_TABLE).text('');
+  // Escape characters
+  let route = encodeURIComponent(message.address);
+
+  // Get the number and increment
+  let number = itemIndex;
+  itemIndex += 1;
+
+  // Create the item separator
+  let routeItemHtml = resultTableRouteCollapsibleHtml(route, number);
+  $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
+
+  // Assign a function to the arrow
+  $(TRACEROUTE_RESULTS_TABLE).on(
+    'click',
+    '#' + TRACEROUTE_HTML_ARROW_NAME + number,
+    async function(event) {
+      let arrow = $('#' + TRACEROUTE_HTML_ARROW_NAME + number);
+      let result = $('#' + TRACEROUTE_HTML_RESULT_NAME + number);
+
+      if (arrow.hasClass('text-primary')) {
+        arrow
+          .removeClass('text-primary fa-chevron-up')
+          .addClass('fa-chevron-down');
+        result.hide();
+      } else {
+        arrow
+          .removeClass('fa-chevron-down')
+          .addClass('text-primary fa-chevron-up');
+        result.show();
+      }
+  });
 
   // Loop through all hops
   for (let hopIndex = 0; hopIndex < message.hops.length; hopIndex++) {
@@ -274,9 +304,9 @@ const updateValues = function(message) {
     }
 
     // Assign parameters to html
-    $(TRACEROUTE_RESULTS_TABLE).append(
+    $('#' + TRACEROUTE_HTML_RESULT_NAME + number).append(
       RESULT_TABLE_ITEM_HTML
-        .text(escape(hop.ip))
+        .text(encodeURIComponent(hop.ip))
         .append(
           RESULT_TABLE_ITEM_VALUE_HTML
           .text(t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)}))
