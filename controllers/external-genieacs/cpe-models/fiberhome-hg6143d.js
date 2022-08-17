@@ -8,16 +8,56 @@ fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.ponSignal = true;
   permissions.features.pingTest = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 730;
   permissions.firmwareUpgrades = {
     'RP2815': [],
   };
   return permissions;
 };
 
+fiberhomeModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return (is5ghz) ? '3' : '0';
+    default:
+      return '';
+  }
+};
+
+fiberhomeModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**3 => milliseconds to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**3))/(1024**2)) * (bytesRec/period);
+};
+
 fiberhomeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  // Nao possui rate e duplex na arvore de WANDevice
-  // Não possui Bandwidth em wifi2
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
