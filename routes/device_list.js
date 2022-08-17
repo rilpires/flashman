@@ -99,13 +99,13 @@ router.route('/uiportforward/:id').get(
                                   .post(
   deviceListController.setPortForward);
 
-// Set/Get Speed test results
+// Get/Execute Speed test results
 router.route('/speedtest/:id').get(
   authController.ensurePermission('grantMeasureDevices'),
   deviceListController.getSpeedtestResults)
                               .post(
   authController.ensurePermission('grantMeasureDevices', 2),
-  deviceListController.doSpeedTest);
+  deviceListController.sendGenericSpeedTest);
 
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(

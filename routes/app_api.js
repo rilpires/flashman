@@ -44,7 +44,7 @@ router.route('/diagnostic/get/speedtest').post(
 router.route('/diagnostic/speedtest').post(
   authController.ensureAPIAccess,
   authController.ensurePermission('grantDiagAppAccess'),
-  diagAPIController.doSpeedTest,
+  diagAPIController.sendDiagnosticSpeedTest,
 );
 
 router.route('/diagnostic/login').post(
