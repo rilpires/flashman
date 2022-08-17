@@ -270,7 +270,7 @@ let deviceSchema = new Schema({
     },
     stage: {
       type: String,
-      enum: ['', 'estimative', 'measure', 'initiating', 'error'],
+      enum: ['', 'estimative', 'measure', 'initiating', 'error', 'done'],
     },
     customized: {type: Boolean},
     in_progress: {type: Boolean},
