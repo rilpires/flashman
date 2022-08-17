@@ -237,7 +237,8 @@ let processWifi = function(content, device, rollback, tr069Changes) {
   }
   if (content.wifi_channel_5ghz) {
     // discard change to invalid 5ghz channel for this model
-    if (Validator.validateChannel(
+    let validator = new Validator();
+    if (validator.validateChannel(
       content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
     ).valid) {
       rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
