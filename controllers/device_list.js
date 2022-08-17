@@ -1325,6 +1325,24 @@ deviceListController.sendMqttMsg = function(req, res) {
             );
           }
 
+          // Clear previous results
+          device.traceroute_results = [];
+
+          // Create a new array with the hosts filled
+          if (Object.keys(device.ping_hosts).length > 0) {
+            device.traceroute_results =
+              device.ping_hosts.map((host)=>({address: host}));
+          }
+
+          // Save
+          if (device.traceroute_results.length > 0) {
+            await device.save().catch((err) => {
+              console.log(
+                'Error saving device after traceroute command: ' + err,
+              );
+            });
+          }
+
           // Start Traceroute
           if (device && device.use_tr069) {
             // Preparation for TR069
