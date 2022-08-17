@@ -80,6 +80,24 @@ const resultTableRouteCollapsibleHtml = function(route, number) {
 };
 
 
+// Return the HTML of an invalid item
+const resultTableRouteInvalidHtml = function(route) {
+  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+
+            // Arrow portion of the header of the collapsible item
+            '<div class="col-1">' +
+              // X
+              '<div class="fas fa-times fa-lg mt-1 red-text"></div>' +
+            '</div>' +
+
+            // Text portion of the header
+            '<div class="col-11">' +
+              '<h5>' + encodeURIComponent(route) + '</h5>' +
+            '</div>' +
+          '</div>');
+};
+
+
 // Saves the route for traceroute to database
 const saveTracerouteAddress = function() {
   // Check if it is the first time adding the routes
@@ -256,8 +274,13 @@ const setUpdatingAnimation = function(updating) {
 const updateValues = function(message) {
   // Check if the message did not come empty
   if (isNaN(message.tries_per_hop)) {
-    // Set the error and return
-    setErrorModal(true);
+    // Escape characters
+    let route = encodeURIComponent(message.address);
+
+    // Create the invalid item
+    let routeItemHtml = resultTableRouteInvalidHtml(route);
+    $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
+
     return;
   }
 
@@ -268,7 +291,7 @@ const updateValues = function(message) {
   let number = itemIndex;
   itemIndex += 1;
 
-  // Create the item separator
+  // Create the item
   let routeItemHtml = resultTableRouteCollapsibleHtml(route, number);
   $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
 
