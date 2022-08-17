@@ -169,13 +169,6 @@ const initiatePingCommand = async function(req, res, device) {
       message: t('cpeWithoutCommand'),
     });
   }
-  if (!canStartNewDiagnostic(device)) {
-    res.status(200).json({
-      success: false,
-      message: t('diagnosticInProgress'),
-    });
-  }
-
   // Validated from here. Saving device & validating stuffs
 
   if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -186,6 +179,7 @@ const initiatePingCommand = async function(req, res, device) {
   await device.save().catch((err) => {
     console.log('Error saving device after ping command: ' + err);
   });
+
   if (device.use_tr069) {
     device.pingtest_results = [];
 
@@ -205,10 +199,14 @@ const initiatePingCommand = async function(req, res, device) {
       console.log('Error saving device right before firing ping diagnose');
     });
     if (device.pingtest_results.length > 0) {
-      acsDiagnosticsHandler.firePingDiagnose(device);
+      let fireResult = await acsDiagnosticsHandler.firePingDiagnose(device);
+      return res.status(200).json(fireResult);
+    } else {
+      return res.status(200).json({success: false});
     }
   } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
+    return res.status(200).json({success: true});
   }
 };
 
@@ -216,13 +214,6 @@ const initiatePingCommand = async function(req, res, device) {
 // Common validations and device.save goes here
 const initiateSpeedTest = async function(req, res, device) {
   let mac = device._id;
-
-  if (!canStartNewDiagnostic(device)) {
-    res.status(200).json({
-      success: false,
-      message: t('diagnosticInProgress'),
-    });
-  }
   if (!device.use_tr069) {
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
       return map[mac];
@@ -254,7 +245,8 @@ const initiateSpeedTest = async function(req, res, device) {
   });
 
   if (device.use_tr069) {
-    acsDiagnosticsHandler.fireSpeedDiagnose(device);
+    let fireResult = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
+    return res.status(200).json(fireResult);
   } else {
     if (device.current_diagnostic.customized) {
       mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
@@ -262,16 +254,34 @@ const initiateSpeedTest = async function(req, res, device) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], req.user);
     }
+    return res.status(200).json({success: true});
   }
-  return res.status(200).json({
-    success: true,
+};
+
+// This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
+// Common validations and device.save goes here
+const initiateTracerouteTest = async function(req, res, device) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions.grantTraceroute) {
+    return res.status(200).json({
+      success: false,
+      message: t('cpeWithoutCommand'),
+    });
+  }
+
+  // Everything validated from here;
+  await device.save().catch((err)=>{
+    return res.status(200).json({
+      success: false,
+      message: t('cpeSaveError', {errorline: __line}),
+    });
   });
 };
 
 const canStartNewDiagnostic = function(device) {
   const msSinceLastModified =
     new Date() - device.current_diagnostic.last_modified_at;
-  const timeoutThresholdMs = 2 * 60 * 1000; // 2 minutes;
+  const timeoutThresholdMs = 2 * 5 * 1000; // 2 minutes;
   if (!isNaN(msSinceLastModified) &&
       msSinceLastModified<timeoutThresholdMs &&
       device.current_diagnostic.in_progress
@@ -1506,6 +1516,12 @@ deviceListController.sendCustomPing = async function(req, res) {
       });
     }
 
+    if (!canStartNewDiagnostic(device)) {
+      return res.status(200).json({
+        success: false,
+        message: t('diagnosticInProgress'),
+      });
+    }
     let now = new Date();
     device.current_diagnostic = {
       type: 'ping',
@@ -1515,7 +1531,7 @@ deviceListController.sendCustomPing = async function(req, res) {
       started_at: now,
       last_modified_at: now,
       targets: approvedTempHosts,
-      user: req.user,
+      user: req.user.name,
       webhook_url: '',
       webhook_user: '',
       webhook_secret: '',
@@ -1554,6 +1570,12 @@ deviceListController.sendGenericPing = async function(req, res) {
                                       {errorline: __line})});
       }
 
+      if (!canStartNewDiagnostic(device)) {
+        return res.status(200).json({
+          success: false,
+          message: t('diagnosticInProgress'),
+        });
+      }
       let now = new Date();
       device.current_diagnostic = {
         type: 'ping',
@@ -1563,7 +1585,7 @@ deviceListController.sendGenericPing = async function(req, res) {
         started_at: now,
         last_modified_at: now,
         targets: [],
-        user: req.user,
+        user: req.user.name,
         webhook_url: '',
         webhook_user: '',
         webhook_secret: '',
@@ -1620,6 +1642,13 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       });
     }
 
+    if (!canStartNewDiagnostic(device)) {
+      return res.status(200).json({
+        success: false,
+        message: t('diagnosticInProgress'),
+      });
+    }
+
     let now = new Date();
     device.current_diagnostic = {
       type: 'speedtest',
@@ -1629,7 +1658,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       started_at: now,
       last_modified_at: now,
       targets: [req.body.content.url],
-      user: req.user,
+      user: req.user.name,
       webhook_url: '',
       webhook_user: '',
       webhook_secret: '',
@@ -1690,6 +1719,14 @@ deviceListController.sendGenericSpeedTest = async function(req, res, device) {
         message: t('serviceNotConfiguredByAdmin'),
       });
     }
+
+  if (!canStartNewDiagnostic(device)) {
+    return res.status(200).json({
+      success: false,
+      message: t('diagnosticInProgress'),
+    });
+  }
+
     let now = new Date();
     // TR069 doesnt use 'targets' field.
     let firmwareUrl = config.measureServerIP + ':' + config.measureServerPort;
@@ -1701,7 +1738,7 @@ deviceListController.sendGenericSpeedTest = async function(req, res, device) {
       started_at: now,
       last_modified_at: now,
       targets: [firmwareUrl],
-      user: req.user,
+      user: req.user.name,
       webhook_url: '',
       webhook_user: '',
       webhook_secret: '',
@@ -1711,14 +1748,58 @@ deviceListController.sendGenericSpeedTest = async function(req, res, device) {
 };
 
 deviceListController.sendCustomTraceRoute = async function(req, res) {
-  /* */
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    async function(err, device) {
+      if (err) {
+        return res.status(200).json({success: false,
+                                     message: t('cpeFindError',
+                                      {errorline: __line})});
+      }
+      if (Array.isArray(device) && device.length > 0) {
+        device = device[0];
+      } else {
+        return res.status(200).json({success: false,
+                                     message: t('cpeNotFound',
+                                      {errorline: __line})});
+      }
+
+      if (!canStartNewDiagnostic(device)) {
+        return res.status(200).json({
+          success: false,
+          message: t('diagnosticInProgress'),
+        });
+      }
+
+      initiateTracerouteTest(req, res, device);
+    });
 };
 
 deviceListController.sendGenericTraceRoute = async function(req, res) {
-  /* */
-};
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
+    if (err) {
+      return res.status(200).json({success: false,
+                                   message: t('cpeFindError',
+                                    {errorline: __line})});
+    }
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+    }
 
-devi
+    if (!canStartNewDiagnostic(device)) {
+      return res.status(200).json({
+        success: false,
+        message: t('diagnosticInProgress'),
+      });
+    }
+
+    initiateTracerouteTest(req, res, device);
+  });
+};
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
