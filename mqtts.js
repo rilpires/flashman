@@ -424,7 +424,6 @@ mqtts.anlixMessageRouterTraceroute = function(
   maxTime,
 ) {
   const payload = 'traceroute ' +
-    route + ' ' +
     maxHops + ' ' +
     numberProbes + ' ' +
     maxTime;
