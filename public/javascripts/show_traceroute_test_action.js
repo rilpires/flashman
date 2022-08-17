@@ -129,11 +129,10 @@ const resetTracerouteDisplay = function() {
 
 // Constants
 const MEAN_TRUNCATE_NUMBER = 3;
-const DEFAULT_TRACEROUTE_SERVER = 'www.google.com';
 const SELECTIZE_OPTIONS_ADDRESS = {
   create: true,
-  maxItems: 1,
   onItemAdd: saveTracerouteAddress,
+  onItemRemove: saveTracerouteAddress,
   onChange: resetTracerouteDisplay,
   render: {
     option_create: SELECTIZE_ADDRESS_HTML,
