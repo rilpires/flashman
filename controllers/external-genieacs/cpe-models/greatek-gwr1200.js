@@ -15,6 +15,12 @@ greatekModel.modelPermissions = function() {
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.speedTestLimit = 300;
   permissions.lan.configWrite = false;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
+  permissions.wifi.bandRead = false;
+  permissions.wifi.bandWrite = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '638.112.100.1383': [],
   };
@@ -67,6 +73,8 @@ greatekModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   delete fields.diagnostics.speedtest.num_of_conn;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =

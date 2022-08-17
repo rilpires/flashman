@@ -8,6 +8,10 @@ nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
+  ];
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '3FE46343AFIA57': [],
     '3FE46343AFIA89': [],
@@ -29,6 +33,39 @@ nokiaModel.convertWifiMode = function(mode) {
     case '11ax':
     default:
       return '';
+  }
+};
+
+nokiaModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '0';
+    case 'HT40':
+    case 'VHT40':
+      return '1';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return (is5ghz) ? '3' : '2';
+    default:
+      return '';
+  }
+};
+
+nokiaModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '2':
+      return 'auto';
+    case '3':
+      return (isAC) ? 'auto' : undefined;
+    default:
+      return undefined;
   }
 };
 

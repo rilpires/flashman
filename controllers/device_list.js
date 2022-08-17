@@ -1704,6 +1704,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
+      let needsToUpdateExtRef = false;
       let validator = new Validator();
 
       let errors = [];
@@ -1765,6 +1766,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixDNS =
         util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
+      let extReference = util.returnObjOrFalse(content.external_reference);
       let slaveCustomConfigs = [];
       try {
         slaveCustomConfigs = JSON.parse(content.slave_custom_configs);
@@ -1874,8 +1876,13 @@ deviceListController.setDeviceReg = function(req, res) {
           }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
-          genericValidate(channel5ghz,
-                          validator.validateChannel, 'channel5ghz');
+          genericValidate(
+            channel5ghz,
+            (ch)=>validator.validateChannel(
+              ch, permissions.grantWifi5ChannelList,
+            ),
+            'channel5ghz',
+          );
         }
         if (content.hasOwnProperty('wifi_band_5ghz')) {
           genericValidate(band5ghz, validator.validateBand, 'band5ghz');
@@ -1901,6 +1908,13 @@ deviceListController.setDeviceReg = function(req, res) {
                           'bridge_fixed_gateway');
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
+        }
+        if ((content.hasOwnProperty('external_reference')) &&
+            (extReference.kind !== matchedDevice.external_reference.kind ||
+             extReference.data !== matchedDevice.external_reference.data)) {
+          genericValidate(extReference, validator.validateExtReference,
+            'external_reference');
+          needsToUpdateExtRef = true;
         }
         // We must enable Wi-Fi corresponding to mesh radio we're using
         // Some models have this restriction.
@@ -2015,16 +2029,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band') &&
+                permissions.grantWifiBandEdit &&
                 band !== '' && band !== matchedDevice.wifi_band) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi2.band = band;
-                matchedDevice.wifi_band = band;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto2) {
+                  changes.wifi2.band = band;
+                  matchedDevice.wifi_band = band;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode') &&
+                permissions.grantWifiModeEdit &&
                 mode !== '' && mode !== matchedDevice.wifi_mode) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.mode = mode;
@@ -2100,16 +2119,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
+                permissions.grantWifiBandEdit &&
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi5.band = band5ghz;
-                matchedDevice.wifi_band_5ghz = band5ghz;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto5) {
+                  changes.wifi5.band = band5ghz;
+                  matchedDevice.wifi_band_5ghz = band5ghz;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                permissions.grantWifiModeEdit &&
                 mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.mode = mode5ghz;
@@ -2186,17 +2210,12 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if (content.hasOwnProperty('external_reference') &&
-                (content.external_reference.kind !==
-                 matchedDevice.external_reference.kind ||
-                 content.external_reference.data !==
-                 matchedDevice.external_reference.data)
-            ) {
+            if (needsToUpdateExtRef) {
               if (superuserGrant || role.grantDeviceId) {
-                matchedDevice.external_reference.kind =
-                  content.external_reference.kind;
-                matchedDevice.external_reference.data =
-                  content.external_reference.data;
+                let extRef =
+                  util.getExtRefPattern(extReference.kind, extReference.data);
+                matchedDevice.external_reference.kind = extRef.kind;
+                matchedDevice.external_reference.data = extRef.data;
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
@@ -2303,31 +2322,28 @@ deviceListController.setDeviceReg = function(req, res) {
                   ) {
                     delete changes.wifi5.channel;
                   }
-                } else {
-                  meshHandlers.setMeshMode(
-                    matchedDevice, meshMode,
-                  );
                 }
+                meshHandlers.setMeshMode(
+                  matchedDevice, meshMode,
+                );
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
               }
             }
-            if (
-              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
-              (
-                (
-                  matchedDevice.wifi_state == 0 &&
-                  JSON.stringify(changes.wifi2) != '{}' &&
-                  JSON.stringify(changes.wifi2) != '{"enable":0}'
-                ) ||
-                (
-                  matchedDevice.wifi_state_5ghz == 0 &&
-                  JSON.stringify(changes.wifi5) != '{}' &&
-                  JSON.stringify(changes.wifi5) != '{"enable":0}'
-                )
-              )
-            ) {
+            let isWifi2DisabledAndChangingSomething = (
+              matchedDevice.wifi_state == 0 &&
+              JSON.stringify(changes.wifi2) != '{}' &&
+              JSON.stringify(changes.wifi2) != '{"enable":0}'
+            );
+            let isWifi5DisabledAndChangingSomething = (
+              matchedDevice.wifi_state_5ghz == 0 &&
+              JSON.stringify(changes.wifi5) != '{}' &&
+              JSON.stringify(changes.wifi5) != '{"enable":0}'
+            );
+            if (cpe.modelPermissions().wifi.mustBeEnabledToConfigure
+              && (isWifi2DisabledAndChangingSomething ||
+                  isWifi5DisabledAndChangingSomething)) {
               return res.status(500).json({
                 success: false,
                 message: t('enabledToModifyFields',
@@ -2389,7 +2405,6 @@ deviceListController.createDeviceReg = function(req, res) {
   if (util.isJSONObject(req.body.content)) {
     const content = req.body.content;
     const macAddr = content.mac_address.trim().toUpperCase();
-    const extReference = content.external_reference;
     const validator = new Validator();
 
     let errors = [];
@@ -2403,6 +2418,7 @@ deviceListController.createDeviceReg = function(req, res) {
     let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
     let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
     let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+    const extReference = util.returnObjOrFalse(content.external_reference);
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -2456,6 +2472,10 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
       genericValidate(mode, validator.validateMode, 'mode');
+      if (extReference) {
+        genericValidate(extReference, validator.validateExtReference,
+          'external_reference');
+      }
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -2472,7 +2492,7 @@ deviceListController.createDeviceReg = function(req, res) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
               'created_at': new Date(),
-              'external_reference': extReference,
+              'external_reference': extReference ? extReference : {},
               'model': '',
               'release': release,
               'pppoe_user': pppoeUser,
@@ -2487,6 +2507,12 @@ deviceListController.createDeviceReg = function(req, res) {
               'do_update_parameters': false,
               'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
+            if (extReference) {
+              let extRef =
+                util.getExtRefPattern(extReference.kind, extReference.data);
+              newDeviceModel.external_reference.kind = extRef.kind;
+              newDeviceModel.external_reference.data = extRef.data;
+            }
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
             }

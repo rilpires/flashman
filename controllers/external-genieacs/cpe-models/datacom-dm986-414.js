@@ -13,6 +13,11 @@ datacomModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+  ];
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
   permissions.firmwareUpgrades = {
     'V4.6.0-210709': [],
   };
@@ -32,6 +37,37 @@ datacomModel.convertWifiMode = function(mode) {
     case '11ax':
     default:
       return '';
+  }
+};
+
+datacomModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '0';
+    case 'HT40':
+    case 'VHT40':
+      return '1';
+    case 'VHT80':
+      return '2';
+    case 'auto':
+      return (is5ghz) ? '2' : '1';
+    default:
+      return '';
+  }
+};
+
+datacomModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '2':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
   }
 };
 
@@ -55,6 +91,10 @@ datacomModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
+    'ChannelWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
+    'ChannelWidth';
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');

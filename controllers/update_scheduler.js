@@ -722,9 +722,11 @@ scheduleController.getDevicesReleases = async function(req, res) {
               let slaveDevice = matchedDevices.find(
                 (d) => d._id === device.mesh_slaves[i],
               );
-              let slaveModel = slaveDevice.model.replace('N/', '');
-              if (!models.includes(slaveModel)) {
-                models.push(slaveModel);
+              if (slaveDevice && ('model' in slaveDevice)) {
+                let slaveModel = slaveDevice.model.replace('N/', '');
+                if (!models.includes(slaveModel)) {
+                  models.push(slaveModel);
+                }
               }
             }
             meshNetworks.push({

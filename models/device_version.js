@@ -1742,8 +1742,13 @@ const convertTR069Permissions = function(cpePermissions) {
     grantDiacritics: cpePermissions.wifi.allowDiacritics,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
-    grantWifiBand: true,
-    grantWifiBandAuto: true,
+    grantWifiModeRead: cpePermissions.wifi.modeRead,
+    grantWifiModeEdit: cpePermissions.wifi.modeWrite,
+    grantWifiBandRead: cpePermissions.wifi.bandRead,
+    grantWifiBandEdit: cpePermissions.wifi.bandWrite,
+    grantWifiBandAuto2: cpePermissions.wifi.bandAuto2,
+    grantWifiBandAuto5: cpePermissions.wifi.bandAuto5,
+    grantWifi5ChannelList: cpePermissions.wifi.list5ghzChannels,
     grantWifiState: true,
     grantWifiPowerHiddenIpv6Box: false,
     grantWifiExtendedChannels: cpePermissions.wifi.extended2GhzChannels,
@@ -1758,13 +1763,15 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
-    grantOpmode: cpePermissions.features.mesh,
+    grantOpmode: cpePermissions.features.meshCable ||
+      cpePermissions.features.meshWifi,
     grantVlanSupport: false,
     grantWanBytesSupport: true,
     grantPonSignalSupport: cpePermissions.features.ponSignal,
     grantMeshMode: false,
     grantMeshV2PrimaryModeUpgrade: false,
-    grantMeshV2PrimaryMode: cpePermissions.features.mesh,
+    grantMeshV2PrimaryModeCable: cpePermissions.features.meshCable,
+    grantMeshV2PrimaryModeWifi: cpePermissions.features.meshWifi,
     grantMeshV2SecondaryModeUpgrade: false,
     grantMeshV2SecondaryMode: false,
     grantMeshV2HardcodedBssid: cpePermissions.mesh.hardcodedBSSIDOffset,
@@ -1826,8 +1833,13 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantDiacritics = grantDiacritics(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
-  result.grantWifiBand = grantWifiBand(version, model);
-  result.grantWifiBandAuto = grantWifiBandAuto(version, model);
+  result.grantWifiModeRead = grantWifiBand(version, model);
+  result.grantWifiModeEdit = grantWifiBand(version, model);
+  result.grantWifiBandRead = grantWifiBand(version, model);
+  result.grantWifiBandEdit = grantWifiBand(version, model);
+  result.grantWifiBandAuto2 = grantWifiBandAuto(version, model);
+  result.grantWifiBandAuto5 = grantWifiBandAuto(version, model);
+  result.grantWifi5ChannelList = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   result.grantWifiState = grantWifiState(version, model);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
@@ -1849,7 +1861,8 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantMeshMode = grantMeshV1Mode(version, model);
   result.grantMeshV2PrimaryModeUpgrade =
     grantMeshV2PrimaryModeUpgrade(version, model);
-  result.grantMeshV2PrimaryMode = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2PrimaryModeCable = grantMeshV2PrimaryMode(version, model);
+  result.grantMeshV2PrimaryModeWifi = result.grantMeshV2PrimaryModeCable;
   result.grantMeshV2SecondaryModeUpgrade =
     grantMeshV2SecondaryModeUpgrade(version, model);
   result.grantMeshV2SecondaryMode = grantMeshV2SecondaryMode(version, model);
