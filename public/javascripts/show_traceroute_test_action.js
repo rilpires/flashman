@@ -55,30 +55,29 @@ const SELECTIZE_ADDRESS_HTML = function(data, escape) {
 
 // Saves the route for traceroute to database
 const saveTracerouteAddress = function() {
+  // Check if it is the first time adding the routes
+  if (!initialized) {
+    return;
+  }
+
   // Get which device to show the info
   let deviceId = $(DEVICE_ID_MODAL).text();
 
-  // Get the route
-  let address = $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue();
+  // Get routes
+  let addresses = $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue();
 
-  // Check if address is valid
-  if (address === '' || address === null) {
+  // Check if addresses variable is valid
+  if (addresses === '' || addresses === null || addresses.length === 0) {
     return;
   }
 
   // Send the command to send the traceroute request
   sendRequest(
-    '/devicelist/traceroute/' + deviceId,
+    '/devicelist/pinghostslist/' + deviceId,
     'POST',
     deviceId,
 
     function(id, data) {
-      // Check if it is the first time
-      if (!initialized) {
-        initialized = true;
-        return;
-      }
-
       // If could save successfully
       if (data.success) {
         $(TRACEROUTE_ADDRESS_SELECTOR)
@@ -113,7 +112,7 @@ const saveTracerouteAddress = function() {
     },
 
     JSON.stringify({
-      'content': JSON.stringify({'traceroute_route': address}),
+      'content': JSON.stringify({'hosts': addresses}),
     }),
   );
 };
