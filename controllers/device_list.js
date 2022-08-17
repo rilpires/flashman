@@ -159,6 +159,8 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
+// This should be called right after sendCustomPingTest or sendGenericPingTest
+// Common validations and device.save goes here
 const initiatePingCommand = async function(req, res, device) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantPingTest) {
@@ -208,6 +210,62 @@ const initiatePingCommand = async function(req, res, device) {
   } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
   }
+};
+
+// This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
+// Common validations and device.save goes here
+const initiateSpeedTest = async function(req, res, device) {
+  let mac = device._id;
+
+  if (!canStartNewDiagnostic(device)) {
+    res.status(200).json({
+      success: false,
+      message: t('diagnosticInProgress'),
+    });
+  }
+  if (!device.use_tr069) {
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[mac];
+    });
+    if (!isDevOn) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeNotOnline', {errorline: __line}),
+      });
+    }
+  }
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions.grantSpeedTest) {
+    return res.status(200).json({
+      success: false,
+      message: t('cpeWithoutCommand'),
+    });
+  }
+
+  // Everything is validated now. Proceed to save & trigger stuffs
+  if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+    sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
+  }
+  await device.save().catch((err)=>{
+    return res.status(200).json({
+      success: false,
+      message: t('cpeSaveError', {errorline: __line}),
+    });
+  });
+
+  if (device.use_tr069) {
+    acsDiagnosticsHandler.fireSpeedDiagnose(device);
+  } else {
+    if (device.current_diagnostic.customized) {
+      mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
+    } else {
+      mqtt.anlixMessageRouterSpeedTest(mac,
+        device.current_diagnostic.targets[0], req.user);
+    }
+  }
+  return res.status(200).json({
+    success: true,
+  });
 };
 
 const canStartNewDiagnostic = function(device) {
@@ -1590,7 +1648,7 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
       }
     }
 
-    return deviceListController.initiateSpeedTest(req, res);
+    return initiateSpeedTest(req, res);
   });
 };
 
@@ -1648,7 +1706,7 @@ deviceListController.sendGenericSpeedTest = async function(req, res, device) {
       webhook_user: '',
       webhook_secret: '',
     };
-    deviceListController.initiateSpeedTest(req, res, device);
+    initiateSpeedTest(req, res, device);
   });
 };
 
@@ -1659,6 +1717,8 @@ deviceListController.sendCustomTraceRoute = async function(req, res) {
 deviceListController.sendGenericTraceRoute = async function(req, res) {
   /* */
 };
+
+devi
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -3414,62 +3474,6 @@ deviceListController.getSpeedtestResults = function(req, res) {
       measures: matchedDevice.speedtest_results,
       limit: permissions.grantSpeedTestLimit,
     });
-  });
-};
-
-// This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
-// Common validations and device.save goes here
-deviceListController.initiateSpeedTest = async function(req, res, device) {
-  let mac = device._id;
-
-  if (!canStartNewDiagnostic(device)) {
-    res.status(200).json({
-      success: false,
-      message: t('diagnosticInProgress'),
-    });
-  }
-  if (!device.use_tr069) {
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[mac];
-    });
-    if (!isDevOn) {
-      return res.status(200).json({
-        success: false,
-        message: t('cpeNotOnline', {errorline: __line}),
-      });
-    }
-  }
-  let permissions = DeviceVersion.devicePermissions(device);
-  if (!permissions.grantSpeedTest) {
-    return res.status(200).json({
-      success: false,
-      message: t('cpeWithoutCommand'),
-    });
-  }
-
-  // Everything is validated now. Proceed to save & trigger stuffs
-  if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-    sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
-  }
-  await device.save().catch((err)=>{
-    return res.status(200).json({
-      success: false,
-      message: t('cpeSaveError', {errorline: __line}),
-    });
-  });
-
-  if (device.use_tr069) {
-    acsDiagnosticsHandler.fireSpeedDiagnose(device);
-  } else {
-    if (device.current_diagnostic.customized) {
-      mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
-    } else {
-      mqtt.anlixMessageRouterSpeedTest(mac,
-        device.current_diagnostic.targets[0], req.user);
-    }
-  }
-  return res.status(200).json({
-    success: true,
   });
 };
 
