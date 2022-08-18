@@ -237,7 +237,8 @@ let processWifi = function(content, device, rollback, tr069Changes) {
   }
   if (content.wifi_channel_5ghz) {
     // discard change to invalid 5ghz channel for this model
-    if (Validator.validateChannel(
+    let validator = new Validator();
+    if (validator.validateChannel(
       content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
     ).valid) {
       rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
@@ -1034,7 +1035,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
           matchedDeviceEdit.last_location_date = new Date();
         }
         try {
-          await matchedDevice.save();
+          await matchedDeviceEdit.save();
         } catch (err) {
           console.log('Error saving location or FCM: ' + err);
         }
@@ -1043,6 +1044,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.devicePermissions(matchedDevice);
+
+    // Add legacy permissions for backwards compatibility with old apps
+    permissions.grantWifiBand = (
+      permissions.grantWifiModeEdit || permissions.grantWifiBandEdit
+    );
 
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {

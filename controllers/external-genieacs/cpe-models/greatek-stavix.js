@@ -17,6 +17,8 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
+  permissions.wifi.modeRead = false;
+  permissions.wifi.modeWrite = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.usesStavixXMLConfig = true;

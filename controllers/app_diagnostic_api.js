@@ -289,7 +289,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
       }
       if (content.wifi_channel_5ghz) {
         // discard change to invalid 5ghz channel for this model
-        if (Validator.validateChannel(
+        let validator = new Validator();
+        if (validator.validateChannel(
           content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
         ).valid) {
           device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
@@ -512,19 +513,21 @@ diagAppAPIController.receiveCertification = async (req, res) => {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      if (
-        content.current.latitude && content.current.longitude &&
-        !device.stop_coordinates_update
-      ) {
-        device.latitude = content.current.latitude;
-        device.longitude = content.current.longitude;
-        device.last_location_date = new Date();
+      if (device) {
+        if (
+          content.current.latitude && content.current.longitude &&
+          !device.stop_coordinates_update
+        ) {
+          device.latitude = content.current.latitude;
+          device.longitude = content.current.longitude;
+          device.last_location_date = new Date();
+        }
+        if (content.current.contractType && content.current.contract) {
+          device.external_reference.kind = content.current.contractType;
+          device.external_reference.data = content.current.contract;
+        }
+        await device.save();
       }
-      if (content.current.contractType && content.current.contract) {
-        device.external_reference.kind = content.current.contractType;
-        device.external_reference.data = content.current.contract;
-      }
-      await device.save();
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
