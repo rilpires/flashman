@@ -1683,9 +1683,10 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
 
 
 deviceListController.sendGenericSpeedTest = async function(req, res, device) {
-  // This function could be called directly from express(undefined device)
-  // or other workflows. Recursion into defined device always
-  if (!device) {
+  // This function could be called directly from express or other workflows.
+  // express will call with third argument being a function ('next').
+  // Recursion into defined device always
+  if (typeof(device)=='function') {
     DeviceModel.findByMacOrSerial(req.params.id.toUpperCase())
     .exec(async function(err, matchedDevice) {
       if (err) {
@@ -1720,12 +1721,12 @@ deviceListController.sendGenericSpeedTest = async function(req, res, device) {
       });
     }
 
-  if (!canStartNewDiagnostic(device)) {
-    return res.status(200).json({
-      success: false,
-      message: t('diagnosticInProgress'),
-    });
-  }
+    if (!canStartNewDiagnostic(device)) {
+      return res.status(200).json({
+        success: false,
+        message: t('diagnosticInProgress'),
+      });
+    }
 
     let now = new Date();
     // TR069 doesnt use 'targets' field.
