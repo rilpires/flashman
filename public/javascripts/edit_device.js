@@ -79,7 +79,8 @@ let validateEditDevice = function(event) {
   let validateWifi = row.data('validate-wifi');
   let validateWifiMode = row.data('validate-wifi-mode');
   let validateWifiDiacritics = row.data('validate-wifi-diacritics');
-  let validateWifiBand = row.data('validate-wifi-band');
+  let validateWifiBand2 = row.data('validate-wifi-band-2ghz');
+  let validateWifiBand5 = row.data('validate-wifi-band-5ghz');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
   let validatePppoe = row.data('validatePppoe');
@@ -225,7 +226,7 @@ let validateEditDevice = function(event) {
   if (validateWifiMode) {
     genericValidate(mode, validator.validateMode, errors.mode);
   }
-  if (validateWifiBand) {
+  if (validateWifiBand2) {
     genericValidate(band, validator.validateBand, errors.band);
   }
   if (validateWifiPower) {
@@ -261,7 +262,7 @@ let validateEditDevice = function(event) {
       ),
       errors.channel5ghz,
     );
-    if (validateWifiBand) {
+    if (validateWifiBand5) {
       genericValidate(band5ghz,
                       validator.validateBand, errors.band5ghz);
     }
@@ -314,7 +315,7 @@ let validateEditDevice = function(event) {
       data.content.wifi_password = (password) ? password : '';
       data.content.wifi_channel = channel;
     }
-    if (validateWifiBand) {
+    if (validateWifiBand2) {
       data.content.wifi_band = band;
       data.content.wifi_mode = mode;
     }
@@ -325,7 +326,9 @@ let validateEditDevice = function(event) {
       data.content.wifi_ssid_5ghz = ssid5ghz;
       data.content.wifi_password_5ghz = (password5ghz) ? password5ghz : '';
       data.content.wifi_channel_5ghz = channel5ghz;
-      data.content.wifi_band_5ghz = band5ghz;
+      if (validateWifiBand5) {
+        data.content.wifi_band_5ghz = band5ghz;
+      }
       data.content.wifi_mode_5ghz = mode5ghz;
       if (validateWifiPower) {
         data.content.wifi_power_5ghz = power5ghz;
