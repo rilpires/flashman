@@ -27,11 +27,6 @@ raisecomModel.modelPermissions = function() {
   // wifi permissions
   permissions.wifi.list5ghzChannels =
     [36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165];
-  permissions.wifi.bandRead = false; // will display current wifi band
-  permissions.wifi.bandWrite = false; // can change current wifi band
-  // can change current wifi 2.4 band to auto mode
-  permissions.wifi.bandAuto2 = false;
-  // can change current wifi 5 band to auto mode
   permissions.wifi.bandAuto5 = false;
 
   // firmware permissions
@@ -65,11 +60,11 @@ raisecomModel.convertWifiMode = function(mode) {
 };
 
 // Conversion from Flashman format to CPE format
-// 20Mhz    = 0
-// 40Mhz    = 1
-// Auto     = 2
-// 80Mhz    = 3
 raisecomModel.convertWifiBand = function(band, is5ghz=false) {
+  // 20Mhz    = 0
+  // 40Mhz    = 1
+  // 80Mhz    = 3
+  // Auto     = 2
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -94,7 +89,9 @@ raisecomModel.convertWifiBandToFlashman = function(band, isAC) {
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '2':
-      return 'auto';
+      // 'auto' bandwidth for AC is disabled,
+      // but we will set it to 80Mhz as a fallback
+      return (isAC) ? 'VHT80' /* just a fallback */ : 'auto';
     case '3':
       return (isAC) ? 'VHT80' : undefined;
     default:
@@ -152,12 +149,17 @@ raisecomModel.getModelFields = function() {
   fields.port_mapping_values.protocol[1] = 'TCPandUDP';
 
   // wifi fields
-  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.'+
-    '1.X_CT-COM_ChannelWidth';
-  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.'+
-    '6.X_CT-COM_ChannelWidth';
-  delete fields.mesh2;
-  delete fields.mesh5;
+  Object.keys(fields.wifi2).forEach((k)=>{
+    fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '6');
+  });
+  Object.keys(fields.mesh2).forEach((k)=>{
+    fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '2');
+    fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '3');
+  });
+  fields.wifi2.band =
+    fields.wifi2.band.replace(/BandWidth/g, 'X_CT-COM_ChannelWidth');
+  fields.wifi5.band =
+    fields.wifi5.band.replace(/BandWidth/g, 'X_CT-COM_ChannelWidth');
 
   // stun fields
   delete fields.stun;
