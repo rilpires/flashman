@@ -10,6 +10,9 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 730;
+  permissions.features.portForward = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.firmwareUpgrades = {
     'RP2815': [],
   };
@@ -70,6 +73,13 @@ fiberhomeModel.getModelFields = function() {
     'X_FH_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.TXPower';
+  fields.port_mapping_values.protocol[1] = 'ALL';
+  fields.port_mapping_fields.internal_port_end = [
+    'X_FH_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt',
+  ];
+  fields.port_mapping_fields.external_port_end = [
+    'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
+  ];
   fields.wifi2.password = fields.wifi2.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
