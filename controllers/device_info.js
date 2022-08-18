@@ -196,7 +196,7 @@ const createRegistry = async function(req, res) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
   }
-  if (permissions.grantWifiBandEdit) {
+  if (permissions.grantWifiBandEdit2) {
     genericValidate(band, validator.validateBand,
                     'band', null, errors);
   }
@@ -220,7 +220,7 @@ const createRegistry = async function(req, res) {
       (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
       'channel5ghz', null, errors,
     );
-    if (permissions.grantWifiBandEdit) {
+    if (permissions.grantWifiBandEdit5) {
       genericValidate(band5ghz, validator.validateBand,
                       'band5ghz', null, errors);
     }
@@ -616,8 +616,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           );
 
           if (
-            permissionsSentVersion.grantWifiBandEdit &&
-            !permissionsCurrVersion.grantWifiBandEdit
+            permissionsSentVersion.grantWifiModeEdit &&
+            !permissionsCurrVersion.grantWifiModeEdit
           ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();

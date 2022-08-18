@@ -2029,7 +2029,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band') &&
-                permissions.grantWifiBandEdit &&
+                permissions.grantWifiBandEdit2 &&
                 band !== '' && band !== matchedDevice.wifi_band) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 // Discard change to 'auto' if not allowed
@@ -2119,7 +2119,7 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
-                permissions.grantWifiBandEdit &&
+                permissions.grantWifiBandEdit5 &&
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 // Discard change to 'auto' if not allowed
