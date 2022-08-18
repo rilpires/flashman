@@ -1876,8 +1876,13 @@ deviceListController.setDeviceReg = function(req, res) {
           }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
-          genericValidate(channel5ghz,
-                          validator.validateChannel, 'channel5ghz');
+          genericValidate(
+            channel5ghz,
+            (ch)=>validator.validateChannel(
+              ch, permissions.grantWifi5ChannelList,
+            ),
+            'channel5ghz',
+          );
         }
         if (content.hasOwnProperty('wifi_band_5ghz')) {
           genericValidate(band5ghz, validator.validateBand, 'band5ghz');
@@ -2024,16 +2029,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band') &&
+                permissions.grantWifiBandEdit &&
                 band !== '' && band !== matchedDevice.wifi_band) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi2.band = band;
-                matchedDevice.wifi_band = band;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto2) {
+                  changes.wifi2.band = band;
+                  matchedDevice.wifi_band = band;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode') &&
+                permissions.grantWifiModeEdit &&
                 mode !== '' && mode !== matchedDevice.wifi_mode) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.mode = mode;
@@ -2109,16 +2119,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
+                permissions.grantWifiBandEdit &&
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi5.band = band5ghz;
-                matchedDevice.wifi_band_5ghz = band5ghz;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto5) {
+                  changes.wifi5.band = band5ghz;
+                  matchedDevice.wifi_band_5ghz = band5ghz;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                permissions.grantWifiModeEdit &&
                 mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.mode = mode5ghz;

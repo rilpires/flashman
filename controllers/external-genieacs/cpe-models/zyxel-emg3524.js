@@ -8,6 +8,12 @@ zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.stun = true;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
+  permissions.wifi.bandRead = false;
+  permissions.wifi.bandWrite = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     'V1.42(ABXU.1)b6_0118': [],
   };

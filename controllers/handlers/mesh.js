@@ -212,8 +212,8 @@ meshHandlers.buildTR069Changes = function(
           changes.wifi5.encryption = wpaMode;
         }
         if (ieeeMode != '') {
-          changes.wifi2.encryption2 = ieeeMode;
-          changes.wifi5.encryption2 = ieeeMode;
+          changes.wifi2.encryptionIeee = ieeeMode;
+          changes.wifi5.encryptionIeee = ieeeMode;
         }
       }
       break;

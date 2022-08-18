@@ -75,6 +75,7 @@ basicCPEModel.modelPermissions = function() {
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
     },
     wifi: {
+      list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
       allowDiacritics: false, // allows accented chars for ssid and password
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
@@ -83,6 +84,8 @@ basicCPEModel.modelPermissions = function() {
       ssidWrite: true, // can change current wifi ssid and password
       bandRead: true, // will display current wifi band
       bandWrite: true, // can change current wifi band
+      bandAuto2: true, // can change current wifi 2.4 band to auto mode
+      bandAuto5: true, // can change current wifi 5 band to auto mode
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change

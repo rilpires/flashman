@@ -12,6 +12,12 @@ tendaModel.modelPermissions = function() {
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48];
+  permissions.wifi.bandRead = false;
+  permissions.wifi.bandWrite = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.usesStavixXMLConfig = true;
   permissions.firmwareUpgrades = {
     'v1.0.1': [],
