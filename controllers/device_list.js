@@ -3141,7 +3141,7 @@ deviceListController.setPingHostsList = function(req, res) {
     const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
     if (getDefaultPingHosts.success &&
         getDefaultPingHosts.hosts.length > 0 &&
-        !getDefaultPingHosts.hosts.some((x) => approvedHosts.includes(x))) {
+        !getDefaultPingHosts.hosts.every((x) => approvedHosts.includes(x))) {
       return res.status(200).json({
         success: false,
         message: t('hostListMustContainDefaultHosts',
