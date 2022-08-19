@@ -254,6 +254,17 @@ const createRegistry = async function(req, res) {
     }
   }
 
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
+  }
+
   if (errors.length < 1) {
     let newMeshId = meshHandlers.genMeshID();
     let newMeshKey = meshHandlers.genMeshKey();
@@ -312,6 +323,7 @@ const createRegistry = async function(req, res) {
       'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
+      'ping_hosts': defaultPingHosts,
     };
     if (vlanParsed !== undefined) {
       deviceObj.vlan = vlanParsed;

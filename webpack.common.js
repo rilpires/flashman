@@ -53,6 +53,7 @@ module.exports = {
       './public/src/common.index.js',
       './public/javascripts/settings_actions.js',
       './public/javascripts/factory_credentials.js',
+      './public/javascripts/default_ping_hosts_config.js',
     ],
     index: [
       './public/src/common.index.js',
