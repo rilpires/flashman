@@ -305,6 +305,11 @@ let deviceSchema = new Schema({
     ipv6_enabled: {type: Boolean, default: false},
     ipv6_mode: {type: String, default: ''},
   },
+
+  // They are expressed in percentage, without %
+  // The value of 101 is invalid, used to represent a not setted state
+  cpu_usage: {type: Number, min: 0, max: 101, default: 101},
+  memory_usage: {type: Number, min: 0, max: 101, default: 101},
 });
 
 deviceSchema.set('autoIndex', false);

@@ -796,6 +796,23 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
 
+        // CPU and Memory usage
+        let cpuUsage = (
+          parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+        );
+        let memoryUsage = (
+          parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+        );
+
+        // Check if CPU and Memory came valid
+        if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+          deviceSetQuery.cpu_usage = cpuUsage;
+        }
+
+        if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+          deviceSetQuery.memory_usage = memoryUsage;
+        }
+
         let sentWifiLastChannel =
         util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
         if (sentWifiLastChannel !== matchedDevice.wifi_last_channel) {
@@ -2175,6 +2192,25 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     // Wan Bytes
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
+    }
+
+    // CPU and Memory usage
+    if (util.isJSONObject(req.body.resources)) {
+      let cpuUsage = (
+        parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+      );
+      let memoryUsage = (
+        parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+      );
+
+      // Check if CPU and Memory came valid
+      if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+        matchedDevice.cpu_usage = cpuUsage;
+      }
+
+      if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+        matchedDevice.memory_usage = memoryUsage;
+      }
     }
 
     // Save
