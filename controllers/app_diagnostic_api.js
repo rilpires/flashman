@@ -653,6 +653,18 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
 
       let permissions = DeviceVersion.devicePermissions(device);
 
+      // Add legacy permissions for backwards compatibility with old apps
+      permissions.grantWifiBandEdit = (
+        permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+      );
+      permissions.grantWifiBandRead = (
+        permissions.grantWifiBandRead2 || permissions.grantWifiBandRead5
+      );
+      permissions.grantWifiBand = (
+        (permissions.grantWifiBandEdit && permissions.grantWifiBandRead) ||
+        permissions.grantWifiModeEdit
+      );
+
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {
           certification.requiredSpeedTest = permissions.grantSpeedTest;
