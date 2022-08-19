@@ -385,7 +385,7 @@ deviceListController.sendCustomTraceRoute
     in_progress: true,
     started_at: now,
     last_modified_at: now,
-    targets: [reqBody.content.targets],
+    targets: reqBody.content.hosts,
     user: username,
     webhook_url: '',
     webhook_user: '',
@@ -410,7 +410,7 @@ deviceListController.sendGenericTraceRoute
     in_progress: true,
     started_at: now,
     last_modified_at: now,
-    targets: [device.ping_hosts],
+    targets: device.ping_hosts.map((e)=>e),
     user: username,
     webhook_url: '',
     webhook_user: '',
@@ -526,7 +526,7 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
   }
 
   // Start Traceroute
-  if (device && device.use_tr069) {
+  if (device.use_tr069) {
     // Preparation for TR069
   } else {
     mqtt.anlixMessageRouterTraceroute(
@@ -537,6 +537,7 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
       device.traceroute_max_wait,
     );
   }
+  return {success:true};
 };
 
 // Common validation used by all diagnostics
@@ -1569,11 +1570,11 @@ deviceListController.sendMqttMsg = async function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          return deviceListController.sendGenericSpeedTestAPI(req, res);
+          return await deviceListController.sendGenericSpeedTestAPI(req, res);
         } else if (msgtype === 'ping') {
-          return deviceListController.sendGenericPingAPI(req, res);
+          return await deviceListController.sendGenericPingAPI(req, res);
         } else if (msgtype === 'traceroute') {
-          return deviceListController.sendGenericTraceRoute(req, res);
+          return await deviceListController.sendGenericTraceRouteAPI(req, res);
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request

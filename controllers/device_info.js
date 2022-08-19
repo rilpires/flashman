@@ -1892,6 +1892,9 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
   });
 };
 
+// This is called from flashbox when fetching which targets
+// to traceroute. When no customized test is in progress, 
+// return device.ping_hosts. Else, current_diagnostic.targets
 deviceInfoController.getPingHosts = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
@@ -1905,7 +1908,9 @@ deviceInfoController.getPingHosts = function(req, res) {
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
-      if (matchedDevice.current_diagnostic.customized) {
+      if (matchedDevice.current_diagnostic.in_progress &&
+        matchedDevice.current_diagnostic.customized
+      ) {
         return res.status(200).json({
           'sucess': true,
           'hosts': matchedDevice.current_diagnostic.targets,
@@ -2370,6 +2375,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    console.log('chegou traceroute:' , req.body);
     // Get the current test
     let currentTest = matchedDevice.traceroute_results.find(
       (test)=> test.address === req.body.address,
