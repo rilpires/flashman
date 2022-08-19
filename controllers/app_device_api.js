@@ -1052,7 +1052,8 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       permissions.grantWifiBandRead2 || permissions.grantWifiBandRead5
     );
     permissions.grantWifiBand = (
-      permissions.grantWifiBandEdit && permissions.grantWifiBandRead
+      (permissions.grantWifiBandEdit && permissions.grantWifiBandRead) ||
+      permissions.grantWifiModeEdit
     );
 
     // Override some permissions if device in bridge mode
