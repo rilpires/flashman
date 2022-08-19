@@ -159,11 +159,12 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-deviceListController.sendCustomPing = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomPing
+  = async function(device, reqBody, username, sessionID) {
   if (!device) {
     return {
       success: false,
-      message: t('cpeNotFound',{errorline: __line})
+      message: t('cpeNotFound', {errorline: __line}),
     };
   }
 
@@ -227,18 +228,19 @@ deviceListController.sendCustomPing = async function(device, reqBody, username, 
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendGenericPing = async function(device, username, sessionID) {
+deviceListController.sendGenericPing
+  = async function(device, username, sessionID) {
   if (!device) {
     return {
       success: false,
-      message: t('cpeNotFound',{errorline: __line})
+      message: t('cpeNotFound', {errorline: __line}),
     };
   }
 
   if (!canStartNewDiagnostic(device)) {
     return {
       success: false,
-      message: t('diagnosticInProgress')
+      message: t('diagnosticInProgress'),
     };
   }
   let now = new Date();
@@ -258,37 +260,36 @@ deviceListController.sendGenericPing = async function(device, username, sessionI
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendCustomSpeedTest = async function(device, reqBody, username, sessionID) {
-  if(!device){
+deviceListController.sendCustomSpeedTest
+  = async function(device, reqBody, username, sessionID) {
+  if (!device) {
     return {
       success: false,
-      message: t('cpeNotFound',{errorline: __line})
+      message: t('cpeNotFound', {errorline: __line}),
     };
   }
-  
+
   let validationOk = true;
   let invalidField = '';
   if (typeof reqBody.content != 'object') {
     validationOk = false;
     invalidField = 'url';
-  } 
-  else if (typeof reqBody.content.url != 'string'|| 
+  } else if (typeof reqBody.content.url != 'string'||
           !util.urlRegex.test(reqBody.content.url)
   ) {
     validationOk = false;
     invalidField = 'url';
-  } 
-  else if ( reqBody.content.webhook) {
+  } else if ( reqBody.content.webhook) {
     validationOk = false;
     if (typeof reqBody.content.webhook != 'object') {
-      invalidField = 'content.webhook'
+      invalidField = 'content.webhook';
     } else if (typeof reqBody.content.webhook.url != 'string') {
-      invalidField = 'content.webhook.url'
-    } else if (reqBody.content.webhook.user && 
+      invalidField = 'content.webhook.url';
+    } else if (reqBody.content.webhook.user &&
                 typeof reqBody.content.webhook.user != 'string'
     ) {
       invalidField = 'content.webhook.user';
-    } else if (reqBody.content.webhook.secret && 
+    } else if (reqBody.content.webhook.secret &&
                 typeof reqBody.content.webhook.secret != 'string'
     ) {
       invalidField = 'content.webhook.secret';
@@ -296,18 +297,18 @@ deviceListController.sendCustomSpeedTest = async function(device, reqBody, usern
       validationOk = true;
     }
   }
-  
+
   if (!validationOk) {
     return {
       success: false,
-      message: t('fieldNameInvalid', {name: invalidField, errorline: __line})
+      message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
     };
   }
 
   if (!canStartNewDiagnostic(device)) {
     return {
       success: false,
-      message: t('diagnosticInProgress')
+      message: t('diagnosticInProgress'),
     };
   }
 
@@ -342,17 +343,18 @@ deviceListController.sendCustomSpeedTest = async function(device, reqBody, usern
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericSpeedTest = async function(device, username, sessionID) {
-  if(!device){
+deviceListController.sendGenericSpeedTest
+  = async function(device, username, sessionID) {
+  if (!device) {
     return {
       success: false,
-      message: t('cpeNotFound',{errorline: __line})
+      message: t('cpeNotFound', {errorline: __line}),
     };
   }
   let projection = {measureServerIP: true, measureServerPort: true};
-  let config 
+  let config;
   try {
-    config = 
+    config =
       await Config.findOne({is_default: true}, projection).lean().exec();
   } catch (e) {
     return {
@@ -394,7 +396,8 @@ deviceListController.sendGenericSpeedTest = async function(device, username, ses
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendCustomTraceRoute = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomTraceRoute
+  = async function(device, reqBody, username, sessionID) {
   if (!canStartNewDiagnostic(device)) {
     return {
       success: false,
@@ -404,12 +407,13 @@ deviceListController.sendCustomTraceRoute = async function(device, reqBody, user
   return initiateTracerouteTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericTraceRoute = async function(device, username) {
+deviceListController.sendGenericTraceRoute
+  = async function(device, username, sessionID) {
   if (!canStartNewDiagnostic(device)) {
-    return res.status(200).json({
+    return {
       success: false,
       message: t('diagnosticInProgress'),
-    });
+    };
   }
   return initiateTracerouteTest(device, username, sessionID);
 };
@@ -417,7 +421,7 @@ deviceListController.sendGenericTraceRoute = async function(device, username) {
 // This should be called right after sendCustomPingTest or sendGenericPingTest
 // Common validations and device.save goes here
 const initiatePingCommand = async function(device, username, sessionID) {
-  let permissions = DeviceVersion.devicePermissions(device,);
+  let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantPingTest) {
     return {
       success: false,
@@ -3922,66 +3926,78 @@ deviceListController.getLanInfo = async function(request, response) {
   });
 };
 
-deviceListController.sendCustomPingAPI = async function(req,res) {
+deviceListController.sendCustomPingAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomPing(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomPing(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
-deviceListController.sendGenericPingAPI = async function(req,res) {
+};
+deviceListController.sendGenericPingAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericPing(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericPing(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendCustomSpeedTestAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomSpeedTest(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomSpeedTest(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendGenericSpeedTestAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericSpeedTest(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericSpeedTest(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendCustomTraceRouteAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomTraceRoute(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomTraceRoute(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericTraceRoute(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericTraceRoute(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 
 // Traceroute
 // Get the route for Traceroute

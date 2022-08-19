@@ -1908,8 +1908,8 @@ deviceInfoController.getPingHosts = function(req, res) {
       if (matchedDevice.current_diagnostic.customized) {
         return res.status(200).json({
           'sucess': true,
-          'hosts': matchedDevice.current_diagnostic.targets
-        })
+          'hosts': matchedDevice.current_diagnostic.targets,
+        });
       } else if (matchedDevice.ping_hosts) {
         return res.status(200).json({
           'success': true,
