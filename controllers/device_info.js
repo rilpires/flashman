@@ -1905,7 +1905,12 @@ deviceInfoController.getPingHosts = function(req, res) {
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
-      if (matchedDevice.ping_hosts) {
+      if (matchedDevice.current_diagnostic.customized) {
+        return res.status(200).json({
+          'sucess': true,
+          'hosts': matchedDevice.current_diagnostic.targets
+        })
+      } else if (matchedDevice.ping_hosts) {
         return res.status(200).json({
           'success': true,
           'hosts': matchedDevice.ping_hosts,
@@ -2048,10 +2053,7 @@ deviceInfoController.receivePingResult = function(req, res) {
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.current_diagnostic.type=='ping' &&
-        matchedDevice.current_diagnostic.customized &&
-        matchedDevice.current_diagnostic.in_progress
-    ) {
+    if (matchedDevice.current_diagnostic.customized) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
