@@ -37,10 +37,10 @@ const getDefaultPingHosts = function(event) {
 const defaultHostsTableToggle = function(addingNewDevice = false) {
   if (getDefaultPingHostsList('defaultPingHostsInfo').length > 0 ||
       addingNewDevice) {
-    $('#default-hosts-config-table-hide').hide();
+    $('#default-hosts-config-table-none').hide();
     $('#default-hosts-config-table').show();
   } else if (getDefaultPingHostsList('defaultPingHostsInfo').length == 0) {
-    $('#default-hosts-config-table-hide').show();
+    $('#default-hosts-config-table-none').show();
     $('#default-hosts-config-table').hide();
   }
 };
