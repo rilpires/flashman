@@ -3227,9 +3227,8 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
         }
       });
       if (approvedHosts.length) {
-        const overwritePingHosts =
-          await deviceListController.overwritePingHosts(approvedHosts);
-        if (!overwritePingHosts.success) {
+        const overwriteResult = await overwriteHostsOnDevices(approvedHosts);
+        if (!overwriteResult.success) {
           success = false; type = 'error';
           message = t('cpeSaveError', {errorline: __line});
         }
@@ -3240,7 +3239,7 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
     });
 };
 
-deviceListController.overwritePingHosts = async function(approvedHosts) {
+const overwriteHostsOnDevices = async function(approvedHosts) {
   let devices = {};
   try {
     devices = await DeviceModel.find();
