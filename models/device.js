@@ -226,12 +226,6 @@ let deviceSchema = new Schema({
   // Store hosts to measure against
   ping_hosts: {
     type: [String],
-    default: [
-      'www.google.com',
-      'www.youtube.com',
-      'www.facebook.com',
-      'www.instagram.com',
-    ],
   },
   // When ping_hosts has at least one value or speedtest_url != '',
   // the next ping/speedtest result should NOT be sent to the usual
