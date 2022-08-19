@@ -3831,12 +3831,6 @@ deviceListController.changeLicenseStatus = async function(req, res) {
   }
 };
 
-deviceListController.getDeviceId = function(device) {
-  if (device.use_tr069) {
-    if (device.serial_tr069) return device.serial_tr069;
-  } else return device._id;
-};
-
 deviceListController.delDeviceAndBlockLicense = async function(req, res) {
   // Check request body
   if (!('ids' in req.body) || !('block' in req.body)) {
@@ -3881,7 +3875,11 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
             t('Device') + ' - ' + device._id + ' - ' +
             t('operationUnsuccessful', {errorline: __line}));
         } else {
-          devIds.push(deviceListController.getDeviceId(device));
+          if (device.use_tr069) {
+            devIds.push(device.serial_tr069);
+          } else {
+            devIds.push(device._id);
+          }
         }
       }
     }
