@@ -953,7 +953,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
 deviceListController.delDeviceReg = async function(req, res) {
   try {
-    let matchedConfig = await Config.findOne().lean();
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {blockLicenseAtDeviceRemoval: true}).lean();
     let mustBlockAtRemoval =
       ('blockLicenseAtDeviceRemoval' in matchedConfig) ?
         matchedConfig.blockLicenseAtDeviceRemoval : false;
