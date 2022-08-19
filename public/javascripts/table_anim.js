@@ -396,9 +396,23 @@ anlixDocumentReady.add(function() {
         upgradeStatus.find('.status-error').addClass('d-none');
         // Deactivate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', true);
+        // Enable all disassoc buttons
+        let slaveList = JSON.parse(row.next()
+          .data('slaves').replaceAll('$', '"'));
+        slaveList.forEach((s) => {
+          $('tr[id="'+s+'"]').find('.btn-disassoc')
+            .attr('disabled', false);
+        });
       } else {
         // Deactivate dropdown
         row.find('.device-update .dropdown-toggle').attr('disabled', true);
+        // Disable all disassoc buttons
+        let slaveList = JSON.parse(row.next()
+          .data('slaves').replaceAll('$', '"'));
+        slaveList.forEach((s) => {
+          $('tr[id="'+s+'"]').find('.btn-disassoc')
+            .attr('disabled', true);
+        });
         // Update waiting status
         let upgradeStatus = row.find('span.upgrade-status');
         upgradeStatus.find('.status-none').addClass('d-none');
