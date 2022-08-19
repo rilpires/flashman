@@ -73,9 +73,6 @@ anlixDocumentReady.add(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('STATISTICS', function(macaddr, data) {
     // If resources object exists
-    console.log('AKIIIIIIIIIIIIIIIIIIIII-1');
-    console.log(data);
-
     if (data.resources && macaddr === $('#estatistics-modal-hlabel').text()) {
       // Check if cpu usage, mem usage exists and they are valid
       if (
