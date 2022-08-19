@@ -3165,7 +3165,7 @@ deviceListController.setPingHostsList = function(req, res) {
 };
 
 const getDefaultPingHostsAtConfig = async function() {
-  let message = t('configGenericError', {errorline: __line});
+  let message = t('configNotFound', {errorline: __line});
   let config = {};
   try {
     config = await Config.findOne(
