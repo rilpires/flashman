@@ -221,8 +221,11 @@ diagAppAPIController.configureWifi = async function(req, res) {
       permissions.grantWifiBandEdit = (
         permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
       );
+      permissions.grantWifiBandRead = (
+        permissions.grantWifiBandRead2 || permissions.grantWifiBandRead5
+      );
       permissions.grantWifiBand = (
-        permissions.grantWifiModeEdit || permissions.grantWifiBandEdit
+        permissions.grantWifiBandEdit && permissions.grantWifiBandRead
       );
 
       let createPrefixErrNotification = false;
