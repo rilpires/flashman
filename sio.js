@@ -20,7 +20,7 @@ const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
-const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
+const SIO_NOTIFICATION_STATISTICS = 'STATISTICS';
 const SIO_NOTIFICATION_WAN_INFO = 'WANINFO';
 const SIO_NOTIFICATION_LAN_INFO = 'LANINFO';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
@@ -244,22 +244,22 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   return found;
 };
 
-sio.anlixWaitForWanBytesNotification = function(session, macaddr) {
+sio.anlixWaitForStatisticsNotification = function(session, macaddr) {
   if (!session) {
     return false;
   }
   if (!macaddr) {
     return false;
   }
-  registerNotification(session, SIO_NOTIFICATION_WAN_BYTES, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_STATISTICS, macaddr);
   return true;
 };
 
-sio.anlixSendWanBytesNotification = function(macaddr, upStatusData) {
+sio.anlixSendStatisticsNotification = function(macaddr, upStatusData) {
   if (!macaddr) {
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_WAN_BYTES,
+  let found = emitNotification(SIO_NOTIFICATION_STATISTICS,
                                macaddr, upStatusData, macaddr);
   return found;
 };

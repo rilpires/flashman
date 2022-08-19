@@ -54,7 +54,7 @@ module.exports = (app) => {
           grantOpmodeEdit: true,
           grantVlan: 2,
           grantVlanProfileEdit: true,
-          grantWanBytesView: true,
+          grantStatisticsView: true,
           grantCsvExport: true,
           grantFirmwareBetaUpgrade: true,
           grantFirmwareRestrictedUpgrade: true,

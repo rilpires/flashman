@@ -2182,7 +2182,7 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
       return res.status(500).json({processed: 0});
     });
     sio.anlixSendUpStatusNotification(id, req.body);
-    sio.anlixSendWanBytesNotification(id, req.body);
+    sio.anlixSendStatisticsNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };

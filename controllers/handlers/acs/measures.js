@@ -72,7 +72,7 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
           console.log('Error saving device wan bytes: ' + err);
         });
       }
-      sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
+      sio.anlixSendStatisticsNotification(mac, {wanbytes: wanBytes});
     });
   });
   req.end();

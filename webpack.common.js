@@ -66,7 +66,7 @@ module.exports = {
       './public/javascripts/show_devices_logs_actions.js',
       './public/javascripts/show_ping_test_actions.js',
       './public/javascripts/show_speed_test_actions.js',
-      './public/javascripts/show_wan_bytes_actions.js',
+      './public/javascripts/show_statistics_actions.js',
       './public/javascripts/show_lan_devices_actions.js',
       './public/javascripts/show_site_survey_actions.js',
       './public/javascripts/show_upgrade_schedule_actions.js',
