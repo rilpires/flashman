@@ -3242,7 +3242,7 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
 const overwriteHostsOnDevices = async function(approvedHosts) {
   let devices = {};
   try {
-    devices = await DeviceModel.find();
+    devices = await DeviceModel.find({}, {ping_hosts: true});
   } catch (err) {
     return {success: false, type: 'error',
       message: t('cpeFindError', {errorline: __line})};
