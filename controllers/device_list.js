@@ -161,11 +161,9 @@ const getOnlineCountMesh = function(query, lastHour) {
 
 deviceListController.sendCustomPing
   = async function(device, reqBody, username, sessionID) {
-  if (!device) {
-    return {
-      success: false,
-      message: t('cpeNotFound', {errorline: __line}),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
 
   let inputHosts = [];
@@ -191,12 +189,6 @@ deviceListController.sendCustomPing
     };
   }
 
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
-  }
   let now = new Date();
   device.current_diagnostic = {
     type: 'ping',
@@ -230,18 +222,9 @@ deviceListController.sendCustomPing
 
 deviceListController.sendGenericPing
   = async function(device, username, sessionID) {
-  if (!device) {
-    return {
-      success: false,
-      message: t('cpeNotFound', {errorline: __line}),
-    };
-  }
-
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
   let now = new Date();
   device.current_diagnostic = {
@@ -262,11 +245,9 @@ deviceListController.sendGenericPing
 
 deviceListController.sendCustomSpeedTest
   = async function(device, reqBody, username, sessionID) {
-  if (!device) {
-    return {
-      success: false,
-      message: t('cpeNotFound', {errorline: __line}),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
 
   let validationOk = true;
@@ -305,13 +286,6 @@ deviceListController.sendCustomSpeedTest
     };
   }
 
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
-  }
-
   let now = new Date();
   device.current_diagnostic = {
     type: 'speedtest',
@@ -345,11 +319,9 @@ deviceListController.sendCustomSpeedTest
 
 deviceListController.sendGenericSpeedTest
   = async function(device, username, sessionID) {
-  if (!device) {
-    return {
-      success: false,
-      message: t('cpeNotFound', {errorline: __line}),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
   let projection = {measureServerIP: true, measureServerPort: true};
   let config;
@@ -369,14 +341,6 @@ deviceListController.sendGenericSpeedTest
       message: t('serviceNotConfiguredByAdmin'),
     };
   }
-
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
-  }
-
   let now = new Date();
   // TR069 doesnt use 'targets' field.
   let firmwareUrl = config.measureServerIP + ':' + config.measureServerPort;
@@ -398,24 +362,20 @@ deviceListController.sendGenericSpeedTest
 
 deviceListController.sendCustomTraceRoute
   = async function(device, reqBody, username, sessionID) {
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
-  return initiateTracerouteTest(device, username, sessionID);
+  return await initiateTracerouteTest(device, username, sessionID);
 };
 
 deviceListController.sendGenericTraceRoute
   = async function(device, username, sessionID) {
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
-  return initiateTracerouteTest(device, username, sessionID);
+  return await initiateTracerouteTest(device, username, sessionID);
 };
 
 // This should be called right after sendCustomPingTest or sendGenericPingTest
@@ -537,7 +497,14 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
   });
 };
 
-const canStartNewDiagnostic = function(device) {
+// Common validation used by all diagnostics
+const checkNewDiagnosticAvailability = function(device) {
+  if (!device) {
+    return {
+      success: false,
+      message: t('cpeNotFound', {errorline: __line}),
+    };
+  }
   const msSinceLastModified =
     new Date() - device.current_diagnostic.last_modified_at;
   const timeoutThresholdMs = 2 * 5 * 1000; // 2 minutes;
@@ -545,9 +512,11 @@ const canStartNewDiagnostic = function(device) {
       msSinceLastModified<timeoutThresholdMs &&
       device.current_diagnostic.in_progress
   ) {
-    return false;
+    return {
+      success: false,
+      message: t('diagnosticInProgress'),
+    };
   }
-  return true;
 };
 
 // Main page
