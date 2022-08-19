@@ -273,7 +273,7 @@
 	"operationStartSuccessful": "Operação iniciada com sucesso",
 	"operationSuccessful": "Operação realizada com sucesso",
 	"operationUnsuccessful": "Operação não pode ser realizada ({{errorline}})",
-	"couldntRemoveSomeDevices": "Algumas CPEs não puderam ser removidas",
+	"couldntRemoveSomeDevices": "{{amount}} CPEs não puderam ser removidas",
 	"couldntBlockSomeLicenses": "Não foi possível bloquear algumas licensas de CPEs",
 	"requestFormatError": "Erro no formato da requisição ({{errorline}})",
 	"notEnoughPermissionsForFields": "Permissão insuficiente para alterar campos requisitados ({{errorline}})",

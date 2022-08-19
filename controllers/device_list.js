@@ -981,34 +981,37 @@ deviceListController.delDeviceReg = async function(req, res) {
     }
     // We gonna push the error messages to an Array, then we must log to the
     // console the errors inside this Array, if not empty.
-    let failedAtRemoval = [];
+    let failedAtRemoval = {};
     for (let device of devices) {
+      // Cannot delete mesh masters with associated slaves
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
       if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        failedAtRemoval.push(
-          t('Device') + ' - ' + device.id + ' - ' +
-          t('cantDeleteMeshWithSecondaries', {errorline: __line}));
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
       } else {
         let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
         if (!removalOK) {
-          failedAtRemoval.push(
-          t('Device') + ' - ' + device.id + ' - ' +
-          t('operationUnsuccessful', {errorline: __line}));
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
         }
       }
     }
-    if (failedAtRemoval.length > 0) {
-      // It there are errors inside failedAtRemoval's Array, then we just gonna
-      // log it to the console and return a error JSON response
-      console.log(
-        [t('couldntRemoveSomeDevices')].concat(failedAtRemoval).join('\n'));
+    // If there are any errors in the array, we log the details and inform which
+    // cpes failed to be removed in the response
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: t('couldntRemoveSomeDevices'),
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
       });
     }
-    // In the case that any errors are pushed to our Array, then we just have
-    // to return a success JSON response
+    // No errors present, simply return success
     return res.status(200).json({
       success: true,
       type: 'success',

@@ -273,7 +273,7 @@
 	"operationStartSuccessful": "Operation started successfully",
 	"operationSuccessful": "Operation performed successfully",
 	"operationUnsuccessful": "Operation cannot be performed ({{errorline}})",
-	"couldntRemoveSomeDevices": "Some CPEs couldn't be removed",
+	"couldntRemoveSomeDevices": "{{amount}} CPEs couldn't be removed",
 	"couldntBlockSomeLicenses": "Couldn't block some CPEs licenses",
 	"requestFormatError": "Error in request format ({{errorline}})",
 	"notEnoughPermissionsForFields": "Insufficient permission to change requested fields ({{errorline}})",
