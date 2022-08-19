@@ -1908,8 +1908,8 @@ deviceInfoController.getPingHosts = function(req, res) {
       if (matchedDevice.current_diagnostic.customized) {
         return res.status(200).json({
           'sucess': true,
-          'hosts': matchedDevice.current_diagnostic.targets
-        })
+          'hosts': matchedDevice.current_diagnostic.targets,
+        });
       } else if (matchedDevice.ping_hosts) {
         return res.status(200).json({
           'success': true,
@@ -2369,6 +2369,33 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
+
+    // Get the current test
+    let currentTest = matchedDevice.traceroute_results.find(
+      (test)=> test.address === req.body.address,
+    );
+
+    // Could not find the test, return with not processed
+    if (!currentTest) {
+      return res.status(200).json({processed: 0});
+    }
+
+    // Just set the completed
+    currentTest.completed = true;
+
+    // If the tries per hop came is not empty
+    if (!isNaN(req.body.tries_per_hop)) {
+      // Fill the traceroute result
+      currentTest.all_hops_tested = req.body.all_hops_tested;
+      currentTest.reached_destination = req.body.reached_destination;
+      currentTest.tries_per_hop = req.body.tries_per_hop;
+      currentTest.hops = req.body.hops;
+    }
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      console.log('Error saving ping test to database: ' + err);
+    });
 
     // Send socket IO notification
     sio.anlixSendTracerouteNotification(id, req.body);

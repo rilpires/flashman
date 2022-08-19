@@ -159,12 +159,11 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-deviceListController.sendCustomPing = async function(device, reqBody, username, sessionID) {
-  if (!device) {
-    return {
-      success: false,
-      message: t('cpeNotFound',{errorline: __line})
-    };
+deviceListController.sendCustomPing
+  = async function(device, reqBody, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
 
   let inputHosts = [];
@@ -190,12 +189,6 @@ deviceListController.sendCustomPing = async function(device, reqBody, username, 
     };
   }
 
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
-  }
   let now = new Date();
   device.current_diagnostic = {
     type: 'ping',
@@ -227,20 +220,19 @@ deviceListController.sendCustomPing = async function(device, reqBody, username, 
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendGenericPing = async function(device, username, sessionID) {
-  if (!device) {
+deviceListController.sendGenericPing
+  = async function(device, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
+  }
+  if (device.ping_hosts.length==0) {
     return {
       success: false,
-      message: t('cpeNotFound',{errorline: __line})
+      message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
     };
   }
 
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress')
-    };
-  }
   let now = new Date();
   device.current_diagnostic = {
     type: 'ping',
@@ -249,46 +241,44 @@ deviceListController.sendGenericPing = async function(device, username, sessionI
     in_progress: true,
     started_at: now,
     last_modified_at: now,
-    targets: [],
+    targets: device.ping_hosts.map((item) => item),
     user: username,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
+
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendCustomSpeedTest = async function(device, reqBody, username, sessionID) {
-  if(!device){
-    return {
-      success: false,
-      message: t('cpeNotFound',{errorline: __line})
-    };
+deviceListController.sendCustomSpeedTest
+  = async function(device, reqBody, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
-  
+
   let validationOk = true;
   let invalidField = '';
   if (typeof reqBody.content != 'object') {
     validationOk = false;
     invalidField = 'url';
-  } 
-  else if (typeof reqBody.content.url != 'string'|| 
+  } else if (typeof reqBody.content.url != 'string'||
           !util.urlRegex.test(reqBody.content.url)
   ) {
     validationOk = false;
     invalidField = 'url';
-  } 
-  else if ( reqBody.content.webhook) {
+  } else if ( reqBody.content.webhook) {
     validationOk = false;
     if (typeof reqBody.content.webhook != 'object') {
-      invalidField = 'content.webhook'
+      invalidField = 'content.webhook';
     } else if (typeof reqBody.content.webhook.url != 'string') {
-      invalidField = 'content.webhook.url'
-    } else if (reqBody.content.webhook.user && 
+      invalidField = 'content.webhook.url';
+    } else if (reqBody.content.webhook.user &&
                 typeof reqBody.content.webhook.user != 'string'
     ) {
       invalidField = 'content.webhook.user';
-    } else if (reqBody.content.webhook.secret && 
+    } else if (reqBody.content.webhook.secret &&
                 typeof reqBody.content.webhook.secret != 'string'
     ) {
       invalidField = 'content.webhook.secret';
@@ -296,18 +286,11 @@ deviceListController.sendCustomSpeedTest = async function(device, reqBody, usern
       validationOk = true;
     }
   }
-  
+
   if (!validationOk) {
     return {
       success: false,
-      message: t('fieldNameInvalid', {name: invalidField, errorline: __line})
-    };
-  }
-
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress')
+      message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
     };
   }
 
@@ -342,17 +325,16 @@ deviceListController.sendCustomSpeedTest = async function(device, reqBody, usern
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericSpeedTest = async function(device, username, sessionID) {
-  if(!device){
-    return {
-      success: false,
-      message: t('cpeNotFound',{errorline: __line})
-    };
+deviceListController.sendGenericSpeedTest
+  = async function(device, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
   let projection = {measureServerIP: true, measureServerPort: true};
-  let config 
+  let config;
   try {
-    config = 
+    config =
       await Config.findOne({is_default: true}, projection).lean().exec();
   } catch (e) {
     return {
@@ -367,14 +349,6 @@ deviceListController.sendGenericSpeedTest = async function(device, username, ses
       message: t('serviceNotConfiguredByAdmin'),
     };
   }
-
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
-  }
-
   let now = new Date();
   // TR069 doesnt use 'targets' field.
   let firmwareUrl = config.measureServerIP + ':' + config.measureServerPort;
@@ -394,30 +368,62 @@ deviceListController.sendGenericSpeedTest = async function(device, username, ses
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendCustomTraceRoute = async function(device, reqBody, username, sessionID) {
-  if (!canStartNewDiagnostic(device)) {
-    return {
-      success: false,
-      message: t('diagnosticInProgress'),
-    };
+deviceListController.sendCustomTraceRoute
+  = async function(device, reqBody, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
-  return initiateTracerouteTest(device, username, sessionID);
+
+  /** VALIDATING REQBODY.... **/
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'traceroute',
+    stage: 'initiating',
+    customized: true,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: [reqBody.content.targets],
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  return await initiateTracerouteTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericTraceRoute = async function(device, username) {
-  if (!canStartNewDiagnostic(device)) {
-    return res.status(200).json({
-      success: false,
-      message: t('diagnosticInProgress'),
-    });
+deviceListController.sendGenericTraceRoute
+  = async function(device, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
   }
-  return initiateTracerouteTest(device, username, sessionID);
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'traceroute',
+    stage: 'initiating',
+    customized: false,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: [device.ping_hosts],
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  return await initiateTracerouteTest(device, username, sessionID);
 };
 
 // This should be called right after sendCustomPingTest or sendGenericPingTest
 // Common validations and device.save goes here
 const initiatePingCommand = async function(device, username, sessionID) {
-  let permissions = DeviceVersion.devicePermissions(device,);
+  let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantPingTest) {
     return {
       success: false,
@@ -426,39 +432,19 @@ const initiatePingCommand = async function(device, username, sessionID) {
   }
 
   // Validated from here. Saving device & validating stuffs
+  device.pingtest_results =
+    device.current_diagnostic.targets.map((item) => ({host: item}));
+  await device.save().catch((err) => {
+    console.log('Error saving device after ping command: ' + err);
+  });
   if (sessionID && sio.anlixConnections[sessionID]) {
     sio.anlixWaitForPingTestNotification(
       sessionID, device._id.toUpperCase(),
     );
   }
-  await device.save().catch((err) => {
-    console.log('Error saving device after ping command: ' + err);
-  });
 
   if (device.use_tr069) {
-    device.pingtest_results = [];
-
-    if (device.current_diagnostic.customized) {
-      device.pingtest_results =
-        device.current_diagnostic.targets.map((item) => ({host: item}));
-    } else if (Object.keys(device.ping_hosts).length > 0) {
-      device.pingtest_results =
-        device.ping_hosts.map((h)=>({host: h}));
-    }
-    if (device.pingtest_results.length == 0) {
-      device.current_diagnostic.stage = 'done';
-      device.current_diagnostic.last_modified_at = new Date();
-      device.current_diagnostic.in_progress = false;
-    }
-    await device.save().catch((err) => {
-      console.log('Error saving device right before firing ping diagnose');
-    });
-    if (device.pingtest_results.length > 0) {
-      let fireResult = await acsDiagnosticsHandler.firePingDiagnose(device);
-      return fireResult;
-    } else {
-      return {success: false};
-    }
+    return await acsDiagnosticsHandler.firePingDiagnose(device);
   } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
     return {success: true};
@@ -524,16 +510,43 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
     };
   }
 
-  // Everything validated from here;
+  // Validated from here. Saving device & validating stuffs
+  device.traceroute_results =
+    device.current_diagnostic.targets.map((host)=>({address: host}));
   await device.save().catch((err)=>{
     return {
       success: false,
       message: t('cpeSaveError', {errorline: __line}),
     };
   });
+  if (sessionID && sio.anlixConnections[sessionID]) {
+    sio.anlixWaitForTracerouteNotification(
+      sessionID, device._id.toUpperCase(),
+    );
+  }
+
+  // Start Traceroute
+  if (device && device.use_tr069) {
+    // Preparation for TR069
+  } else {
+    mqtt.anlixMessageRouterTraceroute(
+      device._id,
+      device.traceroute_route,
+      device.traceroute_max_hops,
+      device.traceroute_numberProbes,
+      device.traceroute_max_wait,
+    );
+  }
 };
 
-const canStartNewDiagnostic = function(device) {
+// Common validation used by all diagnostics
+const checkNewDiagnosticAvailability = function(device) {
+  if (!device) {
+    return {
+      success: false,
+      message: t('cpeNotFound', {errorline: __line}),
+    };
+  }
   const msSinceLastModified =
     new Date() - device.current_diagnostic.last_modified_at;
   const timeoutThresholdMs = 2 * 5 * 1000; // 2 minutes;
@@ -541,9 +554,11 @@ const canStartNewDiagnostic = function(device) {
       msSinceLastModified<timeoutThresholdMs &&
       device.current_diagnostic.in_progress
   ) {
-    return false;
+    return {
+      success: false,
+      message: t('diagnosticInProgress'),
+    };
   }
-  return true;
 };
 
 // Main page
@@ -1558,32 +1573,7 @@ deviceListController.sendMqttMsg = async function(req, res) {
         } else if (msgtype === 'ping') {
           return deviceListController.sendGenericPingAPI(req, res);
         } else if (msgtype === 'traceroute') {
-          if (!permissions.grantTraceroute) {
-            return res.status(200).json({
-              success: false,
-              message: t('cpeWithoutCommand'),
-            });
-          }
-
-          // Wait for notification
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForTracerouteNotification(
-              req.sessionID, req.params.id.toUpperCase(),
-            );
-          }
-
-          // Start Traceroute
-          if (device && device.use_tr069) {
-            // Preparation for TR069
-          } else {
-            mqtt.anlixMessageRouterTraceroute(
-              device._id,
-              device.traceroute_route,
-              device.traceroute_max_hops,
-              device.traceroute_numberProbes,
-              device.traceroute_max_wait,
-            );
-          }
+          return deviceListController.sendGenericTraceRoute(req, res);
         } else if (msgtype === 'boot') {
           if (device && device.use_tr069) {
             // acs integration will respond to request
@@ -3438,7 +3428,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('cpeFindError', {errorline: __line}),
+        message: t('cpeFindError', {er,rorline: __line}),
       });
     }
     if (matchedDevice == null) {
@@ -3922,163 +3912,78 @@ deviceListController.getLanInfo = async function(request, response) {
   });
 };
 
-deviceListController.sendCustomPingAPI = async function(req,res) {
+deviceListController.sendCustomPingAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomPing(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomPing(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
-deviceListController.sendGenericPingAPI = async function(req,res) {
+};
+deviceListController.sendGenericPingAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericPing(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericPing(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendCustomSpeedTestAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomSpeedTest(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomSpeedTest(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendGenericSpeedTestAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericSpeedTest(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericSpeedTest(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendCustomTraceRouteAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendCustomTraceRoute(matchedDevice, req.body, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendCustomTraceRoute(
+    matchedDevice, req.body, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
+};
 deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   let matchedDevice;
   try {
     matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch(e) {
-    matchDevice = null;
+  } catch (e) {
+    matchedDevice = null;
   }
-  let commandResponse = await deviceListController.sendGenericTraceRoute(matchedDevice, req.user.name, req.sessionID);
+  let commandResponse = await deviceListController.sendGenericTraceRoute(
+    matchedDevice, req.user.name, req.sessionID,
+  );
   return res.status(200).json(commandResponse);
-}
-
-// Traceroute
-// Get the route for Traceroute
-deviceListController.getTracerouteAddress = function(request, response) {
-  DeviceModel.findByMacOrSerial(request.params.id.toUpperCase()).exec(
-  function(err, matchedDevice) {
-    let device;
-
-    // Check if an error happened getting the device
-    if (err) {
-      return response.status(200).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
-    }
-
-    // Check if found the device
-    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-      device = matchedDevice[0];
-    } else {
-      return response.status(200).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
-    }
-
-    // Return the address
-    return response.status(200).json({
-      success: true,
-      traceroute_route: device.traceroute_route,
-    });
-  });
 };
-
-// Set the route for Traceroute
-deviceListController.setTracerouteAddress = function(request, response) {
-  DeviceModel.findByMacOrSerial(request.params.id.toUpperCase()).exec(
-
-  function(err, matchedDevice) {
-    // Check if an error happened getting the device
-    if (err) {
-      return response.status(200).json({
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      });
-    }
-
-    // Check if found the device
-    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-      matchedDevice = matchedDevice[0];
-    } else {
-      return response.status(200).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
-    }
-
-    // Check the address type
-    let content;
-
-    // Make sure it is string or a object
-    if (typeof(request.body.content) == 'string' &&
-        util.isJsonString(request.body.content)
-    ) {
-      content = JSON.parse(request.body.content);
-    } else if (typeof(request.body.content) == 'object') {
-      content = request.body.content;
-    } else {
-      return response.status(200).json({
-        success: false,
-        message: t('fieldNameInvalid',
-          {name: 'content', errorline: __line}),
-      });
-    }
-
-    // Verify address
-    content = content.traceroute_route.toLowerCase();
-    if (content.match(util.fqdnLengthRegex)) {
-      matchedDevice.traceroute_route = content;
-    }
-
-    // Save the device
-    matchedDevice.save(function(err) {
-      if (err) {
-        return response.status(200).json({
-          success: false,
-          message: t('cpeSaveError', {errorline: __line}),
-        });
-      }
-
-      return response.status(200).json({
-        success: true,
-      });
-    });
-  });
-};
-
 
 deviceListController.exportDevicesCsv = async function(req, res) {
   let queryContents = req.query.filter.split(',');

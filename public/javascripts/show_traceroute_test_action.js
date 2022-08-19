@@ -4,6 +4,7 @@ import 'selectize';
 
 const t = i18next.t;
 let initialized = false;
+let itemIndex = 0;
 
 
 // Modals
@@ -32,6 +33,9 @@ const SIO_NOTIFICATION_TRACEROUTE = 'TRACEROUTE';
 
 
 // HTMLs
+const TRACEROUTE_HTML_ARROW_NAME = 'traceroute-item-arrow-';
+const TRACEROUTE_HTML_RESULT_NAME = 'traceroute-item-result-';
+
 const RESULT_TABLE_ITEM_HTML = $('<li>')
   .addClass('list-group-item')
   .addClass('d-flex')
@@ -52,33 +56,73 @@ const SELECTIZE_ADDRESS_HTML = function(data, escape) {
     );
 };
 
+// Return the HTML of the collapsible item
+const resultTableRouteCollapsibleHtml = function(route, number) {
+  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+
+            // Arrow portion of the header of the collapsible item
+            '<div class="col-1">' +
+              // Arrow
+              '<div id="' + TRACEROUTE_HTML_ARROW_NAME + number +
+              '" class="fas fa-chevron-down fa-lg mt-1"></div>' +
+            '</div>' +
+
+            // Text portion of the header
+            '<div class="col-11">' +
+              '<h5>' + encodeURIComponent(route) + '</h5>' +
+            '</div>' +
+          '</div>' +
+
+          // Result of the item
+          '<div id="' + TRACEROUTE_HTML_RESULT_NAME + number +
+          '" class="pl-2 pr-2 grey lighten-5 border" style="display: none;">' +
+          '</div>');
+};
+
+
+// Return the HTML of an invalid item
+const resultTableRouteInvalidHtml = function(route) {
+  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+
+            // Arrow portion of the header of the collapsible item
+            '<div class="col-1">' +
+              // X
+              '<div class="fas fa-times fa-lg mt-1 red-text"></div>' +
+            '</div>' +
+
+            // Text portion of the header
+            '<div class="col-11">' +
+              '<h5>' + encodeURIComponent(route) + '</h5>' +
+            '</div>' +
+          '</div>');
+};
+
 
 // Saves the route for traceroute to database
 const saveTracerouteAddress = function() {
+  // Check if it is the first time adding the routes
+  if (!initialized) {
+    return;
+  }
+
   // Get which device to show the info
   let deviceId = $(DEVICE_ID_MODAL).text();
 
-  // Get the route
-  let address = $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue();
+  // Get routes
+  let addresses = $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue();
 
-  // Check if address is valid
-  if (address === '' || address === null) {
+  // Check if addresses variable is valid
+  if (addresses === '' || addresses === null || addresses.length === 0) {
     return;
   }
 
   // Send the command to send the traceroute request
   sendRequest(
-    '/devicelist/traceroute/' + deviceId,
+    '/devicelist/pinghostslist/' + deviceId,
     'POST',
     deviceId,
 
     function(id, data) {
-      // Check if it is the first time
-      if (!initialized) {
-        initialized = true;
-        return;
-      }
-
       // If could save successfully
       if (data.success) {
         $(TRACEROUTE_ADDRESS_SELECTOR)
@@ -113,7 +157,7 @@ const saveTracerouteAddress = function() {
     },
 
     JSON.stringify({
-      'content': JSON.stringify({'traceroute_route': address}),
+      'content': JSON.stringify({'hosts': addresses}),
     }),
   );
 };
@@ -130,11 +174,10 @@ const resetTracerouteDisplay = function() {
 
 // Constants
 const MEAN_TRUNCATE_NUMBER = 3;
-const DEFAULT_TRACEROUTE_SERVER = 'www.google.com';
 const SELECTIZE_OPTIONS_ADDRESS = {
   create: true,
-  maxItems: 1,
   onItemAdd: saveTracerouteAddress,
+  onItemRemove: saveTracerouteAddress,
   onChange: resetTracerouteDisplay,
   render: {
     option_create: SELECTIZE_ADDRESS_HTML,
@@ -231,13 +274,47 @@ const setUpdatingAnimation = function(updating) {
 const updateValues = function(message) {
   // Check if the message did not come empty
   if (isNaN(message.tries_per_hop)) {
-    // Set the error and return
-    setErrorModal(true);
+    // Escape characters
+    let route = encodeURIComponent(message.address);
+
+    // Create the invalid item
+    let routeItemHtml = resultTableRouteInvalidHtml(route);
+    $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
+
     return;
   }
 
-  // Clear previous results
-  $(TRACEROUTE_RESULTS_TABLE).text('');
+  // Escape characters
+  let route = encodeURIComponent(message.address);
+
+  // Get the number and increment
+  let number = itemIndex;
+  itemIndex += 1;
+
+  // Create the item
+  let routeItemHtml = resultTableRouteCollapsibleHtml(route, number);
+  $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
+
+  // Assign a function to the arrow
+  $(TRACEROUTE_RESULTS_TABLE).on(
+    'click',
+    '#' + TRACEROUTE_HTML_ARROW_NAME + number,
+    async function(event) {
+      let arrow = $('#' + TRACEROUTE_HTML_ARROW_NAME + number);
+      let result = $('#' + TRACEROUTE_HTML_RESULT_NAME + number);
+
+      if (arrow.hasClass('text-primary')) {
+        arrow
+          .removeClass('text-primary fa-chevron-up')
+          .addClass('fa-chevron-down');
+        result.hide();
+      } else {
+        arrow
+          .removeClass('fa-chevron-down')
+          .addClass('text-primary fa-chevron-up');
+        result.show();
+      }
+  });
 
   // Loop through all hops
   for (let hopIndex = 0; hopIndex < message.hops.length; hopIndex++) {
@@ -250,9 +327,9 @@ const updateValues = function(message) {
     }
 
     // Assign parameters to html
-    $(TRACEROUTE_RESULTS_TABLE).append(
+    $('#' + TRACEROUTE_HTML_RESULT_NAME + number).append(
       RESULT_TABLE_ITEM_HTML
-        .text(escape(hop.ip))
+        .text(encodeURIComponent(hop.ip))
         .append(
           RESULT_TABLE_ITEM_VALUE_HTML
           .text(t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)}))
@@ -321,34 +398,35 @@ const showModal = async function(event) {
 
   // Send the command to get the route from database
   sendRequest(
-    '/devicelist/traceroute/' + deviceId,
+    '/devicelist/pinghostslist/' + deviceId,
     'GET',
     deviceId,
     function(id, data) {
-      let tracerouteRoute = DEFAULT_TRACEROUTE_SERVER;
-
       // If happened an error
       if (!data.success) {
         onRequisitionError();
         return;
       }
 
-      // Check if empty or null
-      if (data.traceroute_route !== '' ||
-          data.traceroute_route !== null) {
-        tracerouteRoute = data.traceroute_route;
-      }
+      // Get the list from ping
+      let hostslist = data.ping_hosts_list;
 
-      initialized = false;
+      // Assign each route
+      $.each(hostslist, function(idx, address) {
+        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize
+          .addOption({
+            value: address,
+            text: address,
+          });
 
-      // Assign the route
-      $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize
-        .addOption({
-          value: tracerouteRoute,
-          text: tracerouteRoute,
-        });
-        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.addItem(tracerouteRoute);
-        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
+        $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.addItem(address);
+      });
+
+      // Update items
+      $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
+
+      // Update completed
+      initialized = true;
     },
     onRequisitionError,
   );
@@ -363,6 +441,9 @@ anlixDocumentReady.add(function() {
 
   // Assign Traceroute Show Modal Button
   $(document).on('click', '.btn-traceroute-test-modal', async function(event) {
+    // Do not save the routes when adding then
+    initialized = false;
+
     showModal(event);
   });
 
@@ -374,6 +455,10 @@ anlixDocumentReady.add(function() {
 
     // Start the animation
     setUpdatingAnimation(true);
+
+    // Clear the result section and events
+    $(TRACEROUTE_RESULTS_TABLE).text('');
+    $(TRACEROUTE_RESULTS_TABLE).off();
 
     // Send the command to send the traceroute request
     sendRequest(
@@ -388,15 +473,14 @@ anlixDocumentReady.add(function() {
       },
       onRequisitionError,
     );
+  });
 
-
-    // Assign a socket IO
-    socket.on(SIO_NOTIFICATION_TRACEROUTE, function(macaddr, data) {
-      // Check if it is the current device
-      if ($(DEVICE_ID_MODAL).text() === macaddr) {
-        // Update values
-        updateValues(data);
-      }
-    });
+  // Assign a socket IO
+  socket.on(SIO_NOTIFICATION_TRACEROUTE, function(macaddr, data) {
+    // Check if it is the current device
+    if ($(DEVICE_ID_MODAL).text() === macaddr) {
+      // Update values
+      updateValues(data);
+    }
   });
 });
