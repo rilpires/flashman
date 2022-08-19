@@ -988,8 +988,8 @@ deviceListController.delDeviceReg = async function(req, res) {
           t('Device') + ' - ' + device.id + ' - ' +
           t('cantDeleteMeshWithSecondaries', {errorline: __line}));
       } else {
-        let removal = await deviceHandlers.removeDeviceFromDatabase(device);
-        if (!removal.success) {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
           failedAtRemoval.push(
           t('Device') + ' - ' + device.id + ' - ' +
           t('operationUnsuccessful', {errorline: __line}));
@@ -3869,8 +3869,8 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
           t('Device') + ' - ' + device._id + ' - ' +
           t('cantDeleteMeshWithSecondaries', {errorline: __line}));
       } else {
-        let removal = await deviceHandlers.removeDeviceFromDatabase(device);
-        if (!removal.success) {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
           failedAtRemoval.push(
             t('Device') + ' - ' + device._id + ' - ' +
             t('operationUnsuccessful', {errorline: __line}));

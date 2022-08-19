@@ -470,8 +470,8 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
                                      message: t('cantDeleteMeshWithSecondaries',
                                      {errorline: __line})});
       }
-      let removal = await deviceHandlers.removeDeviceFromDatabase(device);
-      if (!removal.success) {
+      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      if (!removalOK) {
         return res.status(500).json({'error':
           t('operationUnsuccessful', {errorline: __line})});
       }
