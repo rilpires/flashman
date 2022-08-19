@@ -1,4 +1,5 @@
 /* global __line */
+const Validator = require('../public/javascripts/device_validator');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
@@ -142,6 +143,10 @@ const generateSessionCredential = async (user) => {
     session.onuUserLogin = trConf.web_login_user || '';
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
+    session.onuPonThreshold = trConf.pon_signal_threshold;
+    session.onuPonThresholdCritical = trConf.pon_signal_threshold_critical;
+    session.onuPonThresholdCriticalHigh =
+      trConf.pon_signal_threshold_critical_high;
   }
   return session;
 };
@@ -210,6 +215,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
           t('configFindError', {errorline: __line})});
       }
 
+      let permissions = DeviceVersion.devicePermissions(device);
+
       let createPrefixErrNotification = false;
       // What only matters in this case is the deviceEnabled flag
       if (device.isSsidPrefixEnabled &&
@@ -267,27 +274,41 @@ diagAppAPIController.configureWifi = async function(req, res) {
         changes.wifi2.channel = content.wifi_channel.trim();
         updateParameters = true;
       }
-      if (content.wifi_band) {
-        device.wifi_band = content.wifi_band.trim();
-        changes.wifi2.band = content.wifi_band.trim();
-        updateParameters = true;
+      if (content.wifi_band && permissions.grantWifiBandEdit) {
+        // discard change to auto when model doesnt support it
+        if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
+          device.wifi_band = content.wifi_band.trim();
+          changes.wifi2.band = content.wifi_band.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_mode) {
+      if (content.wifi_mode && permissions.grantWifiModeEdit) {
         device.wifi_mode = content.wifi_mode.trim();
         changes.wifi2.mode = content.wifi_mode.trim();
         updateParameters = true;
       }
       if (content.wifi_channel_5ghz) {
-        device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
-        changes.wifi5.channel = content.wifi_channel_5ghz.trim();
-        updateParameters = true;
+        // discard change to invalid 5ghz channel for this model
+        let validator = new Validator();
+        if (validator.validateChannel(
+          content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
+        ).valid) {
+          device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
+          changes.wifi5.channel = content.wifi_channel_5ghz.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_band_5ghz) {
-        device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
-        changes.wifi5.band = content.wifi_band_5ghz.trim();
-        updateParameters = true;
+      if (content.wifi_band_5ghz && permissions.grantWifiBandEdit) {
+        // discard change to auto when model doesnt support it
+        if (
+          content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5
+        ) {
+          device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
+          changes.wifi5.band = content.wifi_band_5ghz.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_mode_5ghz) {
+      if (content.wifi_mode_5ghz && permissions.grantWifiModeEdit) {
         device.wifi_mode_5ghz = content.wifi_mode_5ghz.trim();
         changes.wifi5.mode = content.wifi_mode_5ghz.trim();
         updateParameters = true;
@@ -501,19 +522,21 @@ diagAppAPIController.receiveCertification = async (req, res) => {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      if (
-        content.current.latitude && content.current.longitude &&
-        !device.stop_coordinates_update
-      ) {
-        device.latitude = content.current.latitude;
-        device.longitude = content.current.longitude;
-        device.last_location_date = new Date();
+      if (device) {
+        if (
+          content.current.latitude && content.current.longitude &&
+          !device.stop_coordinates_update
+        ) {
+          device.latitude = content.current.latitude;
+          device.longitude = content.current.longitude;
+          device.last_location_date = new Date();
+        }
+        if (content.current.contractType && content.current.contract) {
+          device.external_reference.kind = content.current.contractType;
+          device.external_reference.data = content.current.contract;
+        }
+        await device.save();
       }
-      if (content.current.contractType && content.current.contract) {
-        device.external_reference.kind = content.current.contractType;
-        device.external_reference.data = content.current.contract;
-      }
-      await device.save();
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond

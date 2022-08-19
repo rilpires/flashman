@@ -201,6 +201,21 @@ meshHandlers.buildTR069Changes = function(
     case 1:
       changes.mesh2.enable = false;
       changes.mesh5.enable = false;
+      // Set the parameters below to improve hand-off with custom Anlix firmware
+      if (cpe.modelPermissions().mesh.setEncryptionForCable) {
+        changes.wifi2.beacon_type = beaconType;
+        changes.wifi5.beacon_type = beaconType;
+        const wpaMode = cpe.getWPAEncryptionMode();
+        const ieeeMode = cpe.getIeeeEncryptionMode();
+        if (wpaMode != '') {
+          changes.wifi2.encryption = wpaMode;
+          changes.wifi5.encryption = wpaMode;
+        }
+        if (ieeeMode != '') {
+          changes.wifi2.encryptionIeee = ieeeMode;
+          changes.wifi5.encryptionIeee = ieeeMode;
+        }
+      }
       break;
     case 2:
       changes.mesh2 =
@@ -300,7 +315,8 @@ meshHandlers.validateMeshMode = async function(
 
   const permissions = DeviceVersion.devicePermissions(device);
   const isMeshV1Compatible = permissions.grantMeshMode;
-  const isMeshV2Compatible = permissions.grantMeshV2PrimaryMode;
+  const isMeshV2Compatible = permissions.grantMeshV2PrimaryModeCable ||
+    permissions.grantMeshV2PrimaryModeWifi;
 
   if (!isMeshV1Compatible && !isMeshV2Compatible && targetMode > 0) {
     errors.push(t('cpeNotCompatibleWithMesh', {errorline: __line}));

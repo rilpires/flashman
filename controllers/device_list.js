@@ -1918,8 +1918,13 @@ deviceListController.setDeviceReg = function(req, res) {
           }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
-          genericValidate(channel5ghz,
-                          validator.validateChannel, 'channel5ghz');
+          genericValidate(
+            channel5ghz,
+            (ch)=>validator.validateChannel(
+              ch, permissions.grantWifi5ChannelList,
+            ),
+            'channel5ghz',
+          );
         }
         if (content.hasOwnProperty('wifi_band_5ghz')) {
           genericValidate(band5ghz, validator.validateBand, 'band5ghz');
@@ -2066,16 +2071,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band') &&
+                permissions.grantWifiBandEdit &&
                 band !== '' && band !== matchedDevice.wifi_band) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi2.band = band;
-                matchedDevice.wifi_band = band;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto2) {
+                  changes.wifi2.band = band;
+                  matchedDevice.wifi_band = band;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode') &&
+                permissions.grantWifiModeEdit &&
                 mode !== '' && mode !== matchedDevice.wifi_mode) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.mode = mode;
@@ -2151,16 +2161,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
+                permissions.grantWifiBandEdit &&
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi5.band = band5ghz;
-                matchedDevice.wifi_band_5ghz = band5ghz;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto5) {
+                  changes.wifi5.band = band5ghz;
+                  matchedDevice.wifi_band_5ghz = band5ghz;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                permissions.grantWifiModeEdit &&
                 mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.mode = mode5ghz;
@@ -2349,31 +2364,28 @@ deviceListController.setDeviceReg = function(req, res) {
                   ) {
                     delete changes.wifi5.channel;
                   }
-                } else {
-                  meshHandlers.setMeshMode(
-                    matchedDevice, meshMode,
-                  );
                 }
+                meshHandlers.setMeshMode(
+                  matchedDevice, meshMode,
+                );
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
               }
             }
-            if (
-              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
-              (
-                (
-                  matchedDevice.wifi_state == 0 &&
-                  JSON.stringify(changes.wifi2) != '{}' &&
-                  JSON.stringify(changes.wifi2) != '{"enable":0}'
-                ) ||
-                (
-                  matchedDevice.wifi_state_5ghz == 0 &&
-                  JSON.stringify(changes.wifi5) != '{}' &&
-                  JSON.stringify(changes.wifi5) != '{"enable":0}'
-                )
-              )
-            ) {
+            let isWifi2DisabledAndChangingSomething = (
+              matchedDevice.wifi_state == 0 &&
+              JSON.stringify(changes.wifi2) != '{}' &&
+              JSON.stringify(changes.wifi2) != '{"enable":0}'
+            );
+            let isWifi5DisabledAndChangingSomething = (
+              matchedDevice.wifi_state_5ghz == 0 &&
+              JSON.stringify(changes.wifi5) != '{}' &&
+              JSON.stringify(changes.wifi5) != '{"enable":0}'
+            );
+            if (cpe.modelPermissions().wifi.mustBeEnabledToConfigure
+              && (isWifi2DisabledAndChangingSomething ||
+                  isWifi5DisabledAndChangingSomething)) {
               return res.status(500).json({
                 success: false,
                 message: t('enabledToModifyFields',
@@ -3129,7 +3141,7 @@ deviceListController.getPingHostsList = function(req, res) {
 
 deviceListController.setPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  function(err, matchedDevice) {
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
         success: false,
@@ -3166,6 +3178,18 @@ deviceListController.setPingHostsList = function(req, res) {
         approvedHosts.push(host);
       }
     });
+
+    // Check if approved hosts contains default hosts if configured
+    const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
+    if (getDefaultPingHosts.success &&
+        getDefaultPingHosts.hosts.length > 0 &&
+        !getDefaultPingHosts.hosts.every((x) => approvedHosts.includes(x))) {
+      return res.status(200).json({
+        success: false,
+        message: t('hostListMustContainDefaultHosts',
+          {hosts: getDefaultPingHosts.hosts, errorline: __line}),
+      });
+    }
     matchedDevice.ping_hosts = approvedHosts;
     matchedDevice.save(function(err) {
       if (err) {
@@ -3180,6 +3204,101 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     });
   });
+};
+
+const getDefaultPingHostsAtConfig = async function() {
+  let message = t('configNotFound', {errorline: __line});
+  let config = {};
+  try {
+    config = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true},
+    ).lean();
+  } catch (err) {
+    message = t('configFindError', {errorline: __line});
+  }
+  if (config && Array.isArray(config.default_ping_hosts)) {
+    return {success: true, hosts: config.default_ping_hosts};
+  }
+  return {success: false, type: 'error', message: message};
+};
+
+deviceListController.getDefaultPingHosts = async function(req, res) {
+  const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
+  if (getDefaultPingHosts.success) {
+    return res.status(200).json({
+      success: true,
+      default_ping_hosts_list: getDefaultPingHosts.hosts,
+    });
+  }
+  return res.status(200).json({
+    success: false, message: getDefaultPingHosts.message,
+  });
+};
+
+deviceListController.setDefaultPingHosts = async function(req, res) {
+  let success = true;
+  let type = 'success';
+  let message = t('operationSuccessful', {errorline: __line});
+  Config.findOne({is_default: true}, {default_ping_hosts: true}).exec(
+    async function(err, matchedConfig) {
+      if (err) {
+        success = false; type = 'error';
+        message = t('configFindError', {errorline: __line});
+      }
+      if (!util.isJSONObject(req.body)) {
+        success = false; type = 'error';
+        message = t('jsonError', {errorline: __line});
+      }
+      if (!req.body.default_ping_hosts_list) {
+        success = false; type = 'error';
+        message = t('configNotFound', {errorline: __line});
+      }
+      let hosts = req.body.default_ping_hosts_list;
+      let approvedHosts = [];
+      hosts.forEach((host) => {
+        host = host.toLowerCase();
+        if (host.match(util.fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedConfig.default_ping_hosts = approvedHosts;
+      matchedConfig.save(function(err) {
+        if (err) {
+          success = false; type = 'error';
+          message = t('configSaveError', {errorline: __line});
+        }
+      });
+      if (approvedHosts.length) {
+        const overwriteResult = await overwriteHostsOnDevices(approvedHosts);
+        if (!overwriteResult.success) {
+          success = false; type = 'error';
+          message = t('cpeSaveError', {errorline: __line});
+        }
+      }
+    });
+    return res.status(200).json({
+      success: success, type: type, message: message,
+    });
+};
+
+const overwriteHostsOnDevices = async function(approvedHosts) {
+  let devices = {};
+  try {
+    devices = await DeviceModel.find({}, {ping_hosts: true});
+  } catch (err) {
+    return {success: false, type: 'error',
+      message: t('cpeFindError', {errorline: __line})};
+  }
+  for (let device of devices) {
+    device.ping_hosts = approvedHosts;
+    try {
+      device.save();
+    } catch (err) {
+      return {success: false, type: 'error',
+        message: t('cpeSaveError', {errorline: __line})};
+    }
+  }
+  return {success: true};
 };
 
 deviceListController.getLanDevices = async function(req, res) {

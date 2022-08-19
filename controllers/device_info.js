@@ -192,11 +192,13 @@ const createRegistry = async function(req, res) {
   genericValidate(channel, validator.validateChannel,
                   'channel', null, errors);
 
-  if (permissions.grantWifiBand) {
-    genericValidate(band, validator.validateBand,
-                    'band', null, errors);
+  if (permissions.grantWifiModeEdit) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
+  }
+  if (permissions.grantWifiBandEdit) {
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
   }
   if (permissions.grantWifiPowerHiddenIpv6Box) {
     genericValidate(power, validator.validatePower,
@@ -213,17 +215,24 @@ const createRegistry = async function(req, res) {
       (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
       'password5ghz', null, errors,
     );
-    genericValidate(channel5ghz, validator.validateChannel,
-                    'channel5ghz', null, errors);
-    genericValidate(band5ghz, validator.validateBand,
-                    'band5ghz', null, errors);
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
+      'channel5ghz', null, errors,
+    );
+    if (permissions.grantWifiBandEdit) {
+      genericValidate(band5ghz, validator.validateBand,
+                      'band5ghz', null, errors);
+    }
 
     // Fix for devices that uses 11a as 11ac mode
     if (mode5ghz == '11a') {
       mode5ghz = '11ac';
     }
-    genericValidate(mode5ghz, validator.validateMode,
-                    'mode5ghz', null, errors);
+    if (permissions.grantWifiModeEdit) {
+      genericValidate(mode5ghz, validator.validateMode,
+                      'mode5ghz', null, errors);
+    }
     if (permissions.grantWifiPowerHiddenIpv6Box) {
       genericValidate(power5ghz, validator.validatePower,
                       'power5ghz', null, errors);
@@ -243,6 +252,17 @@ const createRegistry = async function(req, res) {
       genericValidate(bridgeFixDNS, validator.validateIP,
                       'bridge_fix_ip', null, errors);
     }
+  }
+
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
   }
 
   if (errors.length < 1) {
@@ -303,6 +323,7 @@ const createRegistry = async function(req, res) {
       'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
+      'ping_hosts': defaultPingHosts,
     };
     if (vlanParsed !== undefined) {
       deviceObj.vlan = vlanParsed;
@@ -606,8 +627,10 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             sentVersion, is5ghzCapable, (bodyModel + bodyModelVer),
           );
 
-          if ( permissionsSentVersion.grantWifiBand &&
-              !permissionsCurrVersion.grantWifiBand) {
+          if (
+            permissionsSentVersion.grantWifiBandEdit &&
+            !permissionsCurrVersion.grantWifiBandEdit
+          ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();
             let mode =
@@ -646,8 +669,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
-            genericValidate(channel5ghz, validator.validateChannel,
-                            'channel5ghz', null, errors);
+            genericValidate(
+              channel5ghz,
+              (ch)=>validator.validateChannel(
+                ch, permissionsSentVersion.grantWifi5ChannelList,
+              ),
+              'channel5ghz', null, errors,
+            );
             genericValidate(band5ghz, validator.validateBand,
                             'band5ghz', null, errors);
 
@@ -1508,7 +1536,8 @@ deviceInfoController.receiveDevices = async function(req, res) {
     const permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // In mesh v2 there is a new layout of the flashbox response
-    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+    const meshV2 = (permissions.grantMeshV2PrimaryModeCable ||
+      permissions.grantMeshV2PrimaryModeWifi ||
       permissions.grantMeshV2SecondaryMode);
 
     if ('mesh_routers' in req.body) {

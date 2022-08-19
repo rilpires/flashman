@@ -21,7 +21,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.lan.configWrite = false;
   // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 120;
-  permissions.wifi.modeRead = true;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
 
   // firmware upgrade permissions
