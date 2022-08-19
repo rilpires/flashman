@@ -968,7 +968,6 @@ deviceListController.delDeviceReg = async function(req, res) {
     // delDeviceReg to do the license block with delDeviceAndBlockLicense
     if (mustBlockAtRemoval) {
       req.body.ids = removeList;
-      req.body.block = true;
       return await deviceListController.delDeviceAndBlockLicense(req, res);
     }
     let devices = await DeviceModel.findByMacOrSerial(removeList);
@@ -3836,25 +3835,23 @@ deviceListController.changeLicenseStatus = async function(req, res) {
 
 deviceListController.delDeviceAndBlockLicense = async function(req, res) {
   // Check request body
-  if (!('ids' in req.body) || !('block' in req.body)) {
+  if (!('ids' in req.body)) {
     return res.status(500).json({success: false, type: 'error',
       message: t('jsonInvalidFormat', {errorline: __line})});
   }
   try {
-    // Get new block status
-    const newBlockStatus =
-      (req.body.block === true || req.body.block === 'true');
     let devIds = req.body.ids;
     // Check devices array
     if (!Array.isArray(devIds)) {
       devIds = [devIds];
     }
     // Get devices from ids
-    let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
-      // Use projection
-      {_id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
-        mesh_master: true, mesh_slaves: true},
-    );
+    let projection = {
+      _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
+      mesh_master: true, mesh_slaves: true,
+    };
+    let matchedDevices =
+      await DeviceModel.findByMacOrSerial(devIds, false, projection);
     // Check if get at least one device
     if (matchedDevices.length === 0) {
       return res.status(500).json({success: false, type: 'error',
@@ -3863,49 +3860,43 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
     }
     devIds = [];
     // Creating an Array for the error messages
-    let failedAtRemoval = [];
+    let failedAtRemoval = {};
     // Try to remove each device
     for (let device of matchedDevices) {
-      // If the device is a mesh master, then we must do not delete it
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
+      // If the device is a mesh master, then we must not delete it
       if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        failedAtRemoval.push(
-          t('Device') + ' - ' + device._id + ' - ' +
-          t('cantDeleteMeshWithSecondaries', {errorline: __line}));
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
       } else {
         let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
         if (!removalOK) {
-          failedAtRemoval.push(
-            t('Device') + ' - ' + device._id + ' - ' +
-            t('operationUnsuccessful', {errorline: __line}));
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
         } else {
-          if (device.use_tr069) {
-            devIds.push(device.serial_tr069);
-          } else {
-            devIds.push(device._id);
-          }
+          devIds.push(deviceId);
         }
       }
     }
-    if (failedAtRemoval.length > 0) {
-      console.log(
-        [t('couldntRemoveSomeDevices')].concat(failedAtRemoval).join('\n'));
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
+      });
+    }
+    // Move on to blocking the licenses
+    let retObj = await controlApi.changeLicenseStatus(req.app, true, devIds);
+    if (!retObj.success) {
       return res.status(500).json({success: false, type: 'danger',
-                                   message: t('couldntRemoveSomeDevices',
-                                   {errorline: __line})});
-    } else {
-      // Try to block device's license
-      let retObj =
-        await controlApi.changeLicenseStatus(req.app, newBlockStatus, devIds);
-      if (!retObj.success) {
-        console.log(t('couldntBlockSomeLicenses'));
-        console.log(devIds);
-        return res.status(500).json({success: false, type: 'danger',
-                                   message: t('couldntBlockSomeLicenses',
-                                   {errorline: __line})});
-      } else {
-        console.log(t('operationSuccessful'));
-        console.log(devIds);
-      }
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
     }
     return res.status(200).json({success: true, type: 'success',
                                 message: t('operationSuccessful')});
