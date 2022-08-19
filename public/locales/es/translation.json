@@ -51,6 +51,7 @@
 	"secondaryIndicatedCpeNotAssignedToPrimary": "CPE indicado como secundario no tiene principal asociado ({{errorline}})",
 	"secondaryIndicatedCpeHasSecondariesAssigned": "CPE indicado como secundario tiene CPE secundarios asociados ({{errorline}})",
 	"secondaryIndicatedCpeNotInPrimaryList": "El CPE designado como secundario no está en la lista de secundarios para el CPE designado como principal",
+	"cannotDisassocWhileUpdating": "No se puede desasociar un CPE secundario durante la actualización",
 	"errorCreditingMeshLicense": "Error al acreditar la licencia mesh ({{errorline}})",
 	"Success": "Éxito",
 	"fieldNotFound": "Campo no encontrado ({{errorline}})",
