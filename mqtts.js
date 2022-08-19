@@ -517,10 +517,10 @@ mqtts.anlixMessageRouterWifiState = function(id, state, wirelessRadio) {
   }
 };
 
-mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+mqtts.anlixMessageRouterSpeedTest = function(id, ip, username) {
   const serverId = findServerId(id);
   if (serverId !== null) {
-    const name = user.name.replace(/ /g, '_');
+    const name = username.replace(/ /g, '_');
     const packet = {
       id: id,
       qos: 2,
@@ -534,15 +534,15 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
 };
 
 
-mqtts.anlixMessageRouterSpeedTestRaw = function(id, user) {
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, username) {
   const serverId = findServerId(id);
   if (serverId !== null) {
-    const name = user.name.replace(/ /g, '_');
+    const name = username.replace(/ /g, '_');
     const packet = {
       id: id,
       qos: 2,
       retain: true,
-      payload: 'rawspeedtest ' + ' ' + name + ' 3 15',
+      payload: 'rawspeedtest ' + name + ' 3 15',
       // Fix parallel connections to 3 and timeout to 15 seconds
     };
     toPublishPacket(serverId, packet);
