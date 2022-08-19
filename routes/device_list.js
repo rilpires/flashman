@@ -105,7 +105,7 @@ router.route('/speedtest/:id').get(
   deviceListController.getSpeedtestResults)
                               .post(
   authController.ensurePermission('grantMeasureDevices', 2),
-  deviceListController.sendGenericSpeedTest);
+  deviceListController.sendGenericSpeedTestAPI);
 
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(

@@ -159,21 +159,276 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-// This should be called right after sendCustomPingTest or sendGenericPingTest
-// Common validations and device.save goes here
-const initiatePingCommand = async function(req, res, device) {
-  let permissions = DeviceVersion.devicePermissions(device);
-  if (!permissions.grantPingTest) {
+deviceListController.sendCustomPing = async function(device, reqBody, username, sessionID) {
+  if (!device) {
+    return {
+      success: false,
+      message: t('cpeNotFound',{errorline: __line})
+    };
+  }
+
+  let inputHosts = [];
+  if (reqBody.content && Array.isArray(reqBody.content.hosts) ) {
+    inputHosts = reqBody.content.hosts.filter((h) => typeof(h) == 'string');
+  } else {
+    return {
+      success: false,
+      message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+    };
+  }
+
+  let hostFilter = (host) => host.match(util.fqdnLengthRegex);
+  let approvedTempHosts = [];
+  approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
+  approvedTempHosts = approvedTempHosts.filter(hostFilter);
+  approvedTempHosts = Array.from(new Set(approvedTempHosts));
+
+  if (approvedTempHosts.length == 0) {
+    return {
+      success: false,
+      message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+    };
+  }
+
+  if (!canStartNewDiagnostic(device)) {
+    return {
+      success: false,
+      message: t('diagnosticInProgress'),
+    };
+  }
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'ping',
+    stage: 'initiating',
+    customized: true,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: approvedTempHosts,
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  if (typeof reqBody.content.webhook == 'object' &&
+      typeof(device.current_diagnostic.webhook_url) == 'string'
+  ) {
+    device.current_diagnostic.webhook_url = reqBody.content.webhook.url;
+    if (typeof reqBody.content.webhook.user == 'string' &&
+        typeof reqBody.content.webhook.secret == 'string'
+    ) {
+      device.current_diagnostic.webhook_user = reqBody.content.webhook.user;
+      device.current_diagnostic.webhook_secret =
+        reqBody.content.webhook.secret;
+    }
+  }
+
+  return await initiatePingCommand(device, username, sessionID);
+};
+
+deviceListController.sendGenericPing = async function(device, username, sessionID) {
+  if (!device) {
+    return {
+      success: false,
+      message: t('cpeNotFound',{errorline: __line})
+    };
+  }
+
+  if (!canStartNewDiagnostic(device)) {
+    return {
+      success: false,
+      message: t('diagnosticInProgress')
+    };
+  }
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'ping',
+    stage: 'initiating',
+    customized: false,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: [],
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+  return await initiatePingCommand(device, username, sessionID);
+};
+
+deviceListController.sendCustomSpeedTest = async function(device, reqBody, username, sessionID) {
+  if(!device){
+    return {
+      success: false,
+      message: t('cpeNotFound',{errorline: __line})
+    };
+  }
+  
+  let validationOk = true;
+  let invalidField = '';
+  if (typeof reqBody.content != 'object') {
+    validationOk = false;
+    invalidField = 'url';
+  } 
+  else if (typeof reqBody.content.url != 'string'|| 
+          !util.urlRegex.test(reqBody.content.url)
+  ) {
+    validationOk = false;
+    invalidField = 'url';
+  } 
+  else if ( reqBody.content.webhook) {
+    validationOk = false;
+    if (typeof reqBody.content.webhook != 'object') {
+      invalidField = 'content.webhook'
+    } else if (typeof reqBody.content.webhook.url != 'string') {
+      invalidField = 'content.webhook.url'
+    } else if (reqBody.content.webhook.user && 
+                typeof reqBody.content.webhook.user != 'string'
+    ) {
+      invalidField = 'content.webhook.user';
+    } else if (reqBody.content.webhook.secret && 
+                typeof reqBody.content.webhook.secret != 'string'
+    ) {
+      invalidField = 'content.webhook.secret';
+    } else {
+      validationOk = true;
+    }
+  }
+  
+  if (!validationOk) {
+    return {
+      success: false,
+      message: t('fieldNameInvalid', {name: invalidField, errorline: __line})
+    };
+  }
+
+  if (!canStartNewDiagnostic(device)) {
+    return {
+      success: false,
+      message: t('diagnosticInProgress')
+    };
+  }
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'speedtest',
+    stage: 'measure',
+    customized: true,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: [reqBody.content.url],
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  if (typeof reqBody.content.webhook == 'object' &&
+      typeof device.current_diagnostic.webhook_url == 'string'
+  ) {
+    let webhook = reqBody.content.webhook;
+    device.current_diagnostic.webhook_url = webhook.url;
+    if (typeof webhook.user == 'string' &&
+        typeof webhook.secret == 'string'
+    ) {
+      device.current_diagnostic.webhook_user = webhook.user;
+      device.current_diagnostic.webhook_secret = webhook.secret;
+    }
+  }
+
+  return await initiateSpeedTest(device, username, sessionID);
+};
+
+deviceListController.sendGenericSpeedTest = async function(device, username, sessionID) {
+  if(!device){
+    return {
+      success: false,
+      message: t('cpeNotFound',{errorline: __line})
+    };
+  }
+  let projection = {measureServerIP: true, measureServerPort: true};
+  let config 
+  try {
+    config = 
+      await Config.findOne({is_default: true}, projection).lean().exec();
+  } catch (e) {
+    return {
+      success: false,
+      message: t('configFindError', {errorline: __line}),
+    };
+  }
+
+  if (!config.measureServerIP || !config.measureServerPort) {
+    return {
+      success: false,
+      message: t('serviceNotConfiguredByAdmin'),
+    };
+  }
+
+  if (!canStartNewDiagnostic(device)) {
+    return {
+      success: false,
+      message: t('diagnosticInProgress'),
+    };
+  }
+
+  let now = new Date();
+  // TR069 doesnt use 'targets' field.
+  let firmwareUrl = config.measureServerIP + ':' + config.measureServerPort;
+  device.current_diagnostic = {
+    type: 'speedtest',
+    stage: 'estimative',
+    customized: false,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    targets: [firmwareUrl],
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+  return await initiateSpeedTest(device, username, sessionID);
+};
+
+deviceListController.sendCustomTraceRoute = async function(device, reqBody, username, sessionID) {
+  if (!canStartNewDiagnostic(device)) {
+    return {
+      success: false,
+      message: t('diagnosticInProgress'),
+    };
+  }
+  return initiateTracerouteTest(device, username, sessionID);
+};
+
+deviceListController.sendGenericTraceRoute = async function(device, username) {
+  if (!canStartNewDiagnostic(device)) {
     return res.status(200).json({
       success: false,
-      message: t('cpeWithoutCommand'),
+      message: t('diagnosticInProgress'),
     });
   }
-  // Validated from here. Saving device & validating stuffs
+  return initiateTracerouteTest(device, username, sessionID);
+};
 
-  if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+// This should be called right after sendCustomPingTest or sendGenericPingTest
+// Common validations and device.save goes here
+const initiatePingCommand = async function(device, username, sessionID) {
+  let permissions = DeviceVersion.devicePermissions(device,);
+  if (!permissions.grantPingTest) {
+    return {
+      success: false,
+      message: t('cpeWithoutCommand'),
+    };
+  }
+
+  // Validated from here. Saving device & validating stuffs
+  if (sessionID && sio.anlixConnections[sessionID]) {
     sio.anlixWaitForPingTestNotification(
-      req.sessionID, req.params.id.toUpperCase(),
+      sessionID, device._id.toUpperCase(),
     );
   }
   await device.save().catch((err) => {
@@ -200,81 +455,81 @@ const initiatePingCommand = async function(req, res, device) {
     });
     if (device.pingtest_results.length > 0) {
       let fireResult = await acsDiagnosticsHandler.firePingDiagnose(device);
-      return res.status(200).json(fireResult);
+      return fireResult;
     } else {
-      return res.status(200).json({success: false});
+      return {success: false};
     }
   } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
-    return res.status(200).json({success: true});
+    return {success: true};
   }
 };
 
 // This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
 // Common validations and device.save goes here
-const initiateSpeedTest = async function(req, res, device) {
+const initiateSpeedTest = async function(device, username, sessionID) {
   let mac = device._id;
   if (!device.use_tr069) {
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
       return map[mac];
     });
     if (!isDevOn) {
-      return res.status(200).json({
+      return {
         success: false,
         message: t('cpeNotOnline', {errorline: __line}),
-      });
+      };
     }
   }
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantSpeedTest) {
-    return res.status(200).json({
+    return {
       success: false,
       message: t('cpeWithoutCommand'),
-    });
+    };
   }
 
   // Everything is validated now. Proceed to save & trigger stuffs
-  if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-    sio.anlixWaitForSpeedTestNotification(req.sessionID, mac);
+  if (sessionID && sio.anlixConnections[sessionID]) {
+    sio.anlixWaitForSpeedTestNotification(sessionID, mac);
   }
   await device.save().catch((err)=>{
-    return res.status(200).json({
+    return {
       success: false,
       message: t('cpeSaveError', {errorline: __line}),
-    });
+    };
   });
 
   if (device.use_tr069) {
     let fireResult = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
-    return res.status(200).json(fireResult);
+    return fireResult;
   } else {
     if (device.current_diagnostic.customized) {
-      mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
+      mqtt.anlixMessageRouterSpeedTestRaw(mac, username);
     } else {
       mqtt.anlixMessageRouterSpeedTest(mac,
-        device.current_diagnostic.targets[0], req.user);
+        device.current_diagnostic.targets[0], username);
     }
-    return res.status(200).json({success: true});
+    return {success: true};
   }
 };
 
 // This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
 // Common validations and device.save goes here
-const initiateTracerouteTest = async function(req, res, device) {
+const initiateTracerouteTest = async function(device, username, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantTraceroute) {
-    return res.status(200).json({
+    return {
       success: false,
       message: t('cpeWithoutCommand'),
-    });
+    };
   }
 
   // Everything validated from here;
   await device.save().catch((err)=>{
-    return res.status(200).json({
+    return {
       success: false,
       message: t('cpeSaveError', {errorline: __line}),
-    });
+    };
   });
 };
 
@@ -1184,7 +1439,7 @@ deviceListController.factoryResetDevice = function(req, res) {
 // REST API only functions
 //
 
-deviceListController.sendMqttMsg = function(req, res) {
+deviceListController.sendMqttMsg = async function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -1299,9 +1554,9 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
         }
         if (msgtype === 'speedtest') {
-          return deviceListController.sendGenericSpeedTest(req, res, device);
+          return deviceListController.sendGenericSpeedTestAPI(req, res);
         } else if (msgtype === 'ping') {
-          return deviceListController.sendGenericPing(req, res, device);
+          return deviceListController.sendGenericPingAPI(req, res);
         } else if (msgtype === 'traceroute') {
           if (!permissions.grantTraceroute) {
             return res.status(200).json({
@@ -1477,330 +1732,6 @@ deviceListController.sendMqttMsg = function(req, res) {
   });
 };
 
-deviceListController.sendCustomPing = async function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  async function(err, device) {
-    if (err) {
-      return res.status(200).json({success: false,
-                                   message: t('cpeFindError',
-                                    {errorline: __line})});
-    }
-    if (Array.isArray(device) && device.length > 0) {
-      device = device[0];
-    } else {
-      return res.status(200).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-
-    let inputHosts = [];
-    if (req.body.content && Array.isArray(req.body.content.hosts) ) {
-      inputHosts = req.body.content.hosts.filter((h) => typeof(h) == 'string');
-    } else {
-      return res.status(200).json({
-        success: false,
-        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
-      });
-    }
-
-    let hostFilter = (host) => host.match(util.fqdnLengthRegex);
-    let approvedTempHosts = [];
-    approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
-    approvedTempHosts = approvedTempHosts.filter(hostFilter);
-    approvedTempHosts = Array.from(new Set(approvedTempHosts));
-
-    if (approvedTempHosts.length == 0) {
-      return res.status(200).json({
-        success: false,
-        message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
-      });
-    }
-
-    if (!canStartNewDiagnostic(device)) {
-      return res.status(200).json({
-        success: false,
-        message: t('diagnosticInProgress'),
-      });
-    }
-    let now = new Date();
-    device.current_diagnostic = {
-      type: 'ping',
-      stage: 'initiating',
-      customized: true,
-      in_progress: true,
-      started_at: now,
-      last_modified_at: now,
-      targets: approvedTempHosts,
-      user: req.user.name,
-      webhook_url: '',
-      webhook_user: '',
-      webhook_secret: '',
-    };
-
-    if (typeof req.body.content.webhook == 'object' &&
-        typeof(device.current_diagnostic.webhook_url) == 'string'
-    ) {
-      device.current_diagnostic.webhook_url = req.body.content.webhook.url;
-      if (typeof req.body.content.webhook.user == 'string' &&
-          typeof req.body.content.webhook.secret == 'string'
-      ) {
-        device.current_diagnostic.webhook_user = req.body.content.webhook.user;
-        device.current_diagnostic.webhook_secret =
-          req.body.content.webhook.secret;
-      }
-    }
-
-    initiatePingCommand(req, res, device);
-  });
-};
-
-deviceListController.sendGenericPing = async function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-    async function(err, device) {
-      if (err) {
-        return res.status(200).json({success: false,
-                                    message: t('cpeFindError',
-                                      {errorline: __line})});
-      }
-      if (Array.isArray(device) && device.length > 0) {
-        device = device[0];
-      } else {
-        return res.status(200).json({success: false,
-                                    message: t('cpeNotFound',
-                                      {errorline: __line})});
-      }
-
-      if (!canStartNewDiagnostic(device)) {
-        return res.status(200).json({
-          success: false,
-          message: t('diagnosticInProgress'),
-        });
-      }
-      let now = new Date();
-      device.current_diagnostic = {
-        type: 'ping',
-        stage: 'initiating',
-        customized: false,
-        in_progress: true,
-        started_at: now,
-        last_modified_at: now,
-        targets: [],
-        user: req.user.name,
-        webhook_url: '',
-        webhook_user: '',
-        webhook_secret: '',
-      };
-      initiatePingCommand(req, res, device);
-    });
-};
-
-deviceListController.sendCustomSpeedTest = async function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  async function(err, device) {
-    if (err) {
-      return res.status(200).json({success: false,
-                                   message: t('cpeFindError',
-                                    {errorline: __line})});
-    }
-    if (Array.isArray(device) && device.length > 0) {
-      device = device[0];
-    } else {
-      return res.status(200).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    let validationOk = true;
-    let invalidField = '';
-    if (typeof req.body.content != 'object' ||
-        typeof req.body.content.url != 'string'
-    ) {
-      validationOk = false;
-      invalidField = 'url';
-    } else if (typeof req.body.content.webhook == 'object') {
-      let webhook = req.body.content.webhook;
-      if (typeof webhook.url != 'string') {
-        validationOk = false;
-        invalidField = 'webhook.url';
-      } else if (webhook.user && typeof webhook.user !== 'string') {
-        validationOk = false;
-        invalidField = 'webhook.user';
-      } else if (webhook.secret && typeof webhook.secret !== 'string') {
-        validationOk = false;
-        invalidField = 'webhook.secret';
-      }
-    }
-
-    if (!util.urlRegex.test(req.body.content.url)) {
-      validationOk = false;
-      invalidField = 'url';
-    }
-
-    if (!validationOk) {
-      return res.status(200).json({
-        success: false,
-        message: t('fieldNameInvalid', {name: invalidField, errorline: __line}),
-      });
-    }
-
-    if (!canStartNewDiagnostic(device)) {
-      return res.status(200).json({
-        success: false,
-        message: t('diagnosticInProgress'),
-      });
-    }
-
-    let now = new Date();
-    device.current_diagnostic = {
-      type: 'speedtest',
-      stage: 'measure',
-      customized: true,
-      in_progress: true,
-      started_at: now,
-      last_modified_at: now,
-      targets: [req.body.content.url],
-      user: req.user.name,
-      webhook_url: '',
-      webhook_user: '',
-      webhook_secret: '',
-    };
-
-    if (typeof req.body.content.webhook == 'object' &&
-        typeof device.current_diagnostic.webhook_url == 'string'
-    ) {
-      let webhook = req.body.content.webhook;
-      device.current_diagnostic.webhook_url = webhook.url;
-      if (typeof webhook.user == 'string' &&
-          typeof webhook.secret == 'string'
-      ) {
-        device.current_diagnostic.webhook_user = webhook.user;
-        device.current_diagnostic.webhook_secret = webhook.secret;
-      }
-    }
-
-    return initiateSpeedTest(req, res);
-  });
-};
-
-
-deviceListController.sendGenericSpeedTest = async function(req, res, device) {
-  // This function could be called directly from express or other workflows.
-  // express will call with third argument being a function ('next').
-  // Recursion into defined device always
-  if (typeof(device)=='function') {
-    DeviceModel.findByMacOrSerial(req.params.id.toUpperCase())
-    .exec(async function(err, matchedDevice) {
-      if (err) {
-        return res.status(200).json({success: false,
-                                    message: t('cpeFindError',
-                                      {errorline: __line})});
-      }
-      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-        deviceListController.sendGenericSpeedTest(req, res, matchedDevice[0]);
-      } else {
-        return res.status(200).json({success: false,
-                                    message: t('cpeNotFound',
-                                      {errorline: __line})});
-      }
-    });
-    return;
-  }
-
-  let projection = {measureServerIP: true, measureServerPort: true};
-  Config.findOne({is_default: true}, projection).lean()
-  .exec(async function(err, config) {
-    if (err || !config) {
-      return res.status(200).json({
-        success: false,
-        message: t('configFindError', {errorline: __line}),
-      });
-    }
-    if (!config.measureServerIP || !config.measureServerPort) {
-      return res.status(200).json({
-        success: false,
-        message: t('serviceNotConfiguredByAdmin'),
-      });
-    }
-
-    if (!canStartNewDiagnostic(device)) {
-      return res.status(200).json({
-        success: false,
-        message: t('diagnosticInProgress'),
-      });
-    }
-
-    let now = new Date();
-    // TR069 doesnt use 'targets' field.
-    let firmwareUrl = config.measureServerIP + ':' + config.measureServerPort;
-    device.current_diagnostic = {
-      type: 'speedtest',
-      stage: 'estimative',
-      customized: false,
-      in_progress: true,
-      started_at: now,
-      last_modified_at: now,
-      targets: [firmwareUrl],
-      user: req.user.name,
-      webhook_url: '',
-      webhook_user: '',
-      webhook_secret: '',
-    };
-    initiateSpeedTest(req, res, device);
-  });
-};
-
-deviceListController.sendCustomTraceRoute = async function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-    async function(err, device) {
-      if (err) {
-        return res.status(200).json({success: false,
-                                     message: t('cpeFindError',
-                                      {errorline: __line})});
-      }
-      if (Array.isArray(device) && device.length > 0) {
-        device = device[0];
-      } else {
-        return res.status(200).json({success: false,
-                                     message: t('cpeNotFound',
-                                      {errorline: __line})});
-      }
-
-      if (!canStartNewDiagnostic(device)) {
-        return res.status(200).json({
-          success: false,
-          message: t('diagnosticInProgress'),
-        });
-      }
-
-      initiateTracerouteTest(req, res, device);
-    });
-};
-
-deviceListController.sendGenericTraceRoute = async function(req, res) {
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  async function(err, device) {
-    if (err) {
-      return res.status(200).json({success: false,
-                                   message: t('cpeFindError',
-                                    {errorline: __line})});
-    }
-    if (Array.isArray(device) && device.length > 0) {
-      device = device[0];
-    } else {
-      return res.status(200).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-
-    if (!canStartNewDiagnostic(device)) {
-      return res.status(200).json({
-        success: false,
-        message: t('diagnosticInProgress'),
-      });
-    }
-
-    initiateTracerouteTest(req, res, device);
-  });
-};
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -3991,6 +3922,66 @@ deviceListController.getLanInfo = async function(request, response) {
   });
 };
 
+deviceListController.sendCustomPingAPI = async function(req,res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendCustomPing(matchedDevice, req.body, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
+deviceListController.sendGenericPingAPI = async function(req,res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendGenericPing(matchedDevice, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
+deviceListController.sendCustomSpeedTestAPI = async function(req, res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendCustomSpeedTest(matchedDevice, req.body, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
+deviceListController.sendGenericSpeedTestAPI = async function(req, res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendGenericSpeedTest(matchedDevice, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
+deviceListController.sendCustomTraceRouteAPI = async function(req, res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendCustomTraceRoute(matchedDevice, req.body, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
+deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch(e) {
+    matchDevice = null;
+  }
+  let commandResponse = await deviceListController.sendGenericTraceRoute(matchedDevice, req.user.name, req.sessionID);
+  return res.status(200).json(commandResponse);
+}
 
 // Traceroute
 // Get the route for Traceroute

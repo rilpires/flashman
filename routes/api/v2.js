@@ -68,17 +68,17 @@ router.route('/device/command/:id/:msg').put(
 // Send a customized ping command
 router.route('/device/pingdiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendCustomPing);
+  deviceListController.sendCustomPingAPI);
 
 // Send a customized speedtest command
 router.route('/device/speeddiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendCustomSpeedTest);
+  deviceListController.sendCustomSpeedTestAPI);
 
 // Send a customized traceroute command
 router.route('/device/tracediagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendCustomTraceRoute);
+  deviceListController.sendCustomTraceRouteAPI);
 
 // Set/Get Port forward
 router.route('/device/portforward/:id').get(
