@@ -28,22 +28,22 @@
           .col
 
             //- Address Tittle
-            span #{t('targetAddress')} &nbsp;
+            span #{t('targetAddresses')} &nbsp;
 
             //- Address Tooltip
-            //- Using # in href moves the page to begin
+            //- Using # in href moves the page to beginning
             //- Using javascript:void(0) does not have this problem
             a.fas.fa-question-circle(
               href="javascript:void(0)",
               data-toggle="tooltip",
-              title=t('targetAddressTooltip')
+              title=t('targetAddressesTooltip')
             )
         
         //- Address Field
         .row.mt-1
           .col
             //- Address list
-            select.form-control#traceroute-host-selector
+            select.form-control#traceroute-host-selector(Multiple)
 
             //- Save successful
             .valid-feedback.text-right.mt-0
@@ -65,7 +65,7 @@
               i.fas.fa-list.fa-4x
               br
               br
-              span= t('chooseAddressAndClickToStart')
+              span= t('addAddressesAndClickToStart')
 
             //- Refresh icon and text
             #traceroute-loading-section.row.pt-3
