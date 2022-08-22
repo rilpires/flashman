@@ -343,6 +343,19 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
+                        .text(t('cpeLicenseBlockAtRemoval')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-block-license-at-removal').append(
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
                         .text(t('cpesRegistersAddition')),
                         $('<select>')
                         .addClass('browser-default md-select')
@@ -694,6 +707,9 @@ anlixDocumentReady.add(function() {
         }
         $(rowObj).find('[name=grant-device-removal] option[value=' +
           deviceRemovalValue + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-block-license-at-removal] option[value=' +
+          roleObj.grantDeviceLicenseBlock + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-add] option[value=' +
           roleObj.grantDeviceAdd + ']')

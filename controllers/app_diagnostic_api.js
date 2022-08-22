@@ -465,8 +465,16 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
         return res.status(403).json({'error':
           t('cpeIsNotMeshSlave', {errorline: __line})});
       }
-      deviceHandlers.removeDeviceFromDatabase(device);
-      return res.status(200).json({'success': true});
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        return res.status(500).json({success: false, type: 'danger',
+                                     message: t('cantDeleteMeshWithSecondaries',
+                                     {errorline: __line})});
+      }
+      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      if (!removalOK) {
+        return res.status(500).json({'error':
+          t('operationUnsuccessful', {errorline: __line})});
+      }
     } else {
       return res.status(403).json({'error':
         t('macUndefined', {errorline: __line})});
@@ -476,6 +484,7 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
     return res.status(500).json({'error':
       t('serverError', {errorline: __line})});
   }
+  return res.status(200).json({'success': true});
 };
 
 diagAppAPIController.receiveCertification = async (req, res) => {
@@ -640,6 +649,13 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       };
 
       let permissions = DeviceVersion.devicePermissions(device);
+
+      // Legacy permission for old apps that didn't differentiate between cable
+      // and wifi mesh permissions
+      permissions.grantMeshV2PrimaryMode = (
+        permissions.grantMeshV2PrimaryModeCable ||
+        permissions.grantMeshV2PrimaryModeWifi
+      );
 
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {

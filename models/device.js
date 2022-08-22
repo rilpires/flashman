@@ -323,7 +323,9 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
-deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
+deviceSchema.statics.findByMacOrSerial = function(
+  id, useLean=false, projection=null,
+) {
   let query;
   if (Array.isArray(id)) {
     let regexList = [];
@@ -342,12 +344,14 @@ deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}).lean(); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection).lean();
   } else {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection);
   }
 };
 
