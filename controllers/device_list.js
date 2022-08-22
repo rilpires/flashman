@@ -564,11 +564,10 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
 
   // Start Traceroute
   if (device.use_tr069) {
-    // Preparation for TR069
+    return await acsDiagnosticsHandler.fireTraceDiagnose(device);
   } else {
     mqtt.anlixMessageRouterTraceroute(
       device._id,
-      device.traceroute_route,
       device.traceroute_max_hops,
       device.traceroute_number_probes,
       device.traceroute_max_wait,
