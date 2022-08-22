@@ -6,6 +6,7 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
@@ -22,7 +23,8 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    '638.112.100.1383': [],
+    '638.112.100.1383': ['638.112.100.1435'],
+    '638.112.100.1435': ['638.112.100.1383'],
   };
   return permissions;
 };
