@@ -315,9 +315,11 @@ let validateEditDevice = function(event) {
       data.content.wifi_password = (password) ? password : '';
       data.content.wifi_channel = channel;
     }
+    if (validateWifiMode) {
+      data.content.wifi_mode = mode;
+    }
     if (validateWifiBand2) {
       data.content.wifi_band = band;
-      data.content.wifi_mode = mode;
     }
     if (validateWifiPower) {
       data.content.wifi_power = power;
@@ -329,7 +331,9 @@ let validateEditDevice = function(event) {
       if (validateWifiBand5) {
         data.content.wifi_band_5ghz = band5ghz;
       }
-      data.content.wifi_mode_5ghz = mode5ghz;
+      if (validateWifiMode) {
+        data.content.wifi_mode_5ghz = mode5ghz;
+      }
       if (validateWifiPower) {
         data.content.wifi_power_5ghz = power5ghz;
       }
