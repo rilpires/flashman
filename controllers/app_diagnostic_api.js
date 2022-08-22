@@ -221,12 +221,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
       permissions.grantWifiBandEdit = (
         permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
       );
-      permissions.grantWifiBandRead = (
-        permissions.grantWifiBandRead2 || permissions.grantWifiBandRead5
-      );
       permissions.grantWifiBand = (
-        (permissions.grantWifiBandEdit && permissions.grantWifiBandRead) ||
-        permissions.grantWifiModeEdit
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
       );
 
       let createPrefixErrNotification = false;
@@ -657,12 +653,8 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       permissions.grantWifiBandEdit = (
         permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
       );
-      permissions.grantWifiBandRead = (
-        permissions.grantWifiBandRead2 || permissions.grantWifiBandRead5
-      );
       permissions.grantWifiBand = (
-        (permissions.grantWifiBandEdit && permissions.grantWifiBandRead) ||
-        permissions.grantWifiModeEdit
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
       );
 
       if (config.certification.speedtest_step_required) {
