@@ -514,4 +514,10 @@ acsDiagnosticsHandler.fireSpeedDiagnose = async function(device) {
   }
 };
 
+acsDiagnosticsHandler.fireTraceDiagnose = async function(device) {
+  return {
+    success: false, message: t('notAvailable'),
+  };
+};
+
 module.exports = acsDiagnosticsHandler;
