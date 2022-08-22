@@ -375,7 +375,30 @@ deviceListController.sendCustomTraceRoute
     return err;
   }
 
-  /** VALIDATING REQBODY.... **/
+  // Validation is basically the same as custom ping command
+  let inputHosts = [];
+  if (reqBody.content && Array.isArray(reqBody.content.hosts) ) {
+    inputHosts = reqBody.content.hosts.filter((h) => typeof(h) == 'string');
+  } else {
+    return {
+      success: false,
+      message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+    };
+  }
+
+  let hostFilter = (host) => host.match(util.fqdnLengthRegex);
+  let approvedTempHosts = [];
+  approvedTempHosts = inputHosts.map((host)=>host.toLowerCase());
+  approvedTempHosts = approvedTempHosts.filter(hostFilter);
+  approvedTempHosts = Array.from(new Set(approvedTempHosts));
+
+  if (approvedTempHosts.length == 0) {
+    return {
+      success: false,
+      message: t('fieldNameInvalid', {name: 'hosts', errorline: __line}),
+    };
+  }
+
 
   let now = new Date();
   device.current_diagnostic = {
@@ -385,12 +408,26 @@ deviceListController.sendCustomTraceRoute
     in_progress: true,
     started_at: now,
     last_modified_at: now,
-    targets: reqBody.content.hosts,
+    targets: approvedTempHosts,
     user: username,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
+
+
+  if (typeof reqBody.content.webhook == 'object' &&
+      typeof device.current_diagnostic.webhook_url == 'string'
+  ) {
+    let webhook = reqBody.content.webhook;
+    device.current_diagnostic.webhook_url = webhook.url;
+    if (typeof webhook.user == 'string' &&
+        typeof webhook.secret == 'string'
+    ) {
+      device.current_diagnostic.webhook_user = webhook.user;
+      device.current_diagnostic.webhook_secret = webhook.secret;
+    }
+  }
 
   return await initiateTracerouteTest(device, username, sessionID);
 };
