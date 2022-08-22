@@ -306,7 +306,7 @@ let deviceSchema = new Schema({
 
   // Traceroute
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 30},
-  traceroute_numberProbes: {type: Number, min: 1, max: 10, default: 3},
+  traceroute_number_probes: {type: Number, min: 1, max: 10, default: 3},
   traceroute_max_wait: {type: Number, min: 1, max: 5, default: 3},
   // This field is used by flashboard, not needed by flashman's frontend
   traceroute_results: [{
