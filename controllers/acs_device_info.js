@@ -605,7 +605,7 @@ const requestSync = async function(device) {
       dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band && permissions.grantWifiBandRead2) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead5) {
       dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
