@@ -2689,8 +2689,8 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', 'disabled');
           } else {
-            wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', '');
           }
           if (!grantWifiBandEdit2 || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
