@@ -898,9 +898,9 @@ anlixDocumentReady.add(function() {
     '</button>';
   };
 
-  const buildDisassociateSlave = function() {
+  const buildDisassociateSlave = function(enable) {
     return '<button class="btn btn-danger btn-sm btn-disassoc m-0" '+
-    'type="button">'+
+    'type="button"'+ (enable ? '' : 'disabled') + '>' +
       '<i class="fas fa-minus-circle"></i>'+
       '<span>&nbsp; '+t('Disassociate')+'</span>'+
     '</button>';
@@ -2986,8 +2986,10 @@ anlixDocumentReady.add(function() {
                 if (grantMeshV2PrimModeCable || grantMeshV2PrimModeWifi) {
                   let disassocSlaveButton = '<td></td>';
                   if (isSuperuser || grantSlaveDisassociate) {
-                    disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                    disassocSlaveButton =
+                      '<td>' +
+                      buildDisassociateSlave(device.do_update_status == 1) +
+                      '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                             disassocSlaveButton);
