@@ -39,6 +39,7 @@ const tr069Models = {
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -166,6 +167,9 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
     return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+  } else if (modelName === '1200R') {
+    // Intelbras WiFiber 1200R InMesh
+    return {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
