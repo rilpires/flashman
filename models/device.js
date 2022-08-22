@@ -304,11 +304,11 @@ let deviceSchema = new Schema({
     ipv6_mode: {type: String, default: ''},
   },
 
-  // Traceroute
+  // Traceroute parameters like max_hops are only valid in firmwares.
+  // May be valid in some tr069 devices?
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 30},
   traceroute_number_probes: {type: Number, min: 1, max: 10, default: 3},
   traceroute_max_wait: {type: Number, min: 1, max: 5, default: 3},
-  // This field is used by flashboard, not needed by flashman's frontend
   traceroute_results: [{
     all_hops_tested: {type: Boolean, deafult: false},
     reached_destination: {type: Boolean, deafult: false},
