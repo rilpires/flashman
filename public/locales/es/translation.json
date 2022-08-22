@@ -762,7 +762,7 @@
 	"licenseStatusIs": "El estado de la licencia es",
 	"wifiXGhzChannel": "Canal Wi-Fi {{-x}}GHz",
 	"signalStrength": "Intensidad de señal",
-	"xGhzsignalStrength": "$t(signalStrength) {{-x}}GHz",
+	"xGhzSignalStrength": "$t(signalStrength) {{-x}}GHz",
 	"updateMany": "Actualizar varios",
 	"noCpeFound": "No se encontró CPE",
 	"unblockDevices": "Desbloquear dispositivos",
