@@ -448,6 +448,48 @@ deviceHandlers.sendPingToTraps = function(id, results) {
   });
 };
 
+// This is a single result.
+deviceHandlers.sendTracerouteToTraps = function(id, result) {
+  // No await needed
+  sio.anlixSendTracerouteNotification(id, result);
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+      if (matchedConfig.traps_callbacks &&
+          matchedConfig.traps_callbacks.devices_crud
+      ) {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
+          let requestOptions = {};
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': id,
+              'type': 'device',
+              'changes': {
+                'traceroute_result': result
+              },
+            };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
+          }
+        });
+        Promise.all(promises).then((resp) => {}, (err) => {});
+      }
+    }
+  });
+};
+
 const sendSpeedtestResultToCustomTrap = async function(device, result) {
   let requestOptions = {};
   requestOptions.url = device.current_diagnostic.webhook_url;

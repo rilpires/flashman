@@ -2400,11 +2400,33 @@ deviceInfoController.receiveTraceroute = function(req, res) {
 
     // Save
     await matchedDevice.save().catch((err) => {
-      console.log('Error saving ping test to database: ' + err);
+      console.log('Error saving traceroute test to database: ' + err);
     });
 
-    // Send socket IO notification
-    sio.anlixSendTracerouteNotification(id, req.body);
+    // Propagating to the proper callback(s)
+    if (matchedDevice.current_diagnostic.customized) {
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
+        let requestOptions = {};
+        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': matchedDevice._id,
+          'type': 'device',
+          'traceroute_result': currentTest,
+        };
+        if (matchedDevice.current_diagnostic.webhook_user &&
+            matchedDevice.current_diagnostic.webhook_secret
+        ) {
+          requestOptions.auth = {
+            user: matchedDevice.current_diagnostic.webhook_user,
+            pass: matchedDevice.current_diagnostic.webhook_secret,
+          };
+        }
+        request(requestOptions).then(()=>{}, ()=>{});
+      }
+    } else {
+      deviceHandlers.sendTracerouteToTraps(id, currentTest);
+    }
 
     return res.status(200).json({processed: 1});
   });
