@@ -52,6 +52,7 @@
 	"secondaryIndicatedCpeNotAssignedToPrimary": "CPE indicado como secundário não possui primário associado ({{errorline}})",
 	"secondaryIndicatedCpeHasSecondariesAssigned": "CPE indicado como secundário possui CPEs secundários associados ({{errorline}})",
 	"secondaryIndicatedCpeNotInPrimaryList": "CPE indicado como secundário não está na lista de secundários do CPE indicado como primário",
+	"cannotDisassocWhileUpdating": "Não é possível desassociar uma CPE secundária enquanto está atualizando",
 	"errorCreditingMeshLicense": "Erro ao creditar a licença mesh ({{errorline}})",
 	"errorBlockingLicense": "Erro ao bloquear a licença ({{errorline}})",
 	"Success": "Sucesso",

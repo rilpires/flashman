@@ -30,6 +30,13 @@ let updateDevice = function(event) {
       // Disable selection
       let dropdownBtn = selBtnGroup.find('.dropdown-toggle');
       dropdownBtn.attr('disabled', true);
+      // Disable all disassoc buttons
+      let slaveList = JSON.parse(row.next()
+        .data('slaves').replaceAll('$', '"'));
+      slaveList.forEach((s) => {
+        $('tr[id="'+s+'"]').find('.btn-disassoc')
+          .attr('disabled', true);
+      });
       // Submit update
       let id = row.prop('id');
       $.ajax({
@@ -76,6 +83,13 @@ let cancelDeviceUpdate = function(event) {
   let row = $(event.target).closest('tr');
   let id = row.prop('id');
   let slaveCount = row.data('slave-count');
+  // Enable all disassoc buttons
+  let slaveList = JSON.parse(row.next()
+    .data('slaves').replaceAll('$', '"'));
+  slaveList.forEach((s) => {
+    $('tr[id="'+s+'"]').find('.btn-disassoc')
+      .attr('disabled', false);
+  });
   $.ajax({
     url: '/devicelist/update/' + id + '/' + selRelease,
     type: 'post',

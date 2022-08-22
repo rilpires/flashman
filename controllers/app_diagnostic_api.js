@@ -1148,6 +1148,12 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
       message: t('secondaryIndicatedCpeNotInPrimaryList', {errorline: __line}),
     });
   }
+  if (matchedMaster.do_update_status != 1) {
+    return res.status(403).json({
+      success: false,
+      message: t('cannotDisassocWhileUpdating', {errorline: __line}),
+    });
+  }
 
   // Credit mesh license back
   let controlApiRet = await controlApi.meshLicenseCredit(slaveMacAddr);
