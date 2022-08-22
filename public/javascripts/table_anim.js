@@ -3271,14 +3271,35 @@ anlixDocumentReady.add(function() {
       getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
     ) ? true : false;
 
-    let willShowDeleteAndBlock =
-      mustBlockLicenseAtRemoval || (isSuperuser || grantDeviceLicenseBlock);
-    let willShowDelete =
-      !mustBlockLicenseAtRemoval && (isSuperuser || grantDeviceRemoval);
+    let hasBlockPermission = (isSuperuser || grantDeviceLicenseBlock);
+    let denyButtonText = t('Remove');
+    let willShowDeleteAndBlock = true;
+    let willShowDelete = true;
 
-    let singleOrMultipleWarning = (isMultiple) ?
-      t('removeDevicesAndBlockLicensesWarning') :
-      t('removeDeviceAndBlockLicenseWarning');
+    let alertDiv =
+      '<div class="alert alert-danger text-center">' +
+        '<div class="fas fa-exclamation-triangle fa-lg"></div>' +
+        '<span>&nbsp;&nbsp;$REPLACE_TEXT</span>' +
+      '</div>';
+
+    if (mustBlockLicenseAtRemoval) {
+      willShowDeleteAndBlock = false;
+      denyButtonText = t('removeAndBlock');
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning'),
+      );
+    } else if (!hasBlockPermission) {
+      willShowDeleteAndBlock = false;
+      alertDiv = '';
+    } else if (isMultiple) {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDevicesAndBlockLicensesWarning'),
+      );
+    } else {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDeviceAndBlockLicenseWarning'),
+      );
+    }
 
     return {
       icon: 'warning',
@@ -3289,7 +3310,7 @@ anlixDocumentReady.add(function() {
       confirmButtonColor: '#ff3547',
       showConfirmButton: willShowDeleteAndBlock,
       // Just remove button
-      denyButtonText: t('Remove'),
+      denyButtonText: denyButtonText,
       denyButtonColor: '#f2ab63',
       showDenyButton: willShowDelete,
       // Cancel button
@@ -3297,9 +3318,7 @@ anlixDocumentReady.add(function() {
       cancelButtonColor: '#4db6ac',
       showCancelButton: true,
       // Helper at footer
-      footer: mustBlockLicenseAtRemoval ?
-        '<p>'+t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning')+'</p>' :
-        '<p>'+singleOrMultipleWarning+'</p>',
+      footer: alertDiv,
     };
   };
 
