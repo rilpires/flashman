@@ -472,7 +472,7 @@ deviceHandlers.sendTracerouteToTraps = function(id, result) {
               'id': id,
               'type': 'device',
               'changes': {
-                'traceroute_result': result
+                'traceroute_result': result,
               },
             };
             if (callbackAuthUser && callbackAuthSecret) {

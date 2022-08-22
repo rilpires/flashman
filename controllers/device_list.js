@@ -573,7 +573,7 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
       device.traceroute_max_wait,
     );
   }
-  return {success:true};
+  return {success: true};
 };
 
 // Common validation used by all diagnostics

@@ -455,7 +455,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
             fields.diagnostics.speedtest,
           );
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
-          await calculateTraceDiagnostic(/*to-do*/);
+          await calculateTraceDiagnostic(/* to-do */);
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
