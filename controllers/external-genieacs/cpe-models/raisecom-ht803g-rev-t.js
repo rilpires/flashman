@@ -11,7 +11,7 @@ raisecomModel.modelPermissions = function() {
 
   // features permissions
   permissions.features.ponSignal = true; // will measure pon rx/tx power
-  permissions.features.portForward = true; // will enable port forward dialogs
+  permissions.features.portForward = false; // will enable port forward dialogs
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
 
@@ -22,12 +22,17 @@ raisecomModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   // speedtest limit, values above show as "limit+ Mbps"
-  permissions.wan.speedTestLimit = 10000;
+  permissions.wan.speedTestLimit = 300;
 
   // wifi permissions
   permissions.wifi.list5ghzChannels =
     [36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165];
   permissions.wifi.bandAuto5 = false;
+
+  // mesh permissions
+  permissions.mesh.setEncryptionForCable = false;
+  // p.s.: even with the existing fields at the tr-069 tree, is not possible to
+  // change the wireless security configurations in specific cases
 
   // firmware permissions
   permissions.firmwareUpgrades = {
@@ -111,8 +116,20 @@ raisecomModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
+raisecomModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 raisecomModel.getBeaconType = function() {
-  return 'WPAand11i';
+  return '11i';
+};
+
+raisecomModel.getWPAEncryptionMode = function() {
+  return 'AESEncryption';
+};
+
+raisecomModel.getIeeeEncryptionMode = function() {
+  return 'AESEncryption';
 };
 
 // Map TR-069 XML fields to Flashman fields
@@ -123,9 +140,13 @@ raisecomModel.getModelFields = function() {
   fields.common.alt_uid = 'InternetGatewayDevice.LANDevice.1.'+
     'LANEthernetInterfaceConfig.1.MACAddress';
 
+  // user and password fields
+  fields.common.web_admin_user =
+    'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+  fields.common.web_admin_password =
+    'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Username';
+
   // wan fields
-  delete fields.wan.rate;
-  delete fields.wan.duplex;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.Stats.BytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -161,16 +182,15 @@ raisecomModel.getModelFields = function() {
   fields.wifi5.band =
     fields.wifi5.band.replace(/BandWidth/g, 'X_CT-COM_ChannelWidth');
 
-  // stun fields
-  delete fields.stun;
-
-  // access control fields
-  delete fields.access_control;
-
-  // devices fields
-  delete fields.devices.host_rssi;
-  delete fields.devices.host_snr;
-  delete fields.devices.host_rate;
+  // wifi encryption fields
+  fields.wifi2.encryption =
+    fields.wifi2.beacon_type.replace(/BeaconType/g, 'WPAEncryptionModes');
+  fields.wifi5.encryption =
+    fields.wifi5.beacon_type.replace(/BeaconType/g, 'WPAEncryptionModes');
+  fields.wifi2.encryptionIeee =
+    fields.wifi2.beacon_type.replace(/BeaconType/g, 'IEEE11iEncryptionModes');
+  fields.wifi5.encryptionIeee =
+    fields.wifi5.beacon_type.replace(/BeaconType/g, 'IEEE11iEncryptionModes');
 
   // diagnostics fields
   delete fields.diagnostics.speedtest.num_of_conn;
