@@ -144,6 +144,20 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = 5;
             }
           }
+          // Collect host active if field can be trusted. If the host is not
+          // active, discard it. If the field cannot be trusted, active is
+          // always true
+          if (cpe.modelPermissions().lan.canTrustActive) {
+            let hostActiveKey = fields.devices.host_active.replace('*', i);
+            let hostActive = utilHandlers.getFromNestedKey(
+              data, hostActiveKey+'._value',
+            );
+            if (!hostActive) {
+              return;
+            }
+            device.active = hostActive;
+          }
+          device.active = true;
           // Push basic device information
           devices.push(device);
         });
@@ -234,14 +248,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 } else if (modeVal.includes('g')) {
                   device.wifi_mode = 'G';
                 }
-                // Skip this device when following flag is enable
-                if (cpe.modelPermissions().lan.skipIfNoWifiMode) {
-                  // Skip this device if mode value is empty
-                  if (modeVal == '') {
-                    const devIdx = devices.indexOf(device);
-                    devices.splice(devIdx, 1);
-                    continue;
-                  }
+                // Skip this device when following flag is enabled and mode
+                // value is empty
+                if (cpe.modelPermissions().lan.skipIfNoWifiMode &&
+                    modeVal == '') {
+                    device.active = false;
                 }
               }
               // Collect connection speed, if available
@@ -264,6 +275,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             }
           }
         }
+        // Filters devices checking if they are active
+        devices = devices.filter((k) => (k.active));
         await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);
