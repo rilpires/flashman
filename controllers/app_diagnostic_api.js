@@ -217,6 +217,14 @@ diagAppAPIController.configureWifi = async function(req, res) {
 
       let permissions = DeviceVersion.devicePermissions(device);
 
+      // Add legacy permissions for backwards compatibility with old apps
+      permissions.grantWifiBandEdit = (
+        permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+      );
+      permissions.grantWifiBand = (
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
+      );
+
       let createPrefixErrNotification = false;
       // What only matters in this case is the deviceEnabled flag
       if (device.isSsidPrefixEnabled &&
@@ -274,7 +282,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         changes.wifi2.channel = content.wifi_channel.trim();
         updateParameters = true;
       }
-      if (content.wifi_band && permissions.grantWifiBandEdit) {
+      if (content.wifi_band && permissions.grantWifiBandEdit2) {
         // discard change to auto when model doesnt support it
         if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
           device.wifi_band = content.wifi_band.trim();
@@ -298,7 +306,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
           updateParameters = true;
         }
       }
-      if (content.wifi_band_5ghz && permissions.grantWifiBandEdit) {
+      if (content.wifi_band_5ghz && permissions.grantWifiBandEdit5) {
         // discard change to auto when model doesnt support it
         if (
           content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5
@@ -640,6 +648,21 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       };
 
       let permissions = DeviceVersion.devicePermissions(device);
+
+      // Add legacy permissions for backwards compatibility with old apps
+      permissions.grantWifiBandEdit = (
+        permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+      );
+      permissions.grantWifiBand = (
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
+      );
+
+      // Legacy permission for old apps that didn't differentiate between cable
+      // and wifi mesh permissions
+      permissions.grantMeshV2PrimaryMode = (
+        permissions.grantMeshV2PrimaryModeCable ||
+        permissions.grantMeshV2PrimaryModeWifi
+      );
 
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {
