@@ -113,6 +113,17 @@ router.route('/pinghostslist/:id').get(
                                   .post(
   deviceListController.setPingHostsList);
 
+// Set/Get Default Ping hosts list
+router.route('/defaultpinghostslist')
+.get(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.getDefaultPingHosts,
+)
+.post(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.setDefaultPingHosts,
+);
+
 router.route('/landevices/:id').get(
   deviceListController.getLanDevices);
 
