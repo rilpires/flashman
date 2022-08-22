@@ -657,6 +657,13 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
       );
 
+      // Legacy permission for old apps that didn't differentiate between cable
+      // and wifi mesh permissions
+      permissions.grantMeshV2PrimaryMode = (
+        permissions.grantMeshV2PrimaryModeCable ||
+        permissions.grantMeshV2PrimaryModeWifi
+      );
+
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {
           certification.requiredSpeedTest = permissions.grantSpeedTest;

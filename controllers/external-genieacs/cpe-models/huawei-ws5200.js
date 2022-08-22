@@ -19,7 +19,6 @@ huaweiModel.modelPermissions = function() {
   permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '10.0.5.9(C506)': [],
     '10.0.5.5(C947)': [],
@@ -55,6 +54,8 @@ huaweiModel.getModelFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
   Object.keys(fields.wifi5).forEach((k)=>{
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '2');
   });
