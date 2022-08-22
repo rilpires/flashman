@@ -2375,7 +2375,6 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
-    console.log('chegou traceroute:' , req.body);
     // Get the current test
     let currentTest = matchedDevice.traceroute_results.find(
       (test)=> test.address === req.body.address,
@@ -2386,9 +2385,6 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       return res.status(200).json({processed: 0});
     }
 
-    // Just set the completed
-    currentTest.completed = true;
-
     // If the tries per hop came is not empty
     if (!isNaN(req.body.tries_per_hop)) {
       // Fill the traceroute result
@@ -2398,6 +2394,18 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       currentTest.hops = req.body.hops;
     }
 
+    // Setting the completed flag & updating last_modified_at
+    // We may want to indicate that the diagnostic is completed with 
+    // in_progress==false
+    currentTest.completed = true;
+    matchedDevice.current_diagnostic.last_modified_at = new Date();
+    let isLastResult = matchedDevice.traceroute_results
+      .filter((result=>result.completed)).length==0;
+    if (isLastResult) {
+      matchedDevice.current_diagnostic.stage = 'done';
+      matchedDevice.current_diagnostic.in_progress = false;
+    }
+    
     // Save
     await matchedDevice.save().catch((err) => {
       console.log('Error saving traceroute test to database: ' + err);
