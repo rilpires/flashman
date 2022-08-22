@@ -2403,6 +2403,14 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       console.log('Error saving traceroute test to database: ' + err);
     });
 
+    // Soft copying result
+    let trapResult = {
+      all_hops_testes: currentTest.all_hops_tested,
+      reached_destination: currentTest.reached_destination,
+      tries_per_hop: currentTest.tries_per_hop,
+      hops: currentTest.hops,
+    }
+    
     // Propagating to the proper callback(s)
     if (matchedDevice.current_diagnostic.customized) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {
@@ -2412,7 +2420,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'traceroute_result': currentTest,
+          'traceroute_result': trapResult,
         };
         if (matchedDevice.current_diagnostic.webhook_user &&
             matchedDevice.current_diagnostic.webhook_secret
@@ -2425,7 +2433,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
         request(requestOptions).then(()=>{}, ()=>{});
       }
     } else {
-      deviceHandlers.sendTracerouteToTraps(id, currentTest);
+      deviceHandlers.sendTracerouteToTraps(id, trapResult);
     }
 
     return res.status(200).json({processed: 1});
