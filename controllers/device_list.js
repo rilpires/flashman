@@ -586,7 +586,7 @@ const checkNewDiagnosticAvailability = function(device) {
   }
   const msSinceLastModified =
     new Date() - device.current_diagnostic.last_modified_at;
-  const timeoutThresholdMs = 2 * 5 * 1000; // 2 minutes;
+  const timeoutThresholdMs = 2 * 60 * 1000; // 2 minutes;
   if (!isNaN(msSinceLastModified) &&
       msSinceLastModified<timeoutThresholdMs &&
       device.current_diagnostic.in_progress
