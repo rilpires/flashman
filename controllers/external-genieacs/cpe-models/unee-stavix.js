@@ -22,6 +22,7 @@ uneeModel.modelPermissions = function() {
     'V1.3.4': [],
   };
   permissions.onlineAfterReset = true;
+  permissions.lan.canTrustActive = false;
   return permissions;
 };
 
