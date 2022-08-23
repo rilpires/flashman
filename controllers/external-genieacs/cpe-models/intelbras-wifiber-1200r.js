@@ -2,7 +2,10 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 1200R inMesh'};
+intelbrasModel.identifier = {
+  vendor: 'Intelbras',
+  model: 'WiFiber 1200R inMesh',
+};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -13,15 +16,16 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.wan.speedTestLimit = 350;
+  permissions.wan.speedTestLimit = 300;
+  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.configWrite = false;
+  permissions.lan.sendRoutersOnLANChange = false;
+  permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 136, 140, 149, 153, 157, 161, 165,
   ];
-  permissions.wifi.bandAuto2 = false;
-  permissions.wifi.bandAuto5 = false;
-  permissions.wifi.modeRead = false;
-  permissions.wifi.modeWrite = false;
-  permissions.usesStavixXMLConfig = true;
+  permissions.wifi.bandWrite = false;
   permissions.firmwareUpgrades = {
     '1.1-220712': [],
   };
@@ -69,8 +73,8 @@ intelbrasModel.convertWifiBand = function(band, is5ghz=false) {
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'WANPPPConnection.1.X_ITBS_VlanMuxID';
+  fields.common.web_admin_password = 'InternetGatewayDevice'+
+    '.UserInterface.AdminPassword';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.'+
     'WLANConfiguration.1.AssociatedDevice.1.X_ITBS_WLAN_SNR';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
@@ -89,6 +93,10 @@ intelbrasModel.getModelFields = function() {
     '.X_ITBS_BandWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
     '.X_ITBS_BandWidth';
+  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
+    '.X_ITBS_WlanStandard';
+  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
+    '.X_ITBS_WlanStandard';
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
