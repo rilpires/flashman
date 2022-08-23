@@ -1893,7 +1893,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
 };
 
 // This is called from flashbox when fetching which targets
-// to traceroute. When no customized test is in progress, 
+// to traceroute. When no customized test is in progress,
 // return device.ping_hosts. Else, current_diagnostic.targets
 deviceInfoController.getPingHosts = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
@@ -2395,17 +2395,17 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     }
 
     // Setting the completed flag & updating last_modified_at
-    // We may want to indicate that the diagnostic is completed with 
+    // We may want to indicate that the diagnostic is completed with
     // in_progress==false
     currentTest.completed = true;
     matchedDevice.current_diagnostic.last_modified_at = new Date();
     let isLastResult = matchedDevice.traceroute_results
-      .filter((result=>result.completed)).length==0;
+      .filter(((result)=>result.completed)).length==0;
     if (isLastResult) {
       matchedDevice.current_diagnostic.stage = 'done';
       matchedDevice.current_diagnostic.in_progress = false;
     }
-    
+
     // Save
     await matchedDevice.save().catch((err) => {
       console.log('Error saving traceroute test to database: ' + err);
@@ -2417,8 +2417,8 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       reached_destination: currentTest.reached_destination,
       tries_per_hop: currentTest.tries_per_hop,
       hops: currentTest.hops,
-    }
-    
+    };
+
     // Propagating to the proper callback(s)
     if (matchedDevice.current_diagnostic.customized) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {

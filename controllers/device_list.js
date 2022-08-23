@@ -3465,7 +3465,7 @@ deviceListController.getSiteSurvey = function(req, res) {
     if (err) {
       return res.status(200).json({
         success: false,
-        message: t('cpeFindError', {er,rorline: __line}),
+        message: t('cpeFindError', {errorline: __line}),
       });
     }
     if (matchedDevice == null) {
