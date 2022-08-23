@@ -112,6 +112,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = utilHandlers.getFromNestedKey(data, macKey+'._value');
+          console.log(device.mac);
           if (typeof device.mac === 'string') {
             device.mac = device.mac.toUpperCase().replace(/-/g, ':');
           } else {
@@ -145,8 +146,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             }
           }
           // Collect host active if field can be trusted. If the host is not
-          // active, discard it. If the field cannot be trusted, active is
-          // always true
+          // active, discard it. If the field cannot be trusted, set host active
+          // to always false and re-evaluate this information later
           if (cpe.modelPermissions().lan.canTrustActive) {
             let hostActiveKey = fields.devices.host_active.replace('*', i);
             let hostActive = utilHandlers.getFromNestedKey(
@@ -156,8 +157,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               return;
             }
             device.active = hostActive;
+          } else {
+            device.active = false;
           }
-          device.active = true;
           // Push basic device information
           devices.push(device);
         });
@@ -205,6 +207,12 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               }
               let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
               if (!device) continue;
+              // If the active host cannot be trusted, we iterate over the
+              // associated devices and map as active only those hosts that
+              // appear both in hosts and connected devices
+              if (!cpe.modelPermissions().lan.canTrustActive) {
+                device.active = true;
+              }
               // Mark device as a wifi device
               device.wifi = true;
               if (iface == iface2) {
