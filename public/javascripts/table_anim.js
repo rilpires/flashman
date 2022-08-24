@@ -3517,7 +3517,7 @@ anlixDocumentReady.add(function() {
       } else if (result.value) {
         swal.fire({
           title: t('gettingStockFirmwareReady...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });
