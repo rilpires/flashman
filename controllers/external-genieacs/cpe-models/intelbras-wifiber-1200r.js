@@ -9,10 +9,10 @@ intelbrasModel.identifier = {
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
@@ -23,7 +23,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
-    112, 116, 136, 140, 149, 153, 157, 161, 165,
+    112, 116, 136, 140, 149, 153, 157, 161,
   ];
   permissions.wifi.bandWrite = false;
   permissions.firmwareUpgrades = {
