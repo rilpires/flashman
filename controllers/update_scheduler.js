@@ -145,7 +145,7 @@ const getConfig = async function(lean=true, needActive=true) {
 const getDevice = async function(mac, lean=false) {
   let device = null;
   const projection = {
-    lan_devices: false, port_mapping: false, ap_survey: false,
+    port_mapping: false, ap_survey: false,
     pingtest_results: false, speedtest_results: false,
     firstboot_log: false, lastboot_log: false,
   };
