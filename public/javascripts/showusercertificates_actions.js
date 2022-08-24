@@ -352,7 +352,7 @@ const fetchCertification = function(id, name, timestamp) {
             diagPon = (diagPon > 0) ? t('Error'): t('Ok');
             if (diagPon == 4) {
               // Could not measure RX power
-              diagRxPower = t('notMeasured');
+              diagRxPower = t('noMeasured');
             } else {
               diagRxPower = diagRxPower.toString() + ' dBm';
             }
