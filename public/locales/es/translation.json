@@ -1010,7 +1010,7 @@
 	"Name": "Nombre",
 	"vlanProfileNameUniquenessRule": "El nombre del perfil VLAN $t(uniquenessRule)",
 	"vlanProfileNameCharRules": "El nombre del perfil de VLAN no puede estar vacío, debe comenzar con un carácter alfabético, contener caracteres alfanuméricos, guiones o guiones bajos",
-	"vlanProfileNameRules": "$t(vlanProfileCharRules) y $t(vlanProfileUniquenessRule)",
+	"vlanProfileNameRules": "$t(vlanProfileNameCharRules) y $t(vlanProfileNameUniquenessRule).",
 	"vlanProfiles": "Perfiles de VLAN",
 	"noVlanProfileFound": "No se encontró ningún perfil de VLAN",
 	"editName": "Editar nombre",
