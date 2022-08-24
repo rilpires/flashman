@@ -112,7 +112,6 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect device mac
           let macKey = fields.devices.host_mac.replace('*', i);
           device.mac = utilHandlers.getFromNestedKey(data, macKey+'._value');
-          console.log(device.mac);
           if (typeof device.mac === 'string') {
             device.mac = device.mac.toUpperCase().replace(/-/g, ':');
           } else {
