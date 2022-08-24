@@ -434,7 +434,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
     'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
     'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
-    'alerta': new RegExp(`^${t('alerta')}$`), // /^alerta/
+    'alerta': new RegExp(`^${t('alert')}$`), // /^alerta/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
