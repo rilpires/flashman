@@ -418,7 +418,7 @@ const fetchCertification = function(id, name, timestamp) {
         let modeStr = '';
         switch (cert.mesh.mode) {
           case 0:
-            modeStr = t('Deactivaded');
+            modeStr = t('Deactivated');
             break;
           case 1:
             modeStr = t('Cable');
