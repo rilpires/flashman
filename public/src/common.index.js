@@ -37,7 +37,6 @@ i18next
     i18nextResolved();
     // console.log('--- i18next.default.languages:', i18next.default.languages)
     // console.log('--- i18next.default.resolvedLanguage:', i18next.default.resolvedLanguage)
-    // console.log('--- mykey:', t('mykey'))
   });
 
 // Object that holds all DOMContentLoaded callbacks. Even though they are
