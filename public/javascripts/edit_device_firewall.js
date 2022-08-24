@@ -315,7 +315,7 @@ anlixDocumentReady.add(function() {
     if (ports == '') {
       swal.fire({
         title: t('ruleInclusionFail'),
-        text: t('informAtLeastOnePortToOpenAccess!'),
+        text: t('informAtLeastOnePortToOpenAccess'),
         icon: 'error',
         confirmButtonColor: '#4db6ac',
       });
