@@ -400,22 +400,26 @@ anlixDocumentReady.add(function() {
         // Deactivate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', true);
         // Enable all disassoc buttons
-        let slaveList = JSON.parse(row.next()
-          .data('slaves').replaceAll('$', '"'));
-        slaveList.forEach((s) => {
-          $('tr[id="'+s+'"]').find('.btn-disassoc')
-            .attr('disabled', false);
-        });
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', false);
+          });
+        }
       } else {
         // Deactivate dropdown
         row.find('.device-update .dropdown-toggle').attr('disabled', true);
         // Disable all disassoc buttons
-        let slaveList = JSON.parse(row.next()
-          .data('slaves').replaceAll('$', '"'));
-        slaveList.forEach((s) => {
-          $('tr[id="'+s+'"]').find('.btn-disassoc')
-            .attr('disabled', true);
-        });
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', true);
+          });
+        }
         // Update waiting status
         let upgradeStatus = row.find('span.upgrade-status');
         upgradeStatus.find('.status-none').addClass('d-none');
@@ -537,7 +541,7 @@ anlixDocumentReady.add(function() {
         // Assign both ipv4 and ipv6 to row
         row.find('.device-wan-ip').html(
           wanip +
-          (wanipv6 ? '<br>' + wanipv6 : ''),
+          (wanipv6 ? '<br><h6 style="font-size:70%">' + wanipv6 + '</h6>' : ''),
         );
 
         row.find('.device-ip').html(res.ip);
@@ -866,7 +870,8 @@ anlixDocumentReady.add(function() {
         uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
-        (device.wan_ipv6 ? '<br>' + device.wan_ipv6 : '') +
+        (device.wan_ipv6 ?
+          '<br><h6 style="font-size:70%">' + device.wan_ipv6 + '</h6>' : '') +
       '</td><td class="text-center device-ip">'+
         device.ip+
       '</td><td class="text-center device-installed-release">'+
