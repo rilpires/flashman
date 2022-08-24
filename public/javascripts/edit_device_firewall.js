@@ -391,7 +391,7 @@ anlixDocumentReady.add(function() {
       if (intPorts.indexOf(parseInt(intPort)) != -1) {
         swal.fire({
           title: t('ruleInclusionFail'),
-          text: t('internalPortAlreadyInUse!'),
+          text: t('internalPortAlreadyInUse'),
           icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
