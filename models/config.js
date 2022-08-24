@@ -13,6 +13,8 @@ let configSchema = new mongoose.Schema({
     functions_fqdn: String,
     secret_token: String,
   },
+  blockLicenseAtDeviceRemoval: {
+    type: Boolean, required: true, default: false},
   tr069: {
     server_url: String,
     web_login: String,

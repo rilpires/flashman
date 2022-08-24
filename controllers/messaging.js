@@ -22,6 +22,7 @@ const getMessagingConfig = async function() {
 
 const getTokensFromDevice = function(device) {
   // Filter devices that have a FCM uid registered
+  if (!device.lan_devices) return;
   return device.lan_devices.filter((d)=>d.fcm_uid).map((d)=>d.fcm_uid);
 };
 

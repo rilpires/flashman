@@ -104,6 +104,12 @@ block content
                       option(value=2)= t('allowMany')
                 .md-form
                   .md-selectfield.form-control.my-0
+                    label= t('cpeLicenseBlockAtRemoval')
+                    select.browser-default.md-select(name="grant-block-license-at-removal")
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
+                .md-form
+                  .md-selectfield.form-control.my-0
                     label= t('cpesRegistersAddition')
                     select.browser-default.md-select(name="grant-device-add")
                       option(value="false")= t('Block')
