@@ -845,6 +845,7 @@
 	"ssidPrefix": "SSID prefix",
 	"thisFieldIsMandatory": "This field is required",
 	"thisFieldCannotHaveMoreThanMaxChars": "This field cannot be longer than {{-max}} characters",
+	"acceptableCharsAre0-9a-zA-Z .-#": "Alphanumeric characters, spaces, period, -, and # are accepted",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "Alphanumeric characters, spaces, period, -, _ and # are accepted",
 	"endingSeparatorMustHaveAtLeastOne.-ul#": "Must have at least one period, -, _ or # as separator at the end",
 	"ssidPrefixInvalidFeedback": "$t(thisFieldIsMandatory). $t(thisFieldCannotHaveMoreThanMaxChars, {\"max\": 16}). $t(acceptableCharsAre0-9a-zA-Z .-#). $t(endingSeparatorMustHaveAtLeastOne.-ul#)",

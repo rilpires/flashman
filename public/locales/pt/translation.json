@@ -853,6 +853,7 @@
 	"ssidPrefix": "Prefixo SSID",
 	"thisFieldIsMandatory": "Este campo é obrigatório",
 	"thisFieldCannotHaveMoreThanMaxChars": "Este campo não pode ter mais de {{-max}} caracteres",
+	"acceptableCharsAre0-9a-zA-Z .-#": "São aceitos caracteres alfanuméricos, espaços, ponto, -, e #",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #",
 	"endingSeparatorMustHaveAtLeastOne.-ul#": "Deve ter pelo menos um ponto, -, _ ou # como separador no final",
 	"ssidPrefixInvalidFeedback": "$t(thisFieldIsMandatory). $t(thisFieldCannotHaveMoreThanMaxChars, {\"max\": 16}). $t(acceptableCharsAre0-9a-zA-Z .-#). $t(endingSeparatorMustHaveAtLeastOne.-ul#)",
