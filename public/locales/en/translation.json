@@ -1018,6 +1018,8 @@
 	"factoryCredentialsNotFound": "Could not find a valid custom web credentials configuration",
 	"factoryCredentialsGenericError": "An error has occurred while searching for the custom web credentials configuration",
 	"duplicatedCredentials": "The model {{-model}} already has a custom web credentials configuration",
+	"emptyHostError": "The host field cannot be empty!",
+	"duplicatedHost": "The address {{-host}} is already registered!",
 	"defaultHostsConfig": "Default latency diagnostic hosts configuration",
 	"defaultHostsConfigWarning": "Careful! This procedure will overwrite the latency diagnostic hosts list for every CPE in the database.",
 	"defaultHosts": "Default hosts",
