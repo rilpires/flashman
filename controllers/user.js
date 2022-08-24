@@ -1520,7 +1520,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('hasMeshBeenConfigured?'),
+        label: t('hasMeshBeenConfigured'),
         value: 'certifications.didConfigureMesh',
         default: '',
       },
