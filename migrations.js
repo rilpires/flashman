@@ -73,6 +73,20 @@ module.exports = (app) => {
                 console.log('Role updated');
               });
           }
+          if (typeof roles[idx].grantStatisticsView == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantStatisticsView: roles[idx].grantWanBytesView},
+              (err) => {
+                console.log('Role updated: Renamed grantWanBytesView');
+                Role.collection.update(
+                  {name: roles[idx].name},
+                  {$unset: {grantWanBytesView: 1}},
+                  (err) => {
+                    console.log('Role updated: Removed grantWanBytesView');
+                  });
+              });
+          }
         }
       }
     });
