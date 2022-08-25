@@ -1374,8 +1374,10 @@ anlixDocumentReady.add(function() {
           let ponRXPower = device.pon_rxpower;
           let grantWifiModeRead = device.permissions.grantWifiModeRead;
           let grantWifiModeEdit = device.permissions.grantWifiModeEdit;
-          let grantWifiBandRead = device.permissions.grantWifiBandRead;
-          let grantWifiBandEdit = device.permissions.grantWifiBandEdit;
+          let grantWifiBandRead2 = device.permissions.grantWifiBandRead2;
+          let grantWifiBandRead5 = device.permissions.grantWifiBandRead5;
+          let grantWifiBandEdit2 = device.permissions.grantWifiBandEdit2;
+          let grantWifiBandEdit5 = device.permissions.grantWifiBandEdit5;
           let grantWifiBandAuto2 = device.permissions.grantWifiBandAuto2;
           let grantWifiBandAuto5 = device.permissions.grantWifiBandAuto5;
           let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
@@ -1495,8 +1497,10 @@ anlixDocumentReady.add(function() {
             grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-mode="'+
             (grantWifiModeEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-band="'+
-            (grantWifiBandEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-2ghz="'+
+            (grantWifiBandEdit2 && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-5ghz="'+
+            (grantWifiBandEdit5 && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+
             (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+
@@ -2339,7 +2343,7 @@ anlixDocumentReady.add(function() {
                 '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
-                (grantWifiBandRead ?
+                (grantWifiBandRead5 ?
                   '<div class="md-form">'+
                     '<div class="input-group">'+
                       '<div class="md-selectfield form-control my-0">'+
@@ -2546,7 +2550,7 @@ anlixDocumentReady.add(function() {
                       '$REPLACE_WIFI2_HIDDEN'+
                     '</div>'+
                     '<div class="col-6">'+
-                      (grantWifiBandRead ?
+                      (grantWifiBandRead2 ?
                         '<div class="md-form">'+
                           '<div class="input-group">'+
                             '<div class="md-selectfield form-control my-0">'+
@@ -2709,14 +2713,17 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', 'disabled');
           } else {
-            wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', '');
           }
-          if (!grantWifiBandEdit || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiBandEdit2 || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiBandEdit5 || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
+          } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
@@ -3517,7 +3524,7 @@ anlixDocumentReady.add(function() {
       } else if (result.value) {
         swal.fire({
           title: t('gettingStockFirmwareReady...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });

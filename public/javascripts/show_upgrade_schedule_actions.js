@@ -342,7 +342,7 @@ anlixDocumentReady.add(function() {
         .addClass('fa-spinner fa-pulse');
       swal.fire({
         title: t('startingSchedule...'),
-        onOpen: () => {
+        didOpen: () => {
           swal.showLoading();
         },
       });
@@ -486,7 +486,7 @@ anlixDocumentReady.add(function() {
       p.then((result)=>{
         swal.fire({
           title: t('abortingSchedule...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });
@@ -521,7 +521,7 @@ anlixDocumentReady.add(function() {
   $('#refresh-btn').click((event)=>{
     swal.fire({
       title: t('searchingInfo...'),
-      onOpen: () => {
+      didOpen: () => {
         swal.showLoading();
       },
     });
@@ -592,7 +592,7 @@ anlixDocumentReady.add(function() {
   $('#results-btn').click((event)=>{
     swal.fire({
       title: t('searchingInfo...'),
-      onOpen: () => {
+      didOpen: () => {
         swal.showLoading();
       },
     });
