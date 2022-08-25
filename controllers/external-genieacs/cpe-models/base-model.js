@@ -64,7 +64,7 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
       skipIfNoWifiMode: false, // will skip devices with no host mode info
                                // (developed for Nokia models)
-      canTrustActive: true, // flag to handle devices that can trust Active
+      canTrustActive: false, // flag to handle devices that can trust Active
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
