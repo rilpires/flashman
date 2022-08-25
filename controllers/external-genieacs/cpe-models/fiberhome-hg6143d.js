@@ -10,7 +10,7 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.lan.canTrustActive = true;
-  permissions.wan.speedTestLimit = 730;
+  permissions.wan.speedTestLimit = 700;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
