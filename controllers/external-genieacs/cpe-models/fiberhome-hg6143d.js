@@ -51,10 +51,26 @@ fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
       return '2';
     case 'VHT80':
       return '3';
-    case 'auto':
-      return (is5ghz) ? '3' : '0';
+    case 'auto': // This model's 5ghz auto is only 20/40
+      return '0';
     default:
       return '';
+  }
+};
+
+fiberhomeModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
   }
 };
 
