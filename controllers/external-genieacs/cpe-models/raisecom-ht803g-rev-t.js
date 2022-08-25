@@ -16,23 +16,17 @@ raisecomModel.modelPermissions = function() {
   permissions.features.speedTest = true; // will enable speed test dialogs
 
   // wan permissions
-  // queue tasks and only send request on last
-  permissions.wan.portForwardQueueTasks = true;
-  // specifies range/asym support
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
   // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 300;
+
+  // wan port forwarding
+  // permissions.wan.portForwardPermissions = // specifies range/asym support
+  //   basicCPEModel.portForwardPermissions.noRanges;
 
   // wifi permissions
   permissions.wifi.list5ghzChannels =
     [36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165];
   permissions.wifi.bandAuto5 = false;
-
-  // mesh permissions
-  permissions.mesh.setEncryptionForCable = false;
-  // p.s.: even with the existing fields at the tr-069 tree, is not possible to
-  // change the wireless security configurations in specific cases
 
   // firmware permissions
   permissions.firmwareUpgrades = {
@@ -47,16 +41,16 @@ raisecomModel.convertWifiMode = function(mode) {
   // b/g/n =  'b,g,n'
   // b/g =    'g'
   // n =      'n'
+
   // ac/n/a = 'n'
   // n/a =    'n'
   // a =      '' (blank)
   switch (mode) {
     case '11g':
-      return 'b/g';
+      return 'g';
     case '11n':
       return 'b,g,n';
     case '11na':
-      return 'n';
     case '11ac':
       return 'n';
     default:
@@ -69,7 +63,7 @@ raisecomModel.convertWifiBand = function(band, is5ghz=false) {
   // 20Mhz    = 0
   // 40Mhz    = 1
   // 80Mhz    = 3
-  // Auto     = 2
+  // 20/40Mhz = 2
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -80,7 +74,7 @@ raisecomModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '3';
     case 'auto':
-      return '2';
+      return (is5ghz) ? undefined : '2';
     default:
       return '';
   }
@@ -94,9 +88,8 @@ raisecomModel.convertWifiBandToFlashman = function(band, isAC) {
     case '1':
       return (isAC) ? 'VHT40' : 'HT40';
     case '2':
-      // 'auto' bandwidth for AC is disabled,
-      // but we will set it to 80Mhz as a fallback
-      return (isAC) ? 'VHT80' /* just a fallback */ : 'auto';
+      // 'auto' bandwidth for AC is disabled
+      return (isAC) ? undefined : 'auto';
     case '3':
       return (isAC) ? 'VHT80' : undefined;
     default:
@@ -142,32 +135,36 @@ raisecomModel.getModelFields = function() {
 
   // user and password fields
   fields.common.web_admin_user =
-    'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
-  fields.common.web_admin_password =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Username';
+  fields.common.web_admin_password =
+    'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
 
   // wan fields
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
-    'X_CT-COM_GponInterfaceConfig.Stats.BytesReceived';
+    'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
-    'X_CT-COM_GponInterfaceConfig.Stats.BytesSent';
-  fields.wan.port_mapping_entries_dhcp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries';
-  fields.wan.port_mapping_entries_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries';
+    'WANCommonInterfaceConfig.TotalBytesSent';
+
+  // fields.wan.port_mapping_entries_dhcp =
+  //   'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
+  //   'WANIPConnection.*.PortMappingNumberOfEntries';
+  // fields.wan.port_mapping_entries_ppp =
+  //   'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
+  //   'WANPPPConnection.*.PortMappingNumberOfEntries';
+
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
-    'X_CT-COM_GponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
-    'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wan.pon_rxpower =
+    'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower =
+    'InternetGatewayDevice.WANDevice.1.X_CT-COM_GponInterfaceConfig.TXPower';
 
   // port mapping fields
-  fields.port_mapping_dhcp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANIPConnection.*.PortMapping';
-  fields.port_mapping_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.PortMapping';
-  fields.port_mapping_values.protocol[1] = 'TCPandUDP';
+  // fields.port_mapping_dhcp = 'InternetGatewayDevice.WANDevice.1.'+
+  //   'WANConnectionDevice.*.WANIPConnection.*.PortMapping';
+  // fields.port_mapping_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+  //   'WANConnectionDevice.*.WANPPPConnection.*.PortMapping';
+  // fields.port_mapping_values.protocol[1] = 'TCPandUDP';
 
   // wifi fields
   Object.keys(fields.wifi2).forEach((k)=>{
@@ -177,10 +174,10 @@ raisecomModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '2');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '3');
   });
-  fields.wifi2.band =
-    fields.wifi2.band.replace(/BandWidth/g, 'X_CT-COM_ChannelWidth');
-  fields.wifi5.band =
-    fields.wifi5.band.replace(/BandWidth/g, 'X_CT-COM_ChannelWidth');
+  fields.wifi2.band = fields.wifi2.band.replace(
+    /BandWidth/g, 'X_CT-COM_ChannelWidth');
+  fields.wifi5.band = fields.wifi5.band.replace(
+    /BandWidth/g, 'X_CT-COM_ChannelWidth');
 
   // wifi encryption fields
   fields.wifi2.encryption =
