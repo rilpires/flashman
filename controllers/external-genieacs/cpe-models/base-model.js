@@ -81,8 +81,10 @@ basicCPEModel.modelPermissions = function() {
       extended2GhzChannels: true, // allow channels 12 and 13
       ssidRead: true, // will display current wifi ssid and password
       ssidWrite: true, // can change current wifi ssid and password
-      bandRead: true, // will display current wifi band
-      bandWrite: true, // can change current wifi band
+      bandRead2: true, // will display current wifi 2.4 band
+      bandRead5: true, // will display current wifi 5 band
+      bandWrite2: true, // can change current wifi 2.4 band
+      bandWrite5: true, // can change current wifi 5 band
       bandAuto2: true, // can change current wifi 2.4 band to auto mode
       bandAuto5: true, // can change current wifi 5 band to auto mode
       modeRead: true, // will display current wifi mode

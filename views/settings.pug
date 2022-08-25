@@ -2,6 +2,7 @@ extends layout
 
 block content
   include includes/showfactorycredentials
+  include includes/showdefaulthostsconfig
 
   form#config-flashman-form.needs-validation(
     method="post",
@@ -57,11 +58,21 @@ block content
               .col-md.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
+                    label= t('mustBlockLicenseAtDeviceRemoval')
+                    select.browser-default.md-select(name="must-block-license-at-removal")
+                      option(value="false")= t('No')
+                      option(value="true")= t('Yes')
+                .md-form
+                  .md-selectfield.form-control.my-0
                     label= t('FlashmanLanguage')
                     select.browser-default.md-select(name="selected-language")
                       option(value="en") 🇬🇧 English
                       option(value="es") 🇪🇸 Español
                       option(value="pt-BR") 🇧🇷 Português brasileiro
+                .row
+                  #default-hosts-config-button.button.btn.btn-primary.mt-2.mx-auto
+                    .fas.fa-stethoscope.fa-lg
+                    span &nbsp; #{t('defaultHostsConfig')}
                 #is-ssid-prefix-enabled-col.d-none
                   .alert.alert-info
                     .fas.fa-info-circle.fa-lg

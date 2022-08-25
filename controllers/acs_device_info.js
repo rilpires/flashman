@@ -311,6 +311,17 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -367,6 +378,7 @@ const createRegistry = async function(req, cpe, permissions) {
     mesh_id: newMeshId,
     bssid_mesh2: meshBSSIDs.mesh2,
     bssid_mesh5: meshBSSIDs.mesh5,
+    ping_hosts: defaultPingHosts,
   });
   try {
     await newDevice.save();
@@ -589,7 +601,7 @@ const requestSync = async function(device) {
     dataToFetch.wifiMode = true;
     parameterNames.push(fields.wifi2.mode);
   }
-  if (fields.wifi2.band && permissions.grantWifiBandRead) {
+  if (fields.wifi2.band && permissions.grantWifiBandRead2) {
     dataToFetch.wifiBand = true;
     parameterNames.push(fields.wifi2.band);
   }
@@ -605,7 +617,7 @@ const requestSync = async function(device) {
       dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band && permissions.grantWifiBandRead) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead5) {
       dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
@@ -1221,7 +1233,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (band2 && (!device.wifi_band || autoWithNoPermission)) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
-      if (permissions.grantWifiBandEdit) {
+      if (permissions.grantWifiBandEdit2) {
         changes.wifi2.band = device.wifi_band;
         hasChanges = true;
       } else {
@@ -1252,7 +1264,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
-      if (permissions.grantWifiBandEdit) {
+      if (permissions.grantWifiBandEdit5) {
         changes.wifi5.band = device.wifi_band_5ghz;
         hasChanges = true;
       } else {
