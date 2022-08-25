@@ -1690,7 +1690,11 @@ deviceListController.sendMqttMsg = async function(req, res) {
             sio.anlixWaitForSiteSurveyNotification(
               req.sessionID, req.params.id.toUpperCase());
           }
-          mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
+          if (device && device.use_tr069) {
+            acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
+          } else {
+            mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
+          }
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {

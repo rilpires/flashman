@@ -184,6 +184,12 @@ const calculateTraceDiagnostic = async function(
   // TO-DO !!!
 };
 
+const calculateSiteSurveyDiagnostic = async function(
+  device, cpe, data, pingKeys, pingFields,
+) {
+  // TO-DO !!!
+};
+
 
 const calculateSpeedDiagnostic = async function(
   device, data, speedKeys, speedFields,
@@ -364,6 +370,32 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
   }
 };
 
+const startSiteSurveyDiagnose = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  } catch (err) {
+    return {success: false, message: err.message + ' in ' + acsID};
+  }
+  if (!device) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let diagnStateField = fields.diagnostics.sitesurvey.root +
+                        fields.diagnostics.sitesurvey.diag_state;
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: [[diagnStateField, 'Requested', 'xsd:string']],
+  };
+  const result = await TasksAPI.addTask(acsID, task);
+  if (!result.success) {
+    console.log('Error starting site survey diagnose for ' + acsID);
+  }
+};
+
 acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
   let device;
   try {
@@ -456,6 +488,8 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
           );
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
           await calculateTraceDiagnostic(/* to-do */);
+        } else if (permissions.grantSiteSurveyTest && diagType=='sitesurvey') {
+          await calculateSiteSurveyDiagnostic(/* to-do */);
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
@@ -518,6 +552,30 @@ acsDiagnosticsHandler.fireTraceDiagnose = async function(device) {
   return {
     success: false, message: t('notAvailable'),
   };
+};
+
+acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return {success: false,
+            message: t('cpeFindError', {errorline: __line})};
+  }
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let siteSurveyDiagnostics = fields.diagnostics.sitesurvey.root;
+  // We need to update the parameter values before we fire the speedtest
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [siteSurveyDiagnostics],
+  };
+  const result = await TasksAPI.addTask(acsID, task, startSiteSurveyDiagnose);
+  if (result.success) {
+    return {success: true, message: t('operationSuccessful')};
+  } else {
+    return {
+      success: false, message: t('acsSiteSurveyError', {errorline: __line}),
+    };
+  }
 };
 
 module.exports = acsDiagnosticsHandler;
