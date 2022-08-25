@@ -1217,7 +1217,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'onlinedevs':
       case 'ping':
       case 'upstatus':
-      case 'statistics':
+      case 'wanbytes':
       case 'waninfo':
       case 'laninfo':
       case 'speedtest':
@@ -1307,7 +1307,7 @@ deviceListController.sendMqttMsg = function(req, res) {
           slaves.forEach((slave)=>{
             mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
           });
-        } else if (msgtype === 'statistics') {
+        } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
             sio.anlixWaitForStatisticsNotification(
               req.sessionID,
