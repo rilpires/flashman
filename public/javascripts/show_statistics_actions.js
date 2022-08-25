@@ -4,9 +4,9 @@ import {socket} from './common_actions.js';
 
 
 // Sections
-const STATISTICS_READY_SECTION = '#estatistics-modal-placeholder-ready';
-const STATISTICS_PROGRESS_SECTION = '#estatistics-modal-placeholder-progress';
-const STATISTICS_NONE_SECTION = '#estatistics-modal-placeholder-none';
+const STATISTICS_READY_SECTION = '#statistics-modal-placeholder-ready';
+const STATISTICS_PROGRESS_SECTION = '#statistics-modal-placeholder-progress';
+const STATISTICS_NONE_SECTION = '#statistics-modal-placeholder-none';
 const STATISTICS_RESULTS_SECTION = '#statistics-results';
 const STATISTICS_RESOURCES_SECTION = '#resources-section';
 const STATISTICS_WAN_BYTES_SECTION = '#wan-bytes-section';
@@ -36,14 +36,14 @@ anlixDocumentReady.add(function() {
   };
 
   const refreshStatistics = function(deviceId) {
-    $('#btn-estatistics-modal-refresh').prop('disabled', true);
+    $('#btn-statistics-modal-refresh').prop('disabled', true);
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/statistics',
       type: 'post',
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          $('#btn-estatistics-modal-refresh > i')
+          $('#btn-statistics-modal-refresh > i')
             .addClass('animated rotateOut infinite');
           if ($(STATISTICS_RESULTS_SECTION).is(':hidden')) {
             $(STATISTICS_READY_SECTION).hide();
@@ -51,7 +51,7 @@ anlixDocumentReady.add(function() {
             $(STATISTICS_NONE_SECTION).hide();
           }
         } else {
-          $('#btn-estatistics-modal-refresh').prop('disabled', false);
+          $('#btn-statistics-modal-refresh').prop('disabled', false);
           if ($(STATISTICS_RESULTS_SECTION).is(':hidden')) {
             $(STATISTICS_READY_SECTION).show();
             $(STATISTICS_PROGRESS_SECTION).hide();
@@ -60,7 +60,7 @@ anlixDocumentReady.add(function() {
         }
       },
       error: function(xhr, status, error) {
-        $('#btn-estatistics-modal-refresh').prop('disabled', false);
+        $('#btn-statistics-modal-refresh').prop('disabled', false);
         if ($(STATISTICS_RESULTS_SECTION).is(':hidden')) {
           $(STATISTICS_READY_SECTION).show();
           $(STATISTICS_PROGRESS_SECTION).hide();
@@ -73,7 +73,7 @@ anlixDocumentReady.add(function() {
   // Important: include and initialize socket.io first using socket var
   socket.on('STATISTICS', function(macaddr, data) {
     // If resources object exists
-    if (data.resources && macaddr === $('#estatistics-modal-hlabel').text()) {
+    if (data.resources && macaddr === $('#statistics-modal-hlabel').text()) {
       // Check if cpu usage, mem usage exists and they are valid
       if (
         !isNaN(data.resources.cpu_usage) && !isNaN(data.resources.mem_usage) &&
@@ -107,7 +107,7 @@ anlixDocumentReady.add(function() {
     }
 
     // If WAN Bytes exists
-    if (data.wanbytes && macaddr === $('#estatistics-modal-hlabel').text()) {
+    if (data.wanbytes && macaddr === $('#statistics-modal-hlabel').text()) {
       $('#wan-bytes-graph').empty();
       let upBytes = [];
       let downBytes = Object.keys(data.wanbytes).map(function(time) {
@@ -166,8 +166,8 @@ anlixDocumentReady.add(function() {
         ApexCharts.exec(chartUpId, 'updateOptions', upOptions, false, true);
       }
       // Adjust modal content
-      $('#btn-estatistics-modal-refresh').prop('disabled', false);
-      $('#btn-estatistics-modal-refresh > i')
+      $('#btn-statistics-modal-refresh').prop('disabled', false);
+      $('#btn-statistics-modal-refresh > i')
         .removeClass('animated rotateOut infinite');
       $(STATISTICS_READY_SECTION).hide();
       $(STATISTICS_PROGRESS_SECTION).hide();
@@ -181,12 +181,12 @@ anlixDocumentReady.add(function() {
     }
   });
 
-  $(document).on('click', '#btn-estatistics-modal-refresh', function(event) {
-    let id = $('#estatistics-modal-hlabel').text();
+  $(document).on('click', '#btn-statistics-modal-refresh', function(event) {
+    let id = $('#statistics-modal-hlabel').text();
     refreshStatistics(id);
   });
 
-  $(document).on('click', '.btn-estatistics-modal', function(event) {
+  $(document).on('click', '.btn-statistics-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
     let serialid = row.data('serialid');
@@ -197,11 +197,11 @@ anlixDocumentReady.add(function() {
     let isTR069 = row.data('is-tr069') === true; // cast to bool
     chartDownId = '';
     chartUpId = '';
-    $('#estatistics-modal-hlabel').text(id);
+    $('#statistics-modal-hlabel').text(id);
     if (isTR069) {
-      $('#estatistics-modal-visual').text(serialid);
+      $('#statistics-modal-visual').text(serialid);
     } else {
-      $('#estatistics-modal-visual').text(id);
+      $('#statistics-modal-visual').text(id);
     }
     $(STATISTICS_READY_SECTION).show();
     $(STATISTICS_PROGRESS_SECTION).hide();
@@ -214,8 +214,8 @@ anlixDocumentReady.add(function() {
   $('#statistics').on('hidden.bs.modal', function() {
     chartDownId = '';
     chartUpId = '';
-    $('#btn-estatistics-modal-refresh').prop('disabled', false);
-    $('#btn-estatistics-modal-refresh > i')
+    $('#btn-statistics-modal-refresh').prop('disabled', false);
+    $('#btn-statistics-modal-refresh > i')
       .removeClass('animated rotateOut infinite');
     $(STATISTICS_READY_SECTION).show();
     $(STATISTICS_PROGRESS_SECTION).hide();

@@ -1596,7 +1596,7 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_TEXT', t('manageVlans'));
 
           let statisticsAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-estatistics-modal')
+          .replace('$REPLACE_BTN_CLASS', 'btn-statistics-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
           .replace('$REPLACE_TEXT', t('cpeStatistics'));
 

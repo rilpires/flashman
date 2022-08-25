@@ -411,7 +411,7 @@
 	"cpuUsage": "CPU Usage",
 	"memoryUsage": "Memory Usage",
 	"wanBytes": "WAN traffic",
-	"statisticsFor": "Estatistics from",
+	"statisticsFor": "Statistics from",
 	"editSuccess": "Successfully edited",
 	"someCpeFormFieldAreInvalid": "Some fields on the CPE form are not filled in properly",
 	"ruleInclusionFail": "Failed to add rule",

@@ -5,31 +5,31 @@
         p.heading.lead
           span.fas.fa-chart-line.fa-lg
           strong &nbsp; #{t('statisticsFor')}&nbsp;
-          strong(name="estatistics-modal-visual" id="estatistics-modal-visual")
-          span.d-none(name="estatistics-modal-hlabel" id="estatistics-modal-hlabel")
+          strong(name="statistics-modal-visual" id="statistics-modal-visual")
+          span.d-none(name="statistics-modal-hlabel" id="statistics-modal-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
       .modal-body
         .row
           .col.p-0.text-right
-            button#btn-estatistics-modal-refresh.btn.btn-primary.btn-sm
+            button#btn-statistics-modal-refresh.btn.btn-primary.btn-sm
               i.fas.fa-sync-alt.fa-lg
               span &nbsp; #{t('Update')}
-        .row#estatistics-modal-placeholder-ready
+        .row#statistics-modal-placeholder-ready
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
               br
               br
               span= t('updateDataToView')
-        .row#estatistics-modal-placeholder-progress
+        .row#statistics-modal-placeholder-progress
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-spinner.fa-pulse.fa-4x
               br
               br
               span= t('updatingInformations...')
-        .row#estatistics-modal-placeholder-none
+        .row#statistics-modal-placeholder-none
           .col
             h2.text-center.grey-text.mb-3
               i.fas.fa-exchange-alt.fa-4x
