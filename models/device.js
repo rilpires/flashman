@@ -227,12 +227,6 @@ let deviceSchema = new Schema({
   // These are only used by the generic 'ping' command.
   ping_hosts: {
     type: [String],
-    default: [
-      'www.google.com',
-      'www.youtube.com',
-      'www.facebook.com',
-      'www.instagram.com',
-    ],
   },
   // Store pingtest results
   pingtest_results: [{
@@ -344,7 +338,9 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
-deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
+deviceSchema.statics.findByMacOrSerial = function(
+  id, useLean=false, projection=null,
+) {
   let query;
   if (Array.isArray(id)) {
     let regexList = [];
@@ -363,12 +359,14 @@ deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}).lean(); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection).lean();
   } else {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection);
   }
 };
 

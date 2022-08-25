@@ -291,6 +291,16 @@ anlixDocumentReady.add(function() {
       }
       $(`select[name=selected-language] option[value=${resp.language}]`)
         .attr('selected', '');
+      if (resp.blockLicenseAtDeviceRemoval) {
+        let blockLicenseAtRemoval = (
+          resp.blockLicenseAtDeviceRemoval === true ||
+          resp.blockLicenseAtDeviceRemoval === 'true'
+        ) ? true : false;
+        $(`select[name=must-block-license-at-removal] `+
+          `option[value=${blockLicenseAtRemoval}]`)
+        .attr('selected', 'selected');
+        setConfigStorage('blockLicenseAtDeviceRemoval', blockLicenseAtRemoval);
+      }
     },
   });
 
@@ -299,8 +309,8 @@ anlixDocumentReady.add(function() {
     if (
       input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
     ) {
-      swal({
-        type: 'warning',
+      swal.fire({
+        icon: 'warning',
         title: t('Attention!'),
         html: t('enablingTr069HttpCommunicationMustReadAndAgreeConditions'),
         confirmButtonText: t('Enable'),
@@ -327,5 +337,9 @@ anlixDocumentReady.add(function() {
 
   $('#factory-credentials-button').on('click', function(event) {
     $('#factory-credentials-modal').modal('show');
+  });
+
+  $('#default-hosts-config-button').on('click', function(event) {
+    $('#default-hosts-config-modal').modal('show');
   });
 });

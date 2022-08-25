@@ -149,6 +149,7 @@ userController.postRole = function(req, res) {
     grantDeviceActions: req.body['grant-device-actions'],
     grantDeviceRemoval: basicDeviceRemoval,
     grantDeviceMassRemoval: massDeviceRemoval,
+    grantDeviceLicenseBlock: req.body['grant-block-license-at-removal'],
     grantFactoryReset: req.body['grant-factory-reset'],
     grantDeviceAdd: req.body['grant-device-add'],
     grantMonitorManage: req.body['grant-monitor-manage'],
@@ -368,6 +369,7 @@ userController.editRole = function(req, res) {
     role.grantFactoryReset = req.body['grant-factory-reset'];
     role.grantDeviceRemoval = basicDeviceRemoval;
     role.grantDeviceMassRemoval = massDeviceRemoval;
+    role.grantDeviceLicenseBlock = req.body['grant-block-license-at-removal'];
     role.grantDeviceAdd = req.body['grant-device-add'];
     role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];

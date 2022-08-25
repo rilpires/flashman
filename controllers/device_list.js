@@ -1323,6 +1323,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     device.isSsidPrefixEnabled == true);
                 });
 
+                let mustBlockLicenseAtRemoval = (
+                  matchedConfig.blockLicenseAtDeviceRemoval === true
+                ) ? true : false;
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -1336,6 +1340,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  mustBlockLicenseAtRemoval: mustBlockLicenseAtRemoval,
                   ponConfig: {
                     ponSignalThreshold:
                       matchedConfig.tr069.pon_signal_threshold,
@@ -1362,31 +1367,71 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
 deviceListController.delDeviceReg = async function(req, res) {
   try {
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {blockLicenseAtDeviceRemoval: true}).lean();
+    let mustBlockAtRemoval =
+      ('blockLicenseAtDeviceRemoval' in matchedConfig) ?
+        matchedConfig.blockLicenseAtDeviceRemoval : false;
     let removeList = [];
     if (req.params.id) {
       removeList = [req.params.id];
     } else {
       removeList = req.body.ids;
     }
-    let devices = await DeviceModel.findByMacOrSerial(removeList).exec();
+    // If mustBlockAtRemoval flag is true, then we must change the flow of
+    // delDeviceReg to do the license block with delDeviceAndBlockLicense
+    if (mustBlockAtRemoval) {
+      req.body.ids = removeList;
+      return await deviceListController.delDeviceAndBlockLicense(req, res);
+    }
+    let devices = await DeviceModel.findByMacOrSerial(removeList);
     if (devices.length === 0) {
-      return res.json({
+      return res.status(500).json({
         success: false,
         type: 'danger',
         message: t('cpesNotFound', {errorline: __line}),
       });
     }
+    // We gonna push the error messages to an Array, then we must log to the
+    // console the errors inside this Array, if not empty.
+    let failedAtRemoval = {};
     for (let device of devices) {
-      deviceHandlers.removeDeviceFromDatabase(device);
+      // Cannot delete mesh masters with associated slaves
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
+      } else {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
+        }
+      }
     }
-    return res.json({
+    // If there are any errors in the array, we log the details and inform which
+    // cpes failed to be removed in the response
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
+      });
+    }
+    // No errors present, simply return success
+    return res.status(200).json({
       success: true,
       type: 'success',
       message: t('operationSuccessful'),
     });
   } catch (err) {
-    console.error('Erro na remoção: ' + err);
-    return res.json({
+    return res.status(500).json({
       success: false,
       type: 'danger',
       message: t('operationUnsuccessful', {errorline: __line}),
@@ -1936,6 +1981,7 @@ deviceListController.setDeviceReg = function(req, res) {
     if (util.isJSONObject(req.body.content)) {
       let content = req.body.content;
       let updateParameters = false;
+      let needsToUpdateExtRef = false;
       let validator = new Validator();
 
       let errors = [];
@@ -1997,6 +2043,7 @@ deviceListController.setDeviceReg = function(req, res) {
       let bridgeFixDNS =
         util.returnObjOrEmptyStr(content.bridgeFixDNS).toString().trim();
       let meshMode = parseInt(util.returnObjOrNum(content.mesh_mode, 0));
+      let extReference = util.returnObjOrFalse(content.external_reference);
       let slaveCustomConfigs = [];
       try {
         slaveCustomConfigs = JSON.parse(content.slave_custom_configs);
@@ -2106,8 +2153,13 @@ deviceListController.setDeviceReg = function(req, res) {
           }
         }
         if (content.hasOwnProperty('wifi_channel_5ghz')) {
-          genericValidate(channel5ghz,
-                          validator.validateChannel, 'channel5ghz');
+          genericValidate(
+            channel5ghz,
+            (ch)=>validator.validateChannel(
+              ch, permissions.grantWifi5ChannelList,
+            ),
+            'channel5ghz',
+          );
         }
         if (content.hasOwnProperty('wifi_band_5ghz')) {
           genericValidate(band5ghz, validator.validateBand, 'band5ghz');
@@ -2133,6 +2185,13 @@ deviceListController.setDeviceReg = function(req, res) {
                           'bridge_fixed_gateway');
           genericValidate(bridgeFixDNS, validator.validateIP,
                           'bridge_fixed_dns');
+        }
+        if ((content.hasOwnProperty('external_reference')) &&
+            (extReference.kind !== matchedDevice.external_reference.kind ||
+             extReference.data !== matchedDevice.external_reference.data)) {
+          genericValidate(extReference, validator.validateExtReference,
+            'external_reference');
+          needsToUpdateExtRef = true;
         }
         // We must enable Wi-Fi corresponding to mesh radio we're using
         // Some models have this restriction.
@@ -2247,16 +2306,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band') &&
+                permissions.grantWifiBandEdit2 &&
                 band !== '' && band !== matchedDevice.wifi_band) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi2.band = band;
-                matchedDevice.wifi_band = band;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto2) {
+                  changes.wifi2.band = band;
+                  matchedDevice.wifi_band = band;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode') &&
+                permissions.grantWifiModeEdit &&
                 mode !== '' && mode !== matchedDevice.wifi_mode) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.mode = mode;
@@ -2332,16 +2396,21 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('wifi_band_5ghz') &&
+                permissions.grantWifiBandEdit5 &&
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
-                changes.wifi5.band = band5ghz;
-                matchedDevice.wifi_band_5ghz = band5ghz;
-                updateParameters = true;
+                // Discard change to 'auto' if not allowed
+                if (band !== 'auto' || permissions.grantWifiBandAuto5) {
+                  changes.wifi5.band = band5ghz;
+                  matchedDevice.wifi_band_5ghz = band5ghz;
+                  updateParameters = true;
+                }
               } else {
                 hasPermissionError = true;
               }
             }
             if (content.hasOwnProperty('wifi_mode_5ghz') &&
+                permissions.grantWifiModeEdit &&
                 mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.mode = mode5ghz;
@@ -2418,17 +2487,12 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
-            if (content.hasOwnProperty('external_reference') &&
-                (content.external_reference.kind !==
-                 matchedDevice.external_reference.kind ||
-                 content.external_reference.data !==
-                 matchedDevice.external_reference.data)
-            ) {
+            if (needsToUpdateExtRef) {
               if (superuserGrant || role.grantDeviceId) {
-                matchedDevice.external_reference.kind =
-                  content.external_reference.kind;
-                matchedDevice.external_reference.data =
-                  content.external_reference.data;
+                let extRef =
+                  util.getExtRefPattern(extReference.kind, extReference.data);
+                matchedDevice.external_reference.kind = extRef.kind;
+                matchedDevice.external_reference.data = extRef.data;
               } else {
                 // Its possible that default value might be undefined
                 // In this case there is no permission error
@@ -2535,31 +2599,28 @@ deviceListController.setDeviceReg = function(req, res) {
                   ) {
                     delete changes.wifi5.channel;
                   }
-                } else {
-                  meshHandlers.setMeshMode(
-                    matchedDevice, meshMode,
-                  );
                 }
+                meshHandlers.setMeshMode(
+                  matchedDevice, meshMode,
+                );
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
               }
             }
-            if (
-              cpe.modelPermissions().wifi.mustBeEnabledToConfigure &&
-              (
-                (
-                  matchedDevice.wifi_state == 0 &&
-                  JSON.stringify(changes.wifi2) != '{}' &&
-                  JSON.stringify(changes.wifi2) != '{"enable":0}'
-                ) ||
-                (
-                  matchedDevice.wifi_state_5ghz == 0 &&
-                  JSON.stringify(changes.wifi5) != '{}' &&
-                  JSON.stringify(changes.wifi5) != '{"enable":0}'
-                )
-              )
-            ) {
+            let isWifi2DisabledAndChangingSomething = (
+              matchedDevice.wifi_state == 0 &&
+              JSON.stringify(changes.wifi2) != '{}' &&
+              JSON.stringify(changes.wifi2) != '{"enable":0}'
+            );
+            let isWifi5DisabledAndChangingSomething = (
+              matchedDevice.wifi_state_5ghz == 0 &&
+              JSON.stringify(changes.wifi5) != '{}' &&
+              JSON.stringify(changes.wifi5) != '{"enable":0}'
+            );
+            if (cpe.modelPermissions().wifi.mustBeEnabledToConfigure
+              && (isWifi2DisabledAndChangingSomething ||
+                  isWifi5DisabledAndChangingSomething)) {
               return res.status(500).json({
                 success: false,
                 message: t('enabledToModifyFields',
@@ -2621,7 +2682,6 @@ deviceListController.createDeviceReg = function(req, res) {
   if (util.isJSONObject(req.body.content)) {
     const content = req.body.content;
     const macAddr = content.mac_address.trim().toUpperCase();
-    const extReference = content.external_reference;
     const validator = new Validator();
 
     let errors = [];
@@ -2635,6 +2695,7 @@ deviceListController.createDeviceReg = function(req, res) {
     let channel = util.returnObjOrEmptyStr(content.wifi_channel).trim();
     let band = util.returnObjOrEmptyStr(content.wifi_band).trim();
     let mode = util.returnObjOrEmptyStr(content.wifi_mode).trim();
+    const extReference = util.returnObjOrFalse(content.external_reference);
     let pppoe = (pppoeUser !== '' && pppoePassword !== '');
 
     let genericValidate = function(field, func, key, minlength) {
@@ -2688,6 +2749,10 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
       genericValidate(mode, validator.validateMode, 'mode');
+      if (extReference) {
+        genericValidate(extReference, validator.validateExtReference,
+          'external_reference');
+      }
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
         if (err) {
@@ -2704,7 +2769,7 @@ deviceListController.createDeviceReg = function(req, res) {
             let newDeviceModel = new DeviceModel({
               '_id': macAddr,
               'created_at': new Date(),
-              'external_reference': extReference,
+              'external_reference': extReference ? extReference : {},
               'model': '',
               'release': release,
               'pppoe_user': pppoeUser,
@@ -2719,6 +2784,12 @@ deviceListController.createDeviceReg = function(req, res) {
               'do_update_parameters': false,
               'isSsidPrefixEnabled': isSsidPrefixEnabled,
             });
+            if (extReference) {
+              let extRef =
+                util.getExtRefPattern(extReference.kind, extReference.data);
+              newDeviceModel.external_reference.kind = extRef.kind;
+              newDeviceModel.external_reference.data = extRef.data;
+            }
             if (connectionType != '') {
               newDeviceModel.connection_type = connectionType;
             }
@@ -3304,7 +3375,7 @@ deviceListController.getPingHostsList = function(req, res) {
 
 deviceListController.setPingHostsList = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  function(err, matchedDevice) {
+  async function(err, matchedDevice) {
     if (err) {
       return res.status(200).json({
         success: false,
@@ -3341,6 +3412,18 @@ deviceListController.setPingHostsList = function(req, res) {
         approvedHosts.push(host);
       }
     });
+
+    // Check if approved hosts contains default hosts if configured
+    const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
+    if (getDefaultPingHosts.success &&
+        getDefaultPingHosts.hosts.length > 0 &&
+        !getDefaultPingHosts.hosts.every((x) => approvedHosts.includes(x))) {
+      return res.status(200).json({
+        success: false,
+        message: t('hostListMustContainDefaultHosts',
+          {hosts: getDefaultPingHosts.hosts, errorline: __line}),
+      });
+    }
     matchedDevice.ping_hosts = approvedHosts;
     matchedDevice.save(function(err) {
       if (err) {
@@ -3355,6 +3438,101 @@ deviceListController.setPingHostsList = function(req, res) {
       });
     });
   });
+};
+
+const getDefaultPingHostsAtConfig = async function() {
+  let message = t('configNotFound', {errorline: __line});
+  let config = {};
+  try {
+    config = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true},
+    ).lean();
+  } catch (err) {
+    message = t('configFindError', {errorline: __line});
+  }
+  if (config && Array.isArray(config.default_ping_hosts)) {
+    return {success: true, hosts: config.default_ping_hosts};
+  }
+  return {success: false, type: 'error', message: message};
+};
+
+deviceListController.getDefaultPingHosts = async function(req, res) {
+  const getDefaultPingHosts = await getDefaultPingHostsAtConfig();
+  if (getDefaultPingHosts.success) {
+    return res.status(200).json({
+      success: true,
+      default_ping_hosts_list: getDefaultPingHosts.hosts,
+    });
+  }
+  return res.status(200).json({
+    success: false, message: getDefaultPingHosts.message,
+  });
+};
+
+deviceListController.setDefaultPingHosts = async function(req, res) {
+  let success = true;
+  let type = 'success';
+  let message = t('operationSuccessful', {errorline: __line});
+  Config.findOne({is_default: true}, {default_ping_hosts: true}).exec(
+    async function(err, matchedConfig) {
+      if (err) {
+        success = false; type = 'error';
+        message = t('configFindError', {errorline: __line});
+      }
+      if (!util.isJSONObject(req.body)) {
+        success = false; type = 'error';
+        message = t('jsonError', {errorline: __line});
+      }
+      if (!req.body.default_ping_hosts_list) {
+        success = false; type = 'error';
+        message = t('configNotFound', {errorline: __line});
+      }
+      let hosts = req.body.default_ping_hosts_list;
+      let approvedHosts = [];
+      hosts.forEach((host) => {
+        host = host.toLowerCase();
+        if (host.match(util.fqdnLengthRegex)) {
+          approvedHosts.push(host);
+        }
+      });
+      matchedConfig.default_ping_hosts = approvedHosts;
+      matchedConfig.save(function(err) {
+        if (err) {
+          success = false; type = 'error';
+          message = t('configSaveError', {errorline: __line});
+        }
+      });
+      if (approvedHosts.length) {
+        const overwriteResult = await overwriteHostsOnDevices(approvedHosts);
+        if (!overwriteResult.success) {
+          success = false; type = 'error';
+          message = t('cpeSaveError', {errorline: __line});
+        }
+      }
+    });
+    return res.status(200).json({
+      success: success, type: type, message: message,
+    });
+};
+
+const overwriteHostsOnDevices = async function(approvedHosts) {
+  let devices = {};
+  try {
+    devices = await DeviceModel.find({}, {ping_hosts: true});
+  } catch (err) {
+    return {success: false, type: 'error',
+      message: t('cpeFindError', {errorline: __line})};
+  }
+  for (let device of devices) {
+    device.ping_hosts = approvedHosts;
+    try {
+      device.save();
+    } catch (err) {
+      return {success: false, type: 'error',
+        message: t('cpeSaveError', {errorline: __line})};
+    }
+  }
+  return {success: true};
 };
 
 deviceListController.getLanDevices = async function(req, res) {
@@ -3782,6 +3960,80 @@ deviceListController.changeLicenseStatus = async function(req, res) {
   } catch (err) {
     return res.status(500).json({success: false,
                                  message: t('serverError',
+                                 {errorline: __line})});
+  }
+};
+
+deviceListController.delDeviceAndBlockLicense = async function(req, res) {
+  // Check request body
+  if (!('ids' in req.body)) {
+    return res.status(500).json({success: false, type: 'error',
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    let devIds = req.body.ids;
+    // Check devices array
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
+    // Get devices from ids
+    let projection = {
+      _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
+      mesh_master: true, mesh_slaves: true,
+    };
+    let matchedDevices =
+      await DeviceModel.findByMacOrSerial(devIds, false, projection);
+    // Check if get at least one device
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({success: false, type: 'error',
+                                   message: t('cpesNotFound',
+                                   {errorline: __line})});
+    }
+    devIds = [];
+    // Creating an Array for the error messages
+    let failedAtRemoval = {};
+    // Try to remove each device
+    for (let device of matchedDevices) {
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
+      // If the device is a mesh master, then we must not delete it
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
+      } else {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
+        } else {
+          devIds.push(deviceId);
+        }
+      }
+    }
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
+      });
+    }
+    // Move on to blocking the licenses
+    let retObj = await controlApi.changeLicenseStatus(req.app, true, devIds);
+    if (!retObj.success) {
+      return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
+    }
+    return res.status(200).json({success: true, type: 'success',
+                                message: t('operationSuccessful')});
+  } catch (err) {
+    return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
                                  {errorline: __line})});
   }
 };

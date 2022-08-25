@@ -4,9 +4,9 @@ import 'jquery-mask-plugin';
 const t = i18next.t;
 
 let forceUpdateFlashman = function() {
-  swal({
+  swal.fire({
     title: t('updatingFlashman...'),
-    onOpen: () => {
+    didOpen: () => {
       swal.showLoading();
     },
   });
@@ -20,8 +20,8 @@ let forceUpdateFlashman = function() {
     success: function(resp) {
       swal.close();
       if (resp.updated) {
-        swal({
-          type: 'success',
+        swal.fire({
+          icon: 'success',
           title: t('updateSuccess'),
           text: t('youNeedToLogInAgain'),
           confirmButtonColor: '#4db6ac',
@@ -29,8 +29,8 @@ let forceUpdateFlashman = function() {
           window.location.href = '/logout';
         });
       } else {
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('updateError'),
           confirmButtonColor: '#4db6ac',
         });
@@ -40,8 +40,8 @@ let forceUpdateFlashman = function() {
 };
 
 let alertMajorUpdateFlashman = function() {
-  swal({
-    type: 'warning',
+  swal.fire({
+    icon: 'warning',
     title: t('importUpdateAvailable'),
     text: t('newFlashmanVersionNeedsManualInstallPleaseReadDocumentation'),
     confirmButtonText: t('seeInstructions'),
@@ -54,8 +54,8 @@ let alertMajorUpdateFlashman = function() {
 };
 
 let alertUpdateFlashman = function() {
-  swal({
-    type: 'warning',
+  swal.fire({
+    icon: 'warning',
     title: t('updateAvailable'),
     text: t('wouldYouLikeToInstallNewVersionNow?'),
     confirmButtonText: t('Update'),
@@ -71,9 +71,9 @@ let alertUpdateFlashman = function() {
 };
 
 let checkUpdateFlashman = function() {
-  swal({
+  swal.fire({
     title: t('searchingForUpdates...'),
-    onOpen: () => {
+    didOpen: () => {
       swal.showLoading();
     },
   });
@@ -89,8 +89,8 @@ let checkUpdateFlashman = function() {
       if (resp.hasUpdate) {
         alertUpdateFlashman();
       } else {
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('noUpdateFound'),
           confirmButtonColor: '#4db6ac',
         });
