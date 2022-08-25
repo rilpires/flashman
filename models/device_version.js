@@ -1744,8 +1744,10 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiModeRead: cpePermissions.wifi.modeRead,
     grantWifiModeEdit: cpePermissions.wifi.modeWrite,
-    grantWifiBandRead: cpePermissions.wifi.bandRead,
-    grantWifiBandEdit: cpePermissions.wifi.bandWrite,
+    grantWifiBandRead2: cpePermissions.wifi.bandRead2,
+    grantWifiBandRead5: cpePermissions.wifi.bandRead5,
+    grantWifiBandEdit2: cpePermissions.wifi.bandWrite2,
+    grantWifiBandEdit5: cpePermissions.wifi.bandWrite5,
     grantWifiBandAuto2: cpePermissions.wifi.bandAuto2,
     grantWifiBandAuto5: cpePermissions.wifi.bandAuto5,
     grantWifi5ChannelList: cpePermissions.wifi.list5ghzChannels,
@@ -1835,8 +1837,10 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiModeRead = grantWifiBand(version, model);
   result.grantWifiModeEdit = grantWifiBand(version, model);
-  result.grantWifiBandRead = grantWifiBand(version, model);
-  result.grantWifiBandEdit = grantWifiBand(version, model);
+  result.grantWifiBandRead2 = grantWifiBand(version, model);
+  result.grantWifiBandRead5 = grantWifiBand(version, model);
+  result.grantWifiBandEdit2 = grantWifiBand(version, model);
+  result.grantWifiBandEdit5 = grantWifiBand(version, model);
   result.grantWifiBandAuto2 = grantWifiBandAuto(version, model);
   result.grantWifiBandAuto5 = grantWifiBandAuto(version, model);
   result.grantWifi5ChannelList = [36, 40, 44, 48, 149, 153, 157, 161, 165];
