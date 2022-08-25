@@ -1770,7 +1770,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantLanEdit: cpePermissions.lan.configWrite,
     grantLanGwEdit: cpePermissions.lan.configWrite,
     grantLanDevices: cpePermissions.lan.listLANDevices,
-    grantSiteSurvey: false,
+    grantSiteSurvey: cpePermissions.features.siteSurvey,
     grantUpnp: false,
     grantSpeedTest: cpePermissions.features.speedTest,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,

@@ -43,6 +43,7 @@ basicCPEModel.modelPermissions = function() {
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs
+      siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
       upnp: false, // will enable upnp configs (to be implemented)
@@ -637,6 +638,10 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+      },
+      sitesurvey: {
+        root: 'InternetGatewayDevice.X_ITBS_WiFi.NeighboringWiFiDiagnostic',
+        diag_state: 'DiagnosticsState',
       },
     },
   };
