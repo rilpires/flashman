@@ -21,6 +21,7 @@
 	"acsPingError": "Error: Could not fire TR-069 ping measure ({{errorline}})",
 	"acsSpeedTestFileUnavailable": "Error: Could not get speedtest measure file ({{errorline}})",
 	"acsSpeedTestError": "Error: Could not fire TR-069 speedtest ({{errorline}})",
+	"acsSiteSurveyError": "Error: Could not fire TR-069 site survey ({{errorline}})",
 	"nothingToReport": "None to report ({{errorline}})",
 	"noMoreTr069Licences": "Your account is out of licenses for TR-069 CPEs left. Please contact your sales representative ({{errorline}})",
 	"tr069LicencesLeft": "Your account has only {{n}} CPE TR-069 licenses left. Please contact your sales representative ({{errorline}})",

@@ -21,6 +21,7 @@
 	"acsPingError": "Error: no se pudo activar la medida de ping TR-069 ({{errorline}})",
 	"acsSpeedTestFileUnavailable": "Error: no se pudo obtener el archivo de medida más rápido ({{errorline}})",
 	"acsSpeedTestError": "Error: no se pudo activar la prueba de velocidad TR-069 ({{errorline}})",
+	"acsSiteSurveyError": "Error: No se pudo disparar la inspección del sitio TR-069 ({{errorline}})",
 	"nothingToReport": "Ninguno para informar ({{errorline}})",
 	"noMoreTr069Licences": "Su cuenta no tiene licencias para TR-069 CPE. Comuníquese con su representante de ventas ({{errorline}})",
 	"tr069LicencesLeft": "A su cuenta solo le quedan {{n}} licencias CPE TR-069. Comuníquese con su representante de ventas ({{errorline}})",
