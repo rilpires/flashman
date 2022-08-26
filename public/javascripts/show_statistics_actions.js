@@ -38,7 +38,7 @@ anlixDocumentReady.add(function() {
   const refreshStatistics = function(deviceId) {
     $('#btn-statistics-modal-refresh').prop('disabled', true);
     $.ajax({
-      url: '/devicelist/command/' + deviceId + '/statistics',
+      url: '/devicelist/command/' + deviceId + '/wanbytes',
       type: 'post',
       dataType: 'json',
       success: function(res) {
