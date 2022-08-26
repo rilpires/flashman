@@ -22,6 +22,7 @@ phyhomeModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceHasAssocTree = false;
   return permissions;
 };
 
