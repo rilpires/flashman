@@ -1657,9 +1657,7 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += devicesAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) &&
-              grantSiteSurvey
-          ) {
+          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
             sideMenu[idxMenu] += siteSurveyAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
