@@ -9,7 +9,6 @@ dlinkModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.wifi.dualBand = false;
-  permissions.lan.LANDeviceHasAssocTree = false;
   permissions.firmwareUpgrades = {
     '3.0.7': [],
   };
