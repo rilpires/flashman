@@ -163,6 +163,7 @@ anlixDocumentReady.add(function() {
   $('#hosts-list').selectize(selectizeOptionsHosts);
 
   $(document).on('click', '.btn-ping-test-modal', function(event) {
+    $('#hosts-list')[0].selectize.clear();
     getDefaultPingHosts(event);
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
