@@ -936,7 +936,7 @@
 	"connectedDevicesInformation": "Information About Connected Devices",
 	"neighboringNetworksInformation": "Information about Surrounding Networks",
 	"speedTestInformation": "Speed Measurement Information",
-	"wanTrafficPlotsAccess": "Access to WAN Traffic Graphs",
+	"cpeStatisticsPlotsAccess": "Access to CPE Statistics",
 	"vlanInformation": "VLAN Information",
 	"firmwareUpdatePermissions": "Firmware Update Permissions",
 	"firmwareManagementControl": "Firmware Management Control",
