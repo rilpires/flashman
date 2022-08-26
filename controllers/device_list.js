@@ -1309,13 +1309,13 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
         } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForWanBytesNotification(
+            sio.anlixWaitForStatisticsNotification(
               req.sessionID,
               req.params.id.toUpperCase(),
             );
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestStatistics(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }

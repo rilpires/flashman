@@ -1,0 +1,85 @@
+#statistics.modal.fade(tabindex="-1", role="dialog")
+  .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+    .modal-content
+      .modal-header
+        p.heading.lead
+          span.fas.fa-chart-line.fa-lg
+          strong &nbsp; #{t('statisticsFor')}&nbsp;
+          strong(name="statistics-modal-visual" id="statistics-modal-visual")
+          span.d-none(name="statistics-modal-hlabel" id="statistics-modal-hlabel")
+        button.close(type="button", data-dismiss="modal")
+          span.white-text &times;
+      .modal-body.pt-2
+        .row
+          .col.p-0.text-right
+            button#btn-statistics-modal-refresh.btn.btn-primary.btn-sm.m-1
+              i.fas.fa-sync-alt.fa-lg
+              span &nbsp; #{t('Update')}
+        .row#statistics-modal-placeholder-ready
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span= t('updateDataToView')
+        .row#statistics-modal-placeholder-progress
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-spinner.fa-pulse.fa-4x
+              br
+              br
+              span= t('updatingInformations...')
+        .row#statistics-modal-placeholder-none
+          .col
+            h2.text-center.grey-text.mb-3
+              i.fas.fa-exchange-alt.fa-4x
+              br
+              br
+              span= t('noDataFound')
+
+        //- Results Section
+        #statistics-results
+
+          //- Resources Section
+          #resources-section
+            //- Resources Tittle
+            h5.text-muted.m-0= t('resources')
+            hr.mt-1.mb-3
+
+            .row.pt-1
+              //- CPU Used
+              .col-6
+                h6.text-muted.m-0= t('cpuUsage')
+                .row.align-items-center
+                  .col-10
+                    .progress(style='height:30px;')
+                      #resource-cpu-usage-bar.progress-bar(
+                        style='height:30px;'
+                      )
+                  .col-2.pl-0
+                    h5#resource-cpu-usage-value.text-muted.m-0= '100%'
+
+              //- Memory Used
+              .col-6
+                h6.text-muted.m-0= t('memoryUsage')
+                .row.align-items-center
+                  .col-10
+                    .progress(style='height:30px;')
+                      #resource-memory-usage-bar.progress-bar(style='height:30px;')
+                  .col-2.pl-0
+                    h5#resource-memory-usage-value.text-muted.m-0= '100%'
+
+
+          //- WAN Bytes Section
+          #wan-bytes-section.pt-4
+            //- WAN Bytes Tittle
+            h5.text-muted.m-0= t('wanBytes')
+            hr.mt-1.mb-3
+
+            //- Download Graph
+            #wan-bytes-down-graph
+            
+            hr
+
+            //- Upload Graph
+            #wan-bytes-up-graph
