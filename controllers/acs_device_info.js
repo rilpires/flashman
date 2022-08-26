@@ -1543,7 +1543,7 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
-acsDeviceInfoController.requestWanBytes = function(device) {
+acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;

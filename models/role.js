@@ -36,7 +36,7 @@ let roleSchema = new mongoose.Schema({
   grantOpmodeEdit: {type: Boolean, required: true, default: false},
   grantVlan: {type: Number, required: true, default: 0},
   grantVlanProfileEdit: {type: Boolean, required: true, default: false},
-  grantWanBytesView: {type: Boolean, required: true, default: false},
+  grantStatisticsView: {type: Boolean, required: true, default: false},
   grantCsvExport: {type: Boolean, required: true, default: true},
   // 2 is the complete search mode, 1 is simple search, 0 no search available
   grantSearchLevel: {type: Number, required: true, default: 2},

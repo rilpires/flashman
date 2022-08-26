@@ -51,7 +51,7 @@ describe('DeviceVersion API', () => {
     expect(permissions.grantBlockDevices).toStrictEqual(true);
     expect(permissions.grantOpmode).toStrictEqual(true);
     expect(permissions.grantVlanSupport).toStrictEqual(false);
-    expect(permissions.grantWanBytesSupport).toStrictEqual(true);
+    expect(permissions.grantStatisticsSupport).toStrictEqual(true);
     expect(permissions.grantPonSignalSupport).toStrictEqual(false);
     expect(permissions.grantMeshMode).toStrictEqual(true);
     expect(permissions.grantUpdateAck).toStrictEqual(true);
