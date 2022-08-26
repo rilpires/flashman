@@ -73,6 +73,15 @@ intelbrasModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+intelbrasModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === '802.11') {
+    return 'wifi';
+  }
+  return 'cable';
+};
+
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
@@ -84,6 +93,8 @@ intelbrasModel.getModelFields = function() {
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
+  fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
+    '*.InterfaceType';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
