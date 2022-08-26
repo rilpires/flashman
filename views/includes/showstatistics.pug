@@ -9,10 +9,10 @@
           span.d-none(name="statistics-modal-hlabel" id="statistics-modal-hlabel")
         button.close(type="button", data-dismiss="modal")
           span.white-text &times;
-      .modal-body
+      .modal-body.pt-2
         .row
           .col.p-0.text-right
-            button#btn-statistics-modal-refresh.btn.btn-primary.btn-sm
+            button#btn-statistics-modal-refresh.btn.btn-primary.btn-sm.m-1
               i.fas.fa-sync-alt.fa-lg
               span &nbsp; #{t('Update')}
         .row#statistics-modal-placeholder-ready
@@ -44,7 +44,7 @@
           #resources-section
             //- Resources Tittle
             h5.text-muted.m-0= t('resources')
-            hr.my-1
+            hr.mt-1.mb-3
 
             .row.pt-1
               //- CPU Used
