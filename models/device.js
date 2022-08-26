@@ -226,12 +226,6 @@ let deviceSchema = new Schema({
   // Store hosts to measure against
   ping_hosts: {
     type: [String],
-    default: [
-      'www.google.com',
-      'www.youtube.com',
-      'www.facebook.com',
-      'www.instagram.com',
-    ],
   },
   // When ping_hosts has at least one value or speedtest_url != '',
   // the next ping/speedtest result should NOT be sent to the usual
@@ -305,15 +299,18 @@ let deviceSchema = new Schema({
     ipv6_enabled: {type: Boolean, default: false},
     ipv6_mode: {type: String, default: ''},
   },
-
+  // They are expressed in percentage, without %
+  // The value of 101 is invalid, used to represent a not setted state
+  cpu_usage: {type: Number, min: 0, max: 101, default: 101},
+  memory_usage: {type: Number, min: 0, max: 101, default: 101},
   // Traceroute
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 30},
   traceroute_numberProbes: {type: Number, min: 1, max: 10, default: 3},
   traceroute_max_wait: {type: Number, min: 1, max: 5, default: 3},
-  // This field is used by flashboard, not needed by flashman's frontend
+  // This field is used by other softwares, not needed by flashman's frontend
   traceroute_results: [{
-    all_hops_tested: {type: Boolean, deafult: false},
-    reached_destination: {type: Boolean, deafult: false},
+    all_hops_tested: {type: Boolean, default: false},
+    reached_destination: {type: Boolean, default: false},
     address: {type: String, default: '---'},
     tries_per_hop: {type: Number, default: 0},
     hops: [{
@@ -346,7 +343,9 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
   });
 };
 
-deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
+deviceSchema.statics.findByMacOrSerial = function(
+  id, useLean=false, projection=null,
+) {
   let query;
   if (Array.isArray(id)) {
     let regexList = [];
@@ -365,12 +364,14 @@ deviceSchema.statics.findByMacOrSerial = function(id, useLean=false) {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}).lean(); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection).lean();
   } else {
     return this.find({$or: [
       {'_id': query}, // mac address
       {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}); // mac address
+      {'alt_uid_tr069': query}]}, // mac address
+      projection);
   }
 };
 

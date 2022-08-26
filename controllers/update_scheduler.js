@@ -145,7 +145,7 @@ const getConfig = async function(lean=true, needActive=true) {
 const getDevice = async function(mac, lean=false) {
   let device = null;
   const projection = {
-    lan_devices: false, port_mapping: false, ap_survey: false,
+    port_mapping: false, ap_survey: false,
     pingtest_results: false, speedtest_results: false,
     firstboot_log: false, lastboot_log: false,
   };
@@ -722,9 +722,11 @@ scheduleController.getDevicesReleases = async function(req, res) {
               let slaveDevice = matchedDevices.find(
                 (d) => d._id === device.mesh_slaves[i],
               );
-              let slaveModel = slaveDevice.model.replace('N/', '');
-              if (!models.includes(slaveModel)) {
-                models.push(slaveModel);
+              if (slaveDevice && ('model' in slaveDevice)) {
+                let slaveModel = slaveDevice.model.replace('N/', '');
+                if (!models.includes(slaveModel)) {
+                  models.push(slaveModel);
+                }
               }
             }
             meshNetworks.push({

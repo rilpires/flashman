@@ -7,7 +7,7 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145V5'};
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -17,6 +17,9 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 850;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
+  ];
   permissions.mesh.bssidOffsets2Ghz = [
     '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
   ];

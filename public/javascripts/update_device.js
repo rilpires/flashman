@@ -1,3 +1,5 @@
+const t = i18next.t;
+
 import {displayAlertMsg} from './common_actions.js';
 
 let updateDevice = function(event) {
@@ -6,24 +8,19 @@ let updateDevice = function(event) {
   let row = $(event.target).closest('tr');
   let slaveCount = row.data('slave-count');
 
-  let warningText = 'A atualização de firmware dura aproximadamente 3 ' +
-      'minutos. O CPE não deverá ser desligado durante esse procedimento. ' +
-      'Comunique seu usuário antes de prosseguir.';
+  let warningText = t('updateSingleDeviceTimeWarning');
   if (slaveCount > 0) {
-    warningText = 'A atualização de firmware dura aproximadamente 3 minutos ' +
-    'para cada CPE. Esta atualização afetará todos os '+(slaveCount+1)+
-    ' roteadores da rede mesh, e durará cerca de '+(slaveCount+1)*3+
-    ' minutos no total. Nenhum CPE deverá ser desligado durante esse '+
-    'procedimento. Comunique seu usuário antes de prosseguir.';
+    warningText = t('updateSlaveDeviceTimeWarning', {slaveCount: slaveCount+1,
+      slaveCount3: (slaveCount+1)*3});
   }
 
-  swal({
-    type: 'warning',
-    title: 'Atenção!',
+  swal.fire({
+    icon: 'warning',
+    title: t('Attention!'),
     text: warningText,
-    confirmButtonText: 'Prosseguir',
+    confirmButtonText: t('Proceed'),
     confirmButtonColor: '#4db6ac',
-    cancelButtonText: 'Cancelar',
+    cancelButtonText: t('Cancel'),
     cancelButtonColor: '#f2ab63',
     showCancelButton: true,
   }).then(function(result) {
@@ -33,6 +30,15 @@ let updateDevice = function(event) {
       // Disable selection
       let dropdownBtn = selBtnGroup.find('.dropdown-toggle');
       dropdownBtn.attr('disabled', true);
+      // Disable all disassoc buttons
+      if (row.next().data('slaves').length > 0) {
+        let slaveList = JSON.parse(row.next()
+          .data('slaves').replaceAll('$', '"'));
+        slaveList.forEach((s) => {
+          $('tr[id="'+s+'"]').find('.btn-disassoc')
+            .attr('disabled', true);
+        });
+      }
       // Submit update
       let id = row.prop('id');
       $.ajax({
@@ -48,10 +54,10 @@ let updateDevice = function(event) {
             upgradeStatus.find('.status-waiting').removeClass('d-none');
             if (slaveCount > 0) {
               upgradeStatus.find('.status-waiting').attr('title',
-                `Atualizando CPEs...`);
+                t('updatingCpes'));
             } else {
               upgradeStatus.find('.status-waiting').attr('title',
-                'Atualizando CPE...');
+                t('updatingCpe'));
             }
             // Activate cancel button
             selBtnGroup.siblings('.btn-cancel-update').attr('disabled', false);
@@ -79,6 +85,15 @@ let cancelDeviceUpdate = function(event) {
   let row = $(event.target).closest('tr');
   let id = row.prop('id');
   let slaveCount = row.data('slave-count');
+  // Enable all disassoc buttons
+  if (row.next().data('slaves').length > 0) {
+    let slaveList = JSON.parse(row.next()
+      .data('slaves').replaceAll('$', '"'));
+    slaveList.forEach((s) => {
+      $('tr[id="'+s+'"]').find('.btn-disassoc')
+        .attr('disabled', false);
+    });
+  }
   $.ajax({
     url: '/devicelist/update/' + id + '/' + selRelease,
     type: 'post',
@@ -87,7 +102,7 @@ let cancelDeviceUpdate = function(event) {
     success: function(res) {
       if (res.success) {
         // Activate dropdown
-        selBtnGroup.find('.dropdown-toggle .selected').text('Escolher');
+        selBtnGroup.find('.dropdown-toggle .selected').text(t('Choose'));
         selBtnGroup.find('.dropdown-toggle').attr('disabled', false);
         // Deactivate waiting status
         let upgradeStatus = selBtnGroup.find('span.upgrade-status');
@@ -96,21 +111,18 @@ let cancelDeviceUpdate = function(event) {
         upgradeStatus.find('.status-ok').addClass('d-none');
         upgradeStatus.find('.status-error').addClass('d-none');
         if (slaveCount > 0) {
-          swal({
-            type: 'warning',
-            title: 'Atenção!',
-            text: 'O processo de atualização da rede mesh foi interrompido. '+
-              'Não recomendamos deixar os CPEs mesh da mesma rede em '+
-              'versões diferentes, portanto certifique-se que esta '+
-              'atualização seja retomada em breve.',
-            confirmButtonText: 'OK',
+          swal.fire({
+            icon: 'warning',
+            title: t('Attention!'),
+            text: t('updateDeviceMeshError'),
+            confirmButtonText: t('OK'),
             confirmButtonColor: '#4db6ac',
           });
         }
       }
     },
     error: function(xhr, status, error) {
-      selBtnGroup.find('.dropdown-toggle .selected').text('Escolher');
+      selBtnGroup.find('.dropdown-toggle .selected').text(t('Choose'));
       selBtnGroup.find('.dropdown-toggle').attr('disabled', false);
       // Deactivate waiting status
       let upgradeStatus = selBtnGroup.find('span.upgrade-status');
@@ -142,15 +154,15 @@ $(function() {
         // Topology errors
         let msg;
         if (errorStatus == 6) {
-          msg = 'Houve um erro ao coletar a topologia dos dispositivos. ';
+          msg = t('errorDuringTopologyCollect');
         } else {
-          msg = 'Houve um erro ao validar a topologia dos dispositivos. ';
+          msg = t('errorDuringTopologyValidation');
         }
-        swal({
-          type: 'error',
-          title: 'Erro',
-          text: msg + 'Cancele o procedimento e tente novamente.',
-          confirmButtonText: 'Cancelar',
+        swal.fire({
+          icon: 'error',
+          title: t('Error'),
+          text: msg + t('errorOccurredTryAgain'),
+          confirmButtonText: t('Cancel'),
           confirmButtonColor: '#4db6ac',
         }).then((result)=>{
           if (result.value) {
@@ -160,15 +172,13 @@ $(function() {
         });
       } else {
         let errorMac = errorAnchor.data('mac');
-        swal({
-          type: 'error',
-          title: 'Erro',
-          text: 'Houve um erro ao realizar a transferência do firmware do ' +
-            'CPE com o MAC ' + errorMac + '. Por favor tente ' +
-            'novamente ou cancele o procedimento.',
-          confirmButtonText: 'Tentar novamente',
+        swal.fire({
+          icon: 'error',
+          title: t('Error'),
+          text: t('updateDeviceFirmwareErrorWithMAC', {errorMac: errorMac}),
+          confirmButtonText: t('tryAgain'),
           confirmButtonColor: '#4db6ac',
-          cancelButtonText: 'Cancelar',
+          cancelButtonText: t('Cancel'),
           cancelButtonColor: '#f2ab63',
           showCancelButton: true,
         }).then((result)=>{
@@ -192,12 +202,11 @@ $(function() {
         });
       }
     } else {
-      swal({
-        type: 'error',
-        title: 'Erro',
-        text: 'Houve um erro ao realizar a transferência do firmware. ' +
-        'Cancele o procedimento e tente novamente.',
-        confirmButtonText: 'Ok',
+      swal.fire({
+        icon: 'error',
+        title: t('Error'),
+        text: t('firmwareDownloadError') + t('errorOccurredTryAgain'),
+        confirmButtonText: t('Ok'),
         confirmButtonColor: '#4db6ac',
       });
     }

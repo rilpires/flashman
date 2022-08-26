@@ -32,9 +32,9 @@ const validateEditDeviceMesh = function(event) {
 };
 
 const openErrorSwal = function(message) {
-  swal({
-    type: 'error',
+  swal.fire({
     title: t('Error'),
+    icon: 'error',
     text: message,
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',
@@ -77,8 +77,10 @@ let validateEditDevice = function(event) {
   let mac = row.data('deviceid');
   let isTR069 = row.data('is-tr069');
   let validateWifi = row.data('validate-wifi');
+  let validateWifiMode = row.data('validate-wifi-mode');
   let validateWifiDiacritics = row.data('validate-wifi-diacritics');
-  let validateWifiBand = row.data('validate-wifi-band');
+  let validateWifiBand2 = row.data('validate-wifi-band-2ghz');
+  let validateWifiBand5 = row.data('validate-wifi-band-5ghz');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
   let validatePppoe = row.data('validatePppoe');
@@ -122,6 +124,8 @@ let validateEditDevice = function(event) {
                                 index.toString()).html();
   let externalReferenceData = $('#edit_external_reference-' +
                                 index.toString()).val();
+  let externalReference = {kind: externalReferenceType,
+                           data: externalReferenceData};
   let validateBridge =
     $('#edit_opmode-' + index.toString()).val() === 'bridge_mode';
   let bridgeEnabled = validateBridge;
@@ -179,6 +183,7 @@ let validateEditDevice = function(event) {
       field: '#edit_opmode_fixip_gateway-' + index.toString()},
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
     mesh_mode: {field: '#edit_meshMode-' + index.toString()},
+    external_reference: {field: '#edit_external_reference-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -218,9 +223,11 @@ let validateEditDevice = function(event) {
     );
     genericValidate(channel, validator.validateChannel, errors.channel);
   }
-  if (validateWifiBand) {
-    genericValidate(band, validator.validateBand, errors.band);
+  if (validateWifiMode) {
     genericValidate(mode, validator.validateMode, errors.mode);
+  }
+  if (validateWifiBand2) {
+    genericValidate(band, validator.validateBand, errors.band);
   }
   if (validateWifiPower) {
     genericValidate(power, validator.validatePower, errors.power);
@@ -239,12 +246,30 @@ let validateEditDevice = function(event) {
       (s)=>validator.validateSSID(s, validateWifiDiacritics),
       errors.ssid5ghz,
     );
-    genericValidate(channel5ghz,
-                    validator.validateChannel, errors.channel5ghz);
-    genericValidate(band5ghz,
-                    validator.validateBand, errors.band5ghz);
-    genericValidate(mode5ghz,
-                    validator.validateMode, errors.mode5ghz);
+    // There is no bulletproof way of validating the 5GHz channel on the front
+    // end. The user could maliciously alter the html in ways to break our
+    // validation, since each device has a different 5ghz channel list that
+    // would need to be stored somewhere client side. So we leave the validation
+    // to the backend, and simply check for the union of all valid 5ghz channels
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(
+        ch, [
+          '36', '40', '44', '48', '52', '56', '60', '64', '100', '104', '108',
+          '112', '116', '120', '124', '128', '132', '136', '140', '144', '149',
+          '153', '157', '161', '165',
+        ],
+      ),
+      errors.channel5ghz,
+    );
+    if (validateWifiBand5) {
+      genericValidate(band5ghz,
+                      validator.validateBand, errors.band5ghz);
+    }
+    if (validateWifiMode) {
+      genericValidate(mode5ghz,
+                      validator.validateMode, errors.mode5ghz);
+    }
     if (validateWifiPower) {
       genericValidate(power5ghz, validator.validatePower, errors.power5ghz);
     }
@@ -275,10 +300,7 @@ let validateEditDevice = function(event) {
     // If no errors present, send to backend
     let data = {'content': {
       'connection_type': (pppoe) ? 'pppoe' : 'dhcp',
-      'external_reference': {
-        kind: externalReferenceType,
-        data: externalReferenceData,
-      },
+      'external_reference': externalReference,
       'slave_custom_configs': JSON.stringify(slaveCustomConfigs),
     }};
     if (validatePppoe) {
@@ -293,9 +315,11 @@ let validateEditDevice = function(event) {
       data.content.wifi_password = (password) ? password : '';
       data.content.wifi_channel = channel;
     }
-    if (validateWifiBand) {
-      data.content.wifi_band = band;
+    if (validateWifiMode) {
       data.content.wifi_mode = mode;
+    }
+    if (validateWifiBand2) {
+      data.content.wifi_band = band;
     }
     if (validateWifiPower) {
       data.content.wifi_power = power;
@@ -304,8 +328,12 @@ let validateEditDevice = function(event) {
       data.content.wifi_ssid_5ghz = ssid5ghz;
       data.content.wifi_password_5ghz = (password5ghz) ? password5ghz : '';
       data.content.wifi_channel_5ghz = channel5ghz;
-      data.content.wifi_band_5ghz = band5ghz;
-      data.content.wifi_mode_5ghz = mode5ghz;
+      if (validateWifiBand5) {
+        data.content.wifi_band_5ghz = band5ghz;
+      }
+      if (validateWifiMode) {
+        data.content.wifi_mode_5ghz = mode5ghz;
+      }
       if (validateWifiPower) {
         data.content.wifi_power_5ghz = power5ghz;
       }
@@ -370,13 +398,16 @@ let validateEditDevice = function(event) {
             mode5ghz: errors.mode5ghz,
             power5ghz: errors.power5ghz,
             mesh_mode: errors.mesh_mode,
+            external_reference: errors.external_reference,
           };
+          let errorMsgs = '';
           resp.errors.forEach(function(pair) {
             let key = Object.keys(pair)[0];
             keyToError[key].messages.push(pair[key]);
+            errorMsgs += pair[key];
           });
           renderEditErrors(errors);
-          openErrorSwal(resp.message);
+          openErrorSwal(errorMsgs);
           switchSubmitButton(index);
         } else if ('success' in resp && !resp.success) {
           openErrorSwal(resp.message);

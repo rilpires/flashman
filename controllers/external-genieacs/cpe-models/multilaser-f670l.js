@@ -7,7 +7,7 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F670L'};
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -15,6 +15,12 @@ multilaserModel.modelPermissions = function() {
   permissions.lan.listLANDevicesSNR = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128,
+    149, 153, 157, 161,
+  ];
+  permissions.wifi.modeWrite = false;
   permissions.mesh.bssidOffsets2Ghz = [
     '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
   ];

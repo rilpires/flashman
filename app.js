@@ -10,7 +10,6 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
-const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -29,26 +28,6 @@ let packageJson = require('./package.json');
 const runMigrations = require('./migrations');
 
 let app = express();
-
-// Express OpenAPI docs generator handling responses first
-const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
-const isOnProduction = (process.env.production === 'true');
-if (!isOnProduction) {
-  expressOasGenerator.handleResponses(
-    app,
-    {
-      mongooseModels: mongoose.modelNames(),
-      swaggerDocumentOptions: {
-        customCss: `
-          .swagger-ui .topbar {
-            background-color: #4db6ac;
-          }
-        `},
-      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
-      alwaysServeDocs: false,
-    },
-  );
-}
 
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
@@ -208,11 +187,6 @@ app.use(passport.session());
 app.use(fileUpload());
 
 app.use('/', index);
-
-// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
-if (!isOnProduction) {
-  expressOasGenerator.handleRequests();
-}
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

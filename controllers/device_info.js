@@ -192,11 +192,13 @@ const createRegistry = async function(req, res) {
   genericValidate(channel, validator.validateChannel,
                   'channel', null, errors);
 
-  if (permissions.grantWifiBand) {
-    genericValidate(band, validator.validateBand,
-                    'band', null, errors);
+  if (permissions.grantWifiModeEdit) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
+  }
+  if (permissions.grantWifiBandEdit2) {
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
   }
   if (permissions.grantWifiPowerHiddenIpv6Box) {
     genericValidate(power, validator.validatePower,
@@ -213,17 +215,24 @@ const createRegistry = async function(req, res) {
       (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
       'password5ghz', null, errors,
     );
-    genericValidate(channel5ghz, validator.validateChannel,
-                    'channel5ghz', null, errors);
-    genericValidate(band5ghz, validator.validateBand,
-                    'band5ghz', null, errors);
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
+      'channel5ghz', null, errors,
+    );
+    if (permissions.grantWifiBandEdit5) {
+      genericValidate(band5ghz, validator.validateBand,
+                      'band5ghz', null, errors);
+    }
 
     // Fix for devices that uses 11a as 11ac mode
     if (mode5ghz == '11a') {
       mode5ghz = '11ac';
     }
-    genericValidate(mode5ghz, validator.validateMode,
-                    'mode5ghz', null, errors);
+    if (permissions.grantWifiModeEdit) {
+      genericValidate(mode5ghz, validator.validateMode,
+                      'mode5ghz', null, errors);
+    }
     if (permissions.grantWifiPowerHiddenIpv6Box) {
       genericValidate(power5ghz, validator.validatePower,
                       'power5ghz', null, errors);
@@ -243,6 +252,17 @@ const createRegistry = async function(req, res) {
       genericValidate(bridgeFixDNS, validator.validateIP,
                       'bridge_fix_ip', null, errors);
     }
+  }
+
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
   }
 
   if (errors.length < 1) {
@@ -303,6 +323,7 @@ const createRegistry = async function(req, res) {
       'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
+      'ping_hosts': defaultPingHosts,
     };
     if (vlanParsed !== undefined) {
       deviceObj.vlan = vlanParsed;
@@ -606,8 +627,10 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             sentVersion, is5ghzCapable, (bodyModel + bodyModelVer),
           );
 
-          if ( permissionsSentVersion.grantWifiBand &&
-              !permissionsCurrVersion.grantWifiBand) {
+          if (
+            permissionsSentVersion.grantWifiModeEdit &&
+            !permissionsCurrVersion.grantWifiModeEdit
+          ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();
             let mode =
@@ -646,8 +669,13 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
-            genericValidate(channel5ghz, validator.validateChannel,
-                            'channel5ghz', null, errors);
+            genericValidate(
+              channel5ghz,
+              (ch)=>validator.validateChannel(
+                ch, permissionsSentVersion.grantWifi5ChannelList,
+              ),
+              'channel5ghz', null, errors,
+            );
             genericValidate(band5ghz, validator.validateBand,
                             'band5ghz', null, errors);
 
@@ -779,6 +807,23 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
+
+        // CPU and Memory usage
+        let cpuUsage = (
+          parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+        );
+        let memoryUsage = (
+          parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+        );
+
+        // Check if CPU and Memory came valid
+        if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+          deviceSetQuery.cpu_usage = cpuUsage;
+        }
+
+        if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+          deviceSetQuery.memory_usage = memoryUsage;
+        }
 
         let sentWifiLastChannel =
         util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
@@ -1508,7 +1553,8 @@ deviceInfoController.receiveDevices = async function(req, res) {
     const permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // In mesh v2 there is a new layout of the flashbox response
-    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+    const meshV2 = (permissions.grantMeshV2PrimaryModeCable ||
+      permissions.grantMeshV2PrimaryModeWifi ||
       permissions.grantMeshV2SecondaryMode);
 
     if ('mesh_routers' in req.body) {
@@ -2203,12 +2249,31 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
 
+    // CPU and Memory usage
+    if (util.isJSONObject(req.body.resources)) {
+      let cpuUsage = (
+        parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+      );
+      let memoryUsage = (
+        parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+      );
+
+      // Check if CPU and Memory came valid
+      if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+        matchedDevice.cpu_usage = cpuUsage;
+      }
+
+      if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+        matchedDevice.memory_usage = memoryUsage;
+      }
+    }
+
     // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});
     });
     sio.anlixSendUpStatusNotification(id, req.body);
-    sio.anlixSendWanBytesNotification(id, req.body);
+    sio.anlixSendStatisticsNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
