@@ -1038,7 +1038,7 @@
 	"noFactoryCredentialConfigured": "No hay credenciales web personalizadas configuradas",
 	"invalidModel": "Modelo no valido",
 	"invalidManufacturer": "Fabricante no valido",
-	"tracerouteTest": "Trazar ruta",
+	"tracerouteTest": "Teste de ruta",
 	"tracerouteTestFor": "Trazar una ruta desde",
 	"updateSingleDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos. El CPE no debe apagarse durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
 	"updateSlaveDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos para cada CPE. Esta actualización afectará a todos los {{slaveCount}} enrutadores de la red en malla y tardará unos {{slaveCount3}} minutos en total. No se debe apagar ningún CPE durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",

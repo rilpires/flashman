@@ -1038,7 +1038,7 @@
 	"noFactoryCredentialConfigured": "Nenhuma credencial web personalizada configurada",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido",
-	"tracerouteTest": "Traçar rota",
+	"tracerouteTest": "Teste de rota",
 	"tracerouteTestFor": "Traçar rota a partir de",
 	"updateSingleDeviceTimeWarning": "A atualização de firmware dura aproximadamente 3 minutos. O CPE não deverá ser desligado durante esse procedimento. Comunique seu cliente antes de prosseguir.",
 	"updateSlaveDeviceTimeWarning": "A atualização de firmware dura aproximadamente 3 minutos para cada CPE. Esta atualização afetará todos os {{slaveCount}} roteadores da rede mesh, e durará cerca de {{slaveCount3}} minutos no total. Nenhum CPE deverá ser desligado durante esse procedimento. Comunique seu cliente antes de prosseguir.",

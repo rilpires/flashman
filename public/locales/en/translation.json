@@ -1030,7 +1030,7 @@
 	"noFactoryCredentialConfigured": "No custom web credentials configured",
 	"invalidModel": "Invalid model",
 	"invalidManufacturer": "Invalid manufacturer",
-	"tracerouteTest": "Trace route",
+	"tracerouteTest": "Route test",
 	"tracerouteTestFor": "Trace route from",
 	"updateSingleDeviceTimeWarning": "The firmware update takes approximately 3 minutes. The CPE should not be turned off during this procedure. Inform your customer before proceeding.",
 	"updateSlaveDeviceTimeWarning": "The firmware update takes approximately 3 minutes for each CPE. This update will affect all {{slaveCount}} routers in the mesh network, and will take about {{slaveCount3}} minutes in total. No CPE should be turned off during this procedure. Inform your customer before proceeding.",
