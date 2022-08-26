@@ -1792,7 +1792,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSiteSurvey: false,
     grantUpnp: false,
     grantSpeedTest: cpePermissions.features.speedTest,
-    grantRawSpeedTest: false,
+    grantRawSpeedTest: true,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
