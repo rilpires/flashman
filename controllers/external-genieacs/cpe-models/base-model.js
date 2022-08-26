@@ -58,13 +58,14 @@ basicCPEModel.modelPermissions = function() {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
-      listLANDevicesSNR: false, // has explicit SNR field on connected devices
+      LANDeviceCanTrustActive: true, // has host active field trustworthy
+      LANDeviceHasSNR: false, // has explicit SNR field on connected devices
+      LANDeviceHasAssocTree: true, // devices that have the Assoc Devices tree
+      LANDeviceSkipIfNoWifiMode: false, // will skip devices with no host mode
+                                      // info (developed for Nokia models)
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
-      skipIfNoWifiMode: false, // will skip devices with no host mode info
-                               // (developed for Nokia models)
-      canTrustActive: true, // flag to handle devices that can trust Active
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
