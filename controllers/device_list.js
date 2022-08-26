@@ -457,6 +457,30 @@ deviceListController.sendGenericTraceRoute
   return await initiateTracerouteTest(device, username, sessionID);
 };
 
+deviceListController.sendGenericSiteSurvey
+  = async function(device, username, sessionID) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
+  }
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'sitesurvey',
+    stage: 'initiating',
+    customized: false,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  return await initiateSiteSurvey(device, username, sessionID);
+};
+
 // This should be called right after sendCustomPingTest or sendGenericPingTest
 // Common validations and device.save goes here
 const initiatePingCommand = async function(device, username, sessionID) {
@@ -532,6 +556,35 @@ const initiateSpeedTest = async function(device, username, sessionID) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], username);
     }
+    return {success: true};
+  }
+};
+
+// This should be called right after sendCustomPingTest or sendGenericPingTest
+// Common validations and device.save goes here
+const initiateSiteSurvey = async function(device, username, sessionID) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions.grantSiteSurvey) {
+    return {
+      success: false,
+      message: t('cpeWithoutCommand'),
+    };
+  }
+
+  // Validated from here. Saving device & validating stuffs
+  await device.save().catch((err) => {
+    console.log('Error saving device after ping command: ' + err);
+  });
+  if (sessionID && sio.anlixConnections[sessionID]) {
+    sio.anlixWaitForSiteSurveyNotification(
+      sessionID, device._id.toUpperCase(),
+    );
+  }
+
+  if (device.use_tr069) {
+    return await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
+  } else {
+    mqtt.anlixMessageRouterSiteSurvey(device._id.toUpperCase());
     return {success: true};
   }
 };
@@ -1686,15 +1739,7 @@ deviceListController.sendMqttMsg = async function(req, res) {
             mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
           });
         } else if (msgtype === 'sitesurvey') {
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForSiteSurveyNotification(
-              req.sessionID, req.params.id.toUpperCase());
-          }
-          if (device && device.use_tr069) {
-            acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
-          } else {
-            mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
-          }
+          return await deviceListController.sendGenericSiteSurveyAPI(req, res);
         } else if (msgtype === 'upstatus') {
           let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -4273,6 +4318,18 @@ deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
     matchedDevice = null;
   }
   let commandResponse = await deviceListController.sendGenericTraceRoute(
+    matchedDevice, req.user.name, req.sessionID,
+  );
+  return res.status(200).json(commandResponse);
+};
+deviceListController.sendGenericSiteSurveyAPI = async function(req, res) {
+  let matchedDevice;
+  try {
+    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
+  } catch (e) {
+    matchedDevice = null;
+  }
+  let commandResponse = await deviceListController.sendGenericSiteSurvey(
     matchedDevice, req.user.name, req.sessionID,
   );
   return res.status(200).json(commandResponse);
