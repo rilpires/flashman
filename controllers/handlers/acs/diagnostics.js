@@ -185,9 +185,90 @@ const calculateTraceDiagnostic = async function(
 };
 
 const calculateSiteSurveyDiagnostic = async function(
-  device, cpe, data, pingKeys, pingFields,
+  device, cpe, data, siteSurveyKeys, siteSurveyFields,
 ) {
-  // TO-DO !!!
+  let id = device.acs_id;
+
+  let apsData = getAllNestedKeysFromObject(data,
+    siteSurveyKeys, siteSurveyFields);
+  let diagState = siteSurveyKeys.root + '.' + siteSurveyKeys.diag_state;
+  let outData = [];
+
+  if (['Requested', 'None'].includes(diagState)) return;
+
+  if (['Complete', 'Complete\n'].includes(diagState)) {
+    for (let connApMac in apsData) {
+      if (Object.prototype.hasOwnProperty.call(apsData, connApMac)) {
+        let outDev = {};
+        let upConnApMac = connApMac.toLowerCase();
+        let upConnDev = apsData[upConnApMac];
+        if (!upConnDev) continue;
+
+        let devReg = device.getAPSurveyDevice(upConnApMac);
+        if (upConnDev.freq) {
+          upConnDev.freq = parseInt(upConnDev.freq);
+        }
+        if (upConnDev.signal) {
+          upConnDev.signal = parseInt(upConnDev.signal);
+        }
+        let devWidth=20;
+        let devVHT=false;
+
+        if (upConnDev.largura_HT) {
+          if (upConnDev.largura_HT === 'any') {
+            devWidth = 40;
+          } else {
+            devWidth = parseInt(upConnDev.largura_HT);
+          }
+        }
+
+        if (upConnDev.largura_VHT) {
+          let VHTWifth=parseInt(upConnDev.largura_VHT);
+          if (VHTWifth > 0) {
+            devVHT=true;
+            devWidth = VHTWifth;
+          }
+        }
+
+        if (devReg) {
+          devReg.ssid = upConnDev.SSID;
+          devReg.freq = upConnDev.freq;
+          devReg.signal = upConnDev.signal;
+          devReg.width = devWidth;
+          devReg.VHT = devVHT;
+          devReg.last_seen = Date.now();
+          if (!devReg.first_seen) {
+            devReg.first_seen = Date.now();
+          }
+        } else {
+          device.ap_survey.push({
+            mac: upConnApMac,
+            ssid: upConnDev.SSID,
+            freq: upConnDev.freq,
+            signal: upConnDev.signal,
+            width: devWidth,
+            VHT: devVHT,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
+        outDev.mac = upConnApMac;
+        outData.push(outDev);
+      }
+    }
+    device.last_site_survey = Date.now();
+    await device.save().catch((err) => {
+      console.log('Error saving site survey to database');
+      return;
+    });
+  } else {
+    console.log('Error retrieving site survey data!');
+  }
+  // if someone is waiting for this message, send the information
+  sio.anlixSendSiteSurveyNotifications(id, outData);
+  console.log('Site Survey Receiving for device ' +
+    id + ' successfully.');
+  return;
 };
 
 
@@ -383,7 +464,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let diagnStateField = fields.diagnostics.sitesurvey.root +
+  let diagnStateField = fields.diagnostics.sitesurvey.root + '.' +
                         fields.diagnostics.sitesurvey.diag_state;
 
   let task = {
@@ -429,6 +510,14 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
       down_transports: '',
       full_load_bytes_rec: '',
       full_load_period: '',
+    },
+    sitesurvey: {
+      diag_state: '',
+      mac: '',
+      ssid: '',
+      freq: '',
+      signal: '',
+      channel: '',
     },
   };
 
@@ -489,7 +578,10 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
           await calculateTraceDiagnostic(/* to-do */);
         } else if (permissions.grantSiteSurveyTest && diagType=='sitesurvey') {
-          await calculateSiteSurveyDiagnostic(/* to-do */);
+          await calculateSiteSurveyDiagnostic(
+            device, cpe, data, diagNecessaryKeys.sitesurvey,
+            fields.diagnostics.sitesurvey,
+          );
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
