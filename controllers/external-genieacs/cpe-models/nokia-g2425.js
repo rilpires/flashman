@@ -19,6 +19,7 @@ nokiaModel.modelPermissions = function() {
   ];
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.firmwareUpgrades = {
     '3FE49025IJHK03': [],
