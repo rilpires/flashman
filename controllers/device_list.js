@@ -1220,6 +1220,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'wanbytes':
       case 'waninfo':
       case 'laninfo':
+      case 'traceroute':
       case 'speedtest':
       case 'wps':
       case 'sitesurvey': {
@@ -1350,6 +1351,53 @@ deviceListController.sendMqttMsg = function(req, res) {
           // If does not use TR069 call the mqtt function
           if (device && !device.use_tr069) {
             mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
+          }
+
+        // Traceroute
+        } else if (msgtype === 'traceroute') {
+          // Check for permission
+          if (!permissions.grantTraceroute) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForTracerouteNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+
+          // Clear previous results
+          device.traceroute_results = [];
+
+          // Create a new array with the hosts filled
+          if (Object.keys(device.ping_hosts).length > 0) {
+            device.traceroute_results =
+              device.ping_hosts.map((host)=>({address: host}));
+          }
+
+          // Save
+          if (device.traceroute_results.length > 0) {
+            await device.save().catch((err) => {
+              console.log(
+                'Error saving device after traceroute command: ' + err,
+              );
+            });
+          }
+
+          // Start Traceroute
+          if (device && device.use_tr069) {
+            // Preparation for TR069
+          } else {
+            mqtt.anlixMessageRouterTraceroute(
+              device._id,
+              device.traceroute_max_hops,
+              device.traceroute_numberProbes,
+              device.traceroute_max_wait,
+            );
           }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
@@ -1517,27 +1565,12 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
         invalidField = 'webhook.secret';
       }
     }
-    if (device.use_tr069) {
-      if (!util.urlRegex.test(req.body.content.url)) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-    } else {
-      // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
-      let urlList = req.body.content.url.split(':');
-      if (!util.ipv4Regex.test(urlList[0])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length > 2) {
-        validationOk = false;
-        invalidField = 'url';
-      }
+
+    if (!util.urlRegex.test(req.body.content.url)) {
+      validationOk = false;
+      invalidField = 'url';
     }
+
     if (!validationOk) {
       return res.status(200).json({
         success: false,
@@ -3548,14 +3581,13 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
-        let url;
-        if (customUrl !== '') {
-          url = customUrl;
+        if (customUrl !== '' && permissions.grantRawSpeedTest) {
+          mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
         } else {
-          url = matchedConfig.measureServerIP + ':' +
+          let url = matchedConfig.measureServerIP + ':' +
                 matchedConfig.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
         }
-        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
       return res.status(200).json({
         success: true,
