@@ -220,7 +220,7 @@ let processWifi = function(content, device, rollback, tr069Changes) {
     tr069Changes.wifi2.channel = content.wifi_channel;
     updateParameters = true;
   }
-  if (content.wifi_band && permissions.grantWifiBandEdit) {
+  if (content.wifi_band && permissions.grantWifiBandEdit2) {
     // discard change to auto when model doesnt support it
     if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
       rollback.wifi_band = device.wifi_band;
@@ -247,7 +247,7 @@ let processWifi = function(content, device, rollback, tr069Changes) {
       updateParameters = true;
     }
   }
-  if (content.wifi_band_5ghz && permissions.grantWifiBandEdit) {
+  if (content.wifi_band_5ghz && permissions.grantWifiBandEdit5) {
     // discard change to auto when model doesnt support it
     if (content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5) {
       rollback.wifi_band_5ghz = device.wifi_band_5ghz;
@@ -1045,9 +1045,11 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
-    // Add legacy permissions for backwards compatibility with old apps
+    permissions.grantWifiBandEdit = (
+      permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+    );
     permissions.grantWifiBand = (
-      permissions.grantWifiModeEdit || permissions.grantWifiBandEdit
+      permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
     );
 
     // Override some permissions if device in bridge mode

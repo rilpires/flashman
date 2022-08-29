@@ -601,7 +601,7 @@ const requestSync = async function(device) {
     dataToFetch.wifiMode = true;
     parameterNames.push(fields.wifi2.mode);
   }
-  if (fields.wifi2.band && permissions.grantWifiBandRead) {
+  if (fields.wifi2.band && permissions.grantWifiBandRead2) {
     dataToFetch.wifiBand = true;
     parameterNames.push(fields.wifi2.band);
   }
@@ -617,7 +617,7 @@ const requestSync = async function(device) {
       dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band && permissions.grantWifiBandRead) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead5) {
       dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
@@ -1233,7 +1233,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (band2 && (!device.wifi_band || autoWithNoPermission)) {
       device.wifi_band = band2;
     } else if (device.wifi_band !== band2) {
-      if (permissions.grantWifiBandEdit) {
+      if (permissions.grantWifiBandEdit2) {
         changes.wifi2.band = device.wifi_band;
         hasChanges = true;
       } else {
@@ -1264,7 +1264,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
-      if (permissions.grantWifiBandEdit) {
+      if (permissions.grantWifiBandEdit5) {
         changes.wifi5.band = device.wifi_band_5ghz;
         hasChanges = true;
       } else {
@@ -1543,7 +1543,7 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
-acsDeviceInfoController.requestWanBytes = function(device) {
+acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;

@@ -29,10 +29,13 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask(t('personIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('personIdentificationMask')).trigger('keyup');
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask(t('enterpriseIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('enterpriseIdentificationMask')).trigger('keyup');
   } else {
+    $(document).off('keyup.' + inputField.attr('id'));
     inputField.unmask();
   }
 };
@@ -195,7 +198,7 @@ anlixDocumentReady.add(function() {
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantVlan = 0;
-  let grantWanBytes = false;
+  let grantStatistics = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
@@ -231,7 +234,7 @@ anlixDocumentReady.add(function() {
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantVlan = role.grantVlan;
-    grantWanBytes = role.grantWanBytesView;
+    grantStatistics = role.grantStatisticsView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
@@ -1374,8 +1377,10 @@ anlixDocumentReady.add(function() {
           let ponRXPower = device.pon_rxpower;
           let grantWifiModeRead = device.permissions.grantWifiModeRead;
           let grantWifiModeEdit = device.permissions.grantWifiModeEdit;
-          let grantWifiBandRead = device.permissions.grantWifiBandRead;
-          let grantWifiBandEdit = device.permissions.grantWifiBandEdit;
+          let grantWifiBandRead2 = device.permissions.grantWifiBandRead2;
+          let grantWifiBandRead5 = device.permissions.grantWifiBandRead5;
+          let grantWifiBandEdit2 = device.permissions.grantWifiBandEdit2;
+          let grantWifiBandEdit5 = device.permissions.grantWifiBandEdit5;
           let grantWifiBandAuto2 = device.permissions.grantWifiBandAuto2;
           let grantWifiBandAuto5 = device.permissions.grantWifiBandAuto5;
           let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
@@ -1396,12 +1401,14 @@ anlixDocumentReady.add(function() {
           let grantResetDevices = device.permissions.grantResetDevices;
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
+          let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
-          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantStatisticsSupport =
+            device.permissions.grantStatisticsSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimModeCable = device.permissions
@@ -1495,8 +1502,10 @@ anlixDocumentReady.add(function() {
             grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-mode="'+
             (grantWifiModeEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
-          formAttr += ' data-validate-wifi-band="'+
-            (grantWifiBandEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-2ghz="'+
+            (grantWifiBandEdit2 && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-5ghz="'+
+            (grantWifiBandEdit5 && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+
             (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+
@@ -1590,10 +1599,10 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', t('manageVlans'));
 
-          let wanBytesAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          let statisticsAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-statistics-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
-          .replace('$REPLACE_TEXT', t('wanBytes'));
+          .replace('$REPLACE_TEXT', t('cpeStatistics'));
 
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
@@ -1609,6 +1618,11 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', t('dataCollecting'));
+
+          let tracerouteAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-traceroute-test-modal')
+          .replace('$REPLACE_ICON', 'fa-list')
+          .replace('$REPLACE_TEXT', t('tracerouteTest'));
 
           let idxMenu = 0;
           let sideMenu = [];
@@ -1663,8 +1677,8 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += vlanAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            sideMenu[idxMenu] += wanBytesAction;
+          if ((isSuperuser || grantStatistics) && grantStatisticsSupport) {
+            sideMenu[idxMenu] += statisticsAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && isSuperuser && enableDataCollecting) {
@@ -1673,6 +1687,10 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (grantTraceroute) {
+            sideMenu[idxMenu] += tracerouteAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 &&
@@ -2339,7 +2357,7 @@ anlixDocumentReady.add(function() {
                 '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
-                (grantWifiBandRead ?
+                (grantWifiBandRead5 ?
                   '<div class="md-form">'+
                     '<div class="input-group">'+
                       '<div class="md-selectfield form-control my-0">'+
@@ -2546,7 +2564,7 @@ anlixDocumentReady.add(function() {
                       '$REPLACE_WIFI2_HIDDEN'+
                     '</div>'+
                     '<div class="col-6">'+
-                      (grantWifiBandRead ?
+                      (grantWifiBandRead2 ?
                         '<div class="md-form">'+
                           '<div class="input-group">'+
                             '<div class="md-selectfield form-control my-0">'+
@@ -2709,14 +2727,17 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', 'disabled');
           } else {
-            wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', '');
           }
-          if (!grantWifiBandEdit || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiBandEdit2 || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiBandEdit5 || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
+          } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
@@ -3022,7 +3043,7 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('personIdentificationMask'));
@@ -3036,7 +3057,7 @@ anlixDocumentReady.add(function() {
                   t('enterpriseIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('enterpriseIdentificationMask'));
@@ -3105,7 +3126,7 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('personIdentificationMask'));
             });
@@ -3115,7 +3136,7 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('enterpriseIdentificationMask'));
             });
@@ -3517,7 +3538,7 @@ anlixDocumentReady.add(function() {
       } else if (result.value) {
         swal.fire({
           title: t('gettingStockFirmwareReady...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });

@@ -218,6 +218,18 @@
       return ret;
     };
 
+    Validator.prototype.validateFqdn = function(fqdn) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 255}),
+        t('insertValidFqdn'),
+      ];
+      let ret = validateRegex(fqdn, 1, 255,
+        /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i);
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
     Validator.prototype.validateIPAgainst = function(ip, ipChallenge) {
       return {
         valid: !ip.includes(ipChallenge),

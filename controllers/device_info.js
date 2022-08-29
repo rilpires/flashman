@@ -196,7 +196,7 @@ const createRegistry = async function(req, res) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
   }
-  if (permissions.grantWifiBandEdit) {
+  if (permissions.grantWifiBandEdit2) {
     genericValidate(band, validator.validateBand,
                     'band', null, errors);
   }
@@ -220,7 +220,7 @@ const createRegistry = async function(req, res) {
       (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
       'channel5ghz', null, errors,
     );
-    if (permissions.grantWifiBandEdit) {
+    if (permissions.grantWifiBandEdit5) {
       genericValidate(band5ghz, validator.validateBand,
                       'band5ghz', null, errors);
     }
@@ -628,8 +628,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           );
 
           if (
-            permissionsSentVersion.grantWifiBandEdit &&
-            !permissionsCurrVersion.grantWifiBandEdit
+            permissionsSentVersion.grantWifiModeEdit &&
+            !permissionsCurrVersion.grantWifiModeEdit
           ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();
@@ -807,6 +807,23 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
+
+        // CPU and Memory usage
+        let cpuUsage = (
+          parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+        );
+        let memoryUsage = (
+          parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+        );
+
+        // Check if CPU and Memory came valid
+        if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+          deviceSetQuery.cpu_usage = cpuUsage;
+        }
+
+        if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+          deviceSetQuery.memory_usage = memoryUsage;
+        }
 
         let sentWifiLastChannel =
         util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
@@ -1946,9 +1963,52 @@ deviceInfoController.getPingHosts = function(req, res) {
       }
     });
   } else {
-    console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+    console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
       'failed: Client Secret not match!');
     return res.status(401).json({success: false});
+  }
+};
+
+
+// Return the speedtest host
+deviceInfoController.getSpeedtestHost = function(request, response) {
+  // Verify secret and find device
+  if (request.body.secret == request.app.locals.secret) {
+    DeviceModel.findById(request.body.id, function(err, matchedDevice) {
+      // Error trying to find the device
+      if (err) {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: Cant get device profile.');
+        return response.status(400).json({success: false});
+      }
+
+      // Could not find the device
+      if (!matchedDevice) {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: No device found.');
+        return response.status(404).json({success: false});
+      }
+
+      // Check and send the URL
+      if (matchedDevice.temp_command_trap.speedtest_url) {
+        return response.status(200).json({
+          'success': true,
+          'host': matchedDevice.temp_command_trap.speedtest_url,
+        });
+
+      // Empty URL
+      } else {
+        console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+          'failed: No host found.');
+        return response.status(404).json({success: false});
+      }
+    });
+
+  // Invalid secret
+  } else {
+    console.log('Router ' + request.body.id + ' Get SpeedTest Host ' +
+      'failed: Client Secret not match!');
+    return response.status(401).json({success: false});
   }
 };
 
@@ -2189,12 +2249,31 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
 
+    // CPU and Memory usage
+    if (util.isJSONObject(req.body.resources)) {
+      let cpuUsage = (
+        parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+      );
+      let memoryUsage = (
+        parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+      );
+
+      // Check if CPU and Memory came valid
+      if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+        matchedDevice.cpu_usage = cpuUsage;
+      }
+
+      if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+        matchedDevice.memory_usage = memoryUsage;
+      }
+    }
+
     // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});
     });
     sio.anlixSendUpStatusNotification(id, req.body);
-    sio.anlixSendWanBytesNotification(id, req.body);
+    sio.anlixSendStatisticsNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
@@ -2320,6 +2399,61 @@ deviceInfoController.receiveLanInfo = function(req, res) {
 
     // Send socket IO notification
     sio.anlixSendLanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
+// Traceroute
+deviceInfoController.receiveTraceroute = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Get the current test
+    let currentTest = matchedDevice.traceroute_results.find(
+      (test)=> test.address === req.body.address,
+    );
+
+    // Could not find the test, return with not processed
+    if (!currentTest) {
+      return res.status(200).json({processed: 0});
+    }
+
+    // Just set the completed
+    currentTest.completed = true;
+
+    // If the tries per hop came is not empty
+    if (!isNaN(req.body.tries_per_hop)) {
+      // Fill the traceroute result
+      currentTest.all_hops_tested = req.body.all_hops_tested;
+      currentTest.reached_destination = req.body.reached_destination;
+      currentTest.tries_per_hop = req.body.tries_per_hop;
+      currentTest.hops = req.body.hops;
+    }
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      console.log('Error saving ping test to database: ' + err);
+    });
+
+    // Send socket IO notification
+    sio.anlixSendTracerouteNotification(id, req.body);
 
     return res.status(200).json({processed: 1});
   });
