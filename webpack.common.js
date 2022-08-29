@@ -78,6 +78,7 @@ module.exports = {
       './public/javascripts/show_lan_info.js',
       './public/javascripts/update_device.js',
       './public/javascripts/table_anim.js',
+      './public/javascripts/show_traceroute_test_action.js',
     ],
   },
   output: {

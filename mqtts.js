@@ -266,7 +266,23 @@ mqtts.authenticate = function(client, username, password, cb) {
 
 // TODO: Refactor functions bellow.
 // All those functions have the same code.
-// Create a common publish function.
+// Use this common publish function to avoiding repeating code.
+mqtts.commonPublishPacket = function(id, qos, retain, payload) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: qos,
+      retain: retain,
+      payload: payload,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message ' + payload + ' to ' + id);
+  }
+
+  return serverId === null;
+};
+
 
 mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   const serverId = findServerId(id);
@@ -399,6 +415,22 @@ mqtts.anlixMessageRouterLanInfo = function(id) {
 };
 
 
+// Traceroute
+mqtts.anlixMessageRouterTraceroute = function(
+  id,
+  maxHops,
+  numberProbes,
+  maxTime,
+) {
+  const payload = 'traceroute ' +
+    maxHops + ' ' +
+    numberProbes + ' ' +
+    maxTime;
+
+  mqtts.commonPublishPacket(id, 2, false, payload);
+};
+
+
 mqtts.anlixMessageRouterSiteSurvey = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {
@@ -492,6 +524,23 @@ mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
       qos: 2,
       retain: true,
       payload: 'speedtest ' + ip + ' ' + name + ' 3 15',
+      // Fix parallel connections to 3 and timeout to 15 seconds
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message SPEEDTEST to ' + id);
+  }
+};
+
+
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, user) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const name = user.name.replace(/ /g, '_');
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'rawspeedtest ' + ' ' + name + ' 3 15',
       // Fix parallel connections to 3 and timeout to 15 seconds
     };
     toPublishPacket(serverId, packet);
