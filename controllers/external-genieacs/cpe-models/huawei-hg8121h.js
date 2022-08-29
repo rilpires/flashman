@@ -14,6 +14,7 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.speedTestLimit = 150;
   permissions.wifi.dualBand = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V3R018C00S128': [],
   };
