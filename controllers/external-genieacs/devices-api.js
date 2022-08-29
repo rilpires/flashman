@@ -208,7 +208,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'P20') {
     // Phyhome P20
     return {success: true, cpe: tr069Models.phyhomeP20Model};
-  } else if (modelName === 'HT803G-WS2' && fwVersion == '3.20') {
+  } else if (modelName === 'HT803G-WS2' && fwVersion.split('.')[0] == '3') {
     // Raisecom HT803G-WS2 REV T
     return {success: true, cpe: tr069Models.raisecomRevTModel};
   } else if (modelSerial === 'AC10') {
