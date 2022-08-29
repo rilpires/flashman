@@ -23,6 +23,7 @@ const ERROR_SECTION = '#traceroute-error-section';
 // Elements on the page
 const TRACEROUTE_RESULTS_TABLE = '#traceroute-test-results-table';
 const TRACEROUTE_START_TEST_BUTTON = '.btn-start-traceroute-test';
+const TRACEROUTE_START_TEST_BUTTON_ICON = '#btn-trace-start-icon';
 const TRACEROUTE_ADDRESS_SELECTOR = '#traceroute-host-selector';
 const TRACEROUTE_ROUTE_ERROR_INFO = '#traceroute-route-invalid-feedback';
 const TRACEROUTE_VALID_CLASS = 'is-valid';
@@ -257,6 +258,20 @@ const sendRequest = function(
   });
 };
 
+// Configure state of button that starts the test
+const setButtonState = function(enabled) {
+  if (enabled) {
+    $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', false);
+    $(TRACEROUTE_START_TEST_BUTTON_ICON)
+      .removeClass('fa-spinner fa-pulse')
+      .addClass('fa-play');
+  } else {
+    $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', true);
+    $(TRACEROUTE_START_TEST_BUTTON_ICON)
+      .removeClass('fa-play')
+      .addClass('fa-spinner fa-pulse');
+  }
+};
 
 // Configure the updating animation
 //   updating - If should activate or disable the animations
@@ -271,9 +286,6 @@ const setUpdatingAnimation = function(updating) {
     // Show Update
     $(UPDATE_SECTION).show();
 
-    // Disable update button and rotate the icon
-    $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', true);
-
   // Disable update animation
   } else {
     // Show sections
@@ -283,9 +295,6 @@ const setUpdatingAnimation = function(updating) {
     $(INFO_SECTION).hide();
     $(ERROR_SECTION).hide();
     $(UPDATE_SECTION).hide();
-
-    // Enable update button and cancel rotation
-    $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', false);
   }
 };
 
@@ -310,6 +319,7 @@ const updateValues = function(message) {
 
     // Cancel the animation, even though the error occured
     setUpdatingAnimation(false);
+    setButtonState(true);
 
     return;
   }
@@ -369,6 +379,12 @@ const updateValues = function(message) {
 
   // When update, cancel the animation
   setUpdatingAnimation(false);
+  const totalAddrs =
+    $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue().length;
+  const completedAddrs = $(TRACEROUTE_RESULTS_TABLE).children().length;
+  if (completedAddrs == totalAddrs) {
+    setButtonState(true);
+  }
 };
 
 
@@ -377,6 +393,7 @@ const updateValues = function(message) {
 const setErrorModal = function(errored) {
   // Stop the animation
   setUpdatingAnimation(false);
+  setButtonState(true);
 
   // If had an error with traceroute
   if (errored) {
@@ -453,7 +470,7 @@ const showModal = async function(event) {
       // Update items
       $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
       // Enable start test button
-      $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', false);
+      setButtonState(true);
 
       // Update completed
       initialized = true;
@@ -485,6 +502,7 @@ anlixDocumentReady.add(function() {
 
     // Start the animation
     setUpdatingAnimation(true);
+    setButtonState(false);
 
     // Clear the result section and events
     $(TRACEROUTE_RESULTS_TABLE).text('');
