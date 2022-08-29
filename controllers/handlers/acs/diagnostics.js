@@ -27,6 +27,27 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
   return result;
 };
 
+const getAllNestedKeysFromMultipleObjects = function(data, target, base) {
+  let result = [];
+  let resultKeys = [];
+  let resultKeysRaw = utilHandlers.getFromNestedKey(data, base.result);
+  if (resultKeysRaw) {
+    resultKeys = Object.keys(resultKeysRaw);
+  }
+  resultKeys = resultKeys.filter((k)=>k[0] && k[0]!=='_');
+  resultKeys.forEach((i)=>{
+    let obj = {};
+    Object.keys(target).forEach((key)=>{
+      let field = base.result+'.'+i+'.'+target[key] + '._value';
+      if (utilHandlers.checkForNestedKey(data, field)) {
+        obj[key] = utilHandlers.getFromNestedKey(data, field);
+      }
+    });
+    result.push(obj);
+  });
+  return result;
+};
+
 const getNextPingTest = function(device) {
   let found = device.pingtest_results.find((pingTest) => !pingTest.completed);
   return (found) ? found.host : '';
@@ -184,88 +205,109 @@ const calculateTraceDiagnostic = async function(
   // TO-DO !!!
 };
 
+const calculateFreq = function(rawChannel) {
+  const startChannel2Ghz = 1;
+  const startChannel5GHz = 36;
+  let intRawChannel = parseInt(rawChannel);
+  let finalFreq = 2412; // 2.4 GHz
+  if (Math.floor(intRawChannel / startChannel5GHz) != 0) { // 5.0 GHz
+    finalFreq = 5180;
+    finalFreq += (intRawChannel - startChannel5GHz) * 5;
+  } else {
+    finalFreq += (intRawChannel - startChannel2Ghz) * 5;
+  }
+  return finalFreq;
+};
+
 const calculateSiteSurveyDiagnostic = async function(
   device, cpe, data, siteSurveyKeys, siteSurveyFields,
 ) {
   let id = device.acs_id;
+  let siteSurveyObjKeys = {
+    mac: 'BSSID',
+    ssid: 'SSID',
+    channel: 'Channel',
+    signal: 'SignalStrength',
+    band: 'OperatingChannelBandwidth',
+    mode: 'OperatingStandards',
+  };
 
-  let apsData = getAllNestedKeysFromObject(data,
+  let apsData = getAllNestedKeysFromMultipleObjects(data,
+    siteSurveyObjKeys, siteSurveyFields);
+  siteSurveyKeys = getAllNestedKeysFromObject(data,
     siteSurveyKeys, siteSurveyFields);
-  let diagState = siteSurveyKeys.root + '.' + siteSurveyKeys.diag_state;
+  let diagState = siteSurveyKeys.diag_state;
   let outData = [];
 
-  if (['Requested', 'None'].includes(diagState)) return;
+  if (['None'].includes(diagState)) return;
+  if (['Requested'].includes(diagState)) {
+    acsDiagnosticsHandler.fetchDiagnosticsFromGenie(id);
+    return;
+  }
 
-  if (['Complete', 'Complete\n'].includes(diagState)) {
-    for (let connApMac in apsData) {
-      if (Object.prototype.hasOwnProperty.call(apsData, connApMac)) {
-        let outDev = {};
-        let upConnApMac = connApMac.toLowerCase();
-        let upConnDev = apsData[upConnApMac];
-        if (!upConnDev) continue;
+  if (['Completed', 'Completed\n'].includes(diagState)) {
+    apsData.forEach((ap) => {
+      let outDev = {};
 
-        let devReg = device.getAPSurveyDevice(upConnApMac);
-        if (upConnDev.freq) {
-          upConnDev.freq = parseInt(upConnDev.freq);
-        }
-        if (upConnDev.signal) {
-          upConnDev.signal = parseInt(upConnDev.signal);
-        }
-        let devWidth=20;
-        let devVHT=false;
-
-        if (upConnDev.largura_HT) {
-          if (upConnDev.largura_HT === 'any') {
-            devWidth = 40;
-          } else {
-            devWidth = parseInt(upConnDev.largura_HT);
-          }
-        }
-
-        if (upConnDev.largura_VHT) {
-          let VHTWifth=parseInt(upConnDev.largura_VHT);
-          if (VHTWifth > 0) {
-            devVHT=true;
-            devWidth = VHTWifth;
-          }
-        }
-
-        if (devReg) {
-          devReg.ssid = upConnDev.SSID;
-          devReg.freq = upConnDev.freq;
-          devReg.signal = upConnDev.signal;
-          devReg.width = devWidth;
-          devReg.VHT = devVHT;
-          devReg.last_seen = Date.now();
-          if (!devReg.first_seen) {
-            devReg.first_seen = Date.now();
-          }
-        } else {
-          device.ap_survey.push({
-            mac: upConnApMac,
-            ssid: upConnDev.SSID,
-            freq: upConnDev.freq,
-            signal: upConnDev.signal,
-            width: devWidth,
-            VHT: devVHT,
-            first_seen: Date.now(),
-            last_seen: Date.now(),
-          });
-        }
-        outDev.mac = upConnApMac;
-        outData.push(outDev);
+      let devReg = device.getAPSurveyDevice(ap.mac);
+      if (ap.channel) {
+        ap.freq = calculateFreq(ap.channel);
       }
-    }
+      if (ap.signal) {
+        ap.signal = parseInt(ap.signal);
+      }
+      let devWidth=20;
+      let devVHT=false;
+
+      if (ap.mode.includes('ac')) {
+        devVHT=true;
+      }
+
+      if (ap.band !== 'Auto') {
+        devWidth = parseInt(ap.band);
+      }
+
+      if (devReg) {
+        devReg.ssid = ap.ssid;
+        devReg.freq = ap.freq;
+        devReg.signal = ap.signal;
+        devReg.width = devWidth;
+        devReg.VHT = devVHT;
+        devReg.last_seen = Date.now();
+        if (!devReg.first_seen) {
+          devReg.first_seen = Date.now();
+        }
+      } else {
+        device.ap_survey.push({
+          mac: ap.mac,
+          ssid: ap.ssid,
+          freq: ap.freq,
+          signal: ap.signal,
+          width: devWidth,
+          VHT: devVHT,
+          first_seen: Date.now(),
+          last_seen: Date.now(),
+        });
+      }
+      outDev.mac = ap.mac;
+      outData.push(outDev);
+    });
+    device.current_diagnostic.stage = 'done';
+    device.current_diagnostic.in_progress = false;
+    device.current_diagnostic.last_modified_at = new Date();
     device.last_site_survey = Date.now();
     await device.save().catch((err) => {
       console.log('Error saving site survey to database');
       return;
     });
   } else {
+    device.current_diagnostic.stage = 'error';
+    device.current_diagnostic.in_progress = false;
+    device.current_diagnostic.last_modified_at = new Date();
     console.log('Error retrieving site survey data!');
   }
   // if someone is waiting for this message, send the information
-  sio.anlixSendSiteSurveyNotifications(id, outData);
+  sio.anlixSendSiteSurveyNotifications(device._id.toUpperCase(), outData);
   console.log('Site Survey Receiving for device ' +
     id + ' successfully.');
   return;
@@ -464,8 +506,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let diagnStateField = fields.diagnostics.sitesurvey.root + '.' +
-                        fields.diagnostics.sitesurvey.diag_state;
+  let diagnStateField = fields.diagnostics.sitesurvey.diag_state;
 
   let task = {
     name: 'setParameterValues',
@@ -513,11 +554,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
     },
     sitesurvey: {
       diag_state: '',
-      mac: '',
-      ssid: '',
-      freq: '',
-      signal: '',
-      channel: '',
+      result: '',
     },
   };
 
@@ -577,7 +614,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
           );
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
           await calculateTraceDiagnostic(/* to-do */);
-        } else if (permissions.grantSiteSurveyTest && diagType=='sitesurvey') {
+        } else if (permissions.grantSiteSurvey && diagType=='sitesurvey') {
           await calculateSiteSurveyDiagnostic(
             device, cpe, data, diagNecessaryKeys.sitesurvey,
             fields.diagnostics.sitesurvey,
