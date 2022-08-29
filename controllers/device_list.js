@@ -1223,6 +1223,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'traceroute':
       case 'speedtest':
       case 'wps':
+      case 'pondata':
       case 'sitesurvey': {
         if (device && !device.use_tr069) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
