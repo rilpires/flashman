@@ -127,6 +127,7 @@ const addNewDefaultHost = function(event) {
       title: t('emptyHostError'),
       confirmButtonColor: '#4db6ac',
     });
+    return;
   }
   if (defaultPingHostsInfo.filter((item) => item == newHost).length > 0) {
     swal.fire({
@@ -134,6 +135,7 @@ const addNewDefaultHost = function(event) {
       title: t('duplicatedHost', {host: newHost}),
       confirmButtonColor: '#4db6ac',
     });
+    return;
   } else {
     buildTableLine(newHost);
     defaultPingHostsInfo.push(newHost);
