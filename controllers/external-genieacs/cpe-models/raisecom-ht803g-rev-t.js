@@ -51,7 +51,7 @@ raisecomModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '3';
     case 'auto':
-      return (is5ghz) ? undefined : '2';
+      return (is5ghz) ? '3' : '2';
     default:
       return '';
   }
