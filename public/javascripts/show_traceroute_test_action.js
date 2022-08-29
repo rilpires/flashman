@@ -281,8 +281,8 @@ const updateValues = function(message) {
     let routeItemHtml = resultTableRouteInvalidHtml(route);
     $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
 
-     // Cancel the animation, even though the error occured
-     setUpdatingAnimation(false);
+    // Cancel the animation, even though the error occured
+    setUpdatingAnimation(false);
 
     return;
   }
