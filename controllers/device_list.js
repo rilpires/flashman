@@ -573,7 +573,7 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
 
   // Validated from here. Saving device & validating stuffs
   await device.save().catch((err) => {
-    console.log('Error saving device after ping command: ' + err);
+    console.log('Error saving device after site survey command: ' + err);
   });
   if (sessionID && sio.anlixConnections[sessionID]) {
     sio.anlixWaitForSiteSurveyNotification(
