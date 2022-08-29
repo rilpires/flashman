@@ -29,10 +29,13 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask(t('personIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('personIdentificationMask')).trigger('keyup');
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask(t('enterpriseIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('enterpriseIdentificationMask')).trigger('keyup');
   } else {
+    $(document).off('keyup.' + inputField.attr('id'));
     inputField.unmask();
   }
 };
@@ -3030,7 +3033,7 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('personIdentificationMask'));
@@ -3044,7 +3047,7 @@ anlixDocumentReady.add(function() {
                   t('enterpriseIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('enterpriseIdentificationMask'));
@@ -3113,7 +3116,7 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('personIdentificationMask'));
             });
@@ -3123,7 +3126,7 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('enterpriseIdentificationMask'));
             });
