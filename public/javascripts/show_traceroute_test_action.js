@@ -1,5 +1,6 @@
 import {anlixDocumentReady} from '../src/common.index.js';
 import {socket} from './common_actions.js';
+import Validator from './device_validator.js';
 import 'selectize';
 
 const t = i18next.t;
@@ -111,8 +112,24 @@ const saveTracerouteAddress = function() {
   // Get routes
   let addresses = $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue();
 
+  // Validate each added address
+  let validator = new Validator();
+  for (let idx = 0; idx < addresses.length; idx += 1) {
+    const toValidateAddr = addresses[idx];
+    const validIpv4Obj = validator.validateIP(toValidateAddr);
+    const validFqdnObj = validator.validateFqdn(toValidateAddr);
+
+    if (!validIpv4Obj.valid && !validFqdnObj.valid) {
+      addresses.splice(toValidateAddr, 1);
+    }
+  }
+
   // Check if addresses variable is valid
   if (addresses === '' || addresses === null || addresses.length === 0) {
+    $(TRACEROUTE_ADDRESS_SELECTOR)
+      .removeClass(TRACEROUTE_INVALID_CLASS)
+      .removeClass(TRACEROUTE_VALID_CLASS)
+      .addClass(TRACEROUTE_INVALID_CLASS);
     return;
   }
 
