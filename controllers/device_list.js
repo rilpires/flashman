@@ -1223,6 +1223,7 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'traceroute':
       case 'speedtest':
       case 'wps':
+      case 'pondata':
       case 'sitesurvey': {
         if (device && !device.use_tr069) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1426,6 +1427,29 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
+        } else if (msgtype === 'pondata') {
+          // Check for permission
+          if (!permissions.grantPonSignalSupport) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPonSignalNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+          // Start
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestPonData(device);
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
         } else {
           return res.status(200).json({
             success: false,
@@ -3938,46 +3962,6 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
                                  {errorline: __line})});
   }
 };
-
-deviceListController.receivePonSignalMeasure = async function(req, res) {
-  let deviceId = req.params.deviceId;
-
-  DeviceModel.findById(deviceId, function(err, matchedDevice) {
-    if (err) {
-      return res.status(400).json({processed: 0, success: false});
-    }
-    if (!matchedDevice) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    if (!matchedDevice.use_tr069) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    let mac = matchedDevice._id;
-    let acsID = matchedDevice.acs_id;
-    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-    let fields = cpe.getModelFields();
-    let rxPowerField = fields.wan.pon_rxpower;
-    let txPowerField = fields.wan.pon_txpower;
-    let taskParameterNames = [rxPowerField, txPowerField];
-    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
-      taskParameterNames.push(fields.wan.pon_rxpower_epon);
-      taskParameterNames.push(fields.wan.pon_txpower_epon);
-    }
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: taskParameterNames,
-    };
-
-    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-    res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
-  });
-};
-
 
 // Returns the informations about the WAN for firmware devices
 deviceListController.getWanInfo = async function(request, response) {
