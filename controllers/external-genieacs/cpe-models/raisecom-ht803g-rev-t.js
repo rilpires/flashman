@@ -14,6 +14,7 @@ raisecomModel.modelPermissions = function() {
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
 
+  permissions.lan.canTrustActive = true;
   permissions.wan.speedTestLimit = 300;
 
   // wan port forwarding
@@ -90,6 +91,15 @@ raisecomModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+raisecomModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === '802.11') {
+    return 'wifi';
+  }
+  return 'cable';
+};
+
 raisecomModel.getBeaconType = function() {
   return '11i';
 };
@@ -115,6 +125,10 @@ raisecomModel.getModelFields = function() {
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Username';
   fields.common.web_admin_password =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';
+
+  // devices fields
+  fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
+    '*.InterfaceType';
 
   // wan fields
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
