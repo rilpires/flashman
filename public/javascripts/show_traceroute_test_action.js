@@ -425,6 +425,8 @@ const showModal = async function(event) {
 
       // Update items
       $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.refreshItems();
+      // Enable start test button
+      $(TRACEROUTE_START_TEST_BUTTON).prop('disabled', false);
 
       // Update completed
       initialized = true;
