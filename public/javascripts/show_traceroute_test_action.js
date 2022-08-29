@@ -272,11 +272,18 @@ const setUpdatingAnimation = function(updating) {
 // Update all values
 //  message - Response message to change values
 const updateValues = function(message) {
+  // Validate address
+  if (isNaN(message.address)) {
+    setErrorModal(true);
+
+    return;
+  }
+
+  // Escape characters
+  let route = encodeURIComponent(message.address);
+
   // Check if the message did not come empty
   if (isNaN(message.tries_per_hop)) {
-    // Escape characters
-    let route = encodeURIComponent(message.address);
-
     // Create the invalid item
     let routeItemHtml = resultTableRouteInvalidHtml(route);
     $(TRACEROUTE_RESULTS_TABLE).append(routeItemHtml);
@@ -286,9 +293,6 @@ const updateValues = function(message) {
 
     return;
   }
-
-  // Escape characters
-  let route = encodeURIComponent(message.address);
 
   // Get the number and increment
   let number = itemIndex;
@@ -351,7 +355,7 @@ const updateValues = function(message) {
 // Configure the modal to show or hide Error
 //  errored - If an error happened with traceroute
 const setErrorModal = function(errored) {
-  // Start the animation
+  // Stop the animation
   setUpdatingAnimation(false);
 
   // If had an error with traceroute
