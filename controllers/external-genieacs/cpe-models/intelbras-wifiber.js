@@ -92,6 +92,13 @@ intelbrasModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.X_ITBS_WiFi'+
+    '.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.diag_state = 'InternetGatewayDevice.'+
+    'X_ITBS_WiFi.NeighboringWiFiDiagnostic.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'InternetGatewayDevice.'+
+    'X_ITBS_WiFi.NeighboringWiFiDiagnostic.Result';
   return fields;
 };
 

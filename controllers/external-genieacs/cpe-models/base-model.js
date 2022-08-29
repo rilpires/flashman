@@ -640,23 +640,10 @@ basicCPEModel.getModelFields = function() {
           'PeriodOfFullLoading',
       },
       sitesurvey: {
-        root: 'InternetGatewayDevice.X_ITBS_WiFi.NeighboringWiFiDiagnostic',
-        diag_state: 'DiagnosticsState',
-        mac: 'Result.*.BSSID',
-        ssid: 'Result.*.SSID',
-        freq: 'Result.*.OperatingFrequencyBand',
-        signal: 'Result.*.SignalStrength',
-        /* channel: 'Result.1.Channel',
-        'Result.1.BasicDataTransferRates',
-        'Result.1.BeaconPeriod',
-        'Result.1.DTIMPeriod',
-        'Result.1.EncryptionMode',
-        'Result.1.Mode',
-        'Result.1.Noise',
-        'Result.1.OperatingChannelBandwidth',
-        'Result.1.OperatingStandards',
-        'Result.1.Radio',
-        'Result.1.SecurityModeEnabled',*/
+        // Each device may have they proper fields
+        root: '',
+        diag_state: '',
+        result: '',
       },
     },
   };
