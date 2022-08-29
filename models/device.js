@@ -304,9 +304,9 @@ let deviceSchema = new Schema({
   cpu_usage: {type: Number, min: 0, max: 101, default: 101},
   memory_usage: {type: Number, min: 0, max: 101, default: 101},
   // Traceroute
-  traceroute_max_hops: {type: Number, min: 1, max: 50, default: 30},
+  traceroute_max_hops: {type: Number, min: 1, max: 50, default: 20},
   traceroute_numberProbes: {type: Number, min: 1, max: 10, default: 3},
-  traceroute_max_wait: {type: Number, min: 1, max: 5, default: 3},
+  traceroute_max_wait: {type: Number, min: 1, max: 5, default: 1},
   // This field is used by other softwares, not needed by flashman's frontend
   traceroute_results: [{
     all_hops_tested: {type: Boolean, default: false},
