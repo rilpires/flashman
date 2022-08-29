@@ -260,7 +260,7 @@ let deviceSchema = new Schema({
   current_diagnostic: {
     type: {
       type: String,
-      enum: ['speedtest', 'ping', 'traceroute'],
+      enum: ['speedtest', 'ping', 'traceroute', 'sitesurvey'],
     },
     stage: {
       type: String,
