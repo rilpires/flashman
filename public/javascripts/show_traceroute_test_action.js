@@ -320,6 +320,7 @@ const updateValues = function(message) {
   for (let hopIndex = 0; hopIndex < message.hops.length; hopIndex++) {
     let hop = message.hops[hopIndex];
     let mean = 0;
+    let hopIdxDisplay = hopIndex + 1 + '. ';
 
     // Loop through all tests
     for (let testIndex = 0; testIndex < hop.ms_values.length; testIndex++) {
@@ -329,7 +330,7 @@ const updateValues = function(message) {
     // Assign parameters to html
     $('#' + TRACEROUTE_HTML_RESULT_NAME + number).append(
       RESULT_TABLE_ITEM_HTML
-        .text(encodeURIComponent(hop.ip))
+        .text(hopIdxDisplay + encodeURIComponent(hop.ip))
         .append(
           RESULT_TABLE_ITEM_VALUE_HTML
           .text(t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)}))
