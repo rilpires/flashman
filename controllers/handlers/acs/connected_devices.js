@@ -285,8 +285,16 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             }
           }
         }
-        // Filter devices by active, always including wired connections
-        devices = devices.filter((d) => !d.wifi || d.wifiActive);
+        // Filters devices by wifiActive and wifi flags. If the device has a
+        // wifi property, it always includes it. Otherwise, filter only by
+        // wifiActive
+        devices = devices.filter((d) => {
+          if ('wifi' in d) {
+            return !d.wifi || d.wifiActive;
+          } else {
+            return d.wifiActive;
+          }
+        });
         await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);
