@@ -34,7 +34,8 @@ describe('DeviceVersion API', () => {
     expect(permissions.grantPortForwardAsym).toStrictEqual(true);
     expect(permissions.grantPortOpenIpv6).toStrictEqual(true);
     expect(permissions.grantWifi5ghz).toStrictEqual(true);
-    expect(permissions.grantWifiBandEdit).toStrictEqual(true);
+    expect(permissions.grantWifiBandEdit2).toStrictEqual(true);
+    expect(permissions.grantWifiBandEdit5).toStrictEqual(true);
     expect(permissions.grantWifiBandAuto2).toStrictEqual(true);
     expect(permissions.grantWifiState).toStrictEqual(true);
     expect(permissions.grantWifiPowerHiddenIpv6Box).toStrictEqual(true);
@@ -50,7 +51,7 @@ describe('DeviceVersion API', () => {
     expect(permissions.grantBlockDevices).toStrictEqual(true);
     expect(permissions.grantOpmode).toStrictEqual(true);
     expect(permissions.grantVlanSupport).toStrictEqual(false);
-    expect(permissions.grantWanBytesSupport).toStrictEqual(true);
+    expect(permissions.grantStatisticsSupport).toStrictEqual(true);
     expect(permissions.grantPonSignalSupport).toStrictEqual(false);
     expect(permissions.grantMeshMode).toStrictEqual(true);
     expect(permissions.grantUpdateAck).toStrictEqual(true);

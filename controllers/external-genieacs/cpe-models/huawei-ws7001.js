@@ -14,8 +14,10 @@ huaweiModel.modelPermissions = function() {
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
     149, 153, 157, 161,
   ];
-  permissions.wifi.bandRead = false;
-  permissions.wifi.bandWrite = false;
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;

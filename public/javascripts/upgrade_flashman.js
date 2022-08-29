@@ -6,7 +6,7 @@ const t = i18next.t;
 let forceUpdateFlashman = function() {
   swal.fire({
     title: t('updatingFlashman...'),
-    onOpen: () => {
+    didOpen: () => {
       swal.showLoading();
     },
   });
@@ -73,7 +73,7 @@ let alertUpdateFlashman = function() {
 let checkUpdateFlashman = function() {
   swal.fire({
     title: t('searchingForUpdates...'),
-    onOpen: () => {
+    didOpen: () => {
       swal.showLoading();
     },
   });
