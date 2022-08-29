@@ -381,7 +381,8 @@ const updateValues = function(message) {
   setUpdatingAnimation(false);
   const totalAddrs =
     $(TRACEROUTE_ADDRESS_SELECTOR)[0].selectize.getValue().length;
-  const completedAddrs = $(TRACEROUTE_RESULTS_TABLE).children().length;
+  const completedAddrs =
+    $(TRACEROUTE_RESULTS_TABLE).children('[id^=traceroute-item-result]').length;
   if (completedAddrs == totalAddrs) {
     setButtonState(true);
   }
