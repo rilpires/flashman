@@ -13,8 +13,6 @@ nokiaModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.LANDeviceHasSNR = true;
-  permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 650;
