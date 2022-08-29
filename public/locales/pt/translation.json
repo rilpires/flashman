@@ -544,6 +544,7 @@
 	"targetAddressesTooltip": "Os endereços de destino podem ser sites na Internet ou endereços IP válidos",
 	"saveSuccessful": "Salvo com sucesso",
 	"errorSaving": "Erro ao salvar",
+	"oneOrMoreAddrsNotSaved": "Um ou mais endereços não puderam ser gravados",
 	"addAddressesAndClickToStart": "Adicione os endereços e clique em iniciar",
 	"forTr069OnlyFirstAddressWillBeTested": "Para dispositivos TR-069 apenas o primeiro endereço de destino será testado",
 	"startTest": "Iniciar teste",

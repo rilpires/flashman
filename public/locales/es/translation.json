@@ -549,6 +549,7 @@
 	"targetAddressesTooltip": "Las direcciones de destino pueden ser sitios web en Internet o direcciones IP válidas",
 	"saveSuccessful": "Guardado exitosamente",
 	"errorSaving": "Error al guardar",
+	"oneOrMoreAddrsNotSaved": "No se pudieron guardar un o más registros",
 	"addAddressesAndClickToStart": "Agregue direcciones y haga clic en iniciar",
 	"forTr069OnlyFirstAddressWillBeTested": "Para dispositivos TR-069 solo se probará la primera dirección de destino",
 	"startTest": "Iniciar prueba",

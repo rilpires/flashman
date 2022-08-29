@@ -120,7 +120,11 @@ const saveTracerouteAddress = function() {
     const validFqdnObj = validator.validateFqdn(toValidateAddr);
 
     if (!validIpv4Obj.valid && !validFqdnObj.valid) {
-      addresses.splice(toValidateAddr, 1);
+      $(TRACEROUTE_ADDRESS_SELECTOR)
+        .removeClass(TRACEROUTE_INVALID_CLASS)
+        .removeClass(TRACEROUTE_VALID_CLASS)
+        .addClass(TRACEROUTE_INVALID_CLASS);
+      return;
     }
   }
 
