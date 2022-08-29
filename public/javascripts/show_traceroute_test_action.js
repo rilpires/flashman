@@ -294,9 +294,8 @@ const setUpdatingAnimation = function(updating) {
 //  message - Response message to change values
 const updateValues = function(message) {
   // Validate address
-  if (isNaN(message.address)) {
+  if (message.address == '' || typeof message.address == 'undefined') {
     setErrorModal(true);
-
     return;
   }
 
