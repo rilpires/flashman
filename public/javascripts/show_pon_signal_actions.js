@@ -9,12 +9,13 @@ anlixDocumentReady.add(function() {
   const refreshPonSignal = function(deviceId) {
     $('#btn-pon-signal-refresh').prop('disabled', true);
     $.ajax({
-      url: '/devicelist/ponsignal/' + deviceId,
-      type: 'get',
+      url: '/devicelist/command/' + deviceId + '/pondata',
+      type: 'post',
       dataType: 'json',
       success: function(res) {
         if (res.success) {
-          $('#btn-pon-signal-refresh > i').addClass('animated rotateOut infinite');
+          $('#btn-pon-signal-refresh > i')
+            .addClass('animated rotateOut infinite');
           if ($('#pon-signal-graphs').is(':hidden')) {
             $('#pon-signal-placeholder-ready').hide();
             $('#pon-signal-placeholder-progress').show();
@@ -93,7 +94,8 @@ anlixDocumentReady.add(function() {
       }
       // Adjust modal content
       $('#btn-pon-signal-refresh').prop('disabled', false);
-      $('#btn-pon-signal-refresh > i').removeClass('animated rotateOut infinite');
+      $('#btn-pon-signal-refresh > i')
+        .removeClass('animated rotateOut infinite');
       $('#pon-signal-placeholder-ready').hide();
       $('#pon-signal-placeholder-progress').hide();
       $('#pon-signal-placeholder-none').hide();
