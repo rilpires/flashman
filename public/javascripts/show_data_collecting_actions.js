@@ -91,13 +91,13 @@ $(document).ready(function() {
       type: String,
       service: true, device: true,
       validations: isFqdnValid,
-      invalidMessage: t('inputValidAddres'),
+      invalidMessage: t('inputValidAddress'),
     },
     alarm_fqdn: {
       type: String,
       service: true,
       validations: isFqdnValid,
-      invalidMessage: t('inputValidAddres'),
+      invalidMessage: t('inputValidAddress'),
     },
     ping_packets: { // validation for ping_packets is done directly in html.
       type: Number,

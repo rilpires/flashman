@@ -434,7 +434,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
     'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
     'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
-    'alerta': new RegExp(`^${t('alerta')}$`), // /^alerta/
+    'alerta': new RegExp(`^${t('alert')}$`), // /^alerta/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
@@ -4178,8 +4178,8 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     }
     csvFields.push(
       {label: t('channelWifi5GHz'), value: 'wifi_channel_5ghz'},
-      {label: t('xghzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
-      {label: t('xghzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
+      {label: t('xGhzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
+      {label: t('xGhzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
       {label: t('publicIp'), value: 'ip'},
       {label: t('wanIp'), value: 'wan_ip'},
       {label: t('IpvxEnabled', {x: 6}), value: 'ipv6_enabled'},
