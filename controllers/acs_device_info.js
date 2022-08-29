@@ -1519,11 +1519,22 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
+  let fieldToFetch = '';
+
+  switch (device.current_diagnostic.type) {
+    case 'ping':
+      fieldToFetch = fields.diagnostics.ping.root;
+      break;
+    case 'speedtest':
+      fieldToFetch = fields.diagnostics.speedtest.root;
+      break;
+    case 'sitesurvey':
+      fieldToFetch = fields.diagnostics.sitesurvey.root;
+      break;
+  }
   let task = {
     name: 'getParameterValues',
-    parameterNames: [
-      fields.diagnostics.ping.root, fields.diagnostics.speedtest.root,
-    ],
+    parameterNames: [fieldToFetch],
   };
   TasksAPI.addTask(
     acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
