@@ -9,23 +9,22 @@ raisecomModel.identifier = {vendor: 'Raisecom', model: 'HT803G-WS2'};
 raisecomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
 
-  // features permissions
   permissions.features.ponSignal = true; // will measure pon rx/tx power
   permissions.features.portForward = false; // will enable port forward dialogs
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
 
-  // wan permissions
-  // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 300;
 
   // wan port forwarding
   // permissions.wan.portForwardPermissions = // specifies range/asym support
   //   basicCPEModel.portForwardPermissions.noRanges;
 
-  // wifi permissions
-  permissions.wifi.list5ghzChannels =
-    [36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165];
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
+  ];
+  permissions.wifi.modeRead = false; // Removed because 5ghz cant show AC mode
+  permissions.wifi.modeWrite = false; // Removed because 5ghz cant show AC mode
   permissions.wifi.bandAuto5 = false;
 
   // firmware permissions
@@ -34,28 +33,6 @@ raisecomModel.modelPermissions = function() {
   };
 
   return permissions;
-};
-
-// Conversion from Flashman format to CPE format
-raisecomModel.convertWifiMode = function(mode) {
-  // b/g/n =  'b,g,n'
-  // b/g =    'g'
-  // n =      'n'
-
-  // ac/n/a = 'n'
-  // n/a =    'n'
-  // a =      '' (blank)
-  switch (mode) {
-    case '11g':
-      return 'g';
-    case '11n':
-      return 'b,g,n';
-    case '11na':
-    case '11ac':
-      return 'n';
-    default:
-      return '';
-  }
 };
 
 // Conversion from Flashman format to CPE format
@@ -129,7 +106,7 @@ raisecomModel.getIeeeEncryptionMode = function() {
 raisecomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
 
-  // common fiekds
+  // common fields
   fields.common.alt_uid = 'InternetGatewayDevice.LANDevice.1.'+
     'LANEthernetInterfaceConfig.1.MACAddress';
 
