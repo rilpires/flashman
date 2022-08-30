@@ -245,19 +245,25 @@ const updateProvisionsPresets = async function(config) {
                   waitForLegacyPresetDelete];
   let values = await Promise.allSettled(promises);
   if (values[0].status !== 'fulfilled') {
-    console.log('Error updating Genie diagnostic-provision script!');
+    console.log('Error updating Genie provision script!');
   }
   if (values[1].status !== 'fulfilled') {
-    console.log('Error updating Genie bootstrap-preset json!');
+    console.log('Error updating Genie diagnostic-provision script!');
   }
   if (values[2].status !== 'fulfilled') {
-    console.log('Error updating Genie boot-preset json!');
+    console.log('Error updating Genie bootstrap-preset json!');
   }
   if (values[3].status !== 'fulfilled') {
-    console.log('Error updating Genie periodic-preset json!');
+    console.log('Error updating Genie boot-preset json!');
   }
   if (values[4].status !== 'fulfilled') {
+    console.log('Error updating Genie periodic-preset json!');
+  }
+  if (values[5].status !== 'fulfilled') {
     console.log('Error updating Genie diagnostic-preset json!');
+  }
+  if (values[6].status !== 'fulfilled') {
+    console.log('Error deleting Genie legacy preset json!');
   }
   if (values.every((v) => v.status === 'fulfilled')) {
     console.log('GenieACS presets and provisions updated successfully!');
