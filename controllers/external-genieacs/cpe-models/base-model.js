@@ -415,6 +415,10 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
   return 'cable';
 };
 
+basicCPEModel.convertPPPoEEnable = function(value) {
+  return value;
+};
+
 // Used when fetching connected devices' rssi data, it might need conversions
 basicCPEModel.convertRssiValue = function(rssiValue) {
   // Return undefined in case anything goes wrong
