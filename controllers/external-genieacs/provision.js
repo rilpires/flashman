@@ -47,21 +47,33 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
+
+// Collect basic CPE information from database
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
+log('Provision for device ' + genieID + ' started at ' + now.toString());
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let modelName;
-let firmwareVersion;
-// Replaces IGD for Device on devices that use the new TR-069 standard
-if (modelClass === 'Device2') { // TP Link HC220 G5
-  modelName = declare('Device.DeviceInfo.ModelName', {value: 1}).value[0];
-  firmwareVersion = declare('Device.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
-} else {
-  modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
-  firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+
+// Detect TR-098 or TR-181 data model based on database value
+let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value[0];
+log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
+let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
+
+// Apply connection request credentials preset configuration
+let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+let currentUsername = declare(usernameField, {value: 1}).value[0];
+if (currentUsername !== 'anlix') {
+  declare(prefix + '.ManagementServer.ConnectionRequestUsername', null, {value: 'anlix'});
+}
+let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+let currentPassword = declare(passwordField, {value: 1}).value[0];
+if (currentPassword !== 'landufrj123') {
+  declare(prefix + '.ManagementServer.ConnectionRequestPassword', null, {value: 'landufrj123'});
 }
 
-log('Provision for device ' + genieID + ' started at ' + now.toString());
+// Collect extra information for Flashman model detection
+let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1}).value[0];
+let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
 
 let args = {
   oui: oui,
@@ -71,18 +83,23 @@ let args = {
   acs_id: genieID,
 };
 
+// Get configs and model fields from Flashman via HTTP request
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 
+// Error contacting Flashman - could be network issue or unknown model
 if (!result.success || !result.fields) {
   log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
   log('OUI identified: ' + oui);
   log('Model identified: ' + modelClass);
   return;
 }
+// Flashman did not ask for a full provision sync - provision is done
 if (!result.measure) {
   return;
 }
 
+// Collect all CPE data through provision to send to Flashman
+// Expected to run on creation, fware upgrade and cpe reset recovery
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
 let data = {
@@ -95,6 +112,8 @@ let data = {
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 args = {acs_id: genieID, data: data};
+
+// Send data to Flashman via HTTP request
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
