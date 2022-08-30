@@ -15,21 +15,6 @@
 			"type": "value",
 			"name": "InternetGatewayDevice.ManagementServer.ConnectionRequestPassword",
 			"value": "landufrj123"
-		},
-		{
-			"type": "value",
-			"name": "Device.ManagementServer.PeriodicInformInterval",
-			"value": "300"
-		},
-		{
-			"type": "value",
-			"name": "Device.ManagementServer.ConnectionRequestUsername",
-			"value": "anlix"
-		},
-		{
-			"type": "value",
-			"name": "Device.ManagementServer.ConnectionRequestPassword",
-			"value": "landufrj123"
 		}
 	]
 }
