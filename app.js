@@ -238,13 +238,15 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
   app.listen(parseInt(schedulePort), function() {
+    // Runs every day at 20:00 - automatic update
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
     late8pmRule.minute = 0;
-    // Schedule automatic update
     schedule.scheduleJob(late8pmRule, function() {
       updater.update();
     });
+
+    // Runs every day at 00:00 - sync data with anlix control
     let midnightRule = new schedule.RecurrenceRule();
     midnightRule.hour = 0;
     midnightRule.minute = utilHandlers.getRandomInt(10, 50);
@@ -255,6 +257,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       updater.updateAppPersonalization(app);
       updater.updateLicenseApiSecret(app);
     });
+
+    // Runs every day at 04:00 - contact offline TR069 devices
     let early4amRule = new schedule.RecurrenceRule();
     early4amRule.hour = 4;
     early4amRule.minute = 0;
@@ -264,6 +268,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       // out best fix available...
       acsDeviceController.pingOfflineDevices();
     });
+
+    // Runs every day at 05:00 - clean up tasks in genieacs database
     let early5amRule = new schedule.RecurrenceRule();
     early5amRule.hour = 5;
     early5amRule.minute = 0;
