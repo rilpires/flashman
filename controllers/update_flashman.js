@@ -133,8 +133,6 @@ const updateGenieRepo = function(ref) {
 
 const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
-    let field1='InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-    let field2='Device.ManagementServer.PeriodicInformInterval';
     Config.findOne({is_default: true}).then((config)=>{
       if (!config) {
         console.log('Error reading configs from database in update GenieACS!');
@@ -148,52 +146,11 @@ const updateGenieACS = function(upgrades) {
       } else {
         waitForUpdate = Promise.resolve();
       }
-      // Update provision script if needed
-      let waitForProvision;
-      if (upgrades.updateProvision) {
-        try {
-          let provisionScript = fs.readFileSync(
-            './controllers/external-genieacs/provision.js', 'utf8',
-          );
-          console.log('Updating GenieACS provision...');
-          waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
-        } catch (e) {
-          waitForProvision = Promise.reject();
-        }
-      } else {
-        waitForProvision = Promise.resolve();
-      }
-      // Update preset json if needed
-      let waitForPreset;
-      if (upgrades.updatePreset) {
-        try {
-          let preset = JSON.parse(fs.readFileSync(
-            './controllers/external-genieacs/flashman-preset.json',
-          ));
-          // Alter the periodic inform interval based on database config
-          let interval = '' + parseInt(config.tr069.inform_interval / 1000);
-          preset.configurations.find((c) => c.name === field1).value = interval;
-          preset.configurations.find((c) => c.name === field2).value = interval;
-          preset._id = 'inform';
-          console.log('Updating GenieACS preset...');
-          waitForPreset = tasksApi.putPreset(preset);
-        } catch (e) {
-          waitForPreset = Promise.reject();
-        }
-      } else {
-        waitForPreset = Promise.resolve();
-      }
       // Wait for all promises and check results
-      let promises = [waitForUpdate, waitForProvision, waitForPreset];
+      let promises = [waitForUpdate];
       Promise.allSettled(promises).then((values)=>{
         if (values[0].status !== 'fulfilled') {
           console.log('Error updating GenieACS repository!');
-        }
-        if (values[1].status !== 'fulfilled') {
-          console.log('Error updating GenieACS provision script!');
-        }
-        if (values[2].status !== 'fulfilled') {
-          console.log('Error updating GenieACS preset json!');
         }
         if (values.some((v) => v.status !== 'fulfilled')) {
           return reject();
@@ -206,97 +163,105 @@ const updateGenieACS = function(upgrades) {
   });
 };
 
-const updateProvisionsPresets = function() {
-  return new Promise((resolve, reject) => {
-    // Get config from database
-    Config.findOne({is_default: true}).then((config)=>{
-      if (!config) {
-        console.log('Error reading configs from database in update GenieACS!');
-        return resolve();
-      }
-      // Update diagnostic provision script
-      let waitForProvision;
-      try {
-        let provisionScript = fs.readFileSync(
-          './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
-        );
-        console.log('Updating GenieACS provision...');
-        waitForProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
-      } catch (e) {
-        waitForProvision = Promise.reject();
-      }
+const updateProvisionsPresets = async function(config) {
+  let waitForProvision;
+  try {
+    let provisionScript = fs.readFileSync(
+      './controllers/external-genieacs/provision.js', 'utf8',
+    );
+    console.log('Updating GenieACS provision...');
+    waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
+  } catch (e) {
+    waitForProvision = Promise.reject();
+  }
 
-      // Update preset jsons
-      let waitForBootstrapPreset;
-      try {
-        let preset = JSON.parse(fs.readFileSync(
-          './controllers/external-genieacs/bootstrap-preset.json',
-        ));
-        console.log('Updating Genie bootstrap-preset...');
-        waitForBootstrapPreset = tasksApi.putPreset(preset);
-      } catch (e) {
-        waitForBootstrapPreset = Promise.reject();
-      }
-      let waitForBootPreset;
-      try {
-        let preset = JSON.parse(fs.readFileSync(
-          './controllers/external-genieacs/boot-preset.json',
-        ));
-        console.log('Updating Genie boot-preset...');
-        waitForBootPreset = tasksApi.putPreset(preset);
-      } catch (e) {
-        waitForBootPreset = Promise.reject();
-      }
-      let waitForPeriodicPreset;
-      try {
-        let preset = JSON.parse(fs.readFileSync(
-          './controllers/external-genieacs/periodic-preset.json',
-        ));
-        console.log('Updating Genie periodic-preset...');
-        waitForPeriodicPreset = tasksApi.putPreset(preset);
-      } catch (e) {
-        waitForPeriodicPreset = Promise.reject();
-      }
-      let waitForDiagPreset;
-      try {
-        let preset = JSON.parse(fs.readFileSync(
-          './controllers/external-genieacs/diagnostic-preset.json',
-        ));
-        console.log('Updating Genie diagnostic-preset...');
-        waitForDiagPreset = tasksApi.putPreset(preset);
-      } catch (e) {
-        waitForDiagPreset = Promise.reject();
-      }
+  let waitForDiagProvision;
+  try {
+    let provisionScript = fs.readFileSync(
+      './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
+    );
+    console.log('Updating GenieACS diagnostic-provision...');
+    waitForDiagProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
+  } catch (e) {
+    waitForDiagProvision = Promise.reject();
+  }
 
-      // Wait for all promises and check results
-      let promises = [waitForProvision, waitForBootstrapPreset,
-                      waitForBootPreset, waitForPeriodicPreset,
-                      waitForDiagPreset];
-      Promise.allSettled(promises).then((values)=>{
-        if (values[0].status !== 'fulfilled') {
-          console.log('Error updating Genie diagnostic-provision script!');
-        }
-        if (values[1].status !== 'fulfilled') {
-          console.log('Error updating Genie bootstrap-preset json!');
-        }
-        if (values[2].status !== 'fulfilled') {
-          console.log('Error updating Genie boot-preset json!');
-        }
-        if (values[3].status !== 'fulfilled') {
-          console.log('Error updating Genie periodic-preset json!');
-        }
-        if (values[4].status !== 'fulfilled') {
-          console.log('Error updating Genie diagnostic-preset json!');
-        }
-        if (values.some((v) => v.status !== 'fulfilled')) {
-          return resolve();
-        } else {
-          console.log('GenieACS updated successfully!');
-          return resolve();
-        }
-      });
-    });
-  });
+  let waitForBootstrapPreset;
+  try {
+    let preset = JSON.parse(fs.readFileSync(
+      './controllers/external-genieacs/bootstrap-preset.json',
+    ));
+    console.log('Updating Genie bootstrap-preset...');
+    waitForBootstrapPreset = tasksApi.putPreset(preset);
+  } catch (e) {
+    waitForBootstrapPreset = Promise.reject();
+  }
+
+  let waitForBootPreset;
+  try {
+    let preset = JSON.parse(fs.readFileSync(
+      './controllers/external-genieacs/boot-preset.json',
+    ));
+    console.log('Updating Genie boot-preset...');
+    waitForBootPreset = tasksApi.putPreset(preset);
+  } catch (e) {
+    waitForBootPreset = Promise.reject();
+  }
+
+  let waitForPeriodicPreset;
+  try {
+    let preset = JSON.parse(fs.readFileSync(
+      './controllers/external-genieacs/periodic-preset.json',
+    ));
+    console.log('Updating Genie periodic-preset...');
+    waitForPeriodicPreset = tasksApi.putPreset(preset);
+  } catch (e) {
+    waitForPeriodicPreset = Promise.reject();
+  }
+
+  let waitForDiagPreset;
+  try {
+    let preset = JSON.parse(fs.readFileSync(
+      './controllers/external-genieacs/diagnostic-preset.json',
+    ));
+    console.log('Updating Genie diagnostic-preset...');
+    waitForDiagPreset = tasksApi.putPreset(preset);
+  } catch (e) {
+    waitForDiagPreset = Promise.reject();
+  }
+
+  let waitForLegacyPresetDelete;
+  try {
+    console.log('Removing Genie legacy inform preset...');
+    waitForDiagPreset = tasksApi.deletePreset('inform');
+  } catch (e) {
+    waitForLegacyPresetDelete = Promise.reject();
+  }
+
+  // Wait for all promises and check results
+  let promises = [waitForProvision, waitForDiagProvision,
+                  waitForBootstrapPreset, waitForBootPreset,
+                  waitForPeriodicPreset, waitForDiagPreset,
+                  waitForLegacyPresetDelete];
+  let values = await Promise.allSettled(promises);
+  if (values[0].status !== 'fulfilled') {
+    console.log('Error updating Genie diagnostic-provision script!');
+  }
+  if (values[1].status !== 'fulfilled') {
+    console.log('Error updating Genie bootstrap-preset json!');
+  }
+  if (values[2].status !== 'fulfilled') {
+    console.log('Error updating Genie boot-preset json!');
+  }
+  if (values[3].status !== 'fulfilled') {
+    console.log('Error updating Genie periodic-preset json!');
+  }
+  if (values[4].status !== 'fulfilled') {
+    console.log('Error updating Genie diagnostic-preset json!');
+  }
+  if (values.every((v) => v.status === 'fulfilled')) {
+    console.log('GenieACS presets and provisions updated successfully!');
+  }
 };
 
 const isRunningUserOwnerOfDirectory = function() {
@@ -333,15 +298,11 @@ const isRunningUserOwnerOfDirectory = function() {
 const checkGenieNeedsUpdate = function(remotePackageJson) {
   return new Promise((resolve, reject)=>{
     let updateGenie = false;
-    let updateProvision = false;
-    let updatePreset = false;
     if (!remotePackageJson.genieacs || !localPackageJson.genieacs) {
       // Either remote or local dont have genieacs information - cannot compare
       // data, so it makes no sense to upgrade anything
       return resolve({
         'updateGenie': updateGenie,
-        'updateProvision': updateProvision,
-        'updatePreset': updatePreset,
       });
     }
     exec('[ -d "../genieacs" ]', (err, stdout, stderr) => {
@@ -349,8 +310,6 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
         // No genieacs directory - no TR-069 installation, so no upgrades
         return resolve({
           'updateGenie': updateGenie,
-          'updateProvision': updateProvision,
-          'updatePreset': updatePreset,
         });
       }
       let localGenieRef = localPackageJson.genieacs.ref;
@@ -360,24 +319,8 @@ const checkGenieNeedsUpdate = function(remotePackageJson) {
         // GenieACS version has changed, needs to update it
         updateGenie = true;
       }
-      let localProvisionHash = localPackageJson.genieacs.provisionHash;
-      let remoteProvisionHash = remotePackageJson.genieacs.provisionHash;
-      if (localProvisionHash && remoteProvisionHash &&
-          localProvisionHash !== remoteProvisionHash) {
-        // Provision script has changed, needs to update it
-        updateProvision = true;
-      }
-      let localPresetHash = localPackageJson.genieacs.presetHash;
-      let remotePresetHash = remotePackageJson.genieacs.presetHash;
-      if (localPresetHash && remotePresetHash &&
-          localPresetHash !== remotePresetHash) {
-        // Preset json has changed, needs to update it
-        updatePreset = true;
-      }
       return resolve({
         'updateGenie': updateGenie,
-        'updateProvision': updateProvision,
-        'updatePreset': updatePreset,
         'newGenieRef': remoteGenieRef,
       });
     });
@@ -426,7 +369,7 @@ updateController.rebootGenie = function(instances) {
 
         // Update genieACS provisions and presets
         console.log('Updating genieACS provisions and presets');
-        await updateProvisionsPresets();
+        await updateProvisionsPresets(config);
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
