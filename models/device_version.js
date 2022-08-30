@@ -1520,6 +1520,16 @@ const grantWanLanInformation = function(version) {
   }
 };
 
+// Traceroute
+const grantTraceroute = function(version) {
+  if (version.match(versionRegex)) {
+    return (DeviceVersion.versionCompare(version, '0.35.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 const grantSpeedTest = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
@@ -1536,6 +1546,26 @@ const grantSpeedTest = function(version, model) {
     return true;
   }
 };
+
+
+// Custom URL for SpeedTest
+const grantRawSpeedTest = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].speedtest_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (DeviceVersion.versionCompare(version, '0.35.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
+
 
 const grantSpeedTestLimit = function(version, model) {
   if (grantSpeedTest(version, model) &&
@@ -1600,7 +1630,7 @@ const grantVlanSupport = function(version, model) {
   }
 };
 
-const grantWanBytesSupport = function(version, model) {
+const grantStatisticsSupport = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
@@ -1742,8 +1772,15 @@ const convertTR069Permissions = function(cpePermissions) {
     grantDiacritics: cpePermissions.wifi.allowDiacritics,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
-    grantWifiBand: true,
-    grantWifiBandAuto: true,
+    grantWifiModeRead: cpePermissions.wifi.modeRead,
+    grantWifiModeEdit: cpePermissions.wifi.modeWrite,
+    grantWifiBandRead2: cpePermissions.wifi.bandRead2,
+    grantWifiBandRead5: cpePermissions.wifi.bandRead5,
+    grantWifiBandEdit2: cpePermissions.wifi.bandWrite2,
+    grantWifiBandEdit5: cpePermissions.wifi.bandWrite5,
+    grantWifiBandAuto2: cpePermissions.wifi.bandAuto2,
+    grantWifiBandAuto5: cpePermissions.wifi.bandAuto5,
+    grantWifi5ChannelList: cpePermissions.wifi.list5ghzChannels,
     grantWifiState: true,
     grantWifiPowerHiddenIpv6Box: false,
     grantWifiExtendedChannels: cpePermissions.wifi.extended2GhzChannels,
@@ -1755,13 +1792,14 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSiteSurvey: false,
     grantUpnp: false,
     grantSpeedTest: cpePermissions.features.speedTest,
+    grantRawSpeedTest: true,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
     grantOpmode: cpePermissions.features.meshCable ||
       cpePermissions.features.meshWifi,
     grantVlanSupport: false,
-    grantWanBytesSupport: true,
+    grantStatisticsSupport: true,
     grantPonSignalSupport: cpePermissions.features.ponSignal,
     grantMeshMode: false,
     grantMeshV2PrimaryModeUpgrade: false,
@@ -1776,6 +1814,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSTUN: cpePermissions.features.stun,
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
     grantWanLanInformation: false,
+    grantTraceroute: false,
   };
   if (permissions.grantPortForward) {
     permissions.grantPortForwardOpts =
@@ -1828,8 +1867,15 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantDiacritics = grantDiacritics(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
-  result.grantWifiBand = grantWifiBand(version, model);
-  result.grantWifiBandAuto = grantWifiBandAuto(version, model);
+  result.grantWifiModeRead = grantWifiBand(version, model);
+  result.grantWifiModeEdit = grantWifiBand(version, model);
+  result.grantWifiBandRead2 = grantWifiBand(version, model);
+  result.grantWifiBandRead5 = grantWifiBand(version, model);
+  result.grantWifiBandEdit2 = grantWifiBand(version, model);
+  result.grantWifiBandEdit5 = grantWifiBand(version, model);
+  result.grantWifiBandAuto2 = grantWifiBandAuto(version, model);
+  result.grantWifiBandAuto5 = grantWifiBandAuto(version, model);
+  result.grantWifi5ChannelList = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   result.grantWifiState = grantWifiState(version, model);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
   result.grantWifiExtendedChannels = grantWifiExtendedChannels(version, model);
@@ -1841,12 +1887,13 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantSiteSurvey = grantSiteSurvey(version, model);
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
+  result.grantRawSpeedTest = grantRawSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
   result.grantBlockWiredDevices = grantBlockWiredDevices(model);
   result.grantOpmode = grantOpmode(version, model);
   result.grantVlanSupport = grantVlanSupport(version, model);
-  result.grantWanBytesSupport = grantWanBytesSupport(version, model);
+  result.grantStatisticsSupport = grantStatisticsSupport(version, model);
   result.grantPonSignalSupport = grantPonSignalSupport(model);
   result.grantMeshMode = grantMeshV1Mode(version, model);
   result.grantMeshV2PrimaryModeUpgrade =
@@ -1863,6 +1910,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantSTUN = hasSTUNSupport(model);
   result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   result.grantWanLanInformation = grantWanLanInformation(version);
+  result.grantTraceroute = grantTraceroute(version);
   return result;
 };
 

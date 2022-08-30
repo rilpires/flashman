@@ -51,6 +51,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case '11bgn':
     case '11a':
     case '11na':
+    case '11n':
     case 'a':
     case 'n':
     case 'g,n':
@@ -73,6 +74,7 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'ac,n':
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
+    case '11ax':
     case 'ax':
     case 'a/n/ac/ax':
       return (is5ghz) ? '11ax' : undefined;
@@ -313,6 +315,17 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -369,6 +382,7 @@ const createRegistry = async function(req, cpe, permissions) {
     mesh_id: newMeshId,
     bssid_mesh2: meshBSSIDs.mesh2,
     bssid_mesh5: meshBSSIDs.mesh5,
+    ping_hosts: defaultPingHosts,
   });
   try {
     await newDevice.save();
@@ -522,6 +536,8 @@ const requestSync = async function(device) {
     lan: false,
     wifi2: false,
     wifi5: false,
+    wifiMode: false,
+    wifiBand: false,
     mesh2: false,
     mesh5: false,
     port_forward: false,
@@ -587,10 +603,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  if (fields.wifi2.mode) {
+  if (fields.wifi2.mode && permissions.grantWifiModeRead) {
+    dataToFetch.wifiMode = true;
     parameterNames.push(fields.wifi2.mode);
   }
-  if (fields.wifi2.band) {
+  if (fields.wifi2.band && permissions.grantWifiBandRead2) {
+    dataToFetch.wifiBand = true;
     parameterNames.push(fields.wifi2.band);
   }
   if (device.wifi_is_5ghz_capable) {
@@ -601,10 +619,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    if (fields.wifi5.mode) {
+    if (fields.wifi5.mode && permissions.grantWifiModeRead) {
+      dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead5) {
+      dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
   }
@@ -812,12 +832,16 @@ const fetchSyncResult =
         acsData.wifi2.auto = getFieldFromGenieData(
           data, wifi2.auto, useLastIndexOnWildcard,
         );
-        acsData.wifi2.mode = getFieldFromGenieData(
-          data, wifi2.mode, useLastIndexOnWildcard,
-        );
-        acsData.wifi2.band = getFieldFromGenieData(
-          data, wifi2.band, useLastIndexOnWildcard,
-        );
+        if (dataToFetch.wifiMode) {
+          acsData.wifi2.mode = getFieldFromGenieData(
+            data, wifi2.mode, useLastIndexOnWildcard,
+          );
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi2.band = getFieldFromGenieData(
+            data, wifi2.band, useLastIndexOnWildcard,
+          );
+        }
       }
       if (dataToFetch.wifi5) {
         let wifi5 = fields.wifi5;
@@ -839,12 +863,16 @@ const fetchSyncResult =
         acsData.wifi5.auto = getFieldFromGenieData(
           data, wifi5.auto, useLastIndexOnWildcard,
         );
-        acsData.wifi5.mode = getFieldFromGenieData(
-          data, wifi5.mode, useLastIndexOnWildcard,
-        );
-        acsData.wifi5.band = getFieldFromGenieData(
-          data, wifi5.band, useLastIndexOnWildcard,
-        );
+        if (dataToFetch.wifiMode) {
+          acsData.wifi5.mode = getFieldFromGenieData(
+            data, wifi5.mode, useLastIndexOnWildcard,
+          );
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi5.band = getFieldFromGenieData(
+            data, wifi5.band, useLastIndexOnWildcard,
+          );
+        }
       }
       if (dataToFetch.mesh2) {
         let mesh2 = fields.mesh2;
@@ -1287,16 +1315,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode) {
       device.wifi_mode = mode2;
     } else if (device.wifi_mode !== mode2) {
-      changes.wifi2.mode = device.wifi_mode;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi2.mode = device.wifi_mode;
+        hasChanges = true;
+      } else {
+        device.wifi_mode = mode2;
+      }
     }
-    if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(cpe, data.wifi2.band.value,
-       data.wifi2.mode.value, false);
-      if (data.wifi2.band.value && !device.wifi_band) {
-        device.wifi_band = band2;
-      } else if (device.wifi_band !== band2) {
+  }
+  if (data.wifi2.band && data.wifi2.band.value) {
+    let mode2 = (device.wifi_mode) ? device.wifi_mode : '11n';
+    let band2 = convertWifiBand(cpe, data.wifi2.band.value, mode2, false);
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band === 'auto' && !permissions.grantWifiBandAuto2
+    );
+    if (band2 && (!device.wifi_band || autoWithNoPermission)) {
+      device.wifi_band = band2;
+    } else if (device.wifi_band !== band2) {
+      if (permissions.grantWifiBandEdit2) {
         changes.wifi2.band = device.wifi_band;
+        hasChanges = true;
+      } else {
+        device.wifi_band = band2;
       }
     }
   }
@@ -1305,16 +1346,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode_5ghz) {
       device.wifi_mode_5ghz = mode5;
     } else if (device.wifi_mode_5ghz !== mode5) {
-      changes.wifi5.mode = device.wifi_mode_5ghz;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi5.mode = device.wifi_mode_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_mode_5ghz = mode5;
+      }
     }
-    if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(cpe, data.wifi5.band.value,
-       data.wifi5.mode.value, true);
-      if (data.wifi5.band.value && !device.wifi_band_5ghz) {
-        device.wifi_band_5ghz = band5;
-      } else if (device.wifi_band_5ghz !== band5) {
+  }
+  if (data.wifi5.band && data.wifi5.band.value) {
+    let mode5 = (device.wifi_mode_5ghz) ? device.wifi_mode_5ghz : '11ac';
+    let band5 = convertWifiBand(cpe, data.wifi5.band.value, mode5, true);
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5
+    );
+    if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
+      device.wifi_band_5ghz = band5;
+    } else if (device.wifi_band_5ghz !== band5) {
+      if (permissions.grantWifiBandEdit5) {
         changes.wifi5.band = device.wifi_band_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_band_5ghz = band5;
       }
     }
   }
@@ -1589,7 +1643,7 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
-acsDeviceInfoController.requestWanBytes = function(device) {
+acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -1605,6 +1659,26 @@ acsDeviceInfoController.requestWanBytes = function(device) {
     ],
   };
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
+};
+
+acsDeviceInfoController.requestPonData = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let taskParameterNames = [rxPowerField, txPowerField];
+  if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+    taskParameterNames.push(fields.wan.pon_rxpower_epon);
+    taskParameterNames.push(fields.wan.pon_txpower_epon);
+  }
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: taskParameterNames,
+  };
+  TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
 };
 
 acsDeviceInfoController.requestUpStatus = function(device) {

@@ -9,6 +9,18 @@ huaweiModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.wifi.axWiFiMode = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+    149, 153, 157, 161,
+  ];
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '10.0.5.29(C947)': [],
   };

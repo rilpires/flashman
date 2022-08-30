@@ -13,6 +13,8 @@ let configSchema = new mongoose.Schema({
     functions_fqdn: String,
     secret_token: String,
   },
+  blockLicenseAtDeviceRemoval: {
+    type: Boolean, required: true, default: false},
   tr069: {
     server_url: String,
     web_login: String,
@@ -64,6 +66,7 @@ let configSchema = new mongoose.Schema({
     wifi_devices: Boolean,
     ping_and_wan: Boolean,
   },
+  default_ping_hosts: {type: [String]},
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
     is_aborted: {type: Boolean, default: false},

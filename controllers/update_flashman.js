@@ -605,6 +605,7 @@ updateController.getAutoConfig = function(req, res) {
         bypassMqttSecretCheck: matchedConfig.mqtt_secret_bypass,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
+        blockLicenseAtDeviceRemoval: matchedConfig.blockLicenseAtDeviceRemoval,
         tr069ServerURL: matchedConfig.tr069.server_url,
         tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
@@ -717,6 +718,12 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
+
+    let mustBlockLicense = req.body['must-block-license-at-removal'];
+    mustBlockLicense = (
+      mustBlockLicense === true || mustBlockLicense === 'true'
+    ) ? true : false;
+    config.blockLicenseAtDeviceRemoval = mustBlockLicense;
 
     let ponSignalThreshold = parseInt(req.body['pon-signal-threshold']);
     if (isNaN(ponSignalThreshold)) {

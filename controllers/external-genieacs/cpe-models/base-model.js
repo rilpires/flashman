@@ -76,14 +76,19 @@ basicCPEModel.modelPermissions = function() {
       hasUptimeField: true, // flag to handle devices that don't have uptime
     },
     wifi: {
+      list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
       allowDiacritics: false, // allows accented chars for ssid and password
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13
       ssidRead: true, // will display current wifi ssid and password
       ssidWrite: true, // can change current wifi ssid and password
-      bandRead: true, // will display current wifi band
-      bandWrite: true, // can change current wifi band
+      bandRead2: true, // will display current wifi 2.4 band
+      bandRead5: true, // will display current wifi 5 band
+      bandWrite2: true, // can change current wifi 2.4 band
+      bandWrite5: true, // can change current wifi 5 band
+      bandAuto2: true, // can change current wifi 2.4 band to auto mode
+      bandAuto5: true, // can change current wifi 5 band to auto mode
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
@@ -321,6 +326,23 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
     ]);
   }
   return values;
+};
+
+// Used to convert the speed test result for devices that do not FullLoad
+basicCPEModel.convertSpeedValueBasic = function(endTime, beginTime, bytesRec) {
+  // 10**3 => seconds to miliseconds (because of valueOf() notation)
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  let deltaTime = (endTime - beginTime) / (10**3);
+  return (8/(1024**2)) * (bytesRec/deltaTime);
+};
+
+// Used to convert the speed test result for devices that do FullLoad
+basicCPEModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**6 => microsecond to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**6))/(1024**2)) * (bytesRec/period);
 };
 
 // Used when computing dhcp ranges

@@ -54,7 +54,7 @@ module.exports = (app) => {
           grantOpmodeEdit: true,
           grantVlan: 2,
           grantVlanProfileEdit: true,
-          grantWanBytesView: true,
+          grantStatisticsView: true,
           grantCsvExport: true,
           grantFirmwareBetaUpgrade: true,
           grantFirmwareRestrictedUpgrade: true,
@@ -71,6 +71,20 @@ module.exports = (app) => {
               {name: roles[idx].name},
               {grantShowRowsPerPage: true}, (err) => {
                 console.log('Role updated');
+              });
+          }
+          if (typeof roles[idx].grantStatisticsView == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantStatisticsView: roles[idx].grantWanBytesView},
+              (err) => {
+                console.log('Role updated: Renamed grantWanBytesView');
+                Role.collection.update(
+                  {name: roles[idx].name},
+                  {$unset: {grantWanBytesView: 1}},
+                  (err) => {
+                    console.log('Role updated: Removed grantWanBytesView');
+                  });
               });
           }
         }

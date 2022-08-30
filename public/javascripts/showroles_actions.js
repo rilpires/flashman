@@ -301,10 +301,10 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text(t('wanTrafficPlotsAccess')),
+                        .text(t('cpeStatisticsPlotsAccess')),
                         $('<select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-bytes').append(
+                        .attr('name', 'grant-statistics').append(
                           $('<option>').val(false).text(t('Block')),
                           $('<option>').val(true).text(t('Allow')),
                         ),
@@ -336,6 +336,19 @@ anlixDocumentReady.add(function() {
                           $('<option>').val(0).text(t('Block')),
                           $('<option>').val(1).text(t('Allow')),
                           $('<option>').val(2).text(t('allowMany')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
+                        .text(t('cpeLicenseBlockAtRemoval')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-block-license-at-removal').append(
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
                         ),
                       ),
                     ),
@@ -695,6 +708,9 @@ anlixDocumentReady.add(function() {
         $(rowObj).find('[name=grant-device-removal] option[value=' +
           deviceRemovalValue + ']')
         .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-block-license-at-removal] option[value=' +
+          roleObj.grantDeviceLicenseBlock + ']')
+        .attr('selected', 'selected');
         $(rowObj).find('[name=grant-device-add] option[value=' +
           roleObj.grantDeviceAdd + ']')
         .attr('selected', 'selected');
@@ -743,8 +759,8 @@ anlixDocumentReady.add(function() {
         $(rowObj).find('[name=grant-csv-export] option[value=' +
           roleObj.grantCsvExport + ']')
         .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-wan-bytes] option[value=' +
-          roleObj.grantWanBytesView + ']')
+        $(rowObj).find('[name=grant-statistics] option[value=' +
+          roleObj.grantStatisticsView + ']')
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-vlan] option[value=' +
           roleObj.grantVlan + ']')
