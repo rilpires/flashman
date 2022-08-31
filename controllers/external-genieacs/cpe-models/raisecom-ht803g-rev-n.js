@@ -35,9 +35,7 @@ raisecomModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = true;
   permissions.wifi.modeRead = true;
   permissions.wifi.modeWrite = true;
-
-  // TODO: create a permission to control the usage of space characteres on SSID
-  // permissions.wifi.allowSpace = false;
+  permissions.wifi.allowSpaces = false;
 
   // firmware permissions
   permissions.firmwareUpgrades = {
