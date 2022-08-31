@@ -356,9 +356,19 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   }
   let doesSsid2HavePrefix = (cleanSsid2.ssid) !== ssid2ghz;
   let doesSsid5HavePrefix = (cleanSsid5.ssid) !== ssid5ghz;
-  let anySentHasPrefix = (doesSsid2HavePrefix || doesSsid5HavePrefix);
-  let bothSentHasPrefix = (doesSsid2HavePrefix && doesSsid5HavePrefix);
-  let canEnablePrefix = (cleanSsid2.enablePrefix && cleanSsid5.enablePrefix);
+  let anySentHasPrefix;
+  let allSentHasPrefix;
+  let canEnablePrefix;
+  if (ssid5ghz !== '') {
+    anySentHasPrefix = (doesSsid2HavePrefix || doesSsid5HavePrefix);
+    allSentHasPrefix = (doesSsid2HavePrefix && doesSsid5HavePrefix);
+    canEnablePrefix = (cleanSsid2.enablePrefix && cleanSsid5.enablePrefix);
+  } else {
+    // Discard 5ghz since device didn't report it - not 5ghz capable
+    anySentHasPrefix = doesSsid2HavePrefix;
+    allSentHasPrefix = doesSsid2HavePrefix;
+    canEnablePrefix = cleanSsid2.enablePrefix;
+  }
 
   // If we are creating a new registry, we need to analyze the received SSIDs
   // to check for pre-existing prefixes, regardless of the global flag. The
@@ -366,13 +376,13 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   // no SSID prefix already present, along with the check for enough space in
   // the current SSID to fit in the prefix
   if (isNewRegistry) {
-    if (!globalPrefixFlag && !bothSentHasPrefix) {
+    if (!globalPrefixFlag && !allSentHasPrefix) {
       // If the flag is disabled and sent SSID has no prefix, nothing to do
       return {
         enablePrefix: false, prefixToUse: '',
         ssid2: ssid2ghz, ssid5: ssid5ghz,
       };
-    } else if (!globalPrefixFlag && bothSentHasPrefix) {
+    } else if (!globalPrefixFlag && allSentHasPrefix) {
       // If the flag is disabled and sent SSID has a prefix, we need to store
       // that information to avoid removing the prefix later on
       return {
