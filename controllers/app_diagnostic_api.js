@@ -660,7 +660,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       // prefix and this local flag to the app, to tell it whether the user
       // should be locked in the prefix or not
       let prefixObj = {
-        name: checkResponse.prefix,
+        name: checkResponse.prefixToUse,
         grant: checkResponse.enablePrefix,
       };
 
