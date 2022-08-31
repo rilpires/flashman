@@ -1437,6 +1437,7 @@ anlixDocumentReady.add(function() {
           let grantBlockDevices = device.permissions.grantBlockDevices;
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
           let grantDiacritics = device.permissions.grantDiacritics;
+          let grantSpaces = device.permissions.grantSpaces;
           // WAN and LAN Information
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
@@ -1511,6 +1512,7 @@ anlixDocumentReady.add(function() {
             ((device.mesh_slaves) ?
               JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi-diacritics="'+grantDiacritics+'"';
+          formAttr += ' data-validate-wifi-space="'+grantSpaces+'"';
           formAttr += ' data-validate-wifi="'+
             (isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+
