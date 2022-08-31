@@ -1104,12 +1104,29 @@ anlixDocumentReady.add(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
-          '<label class="active">'+
-            ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
-          '</label>'+
-          '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.version+'">'+
-          '<div class="invalid-feedback"></div>'+
+          // If the model has hardware version info, then
+          // renders two columns on a row to display firmware and
+          // hardware versions side by side
+          '<div class="row">'+
+            '<div class="col">'+
+              // Firmware version info
+              '<label class="active">'+
+                ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
+              '</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>'+
+            // Display hardware version info, if exists
+            ((isTR069 && device.hw_version) ?
+            '<div class="col">'+
+              // Hardware version info
+              '<label class="active">'+t('hardwareVersion')+'</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.hw_version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>' : '') +
+          '</div>'+
         '</div>'+
         (mesh > -1 ?
           '<div class="md-form">'+
