@@ -1101,8 +1101,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let checkResponse = deviceHandlers.checkSsidPrefix(
       config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
       matchedDevice.isSsidPrefixEnabled);
+    // This function returns what prefix we should be using for this device,
+    // based on the local flag and what the saved SSID values are. We send the
+    // prefix and this local flag to the app, to tell it whether the user should
+    // be locked in the prefix or not
     let prefixObj = {};
-    prefixObj.name = checkResponse.prefix;
+    prefixObj.name = checkResponse.prefixToUse;
     prefixObj.grant = checkResponse.enablePrefix;
 
     let response = {

@@ -13,6 +13,7 @@ const language = require('./language');
 const util = require('./handlers/util');
 const t = language.i18next.t;
 let Config = require('../models/config');
+let Devices = require('../models/device');
 let updateController = {};
 
 const isMajorUpgrade = function(target, current) {
@@ -683,6 +684,57 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
   });
 };
 
+const migrateDevicePrefixes = async function(config, oldPrefix) {
+  // We must update the devices already in database with new values for their
+  // local flag, based on the SSID that was already saved and their local flag
+  let projection = {
+    _id: 1, wifi_ssid: 1, wifi_ssid_5ghz: 1, isSsidPrefixEnabled: 1,
+  };
+  // Make sure old prefix is an empty string if it is not set
+  if (typeof oldPrefix !== 'string') {
+    oldPrefix = '';
+  }
+  let devices;
+  try {
+    devices = await Devices.find({}, projection);
+  } catch (e) {
+    console.log('Error querying devices for prefix migration: ' + e);
+    return;
+  }
+  console.log('Starting prefix migration for all devices');
+  devices.forEach(async (device)=>{
+    try {
+      let localPrefixFlag = device.isSsidPrefixEnabled;
+      let fullSsid2;
+      let fullSsid5;
+      if (localPrefixFlag) {
+        fullSsid2 = oldPrefix + device.wifi_ssid;
+        fullSsid5 = oldPrefix + device.wifi_ssid_5ghz;
+      } else {
+        fullSsid2 = device.wifi_ssid;
+        fullSsid5 = device.wifi_ssid_5ghz;
+      }
+      let cleanSsid2 = cleanAndCheckSsid(config.ssidPrefix, fullSsid2);
+      let cleanSsid5 = cleanAndCheckSsid(config.ssidPrefix, fullSsid5);
+      let hasPrefix2 = (cleanSsid2.ssid !== fullSsid2);
+      let hasPrefix5 = (cleanSsid5.ssid !== fullSsid5);
+      if (hasPrefix2 && hasPrefix5) {
+        device.isSsidPrefixEnabled = true;
+        device.wifi_ssid = cleanSsid2.ssid;
+        device.wifi_ssid_5ghz = cleanSsid5.ssid;
+      } else {
+        device.isSsidPrefixEnabled = false;
+        device.wifi_ssid = fullSsid2;
+        device.wifi_ssid_5ghz = fullSsid5;
+      }
+      await device.save();
+    } catch (e) {
+      console.log('Error migrating prefixes for device ' + device._id);
+    }
+  });
+  console.log('Finished migrating prefixes for all devices');
+};
+
 updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
@@ -752,6 +804,7 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
+    let willMigrateDevicePrefixes = {migrate: false};
     if (config.personalizationHash !== '') {
       const isSsidPrefixEnabled =
         (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
@@ -778,6 +831,16 @@ updateController.setAutoConfig = async function(req, res) {
           type: 'danger',
           message: t('ssidPrefixDisabledAlterationError'),
         });
+      }
+      // If prefix is enabled and has changed, we need to migrate devices in
+      // database to properly set local flags -> avoids cases where prefix will
+      // be inserted / removed out of nowhere
+      if (
+        isSsidPrefixEnabled && config.ssidPrefix !== req.body['ssid-prefix']
+      ) {
+        willMigrateDevicePrefixes = {
+          migrate: true, oldPrefix: config.ssidPrefix,
+        };
       }
       config.ssidPrefix = req.body['ssid-prefix'];
       config.isSsidPrefixEnabled = isSsidPrefixEnabled;
@@ -926,6 +989,10 @@ updateController.setAutoConfig = async function(req, res) {
 
     await config.save();
 
+    if (willMigrateDevicePrefixes.migrate) {
+      migrateDevicePrefixes(config, willMigrateDevicePrefixes.oldPrefix);
+    }
+
     // Start / stop insecure GenieACS instance if parameter changed
     if (changedInsecure && config.tr069.insecure_enable) {
       startInsecureGenieACS();
@@ -933,7 +1000,7 @@ updateController.setAutoConfig = async function(req, res) {
       stopInsecureGenieACS();
     }
 
-    return res.status(200).json({
+    res.status(200).json({
       type: 'success',
       message: message,
     });

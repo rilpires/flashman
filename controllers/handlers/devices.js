@@ -345,7 +345,7 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   let prefixValue = config.ssidPrefix;
   let cleanSsid2;
   let cleanSsid5;
-  if (prefixValue !== '') {
+  if (typeof prefixValue === 'string' && prefixValue !== '') {
     // Properly check if prefix is in sent ssid / can fit into sent ssid
     cleanSsid2 = deviceHandlers.cleanAndCheckSsid(prefixValue, ssid2ghz);
     cleanSsid5 = deviceHandlers.cleanAndCheckSsid(prefixValue, ssid5ghz);

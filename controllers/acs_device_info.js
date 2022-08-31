@@ -157,17 +157,22 @@ const createRegistry = async function(req, cpe, permissions) {
   // -> 'new registry' scenario
   let checkResponse = deviceHandlers.checkSsidPrefix(
     matchedConfig, ssid, ssid5ghz, false, true);
-  /* if in the check is not enabled but hash exists and is
-    enabled in config, so we have an error */
-  createPrefixErrNotification = !checkResponse.enablePrefix &&
-    matchedConfig.personalizationHash !== '' &&
-    matchedConfig.isSsidPrefixEnabled;
+  // The function already returns what SSID we should be saving in the database
+  // and what the local flag value should be, based on the global flag and SSID
+  // values.
   isSsidPrefixEnabled = checkResponse.enablePrefix;
-  // cleaned ssid
   ssid = checkResponse.ssid2;
   if (wifi5Capable) {
     ssid5ghz = checkResponse.ssid5;
   }
+  // If the global flag was set to true and the function returned a false value
+  // for the local flag, this means the prefix could not be activated - thus we
+  // issue a warning notification for this device
+  createPrefixErrNotification = (
+    !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled
+  );
 
   // Check for an alternative UID to replace serial field
   let altUid;
@@ -1105,16 +1110,21 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Verify ssid prefix necessity - remove prefix from database object
-  let checkResponse = await getSsidPrefixCheck(device);
-  let ssidPrefix = checkResponse.prefix;
-  device.wifi_ssid = checkResponse.ssid2;
-  device.wifi_ssid_5ghz = checkResponse.ssid5;
+  let checkPrefixLocal = await getSsidPrefixCheck(device);
+  // This function returns what prefix we should be using for this device, based
+  // on the local flag and what the saved SSID values are. We use the prefix to
+  // then prepend it to the saved SSID, so we can compare it to what the CPE
+  // sent to Flashman
+  let ssidPrefix = checkPrefixLocal.prefixToUse;
 
   // Compare prefix database SSIDs with device's current SSIDs
   if (data.wifi2.ssid && data.wifi2.ssid.value) {
     if (!device.wifi_ssid) {
       device.wifi_ssid = data.wifi2.ssid.value.trim();
     }
+    // If database prefix + SSID differs from received SSID, we force a sync
+    // based on what is in database. Changes structure should receive ONLY
+    // the part that isn't the prefix
     if (ssidPrefix + device.wifi_ssid.trim() !== data.wifi2.ssid.value.trim()) {
       changes.wifi2.ssid = device.wifi_ssid.trim();
       hasChanges = true;
@@ -1124,6 +1134,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_ssid_5ghz) {
       device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
     }
+    // If database prefix + SSID differs from received SSID, we force a sync
+    // based on what is in database. Changes structure should receive ONLY
+    // the part that isn't the prefix
     if (ssidPrefix + device.wifi_ssid_5ghz.trim() !==
         data.wifi5.ssid.value.trim()
     ) {
@@ -1660,7 +1673,10 @@ acsDeviceInfoController.updateInfo = async function(
   let rebootAfterUpdate = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
-  let ssidPrefix = ssidPrefixObj.prefix;
+  // This function returns what prefix we should be using for this device, based
+  // on the local flag and what the saved SSID values are. We use the prefix to
+  // then prepend it to the saved SSID, so we send the full SSID in the task
+  let ssidPrefix = ssidPrefixObj.prefixToUse;
   if (
     changes.common && changes.common.web_admin_username &&
     !cpe.isAllowedWebadminUsername(changes.common.web_admin_username)
