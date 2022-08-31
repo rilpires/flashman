@@ -162,17 +162,24 @@
       return ret;
     };
 
-    Validator.prototype.validateSSID = function(ssid, accentedChars) {
+    Validator.prototype.validateSSID = function(
+      ssid, accentedChars, spaceChar,
+    ) {
+      console.log(ssid, spaceChar);
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
-        t('acceptableCharsAre0-9a-zA-Z .-ul'),
+        ((spaceChar) ?
+          t('acceptableCharsAre0-9a-zA-Z .-ul') : // message with allowed space
+          t('acceptableCharsAre0-9a-zA-Z.-ul')), // message with denied space
       ];
       if (accentedChars) {
         // Remove diacritics before applying the regex test
         ssid = ssid.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       }
-      let ret = validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/);
+      let ret = (spaceChar) ?
+        validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#\s]+$/) :
+        validateRegex(ssid, 1, 32, /^[a-zA-Z0-9.\-_#]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
