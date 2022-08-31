@@ -1930,7 +1930,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(
             ssidPrefix+ssid,
-            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            (s)=>validator.validateSSID(
+              s, permissions.grantDiacritics, permissions.grantSpaces,
+            ),
             'ssid',
           );
         }
@@ -1961,7 +1963,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
           genericValidate(
             ssidPrefix+ssid5ghz,
-            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            (s)=>validator.validateSSID(
+              s, permissions.grantDiacritics, permissions.grantSpaces,
+            ),
             'ssid5ghz',
           );
         }
