@@ -140,11 +140,15 @@ router.route('/landevice/block').post(
 router.route('/license').post(
   deviceListController.updateLicenseStatus);
 
+// Set license status of desired CPEs
+router.route('/deleteandblock').post(
+  authController.ensurePermission('grantDeviceRemoval'),
+  authController.ensurePermission('grantDeviceLicenseBlock'),
+  deviceListController.delDeviceAndBlockLicense,
+);
+
 router.route('/export').get(
   deviceListController.exportDevicesCsv);
-
-router.route('/ponsignal/:deviceId').get(
-  deviceListController.receivePonSignalMeasure);
 
 // WAN Informations
 router.route('/waninfo/:id').get(

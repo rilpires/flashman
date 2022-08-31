@@ -16,6 +16,7 @@ let roleSchema = new mongoose.Schema({
   grantDeviceActions: {type: Boolean, required: true, default: false},
   grantDeviceRemoval: {type: Boolean, required: true, default: false},
   grantDeviceMassRemoval: {type: Boolean, required: true, default: false},
+  grantDeviceLicenseBlock: {type: Boolean, required: true, default: false},
   grantFactoryReset: {type: Boolean, required: true, default: false},
   grantDeviceAdd: {type: Boolean, required: true, default: false},
   grantMonitorManage: {type: Boolean, required: true, default: false},
@@ -35,7 +36,7 @@ let roleSchema = new mongoose.Schema({
   grantOpmodeEdit: {type: Boolean, required: true, default: false},
   grantVlan: {type: Number, required: true, default: 0},
   grantVlanProfileEdit: {type: Boolean, required: true, default: false},
-  grantWanBytesView: {type: Boolean, required: true, default: false},
+  grantStatisticsView: {type: Boolean, required: true, default: false},
   grantCsvExport: {type: Boolean, required: true, default: true},
   // 2 is the complete search mode, 1 is simple search, 0 no search available
   grantSearchLevel: {type: Number, required: true, default: 2},

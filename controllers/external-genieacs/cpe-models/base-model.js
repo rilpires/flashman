@@ -312,6 +312,23 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
+// Used to convert the speed test result for devices that do not FullLoad
+basicCPEModel.convertSpeedValueBasic = function(endTime, beginTime, bytesRec) {
+  // 10**3 => seconds to miliseconds (because of valueOf() notation)
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  let deltaTime = (endTime - beginTime) / (10**3);
+  return (8/(1024**2)) * (bytesRec/deltaTime);
+};
+
+// Used to convert the speed test result for devices that do FullLoad
+basicCPEModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**6 => microsecond to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**6))/(1024**2)) * (bytesRec/period);
+};
+
 // Used when computing dhcp ranges
 const convertSubnetMaskToRange = function(mask) {
   // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway

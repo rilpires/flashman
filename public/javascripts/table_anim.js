@@ -29,10 +29,13 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask(t('personIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('personIdentificationMask')).trigger('keyup');
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask(t('enterpriseIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('enterpriseIdentificationMask')).trigger('keyup');
   } else {
+    $(document).off('keyup.' + inputField.attr('id'));
     inputField.unmask();
   }
 };
@@ -189,15 +192,17 @@ anlixDocumentReady.add(function() {
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
+  let grantDeviceLicenseBlock = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantVlan = 0;
-  let grantWanBytes = false;
+  let grantStatistics = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
+  let mustBlockLicenseAtRemoval = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -222,13 +227,14 @@ anlixDocumentReady.add(function() {
     grantSiteSurveyAccess = role.grantSiteSurvey;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
+    grantDeviceLicenseBlock = role.grantDeviceLicenseBlock;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantVlan = role.grantVlan;
-    grantWanBytes = role.grantWanBytesView;
+    grantStatistics = role.grantStatisticsView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
@@ -396,9 +402,27 @@ anlixDocumentReady.add(function() {
         upgradeStatus.find('.status-error').addClass('d-none');
         // Deactivate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', true);
+        // Enable all disassoc buttons
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', false);
+          });
+        }
       } else {
         // Deactivate dropdown
         row.find('.device-update .dropdown-toggle').attr('disabled', true);
+        // Disable all disassoc buttons
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', true);
+          });
+        }
         // Update waiting status
         let upgradeStatus = row.find('span.upgrade-status');
         upgradeStatus.find('.status-none').addClass('d-none');
@@ -520,7 +544,7 @@ anlixDocumentReady.add(function() {
         // Assign both ipv4 and ipv6 to row
         row.find('.device-wan-ip').html(
           wanip +
-          (wanipv6 ? '<br>' + wanipv6 : ''),
+          (wanipv6 ? '<br><h6 style="font-size:70%">' + wanipv6 + '</h6>' : ''),
         );
 
         row.find('.device-ip').html(res.ip);
@@ -849,7 +873,8 @@ anlixDocumentReady.add(function() {
         uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
-        (device.wan_ipv6 ? '<br>' + device.wan_ipv6 : '') +
+        (device.wan_ipv6 ?
+          '<br><h6 style="font-size:70%">' + device.wan_ipv6 + '</h6>' : '') +
       '</td><td class="text-center device-ip">'+
         device.ip+
       '</td><td class="text-center device-installed-release">'+
@@ -881,9 +906,9 @@ anlixDocumentReady.add(function() {
     '</button>';
   };
 
-  const buildDisassociateSlave = function() {
+  const buildDisassociateSlave = function(enable) {
     return '<button class="btn btn-danger btn-sm btn-disassoc m-0" '+
-    'type="button">'+
+    'type="button"'+ (enable ? '' : 'disabled') + '>' +
       '<i class="fas fa-minus-circle"></i>'+
       '<span>&nbsp; '+t('Disassociate')+'</span>'+
     '</button>';
@@ -1250,6 +1275,8 @@ anlixDocumentReady.add(function() {
           displayAlertMsg(res);
           return;
         }
+        setConfigStorage(
+          'mustBlockLicenseAtRemoval', res.mustBlockLicenseAtRemoval);
         setConfigStorage('ssidPrefix', res.ssidPrefix);
         setConfigStorage('isSsidPrefixEnabled', res.isSsidPrefixEnabled);
         // ssid prefix in new device form
@@ -1374,12 +1401,14 @@ anlixDocumentReady.add(function() {
           let grantResetDevices = device.permissions.grantResetDevices;
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
+          let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
-          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantStatisticsSupport =
+            device.permissions.grantStatisticsSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimModeCable = device.permissions
@@ -1570,10 +1599,10 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', t('manageVlans'));
 
-          let wanBytesAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          let statisticsAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-statistics-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
-          .replace('$REPLACE_TEXT', t('wanBytes'));
+          .replace('$REPLACE_TEXT', t('cpeStatistics'));
 
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
@@ -1589,6 +1618,11 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', t('dataCollecting'));
+
+          let tracerouteAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-traceroute-test-modal')
+          .replace('$REPLACE_ICON', 'fa-list')
+          .replace('$REPLACE_TEXT', t('tracerouteTest'));
 
           let idxMenu = 0;
           let sideMenu = [];
@@ -1643,8 +1677,8 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += vlanAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            sideMenu[idxMenu] += wanBytesAction;
+          if ((isSuperuser || grantStatistics) && grantStatisticsSupport) {
+            sideMenu[idxMenu] += statisticsAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && isSuperuser && enableDataCollecting) {
@@ -1653,6 +1687,10 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (grantTraceroute) {
+            sideMenu[idxMenu] += tracerouteAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 &&
@@ -2974,8 +3012,10 @@ anlixDocumentReady.add(function() {
                 if (grantMeshV2PrimModeCable || grantMeshV2PrimModeWifi) {
                   let disassocSlaveButton = '<td></td>';
                   if (isSuperuser || grantSlaveDisassociate) {
-                    disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                    disassocSlaveButton =
+                      '<td>' +
+                      buildDisassociateSlave(device.do_update_status == 1) +
+                      '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                             disassocSlaveButton);
@@ -3003,7 +3043,7 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('personIdentificationMask'));
@@ -3017,7 +3057,7 @@ anlixDocumentReady.add(function() {
                   t('enterpriseIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('enterpriseIdentificationMask'));
@@ -3086,7 +3126,7 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('personIdentificationMask'));
             });
@@ -3096,7 +3136,7 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('enterpriseIdentificationMask'));
             });
@@ -3267,74 +3307,197 @@ anlixDocumentReady.add(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
-  $(document).on('click', '.btn-trash', function(event) {
-    let row = $(event.target).parents('tr');
-    let id = row.data('deviceid');
-    swal.fire({
+  let deviceRemovalSwal = function(isMultiple = false) {
+    mustBlockLicenseAtRemoval = (
+      getConfigStorage('mustBlockLicenseAtRemoval') === true ||
+      getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
+    ) ? true : false;
+
+    let hasBlockPermission = (isSuperuser || grantDeviceLicenseBlock);
+    let denyButtonText = t('Remove');
+    let willShowDeleteAndBlock = true;
+    let willShowDelete = true;
+
+    let alertDiv =
+      '<div class="alert alert-danger text-center">' +
+        '<div class="fas fa-exclamation-triangle fa-lg"></div>' +
+        '<span>&nbsp;&nbsp;$REPLACE_TEXT</span>' +
+      '</div>';
+
+    if (mustBlockLicenseAtRemoval) {
+      willShowDeleteAndBlock = false;
+      denyButtonText = t('removeAndBlock');
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning'),
+      );
+    } else if (!hasBlockPermission) {
+      willShowDeleteAndBlock = false;
+      alertDiv = '';
+    } else if (isMultiple) {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDevicesAndBlockLicensesWarning'),
+      );
+    } else {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDeviceAndBlockLicenseWarning'),
+      );
+    }
+
+    return {
       icon: 'warning',
       title: t('Attention!'),
       text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
-      confirmButtonColor: '#4db6ac',
+      // Remove and block button
+      confirmButtonText: t('removeAndBlock'),
+      confirmButtonColor: '#ff3547',
+      showConfirmButton: willShowDeleteAndBlock,
+      // Just remove button
+      denyButtonText: denyButtonText,
+      denyButtonColor: '#f2ab63',
+      showDenyButton: willShowDelete,
+      // Cancel button
       cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
+      cancelButtonColor: '#4db6ac',
       showCancelButton: true,
-    }).then((result)=>{
-      if (result.value) {
+      // Helper at footer
+      footer: alertDiv,
+    };
+  };
+
+  $(document).on('click', '.btn-trash', function(event) {
+    let row = $(event.target).parents('tr');
+    let id = row.data('deviceid');
+    swal.fire(deviceRemovalSwal(false)).then((result)=>{
+      if (result.isConfirmed) {
+        // Block and delete...
         $.ajax({
-          url: '/devicelist/delete',
-          type: 'post',
+          url: '/devicelist/deleteandblock',
+          type: 'POST',
           traditional: true,
-          data: {ids: [id]},
-          success: function(res) {
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
+          dataType: 'json',
+          data: {'block': true, 'ids': [id]},
+          success: (res) => {
             swal.fire({
-              icon: (res.type === 'danger') ? 'warning' : res.type,
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
+      } else if (result.isDenied) {
+        // Just delete...
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: [id]},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+        });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
     });
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
-    swal.fire({
-      icon: 'warning',
-      title: t('Attention!'),
-      text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
-      confirmButtonColor: '#4db6ac',
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
-      showCancelButton: true,
-    }).then((result)=>{
-      if (result.value) {
+    swal.fire(deviceRemovalSwal(true)).then((result)=>{
+      if (result.isConfirmed) {
+        // Block and delete...
         $.ajax({
+          url: '/devicelist/deleteandblock',
           type: 'POST',
-          url: '/devicelist/delete',
           traditional: true,
-          data: {ids: selectedDevices},
-          success: function(res) {
-            $('#btn-trash-multiple').addClass('disabled');
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
+          dataType: 'json',
+          data: {'block': true, 'ids': selectedDevices},
+          success: (res) => {
             swal.fire({
-              icon: (res.type === 'danger') ? 'warning' : res.type,
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
+      } else if (result.isDenied) {
+        // Just delete...
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: selectedDevices},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+        });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
+      selectedDevices = [];
     });
   });
 
@@ -3375,7 +3538,7 @@ anlixDocumentReady.add(function() {
       } else if (result.value) {
         swal.fire({
           title: t('gettingStockFirmwareReady...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });

@@ -434,7 +434,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
     'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
     'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
-    'alerta': new RegExp(`^${t('alerta')}$`), // /^alerta/
+    'alerta': new RegExp(`^${t('alert')}$`), // /^alerta/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
@@ -909,6 +909,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     device.isSsidPrefixEnabled == true);
                 });
 
+                let mustBlockLicenseAtRemoval = (
+                  matchedConfig.blockLicenseAtDeviceRemoval === true
+                ) ? true : false;
+
                 return res.json({
                 success: true,
                   type: 'success',
@@ -922,6 +926,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   devices: allDevices,
                   ssidPrefix: ssidPrefix,
                   isSsidPrefixEnabled: enabledForAllFlashman,
+                  mustBlockLicenseAtRemoval: mustBlockLicenseAtRemoval,
                   ponConfig: {
                     ponSignalThreshold:
                       matchedConfig.tr069.pon_signal_threshold,
@@ -948,31 +953,71 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
 deviceListController.delDeviceReg = async function(req, res) {
   try {
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {blockLicenseAtDeviceRemoval: true}).lean();
+    let mustBlockAtRemoval =
+      ('blockLicenseAtDeviceRemoval' in matchedConfig) ?
+        matchedConfig.blockLicenseAtDeviceRemoval : false;
     let removeList = [];
     if (req.params.id) {
       removeList = [req.params.id];
     } else {
       removeList = req.body.ids;
     }
-    let devices = await DeviceModel.findByMacOrSerial(removeList).exec();
+    // If mustBlockAtRemoval flag is true, then we must change the flow of
+    // delDeviceReg to do the license block with delDeviceAndBlockLicense
+    if (mustBlockAtRemoval) {
+      req.body.ids = removeList;
+      return await deviceListController.delDeviceAndBlockLicense(req, res);
+    }
+    let devices = await DeviceModel.findByMacOrSerial(removeList);
     if (devices.length === 0) {
-      return res.json({
+      return res.status(500).json({
         success: false,
         type: 'danger',
         message: t('cpesNotFound', {errorline: __line}),
       });
     }
+    // We gonna push the error messages to an Array, then we must log to the
+    // console the errors inside this Array, if not empty.
+    let failedAtRemoval = {};
     for (let device of devices) {
-      deviceHandlers.removeDeviceFromDatabase(device);
+      // Cannot delete mesh masters with associated slaves
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
+      } else {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
+        }
+      }
     }
-    return res.json({
+    // If there are any errors in the array, we log the details and inform which
+    // cpes failed to be removed in the response
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
+      });
+    }
+    // No errors present, simply return success
+    return res.status(200).json({
       success: true,
       type: 'success',
       message: t('operationSuccessful'),
     });
   } catch (err) {
-    console.error('Erro na remoção: ' + err);
-    return res.json({
+    return res.status(500).json({
       success: false,
       type: 'danger',
       message: t('operationUnsuccessful', {errorline: __line}),
@@ -1175,8 +1220,10 @@ deviceListController.sendMqttMsg = function(req, res) {
       case 'wanbytes':
       case 'waninfo':
       case 'laninfo':
+      case 'traceroute':
       case 'speedtest':
       case 'wps':
+      case 'pondata':
       case 'sitesurvey': {
         if (device && !device.use_tr069) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1264,13 +1311,13 @@ deviceListController.sendMqttMsg = function(req, res) {
           });
         } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForWanBytesNotification(
+            sio.anlixWaitForStatisticsNotification(
               req.sessionID,
               req.params.id.toUpperCase(),
             );
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestStatistics(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
@@ -1306,6 +1353,53 @@ deviceListController.sendMqttMsg = function(req, res) {
           if (device && !device.use_tr069) {
             mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
           }
+
+        // Traceroute
+        } else if (msgtype === 'traceroute') {
+          // Check for permission
+          if (!permissions.grantTraceroute) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForTracerouteNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+
+          // Clear previous results
+          device.traceroute_results = [];
+
+          // Create a new array with the hosts filled
+          if (Object.keys(device.ping_hosts).length > 0) {
+            device.traceroute_results =
+              device.ping_hosts.map((host)=>({address: host}));
+          }
+
+          // Save
+          if (device.traceroute_results.length > 0) {
+            await device.save().catch((err) => {
+              console.log(
+                'Error saving device after traceroute command: ' + err,
+              );
+            });
+          }
+
+          // Start Traceroute
+          if (device && device.use_tr069) {
+            // Preparation for TR069
+          } else {
+            mqtt.anlixMessageRouterTraceroute(
+              device._id,
+              device.traceroute_max_hops,
+              device.traceroute_numberProbes,
+              device.traceroute_max_wait,
+            );
+          }
         } else if (msgtype === 'log') {
           // This message is only valid if we have a socket to send response to
           if (sio.anlixConnections[req.sessionID]) {
@@ -1333,6 +1427,29 @@ deviceListController.sendMqttMsg = function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
+        } else if (msgtype === 'pondata') {
+          // Check for permission
+          if (!permissions.grantPonSignalSupport) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPonSignalNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+          // Start
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestPonData(device);
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
         } else {
           return res.status(200).json({
             success: false,
@@ -1472,27 +1589,12 @@ deviceListController.sendCustomSpeedTest = async function(req, res) {
         invalidField = 'webhook.secret';
       }
     }
-    if (device.use_tr069) {
-      if (!util.urlRegex.test(req.body.content.url)) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-    } else {
-      // If a its a Flashbox firmware: Requested format is <IP>:<PORT?>
-      let urlList = req.body.content.url.split(':');
-      if (!util.ipv4Regex.test(urlList[0])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length == 2 && !util.portRegex.test(urlList[1])) {
-        validationOk = false;
-        invalidField = 'url';
-      }
-      if (urlList.length > 2) {
-        validationOk = false;
-        invalidField = 'url';
-      }
+
+    if (!util.urlRegex.test(req.body.content.url)) {
+      validationOk = false;
+      invalidField = 'url';
     }
+
     if (!validationOk) {
       return res.status(200).json({
         success: false,
@@ -3503,14 +3605,13 @@ deviceListController.doSpeedTest = function(req, res) {
         });
         acsDiagnosticsHandler.fireSpeedDiagnose(mac);
       } else {
-        let url;
-        if (customUrl !== '') {
-          url = customUrl;
+        if (customUrl !== '' && permissions.grantRawSpeedTest) {
+          mqtt.anlixMessageRouterSpeedTestRaw(mac, req.user);
         } else {
-          url = matchedConfig.measureServerIP + ':' +
+          let url = matchedConfig.measureServerIP + ':' +
                 matchedConfig.measureServerPort;
+          mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
         }
-        mqtt.anlixMessageRouterSpeedTest(mac, url, req.user);
       }
       return res.status(200).json({
         success: true,
@@ -3788,45 +3889,79 @@ deviceListController.changeLicenseStatus = async function(req, res) {
   }
 };
 
-deviceListController.receivePonSignalMeasure = async function(req, res) {
-  let deviceId = req.params.deviceId;
-
-  DeviceModel.findById(deviceId, function(err, matchedDevice) {
-    if (err) {
-      return res.status(400).json({processed: 0, success: false});
+deviceListController.delDeviceAndBlockLicense = async function(req, res) {
+  // Check request body
+  if (!('ids' in req.body)) {
+    return res.status(500).json({success: false, type: 'error',
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    let devIds = req.body.ids;
+    // Check devices array
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
     }
-    if (!matchedDevice) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    if (!matchedDevice.use_tr069) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    let mac = matchedDevice._id;
-    let acsID = matchedDevice.acs_id;
-    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-    let fields = cpe.getModelFields();
-    let rxPowerField = fields.wan.pon_rxpower;
-    let txPowerField = fields.wan.pon_txpower;
-    let taskParameterNames = [rxPowerField, txPowerField];
-    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
-      taskParameterNames.push(fields.wan.pon_rxpower_epon);
-      taskParameterNames.push(fields.wan.pon_txpower_epon);
-    }
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: taskParameterNames,
+    // Get devices from ids
+    let projection = {
+      _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
+      mesh_master: true, mesh_slaves: true,
     };
-
-    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-    res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
-  });
+    let matchedDevices =
+      await DeviceModel.findByMacOrSerial(devIds, false, projection);
+    // Check if get at least one device
+    if (matchedDevices.length === 0) {
+      return res.status(500).json({success: false, type: 'error',
+                                   message: t('cpesNotFound',
+                                   {errorline: __line})});
+    }
+    devIds = [];
+    // Creating an Array for the error messages
+    let failedAtRemoval = {};
+    // Try to remove each device
+    for (let device of matchedDevices) {
+      let deviceId = device._id;
+      if (device.use_tr069) {
+        deviceId = device.serial_tr069;
+      }
+      // If the device is a mesh master, then we must not delete it
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        failedAtRemoval[deviceId] =
+          t('cantDeleteMeshWithSecondaries', {errorline: __line});
+      } else {
+        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+        if (!removalOK) {
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
+        } else {
+          devIds.push(deviceId);
+        }
+      }
+    }
+    let errCount = Object.keys(failedAtRemoval).length;
+    if (errCount > 0) {
+      console.log(failedAtRemoval);
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: t('couldntRemoveSomeDevices', {amount: errCount}),
+        errors: failedAtRemoval,
+      });
+    }
+    // Move on to blocking the licenses
+    let retObj = await controlApi.changeLicenseStatus(req.app, true, devIds);
+    if (!retObj.success) {
+      return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
+    }
+    return res.status(200).json({success: true, type: 'success',
+                                message: t('operationSuccessful')});
+  } catch (err) {
+    return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
+  }
 };
-
 
 // Returns the informations about the WAN for firmware devices
 deviceListController.getWanInfo = async function(request, response) {
@@ -4027,8 +4162,8 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     }
     csvFields.push(
       {label: t('channelWifi5GHz'), value: 'wifi_channel_5ghz'},
-      {label: t('xghzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
-      {label: t('xghzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
+      {label: t('xGhzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
+      {label: t('xGhzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
       {label: t('publicIp'), value: 'ip'},
       {label: t('wanIp'), value: 'wan_ip'},
       {label: t('IpvxEnabled', {x: 6}), value: 'ipv6_enabled'},
