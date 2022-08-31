@@ -27,22 +27,14 @@ raisecomModel.modelPermissions = function() {
   // wifi permissions
   permissions.wifi.list5ghzChannels =
     [36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161];
-  permissions.wifi.bandRead = true;
-  permissions.wifi.bandWrite = true;
+  permissions.wifi.bandRead2 = true;
+  permissions.wifi.bandRead5 = true;
+  permissions.wifi.bandWrite2 = true;
+  permissions.wifi.bandWrite5 = true;
   permissions.wifi.bandAuto2 = true;
   permissions.wifi.bandAuto5 = true;
   permissions.wifi.modeRead = true;
   permissions.wifi.modeWrite = true;
-
-  // TODO: after merge of new band separation feature
-  // permissions.wifi.bandRead2 = true;
-  // permissions.wifi.bandRead5 = true;
-  // permissions.wifi.bandWrite2 = true;
-  // permissions.wifi.bandWrite5 = true;
-  // permissions.wifi.bandAuto2 = true;
-  // permissions.wifi.bandAuto5 = true;
-  // permissions.wifi.modeRead = true;
-  // permissions.wifi.modeWrite = true;
 
   // TODO: create a permission to control the usage of space characteres on SSID
   // permissions.wifi.allowSpace = false;
