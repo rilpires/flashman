@@ -1556,7 +1556,7 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
-acsDeviceInfoController.requestWanBytes = function(device) {
+acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -1572,6 +1572,26 @@ acsDeviceInfoController.requestWanBytes = function(device) {
     ],
   };
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
+};
+
+acsDeviceInfoController.requestPonData = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let taskParameterNames = [rxPowerField, txPowerField];
+  if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+    taskParameterNames.push(fields.wan.pon_rxpower_epon);
+    taskParameterNames.push(fields.wan.pon_txpower_epon);
+  }
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: taskParameterNames,
+  };
+  TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
 };
 
 acsDeviceInfoController.requestUpStatus = function(device) {

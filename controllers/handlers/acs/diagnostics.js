@@ -511,7 +511,7 @@ acsDiagnosticsHandler.firePingDiagnose = async function(mac) {
     return {success: true, message: t('operationSuccessful')};
   } else {
     return {
-      success: false, message: t('acsPingCouldNotBeSent', {errorline: __line}),
+      success: false, message: t('acsPingError', {errorline: __line}),
     };
   }
 };

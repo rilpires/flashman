@@ -352,7 +352,7 @@ const fetchCertification = function(id, name, timestamp) {
             diagPon = (diagPon > 0) ? t('Error'): t('Ok');
             if (diagPon == 4) {
               // Could not measure RX power
-              diagRxPower = t('notMeasured');
+              diagRxPower = t('noMeasured');
             } else {
               diagRxPower = diagRxPower.toString() + ' dBm';
             }
@@ -418,7 +418,7 @@ const fetchCertification = function(id, name, timestamp) {
         let modeStr = '';
         switch (cert.mesh.mode) {
           case 0:
-            modeStr = t('Deactivaded');
+            modeStr = t('Deactivated');
             break;
           case 1:
             modeStr = t('Cable');

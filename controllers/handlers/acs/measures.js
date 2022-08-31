@@ -72,7 +72,7 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
           console.log('Error saving device wan bytes: ' + err);
         });
       }
-      sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
+      sio.anlixSendStatisticsNotification(mac, {wanbytes: wanBytes});
     });
   });
   req.end();
@@ -156,6 +156,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           ponSignal.txpower,
         );
         deviceEdit.pon_signal_measure = ponSignal;
+        deviceEdit.pon_rxpower = ponSignal.rxpower;
+        deviceEdit.pon_txpower = ponSignal.txpower;
         await deviceEdit.save().catch((err) => {
           console.log('Error saving pon signal: ' + err);
         });

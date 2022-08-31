@@ -171,7 +171,7 @@ userController.postRole = function(req, res) {
     grantCsvExport: req.body['grant-csv-export'],
     grantVlan: req.body['grant-vlan'],
     grantVlanProfileEdit: req.body['grant-vlan-profile-edit'],
-    grantWanBytesView: req.body['grant-wan-bytes'],
+    grantStatisticsView: req.body['grant-statistics'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
     grantShowRowsPerPage: req.body['grant-rows-per-page'],
@@ -390,7 +390,7 @@ userController.editRole = function(req, res) {
     role.grantCsvExport = req.body['grant-csv-export'];
     role.grantVlan = req.body['grant-vlan'];
     role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
-    role.grantWanBytesView = req.body['grant-wan-bytes'];
+    role.grantStatisticsView = req.body['grant-statistics'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantShowRowsPerPage = req.body['grant-rows-per-page'];
@@ -1520,7 +1520,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('hasMeshBeenConfigured?'),
+        label: t('hasMeshBeenConfigured'),
         value: 'certifications.didConfigureMesh',
         default: '',
       },

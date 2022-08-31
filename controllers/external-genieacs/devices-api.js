@@ -40,6 +40,7 @@ const tr069Models = {
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -52,6 +53,7 @@ const tr069Models = {
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   raisecomRevNModel: require('./cpe-models/raisecom-ht803g-rev-n'),
+  raisecomRevTModel: require('./cpe-models/raisecom-ht803g-rev-t'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
@@ -174,6 +176,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
     return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+  } else if (modelName === '1200R') {
+    // Intelbras WiFiber 1200R InMesh
+    return {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
@@ -210,6 +215,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HT803G-WS2' && hwVersion == 'N.00') {
     // Raisecom HT803G-WS2 REV N
     return {success: true, cpe: tr069Models.raisecomRevNModel};
+  } else if (modelName === 'HT803G-WS2' && hwVersion == 'T.00') {
+    // Raisecom HT803G-WS2 REV T
+    return {success: true, cpe: tr069Models.raisecomRevTModel};
   } else if (modelSerial === 'AC10') {
     // Tenda AC10
     return {success: true, cpe: tr069Models.tendaAC10Model};
