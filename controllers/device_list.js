@@ -4095,8 +4095,8 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       'ip': true, 'wan_ip': true, 'ipv6_enabled': true,
       'wan_negociated_speed': true, 'wan_negociated_duplex': true,
       'external_reference.kind': true, 'external_reference.data': true,
-      'model': true, 'version': true, 'installed_release': true,
-      'do_update': true,
+      'model': true, 'version': true, 'hw_version': true,
+      'installed_release': true, 'do_update': true,
     };
 
     let devices = {};
@@ -4157,6 +4157,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('clientId'), value: 'external_reference.data'},
       {label: t('cpeModel'), value: 'model'},
       {label: t('firmwareversion'), value: 'version'},
+      {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
     );

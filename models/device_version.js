@@ -1792,10 +1792,11 @@ const convertTR069Permissions = function(cpePermissions) {
 };
 
 DeviceVersion.devicePermissionsNotRegistered = function(
-  model, modelName, fwVersion,
+  model, modelName, fwVersion, hwVersion,
 ) {
   // Only TR-069 instances should call this function
-  let cpeResult = DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion);
+  let cpeResult =
+    DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion, hwVersion);
   if (cpeResult.success) {
     return convertTR069Permissions(cpeResult.cpe.modelPermissions());
   }

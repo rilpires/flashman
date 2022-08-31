@@ -105,10 +105,13 @@ const instantiateCPEByModelFromDevice = function(device) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let modelName = device.model;
   let fwVersion = device.version;
-  return instantiateCPEByModel(model, modelName, fwVersion);
+  let hwVersion = device.hw_version;
+  return instantiateCPEByModel(model, modelName, fwVersion, hwVersion);
 };
 
-const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
+const instantiateCPEByModel = function(
+  modelSerial, modelName, fwVersion, hwVersion,
+) {
   if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
@@ -204,7 +207,7 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   } else if (modelName === 'P20') {
     // Phyhome P20
     return {success: true, cpe: tr069Models.phyhomeP20Model};
-  } else if (modelName === 'HT803G-WS2' && fwVersion == '5.00.21') {
+  } else if (modelName === 'HT803G-WS2' && hwVersion == 'N.00') {
     // Raisecom HT803G-WS2 REV N
     return {success: true, cpe: tr069Models.raisecomRevNModel};
   } else if (modelSerial === 'AC10') {
@@ -238,8 +241,12 @@ const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
   return {success: false, cpe: basicCPEModel};
 };
 
-const getModelFields = function(oui, model, modelName, firmwareVersion) {
-  let cpeResult = instantiateCPEByModel(model, modelName, firmwareVersion);
+const getModelFields = function(
+  oui, model, modelName, firmwareVersion, hardwareVersion,
+) {
+  let cpeResult = instantiateCPEByModel(
+    model, modelName, firmwareVersion, hardwareVersion,
+  );
   return {
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
@@ -261,7 +268,8 @@ const getDeviceFields = async function(args, callback) {
     return callback(null, flashRes);
   }
   let fieldsResult = getModelFields(
-    params.oui, params.model, params.modelName, params.firmwareVersion,
+    params.oui, params.model, params.modelName,
+    params.firmwareVersion, params.hardwareVersion,
   );
   if (!fieldsResult['success']) {
     return callback(null, fieldsResult);

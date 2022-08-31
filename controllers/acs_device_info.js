@@ -331,6 +331,7 @@ const createRegistry = async function(req, cpe, permissions) {
     acs_id: req.body.acs_id,
     model: model,
     version: data.common.version.value,
+    hw_version: data.common.hw_version.value,
     installed_release: data.common.version.value,
     release: data.common.version.value,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
@@ -852,9 +853,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
   // Fetch functionalities of CPE
   let permissions = null;
-  if (!device && data.common.version && data.common.model) {
+  if (!device && data.common.model &&
+      data.common.version && data.common.hw_version) {
     permissions = DeviceVersion.devicePermissionsNotRegistered(
-      model, data.common.model.value, data.common.version.value,
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
     );
   } else {
     permissions = DeviceVersion.devicePermissions(device);
@@ -867,7 +870,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (!device) {
     let cpe = DevicesAPI.instantiateCPEByModel(
-      model, data.common.model.value, data.common.version.value,
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
     ).cpe;
     if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
@@ -930,6 +934,15 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (device.installed_release === device.release) {
       device.do_update = false;
       device.do_update_status = 1;
+    }
+  }
+
+  // Update hardware version, if data available
+  if (data.common.hm_version && data.common.hm_version.value) {
+    device.hm_version = data.common.hm_version.value.trim();
+    // Both of these fields need to be in sync
+    if (device.hm_version !== device.installed_release) {
+      device.installed_release = device.hm_version;
     }
   }
 

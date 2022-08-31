@@ -430,6 +430,7 @@ basicCPEModel.getModelFields = function() {
         'MACAddress',
       model: 'InternetGatewayDevice.DeviceInfo.ModelName',
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
+      hw_version: 'InternetGatewayDevice.DeviceInfo.HardwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
