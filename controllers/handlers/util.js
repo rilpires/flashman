@@ -109,7 +109,7 @@ utilHandlers.flashboxDevVerRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 utilHandlers.hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 utilHandlers.vlanNameRegex = /^[A-Za-z][A-Za-z\-0-9_]+$/;
 // eslint-disable-next-line max-len
-utilHandlers.fqdnLengthRegex = /^([0-9a-z][-0-9a-z]{0,62}\.){0,3}([0-9a-z][-0-9a-z]{0,62})$/;
+utilHandlers.fqdnLengthRegex = /^([0-9a-z][-0-9a-z]{0,62}\.)*([0-9a-z][-0-9a-z]{0,62})$/;
 utilHandlers.macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
 // eslint-disable-next-line max-len
 utilHandlers.ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
