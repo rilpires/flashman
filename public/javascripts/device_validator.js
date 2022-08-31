@@ -165,7 +165,6 @@
     Validator.prototype.validateSSID = function(
       ssid, accentedChars, spaceChar,
     ) {
-      console.log(ssid, spaceChar);
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
