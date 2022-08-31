@@ -1770,6 +1770,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantPortForwardAsym: false,
     grantPortOpenIpv6: false,
     grantDiacritics: cpePermissions.wifi.allowDiacritics,
+    grantSpaces: cpePermissions.wifi.allowSpaces,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiModeRead: cpePermissions.wifi.modeRead,
