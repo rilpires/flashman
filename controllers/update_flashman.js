@@ -728,7 +728,7 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
         config.ssidPrefix, fullSsid5,
       );
       let hasPrefix2 = (cleanSsid2.ssid !== fullSsid2);
-      let hasPrefix5 = (cleanSsid5.ssid !== fullSsid5);
+      let hasPrefix5 = (fullSsid5 === '' || cleanSsid5.ssid !== fullSsid5);
       if (hasPrefix2 && hasPrefix5) {
         device.isSsidPrefixEnabled = true;
         device.wifi_ssid = cleanSsid2.ssid;
