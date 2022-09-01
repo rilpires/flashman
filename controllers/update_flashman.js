@@ -1011,7 +1011,7 @@ updateController.setAutoConfig = async function(req, res) {
       stopInsecureGenieACS();
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       type: 'success',
       message: message,
     });
