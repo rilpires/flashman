@@ -11,6 +11,7 @@ const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
 const language = require('./language');
 const util = require('./handlers/util');
+const deviceHandler = require('./handlers/devices');
 const t = language.i18next.t;
 let Config = require('../models/config');
 let Devices = require('../models/device');
@@ -688,7 +689,8 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
   // We must update the devices already in database with new values for their
   // local flag, based on the SSID that was already saved and their local flag
   let projection = {
-    _id: 1, wifi_ssid: 1, wifi_ssid_5ghz: 1, isSsidPrefixEnabled: 1,
+    _id: 1, wifi_ssid: 1, wifi_ssid_5ghz: 1,
+    isSsidPrefixEnabled: 1, wifi_is_5ghz_capable: 1,
   };
   // Make sure old prefix is an empty string if it is not set
   if (typeof oldPrefix !== 'string') {
@@ -706,16 +708,25 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
     try {
       let localPrefixFlag = device.isSsidPrefixEnabled;
       let fullSsid2;
-      let fullSsid5;
       if (localPrefixFlag) {
         fullSsid2 = oldPrefix + device.wifi_ssid;
-        fullSsid5 = oldPrefix + device.wifi_ssid_5ghz;
       } else {
         fullSsid2 = device.wifi_ssid;
-        fullSsid5 = device.wifi_ssid_5ghz;
       }
-      let cleanSsid2 = cleanAndCheckSsid(config.ssidPrefix, fullSsid2);
-      let cleanSsid5 = cleanAndCheckSsid(config.ssidPrefix, fullSsid5);
+      let fullSsid5 = '';
+      if (device.wifi_is_5ghz_capable) {
+        if (localPrefixFlag) {
+          fullSsid5 = oldPrefix + device.wifi_ssid_5ghz;
+        } else {
+          fullSsid5 = device.wifi_ssid_5ghz;
+        }
+      }
+      let cleanSsid2 = deviceHandler.cleanAndCheckSsid(
+        config.ssidPrefix, fullSsid2,
+      );
+      let cleanSsid5 = deviceHandler.cleanAndCheckSsid(
+        config.ssidPrefix, fullSsid5,
+      );
       let hasPrefix2 = (cleanSsid2.ssid !== fullSsid2);
       let hasPrefix5 = (cleanSsid5.ssid !== fullSsid5);
       if (hasPrefix2 && hasPrefix5) {
