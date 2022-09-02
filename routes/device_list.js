@@ -150,9 +150,6 @@ router.route('/deleteandblock').post(
 router.route('/export').get(
   deviceListController.exportDevicesCsv);
 
-router.route('/ponsignal/:deviceId').get(
-  deviceListController.receivePonSignalMeasure);
-
 // WAN Informations
 router.route('/waninfo/:id').get(
   deviceListController.getWanInfo);

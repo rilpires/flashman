@@ -29,10 +29,13 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask(t('personIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('personIdentificationMask')).trigger('keyup');
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask(t('enterpriseIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('enterpriseIdentificationMask')).trigger('keyup');
   } else {
+    $(document).off('keyup.' + inputField.attr('id'));
     inputField.unmask();
   }
 };
@@ -195,7 +198,7 @@ anlixDocumentReady.add(function() {
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantVlan = 0;
-  let grantWanBytes = false;
+  let grantStatistics = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
@@ -231,7 +234,7 @@ anlixDocumentReady.add(function() {
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantVlan = role.grantVlan;
-    grantWanBytes = role.grantWanBytesView;
+    grantStatistics = role.grantStatisticsView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
@@ -1404,7 +1407,8 @@ anlixDocumentReady.add(function() {
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
-          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantStatisticsSupport =
+            device.permissions.grantStatisticsSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
           let grantMeshV2PrimModeCable = device.permissions
@@ -1595,10 +1599,10 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', t('manageVlans'));
 
-          let wanBytesAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          let statisticsAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-statistics-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
-          .replace('$REPLACE_TEXT', t('wanBytes'));
+          .replace('$REPLACE_TEXT', t('cpeStatistics'));
 
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
@@ -1671,8 +1675,8 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += vlanAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            sideMenu[idxMenu] += wanBytesAction;
+          if ((isSuperuser || grantStatistics) && grantStatisticsSupport) {
+            sideMenu[idxMenu] += statisticsAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && isSuperuser && enableDataCollecting) {
@@ -3037,7 +3041,7 @@ anlixDocumentReady.add(function() {
                     t('personIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('personIdentificationMask'));
@@ -3051,7 +3055,7 @@ anlixDocumentReady.add(function() {
                   t('enterpriseIdentificationSystem')
                 ) {
                   $(document).on(
-                    'keyup',
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
                     '#edit_external_reference-' + index + '_' + slaveIdx,
                     (event) => {
                       $(event.target).mask(t('enterpriseIdentificationMask'));
@@ -3120,7 +3124,7 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('personIdentificationMask'));
             });
@@ -3130,7 +3134,7 @@ anlixDocumentReady.add(function() {
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $(document).on('keyup',
+            $(document).on('keyup.edit_external_reference-' + index,
                            '#edit_external_reference-' + index, (event) => {
               $(event.target).mask(t('enterpriseIdentificationMask'));
             });

@@ -315,7 +315,7 @@ const calculateSiteSurveyDiagnostic = async function(
 
 
 const calculateSpeedDiagnostic = async function(
-  device, data, speedKeys, speedFields,
+  device, cpe, data, speedKeys, speedFields,
 ) {
   speedKeys = getAllNestedKeysFromObject(data, speedKeys, speedFields);
   let result;
@@ -328,19 +328,14 @@ const calculateSpeedDiagnostic = async function(
     if (diagState == 'Completed' || diagState == 'Complete') {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
       let endTime = (new Date(speedKeys.end_time)).valueOf();
-      // 10**3 => seconds to miliseconds (because of valueOf() notation)
-      let deltaTime = (endTime - beginTime) / (10**3);
-
-      // 8 => byte to bit
-      // 1024**2 => bit to megabit
-      speedValueBasic = (8/(1024**2))*(speedKeys.test_bytes_rec/deltaTime);
+      speedValueBasic = cpe.convertSpeedValueBasic(
+        endTime, beginTime, speedKeys.test_bytes_rec,
+      );
 
       if (speedKeys.full_load_bytes_rec && speedKeys.full_load_period) {
-        // 10**6 => microsecond to second
-        // 8 => byte to bit
-        // 1024**2 => bit to megabit
-        speedValueFullLoad = ((8*(10**6))/(1024**2)) *
-                    (speedKeys.full_load_bytes_rec/speedKeys.full_load_period);
+        speedValueFullLoad = speedValueBasic = cpe.convertSpeedValueFullLoad(
+          speedKeys.full_load_period, speedKeys.full_load_bytes_rec,
+        );
       }
 
       // Speedtest's estimative / real measure step
@@ -609,7 +604,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
           );
         } else if (permissions.grantSpeedTest && diagType=='speedtest') {
           await calculateSpeedDiagnostic(
-            device, data, diagNecessaryKeys.speedtest,
+            device, cpe, data, diagNecessaryKeys.speedtest,
             fields.diagnostics.speedtest,
           );
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
@@ -648,7 +643,7 @@ acsDiagnosticsHandler.firePingDiagnose = async function(device) {
     return {success: true, message: t('operationSuccessful')};
   } else {
     return {
-      success: false, message: t('acsPingCouldNotBeSent', {errorline: __line}),
+      success: false, message: t('acsPingError', {errorline: __line}),
     };
   }
 };

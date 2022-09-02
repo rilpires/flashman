@@ -901,7 +901,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     'recovery': new RegExp(`^${t('unstable')}$`), // /^instavel$/
     'offline': new RegExp(`^${t('offline')}$`), // /^offline$/
     'offline>': new RegExp(`^${t('offline')} >.*`), // /^offline >.*/
-    'alerta': new RegExp(`^${t('alerta')}$`), // /^alerta/
+    'alerta': new RegExp(`^${t('alert')}$`), // /^alerta/
   };
   // mapping to regular expression because one tag has a parameter inside and
   // won't make an exact match, but the other tags need to be exact. This will
@@ -1692,6 +1692,7 @@ deviceListController.sendMqttMsg = async function(req, res) {
       case 'waninfo':
       case 'laninfo':
       case 'wps':
+      case 'pondata':
       case 'sitesurvey': {
         if (device && !device.use_tr069) {
           const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -1764,13 +1765,13 @@ deviceListController.sendMqttMsg = async function(req, res) {
           });
         } else if (msgtype === 'wanbytes') {
           if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForWanBytesNotification(
+            sio.anlixWaitForStatisticsNotification(
               req.sessionID,
               req.params.id.toUpperCase(),
             );
           }
           if (device && device.use_tr069) {
-            acsDeviceInfo.requestWanBytes(device);
+            acsDeviceInfo.requestStatistics(device);
           } else {
             mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
           }
@@ -1833,6 +1834,29 @@ deviceListController.sendMqttMsg = async function(req, res) {
           }
           mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                            req.params.activate);
+        } else if (msgtype === 'pondata') {
+          // Check for permission
+          if (!permissions.grantPonSignalSupport) {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
+          // Wait for notification
+          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+            sio.anlixWaitForPonSignalNotification(
+              req.sessionID, req.params.id.toUpperCase(),
+            );
+          }
+          // Start
+          if (device && device.use_tr069) {
+            acsDeviceInfo.requestPonData(device);
+          } else {
+            return res.status(200).json({
+              success: false,
+              message: t('cpeWithoutCommand'),
+            });
+          }
         } else {
           return res.status(200).json({
             success: false,
@@ -4087,46 +4111,6 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
   }
 };
 
-deviceListController.receivePonSignalMeasure = async function(req, res) {
-  let deviceId = req.params.deviceId;
-
-  DeviceModel.findById(deviceId, function(err, matchedDevice) {
-    if (err) {
-      return res.status(400).json({processed: 0, success: false});
-    }
-    if (!matchedDevice) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    if (!matchedDevice.use_tr069) {
-      return res.status(404).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    let mac = matchedDevice._id;
-    let acsID = matchedDevice.acs_id;
-    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-    let fields = cpe.getModelFields();
-    let rxPowerField = fields.wan.pon_rxpower;
-    let txPowerField = fields.wan.pon_txpower;
-    let taskParameterNames = [rxPowerField, txPowerField];
-    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
-      taskParameterNames.push(fields.wan.pon_rxpower_epon);
-      taskParameterNames.push(fields.wan.pon_txpower_epon);
-    }
-    let task = {
-      name: 'getParameterValues',
-      parameterNames: taskParameterNames,
-    };
-
-    sio.anlixWaitForPonSignalNotification(req.sessionID, mac);
-    res.status(200).json({success: true});
-    TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
-  });
-};
-
-
 // Returns the informations about the WAN for firmware devices
 deviceListController.getWanInfo = async function(request, response) {
   let deviceId = request.params.id.toUpperCase();
@@ -4410,8 +4394,8 @@ deviceListController.exportDevicesCsv = async function(req, res) {
     }
     csvFields.push(
       {label: t('channelWifi5GHz'), value: 'wifi_channel_5ghz'},
-      {label: t('xghzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
-      {label: t('xghzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
+      {label: t('xGhzBandwidth', {x: 5}), value: 'wifi_band_5ghz'},
+      {label: t('xGhzOperationMode', {x: 5}), value: 'wifi_mode_5ghz'},
       {label: t('publicIp'), value: 'ip'},
       {label: t('wanIp'), value: 'wan_ip'},
       {label: t('IpvxEnabled', {x: 6}), value: 'ipv6_enabled'},

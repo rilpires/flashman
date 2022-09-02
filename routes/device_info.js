@@ -2,6 +2,7 @@
 
 let express = require('express');
 
+// eslint-disable-next-line new-cap
 let router = express.Router();
 let deviceInfoController = require('../controllers/device_info');
 

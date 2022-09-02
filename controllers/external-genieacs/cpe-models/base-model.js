@@ -65,6 +65,7 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
       skipIfNoWifiMode: false, // will skip devices with no host mode info
                                // (developed for Nokia models)
+      canTrustActive: false, // flag to handle devices that can trust Active
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -309,6 +310,23 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
     ]);
   }
   return values;
+};
+
+// Used to convert the speed test result for devices that do not FullLoad
+basicCPEModel.convertSpeedValueBasic = function(endTime, beginTime, bytesRec) {
+  // 10**3 => seconds to miliseconds (because of valueOf() notation)
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  let deltaTime = (endTime - beginTime) / (10**3);
+  return (8/(1024**2)) * (bytesRec/deltaTime);
+};
+
+// Used to convert the speed test result for devices that do FullLoad
+basicCPEModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**6 => microsecond to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**6))/(1024**2)) * (bytesRec/period);
 };
 
 // Used when computing dhcp ranges
@@ -590,6 +608,7 @@ basicCPEModel.getModelFields = function() {
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
       host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
         'Layer2Interface',
+      host_active: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Active',
       host_rssi: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalStrength',
       host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
