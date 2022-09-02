@@ -12,6 +12,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
@@ -119,6 +120,19 @@ intelbrasModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.diag_state = ['InternetGatewayDevice'+
+    '.LANDevice.1.WIFI.DiagnosticsState'];
+  fields.diagnostics.sitesurvey.result = [
+    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.1.X_ITBS_NeighborAP',
+    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.6.X_ITBS_NeighborAP',
+  ];
+  fields.diagnostics.sitesurvey.mac = 'BSSID';
+  fields.diagnostics.sitesurvey.ssid = 'SSID';
+  fields.diagnostics.sitesurvey.channel = 'Channel';
+  fields.diagnostics.sitesurvey.signal = 'RSSI';
+  fields.diagnostics.sitesurvey.band = 'BandWidth';
   return fields;
 };
 
