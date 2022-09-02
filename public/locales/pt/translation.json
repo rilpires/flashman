@@ -638,6 +638,7 @@
 	"neighboringNetworksFor": "Redes ao redor de",
 	"networksInXGhz": "Redes em {{-x}}GHz",
 	"showsitesurveyAlertInfo": "A recomendação de melhor canal deve ser alterada manualmente. O mecanismo \"auto\" do CPE pode diferir da recomendação apresentada aqui.",
+	"showsitesurveyTR069WarningInfo": "No Redes ao Redor para TR-069, os Wi-Fis devem estar habilitados para que a consulta funcione.",
 	"updatingNeighbouringNetworks...": "Atualizando redes ao redor...",
 	"noNeighbouringNetworksFound": "Nenhuma rede vizinha encontrada",
 	"Channel=X": "Canal: {{-x}}",
