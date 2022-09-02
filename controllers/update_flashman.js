@@ -819,8 +819,7 @@ updateController.setAutoConfig = async function(req, res) {
     if (config.personalizationHash !== '') {
       const isSsidPrefixEnabled =
         (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix'],
-        isSsidPrefixEnabled);
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
@@ -833,14 +832,6 @@ updateController.setAutoConfig = async function(req, res) {
         return res.status(500).json({
           type: 'danger',
           message: t('ssidPrefixEmptyError'),
-        });
-      // If prefix is disabled, do not allow changes in current prefix
-      } else if (!isSsidPrefixEnabled &&
-                 config.ssidPrefix !== '' &&
-                 config.ssidPrefix !== req.body['ssid-prefix']) {
-        return res.status(500).json({
-          type: 'danger',
-          message: t('ssidPrefixDisabledAlterationError'),
         });
       }
       // If prefix is enabled and has changed, we need to migrate devices in

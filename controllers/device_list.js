@@ -892,8 +892,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     for each device */
                 let ssidPrefix = matchedConfig.ssidPrefix;
                 let enabledForAllFlashman = (
-                  !!matchedConfig.personalizationHash &&
-                    matchedConfig.isSsidPrefixEnabled);
+                  matchedConfig.personalizationHash ? true : false // cast bool
+                );
                 allDevices.forEach(function(device) {
                   /*
                     Define if is to show ssid prefix
@@ -904,9 +904,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     for that device, is enough to be able
                     to show.
                   */
-                  device.isToShowSsidPrefixCheckbox =
-                    (enabledForAllFlashman == true ||
-                    device.isSsidPrefixEnabled == true);
+                  device.isToShowSsidPrefixCheckbox = (
+                    enabledForAllFlashman || device.isSsidPrefixEnabled
+                  );
                 });
 
                 let mustBlockLicenseAtRemoval = (
