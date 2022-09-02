@@ -426,6 +426,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-site-survey-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let isTR069 = row.data('is-tr069') === true;
     let isBridge = row.data('bridge-enabled') === t('Yes');
     let has5ghz = row.data('has-5ghz');
     let hasExtendedChannels = row.data('has-extended-channels');
@@ -440,6 +441,9 @@ anlixDocumentReady.add(function() {
     // Trigger ap device view
     $('#2-ghz-aps').show();
     $('#5-ghz-aps').hide();
+
+    // Show warning
+    if (!isTR069) $('#tr09-warning').hide();
 
     // Refresh devices status
     refreshSiteSurvey(id, isBridge, hasExtendedChannels);
