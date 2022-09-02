@@ -30,20 +30,23 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
 const getAllNestedKeysFromMultipleObjects = function(data, target, base) {
   let result = [];
   let resultKeys = [];
-  let resultKeysRaw = utilHandlers.getFromNestedKey(data, base.result);
-  if (resultKeysRaw) {
-    resultKeys = Object.keys(resultKeysRaw);
-  }
-  resultKeys = resultKeys.filter((k)=>k[0] && k[0]!=='_');
-  resultKeys.forEach((i)=>{
-    let obj = {};
-    Object.keys(target).forEach((key)=>{
-      let field = base.result+'.'+i+'.'+target[key] + '._value';
-      if (utilHandlers.checkForNestedKey(data, field)) {
-        obj[key] = utilHandlers.getFromNestedKey(data, field);
-      }
+  base.result.forEach((res) => {
+    let resultKeysRaw = utilHandlers.getFromNestedKey(data, res);
+    if (resultKeysRaw) {
+      resultKeys = Object.keys(resultKeysRaw);
+    }
+    resultKeys = resultKeys.filter((k)=>k[0] && k[0]!=='_');
+    resultKeys.forEach((i)=>{
+      let obj = {};
+      Object.keys(target).forEach((key)=>{
+        if (target[key] === '') return;
+        let field = res+'.'+i+'.'+target[key] + '._value';
+        if (utilHandlers.checkForNestedKey(data, field)) {
+          obj[key] = utilHandlers.getFromNestedKey(data, field);
+        }
+      });
+      result.push(obj);
     });
-    result.push(obj);
   });
   return result;
 };
@@ -220,36 +223,45 @@ const calculateFreq = function(rawChannel) {
 };
 
 const calculateSiteSurveyDiagnostic = async function(
-  device, cpe, data, siteSurveyKeys, siteSurveyFields,
+  device, cpe, data, siteSurveyFields,
 ) {
   let id = device.acs_id;
   let siteSurveyObjKeys = {
-    mac: 'BSSID',
-    ssid: 'SSID',
-    channel: 'Channel',
-    signal: 'SignalStrength',
-    band: 'OperatingChannelBandwidth',
-    mode: 'OperatingStandards',
+    mac: siteSurveyFields.mac,
+    ssid: siteSurveyFields.ssid,
+    channel: siteSurveyFields.channel,
+    signal: siteSurveyFields.signal,
+    band: siteSurveyFields.band,
+    mode: siteSurveyFields.mode,
   };
 
   let apsData = getAllNestedKeysFromMultipleObjects(data,
     siteSurveyObjKeys, siteSurveyFields);
-  siteSurveyKeys = getAllNestedKeysFromObject(data,
-    siteSurveyKeys, siteSurveyFields);
-  let diagState = siteSurveyKeys.diag_state;
+  let diagState = [];
+  siteSurveyFields.diag_state.forEach((key)=>{
+    if (utilHandlers.checkForNestedKey(data, key + '._value')) {
+      diagState.push(utilHandlers.getFromNestedKey(
+        data, key + '._value',
+      ));
+    }
+  });
   let outData = [];
 
-  if (['None'].includes(diagState)) return;
-  if (['Requested'].includes(diagState)) {
+  if (diagState.every((x) => x === 'None')) {
+    if (cpe.isToDoPoolingInState()) {
+      acsDiagnosticsHandler.doPoolingInState(device.acs_id,
+        cpe.getModelFields());
+    }
+  }
+  if (diagState.includes('Requested')) {
     acsDiagnosticsHandler.fetchDiagnosticsFromGenie(id);
     return;
   }
-
-  if (['Completed', 'Completed\n'].includes(diagState)) {
+  if (diagState.includes('Completed')) {
     apsData.forEach((ap) => {
       let outDev = {};
 
-      let devReg = device.getAPSurveyDevice(ap.mac);
+      let devReg = device.getAPSurveyDevice(ap.mac.toLowerCase());
       if (ap.channel) {
         ap.freq = calculateFreq(ap.channel);
       }
@@ -259,12 +271,14 @@ const calculateSiteSurveyDiagnostic = async function(
       let devWidth=20;
       let devVHT=false;
 
-      if (ap.mode.includes('ac')) {
+      if (ap.mode && ap.mode.includes('ac')) {
         devVHT=true;
       }
 
-      if (ap.band !== 'Auto') {
-        devWidth = parseInt(ap.band);
+      if (ap.band !== 'Auto' &&
+          ap.band.match('[0-9]+') != null) {
+        // '20MHz' | '40MHz' | '80MHz'
+        devWidth = parseInt(ap.band.match('[0-9]+')[0]);
       }
 
       if (devReg) {
@@ -501,16 +515,39 @@ const startSiteSurveyDiagnose = async function(acsID) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let diagnStateField = fields.diagnostics.sitesurvey.diag_state;
+  let params = [];
+  fields.diagnostics.sitesurvey.diag_state.forEach((ds) => {
+    params.push([ds, 'Requested', 'xsd:string']);
+  });
 
   let task = {
     name: 'setParameterValues',
-    parameterValues: [[diagnStateField, 'Requested', 'xsd:string']],
+    parameterValues: params,
   };
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting site survey diagnose for ' + acsID);
   }
+  if (cpe.isToDoPoolingInState()) {
+    acsDiagnosticsHandler.doPoolingInState(acsID, fields);
+  }
+};
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
+  await delay(1000);
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: fields.diagnostics.sitesurvey.diag_state,
+  };
+  const result = await TasksAPI.addTask(acsID, task);
+  if (result.success) {
+    acsDiagnosticsHandler.fetchDiagnosticsFromGenie(acsID);
+  } else {
+    acsDiagnosticsHandler.doPoolingInState(acsID, fields);
+  }
+  return;
 };
 
 acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
@@ -565,7 +602,11 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
       let genieFields = fields.diagnostics[masterKey];
       for (let key in keys) {
         if (genieFields.hasOwnProperty(key)) {
-          parameters.push(genieFields[key]);
+          if (typeof genieFields[key] === 'string') {
+            parameters.push(genieFields[key]);
+          } else if (Array.isArray(genieFields[key])) {
+            parameters = parameters.concat(genieFields[key]);
+          }
         }
       }
     }
@@ -611,8 +652,7 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
           await calculateTraceDiagnostic(/* to-do */);
         } else if (permissions.grantSiteSurvey && diagType=='sitesurvey') {
           await calculateSiteSurveyDiagnostic(
-            device, cpe, data, diagNecessaryKeys.sitesurvey,
-            fields.diagnostics.sitesurvey,
+            device, cpe, data, fields.diagnostics.sitesurvey,
           );
         }
       } catch (e) {
