@@ -838,7 +838,7 @@ updateController.setAutoConfig = async function(req, res) {
       // database to properly set local flags -> avoids cases where prefix will
       // be inserted / removed out of nowhere
       if (
-        isSsidPrefixEnabled && config.ssidPrefix !== req.body['ssid-prefix']
+        config.ssidPrefix && config.ssidPrefix !== req.body['ssid-prefix']
       ) {
         willMigrateDevicePrefixes = {
           migrate: true, oldPrefix: config.ssidPrefix,
