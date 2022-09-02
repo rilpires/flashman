@@ -33,6 +33,8 @@ raisecomModel.modelPermissions = function() {
     '3.20': [],
   };
 
+  permissions.lan.LANDeviceHasAssocTree = false;
+
   return permissions;
 };
 
