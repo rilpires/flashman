@@ -423,6 +423,10 @@ basicCPEModel.getPortForwardRuleName = function(index) {
   return 'Anlix_PortForwarding_' + index.toString();
 };
 
+basicCPEModel.isToDoPoolingInState = function() {
+  return false;
+};
+
 // Map TR-069 XML fields to Flashman fields
 basicCPEModel.getModelFields = function() {
   return {
@@ -661,8 +665,14 @@ basicCPEModel.getModelFields = function() {
       sitesurvey: {
         // Each device may have they proper fields
         root: '',
-        diag_state: '',
-        result: '',
+        diag_state: [],
+        result: [],
+        mac: '',
+        ssid: '',
+        channel: '',
+        signal: '',
+        band: '',
+        mode: '',
       },
     },
   };
