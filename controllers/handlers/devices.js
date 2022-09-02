@@ -292,7 +292,7 @@ deviceHandlers.cleanAndCheckSsid = function(prefix, ssid) {
   // Test if incoming SSID already have the prefix
   if (rePrefix.test(ssid)) {
     // Remove prefix from incoming SSID
-    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix), 'i');
+    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix));
     const finalSsid = ssid.replace(toRemove, '');
     const combinedSsid = strPrefix + finalSsid;
     if (combinedSsid.length > 32) {
