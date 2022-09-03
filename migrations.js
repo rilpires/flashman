@@ -31,7 +31,7 @@ module.exports = (app) => {
     // Check roles
     Role.findOne({}, function(err, role) {
       // Check default role existence
-      if (err || !role) {
+      if (!role) {
         let managerRole = new Role({
           name: 'Gerente',
           grantWifiInfo: 2,
@@ -60,6 +60,23 @@ module.exports = (app) => {
           grantFirmwareRestrictedUpgrade: true,
         });
         managerRole.save();
+      }
+    });
+    Role.findOne({name: 'anlix-statistics-api'}, function(err, apiRole) {
+      // Check API role existence
+      if (!apiRole) {
+        let apiRole = new Role({
+          name: 'anlix-statistics-api',
+          is_hidden: true,
+          grantAPIAccess: true,
+          grantWanType: true,
+          grantWifiInfo: 2,
+          grantPPPoEInfo: 2,
+          grantLanEdit: true,
+          grantDeviceId: true,
+          grantOpmodeEdit: true,
+        });
+        apiRole.save();
       }
     });
     // Use lean to check missing fields
