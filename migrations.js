@@ -104,6 +104,13 @@ module.exports = (app) => {
                   });
               });
           }
+          if (typeof roles[idx].is_hidden == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {is_hidden: false}, (err) => {
+                console.log('Role visibility updated');
+              });
+          }
         }
       }
     });

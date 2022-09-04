@@ -242,7 +242,7 @@ userController.getUserById = function(req, res) {
 };
 
 userController.getRoles = function(req, res) {
-  Role.find(function(err, roles) {
+  Role.find({is_hidden: false}, function(err, roles) {
     if (err) {
       return res.json({success: false, type: 'danger', message: err});
     }
