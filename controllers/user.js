@@ -149,6 +149,7 @@ userController.postRole = function(req, res) {
     grantDeviceActions: req.body['grant-device-actions'],
     grantDeviceRemoval: basicDeviceRemoval,
     grantDeviceMassRemoval: massDeviceRemoval,
+    grantDeviceLicenseBlock: req.body['grant-block-license-at-removal'],
     grantFactoryReset: req.body['grant-factory-reset'],
     grantDeviceAdd: req.body['grant-device-add'],
     grantMonitorManage: req.body['grant-monitor-manage'],
@@ -170,7 +171,7 @@ userController.postRole = function(req, res) {
     grantCsvExport: req.body['grant-csv-export'],
     grantVlan: req.body['grant-vlan'],
     grantVlanProfileEdit: req.body['grant-vlan-profile-edit'],
-    grantWanBytesView: req.body['grant-wan-bytes'],
+    grantStatisticsView: req.body['grant-statistics'],
     grantSearchLevel: parseInt(req.body['grant-search-level']),
     grantShowSearchSummary: req.body['grant-search-summary'],
     grantShowRowsPerPage: req.body['grant-rows-per-page'],
@@ -214,7 +215,7 @@ userController.postRole = function(req, res) {
 
 userController.getUsers = async function(req, res) {
   try {
-    let users = await User.find().lean().exec();
+    let users = await User.find({is_hidden: false}).lean().exec();
     return res.json({success: true, type: 'success', users: users});
   } catch (err) {
     return res.json({success: false, type: 'danger', message: err});
@@ -223,7 +224,7 @@ userController.getUsers = async function(req, res) {
 
 userController.getUsersForDisplay = async function(req, res) {
   try {
-    let usersProjection = {deviceCertifications: false};
+    let usersProjection = {deviceCertifications: false, is_hidden: false};
     let users = await User.find({}, usersProjection).lean().exec();
     return res.json({success: true, type: 'success', users: users});
   } catch (err) {
@@ -241,7 +242,7 @@ userController.getUserById = function(req, res) {
 };
 
 userController.getRoles = function(req, res) {
-  Role.find(function(err, roles) {
+  Role.find({is_hidden: false}, function(err, roles) {
     if (err) {
       return res.json({success: false, type: 'danger', message: err});
     }
@@ -368,6 +369,7 @@ userController.editRole = function(req, res) {
     role.grantFactoryReset = req.body['grant-factory-reset'];
     role.grantDeviceRemoval = basicDeviceRemoval;
     role.grantDeviceMassRemoval = massDeviceRemoval;
+    role.grantDeviceLicenseBlock = req.body['grant-block-license-at-removal'];
     role.grantDeviceAdd = req.body['grant-device-add'];
     role.grantMonitorManage = req.body['grant-monitor-manage'];
     role.grantFirmwareManage = req.body['grant-firmware-manage'];
@@ -388,7 +390,7 @@ userController.editRole = function(req, res) {
     role.grantCsvExport = req.body['grant-csv-export'];
     role.grantVlan = req.body['grant-vlan'];
     role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
-    role.grantWanBytesView = req.body['grant-wan-bytes'];
+    role.grantStatisticsView = req.body['grant-statistics'];
     role.grantSearchLevel = parseInt(req.body['grant-search-level']);
     role.grantShowSearchSummary = req.body['grant-search-summary'];
     role.grantShowRowsPerPage = req.body['grant-rows-per-page'];
@@ -1518,7 +1520,7 @@ userController.certificateSearch = async (req, res) => {
         default: '',
       },
       {
-        label: t('hasMeshBeenConfigured?'),
+        label: t('hasMeshBeenConfigured'),
         value: 'certifications.didConfigureMesh',
         default: '',
       },

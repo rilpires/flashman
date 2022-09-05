@@ -6,6 +6,7 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
@@ -15,8 +16,17 @@ greatekModel.modelPermissions = function() {
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.speedTestLimit = 300;
   permissions.lan.configWrite = false;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    '638.112.100.1383': [],
+    '638.112.100.1383': ['638.112.100.1435'],
+    '638.112.100.1435': ['638.112.100.1383'],
   };
   return permissions;
 };
@@ -67,6 +77,8 @@ greatekModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   delete fields.diagnostics.speedtest.num_of_conn;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =

@@ -326,7 +326,7 @@ vlanController.checkDevicesAffected = async function(req, res) {
                      message: t('operationSuccessful')});
   } else {
     return res.json({success: false, type: 'danger',
-                     message: t('configNotFoud', {errorline: __line})});
+                     message: t('configNotFound', {errorline: __line})});
   }
 };
 
@@ -361,7 +361,7 @@ vlanController.removeVlanProfile = async function(req, res) {
     });
   } else {
     res.json({success: false, type: 'danger',
-      message: t('configNotFoud', {errorline: __line})});
+      message: t('configNotFound', {errorline: __line})});
   }
 };
 
@@ -561,7 +561,7 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
     }
   } else {
     return {success: false, type: 'danger',
-      message: t('configNotFoud', {errorline: __line})};
+      message: t('configNotFound', {errorline: __line})};
   }
   return {
     success: true,

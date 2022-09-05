@@ -2,33 +2,27 @@ const basicCPEModel = require('./base-model');
 
 let fiberhomeModel = Object.assign({}, basicCPEModel);
 
-fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6145F'};
+fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6143D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
-  permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.pingTest = true;
+  permissions.features.speedTest = true;
+  permissions.lan.canTrustActive = true;
+  permissions.wan.speedTestLimit = 700;
   permissions.features.portForward = true;
-  permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.wifi.axWiFiMode = true;
+  permissions.wifi.bandWrite2 = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
     149, 153, 157, 161,
   ];
-  permissions.wifi.bandRead2 = false;
-  permissions.wifi.bandRead5 = false;
-  permissions.wifi.bandWrite2 = false;
-  permissions.wifi.bandWrite5 = false;
-  permissions.wifi.bandAuto2 = false;
-  permissions.wifi.bandAuto5 = false;
-  permissions.wifi.modeRead = true;
-  permissions.wifi.modeWrite = true;
   permissions.firmwareUpgrades = {
-    'RP2930': [],
+    'RP2815': [],
   };
   return permissions;
 };
@@ -36,67 +30,77 @@ fiberhomeModel.modelPermissions = function() {
 fiberhomeModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'bg';
+      return 'g';
     case '11n':
-      return 'bgn';
+      return 'b,g,n';
     case '11na':
       return 'an';
     case '11ac':
       return 'a,n,ac';
     case '11ax':
-      return 'ax';
     default:
       return '';
   }
 };
 
-fiberhomeModel.getBeaconType = function() {
-  return '11i';
-};
-
-fiberhomeModel.convertToDbm = function(power) {
-  return parseFloat(power).toFixed(3);
-};
-
-fiberhomeModel.convertChannelToTask = function(channel, fields, masterKey) {
-  if (channel === 'auto') {
-    channel = '0';
+fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto': // This model's 5ghz auto is only 20/40
+      return '0';
+    default:
+      return '';
   }
-  let values = [];
-  const parsedChannel = parseInt(channel);
-  values.push([
-    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
-  ]);
-  return values;
 };
 
-fiberhomeModel.convertWifiRate = function(rate) {
-  return parseInt(rate) / 1000;
+fiberhomeModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
+fiberhomeModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**3 => milliseconds to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**3))/(1024**2)) * (bytesRec/period);
 };
 
 fiberhomeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_FH_Account.X_FH_WebUserInfo.WebSuperUsername';
-  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_FH_Account.X_FH_WebUserInfo.WebSuperPassword';
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.VLANID';
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
-  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceTxRate';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+    'X_FH_WANGponLinkConfig.VLANIDMark';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.TXPower';
-  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.port_mapping_values.protocol[1] = 'ALL';
+  fields.port_mapping_fields.internal_port_end = [
+    'X_FH_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt',
+  ];
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];

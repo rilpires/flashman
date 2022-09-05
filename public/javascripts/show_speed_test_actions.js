@@ -94,8 +94,8 @@ anlixDocumentReady.add(function() {
   $('.btn-start-speed-test').click(function(event) {
     let id = $('#speed-test-hlabel').text();
     $('.btn-start-speed-test').prop('disabled', true);
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('speedTestWarningMessage'),
       confirmButtonText: t('Proceed'),

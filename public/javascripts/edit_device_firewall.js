@@ -304,19 +304,19 @@ anlixDocumentReady.add(function() {
     let ports = $('#openFirewallPortsPorts')[0].selectize.getValue();
     let dmz = $('#openFirewallPortsDMZ').is(':checked');
     if (deviceId == '') {
-      swal({
+      swal.fire({
         title: t('ruleInclusionFail'),
         text: t('deviceMustBeInformed!'),
-        type: 'error',
+        icon: 'error',
         confirmButtonColor: '#4db6ac',
       });
       return;
     }
     if (ports == '') {
-      swal({
+      swal.fire({
         title: t('ruleInclusionFail'),
-        text: t('informAtLeastOnePortToOpenAccess!'),
-        type: 'error',
+        text: t('informAtLeastOnePortToOpenAccess'),
+        icon: 'error',
         confirmButtonColor: '#4db6ac',
       });
       return;
@@ -325,10 +325,10 @@ anlixDocumentReady.add(function() {
     let asymusage = false;
     $.each(ports, function(idx, portValue) {
       if (!hasPortForwardAsym && portValue.indexOf(':') != -1) {
-        swal({
+        swal.fire({
           title: t('ruleInclusionFail'),
           text: t('cpeDoesNotSupportAsymmetricPorts'),
-          type: 'error',
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
         asymusage = true;
@@ -378,10 +378,10 @@ anlixDocumentReady.add(function() {
       }
 
       if (reservedPorts.indexOf(parseInt(portFinal)) != -1) {
-        swal({
+        swal.fire({
           title: t('ruleInclusionFail'),
           text: t('externalPortAlreadyInUse!'),
-          type: 'error',
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
         hasPortInUse = true;
@@ -389,10 +389,10 @@ anlixDocumentReady.add(function() {
       reservedPorts = reservedPorts.concat(parseInt(portFinal));
 
       if (intPorts.indexOf(parseInt(intPort)) != -1) {
-        swal({
+        swal.fire({
           title: t('ruleInclusionFail'),
-          text: t('internalPortAlreadyInUse!'),
-          type: 'error',
+          text: t('internalPortAlreadyInUse'),
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
         hasPortInUse = true;
@@ -433,25 +433,25 @@ anlixDocumentReady.add(function() {
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
-          swal({
+          swal.fire({
             title: `${t('Success')}! ${t('restartModifiedDeviced')}`,
-            type: 'success',
+            icon: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
-          swal({
+          swal.fire({
             title: t('ruleApplicationFail'),
             text: res.message,
-            type: 'error',
+            icon: 'error',
             confirmButtonColor: '#4db6ac',
           });
         }
       },
       error: function(xhr, status, error) {
-        swal({
+        swal.fire({
           title: t('ruleApplicationFail'),
           text: error,
-          type: 'error',
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
       },

@@ -35,6 +35,64 @@
 
     let Validator = function() {};
 
+    Validator.prototype.validateExtReference = function(extReference) {
+      let expectedRegex = new RegExp(/^.{0,256}$/);
+      let expectedMask;
+      let regexIsValid = false;
+      let kindIsValid = true;
+
+      // Size is not valid
+      if (!(expectedRegex.test(extReference.data))) {
+        return {
+          valid: false,
+          err: [t(
+            'thisFieldCannotHaveMoreThanMaxChars',
+            {max: 256},
+          )],
+        };
+      }
+
+      // Dinamically checking king and getting the expected regex by language
+      switch (extReference.kind.toLowerCase()) {
+        case t('personIdentificationSystem').toLowerCase():
+          expectedRegex = new RegExp(t('personIdentificationRegex'));
+          expectedMask = t('personIdentificationMask');
+        break;
+        case t('enterpriseIdentificationSystem').toLowerCase():
+          expectedRegex = new RegExp(t('enterpriseIdentificationRegex'));
+          expectedMask = t('enterpriseIdentificationMask');
+        break;
+        case t('Other').toLowerCase():
+          // In case of valid kind ("Other") and valid size (tested rigth above)
+          // then we can return the validator as valid
+          return {valid: true};
+        default:
+          kindIsValid = false;
+      }
+
+      // After we get the expected regex for each identification system by
+      // language, we can validate the regex
+      if (extReference.data.length > 0) {
+        regexIsValid = expectedRegex.test(extReference.data);
+      } else {
+        // Nothing to validate if data is empty
+        regexIsValid = true;
+      }
+
+      let errors = [];
+      if (!kindIsValid) {
+        errors.push(t('invalidContractNumberKind', {kind: extReference.kind}));
+      }
+      if (!regexIsValid && expectedMask) {
+        errors.push(t('invalidContractNumberData',
+          {kind: extReference.kind, mask: expectedMask}));
+      }
+      return {
+        valid: (kindIsValid && regexIsValid),
+        err: errors,
+      };
+    };
+
     Validator.prototype.validateMac = function(mac) {
       return {
         valid: mac.match(/^([0-9A-F]{2}[:-]){5}([0-9A-F]{2})$/),
@@ -42,11 +100,16 @@
       };
     };
 
-    Validator.prototype.validateChannel = function(channel) {
+    Validator.prototype.validateChannel = function(channel, list5ghz) {
+      let validChannels = [
+        'auto',
+        '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12', '13',
+      ];
+      if (list5ghz) {
+        validChannels = validChannels.concat(list5ghz.map((ch)=>ch.toString()));
+      }
       return {
-        valid: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11',
-                '12', '13', '36', '40', '44', '48', '149', '153', '157',
-                '161', '165', 'auto'].includes(channel),
+        valid: validChannels.includes(channel),
         err: [t('invalidSelectedChannel')],
       };
     };
@@ -151,6 +214,18 @@
         t('thisFieldMustHaveValidIpFormat'),
       ];
       let ret = validateRegex(ip, 7, 15, /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
+    Validator.prototype.validateFqdn = function(fqdn) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 255}),
+        t('insertValidFqdn'),
+      ];
+      let ret = validateRegex(fqdn, 1, 255,
+        /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };

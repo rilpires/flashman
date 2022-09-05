@@ -340,9 +340,9 @@ anlixDocumentReady.add(function() {
       $('#when-btn-icon')
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
-      swal({
+      swal.fire({
         title: t('startingSchedule...'),
-        onOpen: () => {
+        didOpen: () => {
           swal.showLoading();
         },
       });
@@ -367,8 +367,8 @@ anlixDocumentReady.add(function() {
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
           swal.close();
-          swal({
-            type: 'success',
+          swal.fire({
+            icon: 'success',
             title: t('scheduleStartedSuccessfully!'),
             text: t('pressOkToRefreshPage'),
             confirmButtonColor: '#4db6ac',
@@ -385,8 +385,8 @@ anlixDocumentReady.add(function() {
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
           swal.close();
-          swal({
-            type: 'error',
+          swal.fire({
+            icon: 'error',
             title: t('errorStartingSchedule'),
             text: t('pleaseTryAgain'),
             confirmButtonColor: '#4db6ac',
@@ -462,8 +462,8 @@ anlixDocumentReady.add(function() {
   });
 
   $('#abort-btn').click((event)=>{
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('abortScheduleWarningMessage'),
       confirmButtonText: t('Proceed'),
@@ -475,8 +475,8 @@ anlixDocumentReady.add(function() {
       if (!result.value) return;
       let p = Promise.resolve(true);
       if ($('#progress-todo').hasClass('doing')) {
-        p = swal({
-          type: 'warning',
+        p = swal.fire({
+          icon: 'warning',
           title: t('Attention!'),
           text: t('abortScheduleProgressToDoWarningMessage'),
           confirmButtonText: t('Proceed'),
@@ -484,9 +484,9 @@ anlixDocumentReady.add(function() {
         });
       }
       p.then((result)=>{
-        swal({
+        swal.fire({
           title: t('abortingSchedule...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });
@@ -495,8 +495,8 @@ anlixDocumentReady.add(function() {
           url: '/devicelist/scheduler/abort',
           success: function(res) {
             swal.close();
-            swal({
-              type: 'success',
+            swal.fire({
+              icon: 'success',
               title: t('scheduleSuccessfullyAborted!'),
               text: t('pressOkToRefreshPage'),
               confirmButtonColor: '#4db6ac',
@@ -506,8 +506,8 @@ anlixDocumentReady.add(function() {
           },
           error: function(xhr, status, error) {
             swal.close();
-            swal({
-              type: 'error',
+            swal.fire({
+              icon: 'error',
               title: t('errorAbortingSchedule'),
               text: t('pleaseTryAgain'),
               confirmButtonColor: '#4db6ac',
@@ -519,9 +519,9 @@ anlixDocumentReady.add(function() {
   });
 
   $('#refresh-btn').click((event)=>{
-    swal({
+    swal.fire({
       title: t('searchingInfo...'),
-      onOpen: () => {
+      didOpen: () => {
         swal.showLoading();
       },
     });
@@ -542,8 +542,8 @@ anlixDocumentReady.add(function() {
         }
         if (res.total === (res.done + res.error)) {
           // All devices done, prompt page reload
-          swal({
-            type: 'success',
+          swal.fire({
+            icon: 'success',
             title: t('updatesConcluded'),
             text: t('newScheduleModalMessage'),
             confirmButtonText: t('Refresh'),
@@ -560,8 +560,8 @@ anlixDocumentReady.add(function() {
       },
       error: function(xhr, status, error) {
         swal.close();
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('errorSearchingInfo'),
           text: t('pleaseTryAgain'),
           confirmButtonColor: '#4db6ac',
@@ -590,9 +590,9 @@ anlixDocumentReady.add(function() {
   };
 
   $('#results-btn').click((event)=>{
-    swal({
+    swal.fire({
       title: t('searchingInfo...'),
-      onOpen: () => {
+      didOpen: () => {
         swal.showLoading();
       },
     });
@@ -605,8 +605,8 @@ anlixDocumentReady.add(function() {
       },
       error: function(xhr, status, error) {
         swal.close();
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('errorSearchingInfo'),
           text: t('pleaseTryAgain'),
           confirmButtonColor: '#4db6ac',

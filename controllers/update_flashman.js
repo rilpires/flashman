@@ -13,6 +13,8 @@ const language = require('./language');
 const util = require('./handlers/util');
 const t = language.i18next.t;
 let Config = require('../models/config');
+let User = require('../models/user');
+
 let updateController = {};
 
 const isMajorUpgrade = function(target, current) {
@@ -603,6 +605,7 @@ updateController.getAutoConfig = function(req, res) {
         bypassMqttSecretCheck: matchedConfig.mqtt_secret_bypass,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
+        blockLicenseAtDeviceRemoval: matchedConfig.blockLicenseAtDeviceRemoval,
         tr069ServerURL: matchedConfig.tr069.server_url,
         tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
@@ -677,7 +680,7 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
 
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
-    console.error(e);
+    console.log(e);
     throw new Error(t('geniePresetPutError', {errorline: __line}));
   });
 };
@@ -715,6 +718,12 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
+
+    let mustBlockLicense = req.body['must-block-license-at-removal'];
+    mustBlockLicense = (
+      mustBlockLicense === true || mustBlockLicense === 'true'
+    ) ? true : false;
+    config.blockLicenseAtDeviceRemoval = mustBlockLicense;
 
     let ponSignalThreshold = parseInt(req.body['pon-signal-threshold']);
     if (isNaN(ponSignalThreshold)) {
@@ -949,7 +958,7 @@ updateController.updateAppPersonalization = async function(app) {
 
     Config.findOne({is_default: true}, function(err, config) {
       if (err || !config) {
-        console.error('Error when fetching Config document');
+        console.log('Error when fetching Config document');
         return;
       }
       config.personalizationHash = hash;
@@ -957,13 +966,13 @@ updateController.updateAppPersonalization = async function(app) {
       config.iosLink = ios;
       config.save(function(err) {
         if (err) {
-          console.error('Config save returned error: ' + err);
+          console.log('Config save returned error: ' + err);
           return;
         }
       });
     });
   } else {
-    console.error('App personalization hash update error');
+    console.log('App personalization hash update error');
   }
 };
 
@@ -975,20 +984,51 @@ updateController.updateLicenseApiSecret = async function(app) {
 
     Config.findOne({is_default: true}, function(err, config) {
       if (err || !config) {
-        console.error('Error when fetching Config document');
+        console.log('Error when fetching Config document');
         return;
       }
       config.licenseApiSecret = licenseApiSecret;
       config.company = company;
       config.save(function(err) {
         if (err) {
-          console.error('Config save returned error: ' + err);
+          console.log('Config save returned error: ' + err);
           return;
         }
       });
     });
   } else {
-    console.error('License API secret update error');
+    console.log('License API secret update error');
+  }
+};
+
+updateController.updateApiUserLogin = async function(app) {
+  let controlReq = await controlApi.getApiUserLogin(app);
+  if (controlReq.success == true) {
+    const apiUser = controlReq.apiUser;
+    const apiPass = controlReq.apiPass;
+    let foundUserObj;
+    try {
+      foundUserObj =
+        await User.findOne({name: apiUser}, {name: true}).lean().exec();
+    } catch (err) {
+      console.log('Error retrieving user: ' + err);
+    }
+    if (!foundUserObj) {
+      let apiUserObj = new User({
+        name: apiUser,
+        password: apiPass,
+        role: 'anlix-statistics-api',
+        is_superuser: false,
+        is_hidden: true,
+      });
+      try {
+        await apiUserObj.save();
+      } catch (err) {
+        console.log('Error creating user: ' + err);
+      }
+    }
+  } else {
+    console.log('API user login update error: ' + controlReq.message);
   }
 };
 

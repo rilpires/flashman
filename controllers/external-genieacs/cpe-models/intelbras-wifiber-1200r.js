@@ -2,31 +2,42 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 121 AC'};
+intelbrasModel.identifier = {
+  vendor: 'Intelbras',
+  model: 'WiFiber 1200R inMesh',
+};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.wan.speedTestLimit = 350;
+  permissions.wan.speedTestLimit = 300;
+  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.configWrite = false;
+  permissions.lan.sendRoutersOnLANChange = false;
+  permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+    149, 153, 157, 161,
   ];
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.wifi.modeRead = false;
-  permissions.wifi.modeWrite = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.firmwareUpgrades = {
-    'V210414': ['1.0-210917'],
-    '1.0-210917': [],
+    '1.1-220712': [],
   };
   return permissions;
+};
+
+// Used when setting up a mesh network
+basicCPEModel.getBeaconType = function() {
+  return '11i';
 };
 
 intelbrasModel.convertWifiMode = function(mode) {
@@ -62,15 +73,28 @@ intelbrasModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+intelbrasModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === '802.11') {
+    return 'wifi';
+  }
+  return 'cable';
+};
+
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'WANPPPConnection.1.X_ITBS_VlanMuxID';
+  fields.common.web_admin_password = 'InternetGatewayDevice'+
+    '.UserInterface.AdminPassword';
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.1.AssociatedDevice.1.X_ITBS_WLAN_SNR';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientMode';
+  fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
+    '*.InterfaceType';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -80,9 +104,13 @@ intelbrasModel.getModelFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
-    '.X_ITBS_ChannelWidth';
+    '.X_ITBS_BandWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
-    '.X_ITBS_ChannelWidth';
+    '.X_ITBS_BandWidth';
+  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
+    '.X_ITBS_WlanStandard';
+  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
+    '.X_ITBS_WlanStandard';
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');

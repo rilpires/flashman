@@ -217,7 +217,7 @@ function watchChangeCert(interval, filename, needrestart) {
       } else {
         console.log('Error reading file certificates! Using old ones...');
       }
-    };
+    }
   });
 }
 
