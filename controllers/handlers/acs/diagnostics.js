@@ -51,6 +51,16 @@ const getAllNestedKeysFromMultipleObjects = function(data, target, base) {
   return result;
 };
 
+const saveCurrentDiagnostic = async function(device, msg, progress) {
+  device.current_diagnostic.stage = msg;
+  device.current_diagnostic.in_progress = progress;
+  device.current_diagnostic.last_modified_at = new Date();
+  await device.save().catch((err) => {
+    console.log('Error saving site survey to database');
+    return;
+  });
+};
+
 const getNextPingTest = function(device) {
   let found = device.pingtest_results.find((pingTest) => !pingTest.completed);
   return (found) ? found.host : '';
@@ -201,7 +211,6 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-
 const calculateTraceDiagnostic = async function(
   device, cpe, data, pingKeys, pingFields,
 ) {
@@ -247,6 +256,7 @@ const calculateSiteSurveyDiagnostic = async function(
   });
   let outData = [];
 
+  console.log('!@#', diagState);
   if (diagState.every((x) => x === 'None')) {
     if (cpe.isToDoPoolingInState()) {
       acsDiagnosticsHandler.doPoolingInState(device.acs_id,
@@ -257,9 +267,7 @@ const calculateSiteSurveyDiagnostic = async function(
     acsDiagnosticsHandler.fetchDiagnosticsFromGenie(id);
     return;
   } else if (diagState.some((x) => x.match(/erro/i))) {
-    device.current_diagnostic.stage = 'error';
-    device.current_diagnostic.in_progress = false;
-    device.current_diagnostic.last_modified_at = new Date();
+    await saveCurrentDiagnostic(device, 'error', false);
     console.log('Error retrieving site survey data!');
   } else if (diagState.some((x) => x.match(/complete/i))) {
     apsData.forEach((ap) => {
@@ -310,18 +318,10 @@ const calculateSiteSurveyDiagnostic = async function(
       outDev.mac = ap.mac;
       outData.push(outDev);
     });
-    device.current_diagnostic.stage = 'done';
-    device.current_diagnostic.in_progress = false;
-    device.current_diagnostic.last_modified_at = new Date();
     device.last_site_survey = Date.now();
-    await device.save().catch((err) => {
-      console.log('Error saving site survey to database');
-      return;
-    });
+    await saveCurrentDiagnostic(device, 'done', false);
   } else {
-    device.current_diagnostic.stage = 'error';
-    device.current_diagnostic.in_progress = false;
-    device.current_diagnostic.last_modified_at = new Date();
+    await saveCurrentDiagnostic(device, 'error', false);
     console.log('Error retrieving site survey data!');
   }
   // if someone is waiting for this message, send the information
@@ -537,6 +537,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
   let result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('(1) Error starting site survey diagnose for ' + acsID);
+    saveCurrentDiagnostic(device, 'error', false);
   }
   if (cpe.isToDoPoolingInState()) {
     if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
@@ -550,6 +551,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
       result = await TasksAPI.addTask(acsID, task);
       if (!result.success) {
         console.log('(2) Error starting site survey diagnose for ' + acsID);
+        saveCurrentDiagnostic(device, 'error', false);
       }
     }
     acsDiagnosticsHandler.doPoolingInState(acsID, fields);
@@ -759,6 +761,7 @@ acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {
   if (result.success) {
     return {success: true, message: t('operationSuccessful')};
   } else {
+    saveCurrentDiagnostic(device, 'error', false);
     return {
       success: false, message: t('acsSiteSurveyError', {errorline: __line}),
     };
