@@ -7,6 +7,7 @@ const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
 const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
+const objectId = require('mongoose').Types.ObjectId;
 
 
 module.exports = (app) => {
@@ -28,10 +29,22 @@ module.exports = (app) => {
         newSuperUser.save();
       }
     });
+    // Use lean to check missing on Users
+    User.find({is_hidden: {$exists: false}}, {_id: true}).lean()
+      .exec(function(err, users) {
+        if (!err && users && users.length > 0) {
+          for (let idx = 0; idx < users.length; idx++) {
+            User.findOneAndUpdate(
+              {_id: objectId(users[idx]._id)},
+              {is_hidden: false});
+          }
+        }
+      },
+    );
     // Check roles
     Role.findOne({}, function(err, role) {
       // Check default role existence
-      if (!role) {
+      if (!err && !role) {
         let managerRole = new Role({
           name: 'Gerente',
           grantWifiInfo: 2,
@@ -64,7 +77,7 @@ module.exports = (app) => {
     });
     Role.findOne({name: 'anlix-statistics-api'}, function(err, apiRole) {
       // Check API role existence
-      if (!apiRole) {
+      if (!err && !apiRole) {
         let apiRole = new Role({
           name: 'anlix-statistics-api',
           is_hidden: true,
@@ -79,9 +92,9 @@ module.exports = (app) => {
         apiRole.save();
       }
     });
-    // Use lean to check missing fields
+    // Use lean to check missing fields on Roles
     Role.find({}).lean().exec(function(err, roles) {
-      if (!err && roles) {
+      if (!err && roles && roles.length > 0) {
         for (let idx = 0; idx < roles.length; idx++) {
           if (typeof roles[idx].grantShowRowsPerPage == 'undefined') {
             Role.findOneAndUpdate(
