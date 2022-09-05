@@ -3,7 +3,6 @@
 
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -24,7 +23,6 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
-const acsMeasuresHandler = require('./handlers/acs/measures');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
