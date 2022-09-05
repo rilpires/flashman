@@ -11,8 +11,12 @@ const tasksApi = require('./external-genieacs/tasks-api.js');
 const Validator = require('../public/javascripts/device_validator');
 const language = require('./language');
 const util = require('./handlers/util');
+const deviceHandler = require('./handlers/devices');
 const t = language.i18next.t;
 let Config = require('../models/config');
+let Devices = require('../models/device');
+let User = require('../models/user');
+
 let updateController = {};
 
 const isMajorUpgrade = function(target, current) {
@@ -678,9 +682,70 @@ const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
 
   // saving preset to genieacs.
   await tasksApi.putPreset(informPreset).catch((e) => {
-    console.error(e);
+    console.log(e);
     throw new Error(t('geniePresetPutError', {errorline: __line}));
   });
+};
+
+const migrateDevicePrefixes = async function(config, oldPrefix) {
+  // We must update the devices already in database with new values for their
+  // local flag, based on the SSID that was already saved and their local flag
+  let projection = {
+    _id: 1, wifi_ssid: 1, wifi_ssid_5ghz: 1,
+    isSsidPrefixEnabled: 1, wifi_is_5ghz_capable: 1,
+  };
+  // Make sure old prefix is an empty string if it is not set
+  if (typeof oldPrefix !== 'string') {
+    oldPrefix = '';
+  }
+  let devices;
+  try {
+    devices = await Devices.find({}, projection);
+  } catch (e) {
+    console.log('Error querying devices for prefix migration: ' + e);
+    return;
+  }
+  console.log('Starting prefix migration for all devices');
+  devices.forEach(async (device)=>{
+    try {
+      let localPrefixFlag = device.isSsidPrefixEnabled;
+      let fullSsid2;
+      if (localPrefixFlag) {
+        fullSsid2 = oldPrefix + device.wifi_ssid;
+      } else {
+        fullSsid2 = device.wifi_ssid;
+      }
+      let fullSsid5 = '';
+      if (device.wifi_is_5ghz_capable) {
+        if (localPrefixFlag) {
+          fullSsid5 = oldPrefix + device.wifi_ssid_5ghz;
+        } else {
+          fullSsid5 = device.wifi_ssid_5ghz;
+        }
+      }
+      let cleanSsid2 = deviceHandler.cleanAndCheckSsid(
+        config.ssidPrefix, fullSsid2,
+      );
+      let cleanSsid5 = deviceHandler.cleanAndCheckSsid(
+        config.ssidPrefix, fullSsid5,
+      );
+      let hasPrefix2 = (cleanSsid2.ssid !== fullSsid2);
+      let hasPrefix5 = (fullSsid5 === '' || cleanSsid5.ssid !== fullSsid5);
+      if (hasPrefix2 && hasPrefix5) {
+        device.isSsidPrefixEnabled = true;
+        device.wifi_ssid = cleanSsid2.ssid;
+        device.wifi_ssid_5ghz = cleanSsid5.ssid;
+      } else {
+        device.isSsidPrefixEnabled = false;
+        device.wifi_ssid = fullSsid2;
+        device.wifi_ssid_5ghz = fullSsid5;
+      }
+      await device.save();
+    } catch (e) {
+      console.log('Error migrating prefixes for device ' + device._id);
+    }
+  });
+  console.log('Finished migrating prefixes for all devices');
 };
 
 updateController.setAutoConfig = async function(req, res) {
@@ -752,11 +817,11 @@ updateController.setAutoConfig = async function(req, res) {
     }
     config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
 
+    let willMigrateDevicePrefixes = {migrate: false};
     if (config.personalizationHash !== '') {
       const isSsidPrefixEnabled =
         (req.body['is-ssid-prefix-enabled'] == 'on') ? true : false;
-      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix'],
-        isSsidPrefixEnabled);
+      const validField = validator.validateSSIDPrefix(req.body['ssid-prefix']);
       if (!validField.valid) {
         return res.status(500).json({
           type: 'danger',
@@ -770,14 +835,16 @@ updateController.setAutoConfig = async function(req, res) {
           type: 'danger',
           message: t('ssidPrefixEmptyError'),
         });
-      // If prefix is disabled, do not allow changes in current prefix
-      } else if (!isSsidPrefixEnabled &&
-                 config.ssidPrefix !== '' &&
-                 config.ssidPrefix !== req.body['ssid-prefix']) {
-        return res.status(500).json({
-          type: 'danger',
-          message: t('ssidPrefixDisabledAlterationError'),
-        });
+      }
+      // If prefix is enabled and has changed, we need to migrate devices in
+      // database to properly set local flags -> avoids cases where prefix will
+      // be inserted / removed out of nowhere
+      if (
+        config.ssidPrefix && config.ssidPrefix !== req.body['ssid-prefix']
+      ) {
+        willMigrateDevicePrefixes = {
+          migrate: true, oldPrefix: config.ssidPrefix,
+        };
       }
       config.ssidPrefix = req.body['ssid-prefix'];
       config.isSsidPrefixEnabled = isSsidPrefixEnabled;
@@ -926,6 +993,10 @@ updateController.setAutoConfig = async function(req, res) {
 
     await config.save();
 
+    if (willMigrateDevicePrefixes.migrate) {
+      migrateDevicePrefixes(config, willMigrateDevicePrefixes.oldPrefix);
+    }
+
     // Start / stop insecure GenieACS instance if parameter changed
     if (changedInsecure && config.tr069.insecure_enable) {
       startInsecureGenieACS();
@@ -956,7 +1027,7 @@ updateController.updateAppPersonalization = async function(app) {
 
     Config.findOne({is_default: true}, function(err, config) {
       if (err || !config) {
-        console.error('Error when fetching Config document');
+        console.log('Error when fetching Config document');
         return;
       }
       config.personalizationHash = hash;
@@ -964,13 +1035,13 @@ updateController.updateAppPersonalization = async function(app) {
       config.iosLink = ios;
       config.save(function(err) {
         if (err) {
-          console.error('Config save returned error: ' + err);
+          console.log('Config save returned error: ' + err);
           return;
         }
       });
     });
   } else {
-    console.error('App personalization hash update error');
+    console.log('App personalization hash update error');
   }
 };
 
@@ -982,20 +1053,51 @@ updateController.updateLicenseApiSecret = async function(app) {
 
     Config.findOne({is_default: true}, function(err, config) {
       if (err || !config) {
-        console.error('Error when fetching Config document');
+        console.log('Error when fetching Config document');
         return;
       }
       config.licenseApiSecret = licenseApiSecret;
       config.company = company;
       config.save(function(err) {
         if (err) {
-          console.error('Config save returned error: ' + err);
+          console.log('Config save returned error: ' + err);
           return;
         }
       });
     });
   } else {
-    console.error('License API secret update error');
+    console.log('License API secret update error');
+  }
+};
+
+updateController.updateApiUserLogin = async function(app) {
+  let controlReq = await controlApi.getApiUserLogin(app);
+  if (controlReq.success == true) {
+    const apiUser = controlReq.apiUser;
+    const apiPass = controlReq.apiPass;
+    let foundUserObj;
+    try {
+      foundUserObj =
+        await User.findOne({name: apiUser}, {name: true}).lean().exec();
+    } catch (err) {
+      console.log('Error retrieving user: ' + err);
+    }
+    if (!foundUserObj) {
+      let apiUserObj = new User({
+        name: apiUser,
+        password: apiPass,
+        role: 'anlix-statistics-api',
+        is_superuser: false,
+        is_hidden: true,
+      });
+      try {
+        await apiUserObj.save();
+      } catch (err) {
+        console.log('Error creating user: ' + err);
+      }
+    }
+  } else {
+    console.log('API user login update error: ' + controlReq.message);
   }
 };
 

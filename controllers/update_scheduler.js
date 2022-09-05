@@ -861,6 +861,16 @@ scheduleController.startSchedule = async function(req, res) {
 
   let finalQuery = null;
   let deviceList = [];
+  const deviceProjection = {
+    _id: true,
+    mesh_master: true,
+    mesh_slaves: true,
+    model: true,
+    use_tr069: true,
+    version: true,
+    wifi_is_5ghz_capable: true,
+    acs_id: true,
+  };
 
   const userRole = await Role.findOne(
     {name: util.returnObjOrEmptyStr(req.user.role)});
@@ -897,11 +907,12 @@ scheduleController.startSchedule = async function(req, res) {
   if (useCsv) {
     queryPromise = Promise.resolve(deviceList);
   } else if (useAllDevices) {
-    queryPromise = DeviceModel.find(finalQuery).lean();
+    queryPromise = DeviceModel.find(finalQuery, deviceProjection).lean();
   } else {
     queryPromise = DeviceModel.paginate(finalQuery, {
       page: pageNumber,
       limit: pageCount,
+      projection: deviceProjection,
       lean: true,
     });
   }
@@ -931,11 +942,13 @@ scheduleController.startSchedule = async function(req, res) {
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
-            let slaveModel = slaveDevice.model.replace('N/', '');
-            valid = modelsAvailable.includes(slaveModel);
-            const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
-              slaveDevice, matchedRelease.flashbox_version);
-            if (!allowMeshUpgrade) valid = false;
+            if (slaveDevice && ('model' in slaveDevice)) {
+              let slaveModel = slaveDevice.model.replace('N/', '');
+              valid = modelsAvailable.includes(slaveModel);
+              const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
+                slaveDevice, matchedRelease.flashbox_version);
+              if (!allowMeshUpgrade) valid = false;
+            }
           });
           if (!valid) return false;
         }
