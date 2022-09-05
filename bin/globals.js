@@ -1,3 +1,4 @@
+/* eslint-disable no-undef */
 Object.defineProperty(global, '__stack', {
   get: function() {
     let orig = Error.prepareStackTrace;
@@ -5,6 +6,7 @@ Object.defineProperty(global, '__stack', {
       return stack;
     };
     let err = new Error;
+    // eslint-disable-next-line no-caller
     Error.captureStackTrace(err, arguments.callee);
     let stack = err.stack;
     Error.prepareStackTrace = orig;
