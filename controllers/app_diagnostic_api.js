@@ -242,6 +242,11 @@ diagAppAPIController.configureWifi = async function(req, res) {
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
           matchedConfig, ssid2ghz, ssid5ghz, device.isSsidPrefixEnabled);
+        // This function returns if we should enable the local prefix flag and
+        // what ssids we should save on the database, based on what was sent
+        // from app form. The app always sends SSID without the prefix, so if
+        // this function returned FALSE for enablePrefix, we should generate a
+        // warning for this issue
         createPrefixErrNotification = !checkResponse.enablePrefix;
         isSsidPrefixEnabled = checkResponse.enablePrefix;
         ssid2ghz = checkResponse.ssid2;
@@ -650,9 +655,12 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.wifi_ssid_5ghz,
         device.isSsidPrefixEnabled,
       );
-
+      // This function returns what prefix we should be using for this device,
+      // based on the local flag and what the saved SSID values are. We send the
+      // prefix and this local flag to the app, to tell it whether the user
+      // should be locked in the prefix or not
       let prefixObj = {
-        name: checkResponse.prefix,
+        name: checkResponse.prefixToUse,
         grant: checkResponse.enablePrefix,
       };
 
