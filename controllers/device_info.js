@@ -2483,6 +2483,7 @@ deviceInfoController.receiveTraceroute = function (req, res) {
 
     // Soft copying result
     let trapResult = {
+      address: currentTest.address,
       all_hops_testes: currentTest.all_hops_tested,
       reached_destination: currentTest.reached_destination,
       tries_per_hop: currentTest.tries_per_hop,
