@@ -23,20 +23,24 @@ anlixDocumentReady.add(function() {
         } else {
           $('#site-survey').removeAttr('data-ap-devices-list');
           $('#site-survey').removeData('ap-devices-list');
-          $('#2-ghz-aps').empty();
-          $('#5-ghz-aps').empty();
-          $('#site-survey-placeholder').show();
-          $('#site-survey-placeholder-none').hide();
+          $('#2-ghz-aps').hide();
+          $('#5-ghz-aps').hide();
+          $('.btn-show-5-ghz-aps').addClass('disabled');
+          $('.btn-show-2-ghz-aps').addClass('disabled');
+          $('#site-survey-placeholder').hide();
+          $('#site-survey-placeholder-none').show();
           fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
         }
       },
       error: function(xhr, status, error) {
         $('#site-survey').removeAttr('data-ap-devices-list');
         $('#site-survey').removeData('ap-devices-list');
-        $('#2-ghz-aps').empty();
-        $('#5-ghz-aps').empty();
-        $('#site-survey-placeholder').show();
-        $('#site-survey-placeholder-none').hide();
+        $('#2-ghz-aps').hide();
+        $('#5-ghz-aps').hide();
+        $('.btn-show-5-ghz-aps').addClass('disabled');
+        $('.btn-show-2-ghz-aps').addClass('disabled');
+        $('#site-survey-placeholder').hide();
+        $('#site-survey-placeholder-none').show();
         fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
       },
     });
@@ -445,8 +449,30 @@ anlixDocumentReady.add(function() {
     // Show warning
     if (!isTR069) $('#tr09-warning').hide();
 
-    // Refresh devices status
-    refreshSiteSurvey(id, isBridge, hasExtendedChannels);
+    let idx = row.data('index');
+    if (!row.find('#edit_wifi_state-'+idx)[0].checked ||
+        !row.find('#edit_wifi5_state-'+idx)[0].checked) {
+      swal.fire({
+        icon: 'warning',
+        title: t('Attention!'),
+        text: t('showsitesurveyTR069WarningInfo'),
+        confirmButtonText: t('Proceed'),
+        confirmButtonColor: '#4db6ac',
+        cancelButtonText: t('Cancel'),
+        cancelButtonColor: '#f2ab63',
+        showCancelButton: true,
+      }).then((result)=>{
+        if (result.value) {
+          refreshSiteSurvey(id, isBridge, hasExtendedChannels);
+        } else {
+          $('#site-survey').modal('hide');
+          return;
+        }
+      });
+    } else {
+      // Refresh devices status
+      refreshSiteSurvey(id, isBridge, hasExtendedChannels);
+    }
   });
 
   $(document).on('click', '.btn-sync-ssurvey', function(event) {
@@ -486,8 +512,16 @@ anlixDocumentReady.add(function() {
           $('#site-survey').removeData('ap-devices-list');
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
-          $('#site-survey-placeholder').show();
-          $('#site-survey-placeholder-none').hide();
+          if (data.length == 0) {
+            $('#site-survey-placeholder-none').show();
+            $('.btn-show-5-ghz-aps').addClass('disabled');
+            $('.btn-show-2-ghz-aps').addClass('disabled');
+            $('#2-ghz-aps').hide();
+            $('#5-ghz-aps').hide();
+          } else {
+            $('#site-survey-placeholder').show();
+            $('#site-survey-placeholder-none').hide();
+          }
         } else {
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
