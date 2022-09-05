@@ -830,7 +830,7 @@ updateController.setAutoConfig = async function(req, res) {
       }
       /* check if ssid prefix was not empty and for some reason is coming
         from UI a empty ssid prefix */
-      if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
+      if (config.ssidPrefix && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
           message: t('ssidPrefixEmptyError'),
@@ -846,8 +846,10 @@ updateController.setAutoConfig = async function(req, res) {
           migrate: true, oldPrefix: config.ssidPrefix,
         };
       }
-      config.ssidPrefix = req.body['ssid-prefix'];
-      config.isSsidPrefixEnabled = isSsidPrefixEnabled;
+      if (req.body['ssid-prefix']) {
+        config.ssidPrefix = req.body['ssid-prefix'];
+        config.isSsidPrefixEnabled = isSsidPrefixEnabled;
+      }
     }
 
     let ponSignalThresholdCriticalHigh = parseInt(
