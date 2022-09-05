@@ -6,6 +6,7 @@ const Config = require('./config');
 
 let roleSchema = new mongoose.Schema({
   name: {type: String, unique: true, required: true},
+  is_hidden: {type: Boolean, default: false},
   grantWifiInfo: {type: Number, required: true, default: 0},
   grantPPPoEInfo: {type: Number, required: true, default: 0},
   grantPassShow: {type: Boolean, required: true, default: false},

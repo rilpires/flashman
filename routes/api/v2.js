@@ -7,6 +7,18 @@ const authController = require('../../controllers/auth');
 
 let router = express.Router();
 
+// **************************
+// *** OPEN HEALTH STATUS ***
+// **************************
+
+router.route('/health')
+  .get((req, res) => res.json({
+    version: req.app.locals.appVersion,
+    uptime: process.uptime(),
+  }));
+
+// Include restricted access for below endpoints
+
 router.use( // all paths will use these middlewares.
   authController.ensureAPIAccess,
 );
