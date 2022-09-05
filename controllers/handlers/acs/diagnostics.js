@@ -251,13 +251,17 @@ const calculateSiteSurveyDiagnostic = async function(
     if (cpe.isToDoPoolingInState()) {
       acsDiagnosticsHandler.doPoolingInState(device.acs_id,
         cpe.getModelFields());
+      return;
     }
-  }
-  if (diagState.includes('Requested')) {
+  } else if (diagState.some((x) => x.match(/requested/i))) {
     acsDiagnosticsHandler.fetchDiagnosticsFromGenie(id);
     return;
-  }
-  if (diagState.includes('Completed')) {
+  } else if (diagState.some((x) => x.match(/erro/i))) {
+    device.current_diagnostic.stage = 'error';
+    device.current_diagnostic.in_progress = false;
+    device.current_diagnostic.last_modified_at = new Date();
+    console.log('Error retrieving site survey data!');
+  } else if (diagState.some((x) => x.match(/complete/i))) {
     apsData.forEach((ap) => {
       let outDev = {};
 
@@ -516,19 +520,38 @@ const startSiteSurveyDiagnose = async function(acsID) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let params = [];
-  fields.diagnostics.sitesurvey.diag_state.forEach((ds) => {
-    params.push([ds, 'Requested', 'xsd:string']);
-  });
+
+  if (!cpe.isToDoPoolingInState()) {
+    fields.diagnostics.sitesurvey.diag_state.forEach((ds) => {
+      params.push([ds, 'Requested', 'xsd:string']);
+    });
+  } else {
+    params.push([fields.diagnostics.sitesurvey.diag_state[0],
+      'Requested', 'xsd:string']);
+  }
 
   let task = {
     name: 'setParameterValues',
     parameterValues: params,
   };
-  const result = await TasksAPI.addTask(acsID, task);
+  let result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
-    console.log('Error starting site survey diagnose for ' + acsID);
+    console.log('(1) Error starting site survey diagnose for ' + acsID);
   }
   if (cpe.isToDoPoolingInState()) {
+    if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
+      params = []; result = {};
+      params.push([fields.diagnostics.sitesurvey.diag_state[1],
+        'Requested', 'xsd:string']);
+      task = {
+        name: 'setParameterValues',
+        parameterValues: params,
+      };
+      result = await TasksAPI.addTask(acsID, task);
+      if (!result.success) {
+        console.log('(2) Error starting site survey diagnose for ' + acsID);
+      }
+    }
     acsDiagnosticsHandler.doPoolingInState(acsID, fields);
   }
 };
