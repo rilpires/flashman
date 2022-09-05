@@ -177,7 +177,8 @@
       return ret;
     };
 
-    Validator.prototype.validateSSIDPrefix = function(ssid, isRequired) {
+    Validator.prototype.validateSSIDPrefix = function(ssid) {
+      const isRequired = (ssid !== '');
       const messages = [
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
