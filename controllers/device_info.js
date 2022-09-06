@@ -153,17 +153,23 @@ const createRegistry = async function (req, res) {
   // -> 'new registry' scenario
   let checkResponse = deviceHandlers.checkSsidPrefix(
     matchedConfig, ssid, ssid5ghz, false, true);
-  /* if in the check is not enabled but hash exists and is
-    enabled in config, so we have an error */
-  createPrefixErrNotification = !checkResponse.enablePrefix &&
-    matchedConfig.personalizationHash !== '' &&
-    matchedConfig.isSsidPrefixEnabled;
+  // The function already returns what SSID we should be saving in the database
+  // and what the local flag value should be, based on the global flag and SSID
+  // values.
   isSsidPrefixEnabled = checkResponse.enablePrefix;
-  ssidPrefix = checkResponse.prefix;
-  // clean ssid
+  ssidPrefix = checkResponse.prefixToUse;
   ssid = checkResponse.ssid2;
-  ssid5ghz = checkResponse.ssid5;
-
+  if (is5ghzCapable) {
+    ssid5ghz = checkResponse.ssid5;
+  }
+  // If the global flag was set to true and the function returned a false value
+  // for the local flag, this means the prefix could not be activated - thus we
+  // issue a warning notification for this device
+  createPrefixErrNotification = (
+    !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled
+  );
   let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
     version, is5ghzCapable, model,
   );
@@ -482,20 +488,21 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
         } catch (error) {
           console.log(error.message);
         }
-        // -> 'updating registry' scenario
-        let checkResponse = deviceHandlers.checkSsidPrefix(
-          config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
-          matchedDevice.isSsidPrefixEnabled);
         const is5ghzCapable =
           (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
         let permissionsCurrVersion =
           DeviceVersion.devicePermissionsNotRegisteredFirmware(
             matchedDevice.version, is5ghzCapable, matchedDevice.model,
           );
-        matchedDevice.wifi_ssid = checkResponse.ssid2;
-        matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
-        matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
-        let ssidPrefix = checkResponse.prefix;
+        // -> 'updating registry' scenario
+        let checkResponse = deviceHandlers.checkSsidPrefix(
+          config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
+          matchedDevice.isSsidPrefixEnabled);
+        // This function returns what prefix we should be using for this device,
+        // based on the local flag and what the saved SSID values are. We use
+        // the prefix to then prepend it to the saved SSID, so we can compare it
+        // to what the CPE sent to Flashman, and send the correct value to CPE
+        let ssidPrefix = checkResponse.prefixToUse;
         const validator = new Validator();
         let ssid2ghz = util.returnObjOrEmptyStr(matchedDevice.wifi_ssid);
         genericValidate(

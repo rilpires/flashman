@@ -233,23 +233,16 @@ deviceHandlers.removeDeviceFromDatabase = async function(device) {
   let meshMaster = device.mesh_master;
   let meshSlaves = device.mesh_slaves;
   if (meshSlaves && meshSlaves.length > 0) {
-    // This is a mesh master. Must give an error, beacuse we can not remove
+    // This is a mesh master. Must give an error, because we can not remove
     // mesh masters without disassociating its mesh slaves
     console.log('Tried deleting mesh master ' + device._id);
-    return false;
-  }
-  try {
-    // Use this .remove method so middleware post hook receives object info
-    await device.remove();
-  } catch (e) {
-    console.log('Error removing device ' + device._id + ' : ' + e);
     return false;
   }
   if (meshMaster) {
     // This is a mesh slave. Remove master registration
     let meshMasterReg;
     try {
-      meshMasterReg = DeviceModel.findById(meshMaster);
+      meshMasterReg = await DeviceModel.findById(meshMaster);
     } catch (e) {
       meshMasterReg = null;
     }
@@ -269,6 +262,13 @@ deviceHandlers.removeDeviceFromDatabase = async function(device) {
       console.log('Error updating mesh master device ' + meshMaster);
       return false;
     }
+  }
+  try {
+    // Use this .remove method so middleware post hook receives object info
+    await device.remove();
+  } catch (e) {
+    console.log('Error removing device ' + device._id + ' : ' + e);
+    return false;
   }
   return true;
 };
@@ -292,7 +292,7 @@ deviceHandlers.cleanAndCheckSsid = function(prefix, ssid) {
   // Test if incoming SSID already have the prefix
   if (rePrefix.test(ssid)) {
     // Remove prefix from incoming SSID
-    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix), 'i');
+    const toRemove = new RegExp('^' + util.escapeRegExp(strPrefix));
     const finalSsid = ssid.replace(toRemove, '');
     const combinedSsid = strPrefix + finalSsid;
     if (combinedSsid.length > 32) {
@@ -336,31 +336,109 @@ deviceHandlers.cleanAndCheckSsid = function(prefix, ssid) {
 */
 
 deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
-  keepDevicePrefix, isNewRegistry=false) {
-  // default configuration return
-  let prefixObj = {
-    enablePrefix: false,
-    ssid2: ssid2ghz,
-    ssid5: ssid5ghz,
-    prefix: '',
-  };
-  // clean and check the ssid regardless the flags
-  let valObj2 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid2ghz);
-  let valObj5 = deviceHandlers.cleanAndCheckSsid(config.ssidPrefix, ssid5ghz);
-  // set the cleaned ssid to be returned
-  prefixObj.ssid2 = valObj2.ssid;
-  prefixObj.ssid5 = valObj5.ssid;
-
-  // try to enable prefix
-  if ((isNewRegistry && config.personalizationHash !== '' &&
-     config.isSsidPrefixEnabled) || keepDevicePrefix) {
-    // only enable if is the clean and check for both ssid
-    //  (2ghz and 5ghz) is alright
-    prefixObj.enablePrefix = valObj2.enablePrefix && valObj5.enablePrefix;
-    // return a empty prefix case something goes wrong
-    prefixObj.prefix = prefixObj.enablePrefix ? config.ssidPrefix : '';
+  localPrefixFlag, isNewRegistry=false) {
+  // Global config is only valid if the client is paying for personalized app
+  // and if user manually enabled the flag in the configs page
+  let globalPrefixFlag = (
+    config.personalizationHash !== '' && config.isSsidPrefixEnabled
+  );
+  let prefixValue = config.ssidPrefix;
+  let cleanSsid2;
+  let cleanSsid5;
+  if (typeof prefixValue === 'string' && prefixValue !== '') {
+    // Properly check if prefix is in sent ssid / can fit into sent ssid
+    cleanSsid2 = deviceHandlers.cleanAndCheckSsid(prefixValue, ssid2ghz);
+    cleanSsid5 = deviceHandlers.cleanAndCheckSsid(prefixValue, ssid5ghz);
+  } else {
+    // The prefix in the database is empty, so there's no prefix to check/enable
+    cleanSsid2 = {enablePrefix: false, ssid: ssid2ghz};
+    cleanSsid5 = {enablePrefix: false, ssid: ssid5ghz};
   }
-  return prefixObj;
+  let doesSsid2HavePrefix = (cleanSsid2.ssid) !== ssid2ghz;
+  let doesSsid5HavePrefix = (cleanSsid5.ssid) !== ssid5ghz;
+  let anySentHasPrefix;
+  let allSentHasPrefix;
+  let canEnablePrefix;
+  if (ssid5ghz !== '') {
+    anySentHasPrefix = (doesSsid2HavePrefix || doesSsid5HavePrefix);
+    allSentHasPrefix = (doesSsid2HavePrefix && doesSsid5HavePrefix);
+    canEnablePrefix = (cleanSsid2.enablePrefix && cleanSsid5.enablePrefix);
+  } else {
+    // Discard 5ghz since device didn't report it - not 5ghz capable
+    anySentHasPrefix = doesSsid2HavePrefix;
+    allSentHasPrefix = doesSsid2HavePrefix;
+    canEnablePrefix = cleanSsid2.enablePrefix;
+  }
+
+  // If we are creating a new registry, we need to analyze the received SSIDs
+  // to check for pre-existing prefixes, regardless of the global flag. The
+  // global flag itself will determine if we force a change on new devices with
+  // no SSID prefix already present, along with the check for enough space in
+  // the current SSID to fit in the prefix
+  if (isNewRegistry) {
+    if (!globalPrefixFlag && !allSentHasPrefix) {
+      // If the flag is disabled and sent SSID has no prefix, nothing to do
+      return {
+        enablePrefix: false, prefixToUse: '',
+        ssid2: ssid2ghz, ssid5: ssid5ghz,
+      };
+    } else if (!globalPrefixFlag && allSentHasPrefix) {
+      // If the flag is disabled and sent SSID has a prefix, we need to store
+      // that information to avoid removing the prefix later on
+      return {
+        enablePrefix: true, prefixToUse: prefixValue,
+        ssid2: cleanSsid2.ssid, ssid5: cleanSsid5.ssid,
+      };
+    } else if (globalPrefixFlag && canEnablePrefix) {
+      // If the flag is enabled and sent SSID either already had the prefix or
+      // will now be changed to include the prefix, we store the local flag as
+      // true and the ssids in the database without the prefix
+      return {
+        enablePrefix: true, prefixToUse: prefixValue,
+        ssid2: cleanSsid2.ssid, ssid5: cleanSsid5.ssid,
+      };
+    } else if (globalPrefixFlag && !canEnablePrefix) {
+      // If the flag is enabled and we cannot enable the prefix for some reason,
+      // we store the local flag as false and keep the original SSIDs
+      return {
+        enablePrefix: false, prefixToUse: '',
+        ssid2: ssid2ghz, ssid5: ssid5ghz,
+      };
+    }
+  }
+
+  // For every other operation, we need to account only for the local flag,
+  // since we relying only on the global one would cause all sorts of changes to
+  // pop up whenever it was toggled, causing mayhem as every cpe's ssid would
+  // change overnight
+  if (!localPrefixFlag && !anySentHasPrefix) {
+    // If the flag is disabled and sent SSID has no prefix, nothing to do
+    return {
+      enablePrefix: false, prefixToUse: '',
+      ssid2: ssid2ghz, ssid5: ssid5ghz,
+    };
+  } else if (!localPrefixFlag && anySentHasPrefix) {
+    // If the flag is disabled and sent SSID has prefixes, remove them
+    return {
+      enablePrefix: false, prefixToUse: '',
+      ssid2: cleanSsid2.ssid, ssid5: cleanSsid5.ssid,
+    };
+  } else if (localPrefixFlag && canEnablePrefix) {
+    // If the flag is enabled and sent SSID either already had the prefix or
+    // will now be changed to include the prefix, we store the local flag as
+    // true and the ssids in the database without the prefix
+    return {
+      enablePrefix: true, prefixToUse: prefixValue,
+      ssid2: cleanSsid2.ssid, ssid5: cleanSsid5.ssid,
+    };
+  } else if (localPrefixFlag && !canEnablePrefix) {
+    // If the flag is enabled and we cannot enable the prefix for some reason,
+    // we must set it to false and keep the original SSIDs
+    return {
+      enablePrefix: false, prefixToUse: '',
+      ssid2: ssid2ghz, ssid5: ssid5ghz,
+    };
+  }
 };
 
 // getting values for inform configurations for tr069 from Config.
