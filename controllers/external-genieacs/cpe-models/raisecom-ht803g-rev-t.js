@@ -14,7 +14,6 @@ raisecomModel.modelPermissions = function() {
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
 
-  permissions.lan.canTrustActive = true;
   permissions.wan.speedTestLimit = 300;
 
   // wan port forwarding
