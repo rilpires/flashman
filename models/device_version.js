@@ -1745,21 +1745,25 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
-const grantWiFiAXSupport = function(model) {
+const grantWiFiAXSupport = function(version, model) {
   // Firmware CPEs do not have AX mode support
   return false;
 };
 
-const hasSTUNSupport = function(model) {
+const hasSTUNSupport = function(version, model) {
   return false;
 };
 
-const grantMeshVAPObject = function(model) {
+const grantMeshVAPObject = function(version, model) {
   return false;
 };
 
-const grantDiacritics = function(model) {
+const grantDiacritics = function(version, model) {
   return false;
+};
+
+const grantSsidSpaces = function(version, model) {
+  return true;
 };
 
 const convertTR069Permissions = function(cpePermissions) {
@@ -1770,6 +1774,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantPortForwardAsym: false,
     grantPortOpenIpv6: false,
     grantDiacritics: cpePermissions.wifi.allowDiacritics,
+    grantSsidSpaces: cpePermissions.wifi.allowSpaces,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiModeRead: cpePermissions.wifi.modeRead,
@@ -1824,10 +1829,11 @@ const convertTR069Permissions = function(cpePermissions) {
 };
 
 DeviceVersion.devicePermissionsNotRegistered = function(
-  model, modelName, fwVersion,
+  model, modelName, fwVersion, hwVersion,
 ) {
   // Only TR-069 instances should call this function
-  let cpeResult = DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion);
+  let cpeResult =
+    DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion, hwVersion);
   if (cpeResult.success) {
     return convertTR069Permissions(cpeResult.cpe.modelPermissions());
   }
@@ -1865,6 +1871,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
   result.grantDiacritics = grantDiacritics(version, model);
+  result.grantSsidSpaces = grantSsidSpaces(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiModeRead = grantWifiBand(version, model);

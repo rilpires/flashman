@@ -22,6 +22,7 @@ let userSchema = new mongoose.Schema({
   maxElementsPerPage: {type: Number, default: 10},
   visibleColumnsOnPage: {type: [Number], default: [4, 5, 6, 7, 8]},
   is_superuser: {type: Boolean, default: false},
+  is_hidden: {type: Boolean, default: false},
   role: {type: String, required: false},
   deviceCertifications: [{
     finished: {type: Boolean, default: true},

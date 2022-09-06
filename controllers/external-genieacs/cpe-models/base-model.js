@@ -78,6 +78,7 @@ basicCPEModel.modelPermissions = function() {
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
       allowDiacritics: false, // allows accented chars for ssid and password
+      allowSpaces: true, // allows space char for ssid
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13
@@ -431,6 +432,7 @@ basicCPEModel.getModelFields = function() {
         'MACAddress',
       model: 'InternetGatewayDevice.DeviceInfo.ModelName',
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
+      hw_version: 'InternetGatewayDevice.DeviceInfo.HardwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',

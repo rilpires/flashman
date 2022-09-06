@@ -1107,12 +1107,29 @@ anlixDocumentReady.add(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
-          '<label class="active">'+
-            ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
-          '</label>'+
-          '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.version+'">'+
-          '<div class="invalid-feedback"></div>'+
+          // If the model has hardware version info, then
+          // renders two columns on a row to display firmware and
+          // hardware versions side by side
+          '<div class="row">'+
+            '<div class="col">'+
+              // Firmware version info
+              '<label class="active">'+
+                ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
+              '</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>'+
+            // Display hardware version info, if exists
+            ((isTR069 && device.hw_version) ?
+            '<div class="col">'+
+              // Hardware version info
+              '<label class="active">'+t('hardwareVersion')+'</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.hw_version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>' : '') +
+          '</div>'+
         '</div>'+
         (mesh > -1 ?
           '<div class="md-form">'+
@@ -1420,6 +1437,7 @@ anlixDocumentReady.add(function() {
           let grantBlockDevices = device.permissions.grantBlockDevices;
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
           let grantDiacritics = device.permissions.grantDiacritics;
+          let grantSsidSpaces = device.permissions.grantSsidSpaces;
           // WAN and LAN Information
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
@@ -1494,6 +1512,7 @@ anlixDocumentReady.add(function() {
             ((device.mesh_slaves) ?
               JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
           formAttr += ' data-validate-wifi-diacritics="'+grantDiacritics+'"';
+          formAttr += ' data-validate-wifi-space="'+grantSsidSpaces+'"';
           formAttr += ' data-validate-wifi="'+
             (isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+
