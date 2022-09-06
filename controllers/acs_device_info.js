@@ -943,12 +943,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Update hardware version, if data available
-  if (data.common.hm_version && data.common.hm_version.value) {
-    device.hm_version = data.common.hm_version.value.trim();
-    // Both of these fields need to be in sync
-    if (device.hm_version !== device.installed_release) {
-      device.installed_release = device.hm_version;
-    }
+  if (data.common.hw_version && data.common.hw_version.value) {
+    device.hw_version = data.common.hw_version.value.trim();
   }
 
   // Update secure tr069 flag, if data available
