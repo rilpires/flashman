@@ -1763,7 +1763,7 @@ const grantDiacritics = function(version, model) {
 };
 
 const grantSsidSpaces = function(version, model) {
-  return false;
+  return true;
 };
 
 const convertTR069Permissions = function(cpePermissions) {
