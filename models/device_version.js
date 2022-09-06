@@ -1745,20 +1745,24 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
-const grantWiFiAXSupport = function(model) {
+const grantWiFiAXSupport = function(version, model) {
   // Firmware CPEs do not have AX mode support
   return false;
 };
 
-const hasSTUNSupport = function(model) {
+const hasSTUNSupport = function(version, model) {
   return false;
 };
 
-const grantMeshVAPObject = function(model) {
+const grantMeshVAPObject = function(version, model) {
   return false;
 };
 
-const grantDiacritics = function(model) {
+const grantDiacritics = function(version, model) {
+  return false;
+};
+
+const grantSsidSpaces = function(version, model) {
   return false;
 };
 
@@ -1867,6 +1871,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
   result.grantDiacritics = grantDiacritics(version, model);
+  result.grantSsidSpaces = grantSsidSpaces(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiModeRead = grantWifiBand(version, model);
