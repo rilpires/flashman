@@ -830,24 +830,28 @@ updateController.setAutoConfig = async function(req, res) {
       }
       /* check if ssid prefix was not empty and for some reason is coming
         from UI a empty ssid prefix */
-      if (config.ssidPrefix !== '' && req.body['ssid-prefix'] === '') {
+      if (config.ssidPrefix && req.body['ssid-prefix'] === '') {
         return res.status(500).json({
           type: 'danger',
           message: t('ssidPrefixEmptyError'),
         });
       }
-      // If prefix is enabled and has changed, we need to migrate devices in
-      // database to properly set local flags -> avoids cases where prefix will
-      // be inserted / removed out of nowhere
+      // If prefix is disabled and is being set, OR if is enabled and value is
+      // being changed, we need to migrate devices in database to properly set
+      // their local flags -> this avoids cases where the prefix will be
+      // inserted / removed out of nowhere
       if (
-        config.ssidPrefix && config.ssidPrefix !== req.body['ssid-prefix']
+        (!config.ssidPrefix && req.body['ssid-prefix'] !== '') ||
+        (config.ssidPrefix && config.ssidPrefix !== req.body['ssid-prefix'])
       ) {
         willMigrateDevicePrefixes = {
           migrate: true, oldPrefix: config.ssidPrefix,
         };
       }
-      config.ssidPrefix = req.body['ssid-prefix'];
-      config.isSsidPrefixEnabled = isSsidPrefixEnabled;
+      if (req.body['ssid-prefix']) {
+        config.ssidPrefix = req.body['ssid-prefix'];
+        config.isSsidPrefixEnabled = isSsidPrefixEnabled;
+      }
     }
 
     let ponSignalThresholdCriticalHigh = parseInt(
