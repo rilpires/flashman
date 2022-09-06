@@ -1931,7 +1931,7 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(
             ssidPrefix+ssid,
             (s)=>validator.validateSSID(
-              s, permissions.grantDiacritics, permissions.grantSpaces,
+              s, permissions.grantDiacritics, permissions.grantSsidSpaces,
             ),
             'ssid',
           );
@@ -1964,7 +1964,7 @@ deviceListController.setDeviceReg = function(req, res) {
           genericValidate(
             ssidPrefix+ssid5ghz,
             (s)=>validator.validateSSID(
-              s, permissions.grantDiacritics, permissions.grantSpaces,
+              s, permissions.grantDiacritics, permissions.grantSsidSpaces,
             ),
             'ssid5ghz',
           );
