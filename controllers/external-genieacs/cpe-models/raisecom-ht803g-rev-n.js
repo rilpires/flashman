@@ -18,6 +18,7 @@ raisecomModel.modelPermissions = function() {
 
   // lan permissions
   permissions.lan.configWrite = false; // can change current lan configuration
+  permissions.lan.canTrustActive = true;
 
   // wan permissions
   // speedtest limit, values above show as "limit+ Mbps"
