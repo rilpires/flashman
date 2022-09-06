@@ -431,6 +431,7 @@
 	"thisFieldMustHaveAtLeastMinChars": "Este campo debe tener al menos {{-min}} caracteres",
 	"someEspecialCharactersAccentCedileAreNotAccepted": "No se aceptan acentos, cedilla y algunos caracteres especiales",
 	"acceptableCharsAre0-9a-zA-Z .-ul": "Solo se aceptan caracteres alfanuméricos, espacios, punto, - y _",
+	"acceptableCharsAre0-9a-zA-Z.-ul": "Solo se aceptan caracteres alfanuméricos, punto, - y _",
 	"thisFieldMustHaveValidIpFormat": "Este campo debe contener un formato de IP válido",
 	"thisFieldCannotHaveTheValueValItIsReserved": "Este campo no puede contener el valor {{-val}}. El valor está reservado",
 	"willOnlyAcceptValueMask": "Solo se aceptan 24, 25 o 26 mascarillas",
