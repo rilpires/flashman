@@ -20,8 +20,6 @@ nokiaModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 750;
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
-  permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
