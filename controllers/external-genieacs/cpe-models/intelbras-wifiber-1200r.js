@@ -16,7 +16,6 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 300;
-  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
