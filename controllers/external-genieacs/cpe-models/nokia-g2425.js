@@ -73,7 +73,9 @@ nokiaModel.getModelFields = function() {
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+    'WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.OperatingStandard';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
