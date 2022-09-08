@@ -25,10 +25,10 @@ let mutexRelease = null;
 
 let deviceInfoController = {};
 
-const genericValidate = function (field, func, key, minlength, errors) {
+const genericValidate = function(field, func, key, minlength, errors) {
   let validField = func(field, minlength);
   if (!validField.valid) {
-    validField.err.forEach(function (error) {
+    validField.err.forEach(function(error) {
       let obj = {};
       obj[key] = error;
       errors.push(obj);
@@ -36,7 +36,7 @@ const genericValidate = function (field, func, key, minlength, errors) {
   }
 };
 
-const createRegistry = async function (req, res) {
+const createRegistry = async function(req, res) {
   if (typeof req.body.id == 'undefined') {
     return res.status(400).end();
   }
@@ -136,9 +136,9 @@ const createRegistry = async function (req, res) {
   }
 
   let matchedConfig =
-    await Config.findOne({ is_default: true },
-      { device_update_schedule: false }).lean().catch(
-        function (err) {
+    await Config.findOne({is_default: true},
+      {device_update_schedule: false}).lean().catch(
+        function(err) {
           console.error('Error creating entry: ' + err);
           return res.status(500).end();
         },
@@ -339,7 +339,7 @@ const createRegistry = async function (req, res) {
       newDeviceModel.connection_type = connectionType;
     }
     await newDeviceModel.save().catch(
-      function (err) {
+      function(err) {
         console.error('Error creating entry: ' + err);
         return res.status(500).end();
       },
@@ -347,13 +347,13 @@ const createRegistry = async function (req, res) {
     if (createPrefixErrNotification) {
       // Notify if ssid prefix was impossible to be assigned
       let matchedNotif = await Notification
-        .findOne({ 'message_code': 5, 'target': deviceObj._id })
-        .catch(function (err) {
+        .findOne({'message_code': 5, 'target': deviceObj._id})
+        .catch(function(err) {
           console.error('Error fetching database: ' + err);
         });
       if (!matchedNotif || matchedNotif.allow_duplicate) {
         let notification = new Notification({
-          'message': t('ssidPrefixInvalidLength', { errorline: __line }),
+          'message': t('ssidPrefixInvalidLength', {errorline: __line}),
           'message_code': 5,
           'severity': 'alert',
           'type': 'communication',
@@ -362,7 +362,7 @@ const createRegistry = async function (req, res) {
           'target': deviceObj._id,
         });
         await notification.save().catch(
-          function (err) {
+          function(err) {
             console.error('Error creating notification: ' + err);
           },
         );
@@ -375,7 +375,7 @@ const createRegistry = async function (req, res) {
       'mesh_mode': meshMode,
       'mesh_id': newMeshId,
       'mesh_key': newMeshKey,
-      'wifi_ssid': ssidPrefix + ssid
+      'wifi_ssid': ssidPrefix + ssid,
     };
     if (vlanDidChange) {
       let vlanToDevice = vlanController.convertFlashmanVlan(
@@ -395,7 +395,7 @@ const createRegistry = async function (req, res) {
   }
 };
 
-const serializeBlocked = function (devices) {
+const serializeBlocked = function(devices) {
   if (!devices) return [];
   return devices.map((device) => {
     let dhcpLease = (!device.dhcp_name ||
@@ -404,12 +404,12 @@ const serializeBlocked = function (devices) {
   });
 };
 
-const serializeNamed = function (devices) {
+const serializeNamed = function(devices) {
   if (!devices) return [];
   return devices.map((device) => device.mac + '|' + device.name);
 };
 
-deviceInfoController.syncDate = function (req, res) {
+deviceInfoController.syncDate = function(req, res) {
   // WARNING: This api is open.
   let devId;
   if (req.body.id) {
@@ -438,7 +438,7 @@ deviceInfoController.syncDate = function (req, res) {
     devDate = '';
   }
 
-  console.log('Request Date from ' + devId + ': NTP ' + devNtp + ' Date ' + devDate);
+  console.log('Request Date from '+ devId +': NTP '+ devNtp +' Date '+ devDate);
 
   let parsedate = parseInt(devDate);
   if (!isNaN(parsedate)) {
@@ -449,9 +449,9 @@ deviceInfoController.syncDate = function (req, res) {
     // a minute ahead or more than an hour behind
     let serverDate = Math.floor(Date.now() / 1000);
     if ((diffDate < -(60 * 1000)) || (diffDate > (60 * 60 * 1000))) {
-      res.status(200).json({ 'need_update': 1, 'new_date': serverDate });
+      res.status(200).json({'need_update': 1, 'new_date': serverDate});
     } else {
-      res.status(200).json({ 'need_update': 0, 'new_date': serverDate });
+      res.status(200).json({'need_update': 0, 'new_date': serverDate});
     }
   } else {
     res.status(500).end();
@@ -459,7 +459,7 @@ deviceInfoController.syncDate = function (req, res) {
 };
 
 // Create new device entry or update an existing one
-deviceInfoController.updateDevicesInfo = async function (req, res) {
+deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (req.body.secret != req.app.locals.secret) {
       console.log('Error in SYN: Secret not match!');
@@ -468,7 +468,7 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
   }
 
   let devId = req.body.id.toUpperCase();
-  DeviceModel.findById(devId).lean().exec(async function (err, matchedDevice) {
+  DeviceModel.findById(devId).lean().exec(async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device ' + devId + ': ' + err);
       return res.status(500).end();
@@ -482,8 +482,8 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
         // validate 2.4GHz because feature of ssid prefix
         let config;
         try {
-          config = await Config.findOne({ is_default: true },
-            { device_update_schedule: false }).lean();
+          config = await Config.findOne({is_default: true},
+            {device_update_schedule: false}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
           console.log(error.message);
@@ -929,7 +929,7 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
 
         let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices)
           .filter(
-            function (lanDevice) {
+            function(lanDevice) {
               if (lanDevice.is_blocked) {
                 return true;
               } else {
@@ -939,7 +939,7 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
           );
         let namedDevices = util.deepCopyObject(matchedDevice.lan_devices)
           .filter(
-            function (lanDevice) {
+            function(lanDevice) {
               if ('name' in lanDevice && lanDevice.name != '') {
                 return true;
               } else {
@@ -948,9 +948,9 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
             },
           );
 
-        Config.findOne({ is_default: true },
-          { device_update_schedule: false }).lean()
-          .exec(async function (err, matchedConfig) {
+        Config.findOne({is_default: true},
+          {device_update_schedule: false}).lean()
+          .exec(async function(err, matchedConfig) {
             // data collecting parameters to be sent to device.
             // initiating with default values.
             // Nothing happens in device with these parameters.
@@ -971,7 +971,8 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
             for (let key in matchedConfig.data_collecting) {
               dataCollecting[key] = matchedConfig.data_collecting[key];
             }
-            // combining 'Device' and 'Config' if data_collecting exists in Config
+            // combining 'Device' and 'Config' if
+            // data_collecting exists in Config
             if (matchedDevice.data_collecting !== undefined) {
               // parameters from device model.
               let d = matchedDevice.data_collecting;
@@ -985,13 +986,15 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
               // preference for device value if it exists.
               d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
             } else {
-              // if data collecting doesn't exist, device won't collect anything.
+              // if data collecting doesn't exist,
+              // device won't collect anything.
               dataCollecting.is_active = false;
             }
 
-            const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map) => {
-              return map[matchedDevice._id];
-            });
+            const isDevOn =
+              Object.values(mqtt.unifiedClientsMap).some((map) => {
+                return map[matchedDevice._id];
+              });
 
             let fetchedVlans = '';
             let vlanHash = '';
@@ -1032,7 +1035,8 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
               'pppoe_password':
                 util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
               'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
-              'lan_netmask': util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
+              'lan_netmask':
+                util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
               'wifi_ssid': wifiSsid2ghz,
               'wifi_password':
                 util.returnObjOrEmptyStr(matchedDevice.wifi_password),
@@ -1113,8 +1117,8 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
             // Do not return yet, just respond to request so we can free socket
             res.status(200).json(resJson);
             // Now we push the changed fields to the database
-            DeviceModel.updateOne({ '_id': matchedDevice._id },
-              { '$set': deviceSetQuery }, (err) => {
+            DeviceModel.updateOne({'_id': matchedDevice._id},
+              {'$set': deviceSetQuery}, (err) => {
                 if (err) {
                   console.log(err);
                   return;
@@ -1168,14 +1172,14 @@ deviceInfoController.updateDevicesInfo = async function (req, res) {
 };
 
 // Receive device firmware upgrade confirmation
-deviceInfoController.confirmDeviceUpdate = function (req, res) {
-  DeviceModel.findById(req.body.id, async function (err, matchedDevice) {
+deviceInfoController.confirmDeviceUpdate = function(req, res) {
+  DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
     if (err) {
       console.log('Error finding device: ' + err);
-      return res.status(500).json({ proceed: 0 });
+      return res.status(500).json({proceed: 0});
     } else {
       if (matchedDevice == null) {
-        return res.status(500).json({ proceed: 0 });
+        return res.status(500).json({proceed: 0});
       } else {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         matchedDevice.ip = ip;
@@ -1184,9 +1188,9 @@ deviceInfoController.confirmDeviceUpdate = function (req, res) {
           // Ack timeout already happened, abort update
           try {
             await matchedDevice.save();
-            return res.status(500).json({ proceed: 0 });
+            return res.status(500).json({proceed: 0});
           } catch (err) {
-            return res.status(500).json({ proceed: 0 });
+            return res.status(500).json({proceed: 0});
           }
         }
         let proceed = 0;
@@ -1227,7 +1231,7 @@ deviceInfoController.confirmDeviceUpdate = function (req, res) {
           } else {
             updateScheduler.failedDownload(req.body.id);
           }
-          console.log('WARNING: Device ' + req.body.id + ' failed in firmware ' +
+          console.log('WARNING: Device ' + req.body.id +' failed in firmware ' +
             (upgStatus == '0' ? 'check' : 'download'));
           if (upgStatus == '0') {
             matchedDevice.do_update_status = 3; // img check failed
@@ -1243,29 +1247,29 @@ deviceInfoController.confirmDeviceUpdate = function (req, res) {
         }
 
         matchedDevice.save().catch((err) => {
-          console.log('Error saving device during upgrade confirmation: ' + err);
+          console.log('Error saving device during upgrade confirmation: ' +err);
         });
-        return res.status(200).json({ proceed: proceed });
+        return res.status(200).json({proceed: proceed});
       }
     }
   });
 };
 
-deviceInfoController.registerMqtt = function (req, res) {
+deviceInfoController.registerMqtt = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, async function (err, matchedDevice) {
+    DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         console.log('Attempt to register MQTT secret for device ' +
           req.body.id + ' failed: Cant get device profile.');
-        return res.status(400).json({ is_registered: 0 });
+        return res.status(400).json({is_registered: 0});
       }
       if (!matchedDevice) {
         console.log('Attempt to register MQTT secret for device ' +
           req.body.id + ' failed: No device found.');
-        return res.status(404).json({ is_registered: 0 });
+        return res.status(404).json({is_registered: 0});
       }
       let config = await Config.findOne(
-        { is_default: true }, { mqtt_secret_bypass: true },
+        {is_default: true}, {mqtt_secret_bypass: true},
       ).lean().catch(
         (err) => {
           console.log('Error fetch config from database');
@@ -1281,10 +1285,10 @@ deviceInfoController.registerMqtt = function (req, res) {
           await matchedDevice.save();
           console.log('Device ' +
             req.body.id + ' register MQTT secret successfully.');
-          return res.status(200).json({ is_registered: 1 });
+          return res.status(200).json({is_registered: 1});
         } catch (err) {
           console.log('Error saving device on MQTT register: ' + err);
-          return res.status(500).json({ is_registered: 0 });
+          return res.status(500).json({is_registered: 0});
         }
       } else {
         // Device have a secret. Modification of secret is forbidden!
@@ -1293,13 +1297,13 @@ deviceInfoController.registerMqtt = function (req, res) {
         // Send notification
         Notification.findOne({
           'message_code': 1,
-          'target': matchedDevice._id
+          'target': matchedDevice._id,
         },
-          function (err, matchedNotif) {
+          function(err, matchedNotif) {
             if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
               let notification = new Notification({
                 'message': t('firmwareHasBeenModifiedLocally',
-                  { errorline: __line }),
+                  {errorline: __line}),
                 'message_code': 1,
                 'severity': 'alert',
                 'type': 'communication',
@@ -1309,7 +1313,7 @@ deviceInfoController.registerMqtt = function (req, res) {
                 'allow_duplicate': false,
                 'target': matchedDevice._id,
               });
-              notification.save(function (err) {
+              notification.save(function(err) {
                 if (!err) {
                   sio.anlixSendDeviceStatusNotification(matchedDevice._id,
                     notification);
@@ -1320,28 +1324,28 @@ deviceInfoController.registerMqtt = function (req, res) {
                 matchedNotif);
             }
           });
-        return res.status(404).json({ is_registered: 0 });
+        return res.status(404).json({is_registered: 0});
       }
     });
   } else {
     console.log('Attempt to register MQTT secret for device ' +
       req.body.id + ' failed: Client Secret not match!');
-    return res.status(401).json({ is_registered: 0 });
+    return res.status(401).json({is_registered: 0});
   }
 };
 
-deviceInfoController.registerMeshSlave = function (req, res) {
+deviceInfoController.registerMeshSlave = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Attempt to register mesh slave for device ' +
           req.body.id + ' failed: Cant get device profile.');
-        return res.status(400).json({ is_registered: 0 });
+        return res.status(400).json({is_registered: 0});
       }
       if (!matchedDevice) {
         console.log('Attempt to register mesh slave for device ' +
           req.body.id + ' failed: No device found.');
-        return res.status(404).json({ is_registered: 0 });
+        return res.status(404).json({is_registered: 0});
       }
 
       // lookup if device is already registered
@@ -1349,44 +1353,44 @@ deviceInfoController.registerMeshSlave = function (req, res) {
       let pos = matchedDevice.mesh_slaves.indexOf(slave);
       if (pos < 0) {
         // Not found, register
-        DeviceModel.findById(slave, async function (err, slaveDevice) {
+        DeviceModel.findById(slave, async function(err, slaveDevice) {
           if (err) {
             console.log('Attempt to register mesh slave ' + slave +
               ' for device ' + req.body.id + ' failed: cant get slave device.');
-            return res.status(400).json({ is_registered: 0 });
+            return res.status(400).json({is_registered: 0});
           }
           if (!slaveDevice) {
             console.log('Attempt to register mesh slave ' + slave +
               ' for device ' + req.body.id +
               ' failed: Slave device not found.');
-            return res.status(404).json({ is_registered: 0 });
+            return res.status(404).json({is_registered: 0});
           }
 
           if (slaveDevice.mesh_master) {
             console.log('Attempt to register mesh slave ' + slave +
               ' for device ' + req.body.id +
               ' failed: Slave device aready registred in other master.');
-            return res.status(404).json({ is_registered: 0 });
+            return res.status(404).json({is_registered: 0});
           }
 
           if (slaveDevice.mesh_mode != '0' && !slaveDevice.mesh_master) {
             console.log('Attempt to register mesh slave ' + slave +
               ' for device ' + req.body.id +
               ' failed: Slave device is mesh master.');
-            return res.status(404).json({ is_registered: 0 });
+            return res.status(404).json({is_registered: 0});
           }
 
           slaveDevice.mesh_master = matchedDevice._id;
           meshHandlers.syncSlaveWifi(matchedDevice, slaveDevice);
           await slaveDevice.save().catch((err) => {
             console.log('Error saving master to slave: ' + slave);
-            return res.status(500).json({ is_registered: 0 });
+            return res.status(500).json({is_registered: 0});
           });
 
           matchedDevice.mesh_slaves.push(slave);
           await matchedDevice.save().catch((err) => {
             console.log('Error saving slave to master: ' + req.body.id);
-            return res.status(500).json({ is_registered: 0 });
+            return res.status(500).json({is_registered: 0});
           });
 
           // Push updates to the Slave
@@ -1394,21 +1398,21 @@ deviceInfoController.registerMeshSlave = function (req, res) {
 
           console.log('Slave ' + slave + ' registred on Master ' +
             req.body.id + ' successfully.');
-          return res.status(200).json({ is_registered: 1 });
+          return res.status(200).json({is_registered: 1});
         });
       } else {
         // already registred
-        return res.status(200).json({ is_registered: 2 });
+        return res.status(200).json({is_registered: 2});
       }
     });
   } else {
     console.log('Attempt to register mesh slave for device ' +
       req.body.id + ' failed: Client Secret not match!');
-    return res.status(401).json({ is_registered: 0 });
+    return res.status(401).json({is_registered: 0});
   }
 };
 
-deviceInfoController.receiveLog = function (req, res) {
+deviceInfoController.receiveLog = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let bootType = req.headers['x-anlix-logs'];
   let envsec = req.headers['x-anlix-sec'];
@@ -1416,20 +1420,20 @@ deviceInfoController.receiveLog = function (req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Log: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Log Receiving for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Log Receiving for device ' +
         id + ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     let dbSaveOk = true;
@@ -1464,28 +1468,28 @@ deviceInfoController.receiveLog = function (req, res) {
     }
 
     if (dbSaveOk) {
-      return res.status(200).json({ processed: 1 });
+      return res.status(200).json({processed: 1});
     } else {
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     }
   });
 };
 
-deviceInfoController.getPortForward = function (req, res) {
+deviceInfoController.getPortForward = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get Port Forwards ' +
           'failed: Cant get device profile.');
-        return res.status(400).json({ success: false });
+        return res.status(400).json({success: false});
       }
       if (!matchedDevice) {
         console.log('Router ' + req.body.id + ' Get Port Forwards ' +
           'failed: No device found.');
-        return res.status(404).json({ success: false });
+        return res.status(404).json({success: false});
       }
 
-      let resOut = matchedDevice.lan_devices.filter(function (lanDevice) {
+      let resOut = matchedDevice.lan_devices.filter(function(lanDevice) {
         if (typeof lanDevice.port !== 'undefined' &&
           lanDevice.port.length > 0) {
           return true;
@@ -1517,42 +1521,42 @@ deviceInfoController.getPortForward = function (req, res) {
       } else {
         console.log('Router ' + req.body.id + ' Get Port Forwards ' +
           'failed: No index found.');
-        return res.status(404).json({ success: false });
+        return res.status(404).json({success: false});
       }
     });
   } else {
     console.log('Router ' + req.body.id + ' Get Port Forwards ' +
       'failed: Client Secret not match!');
-    return res.status(401).json({ success: false });
+    return res.status(401).json({success: false});
   }
 };
 
-deviceInfoController.receiveDevices = async function (req, res) {
+deviceInfoController.receiveDevices = async function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Devices Receiving for device ' +
         id + ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
     if (!('Devices' in req.body)) {
       console.log('Devices Receiving for device ' +
         id + ' failed: Invalid JSON.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
 
     const validator = new Validator();
@@ -1576,7 +1580,7 @@ deviceInfoController.receiveDevices = async function (req, res) {
           matchedDevice, meshFatherBssid,
         );
         if (fatherMac === '') {
-          return res.status(500).json({ processed: 0 });
+          return res.status(500).json({processed: 0});
         }
         matchedDevice.mesh_father = fatherMac;
       }
@@ -1587,7 +1591,7 @@ deviceInfoController.receiveDevices = async function (req, res) {
         let outDev = {};
         let upConnDevMac = connDeviceMac.toLowerCase();
         let upConnDev = devsData[upConnDevMac];
-        let ipRes = { valid: false };
+        let ipRes = {valid: false};
         // Skip if not lowercase
         if (!upConnDev) continue;
 
@@ -1774,8 +1778,8 @@ deviceInfoController.receiveDevices = async function (req, res) {
     if (matchedDevice.mesh_master) {
       masterMac = matchedDevice.mesh_master;
       const tmpMasterDevice = await DeviceModel.findOne(
-        { '_id': masterMac },
-        { 'do_update_status': true },
+        {'_id': masterMac},
+        {'do_update_status': true},
       ).lean();
       isWaitingForTopology = tmpMasterDevice.do_update_status === 20;
     } else {
@@ -1800,10 +1804,10 @@ deviceInfoController.receiveDevices = async function (req, res) {
           },
         });
         let masterDevice = await DeviceModel.findOne(
-          { '_id': masterMac },
+          {'_id': masterMac},
           {
             'mesh_onlinedevs_remaining': true,
-            'do_update_status': true
+            'do_update_status': true,
           },
         );
         // end of critical region
@@ -1822,7 +1826,7 @@ deviceInfoController.receiveDevices = async function (req, res) {
       } catch (err) {
         console.log(err);
         mutexRelease();
-        return res.status(500).json({ processed: 0 });
+        return res.status(500).json({processed: 0});
       }
     }
 
@@ -1840,36 +1844,36 @@ deviceInfoController.receiveDevices = async function (req, res) {
     console.log('Devices Receiving for device ' +
       id + ' successfully.');
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
-deviceInfoController.receiveSiteSurvey = function (req, res) {
+deviceInfoController.receiveSiteSurvey = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Site Survey: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Site Survey Receiving for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Site Survey Receiving for device ' +
         id + ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
     if (!('survey' in req.body)) {
       console.log('Site Survey Receiving for device ' +
         id + ' failed: Invalid JSON.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
 
     let apsData = req.body.survey;
@@ -1938,7 +1942,7 @@ deviceInfoController.receiveSiteSurvey = function (req, res) {
     matchedDevice.last_site_survey = Date.now();
     await matchedDevice.save().catch((err) => {
       console.log('Error saving site survey to database');
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     });
 
     // if someone is waiting for this message, send the information
@@ -1946,25 +1950,25 @@ deviceInfoController.receiveSiteSurvey = function (req, res) {
     console.log('Site Survey Receiving for device ' +
       id + ' successfully.');
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 // This is called from flashbox when fetching which targets
 // to traceroute. When no customized test is in progress,
 // return device.ping_hosts. Else, current_diagnostic.targets
-deviceInfoController.getPingHosts = function (req, res) {
+deviceInfoController.getPingHosts = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
           'failed: Cant get device profile.');
-        return res.status(400).json({ success: false });
+        return res.status(400).json({success: false});
       }
       if (!matchedDevice) {
         console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
           'failed: No device found.');
-        return res.status(404).json({ success: false });
+        return res.status(404).json({success: false});
       }
       if (matchedDevice.current_diagnostic.in_progress &&
         matchedDevice.current_diagnostic.customized
@@ -1981,34 +1985,34 @@ deviceInfoController.getPingHosts = function (req, res) {
       } else {
         console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
           'failed: No hosts found.');
-        return res.status(404).json({ success: false });
+        return res.status(404).json({success: false});
       }
     });
   } else {
     console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
       'failed: Client Secret not match!');
-    return res.status(401).json({ success: false });
+    return res.status(401).json({success: false});
   }
 };
 
 
 // Return the speedtest host
-deviceInfoController.getCustomSpeedtestHost = function (request, response) {
+deviceInfoController.getCustomSpeedtestHost = function(request, response) {
   // Verify secret and find device
   if (request.body.secret == request.app.locals.secret) {
-    DeviceModel.findById(request.body.id, function (err, matchedDevice) {
+    DeviceModel.findById(request.body.id, function(err, matchedDevice) {
       // Error trying to find the device
       if (err) {
         console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
           'failed: Cant get device profile.');
-        return response.status(400).json({ success: false });
+        return response.status(400).json({success: false});
       }
 
       // Could not find the device
       if (!matchedDevice) {
         console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
           'failed: No device found.');
-        return response.status(404).json({ success: false });
+        return response.status(404).json({success: false});
       }
 
       // Check and send the URL
@@ -2025,7 +2029,7 @@ deviceInfoController.getCustomSpeedtestHost = function (request, response) {
       } else {
         console.log('Router ' + request.body.id + ' getCustomSpeedtestHost '
           + 'failed: Device isn\'t running a custom speedtest');
-        return response.status(404).json({ success: false });
+        return response.status(404).json({success: false});
       }
     });
 
@@ -2033,22 +2037,22 @@ deviceInfoController.getCustomSpeedtestHost = function (request, response) {
   } else {
     console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
       'failed: Client Secret not match!');
-    return response.status(401).json({ success: false });
+    return response.status(401).json({success: false});
   }
 };
 
-deviceInfoController.getUpnpDevsPerm = function (req, res) {
+deviceInfoController.getUpnpDevsPerm = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
-    DeviceModel.findById(req.body.id, function (err, matchedDevice) {
+    DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
           'failed: Cant get device profile.');
-        return res.status(400).json({ success: false });
+        return res.status(400).json({success: false});
       }
       if (!matchedDevice) {
         console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
           'failed: No device found.');
-        return res.status(404).json({ success: false });
+        return res.status(404).json({success: false});
       }
 
       let outData = [];
@@ -2071,31 +2075,31 @@ deviceInfoController.getUpnpDevsPerm = function (req, res) {
   } else {
     console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
       'failed: Client Secret not match!');
-    return res.status(401).json({ success: false });
+    return res.status(401).json({success: false});
   }
 };
 
-deviceInfoController.receivePingResult = function (req, res) {
+deviceInfoController.receivePingResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, function (err, matchedDevice) {
+  DeviceModel.findById(id, function(err, matchedDevice) {
     if (err) {
       console.log('Ping results for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Ping results for device ' +
         id + ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     let result = {};
@@ -2138,7 +2142,7 @@ deviceInfoController.receivePingResult = function (req, res) {
       }
     } else {
       // Not a customized ping call, send to generic trap
-      deviceHandlers.sendPingToTraps(id, { results: result });
+      deviceHandlers.sendPingToTraps(id, {results: result});
     }
 
     // Clearing out diagnostic fields
@@ -2152,62 +2156,62 @@ deviceInfoController.receivePingResult = function (req, res) {
     });
 
     // We don't need to wait
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 
-deviceInfoController.receiveSpeedtestResult = function (req, res) {
+deviceInfoController.receiveSpeedtestResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Speedtest: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, function (err, matchedDevice) {
+  DeviceModel.findById(id, function(err, matchedDevice) {
     if (err) {
       console.log('Speedtest results for device ' +
         id + ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Speedtest results for device ' +
         id + ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     deviceHandlers.storeSpeedtestResult(matchedDevice, req.body);
 
     // We don't need to wait
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
-deviceInfoController.receiveUpnp = function (req, res) {
+deviceInfoController.receiveUpnp = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Upnp request: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Upnp request for device ' + id +
         ' failed: Cant get device profile.');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Upnp request for device ' + id +
         ' failed: No device found.');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     let deviceMac = req.body.mac;
@@ -2229,10 +2233,10 @@ deviceInfoController.receiveUpnp = function (req, res) {
     } else {
       console.log('Upnp request for device ' + id + ' ignored because of' +
         ' explicit user reject');
-      return res.status(200).json({ processed: 0, reason: 'User rejected upnp' });
+      return res.status(200).json({processed: 0, reason: 'User rejected upnp'});
     }
     await matchedDevice.save().catch((err) => {
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     });
 
     messaging.sendUpnpMessage(matchedDevice, deviceMac, deviceName);
@@ -2240,27 +2244,27 @@ deviceInfoController.receiveUpnp = function (req, res) {
     console.log('Upnp request for device ' + id +
       ' received successfully.');
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
-deviceInfoController.receiveRouterUpStatus = function (req, res) {
+deviceInfoController.receiveRouterUpStatus = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     // System Uptime
@@ -2297,33 +2301,33 @@ deviceInfoController.receiveRouterUpStatus = function (req, res) {
 
     // Save
     await matchedDevice.save().catch((err) => {
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     });
     sio.anlixSendUpStatusNotification(id, req.body);
     sio.anlixSendStatisticsNotification(id, req.body);
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 
 // WAN Information
-deviceInfoController.receiveWanInfo = function (req, res) {
+deviceInfoController.receiveWanInfo = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     // Default Gateway IPv4
@@ -2368,35 +2372,35 @@ deviceInfoController.receiveWanInfo = function (req, res) {
 
     // Save
     await matchedDevice.save().catch((err) => {
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     });
 
     // Send socket IO notification
     sio.anlixSendWanInfoNotification(id, req.body);
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 
 // LAN Information
-deviceInfoController.receiveLanInfo = function (req, res) {
+deviceInfoController.receiveLanInfo = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
 
@@ -2421,35 +2425,35 @@ deviceInfoController.receiveLanInfo = function (req, res) {
 
     // Save
     await matchedDevice.save().catch((err) => {
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     });
 
     // Send socket IO notification
     sio.anlixSendLanInfoNotification(id, req.body);
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 
 // Traceroute
-deviceInfoController.receiveTraceroute = function (req, res) {
+deviceInfoController.receiveTraceroute = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Error Receiving Devices: Secret not match!');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     // Get the current test
@@ -2459,7 +2463,7 @@ deviceInfoController.receiveTraceroute = function (req, res) {
 
     // Could not find the test, return with not processed
     if (!currentTest) {
-      return res.status(200).json({ processed: 0 });
+      return res.status(200).json({processed: 0});
     }
 
     // If the tries per hop came is not empty
@@ -2522,35 +2526,35 @@ deviceInfoController.receiveTraceroute = function (req, res) {
       deviceHandlers.sendTracerouteToTraps(id, trapResult);
     }
 
-    return res.status(200).json({ processed: 1 });
+    return res.status(200).json({processed: 1});
   });
 };
 
 
-deviceInfoController.receiveWpsResult = function (req, res) {
+deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
     if (envsec != req.app.locals.secret) {
       console.log('Wps: Secrets do not match');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
   }
 
-  DeviceModel.findById(id, async function (err, matchedDevice) {
+  DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Wps: Error fetching database');
-      return res.status(400).json({ processed: 0 });
+      return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Wps: ' + id + ' not found');
-      return res.status(404).json({ processed: 0 });
+      return res.status(404).json({processed: 0});
     }
 
     if (!('wps_inform' in req.body) || !('wps_content' in req.body)) {
       console.log('Wps: ' + id + ' wrong request body');
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     }
     const wpsInform = parseInt(req.body.wps_inform);
 
@@ -2567,16 +2571,16 @@ deviceInfoController.receiveWpsResult = function (req, res) {
         matchedDevice.wps_last_connected_mac = macAddr;
       } else {
         console.log('Wps: ' + id + ' wrong content format');
-        return res.status(500).json({ processed: 0 });
+        return res.status(500).json({processed: 0});
       }
     }
     try {
       await matchedDevice.save();
       console.log('Wps: ' + id + ' received successfully');
-      return res.status(200).json({ processed: 1 });
+      return res.status(200).json({processed: 1});
     } catch (err) {
       console.log('Wps: ' + id + ' database save error');
-      return res.status(500).json({ processed: 0 });
+      return res.status(500).json({processed: 0});
     }
   });
 };

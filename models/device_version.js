@@ -1325,7 +1325,7 @@ const flashboxFirmwareDevices = {
   },
 };
 
-DeviceVersion.versionCompare = function (foo, bar) {
+DeviceVersion.versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
     return parseInt(val);
@@ -1340,12 +1340,12 @@ DeviceVersion.versionCompare = function (foo, bar) {
   return 0;
 };
 
-const grantViewLogs = function (version, model) {
+const grantViewLogs = function(version, model) {
   // Enabled in all supported versions
   return true;
 };
 
-const grantResetDevices = function (version, model) {
+const grantResetDevices = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
   } else {
@@ -1354,7 +1354,7 @@ const grantResetDevices = function (version, model) {
   }
 };
 
-const grantPortForward = function (version, model) {
+const grantPortForward = function(version, model) {
   if (version.match(versionRegex)) {
     // Oficial Flashbox firmware
     return (DeviceVersion.versionCompare(version, '0.10.0') >= 0);
@@ -1367,7 +1367,7 @@ const grantPortForward = function (version, model) {
   }
 };
 
-const grantPortForwardAsym = function (version, model) {
+const grantPortForwardAsym = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
@@ -1376,7 +1376,7 @@ const grantPortForwardAsym = function (version, model) {
   }
 };
 
-const grantPortOpenIpv6 = function (version, model) {
+const grantPortOpenIpv6 = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.15.0') >= 0);
   } else {
@@ -1385,12 +1385,12 @@ const grantPortOpenIpv6 = function (version, model) {
   }
 };
 
-const grantWifi2ghzEdit = function (version, model) {
+const grantWifi2ghzEdit = function(version, model) {
   // Every firmware has this feature
   return true;
 };
 
-const grantWifi5ghz = function (version, is5ghzCapable, model) {
+const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (DeviceVersion.versionCompare(version,
       '0.13.0') >= 0));
@@ -1400,7 +1400,7 @@ const grantWifi5ghz = function (version, is5ghzCapable, model) {
   }
 };
 
-const grantWifiBand = function (version, model) {
+const grantWifiBand = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1409,7 +1409,7 @@ const grantWifiBand = function (version, model) {
   }
 };
 
-const grantWifiBandAuto = function (version, model) {
+const grantWifiBandAuto = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
@@ -1418,7 +1418,7 @@ const grantWifiBandAuto = function (version, model) {
   }
 };
 
-const grantWifiPowerHiddenIpv6 = function (version, model) {
+const grantWifiPowerHiddenIpv6 = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.28.0') >= 0);
   } else {
@@ -1427,7 +1427,7 @@ const grantWifiPowerHiddenIpv6 = function (version, model) {
   }
 };
 
-const grantWifiState = function (version, model) {
+const grantWifiState = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
@@ -1436,7 +1436,7 @@ const grantWifiState = function (version, model) {
   }
 };
 
-const grantWifiExtendedChannels = function (version, model) {
+const grantWifiExtendedChannels = function(version, model) {
   if (Object.keys(flashboxFirmwareDevices).includes(model) &&
     flashboxFirmwareDevices[model].wifi2_extended_channels_support
   ) {
@@ -1446,7 +1446,7 @@ const grantWifiExtendedChannels = function (version, model) {
   }
 };
 
-const grantPingTest = function (version, model) {
+const grantPingTest = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1455,7 +1455,7 @@ const grantPingTest = function (version, model) {
   }
 };
 
-const grantLanRead = function (version, model) {
+const grantLanRead = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1464,7 +1464,7 @@ const grantLanRead = function (version, model) {
   }
 };
 
-const grantLanEdit = function (version, model) {
+const grantLanEdit = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.13.0') >= 0);
   } else {
@@ -1474,7 +1474,7 @@ const grantLanEdit = function (version, model) {
 };
 
 // Capability of the LAN Gateway IP being different from the first available IP
-const grantLanGwEdit = function (version, model) {
+const grantLanGwEdit = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.23.0') >= 0);
   } else {
@@ -1483,7 +1483,7 @@ const grantLanGwEdit = function (version, model) {
   }
 };
 
-const grantLanDevices = function (version, model) {
+const grantLanDevices = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.14.0') >= 0);
   } else {
@@ -1492,7 +1492,7 @@ const grantLanDevices = function (version, model) {
   }
 };
 
-const grantSiteSurvey = function (version, model) {
+const grantSiteSurvey = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.29.0') >= 0);
   } else {
@@ -1501,7 +1501,7 @@ const grantSiteSurvey = function (version, model) {
   }
 };
 
-const grantUpnp = function (version, model) {
+const grantUpnp = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.21.0') >= 0);
   } else {
@@ -1511,7 +1511,7 @@ const grantUpnp = function (version, model) {
 };
 
 // WAN and LAN Information
-const grantWanLanInformation = function (version) {
+const grantWanLanInformation = function(version) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.34.0') >= 0);
   } else {
@@ -1521,7 +1521,7 @@ const grantWanLanInformation = function (version) {
 };
 
 // Traceroute
-const grantTraceroute = function (version) {
+const grantTraceroute = function(version) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.35.0') >= 0);
   } else {
@@ -1530,7 +1530,7 @@ const grantTraceroute = function (version) {
   }
 };
 
-const grantSpeedTest = function (version, model) {
+const grantSpeedTest = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1548,7 +1548,7 @@ const grantSpeedTest = function (version, model) {
 };
 
 
-const grantSpeedTestLimit = function (version, model) {
+const grantSpeedTestLimit = function(version, model) {
   if (grantSpeedTest(version, model) &&
     Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
@@ -1557,17 +1557,17 @@ const grantSpeedTestLimit = function (version, model) {
   return 0;
 };
 
-const grantBlockDevices = function (model) {
+const grantBlockDevices = function(model) {
   // Enabled for all Flashbox firmwares
   return true;
 };
 
-const grantBlockWiredDevices = function (model) {
+const grantBlockWiredDevices = function(model) {
   // Enabled for all Flashbox firmwares
   return true;
 };
 
-const grantOpmode = function (version, model) {
+const grantOpmode = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
@@ -1576,7 +1576,7 @@ const grantOpmode = function (version, model) {
   }
 };
 
-const grantVlanSupport = function (version, model) {
+const grantVlanSupport = function(version, model) {
   let ret = { // default return value
     'vlan_support': false,
     'vlan_support_since': '0.30.2',
@@ -1611,7 +1611,7 @@ const grantVlanSupport = function (version, model) {
   }
 };
 
-const grantStatisticsSupport = function (version, model) {
+const grantStatisticsSupport = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.25.0') >= 0);
   } else {
@@ -1620,11 +1620,11 @@ const grantStatisticsSupport = function (version, model) {
   }
 };
 
-const grantPonSignalSupport = function (model) {
+const grantPonSignalSupport = function(model) {
   return false;
 };
 
-const grantMeshV1Mode = function (version, model) {
+const grantMeshV1Mode = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1644,7 +1644,7 @@ const grantMeshV1Mode = function (version, model) {
 
 // No need to check version, just used to check if device in correct release
 // could be a mesh v2 primary device
-const grantMeshV2PrimaryModeUpgrade = function (version, model) {
+const grantMeshV2PrimaryModeUpgrade = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1661,7 +1661,7 @@ const grantMeshV2PrimaryModeUpgrade = function (version, model) {
   }
 };
 
-const grantMeshV2PrimaryMode = function (version, model) {
+const grantMeshV2PrimaryMode = function(version, model) {
   if (grantMeshV2PrimaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
@@ -1671,7 +1671,7 @@ const grantMeshV2PrimaryMode = function (version, model) {
 
 // No need to check version, just used to check if device in correct release
 // could be a mesh v2 secondary device
-const grantMeshV2SecondaryModeUpgrade = function (version, model) {
+const grantMeshV2SecondaryModeUpgrade = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1688,7 +1688,7 @@ const grantMeshV2SecondaryModeUpgrade = function (version, model) {
   }
 };
 
-const grantMeshV2SecondaryMode = function (version, model) {
+const grantMeshV2SecondaryMode = function(version, model) {
   if (grantMeshV2SecondaryModeUpgrade(version, model)) {
     return (DeviceVersion.versionCompare(version, '0.32.0') >= 0);
   } else {
@@ -1696,11 +1696,11 @@ const grantMeshV2SecondaryMode = function (version, model) {
   }
 };
 
-const grantMeshV2HardcodedBssid = function (model) {
+const grantMeshV2HardcodedBssid = function(model) {
   return false;
 };
 
-const grantUpdateAck = function (version, model) {
+const grantUpdateAck = function(version, model) {
   if (version.match(versionRegex)) {
     return (DeviceVersion.versionCompare(version, '0.27.0') >= 0);
   } else {
@@ -1709,7 +1709,7 @@ const grantUpdateAck = function (version, model) {
   }
 };
 
-const grantWpsFunction = function (version, model) {
+const grantWpsFunction = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1726,24 +1726,24 @@ const grantWpsFunction = function (version, model) {
   }
 };
 
-const grantWiFiAXSupport = function (model) {
+const grantWiFiAXSupport = function(model) {
   // Firmware CPEs do not have AX mode support
   return false;
 };
 
-const hasSTUNSupport = function (model) {
+const hasSTUNSupport = function(model) {
   return false;
 };
 
-const grantMeshVAPObject = function (model) {
+const grantMeshVAPObject = function(model) {
   return false;
 };
 
-const grantDiacritics = function (model) {
+const grantDiacritics = function(model) {
   return false;
 };
 
-const convertTR069Permissions = function (cpePermissions) {
+const convertTR069Permissions = function(cpePermissions) {
   let permissions = {
     grantViewLogs: false,
     grantResetDevices: false,
@@ -1803,7 +1803,7 @@ const convertTR069Permissions = function (cpePermissions) {
   return permissions;
 };
 
-DeviceVersion.devicePermissionsNotRegistered = function (
+DeviceVersion.devicePermissionsNotRegistered = function(
   model, modelName, fwVersion,
 ) {
   // Only TR-069 instances should call this function
@@ -1814,7 +1814,7 @@ DeviceVersion.devicePermissionsNotRegistered = function (
   return null;
 };
 
-DeviceVersion.devicePermissionsNotRegisteredFirmware = function (
+DeviceVersion.devicePermissionsNotRegisteredFirmware = function(
   version, is5ghzCapable, model,
 ) {
   // Only Anlix firmware instances should call this function
@@ -1825,7 +1825,7 @@ DeviceVersion.devicePermissionsNotRegisteredFirmware = function (
   });
 };
 
-DeviceVersion.devicePermissions = function (device) {
+DeviceVersion.devicePermissions = function(device) {
   // TR-069 instances have a separate flow
   let cpeResult = DevicesAPI.instantiateCPEByModelFromDevice(device);
   if (cpeResult.success) {
@@ -1893,7 +1893,7 @@ DeviceVersion.devicePermissions = function (device) {
   return result;
 };
 
-DeviceVersion.getPortsQuantity = function (model) {
+DeviceVersion.getPortsQuantity = function(model) {
   // to check the list of supported devices and the quantity of ports
   let ret = 4;
   // The default quantity of ports is 4, as checked
@@ -1903,7 +1903,7 @@ DeviceVersion.getPortsQuantity = function (model) {
   return ret;
 };
 
-DeviceVersion.getDeviceInfo = function (model) {
+DeviceVersion.getDeviceInfo = function(model) {
   let ret = { // default return value
     'vlan_support': false,
     'vlan_support_since': '0.30.2',
@@ -1930,15 +1930,15 @@ DeviceVersion.getDeviceInfo = function (model) {
   return ret;
 };
 
-DeviceVersion.getVlanCompatible = function () {
+DeviceVersion.getVlanCompatible = function() {
   let vlanCompatible = Object.fromEntries(
     Object.entries(flashboxFirmwareDevices).filter(
       ([k, device]) => device.vlan_support));
   return Object.keys(vlanCompatible);
 };
 
-DeviceVersion.mapFirmwareUpgradeMesh = function (curVersion, nextVersion) {
-  let result = { unknownVersion: false, current: 0, upgrade: 0 };
+DeviceVersion.mapFirmwareUpgradeMesh = function(curVersion, nextVersion) {
+  let result = {unknownVersion: false, current: 0, upgrade: 0};
   const currVer = util.returnStrOrEmptyStr(curVersion);
   const nextVer = util.returnStrOrEmptyStr(nextVersion);
   if (currVer.match(versionRegex) && nextVer.match(versionRegex)) {
