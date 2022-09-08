@@ -14,7 +14,6 @@ tendaModel.modelPermissions = function() {
   permissions.wifi.mustBeEnabledToConfigure = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
-  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V16.03.06.05_multi_BR01': [],
   };

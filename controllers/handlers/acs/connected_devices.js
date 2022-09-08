@@ -156,7 +156,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               data, hostActiveKey+'._value',
             );
             if (typeof hostActive === 'string') {
-              hostActive = (hostActive.toLowerCase() === 'true');
+              let trueValues = ['true', '1'];
+              hostActive = (trueValues.includes(hostActive.toLowerCase()));
             }
             if (!hostActive) {
               return;
