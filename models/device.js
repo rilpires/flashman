@@ -408,50 +408,50 @@ deviceSchema.pre('save', function(callback) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true},
                    {traps_callbacks: true}).lean()
-      .exec(function(err, defConfig) {
-        if (err || !defConfig.traps_callbacks ||
-                   !defConfig.traps_callbacks.devices_crud) {
-          return callback(err);
-        }
-        const promises =
-          defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
-            let callbackUrl = deviceCrud.url;
-            let callbackAuthUser = deviceCrud.user;
-            let callbackAuthSecret = deviceCrud.secret;
-            if (callbackUrl) {
-              attrsList.forEach((attr) => {
-                if (!attr.includes('pingtest_results')) {
-                  changedAttrs[attr] = device[attr];
-                }
-              });
-              // Nothing to send - don't call trap
-              if (Object.keys(changedAttrs).length === 0) {
-                return Promise.resolve();
+    .exec(function(err, defConfig) {
+      if (err || !defConfig.traps_callbacks ||
+                  !defConfig.traps_callbacks.devices_crud) {
+        return callback(err);
+      }
+      const promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            attrsList.forEach((attr) => {
+              if (!attr.includes('pingtest_results')) {
+                changedAttrs[attr] = device[attr];
               }
-              requestOptions.url = callbackUrl;
-              requestOptions.method = 'PUT';
-              requestOptions.json = {
-                'id': device._id,
-                'type': 'device',
-                'changes': changedAttrs,
-              };
-              if (callbackAuthUser && callbackAuthSecret) {
-                requestOptions.auth = {
-                  user: callbackAuthUser,
-                  pass: callbackAuthSecret,
-                };
-              }
-              return request(requestOptions);
+            });
+            // Nothing to send - don't call trap
+            if (Object.keys(changedAttrs).length === 0) {
+              return Promise.resolve();
             }
-          });
-        Promise.all(promises).then((resp) => {
-          // Ignore API response
-          return;
-        }, (err) => {
-          // Ignore API endpoint errors
-          return;
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': device._id,
+              'type': 'device',
+              'changes': changedAttrs,
+            };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
+          }
         });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
       });
+    });
   }
   callback();
 });
