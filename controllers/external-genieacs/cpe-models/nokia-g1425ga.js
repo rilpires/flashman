@@ -12,8 +12,6 @@ nokiaModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.LANDeviceHasSNR = true;
-  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
@@ -83,8 +81,6 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
