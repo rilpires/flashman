@@ -10,7 +10,6 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
-  permissions.lan.canTrustActive = true;
   permissions.wan.speedTestLimit = 700;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =

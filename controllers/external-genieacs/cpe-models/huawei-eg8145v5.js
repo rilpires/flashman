@@ -12,7 +12,7 @@ huaweiModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

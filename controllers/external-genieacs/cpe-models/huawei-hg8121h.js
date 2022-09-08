@@ -10,10 +10,11 @@ huaweiModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.speedTestLimit = 150;
   permissions.wifi.dualBand = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V3R018C00S128': [],
   };
