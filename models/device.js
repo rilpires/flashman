@@ -407,10 +407,10 @@ deviceSchema.pre('save', function(callback) {
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
     Config.findOne({is_default: true},
-      {traps_callbacks: true}).lean()
+                   {traps_callbacks: true}).lean()
       .exec(function(err, defConfig) {
         if (err || !defConfig.traps_callbacks ||
-          !defConfig.traps_callbacks.devices_crud) {
+                   !defConfig.traps_callbacks.devices_crud) {
           return callback(err);
         }
         const promises =
@@ -464,10 +464,11 @@ deviceSchema.post('remove', function(device, callback) {
     {traps_callbacks: true}).lean()
     .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-        !defConfig.traps_callbacks.device_crud) {
+                 !defConfig.traps_callbacks.device_crud) {
         return callback(err);
       }
-      let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+      let promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
         let callbackUrl = deviceCrud.url;
         let callbackAuthUser = deviceCrud.user;
         let callbackAuthSecret = deviceCrud.secret;
