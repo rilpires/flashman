@@ -4188,6 +4188,20 @@ deviceListController.getLanInfo = async function(request, response) {
   });
 };
 
+const commonDeviceFind = async function(req) {
+  try {
+    let devId = req.params.id.toUpperCase();
+    let retDevs = await DeviceModel.findByMacOrSerial(devId);
+    if (Array.isArray(retDevs) && retDevs.length > 0) {
+      return {success: true, matchedDevice: retDevs[0]};
+    } else {
+      return {success: false, message: t('cpeNotFound', {errorline: __line})};
+    }
+  } catch (e) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+};
+
 deviceListController.sendCustomPingAPI = async function(req, res) {
   let matchedDevice;
   try {
@@ -4225,16 +4239,15 @@ deviceListController.sendCustomSpeedTestAPI = async function(req, res) {
   return res.status(200).json(commandResponse);
 };
 deviceListController.sendGenericSpeedTestAPI = async function(req, res) {
-  let matchedDevice;
-  try {
-    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch (e) {
-    matchedDevice = null;
+  let devRes = await commonDeviceFind(req);
+  if (devRes.success) {
+    let commandResponse = await deviceListController.sendGenericSpeedTest(
+      devRes.matchedDevice, req.user.name, req.sessionID,
+    );
+    return res.status(200).json(commandResponse);
+  } else {
+    return res.status(200).json(devRes);
   }
-  let commandResponse = await deviceListController.sendGenericSpeedTest(
-    matchedDevice, req.user.name, req.sessionID,
-  );
-  return res.status(200).json(commandResponse);
 };
 deviceListController.sendCustomTraceRouteAPI = async function(req, res) {
   let matchedDevice;
