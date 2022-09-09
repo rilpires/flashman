@@ -77,6 +77,11 @@ router.route('/device/command/:id/:msg').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.sendMqttMsg);
 
+// Send a sync request for TR-069 devices
+router.route('/device/sync/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.syncDevice);
+
 // Send a customized ping command
 router.route('/device/pingdiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
