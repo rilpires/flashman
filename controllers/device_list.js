@@ -4,7 +4,6 @@
 
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
-const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -25,7 +24,6 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info.js');
-const acsMeasuresHandler = require('./handlers/acs/measures');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
@@ -1359,8 +1357,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     for each device */
                 let ssidPrefix = matchedConfig.ssidPrefix;
                 let enabledForAllFlashman = (
-                  !!matchedConfig.personalizationHash &&
-                    matchedConfig.isSsidPrefixEnabled);
+                  matchedConfig.personalizationHash ? true : false // cast bool
+                );
                 allDevices.forEach(function(device) {
                   /*
                     Define if is to show ssid prefix
@@ -1371,9 +1369,9 @@ deviceListController.searchDeviceReg = async function(req, res) {
                     for that device, is enough to be able
                     to show.
                   */
-                  device.isToShowSsidPrefixCheckbox =
-                    (enabledForAllFlashman == true ||
-                    device.isSsidPrefixEnabled == true);
+                  device.isToShowSsidPrefixCheckbox = (
+                    enabledForAllFlashman || device.isSsidPrefixEnabled
+                  );
                 });
 
                 let mustBlockLicenseAtRemoval = (
@@ -2169,16 +2167,20 @@ deviceListController.setDeviceReg = function(req, res) {
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
           matchedConfig, ssid, ssid5ghz, isSsidPrefixEnabled);
+        // This function returns what prefix we should be using for this device,
+        // based on the local flag (as updated in the interface) and what SSID
+        // values should be saved in the database
         isSsidPrefixEnabled = checkResponse.enablePrefix;
-        // cleaned ssid
         ssid = checkResponse.ssid2;
         ssid5ghz = checkResponse.ssid5;
-        let ssidPrefix = checkResponse.prefix;
+        let ssidPrefix = checkResponse.prefixToUse;
 
         if (content.hasOwnProperty('wifi_ssid')) {
           genericValidate(
             ssidPrefix+ssid,
-            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            (s)=>validator.validateSSID(
+              s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+            ),
             'ssid',
           );
         }
@@ -2209,7 +2211,9 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('wifi_ssid_5ghz')) {
           genericValidate(
             ssidPrefix+ssid5ghz,
-            (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+            (s)=>validator.validateSSID(
+              s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+            ),
             'ssid5ghz',
           );
         }
@@ -2813,8 +2817,11 @@ deviceListController.createDeviceReg = function(req, res) {
       // -> 'new registry' scenario
       let checkResponse = deviceHandlers.checkSsidPrefix(
         matchedConfig, ssid, '', false, true);
+      // The function already returns what SSID we should be saving in the
+      // database and what the local flag value should be, based on the global
+      // flag and SSID values.
       isSsidPrefixEnabled = checkResponse.enablePrefix;
-      let ssidPrefix = checkResponse.prefix;
+      let ssidPrefix = checkResponse.prefixToUse;
 
       genericValidate(ssidPrefix+ssid,
         validator.validateSSID, 'ssid');
@@ -4343,8 +4350,8 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       'ip': true, 'wan_ip': true, 'ipv6_enabled': true,
       'wan_negociated_speed': true, 'wan_negociated_duplex': true,
       'external_reference.kind': true, 'external_reference.data': true,
-      'model': true, 'version': true, 'installed_release': true,
-      'do_update': true,
+      'model': true, 'version': true, 'hw_version': true,
+      'installed_release': true, 'do_update': true,
     };
 
     let devices = {};
@@ -4405,6 +4412,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('clientId'), value: 'external_reference.data'},
       {label: t('cpeModel'), value: 'model'},
       {label: t('firmwareversion'), value: 'version'},
+      {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
     );

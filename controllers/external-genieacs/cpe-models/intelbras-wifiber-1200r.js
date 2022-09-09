@@ -17,19 +17,20 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 300;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wifi.extended2GhzChannels = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
     149, 153, 157, 161,
   ];
-  permissions.wifi.bandWrite2 = false;
-  permissions.wifi.bandWrite5 = false;
-  permissions.wifi.bandAuto2 = false;
-  permissions.wifi.bandAuto5 = false;
   permissions.firmwareUpgrades = {
     '1.1-220712': [],
   };

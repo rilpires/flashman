@@ -28,6 +28,7 @@ let deviceSchema = new Schema({
   },
   model: String,
   version: {type: String, default: '0.0.0'},
+  hw_version: {type: String},
   installed_release: String,
   release: String,
   is_license_active: Boolean,
