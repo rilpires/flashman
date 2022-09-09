@@ -285,7 +285,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
-    updater.updateLicenseApiSecret(app);
+    updater.updateApiUserLogin(app);
     // Restart genieacs service whenever Flashman is restarted
     if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
       updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);

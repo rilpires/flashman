@@ -144,25 +144,34 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = 5;
             }
           }
-          // Collect host active if field can be trusted. If the host is not
-          // active, discard it. If the field cannot be trusted, active is
-          // always true
-          if (cpe.modelPermissions().lan.canTrustActive) {
+          // Collect host active if field can be trusted. If the field is
+          // reliable, we break the flow to those devices that are inactive, and
+          // store the rest as active. If the field is not reliable, we have to
+          // check if it has the tree of connected devices. If so, we store that
+          // device as non-active and revisit this information later. If not, we
+          //  store that device as active to preserve legacy behavior
+          if (cpe.modelPermissions().lan.LANDeviceCanTrustActive) {
             let hostActiveKey = fields.devices.host_active.replace('*', i);
             let hostActive = utilHandlers.getFromNestedKey(
               data, hostActiveKey+'._value',
             );
+            if (typeof hostActive === 'string') {
+              let trueValues = ['true', '1'];
+              hostActive = (trueValues.includes(hostActive.toLowerCase()));
+            }
             if (!hostActive) {
               return;
             }
-            device.active = hostActive;
+            device.wifiActive = true;
+          } else {
+            device.wifiActive =
+              !cpe.modelPermissions().lan.LANDeviceHasAssocTree;
           }
-          device.active = true;
           // Push basic device information
           devices.push(device);
         });
 
-        if (fields.devices.host_rssi || fields.devices.host_snr) {
+        if (cpe.modelPermissions().lan.LANDeviceHasAssocTree) {
           // Change iface identifiers to use only numerical identifier
           iface2 = iface2.split('.');
           iface5 = iface5.split('.');
@@ -207,8 +216,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               }
               let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
               if (!device) continue;
-              // Mark device as a wifi device
-              device.wifi = true;
+              // If the execution flow reaches this point, it means that the
+              // host stored in the Associated Devices tree exists in the host
+              // list for that device, which means the connection for that host
+              // is active
+              device.wifiActive = true;
               if (iface == iface2) {
                 device.wifi_freq = 2.4;
               } else if (iface == iface5) {
@@ -224,7 +236,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 device.rssi = cpe.convertRssiValue(rssiValue);
               }
               // Collect explicit snr, if available - fallback on rssi value
-              if (cpe.modelPermissions().lan.listLANDevicesSNR) {
+              if (cpe.modelPermissions().lan.LANDeviceHasSNR) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = utilHandlers.getFromNestedKey(
@@ -252,9 +264,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 }
                 // Skip this device when following flag is enabled and mode
                 // value is empty
-                if (cpe.modelPermissions().lan.skipIfNoWifiMode &&
+                if (cpe.modelPermissions().lan.LANDeviceSkipIfNoWifiMode &&
                     modeVal == '') {
-                    device.active = false;
+                  device.wifiActive = false;
                 }
               }
               // Collect connection speed, if available
@@ -277,8 +289,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             }
           }
         }
-        // Filters devices checking if they are active
-        devices = devices.filter((k) => (k.active));
+        // Filter devices by active, always including wired connections
+        devices = devices.filter((d) => !d.wifi || d.wifiActive);
         await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);

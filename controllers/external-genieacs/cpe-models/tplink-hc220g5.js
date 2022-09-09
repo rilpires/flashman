@@ -14,7 +14,6 @@ tplinkModel.modelPermissions = function() {
   permissions.features.stun = false;
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
-  permissions.lan.canTrustActive = true;
   permissions.firmwareUpgrades = {
     '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
     '0.12.0 2.0.0 v605e.0 Build 220629 Rel.75194n': [],
