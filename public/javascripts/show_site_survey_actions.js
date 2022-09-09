@@ -451,7 +451,8 @@ anlixDocumentReady.add(function() {
 
     let idx = row.data('index');
     if (!row.find('#edit_wifi_state-'+idx)[0].checked ||
-        !row.find('#edit_wifi5_state-'+idx)[0].checked) {
+        (row.find('#edit_wifi5_state-'+idx).length > 0 &&
+        !row.find('#edit_wifi5_state-'+idx)[0].checked)) {
       swal.fire({
         icon: 'warning',
         title: t('Attention!'),
