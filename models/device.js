@@ -268,6 +268,7 @@ let deviceSchema = new Schema({
       enum: ['', 'estimative', 'measure', 'initiating', 'error', 'done'],
     },
     customized: {type: Boolean},
+    recursion_state: {type: Number, default: 5},
     in_progress: {type: Boolean},
     started_at: {type: Date},
     last_modified_at: {type: Date},

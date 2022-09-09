@@ -263,13 +263,14 @@ const calculateSiteSurveyDiagnostic = async function(
 
   console.log('!@#', diagState);
   if (diagState.every((x) => x === 'None')) {
-    if (cpe.isToDoPoolingInState()) {
-      acsDiagnosticsHandler.doPoolingInState(device.acs_id,
-        cpe.getModelFields());
-      return;
-    }
+    await saveCurrentDiagnostic(device, 'error', false);
+    console.log('Error retrieving site survey data!');
+    return;
   } else if (diagState.some((x) => x.match(/requested/i))) {
-    if (cpe.isToDoPoolingInState()) {
+    if (cpe.isToDoPoolingInState() &&
+        device.current_diagnostic.recursion_state > 0) {
+      device.current_diagnostic.recursion_state--;
+      saveCurrentDiagnostic(device, 'initiating', true);
       acsDiagnosticsHandler.doPoolingInState(device.acs_id,
         cpe.getModelFields());
       return;
