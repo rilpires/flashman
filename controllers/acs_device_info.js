@@ -1539,28 +1539,7 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let fields = cpe.getModelFields();
-  let fieldToFetch = '';
-
-  switch (device.current_diagnostic.type) {
-    case 'ping':
-      fieldToFetch = fields.diagnostics.ping.root;
-      break;
-    case 'speedtest':
-      fieldToFetch = fields.diagnostics.speedtest.root;
-      break;
-    case 'sitesurvey':
-      fieldToFetch = fields.diagnostics.sitesurvey.root;
-      break;
-  }
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [fieldToFetch],
-  };
-  TasksAPI.addTask(
-    acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
-  );
+  acsDiagnosticsHandler.triggerDiagnosticResults(acsID, device);
 };
 
 acsDeviceInfoController.requestLogs = function(device) {

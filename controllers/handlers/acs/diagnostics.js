@@ -139,7 +139,12 @@ const calculatePingDiagnostic = async function(
       debug('calculatePingDiagnostic loss is not an number!!!');
     }
     const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
-    currentPingTest.lat = pingKeys.avg_resp_time.toString();
+    if (cpe.modelPermissions().wan.pingTestMicroSeconds) {
+      currentPingTest.lat = (parseInt(
+        pingKeys.avg_resp_time)/1000).toString();
+    } else {
+      currentPingTest.lat = pingKeys.avg_resp_time.toString();
+    }
     currentPingTest.loss = loss.toString();
     currentPingTest.count = count.toString();
 
@@ -264,8 +269,14 @@ const calculateSiteSurveyDiagnostic = async function(
       return;
     }
   } else if (diagState.some((x) => x.match(/requested/i))) {
-    acsDiagnosticsHandler.fetchDiagnosticsFromGenie(id);
-    return;
+    if (cpe.isToDoPoolingInState()) {
+      acsDiagnosticsHandler.doPoolingInState(device.acs_id,
+        cpe.getModelFields());
+      return;
+    } else {
+      acsDiagnosticsHandler.triggerDiagnosticResults(device.acs_id, device);
+      return;
+    }
   } else if (diagState.some((x) => x.match(/erro/i))) {
     await saveCurrentDiagnostic(device, 'error', false);
     console.log('Error retrieving site survey data!');
@@ -287,7 +298,8 @@ const calculateSiteSurveyDiagnostic = async function(
         devVHT=true;
       }
 
-      if (ap.band !== 'Auto' &&
+      if (ap.band &&
+          ap.band !== 'Auto' &&
           ap.band.match('[0-9]+') != null) {
         // '20MHz' | '40MHz' | '80MHz'
         devWidth = parseInt(ap.band.match('[0-9]+')[0]);
@@ -566,13 +578,34 @@ acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
     name: 'getParameterValues',
     parameterNames: fields.diagnostics.sitesurvey.diag_state,
   };
-  const result = await TasksAPI.addTask(acsID, task);
-  if (result.success) {
-    acsDiagnosticsHandler.fetchDiagnosticsFromGenie(acsID);
-  } else {
-    acsDiagnosticsHandler.doPoolingInState(acsID, fields);
-  }
+  TasksAPI.addTask(acsID, task,
+    acsDiagnosticsHandler.fetchDiagnosticsFromGenie);
   return;
+};
+
+acsDiagnosticsHandler.triggerDiagnosticResults = async function(acsID, device) {
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let fieldToFetch = '';
+
+  switch (device.current_diagnostic.type) {
+    case 'ping':
+      fieldToFetch = fields.diagnostics.ping.root;
+      break;
+    case 'speedtest':
+      fieldToFetch = fields.diagnostics.speedtest.root;
+      break;
+    case 'sitesurvey':
+      fieldToFetch = fields.diagnostics.sitesurvey.root;
+      break;
+  }
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [fieldToFetch],
+  };
+  TasksAPI.addTask(
+    acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
+  );
 };
 
 acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
