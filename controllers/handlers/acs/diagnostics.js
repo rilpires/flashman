@@ -178,11 +178,12 @@ const calculatePingDiagnostic = async function(
 };
 
 
-const calculateTraceDiagnostic = async function(
-  device, cpe, data, pingKeys, pingFields,
-) {
-  // TO-DO !!!
-};
+// TODO
+// const calculateTraceDiagnostic = async function(
+//   device, cpe, data, pingKeys, pingFields,
+// ) {
+
+// };
 
 
 const calculateSpeedDiagnostic = async function(
@@ -451,7 +452,8 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
             fields.diagnostics.speedtest,
           );
         } else if (permissions.grantTraceTest && diagType == 'traceroute') {
-          await calculateTraceDiagnostic(/* to-do */);
+          // TODO
+          // await calculateTraceDiagnostic();
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
