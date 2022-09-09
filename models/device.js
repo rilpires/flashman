@@ -410,7 +410,7 @@ deviceSchema.pre('save', function(callback) {
                    {traps_callbacks: true}).lean()
     .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
-                  !defConfig.traps_callbacks.devices_crud) {
+                 !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
       const promises =

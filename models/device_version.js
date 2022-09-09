@@ -218,7 +218,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC60V2': {
     'vlan_support': false, // even though it's in openwrt 19 it splits wan/lan
-    // into different interfaces
+                           // into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -238,7 +238,7 @@ const flashboxFirmwareDevices = {
   },
   'ARCHERC60V3': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
-    // wan/lan into different interfaces
+                           // wan/lan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -600,7 +600,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-MR3020V1': {
     'vlan_support': false, // even though it's in openwrt 19
-    // it doesn't have lan ports
+                           // it doesn't have lan ports
     'vlan_support_since': '1.0.0',
     'lan_ports': [],
     'num_usable_lan_ports': 0,
@@ -620,7 +620,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WDR3500V1': {
     'vlan_support': false, // even though it's in openwrt 19 it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -697,7 +697,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740N/NDV4': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -717,7 +717,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740NDV4': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -737,7 +737,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740N/NDV5': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -757,7 +757,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740NDV5': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -777,7 +777,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740N/NDV6': {
     'vlan_support': false, // it splits
-    // wan/lan into different interfaces
+                           // wan/lan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -797,7 +797,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR740NDV6': {
     'vlan_support': false, // it splits
-    // wan/lan into different interfaces
+                           // wan/lan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -817,7 +817,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR741N/NDV4': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -837,7 +837,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR741NDV4': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -857,7 +857,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR741N/NDV5': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -877,7 +877,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR741NDV5': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -1011,7 +1011,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841N/NDV7': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1031,7 +1031,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841NDV7': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                            // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1051,7 +1051,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841N/NDV8': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -1071,7 +1071,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841NDV8': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [2, 3, 4, 1],
     'num_usable_lan_ports': 4,
@@ -1091,7 +1091,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR842N/NDV3': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1111,7 +1111,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR842NDV3': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1207,7 +1207,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV4': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1227,7 +1227,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV5': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1247,7 +1247,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR940NV6': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1267,7 +1267,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR949NV6': {
     'vlan_support': false, // it splits
-    // lan/wan into different interfaces
+                           // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1393,7 +1393,7 @@ const grantWifi2ghzEdit = function(version, model) {
 const grantWifi5ghz = function(version, is5ghzCapable, model) {
   if (version.match(versionRegex)) {
     return (is5ghzCapable && (DeviceVersion.versionCompare(version,
-      '0.13.0') >= 0));
+                                                           '0.13.0') >= 0));
   } else {
     // Development version, enable everything by default
     return is5ghzCapable;
