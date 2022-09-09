@@ -72,6 +72,7 @@ basicCPEModel.modelPermissions = function() {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface
+      pingTestMicroSeconds: false, // If is to divide by 1000
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
