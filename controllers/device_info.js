@@ -53,7 +53,7 @@ const createRegistry = async function(req, res) {
     util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
   let installedRelease = util.returnObjOrEmptyStr(req.body.release_id).trim();
   let model = util.returnObjOrEmptyStr(req.body.model).trim().toUpperCase() +
-    util.returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
+              util.returnObjOrEmptyStr(req.body.model_ver).trim().toUpperCase();
   let version = util.returnObjOrEmptyStr(req.body.version).trim();
   let connectionType =
     util.returnObjOrEmptyStr(req.body.connection_type).trim();
@@ -2124,7 +2124,10 @@ deviceInfoController.receivePingResult = function(req, res) {
 
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.current_diagnostic.customized) {
+    if (matchedDevice.current_diagnostic.customized &&
+        matchedDevice.current_diagnostic.type == 'ping' &&
+        matchedDevice.current_diagnostic.in_progress
+    ) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
@@ -2506,7 +2509,10 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     };
 
     // Propagating to the proper callback(s)
-    if (matchedDevice.current_diagnostic.customized) {
+    if (matchedDevice.current_diagnostic.customized &&
+        matchedDevice.current_diagnostic.type == 'traceroute' &&
+        !matchedDevice.current_diagnostic.in_progress
+    ) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
         requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
