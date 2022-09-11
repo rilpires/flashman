@@ -612,6 +612,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
     timestamp: formattedNow,
     model: device.model,
     firmware: device.version,
+    hardwareVersion: device.hw_version,
     mac: device._id,
     serial: device.serial_tr069,
     alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
@@ -1128,6 +1129,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       prefix: prefixObj,
       model: matchedDevice.model,
       version: matchedDevice.version,
+      hardwareVersion: matchedDevice.hw_version,
       release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
@@ -1488,6 +1490,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
         mac: device._id,
         model: device.model,
         firmwareVer: device.version,
+        hardwareVer: device.hw_version,
       };
       if (configUser) {
         result.customLogin = configUser;

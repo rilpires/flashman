@@ -23,7 +23,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 120;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
-
+  permissions.lan.LANDeviceHasAssocTree = false;
   // firmware upgrade permissions
   permissions.firmwareUpgrades = {
     '2.1.4': [],

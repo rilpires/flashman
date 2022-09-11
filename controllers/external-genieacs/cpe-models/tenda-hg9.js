@@ -21,6 +21,7 @@ tendaModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.usesStavixXMLConfig = true;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'v1.0.1': [],
   };

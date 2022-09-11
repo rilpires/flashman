@@ -58,13 +58,14 @@ basicCPEModel.modelPermissions = function() {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
-      listLANDevicesSNR: false, // has explicit SNR field on connected devices
+      LANDeviceCanTrustActive: true, // has host active field trustworthy
+      LANDeviceHasSNR: false, // has explicit SNR field on connected devices
+      LANDeviceHasAssocTree: true, // devices that have the Assoc Devices tree
+      LANDeviceSkipIfNoWifiMode: false, // will skip devices with no host mode
+                                      // info (developed for Nokia models)
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
-      skipIfNoWifiMode: false, // will skip devices with no host mode info
-                               // (developed for Nokia models)
-      canTrustActive: false, // flag to handle devices that can trust Active
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -77,6 +78,7 @@ basicCPEModel.modelPermissions = function() {
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
       allowDiacritics: false, // allows accented chars for ssid and password
+      allowSpaces: true, // allows space char for ssid
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13
@@ -430,6 +432,7 @@ basicCPEModel.getModelFields = function() {
         'MACAddress',
       model: 'InternetGatewayDevice.DeviceInfo.ModelName',
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
+      hw_version: 'InternetGatewayDevice.DeviceInfo.HardwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',

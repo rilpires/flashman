@@ -187,7 +187,9 @@ const createRegistry = async function(req, res) {
   }
   genericValidate(
     ssidPrefix + ssid,
-    (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+    (s)=>validator.validateSSID(
+      s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+    ),
     'ssid', null, errors,
   );
   genericValidate(
@@ -213,7 +215,9 @@ const createRegistry = async function(req, res) {
   if (permissions.grantWifi5ghz) {
     genericValidate(
       ssidPrefix + ssid5ghz,
-      (s)=>validator.validateSSID(s, permissions.grantDiacritics),
+      (s)=>validator.validateSSID(
+        s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+      ),
       'ssid5ghz', null, errors,
     );
     genericValidate(
@@ -509,6 +513,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           ssidPrefix + ssid2ghz,
           (s)=>validator.validateSSID(
             s, permissionsCurrVersion.grantDiacritics,
+            permissionsCurrVersion.grantSsidSpaces,
           ),
           'ssid', null, errors,
         );
