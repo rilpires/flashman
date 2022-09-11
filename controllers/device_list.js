@@ -1534,25 +1534,23 @@ deviceListController.factoryResetDevice = function(req, res) {
 // REST API only functions
 //
 
-deviceListController.sendMqttMsg = async function(req, res) {
+deviceListController.sendCommandMsg = async function(req, res) {
   let msgtype = req.params.msg.toLowerCase();
 
-  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
-  async function(err, device) {
-    if (err) {
-      return res.status(200).json({success: false,
-                                   message: t('cpeFindError',
-                                    {errorline: __line})});
-    }
-    if (Array.isArray(device) && device.length > 0) {
-      device = device[0];
-    } else {
-      return res.status(200).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
-    }
-    let permissions = DeviceVersion.devicePermissions(device);
+  switch (msgtype) {
+    case 'traceroute':
+      return await deviceListController.sendGenericTraceRouteAPI(req, res);
+    case 'ping':
+      return await deviceListController.sendGenericPingAPI(req, res);
+    case 'speedtest':
+      return await deviceListController.sendGenericSpeedTestAPI(req, res);
+  }
 
+  let devRes = await commonDeviceFind(req);
+  if (devRes.success) {
+    let device = devRes.matchedDevice;
+    let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
+    let permissions = DeviceVersion.devicePermissions(device);
     let emitMsg = true;
     switch (msgtype) {
       case 'rstapp':
@@ -1624,196 +1622,171 @@ deviceListController.sendMqttMsg = async function(req, res) {
           }
         }
         break;
-      // Do NOT break out from these cases! This is a common pre-requisite
-      // for commands
-      case 'traceroute':
-      case 'ping':
-      case 'speedtest':
       case 'log':
-      case 'boot':
-      case 'onlinedevs':
-      case 'upstatus':
-      case 'wanbytes':
-      case 'waninfo':
-      case 'laninfo':
-      case 'wps':
-      case 'pondata':
-      case 'sitesurvey': {
-        if (device && !device.use_tr069) {
-          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-            return map[req.params.id.toUpperCase()];
-          });
-          if (device && !isDevOn) {
-            return res.status(200).json({success: false,
-                                         message: t('cpeNotOnline',
-                                           {errorline: __line})});
-          }
-        }
-        if (msgtype === 'speedtest') {
-          return await deviceListController.sendGenericSpeedTestAPI(req, res);
-        } else if (msgtype === 'ping') {
-          return await deviceListController.sendGenericPingAPI(req, res);
-        } else if (msgtype === 'traceroute') {
-          return await deviceListController.sendGenericTraceRouteAPI(req, res);
-        } else if (msgtype === 'boot') {
+        // This message is only valid if we have a socket to send response to
+        if (sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForLiveLogNotification(
+            req.sessionID, req.params.id.toUpperCase());
           if (device && device.use_tr069) {
-            // acs integration will respond to request
-            return await acsDeviceInfo.rebootDevice(device, res);
+            acsDeviceInfo.requestLogs(device);
           } else {
-            mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
-          }
-        } else if (msgtype === 'onlinedevs') {
-          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForOnlineDevNotification(
-              req.sessionID,
-              req.params.id.toUpperCase(),
-            );
-            slaves.forEach((slave)=>{
-              sio.anlixWaitForOnlineDevNotification(
-                req.sessionID,
-                slave.toUpperCase(),
-              );
-            });
-          }
-          if (device && device.use_tr069) {
-            acsDeviceInfo.requestConnectedDevices(device);
-          } else {
-            mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
-          }
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
-          });
-        } else if (msgtype === 'sitesurvey') {
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForSiteSurveyNotification(
-              req.sessionID, req.params.id.toUpperCase());
-          }
-          mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
-        } else if (msgtype === 'upstatus') {
-          let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForUpStatusNotification(
-              req.sessionID,
-              req.params.id.toUpperCase(),
-            );
-            slaves.forEach((slave)=>{
-              sio.anlixWaitForUpStatusNotification(
-                req.sessionID,
-                slave.toUpperCase(),
-              );
-            });
-          }
-          if (device && device.use_tr069) {
-            acsDeviceInfo.requestUpStatus(device);
-          } else {
-            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-          }
-          slaves.forEach((slave)=>{
-            mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
-          });
-        } else if (msgtype === 'wanbytes') {
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForStatisticsNotification(
-              req.sessionID,
-              req.params.id.toUpperCase(),
-            );
-          }
-          if (device && device.use_tr069) {
-            acsDeviceInfo.requestStatistics(device);
-          } else {
-            mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
-          }
-
-        // WAN Informations
-        } else if (msgtype === 'waninfo') {
-          // Wait notification, only wait if is not TR069
-          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
-            !device.use_tr069) {
-            sio.anlixWaitForWanInfoNotification(
-              req.sessionID,
-              req.params.id.toUpperCase(),
-            );
-          }
-
-          // If does not use TR069 call the mqtt function
-          if (device && !device.use_tr069) {
-            mqtt.anlixMessageRouterWanInfo(req.params.id.toUpperCase());
-          }
-
-        // LAN Informations
-        } else if (msgtype === 'laninfo') {
-          // Wait notification, only wait if is not TR069
-          if (req.sessionID && sio.anlixConnections[req.sessionID] &&
-            !device.use_tr069) {
-            sio.anlixWaitForLanInfoNotification(
-              req.sessionID,
-              req.params.id.toUpperCase(),
-            );
-          }
-
-          // If does not use TR069 call the mqtt function
-          if (device && !device.use_tr069) {
-            mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
-          }
-        } else if (msgtype === 'log') {
-          // This message is only valid if we have a socket to send response to
-          if (sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForLiveLogNotification(
-              req.sessionID, req.params.id.toUpperCase());
-            if (device && device.use_tr069) {
-              acsDeviceInfo.requestLogs(device);
-            } else {
-              mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
-            }
-          } else {
-            return res.status(200).json({
-              success: false,
-              message: t('commandOnlyWorksInsideSession'),
-            });
-          }
-        } else if (msgtype === 'wps') {
-          if (!('activate' in req.params) ||
-              !(typeof req.params.activate === 'boolean')
-          ) {
-            return res.status(200).json({
-              success: false,
-              message: t('fieldNameInvalid',
-                {name: 'activate', errorline: __line})});
-          }
-          mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
-                                           req.params.activate);
-        } else if (msgtype === 'pondata') {
-          // Check for permission
-          if (!permissions.grantPonSignalSupport) {
-            return res.status(200).json({
-              success: false,
-              message: t('cpeWithoutCommand'),
-            });
-          }
-          // Wait for notification
-          if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-            sio.anlixWaitForPonSignalNotification(
-              req.sessionID, req.params.id.toUpperCase(),
-            );
-          }
-          // Start
-          if (device && device.use_tr069) {
-            acsDeviceInfo.requestPonData(device);
-          } else {
-            return res.status(200).json({
-              success: false,
-              message: t('cpeWithoutCommand'),
-            });
+            mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
           }
         } else {
           return res.status(200).json({
             success: false,
-            message: t('commandNotFound', {errorline: __line}),
+            message: t('commandOnlyWorksInsideSession'),
           });
         }
         break;
-      }
+      case 'boot':
+        if (device && device.use_tr069) {
+          // acs integration will respond to request
+          return await acsDeviceInfo.rebootDevice(device, res);
+        } else {
+          mqtt.anlixMessageRouterReboot(req.params.id.toUpperCase());
+        }
+        break;
+      case 'onlinedevs':
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForOnlineDevNotification(
+            req.sessionID,
+            req.params.id.toUpperCase(),
+          );
+          slaves.forEach((slave)=>{
+            sio.anlixWaitForOnlineDevNotification(
+              req.sessionID,
+              slave.toUpperCase(),
+            );
+          });
+        }
+        if (device && device.use_tr069) {
+          acsDeviceInfo.requestConnectedDevices(device);
+        } else {
+          mqtt.anlixMessageRouterOnlineLanDevs(req.params.id.toUpperCase());
+        }
+        slaves.forEach((slave)=>{
+          mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
+        });
+        break;
+      case 'upstatus':
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForUpStatusNotification(
+            req.sessionID,
+            req.params.id.toUpperCase(),
+          );
+          slaves.forEach((slave)=>{
+            sio.anlixWaitForUpStatusNotification(
+              req.sessionID,
+              slave.toUpperCase(),
+            );
+          });
+        }
+        if (device && device.use_tr069) {
+          acsDeviceInfo.requestUpStatus(device);
+        } else {
+          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+        }
+        slaves.forEach((slave)=>{
+          mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
+        });
+        break;
+      case 'wanbytes':
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForStatisticsNotification(
+            req.sessionID,
+            req.params.id.toUpperCase(),
+          );
+        }
+        if (device && device.use_tr069) {
+          acsDeviceInfo.requestStatistics(device);
+        } else {
+          mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
+        }
+        break;
+      case 'waninfo':
+        // Wait notification, only wait if is not TR069
+        if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+          !device.use_tr069) {
+          sio.anlixWaitForWanInfoNotification(
+            req.sessionID,
+            req.params.id.toUpperCase(),
+          );
+        }
+        // If does not use TR069 call the mqtt function
+        if (device && !device.use_tr069) {
+          mqtt.anlixMessageRouterWanInfo(req.params.id.toUpperCase());
+        }
+        break;
+      case 'laninfo':
+        // Wait notification, only wait if is not TR069
+        if (req.sessionID && sio.anlixConnections[req.sessionID] &&
+          !device.use_tr069) {
+          sio.anlixWaitForLanInfoNotification(
+            req.sessionID,
+            req.params.id.toUpperCase(),
+          );
+        }
+        // If does not use TR069 call the mqtt function
+        if (device && !device.use_tr069) {
+          mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
+        }
+        break;
+      case 'wps':
+        if (!permissions.grantWpsFunction) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+        if (!('activate' in req.params) ||
+            !(typeof req.params.activate === 'boolean')
+        ) {
+          return res.status(200).json({
+            success: false,
+            message: t('fieldNameInvalid',
+              {name: 'activate', errorline: __line})});
+        }
+        mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
+                                         req.params.activate);
+        break;
+      case 'pondata':
+        // Check for permission
+        if (!permissions.grantPonSignalSupport) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutCommand'),
+          });
+        }
+        // Wait for notification
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForPonSignalNotification(
+            req.sessionID, req.params.id.toUpperCase(),
+          );
+        }
+        // Start
+        if (device && device.use_tr069) {
+          acsDeviceInfo.requestPonData(device);
+        } else {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutCommand'),
+          });
+        }
+        break;
+      case 'sitesurvey':
+        if (!permissions.grantSiteSurvey) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutCommand'),
+          });
+        }
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
+          sio.anlixWaitForSiteSurveyNotification(
+            req.sessionID, req.params.id.toUpperCase());
+        }
+        mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
+        break;
       default:
         // Message not implemented
         console.log('REST API MQTT Message not recognized (' + msgtype + ')');
@@ -1823,7 +1796,9 @@ deviceListController.sendMqttMsg = async function(req, res) {
     }
 
     return res.status(200).json({success: true});
-  });
+  } else {
+    return res.status(200).json(devRes);
+  }
 };
 
 
@@ -4193,7 +4168,17 @@ const commonDeviceFind = async function(req) {
     let devId = req.params.id.toUpperCase();
     let retDevs = await DeviceModel.findByMacOrSerial(devId);
     if (Array.isArray(retDevs) && retDevs.length > 0) {
-      return {success: true, matchedDevice: retDevs[0]};
+      let device = retDevs[0];
+      if (device && !device.use_tr069) {
+        const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+          return map[devId];
+        });
+        if (device && !isDevOn) {
+          return {success: false, message: t('cpeNotOnline',
+                                  {errorline: __line})};
+        }
+      }
+      return {success: true, matchedDevice: device};
     } else {
       return {success: false, message: t('cpeNotFound', {errorline: __line})};
     }

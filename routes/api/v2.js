@@ -75,7 +75,7 @@ router.route('/device/lastlog/:id').get(
 // Send a message using MQTT
 router.route('/device/command/:id/:msg').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendMqttMsg);
+  deviceListController.sendCommandMsg);
 
 // Send a customized ping command
 router.route('/device/pingdiagnostic/:id').put(
