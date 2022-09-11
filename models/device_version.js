@@ -1547,6 +1547,23 @@ const grantSpeedTest = function(version, model) {
   }
 };
 
+// Custom URL for Speedtest. This grant is only necessary for firmwares
+const grantCustomSpeedTest = function(version, model) {
+  if (version.match(versionRegex)) {
+    if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
+      // Unspecified model
+      return false;
+    }
+    if (!flashboxFirmwareDevices[model].speedtest_support) {
+      // Model is not compatible with feature
+      return false;
+    }
+    return (DeviceVersion.versionCompare(version, '0.35.0') >= 0);
+  } else {
+    // Development version, enable everything by default
+    return true;
+  }
+};
 
 const grantSpeedTestLimit = function(version, model) {
   if (grantSpeedTest(version, model) &&
@@ -1778,6 +1795,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSiteSurvey: false,
     grantUpnp: false,
     grantSpeedTest: cpePermissions.features.speedTest,
+    grantCustomSpeedTest: true,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
@@ -1874,6 +1892,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantSiteSurvey = grantSiteSurvey(version, model);
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
+  result.grantCustomSpeedTest = grantCustomSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
   result.grantBlockWiredDevices = grantBlockWiredDevices(model);

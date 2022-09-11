@@ -525,7 +525,14 @@ const initiateSpeedTest = async function(device, username, sessionID) {
     return fireResult;
   } else {
     if (device.current_diagnostic.customized) {
-      mqtt.anlixMessageRouterSpeedTestRaw(mac, username);
+      if (!permissions.grantCustomSpeedTest) {
+        return {
+          success: false,
+          message: t('cpeWithoutCommand'),
+        };
+      } else {
+        mqtt.anlixMessageRouterSpeedTestRaw(mac, username);
+      }
     } else {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], username);
@@ -534,8 +541,8 @@ const initiateSpeedTest = async function(device, username, sessionID) {
   }
 };
 
-// This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
-// Common validations and device.save goes here
+// This should be called right after sendCustomTraceRoute
+// or sendGenericTraceRoute. Common validations and device.save goes here
 const initiateTracerouteTest = async function(device, username, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantTraceroute) {
