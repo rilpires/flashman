@@ -21,6 +21,8 @@ huaweiModel.modelPermissions = function() {
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.LANDeviceHasAssocTree = false;
   permissions.firmwareUpgrades = {
     '10.0.5.29(C947)': [],
   };

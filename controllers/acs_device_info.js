@@ -336,6 +336,7 @@ const createRegistry = async function(req, cpe, permissions) {
     acs_id: req.body.acs_id,
     model: model,
     version: data.common.version.value,
+    hw_version: data.common.hw_version.value,
     installed_release: data.common.version.value,
     release: data.common.version.value,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
@@ -515,13 +516,13 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     console.log('Error saving last contact and last tr-069 sync');
   });
   if (doSync) {
-    requestSync(device);
+    acsDeviceInfoController.requestSync(device);
   }
 };
 
 // Builds and sends getParameterValues task to cpe - should only ask for
 // parameters that make sense in this cpe's context
-const requestSync = async function(device) {
+acsDeviceInfoController.requestSync = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
@@ -857,9 +858,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
   // Fetch functionalities of CPE
   let permissions = null;
-  if (!device && data.common.version && data.common.model) {
+  if (!device && data.common.model &&
+      data.common.version && data.common.hw_version) {
     permissions = DeviceVersion.devicePermissionsNotRegistered(
-      model, data.common.model.value, data.common.version.value,
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
     );
   } else {
     permissions = DeviceVersion.devicePermissions(device);
@@ -872,7 +875,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   }
   if (!device) {
     let cpe = DevicesAPI.instantiateCPEByModel(
-      model, data.common.model.value, data.common.version.value,
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
     ).cpe;
     if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
@@ -936,6 +940,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       device.do_update = false;
       device.do_update_status = 1;
     }
+  }
+
+  // Update hardware version, if data available
+  if (data.common.hw_version && data.common.hw_version.value) {
+    device.hw_version = data.common.hw_version.value.trim();
   }
 
   // Update secure tr069 flag, if data available

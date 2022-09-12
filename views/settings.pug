@@ -217,7 +217,12 @@ block content
                     select.browser-default.md-select(name="flashman-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
-                
+                if (superuser || (role && role.grantMonitorManage))
+                  .row
+                    #factory-credentials-button.button.btn.btn-primary.mt-2.mx-auto
+                      .fas.fa-key.fa-lg
+                      span &nbsp; #{t('factoryCredentialsPresetLabel')}
+
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
               data-toggle="collapse",
@@ -258,10 +263,6 @@ block content
                     )
                       a.md-addon.fas.fa-question-circle
                     .invalid-feedback= t('insertValidPassword')
-                  .row
-                      #factory-credentials-button.button.btn.btn-primary.mt-4.mx-auto
-                        .fas.fa-key.fa-lg
-                        span &nbsp; #{t('factoryCredentialsPresetLabel')}
                   span &nbsp;
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(

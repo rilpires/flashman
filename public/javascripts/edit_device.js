@@ -79,6 +79,7 @@ let validateEditDevice = function(event) {
   let validateWifi = row.data('validate-wifi');
   let validateWifiMode = row.data('validate-wifi-mode');
   let validateWifiDiacritics = row.data('validate-wifi-diacritics');
+  let validateWifiSpace = row.data('validate-wifi-space');
   let validateWifiBand2 = row.data('validate-wifi-band-2ghz');
   let validateWifiBand5 = row.data('validate-wifi-band-5ghz');
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
@@ -218,7 +219,7 @@ let validateEditDevice = function(event) {
     }
     genericValidate(
       ssidPrefix+ssid,
-      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      (s)=>validator.validateSSID(s, validateWifiDiacritics, validateWifiSpace),
       errors.ssid,
     );
     genericValidate(channel, validator.validateChannel, errors.channel);
@@ -243,7 +244,7 @@ let validateEditDevice = function(event) {
     }
     genericValidate(
       ssidPrefix+ssid5ghz,
-      (s)=>validator.validateSSID(s, validateWifiDiacritics),
+      (s)=>validator.validateSSID(s, validateWifiDiacritics, validateWifiSpace),
       errors.ssid5ghz,
     );
     // There is no bulletproof way of validating the 5GHz channel on the front

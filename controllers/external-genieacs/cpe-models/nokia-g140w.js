@@ -12,6 +12,8 @@ nokiaModel.modelPermissions = function() {
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];
   permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.firmwareUpgrades = {
     '3FE46343AFIA57': [],
     '3FE46343AFIA89': [],

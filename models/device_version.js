@@ -1031,7 +1031,7 @@ const flashboxFirmwareDevices = {
   },
   'TL-WR841NDV7': {
     'vlan_support': false, // it splits
-                           // lan/wan into different interfaces
+                            // lan/wan into different interfaces
     'vlan_support_since': '1.0.0',
     'lan_ports': [4, 3, 2, 1],
     'num_usable_lan_ports': 4,
@@ -1328,10 +1328,10 @@ const flashboxFirmwareDevices = {
 DeviceVersion.versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
-   return parseInt(val);
+    return parseInt(val);
   });
   let barVer = bar.split('.').map((val) => {
-   return parseInt(val);
+    return parseInt(val);
   });
   for (let i = 0; i < fooVer.length; i++) {
     if (fooVer[i] < barVer[i]) return -1;
@@ -1438,7 +1438,7 @@ const grantWifiState = function(version, model) {
 
 const grantWifiExtendedChannels = function(version, model) {
   if (Object.keys(flashboxFirmwareDevices).includes(model) &&
-      flashboxFirmwareDevices[model].wifi2_extended_channels_support
+    flashboxFirmwareDevices[model].wifi2_extended_channels_support
   ) {
     return true;
   } else {
@@ -1547,9 +1547,8 @@ const grantSpeedTest = function(version, model) {
   }
 };
 
-
-// Custom URL for SpeedTest
-const grantRawSpeedTest = function(version, model) {
+// Custom URL for Speedtest. This grant is only necessary for firmwares
+const grantCustomSpeedTest = function(version, model) {
   if (version.match(versionRegex)) {
     if (!model || !Object.keys(flashboxFirmwareDevices).includes(model)) {
       // Unspecified model
@@ -1566,10 +1565,9 @@ const grantRawSpeedTest = function(version, model) {
   }
 };
 
-
 const grantSpeedTestLimit = function(version, model) {
   if (grantSpeedTest(version, model) &&
-      Object.keys(flashboxFirmwareDevices).includes(model)) {
+    Object.keys(flashboxFirmwareDevices).includes(model)) {
     return flashboxFirmwareDevices[model].speedtest_limit;
   }
 
@@ -1654,7 +1652,7 @@ const grantMeshV1Mode = function(version, model) {
       return false;
     }
     return (DeviceVersion.versionCompare(version, '0.27.0') >= 0 &&
-    DeviceVersion.versionCompare(version, '0.32.0') < 0);
+      DeviceVersion.versionCompare(version, '0.32.0') < 0);
   } else {
     // Development version, enable everything by default
     return true;
@@ -1745,21 +1743,25 @@ const grantWpsFunction = function(version, model) {
   }
 };
 
-const grantWiFiAXSupport = function(model) {
+const grantWiFiAXSupport = function(version, model) {
   // Firmware CPEs do not have AX mode support
   return false;
 };
 
-const hasSTUNSupport = function(model) {
+const hasSTUNSupport = function(version, model) {
   return false;
 };
 
-const grantMeshVAPObject = function(model) {
+const grantMeshVAPObject = function(version, model) {
   return false;
 };
 
-const grantDiacritics = function(model) {
+const grantDiacritics = function(version, model) {
   return false;
+};
+
+const grantSsidSpaces = function(version, model) {
+  return true;
 };
 
 const convertTR069Permissions = function(cpePermissions) {
@@ -1770,6 +1772,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantPortForwardAsym: false,
     grantPortOpenIpv6: false,
     grantDiacritics: cpePermissions.wifi.allowDiacritics,
+    grantSsidSpaces: cpePermissions.wifi.allowSpaces,
     grantWifi2ghzEdit: cpePermissions.wifi.ssidWrite,
     grantWifi5ghz: cpePermissions.wifi.dualBand,
     grantWifiModeRead: cpePermissions.wifi.modeRead,
@@ -1792,7 +1795,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSiteSurvey: false,
     grantUpnp: false,
     grantSpeedTest: cpePermissions.features.speedTest,
-    grantRawSpeedTest: true,
+    grantCustomSpeedTest: true,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
     grantBlockDevices: cpePermissions.lan.blockLANDevices,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
@@ -1824,10 +1827,11 @@ const convertTR069Permissions = function(cpePermissions) {
 };
 
 DeviceVersion.devicePermissionsNotRegistered = function(
-  model, modelName, fwVersion,
+  model, modelName, fwVersion, hwVersion,
 ) {
   // Only TR-069 instances should call this function
-  let cpeResult = DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion);
+  let cpeResult =
+    DevicesAPI.instantiateCPEByModel(model, modelName, fwVersion, hwVersion);
   if (cpeResult.success) {
     return convertTR069Permissions(cpeResult.cpe.modelPermissions());
   }
@@ -1865,6 +1869,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantPortForwardAsym = grantPortForwardAsym(version, model);
   result.grantPortOpenIpv6 = grantPortOpenIpv6(version, model);
   result.grantDiacritics = grantDiacritics(version, model);
+  result.grantSsidSpaces = grantSsidSpaces(version, model);
   result.grantWifi2ghzEdit = grantWifi2ghzEdit(version, model);
   result.grantWifi5ghz = grantWifi5ghz(version, is5ghzCapable);
   result.grantWifiModeRead = grantWifiBand(version, model);
@@ -1887,7 +1892,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantSiteSurvey = grantSiteSurvey(version, model);
   result.grantUpnp = grantUpnp(version, model);
   result.grantSpeedTest = grantSpeedTest(version, model);
-  result.grantRawSpeedTest = grantRawSpeedTest(version, model);
+  result.grantCustomSpeedTest = grantCustomSpeedTest(version, model);
   result.grantSpeedTestLimit = grantSpeedTestLimit(version, model);
   result.grantBlockDevices = grantBlockDevices(model);
   result.grantBlockWiredDevices = grantBlockWiredDevices(model);
