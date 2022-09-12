@@ -263,7 +263,7 @@ const calculateSiteSurveyDiagnostic = async function(
 
   if (diagState.every((x) => x === 'None')) {
     await saveCurrentDiagnostic(device, 'error', false);
-    console.log('Error retrieving site survey data!');
+    console.log('Error retrieving site survey data (None)!');
     return;
   } else if (diagState.some((x) => x.match(/requested/i))) {
     if (cpe.isToDoPoolingInState() &&
@@ -282,7 +282,7 @@ const calculateSiteSurveyDiagnostic = async function(
     }
   } else if (diagState.some((x) => x.match(/erro/i))) {
     await saveCurrentDiagnostic(device, 'error', false);
-    console.log('Error retrieving site survey data!');
+    console.log('Error retrieving site survey data (Error)!');
   } else if (diagState.some((x) => x.match(/complete/i))) {
     apsData.forEach((ap) => {
       let outDev = {};
@@ -548,15 +548,24 @@ const startSiteSurveyDiagnose = async function(acsID) {
           fields.diagnostics.sitesurvey.diag_state[1],
           'Requested', 'xsd:string']);
       }
+    } else {
+      if (device.wifi_state || device.wifi_state_5ghz) {
+        params.push([
+          fields.diagnostics.sitesurvey.diag_state[0],
+          'Requested', 'xsd:string']);
+      }
     }
   } else {
-    params.push([fields.diagnostics.sitesurvey.diag_state[0],
-      'Requested', 'xsd:string']);
+    if (device.wifi_state || device.wifi_state_5ghz) {
+      params.push([fields.diagnostics.sitesurvey.diag_state[0],
+        'Requested', 'xsd:string']);
+    }
   }
 
   if (params.length == 0) {
     console.log('Any wifi is enabled!');
     saveCurrentDiagnostic(device, 'error', false);
+    return;
   }
   let task = {
     name: 'setParameterValues',
