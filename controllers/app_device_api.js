@@ -7,7 +7,6 @@ const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
-const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
@@ -15,6 +14,7 @@ const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
 const fs = require('fs');
+const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
 let appDeviceAPIController = {};
@@ -870,7 +870,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     let lastMeasureID;
     let lastErrorID;
     let previous = matchedDevice.speedtest_results;
-    if (previous.length > 0) {
+    if (previous && previous.length > 0) {
       lastMeasureID = previous[previous.length - 1]._id;
     } else {
       lastMeasureID = '';
@@ -894,44 +894,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      let config;
-      try {
-        config = await Config.findOne(
-          {is_default: true}, {measureServerIP: true, measureServerPort: true},
-        ).lean();
-        if (!config) throw new Error('Config not found');
-      } catch (err) {
-        console.log(err.message);
-      }
-
-      if (config && config.measureServerIP) {
-        if (matchedDevice.use_tr069) {
-          let now = new Date();
-          matchedDevice.current_diagnostic = {
-            type: 'speedtest',
-            stage: 'estimative',
-            customized: false,
-            in_progress: true,
-            started_at: now,
-            last_modified_at: now,
-            targets: [config.measureServerIP],
-            user: 'App_Cliente',
-            webhook_url: '',
-            webhook_user: '',
-            webhook_secret: '',
-          };
-          try {
-            await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice);
-          } catch (err) {
-            console.log('Error speed test procedure: ' + err);
-          }
-        } else {
-          // Send mqtt message to perform speedtest
-          let url = config.measureServerIP + ':' + config.measureServerPort;
-          mqtt.anlixMessageRouterSpeedTest(req.body.id, url, 'App_Cliente');
-        }
-      }
+      sendGenericSpeedTest(matchedDevice, 'App_Cliente');
     }, 1.5*1000);
   });
 };
