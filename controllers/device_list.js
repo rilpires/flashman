@@ -1106,7 +1106,7 @@ deviceListController.syncDevice = function(req, res) {
         message: t('nonTr069AcsSyncError', {errorline: __line}),
       });
     } else {
-      await acsDeviceInfo.requestSync(device);
+      acsDeviceInfo.requestSync(device);
       return res.status(200).json({
         success: true,
         message: t('commandSuccessfullySent!'),
