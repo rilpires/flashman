@@ -1504,6 +1504,38 @@ const downloadStockFirmware = async function(model) {
   });
 };
 
+deviceListController.syncDevice = function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+  async function(err, device) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (Array.isArray(device) && device.length > 0) {
+      device = device[0];
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (!device.use_tr069) {
+      return res.status(500).json({
+        success: false,
+        message: t('nonTr069AcsSyncError', {errorline: __line}),
+      });
+    } else {
+      acsDeviceInfo.requestSync(device);
+      return res.status(200).json({
+        success: true,
+        message: t('commandSuccessfullySent!'),
+      });
+    }
+  });
+};
+
 deviceListController.factoryResetDevice = function(req, res) {
   DeviceModel.findById(req.params.id.toUpperCase(), async (err, device) => {
     if (err || !device) {
