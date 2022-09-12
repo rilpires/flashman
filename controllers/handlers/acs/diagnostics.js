@@ -602,9 +602,10 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(acsID, device) {
       fieldToFetch = fields.diagnostics.sitesurvey.root;
       break;
   }
+  if (typeof fieldToFetch === 'string') fieldToFetch = [fieldToFetch];
   let task = {
     name: 'getParameterValues',
-    parameterNames: [fieldToFetch],
+    parameterNames: fieldToFetch,
   };
   TasksAPI.addTask(
     acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
@@ -789,9 +790,12 @@ acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {
   let fields = cpe.getModelFields();
   let siteSurveyDiagnostics = fields.diagnostics.sitesurvey.root;
   // We need to update the parameter values before we fire the speedtest
+  if (typeof siteSurveyDiagnostics === 'string') {
+    siteSurveyDiagnostics = [siteSurveyDiagnostics];
+  }
   let task = {
     name: 'getParameterValues',
-    parameterNames: [siteSurveyDiagnostics],
+    parameterNames: siteSurveyDiagnostics,
   };
   const result = await TasksAPI.addTask(acsID, task, startSiteSurveyDiagnose);
   if (result.success) {

@@ -17,6 +17,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
+  permissions.features.siteSurvey = true;
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
   // speedtest limit, values above show as "limit+ Mbps"
@@ -107,6 +108,25 @@ intelbrasModel.getModelFields = function() {
     'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.FrequencyWidth';
   fields.wifi5.band = // modes: "20M", "40M", "80M", "Auto20M40M80M"
     'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2.FrequencyWidth';
+  // site survey fields:
+  fields.diagnostics.sitesurvey.root = [
+  'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.WLANNeighbor',
+  'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2.WLANNeighbor'];
+  fields.diagnostics.sitesurvey.diag_state = [
+    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1'+
+      '.WLANNeighbor.DiagnosticsState',
+    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2'+
+      '.WLANNeighbor.DiagnosticsState',
+  ];
+  fields.diagnostics.sitesurvey.result = [
+    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.WLANNeighbor.Result',
+    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2.WLANNeighbor.Result',
+  ];
+  fields.diagnostics.sitesurvey.mac = 'BSSID';
+  fields.diagnostics.sitesurvey.ssid = 'SSIDName';
+  fields.diagnostics.sitesurvey.channel = 'Channel';
+  fields.diagnostics.sitesurvey.signal = 'RSSI';
+  fields.diagnostics.sitesurvey.mode = 'Standard';
   // speedtest fields:
   delete fields.diagnostics.speedtest.num_of_conn;
   delete fields.diagnostics.speedtest.down_transports;
