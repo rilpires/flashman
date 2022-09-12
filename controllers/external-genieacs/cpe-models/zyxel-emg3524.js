@@ -7,6 +7,7 @@ zyxelModel.identifier = {vendor: 'Zyxel', model: 'EMG3524-T10A'};
 zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
+  permissions.features.siteSurvey = true;
   permissions.features.stun = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.bandRead2 = false;
@@ -46,6 +47,10 @@ zyxelModel.getPortForwardRuleName = function(index) {
   return 'User Define';
 };
 
+zyxelModel.isToDoPoolingInState = function() {
+  return true;
+};
+
 zyxelModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
@@ -81,6 +86,18 @@ zyxelModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ZYXEL_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.diag_state = ['InternetGatewayDevice.'+
+    'X_ZYXEL_NeighboringWiFiDiagnostic.DiagnosticsState'];
+  fields.diagnostics.sitesurvey.result = ['InternetGatewayDevice.'+
+    'X_ZYXEL_NeighboringWiFiDiagnostic.Result'];
+  fields.diagnostics.sitesurvey.mac = 'BSSID';
+  fields.diagnostics.sitesurvey.ssid = 'SSID';
+  fields.diagnostics.sitesurvey.channel = 'Channel';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   return fields;
 };
 

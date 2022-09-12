@@ -261,7 +261,6 @@ const calculateSiteSurveyDiagnostic = async function(
   });
   let outData = [];
 
-  console.log('!@#', diagState);
   if (diagState.every((x) => x === 'None')) {
     await saveCurrentDiagnostic(device, 'error', false);
     console.log('Error retrieving site survey data!');
@@ -270,12 +269,15 @@ const calculateSiteSurveyDiagnostic = async function(
     if (cpe.isToDoPoolingInState() &&
         device.current_diagnostic.recursion_state > 0) {
       device.current_diagnostic.recursion_state--;
+      console.log('Pooling state: '+
+        device.current_diagnostic.recursion_state);
       saveCurrentDiagnostic(device, 'initiating', true);
       acsDiagnosticsHandler.doPoolingInState(device.acs_id,
         cpe.getModelFields());
       return;
     } else {
-      acsDiagnosticsHandler.triggerDiagnosticResults(device.acs_id, device);
+      await saveCurrentDiagnostic(device, 'error', false);
+      console.log('Timeout in pooling site survey data!');
       return;
     }
   } else if (diagState.some((x) => x.match(/erro/i))) {
@@ -574,7 +576,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
-  await delay(1000);
+  await delay(5000);
   let task = {
     name: 'getParameterValues',
     parameterNames: fields.diagnostics.sitesurvey.diag_state,
