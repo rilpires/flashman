@@ -18,7 +18,7 @@
   "genieacs": {
     "ref": "fa95d7a310b7faaccf574d6de53e134558cdab69",
     "presetHash": "cb7162a7df7fcadb60e32a70c484fca0",
-    "provisionHash": "6f5a8159d70b019a9b88ffca4dd1693a"
+    "provisionHash": "dc336596ef8b0161e3e638739288f8a5"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",
