@@ -537,14 +537,27 @@ const startSiteSurveyDiagnose = async function(acsID) {
   let params = [];
 
   if (!cpe.isToDoPoolingInState()) {
-    fields.diagnostics.sitesurvey.diag_state.forEach((ds) => {
-      params.push([ds, 'Requested', 'xsd:string']);
-    });
+    if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
+      if(device.wifi_state) {
+        params.push([
+          fields.diagnostics.sitesurvey.diag_state[0],
+          'Requested', 'xsd:string']);
+      }
+      if (device.wifi_state_5ghz) {
+        params.push([
+          fields.diagnostics.sitesurvey.diag_state[1],
+          'Requested', 'xsd:string']);
+      }
+    }
   } else {
     params.push([fields.diagnostics.sitesurvey.diag_state[0],
       'Requested', 'xsd:string']);
   }
 
+  if (params.length == 0) {
+    console.log('Any wifi is enabled!');
+    saveCurrentDiagnostic(device, 'error', false);
+  }
   let task = {
     name: 'setParameterValues',
     parameterValues: params,
