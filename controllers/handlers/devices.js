@@ -532,29 +532,63 @@ deviceHandlers.sendPingToTraps = function(id, results) {
   });
 };
 
+// This is a single result.
+deviceHandlers.sendTracerouteToTraps = function(id, result) {
+  // No await needed
+  sio.anlixSendTracerouteNotification(id, result);
+  let query = {is_default: true};
+  let projection = {traps_callbacks: true};
+  Config.findOne(query, projection, function(err, matchedConfig) {
+    if (!err && matchedConfig) {
+      if (matchedConfig.traps_callbacks &&
+          matchedConfig.traps_callbacks.devices_crud
+      ) {
+        let callbacks = matchedConfig.traps_callbacks.devices_crud;
+        const promises = callbacks.map((deviceCrud) => {
+          let requestOptions = {};
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': id,
+              'type': 'device',
+              'changes': {
+                'traceroute_result': result,
+              },
+            };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
+          }
+        });
+        Promise.all(promises).then((resp) => {}, (err) => {});
+      }
+    }
+  });
+};
+
 const sendSpeedtestResultToCustomTrap = async function(device, result) {
-  if (!device.temp_command_trap ||
-      !device.temp_command_trap.speedtest_url ||
-      !device.temp_command_trap.webhook_url ||
-      device.temp_command_trap.speedtest_url == '' ||
-      device.temp_command_trap.webhook_url == ''
-  ) {
-    return;
-  }
   let requestOptions = {};
-  requestOptions.url = device.temp_command_trap.webhook_url;
+  requestOptions.url = device.current_diagnostic.webhook_url;
   requestOptions.method = 'PUT';
   requestOptions.json = {
     'id': device._id,
     'type': 'device',
     'speedtest_result': result,
   };
-  if (device.temp_command_trap.webhook_user != '' &&
-      device.temp_command_trap.webhook_secret != ''
+  if (device.current_diagnostic.webhook_user != '' &&
+      device.current_diagnostic.webhook_secret != ''
   ) {
     requestOptions.auth = {
-      user: device.temp_command_trap.webhook_user,
-      pass: device.temp_command_trap.webhook_secret,
+      user: device.current_diagnostic.webhook_user,
+      pass: device.current_diagnostic.webhook_secret,
     };
   }
   // No wait!
@@ -625,27 +659,33 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   }
 
   result = formatSpeedtestResult(result);
-  if (device.temp_command_trap &&
-      device.temp_command_trap.speedtest_url &&
-      device.temp_command_trap.speedtest_url != ''
+  if (device.current_diagnostic.type=='speedtest' &&
+      device.current_diagnostic.in_progress
   ) {
-    // Don't care about waiting here
-    sendSpeedtestResultToCustomTrap(device, result);
-    device.temp_command_trap.speedtest_url = '';
-  } else if (result.last_speedtest_error) {
-    device.last_speedtest_error = result.last_speedtest_error;
-  } else {
-    // We need to change some map keys
-    let resultToStore = util.deepCopyObject(result);
-    resultToStore.down_speed = resultToStore.downSpeed;
-    delete resultToStore.downSpeed;
-    device.speedtest_results.push(resultToStore);
-    if (device.speedtest_results.length > 5) {
-      device.speedtest_results.shift();
+    if (result.last_speedtest_error) {
+      device.last_speedtest_error = result.last_speedtest_error;
+    } else if (device.current_diagnostic.customized ) {
+      // Don't care about waiting on sending to custom trap
+      if (device.current_diagnostic.webhook_url) {
+        sendSpeedtestResultToCustomTrap(device, result);
+      }
+    } else {
+      // We need to change some map keys
+      let resultToStore = util.deepCopyObject(result);
+      resultToStore.down_speed = resultToStore.downSpeed;
+      delete resultToStore.downSpeed;
+      device.speedtest_results.push(resultToStore);
+      if (device.speedtest_results.length > 5) {
+        device.speedtest_results.shift();
+      }
+      let permissions = DeviceVersion.devicePermissions(device);
+      result.limit = permissions.grantSpeedTestLimit;
     }
-    let permissions = DeviceVersion.devicePermissions(device);
-    result.limit = permissions.grantSpeedTestLimit;
   }
+
+  device.current_diagnostic.stage = 'done';
+  device.current_diagnostic.in_progress = false;
+  device.current_diagnostic.last_modified_at = new Date();
 
   await device.save().catch((err) => {
     console.log('Error saving device speedtest: ' + err);

@@ -6,7 +6,6 @@ const UserModel = require('../models/user');
 const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
-const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const keyHandlers = require('./handlers/keys');
 const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
@@ -18,6 +17,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const controlApi = require('./external-api/control');
+const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
 let diagAppAPIController = {};
@@ -1306,7 +1306,7 @@ diagAppAPIController.getSpeedTest = function(req, res) {
   });
 };
 
-diagAppAPIController.doSpeedTest = function(req, res) {
+diagAppAPIController.sendDiagnosticSpeedTest = function(req, res) {
   DeviceModel.findByMacOrSerial(req.body.mac).exec(
   async (err, matchedDevice) => {
     if (err) {
@@ -1352,34 +1352,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      let config;
-      try {
-        config = await ConfigModel.findOne(
-          {is_default: true}, {measureServerIP: true, measureServerPort: true},
-        ).lean();
-        if (!config) throw new Error('Config not found');
-      } catch (err) {
-        console.log(err.message);
-      }
-
-      if (config && config.measureServerIP) {
-        if (matchedDevice.use_tr069) {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = req.user.name;
-          matchedDevice.current_speedtest.stage = 'estimative';
-          try {
-            await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
-          } catch (err) {
-            console.log('Error saving speed test estimative: ' + err);
-          }
-        } else {
-          // Send mqtt message to perform speedtest
-          let url = config.measureServerIP + ':' + config.measureServerPort;
-          mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
-                                           {name: req.user.name});
-        }
-      }
+      sendGenericSpeedTest(matchedDevice, req.user.name);
     }, 1.5*1000);
   });
 };
