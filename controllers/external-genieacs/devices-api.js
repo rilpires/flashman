@@ -215,7 +215,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HT803G-WS2' && hwVersion == 'N.00') {
     // Raisecom HT803G-WS2 REV N
     return {success: true, cpe: tr069Models.raisecomRevNModel};
-  } else if (modelName === 'HT803G-WS2' && hwVersion == 'T.00') {
+  } else if (modelName === 'HT803G-WS2') {
     // Raisecom HT803G-WS2 REV T
     return {success: true, cpe: tr069Models.raisecomRevTModel};
   } else if (modelSerial === 'AC10') {
