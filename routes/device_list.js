@@ -91,7 +91,7 @@ router.route('/uilastlog/:id').get(
 // Send a message using MQTT
 router.route('/command/:id/:msg').post(
   authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendMqttMsg);
+  deviceListController.sendCommandMsg);
 
 // For user Interface - Set/Get Port forward
 router.route('/uiportforward/:id').get(

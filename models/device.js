@@ -58,9 +58,11 @@ let deviceSchema = new Schema({
   wifi_mode: String,
   wifi_state: {type: Number, default: 1},
   wifi_hidden: {type: Number, default: 0},
-  wifi_power: {type: Number, default: 100, enum: [ // Percentage
-    25, 50, 75, 100,
-  ]},
+  wifi_power: {
+    type: Number, default: 100, enum: [ // Percentage
+      25, 50, 75, 100,
+    ],
+  },
   wifi_is_5ghz_capable: {type: Boolean, default: false},
   wifi_ssid_5ghz: String,
   wifi_bssid_5ghz: String,
@@ -72,9 +74,11 @@ let deviceSchema = new Schema({
   wifi_mode_5ghz: String,
   wifi_state_5ghz: {type: Number, default: 1},
   wifi_hidden_5ghz: {type: Number, default: 0},
-  wifi_power_5ghz: {type: Number, default: 100, enum: [ // Percentage
-    25, 50, 75, 100,
-  ]},
+  wifi_power_5ghz: {
+    type: Number, default: 100, enum: [ // Percentage
+      25, 50, 75, 100,
+    ],
+  },
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
@@ -92,10 +96,12 @@ let deviceSchema = new Schema({
     ip: String,
     ipv6: [String],
     dhcpv6: [String],
-    conn_type: {type: Number, enum: [
-      0, // cable
-      1, // wireless
-    ]},
+    conn_type: {
+      type: Number, enum: [
+        0, // cable
+        1, // wireless
+      ],
+    },
     conn_speed: Number, // Mbps. Bitrate value in case of wireless
     wifi_freq: Number, // GHz
     wifi_signal: Number, // dBm
@@ -106,19 +112,25 @@ let deviceSchema = new Schema({
     dhcp_vendor_class: String,
     app_uid: String, // App unique identification, should match with apps field
     fcm_uid: String, // FCM unique id, app should provide it on login
-    upnp_permission: {type: String, default: 'none', enum: [
-      'accept', // explicit user ok
-      'reject', // explicit user reject
-      'none', // never asked
-    ]},
+    upnp_permission: {
+      type: String, default: 'none', enum: [
+        'accept', // explicit user ok
+        'reject', // explicit user reject
+        'none', // never asked
+      ],
+    },
     ping: Number,
   }],
   port_mapping: [{
     ip: String,
-    external_port_start: {type: Number, required: true, min: 1,
-      max: 65535},
-    external_port_end: {type: Number, required: true, min: 1,
-      max: 65535},
+    external_port_start: {
+      type: Number, required: true, min: 1,
+      max: 65535,
+    },
+    external_port_end: {
+      type: Number, required: true, min: 1,
+      max: 65535,
+    },
     internal_port_start: {type: Number, required: true, min: 1, max: 65535},
     internal_port_end: {type: Number, required: true, min: 1, max: 65535},
   }],
@@ -134,13 +146,15 @@ let deviceSchema = new Schema({
     first_seen: {type: Date},
   }],
   upnp_requests: [String], // Array of macs, use lan_devices for all device info
-  mesh_mode: {type: Number, default: 0, enum: [
-    0, // disable mesh
-    1, // Cable only
-    2, // Wifi 2.4Ghz as backhaul
-    3, // Wifi 5Ghz as backhaul
-    4, // Use both wifi
-  ]},
+  mesh_mode: {
+    type: Number, default: 0, enum: [
+      0, // disable mesh
+      1, // Cable only
+      2, // Wifi 2.4Ghz as backhaul
+      3, // Wifi 5Ghz as backhaul
+      4, // Use both wifi
+    ],
+  },
   mesh_master: String, // Used for slaves only (Master is null)
   mesh_slaves: [String], // Used for master only (Slave is null)
   mesh_id: String, // Used to identify the mesh network (SSID of backhaul)
@@ -157,11 +171,13 @@ let deviceSchema = new Schema({
     rx_bit: {type: Number, default: 0}, // Mbps
     tx_bit: {type: Number, default: 0}, // Mbps
     latency: {type: Number, default: 0}, // ms
-    iface: {type: Number, default: 1, enum: [
-      1, // Cable
-      2, // 2.4 Radio
-      3, // 5.0 Radio
-    ]},
+    iface: {
+      type: Number, default: 1, enum: [
+        1, // Cable
+        2, // 2.4 Radio
+        3, // 5.0 Radio
+      ],
+    },
     n_conn_dev: {type: Number, default: 0},
   }],
   mesh_father: {type: String, default: ''},
@@ -176,9 +192,11 @@ let deviceSchema = new Schema({
   wan_ipv6_mask: {type: Number, default: 0},
   wan_negociated_speed: String,
   wan_negociated_duplex: String,
-  ipv6_enabled: {type: Number, default: 2, enum: [
-    0, 1, 2, // 0 - false, 1 - true, 2 - unknown (old firmware)
-  ]},
+  ipv6_enabled: {
+    type: Number, default: 2, enum: [
+      0, 1, 2, // 0 - false, 1 - true, 2 - unknown (old firmware)
+    ],
+  },
   ip: String,
   ntp_status: String,
   last_site_survey: Date,
@@ -188,19 +206,21 @@ let deviceSchema = new Schema({
   last_hardreset: Date,
   do_update: Boolean,
   do_update_parameters: Boolean,
-  do_update_status: {type: Number, default: 1, enum: [
-    0, // waiting status update
-    1, // success
-    2, // error, image download failed
-    3, // error, image check failed
-    4, // error, update aborted manually
-    5, // error, update ack not received in time
-    6, // error, topology info not received in time
-    7, // error, invalid topology
-    10, // ack received
-    20, // waiting for topology info
-    30, // topology received
-  ]},
+  do_update_status: {
+    type: Number, default: 1, enum: [
+      0, // waiting status update
+      1, // success
+      2, // error, image download failed
+      3, // error, image check failed
+      4, // error, update aborted manually
+      5, // error, update ack not received in time
+      6, // error, topology info not received in time
+      7, // error, invalid topology
+      10, // ack received
+      20, // waiting for topology info
+      30, // topology received
+    ],
+  },
   // Next device to update in a mesh network.
   // Only master will have this
   mesh_next_to_update: String,
@@ -303,11 +323,10 @@ let deviceSchema = new Schema({
   // The value of 101 is invalid, used to represent a not setted state
   cpu_usage: {type: Number, min: 0, max: 101, default: 101},
   memory_usage: {type: Number, min: 0, max: 101, default: 101},
-  // Traceroute
+  // Traceroute parameters like max_hops are only valid in firmwares
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 20},
-  traceroute_number_probes: {type: Number, min: 1, max: 10, default: 3},
+  traceroute_number_probes: {type: Number, min: 1, max: 5, default: 3},
   traceroute_max_wait: {type: Number, min: 1, max: 5, default: 1},
-  // This field is used by other softwares, not needed by flashman's frontend
   traceroute_results: [{
     all_hops_tested: {type: Boolean, default: false},
     reached_destination: {type: Boolean, default: false},
@@ -344,7 +363,7 @@ deviceSchema.methods.getAPSurveyDevice = function(mac) {
 };
 
 deviceSchema.statics.findByMacOrSerial = function(
-  id, useLean=false, projection=null,
+  id, useLean = false, projection = null,
 ) {
   let query;
   if (Array.isArray(id)) {
@@ -361,16 +380,20 @@ deviceSchema.statics.findByMacOrSerial = function(
     return [];
   }
   if (useLean) {
-    return this.find({$or: [
-      {'_id': query}, // mac address
-      {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}, // mac address
+    return this.find({
+      $or: [
+        {'_id': query}, // mac address
+        {'serial_tr069': query}, // serial
+        {'alt_uid_tr069': query}],
+    }, // mac address
       projection).lean();
   } else {
-    return this.find({$or: [
-      {'_id': query}, // mac address
-      {'serial_tr069': query}, // serial
-      {'alt_uid_tr069': query}]}, // mac address
+    return this.find({
+      $or: [
+        {'_id': query}, // mac address
+        {'serial_tr069': query}, // serial
+        {'alt_uid_tr069': query}],
+    }, // mac address
       projection);
   }
 };
@@ -393,25 +416,70 @@ deviceSchema.pre('save', function(callback) {
       }
       const promises =
         defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
+          let callbackUrl = deviceCrud.url;
+          let callbackAuthUser = deviceCrud.user;
+          let callbackAuthSecret = deviceCrud.secret;
+          if (callbackUrl) {
+            attrsList.forEach((attr) => {
+              if (!attr.includes('pingtest_results')) {
+                changedAttrs[attr] = device[attr];
+              }
+            });
+            // Nothing to send - don't call trap
+            if (Object.keys(changedAttrs).length === 0) {
+              return Promise.resolve();
+            }
+            requestOptions.url = callbackUrl;
+            requestOptions.method = 'PUT';
+            requestOptions.json = {
+              'id': device._id,
+              'type': 'device',
+              'changes': changedAttrs,
+            };
+            if (callbackAuthUser && callbackAuthSecret) {
+              requestOptions.auth = {
+                user: callbackAuthUser,
+                pass: callbackAuthSecret,
+              };
+            }
+            return request(requestOptions);
+          }
+        });
+      Promise.all(promises).then((resp) => {
+        // Ignore API response
+        return;
+      }, (err) => {
+        // Ignore API endpoint errors
+        return;
+      });
+    });
+  }
+  callback();
+});
+
+deviceSchema.post('remove', function(device, callback) {
+  let requestOptions = {};
+
+  // Send modified fields if callback exists
+  Config.findOne({is_default: true},
+    {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
+      if (err || !defConfig.traps_callbacks ||
+                 !defConfig.traps_callbacks.device_crud) {
+        return callback(err);
+      }
+      let promises =
+        defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
         let callbackUrl = deviceCrud.url;
         let callbackAuthUser = deviceCrud.user;
         let callbackAuthSecret = deviceCrud.secret;
         if (callbackUrl) {
-          attrsList.forEach((attr) => {
-            if (!attr.includes('pingtest_results')) {
-              changedAttrs[attr] = device[attr];
-            }
-          });
-          // Nothing to send - don't call trap
-          if (Object.keys(changedAttrs).length === 0) {
-            return Promise.resolve();
-          }
           requestOptions.url = callbackUrl;
           requestOptions.method = 'PUT';
           requestOptions.json = {
             'id': device._id,
             'type': 'device',
-            'changes': changedAttrs,
+            'removed': true,
           };
           if (callbackAuthUser && callbackAuthSecret) {
             requestOptions.auth = {
@@ -430,53 +498,9 @@ deviceSchema.pre('save', function(callback) {
         return;
       });
     });
-  }
   callback();
 });
 
-deviceSchema.post('remove', function(device, callback) {
-  let requestOptions = {};
-
-  // Send modified fields if callback exists
-  Config.findOne({is_default: true},
-                 {traps_callbacks: true}).lean()
-  .exec(function(err, defConfig) {
-    if (err || !defConfig.traps_callbacks ||
-               !defConfig.traps_callbacks.device_crud) {
-      return callback(err);
-    }
-    let promises = defConfig.traps_callbacks.devices_crud.map((deviceCrud) => {
-      let callbackUrl = deviceCrud.url;
-      let callbackAuthUser = deviceCrud.user;
-      let callbackAuthSecret = deviceCrud.secret;
-      if (callbackUrl) {
-        requestOptions.url = callbackUrl;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': device._id,
-          'type': 'device',
-          'removed': true,
-        };
-        if (callbackAuthUser && callbackAuthSecret) {
-          requestOptions.auth = {
-            user: callbackAuthUser,
-            pass: callbackAuthSecret,
-          };
-        }
-        return request(requestOptions);
-      }
-    });
-    Promise.all(promises).then((resp) => {
-      // Ignore API response
-      return;
-    }, (err) => {
-      // Ignore API endpoint errors
-      return;
-    });
-  });
-  callback();
-});
-
-let Device = mongoose.model('Device', deviceSchema );
+let Device = mongoose.model('Device', deviceSchema);
 
 module.exports = Device;

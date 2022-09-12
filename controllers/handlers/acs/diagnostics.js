@@ -17,7 +17,7 @@ let acsDiagnosticsHandler = {};
 
 const getAllNestedKeysFromObject = function(data, target, genieFields) {
   let result = {};
-  Object.keys(target).forEach((key)=>{
+  Object.keys(target).forEach((key) => {
     if (utilHandlers.checkForNestedKey(data, genieFields[key] + '._value')) {
       result[key] = utilHandlers.getFromNestedKey(
         data, genieFields[key] + '._value',
@@ -80,16 +80,16 @@ const getSpeedtestFile = async function(device, bandEstimative) {
     return '';
   }
 
-  if (device.current_diagnostic.type=='speedtest' &&
-      device.current_diagnostic.in_progress &&
-      device.current_diagnostic.customized
+  if (device.current_diagnostic.type == 'speedtest' &&
+    device.current_diagnostic.in_progress &&
+    device.current_diagnostic.customized
   ) {
     return device.current_diagnostic.targets[0];
   }
 
   let stage = device.current_diagnostic.stage;
   let url = 'http://' + matchedConfig.measureServerIP + ':' +
-                  matchedConfig.measureServerPort + '/measure/tr069/';
+    matchedConfig.measureServerPort + '/measure/tr069/';
   if (stage) {
     if (stage == 'estimative') {
       return url + 'file_1920KB.bin';
@@ -120,7 +120,7 @@ const getSpeedtestFile = async function(device, bandEstimative) {
 };
 
 const calculatePingDiagnostic = async function(
-    device, cpe, data, pingKeys, pingFields,
+  device, cpe, data, pingKeys, pingFields,
 ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
   let diagState = pingKeys.diag_state;
@@ -171,9 +171,9 @@ const calculatePingDiagnostic = async function(
   // If ping command was sent from a customized api call,
   // we don't want to propagate it to the generic webhook,
   // so we send it to the customized webhook
-  if (device.current_diagnostic.type=='ping' &&
-      device.current_diagnostic.customized &&
-      device.current_diagnostic.in_progress
+  if (device.current_diagnostic.type == 'ping' &&
+    device.current_diagnostic.customized &&
+    device.current_diagnostic.in_progress
   ) {
     if (device.current_diagnostic.webhook_url) {
       let requestOptions = {};
@@ -185,7 +185,7 @@ const calculatePingDiagnostic = async function(
         'ping_results': result,
       };
       if (device.current_diagnostic.webhook_user &&
-          device.current_diagnostic.webook_secret
+        device.current_diagnostic.webook_secret
       ) {
         requestOptions.auth = {
           user: device.current_diagnostic.webhook_user,
@@ -193,7 +193,7 @@ const calculatePingDiagnostic = async function(
         };
       }
       // No wait!
-      request(requestOptions).then(()=>{}, ()=>{});
+      request(requestOptions).then(() => { }, () => { });
     }
   } else {
     // Generic ping test -> generic trap
@@ -216,11 +216,12 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-const calculateTraceDiagnostic = async function(
-  device, cpe, data, pingKeys, pingFields,
-) {
-  // TO-DO !!!
-};
+// TODO
+// const calculateTraceDiagnostic = async function(
+//   device, cpe, data, pingKeys, pingFields,
+// ) {
+
+// };
 
 const calculateFreq = function(rawChannel) {
   const startChannel2Ghz = 1;
@@ -348,14 +349,15 @@ const calculateSiteSurveyDiagnostic = async function(
 
 
 const calculateSpeedDiagnostic = async function(
-  device, cpe, data, speedKeys, speedFields,
+  device, data, speedKeys, speedFields,
 ) {
   speedKeys = getAllNestedKeysFromObject(data, speedKeys, speedFields);
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
-  if (device.current_diagnostic.type=='speedtest' &&
-      device.current_diagnostic.in_progress
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  if (device.current_diagnostic.type == 'speedtest' &&
+    device.current_diagnostic.in_progress
   ) {
     const diagState = speedKeys.diag_state;
     if (diagState == 'Completed' || diagState == 'Complete') {
@@ -459,16 +461,16 @@ const startPingDiagnose = async function(acsID) {
   let task = {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                      [diagnNumRepField, numberOfRep, 'xsd:unsignedInt'],
-                      [diagnURLField, pingHostUrl, 'xsd:string'],
-                      [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
+    [diagnNumRepField, numberOfRep, 'xsd:unsignedInt'],
+    [diagnURLField, pingHostUrl, 'xsd:string'],
+    [diagnTimeoutField, timeout, 'xsd:unsignedInt']],
   };
   if (cpe.modelPermissions().wan.pingTestSetInterface) {
     let interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
       'WANConnectionDevice.1.WANPPPConnection.1.';
     if (device.connection_type === 'dhcp') {
       interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
-      'WANConnectionDevice.1.WANIPConnection.1.';
+        'WANConnectionDevice.1.WANIPConnection.1.';
     }
     task.parameterValues.push(
       [diagnInterfaceField, interfaceVal, 'xsd:string'],
@@ -508,8 +510,8 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
   let task = {
     name: 'setParameterValues',
     parameterValues: [[diagnStateField, 'Requested', 'xsd:string'],
-                      [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
-                      [diagnURLField, speedtestHostUrl, 'xsd:string']],
+    [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
+    [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
   // Special case for models that cannot change number of connections
   if (!diagnNumConnField) {
@@ -697,8 +699,8 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
   }
 
   let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+
-              '&projection='+parameters.join(',');
+  let path = '/devices/?query=' + JSON.stringify(query) +
+    '&projection=' + parameters.join(',');
   let options = {
     protocol: 'http:',
     method: 'GET',
@@ -706,10 +708,10 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
     port: 7557,
     path: encodeURI(path),
   };
-  let request = http.request(options, (response)=>{
+  let request = http.request(options, (response) => {
     let chunks = [];
     response.on('error', (error) => console.log(error));
-    response.on('data', async (chunk)=>chunks.push(chunk));
+    response.on('data', async (chunk) => chunks.push(chunk));
     response.on('end', async (chunk) => {
       let body = Buffer.concat(chunks);
       try {
@@ -720,20 +722,21 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
           console.log('Failed: genie can\'t check device permissions');
         } else if (!device.current_diagnostic.in_progress) {
           console.log('Genie diagnostic received but ' +
-          'current_diagnostic.in_progress==false');
-        } else if (permissions.grantPingTest && diagType=='ping') {
+            'current_diagnostic.in_progress==false');
+        } else if (permissions.grantPingTest && diagType == 'ping') {
           await calculatePingDiagnostic(
             device, cpe, data,
             diagNecessaryKeys.ping,
             fields.diagnostics.ping,
           );
-        } else if (permissions.grantSpeedTest && diagType=='speedtest') {
+        } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
           await calculateSpeedDiagnostic(
-            device, cpe, data, diagNecessaryKeys.speedtest,
+            device, data, diagNecessaryKeys.speedtest,
             fields.diagnostics.speedtest,
           );
         } else if (permissions.grantTraceTest && diagType=='traceroute') {
-          await calculateTraceDiagnostic(/* to-do */);
+          // TODO
+          // await calculateTraceDiagnostic(/* to-do */);
         } else if (permissions.grantSiteSurvey && diagType=='sitesurvey') {
           await calculateSiteSurveyDiagnostic(
             device, cpe, data, fields.diagnostics.sitesurvey,
@@ -750,8 +753,10 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
 
 acsDiagnosticsHandler.firePingDiagnose = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) {
-    return {success: false,
-            message: t('cpeFindError', {errorline: __line})};
+    return {
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    };
   }
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
@@ -774,8 +779,10 @@ acsDiagnosticsHandler.firePingDiagnose = async function(device) {
 
 acsDiagnosticsHandler.fireSpeedDiagnose = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) {
-    return {success: false,
-            message: t('cpeFindError', {errorline: __line})};
+    return {
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    };
   }
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
