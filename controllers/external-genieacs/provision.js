@@ -53,9 +53,6 @@ let genieID = declare('DeviceID.ID', {value: 1}).value[0];
 log('Provision for device ' + genieID + ' started at ' + now.toString());
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
-let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
-let hardwareVersion = declare('InternetGatewayDevice.DeviceInfo.HardwareVersion', {value: 1}).value[0];
 
 // Detect TR-098 or TR-181 data model based on database value
 let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value[0];
@@ -66,17 +63,18 @@ let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
 let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
 let currentUsername = declare(usernameField, {value: 1}).value[0];
 if (currentUsername !== 'anlix') {
-  declare(prefix + '.ManagementServer.ConnectionRequestUsername', null, {value: 'anlix'});
+  declare(usernameField, null, {value: 'anlix'});
 }
 let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
 let currentPassword = declare(passwordField, {value: 1}).value[0];
 if (currentPassword !== 'landufrj123') {
-  declare(prefix + '.ManagementServer.ConnectionRequestPassword', null, {value: 'landufrj123'});
+  declare(passwordField, null, {value: 'landufrj123'});
 }
 
 // Collect extra information for Flashman model detection
 let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1}).value[0];
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1}).value[0];
 
 let args = {
   oui: oui,
