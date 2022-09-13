@@ -369,6 +369,7 @@ deviceSchema.statics.findByMacOrSerial = function(
   if (Array.isArray(id)) {
     let regexList = [];
     id.forEach((i) => {
+      if (typeof i === 'undefined') return;
       let regex = new RegExp(i, 'i');
       regexList.push(regex);
     });
