@@ -370,12 +370,12 @@ deviceSchema.statics.findByMacOrSerial = function(
     let regexList = [];
     id.forEach((i) => {
       if (typeof i === 'undefined') return;
-      let regex = new RegExp(i, 'i');
+      let regex = new RegExp('^' + i + '$', 'i');
       regexList.push(regex);
     });
     query = {'$in': regexList};
   } else if (id !== undefined) {
-    let regex = new RegExp(id, 'i');
+    let regex = new RegExp('^' + id + '$', 'i');
     query = {'$regex': regex};
   } else {
     return [];
