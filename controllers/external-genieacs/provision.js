@@ -55,7 +55,7 @@ let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
 
 // Detect TR-098 or TR-181 data model based on database value
-let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value[0];
+let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
 log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
 let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
 
