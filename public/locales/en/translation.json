@@ -592,6 +592,7 @@
 	"sendingCommandToCpes...": "Sending command to CPEs...",
 	"oneOrMoreCommandCouldNotBeSent!": "Could not send one or more commands!",
 	"commandSuccessfullySent!": "Command sent successfully!",
+	"diagnosticInProgress": "Command could not be started as there is already a diagnostic in progress.",
 	"Restart": "Restart",
 	"tryAgain": "Try again",
 	"specialSearchFilters": "Special Search Filters",

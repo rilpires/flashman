@@ -91,7 +91,7 @@ router.route('/uilastlog/:id').get(
 // Send a message using MQTT
 router.route('/command/:id/:msg').post(
   authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendMqttMsg);
+  deviceListController.sendCommandMsg);
 
 // For user Interface - Set/Get Port forward
 router.route('/uiportforward/:id').get(
@@ -99,13 +99,13 @@ router.route('/uiportforward/:id').get(
                                   .post(
   deviceListController.setPortForward);
 
-// Set/Get Speed test results
+// Get/Execute Speed test results
 router.route('/speedtest/:id').get(
   authController.ensurePermission('grantMeasureDevices'),
   deviceListController.getSpeedtestResults)
                               .post(
   authController.ensurePermission('grantMeasureDevices', 2),
-  deviceListController.doSpeedTest);
+  deviceListController.sendGenericSpeedTestAPI);
 
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(

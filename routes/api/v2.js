@@ -75,17 +75,27 @@ router.route('/device/lastlog/:id').get(
 // Send a message using MQTT
 router.route('/device/command/:id/:msg').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendMqttMsg);
+  deviceListController.sendCommandMsg);
+
+// Send a sync request for TR-069 devices
+router.route('/device/sync/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.syncDevice);
 
 // Send a customized ping command
 router.route('/device/pingdiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendCustomPing);
+  deviceListController.sendCustomPingAPI);
 
 // Send a customized speedtest command
 router.route('/device/speeddiagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
-  deviceListController.sendCustomSpeedTest);
+  deviceListController.sendCustomSpeedTestAPI);
+
+// Send a customized traceroute command
+router.route('/device/tracediagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomTraceRouteAPI);
 
 // Set/Get Port forward
 router.route('/device/portforward/:id').get(

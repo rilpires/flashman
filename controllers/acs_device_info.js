@@ -520,13 +520,13 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     console.log('Error saving last contact and last tr-069 sync');
   });
   if (doSync) {
-    requestSync(device);
+    acsDeviceInfoController.requestSync(device);
   }
 };
 
 // Builds and sends getParameterValues task to cpe - should only ask for
 // parameters that make sense in this cpe's context
-const requestSync = async function(device) {
+acsDeviceInfoController.requestSync = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
