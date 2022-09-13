@@ -599,45 +599,6 @@ updateController.getAutoConfig = function(req, res) {
   });
 };
 
-/* saving tr069 inform interval in genieacs for all devices. The errors thrown
- by this function have messages that are in portuguese, ready to be used in the
- user interface. */
-const updatePeriodicInformInGenieAcs = async function(tr069InformInterval) {
-  let parameterName = // the tr069 name for inform interval.
-   'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
-
-  // updating inform interval in genie preset.
-  /* we already have a preset in genieacs which _id is 'inform'. first we get
- the whole preset then we change/add the periodic inform value and then we over
- wright that preset.*/
-  let informPreset = await tasksApi.getFromCollection('presets',
-   {_id: 'inform'}); // genie returns an object inside and array.
-  informPreset = informPreset[0]; // getting the only object.
-  // if the periodic inform parameter exists in preset.
-  let foundPeriodicInform = false; // false means it doesn't exist.
-  tr069InformInterval = ''+tr069InformInterval; // preset value is a string.
-  // we will change the value if it exists.
-  for (let i = 0; i < informPreset.configurations.length; i++) {
-    if (informPreset.configurations[i].type === 'value'
-     && informPreset.configurations[i].name === parameterName) {
-      foundPeriodicInform = true; // true means periodic inform exist.
-      informPreset.configurations[i].value = tr069InformInterval; // new value.
-    }
-  }
-  // we will create a new value if it doesn't exist.
-  if (!foundPeriodicInform) { // if it periodic inform doesn't exist in preset.
-    // we add a new configuration.
-    informPreset.configurations.push({type: 'value',
-     name: parameterName, value: tr069InformInterval});
-  }
-
-  // saving preset to genieacs.
-  await tasksApi.putPreset(informPreset).catch((e) => {
-    console.log(e);
-    throw new Error(t('geniePresetPutError', {errorline: __line}));
-  });
-};
-
 const migrateDevicePrefixes = async function(config, oldPrefix) {
   // We must update the devices already in database with new values for their
   // local flag, based on the SSID that was already saved and their local flag
@@ -876,13 +837,6 @@ updateController.setAutoConfig = async function(req, res) {
      && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
      // and recovery is smaller than offline.
      && tr069RecoveryThreshold < tr069OfflineThreshold) {
-      // if received inform interval, in seconds, is different than saved
-      // inform interval in milliseconds,
-      if (tr069InformInterval*1000 !== config.tr069.inform_interval
-       && !process.env.FLM_GENIE_IGNORED) { // and if there's a GenieACS.
-        // setting inform interval in genie for all devices and in preset.
-        await updatePeriodicInformInGenieAcs(tr069InformInterval);
-      }
       config.tr069.server_url = tr069ServerURL;
       config.tr069.web_login = onuWebLogin;
       config.tr069.web_password = onuWebPassword;
