@@ -95,7 +95,7 @@ utilHandlers.getLastIndexOfNestedKey = function(
   let lastIndex = orderedKeys.length - 1;
   return {
     success: (lastIndex >= 0),
-    lastIndex: (lastIndex >= 0) ? lastIndex.toString() : undefined,
+    lastIndex: (lastIndex >= 0) ? orderedKeys[lastIndex] : undefined,
   };
 };
 
