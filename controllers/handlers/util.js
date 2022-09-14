@@ -32,6 +32,11 @@ utilHandlers.getExtRefPattern = function(kind, data) {
   }
 };
 
+const orderNumericGenieKeys = function(keys) {
+  let onlyNumbers = keys.filter((k)=>!k.includes('_') && !isNaN(parseInt(k)));
+  return onlyNumbers.sort((a, b)=>a-b);
+};
+
 utilHandlers.checkForNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -40,15 +45,14 @@ utilHandlers.checkForNestedKey = function(
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
     if (splitKey[i] === '*') {
-      let lastIndex = 1;
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
       if (useLastIndexOnWildcard) {
-        Object.keys(current).forEach((k) => {
-          if (!k.includes('_')) {
-            lastIndex = k;
-          }
-        });
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
       }
-      splitKey[i] = lastIndex;
+      splitKey[i] = targetIndex;
     }
     if (typeof current[splitKey[i]] === 'object' ||
         current[splitKey[i]] !== undefined) {
@@ -68,15 +72,14 @@ utilHandlers.getFromNestedKey = function(
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
     if (splitKey[i] === '*') {
-      let lastIndex = 1;
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
       if (useLastIndexOnWildcard) {
-        Object.keys(current).forEach((k) => {
-          if (!k.includes('_')) {
-            lastIndex = k;
-          }
-        });
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
       }
-      splitKey[i] = lastIndex;
+      splitKey[i] = targetIndex;
     }
     if (typeof current[splitKey[i]] === 'object' ||
         current[splitKey[i]] !== undefined) {
