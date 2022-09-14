@@ -107,8 +107,6 @@ basicCPEModel.modelPermissions = function() {
     usesStavixXMLConfig: false, // flag for stavix-like models with xml config
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
     needInterfaceInPortFoward: false, // flag for devices that need interf tree
-    needToCalculateRSSI: false, // flag for devices that need to apply formula
-                                // to calculate RSSI
   };
 };
 
