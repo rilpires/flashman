@@ -6,6 +6,7 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
@@ -18,6 +19,10 @@ tplinkModel.modelPermissions = function() {
     '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
     '0.12.0 2.0.0 v605e.0 Build 220629 Rel.75194n': [],
   };
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
+  ];
+  permissions.wifi.modeWrite = false;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
   return permissions;
@@ -38,7 +43,9 @@ tplinkModel.convertWifiMode = function(mode) {
 };
 
 tplinkModel.convertRssiValue = function(rssiValue) {
-  return (rssiValue/2) - 110;
+  let result = basicCPEModel.convertRssiValue(rssiValue);
+  // This model sends RSSI as some mystical formula, according to TP-Link
+  return (result / 2) - 110;
 };
 
 tplinkModel.convertPPPoEEnable = function(pppoe) {
@@ -101,7 +108,7 @@ tplinkModel.getModelFields = function() {
   fields.wifi2.mode = 'Device.WiFi.Radio.1.OperatingStandards';
   fields.wifi2.enable = 'Device.WiFi.SSID.1.Enable';
   delete fields.wifi2.beacon_type;
-  fields.wifi2.band = 'Device.WiFi.Radio.1.CurrentOperatingChannelBandwidth';
+  fields.wifi2.band = 'Device.WiFi.Radio.1.OperatingChannelBandwidth';
   fields.wifi5.ssid = 'Device.WiFi.SSID.3.SSID';
   fields.wifi5.bssid = 'Device.WiFi.SSID.3.BSSID';
   fields.wifi5.password = 'Device.WiFi.AccessPoint.3.Security.KeyPassphrase';
@@ -110,7 +117,7 @@ tplinkModel.getModelFields = function() {
   fields.wifi5.mode = 'Device.WiFi.Radio.2.OperatingStandards';
   fields.wifi5.enable = 'Device.WiFi.SSID.2.Enable';
   delete fields.wifi5.beacon_type;
-  fields.wifi5.band = 'Device.WiFi.Radio.2.CurrentOperatingChannelBandwidth';
+  fields.wifi5.band = 'Device.WiFi.Radio.2.OperatingChannelBandwidth';
   // Mesh
   fields.mesh2 = {};
   fields.mesh5 = {};
