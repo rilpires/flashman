@@ -1463,7 +1463,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (cpe.modelPermissions().usesStavixXMLConfig) {
+    if (
+      cpe.modelPermissions().usesStavixXMLConfig &&
+      config.tr069.web_login && config.tr069.web_password
+    ) {
       // Trigger xml config syncing for
       // web admin user and password
       device.web_admin_username = config.tr069.web_login;
