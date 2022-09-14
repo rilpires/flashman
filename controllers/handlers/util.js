@@ -54,7 +54,7 @@ utilHandlers.checkForNestedKey = function(
       }
       splitKey[i] = targetIndex;
     }
-    if (typeof current[splitKey[i]] === 'undefined') {
+    if (!current.hasOwnProperty(splitKey[i])) {
       return false;
     }
     current = current[splitKey[i]];
@@ -79,7 +79,7 @@ utilHandlers.getFromNestedKey = function(
       }
       splitKey[i] = targetIndex;
     }
-    if (typeof current[splitKey[i]] === 'undefined') {
+    if (!current.hasOwnProperty(splitKey[i])) {
       return undefined;
     }
     current = current[splitKey[i]];
