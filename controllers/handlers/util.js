@@ -54,12 +54,10 @@ utilHandlers.checkForNestedKey = function(
       }
       splitKey[i] = targetIndex;
     }
-    if (typeof current[splitKey[i]] === 'object' ||
-        current[splitKey[i]] !== undefined) {
-        current = current[splitKey[i]];
-    } else {
+    if (typeof current[splitKey[i]] === 'undefined') {
       return false;
     }
+    current = current[splitKey[i]];
   }
   return true;
 };
@@ -81,12 +79,10 @@ utilHandlers.getFromNestedKey = function(
       }
       splitKey[i] = targetIndex;
     }
-    if (typeof current[splitKey[i]] === 'object' ||
-        current[splitKey[i]] !== undefined) {
-        current = current[splitKey[i]];
-    } else {
+    if (typeof current[splitKey[i]] === 'undefined') {
       return undefined;
     }
+    current = current[splitKey[i]];
   }
   return current;
 };
