@@ -91,14 +91,12 @@ utilHandlers.getLastIndexOfNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
   let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
-  let lastIndex = 0;
-  Object.keys(tree).forEach((k) => {
-    if (!k.includes('_')) {
-      lastIndex = k;
-    }
-  });
-  return (lastIndex)? {success: true, lastIndex: lastIndex} :
-                      {success: false, lastIndex: undefined};
+  let orderedKeys = orderNumericGenieKeys(Object.keys(tree));
+  let lastIndex = orderedKeys.length - 1;
+  return {
+    success: (lastIndex >= 0),
+    lastIndex: (lastIndex >= 0) ? lastIndex.toString() : undefined,
+  };
 };
 
 utilHandlers.isJSONObject = function(val) {
