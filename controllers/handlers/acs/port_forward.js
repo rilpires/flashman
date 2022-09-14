@@ -361,23 +361,24 @@ acsPortForwardHandler.changePortForwardRules = async function(
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+v[1][0],
-        device.port_mapping[i][v[1][1]], v[1][2]]);
-      });
-      Object.entries(fields.port_mapping_values).forEach((v) => {
+        iterateTemplate+v[1][0], device.port_mapping[i][v[1][1]], v[1][2],
+      ]);
+    });
+    Object.entries(fields.port_mapping_values).forEach((v) => {
       if (v[0] == 'description') {
         let ruleName = cpe.getPortForwardRuleName(i+1);
         v[1][1] = ruleName;
       }
       updateTasks.parameterValues.push([
-        iterateTemplate+v[1][0], v[1][1], v[1][2]]);
+        iterateTemplate+v[1][0], v[1][1], v[1][2],
+      ]);
     });
     if (cpe.modelPermissions().needInterfaceInPortFoward && interfaceValue) {
-        updateTasks.parameterValues.push([
-          interfaceKey,
-          interfaceValue,
-          'xsd:string',
-        ]);
+      updateTasks.parameterValues.push([
+        interfaceKey,
+        interfaceValue,
+        'xsd:string',
+      ]);
     }
   }
   // just send tasks if there are port mappings to fill/set
