@@ -200,16 +200,18 @@ module.exports = (app) => {
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
-            let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
-              devices[idx]).cpe;
-            let meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(
-              cpe, devices[idx]._id);
-            devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
-            devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
-            saveDevice = true;
-          }
-          if (saveDevice) {
-            devices[idx].save();
+            let cpe =
+              DevicesAPI.instantiateCPEByModelFromDevice(devices[idx]).cpe;
+            acsMeshDeviceHandler.getMeshBSSIDs(cpe, devices[idx]._id)
+              .then((meshBSSIDs) => {
+                devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
+                devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
+                devices[idx].save();
+              });
+          } else {
+            if (saveDevice) {
+              devices[idx].save();
+            }
           }
         }
       }
