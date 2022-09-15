@@ -16,7 +16,6 @@ uneeModel.modelPermissions = function() {
     149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto5 = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.firmwareUpgrades = {
     'V1.2.9': [],
     'V1.3.4': [],
