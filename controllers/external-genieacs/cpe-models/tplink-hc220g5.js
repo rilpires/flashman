@@ -42,6 +42,23 @@ tplinkModel.convertWifiMode = function(mode) {
   }
 };
 
+tplinkModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    case 'auto':
+      return 'Auto';
+    default:
+      return '';
+  }
+};
+
 tplinkModel.convertRssiValue = function(rssiValue) {
   let result = basicCPEModel.convertRssiValue(rssiValue);
   // This model sends RSSI as some mystical formula, according to TP-Link
