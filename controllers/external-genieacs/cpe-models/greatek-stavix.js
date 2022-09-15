@@ -8,11 +8,8 @@ greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.mesh.setEncryptionForCable = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 250;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
@@ -21,7 +18,6 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V1.2.3': [],

@@ -132,15 +132,13 @@ describe('DeviceVersion API', () => {
     });
 
     [permissions123].forEach((permission)=>{
-      expect(permission.grantPortForward).toStrictEqual(true);
+      expect(permission.grantPortForward).toStrictEqual(false);
       expect(permission.grantUpnp).toStrictEqual(false);
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(true);
       expect(permission.grantSpeedTestLimit).toStrictEqual(250);
       expect(permission.grantBlockDevices).toStrictEqual(false);
       expect(permission.grantPonSignalSupport).toStrictEqual(true);
-      expect(permission.grantPortForwardOpts).toStrictEqual(
-        fullSupportPortForwawrdOpts);
     });
   });
 
