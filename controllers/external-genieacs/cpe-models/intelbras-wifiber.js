@@ -62,6 +62,8 @@ intelbrasModel.convertWifiBand = function(band, is5ghz=false) {
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_ITBS_WebAdminPassword';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'WANPPPConnection.1.X_ITBS_VlanMuxID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
