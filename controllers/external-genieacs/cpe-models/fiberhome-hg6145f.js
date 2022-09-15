@@ -7,6 +7,7 @@ fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6145F'};
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
