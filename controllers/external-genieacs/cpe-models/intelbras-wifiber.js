@@ -21,7 +21,6 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V210414': ['1.0-210917'],

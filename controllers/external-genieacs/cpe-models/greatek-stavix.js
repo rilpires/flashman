@@ -21,7 +21,6 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V1.2.3': [],
