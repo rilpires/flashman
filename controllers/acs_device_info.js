@@ -198,7 +198,7 @@ const createRegistry = async function(req, cpe, permissions) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     }
   } else {
-    meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(cpe, macAddr);
+    meshBSSIDs = await acsMeshDeviceHandler.getMeshBSSIDs(cpe, macAddr);
   }
 
   // Get channel information here to avoid ternary mess
@@ -1318,7 +1318,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (permissions.grantMeshV2HardcodedBssid &&
     (!device.bssid_mesh2 || !device.bssid_mesh5)) {
-    const meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(cpe, device._id);
+    const meshBSSIDs =
+      await acsMeshDeviceHandler.getMeshBSSIDs(cpe, device._id);
     device.bssid_mesh2 = meshBSSIDs.mesh2.toUpperCase();
     device.bssid_mesh5 = meshBSSIDs.mesh5.toUpperCase();
   }

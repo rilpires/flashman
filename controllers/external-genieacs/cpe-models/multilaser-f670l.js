@@ -21,12 +21,6 @@ multilaserModel.modelPermissions = function() {
     149, 153, 157, 161,
   ];
   permissions.wifi.modeWrite = false;
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
-  ];
   permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
