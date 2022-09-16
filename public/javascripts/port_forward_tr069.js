@@ -77,6 +77,10 @@ let showIncompatibilityMessage = function(compatibility) {
       .addClass('d-block');
     compatInfoMessage
       .html(message);
+  } else {
+    compatInfoDiv
+      .removeClass('d-block')
+      .addClass('d-none');
   }
   if (!compatibility.simpleSymmetric) {
     portInputs[0].disabled = portInputs[1].disabled =
