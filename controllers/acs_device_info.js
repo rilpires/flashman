@@ -1437,12 +1437,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (cpe.modelPermissions().stavixXMLConfig.portForward) {
-        xmlTargets.push('port-forward');
-      } else {
+      // Stavix XML devices should not sync port forward daily
+      if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
         if (device.connection_type === 'pppoe' &&
             data.wan.port_mapping_entries_ppp) {
@@ -1463,24 +1461,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (
-      cpe.modelPermissions().stavixXMLConfig.webCredentials &&
-      config.tr069.web_login && config.tr069.web_password
-    ) {
-      // Trigger xml config syncing for
-      // web admin user and password
-      device.web_admin_username = config.tr069.web_login;
-      device.web_admin_password = config.tr069.web_password;
-      if (!cpe.isAllowedWebadminUsername(config.tr069.web_login)) {
-        // this model can't have two users as "admin", if this happens you
-        // can't access it anymore and will be only using normal user account
-        device.web_admin_username = 'root';
-      }
-      await device.save().catch((err) => {
-        console.log('Error saving device daily sync to database: ' + err);
-      });
-      xmlTargets.push('web-admin');
-    } else {
+    // Stavix XML devices should not sync web credentials daily
+    if (!cpe.modelPermissions().stavixXMLConfig.webCredentials) {
       // Send web admin password correct setup for those CPEs that always
       // retrieve blank on this field
       if (typeof config.tr069.web_password !== 'undefined' &&
@@ -1496,9 +1478,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
       await acsAccessControlHandler.changeAcRules(device);
-    }
-    if (xmlTargets.length > 0) {
-      acsXMLConfigHandler.configFileEditing(device, xmlTargets);
     }
   }
 };
