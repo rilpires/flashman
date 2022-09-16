@@ -79,7 +79,11 @@ let validateNewDevice = function() {
     genericValidate(pppoePassword, validator.validatePassword,
                     errors.pppoe_password, pppoePassLength);
   }
-  genericValidate(ssidPrefix+ssid, validator.validateSSID, errors.ssid);
+  genericValidate(
+    ssidPrefix+ssid,
+    (s)=>validator.validateSSID(s, false, true),
+    errors.ssid,
+  );
   genericValidate(password, validator.validateWifiPassword, errors.password);
   genericValidate(channel, validator.validateChannel, errors.channel);
   genericValidate(band, validator.validateBand, errors.band);
