@@ -1083,20 +1083,25 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process LAN configuration - current IP and subnet mask
-  if (data.lan.router_ip) {
-    if (data.lan.router_ip.value && !device.lan_subnet) {
+  let canChangeLAN = cpe.modelPermissions().lan.configWrite;
+  if (data.lan.router_ip && data.lan.router_ip.value) {
+    if (!canChangeLAN || !device.lan_subnet) {
       device.lan_subnet = data.lan.router_ip.value;
-    } else if (device.lan_subnet !== data.lan.router_ip.value) {
+    } else if (canChangeLAN && device.lan_subnet !== data.lan.router_ip.value) {
       changes.lan.router_ip = device.lan_subnet;
       hasChanges = true;
     }
   }
-  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  if (subnetNumber > 0 && !device.lan_netmask) {
-    device.lan_netmask = subnetNumber;
-  } else if (device.lan_netmask !== subnetNumber) {
-    changes.lan.subnet_mask = device.lan_netmask;
-    hasChanges = true;
+  if (data.lan.subnet_mask && data.lan.subnet_mask.value) {
+    let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+    if (subnetNumber > 0 && (!canChangeLAN || !device.lan_netmask)) {
+      device.lan_netmask = subnetNumber;
+    } else if (
+      subnetNumber > 0 && canChangeLAN && device.lan_netmask !== subnetNumber
+    ) {
+      changes.lan.subnet_mask = device.lan_netmask;
+      hasChanges = true;
+    }
   }
 
   // Process Wi-Fi enable fields - careful with non-boolean values
