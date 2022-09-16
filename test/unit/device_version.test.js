@@ -132,7 +132,7 @@ describe('DeviceVersion API', () => {
     });
 
     [permissions123].forEach((permission)=>{
-      expect(permission.grantPortForward).toStrictEqual(false);
+      expect(permission.grantPortForward).toStrictEqual(true);
       expect(permission.grantUpnp).toStrictEqual(false);
       expect(permission.grantWpsFunction).toStrictEqual(false);
       expect(permission.grantSpeedTest).toStrictEqual(true);
