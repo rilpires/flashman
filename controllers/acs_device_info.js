@@ -262,6 +262,7 @@ const createRegistry = async function(req, cpe, permissions) {
   // Force a web credentials sync
   let webAdminUser;
   let webAdminPass;
+  let syncXmlConfigs = false;
   if (
     data.common.web_admin_username &&
     data.common.web_admin_username.writable &&
@@ -270,6 +271,13 @@ const createRegistry = async function(req, cpe, permissions) {
     webAdminUser = matchedConfig.tr069.web_login;
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_login &&
+    cpe.isAllowedWebadminUsername(matchedConfig.tr069.web_login)
+  ) {
+    webAdminUser = matchedConfig.tr069.web_login;
+    syncXmlConfigs = true;
   }
   if (
     data.common.web_admin_password &&
@@ -279,6 +287,12 @@ const createRegistry = async function(req, cpe, permissions) {
     webAdminPass = matchedConfig.tr069.web_password;
     changes.common.web_admin_password = matchedConfig.tr069.web_password;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_password
+  ) {
+    webAdminPass = matchedConfig.tr069.web_password;
+    syncXmlConfigs = true;
   }
 
   let wanMtu;
@@ -435,6 +449,9 @@ const createRegistry = async function(req, cpe, permissions) {
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
     }
+  }
+  if (syncXmlConfigs) {
+    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
   }
 
   if (createPrefixErrNotification) {
