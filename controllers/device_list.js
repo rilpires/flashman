@@ -1707,7 +1707,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
     case 'speedtest':
       return await deviceListController.sendGenericSpeedTestAPI(req, res);
     case 'sitesurvey':
-      return await deviceListController.sendGenericSpeedTestAPI(req, res);
+      return await deviceListController.sendGenericSiteSurveyAPI(req, res);
   }
 
   let devRes = await commonDeviceFind(req);
