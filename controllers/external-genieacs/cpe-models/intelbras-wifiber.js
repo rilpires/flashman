@@ -9,11 +9,8 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
@@ -22,7 +19,6 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V210414': ['1.0-210917'],
@@ -67,6 +63,8 @@ intelbrasModel.convertWifiBand = function(band, is5ghz=false) {
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_ITBS_WebAdminPassword';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'WANPPPConnection.1.X_ITBS_VlanMuxID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +

@@ -61,7 +61,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -192,7 +192,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
-            let assocIndexes = utilHandlers.getFromNestedKey(data, assocField);
+            let assocIndexes = utilHandlers.getFromNestedKey(
+              data, assocField,
+            );
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
             } else {
@@ -219,8 +221,6 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               // list for that device, which means the connection for that host
               // is active
               device.wifiActive = true;
-              // Mark device as a wifi device
-              device.wifi = true;
               if (iface == iface2) {
                 device.wifi_freq = 2.4;
               } else if (iface == iface5) {

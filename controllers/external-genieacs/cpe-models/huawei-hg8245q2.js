@@ -20,12 +20,6 @@ huaweiModel.modelPermissions = function() {
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
   ];
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x8',
-  ];
   permissions.firmwareUpgrades = {
     'V3R017C10S100': [],
   };

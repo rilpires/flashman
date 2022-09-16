@@ -60,6 +60,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
@@ -215,7 +216,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HT803G-WS2' && hwVersion == 'N.00') {
     // Raisecom HT803G-WS2 REV N
     return {success: true, cpe: tr069Models.raisecomRevNModel};
-  } else if (modelName === 'HT803G-WS2' && hwVersion == 'T.00') {
+  } else if (modelName === 'HT803G-WS2') {
     // Raisecom HT803G-WS2 REV T
     return {success: true, cpe: tr069Models.raisecomRevTModel};
   } else if (modelSerial === 'AC10') {
@@ -236,6 +237,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'HC220-G5') {
+    // TP-Link HC220-G5
+    return {success: true, cpe: tr069Models.tplinkHC220G5Model};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
@@ -259,6 +263,7 @@ const getModelFields = function(
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
+    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -286,6 +291,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 

@@ -1423,6 +1423,66 @@ deviceListController.searchDeviceReg = async function(req, res) {
   });
 };
 
+// Function that matches and removes general CPE ids from database
+// Returns JSON with status, message and removed CPE ids
+const delDeviceOnDatabase = async function(devIds) {
+  let removedDevIds = [];
+  // Creating an Array for the error messages
+  let failedAtRemoval = {};
+  // Get devices from ids
+  let projection = {
+    _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
+    mesh_master: true, mesh_slaves: true,
+  };
+  let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
+                                                           projection);
+  // Check if get at least one device
+  if (matchedDevices.length === 0) {
+    return {
+      success: false,
+      removedIds: removedDevIds,
+      message: t('cpesNotFound', {errorline: __line}),
+      errors: failedAtRemoval,
+    };
+  }
+  // Try to remove each device
+  for (let device of matchedDevices) {
+    let deviceId = device._id;
+    if (device.use_tr069) {
+      deviceId = device.serial_tr069;
+    }
+    // If the device is a mesh master, then we must not delete it
+    if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+      failedAtRemoval[deviceId] =
+        t('cantDeleteMeshWithSecondaries', {errorline: __line});
+    } else {
+      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      if (!removalOK) {
+        failedAtRemoval[deviceId] =
+          t('operationUnsuccessful', {errorline: __line});
+      } else {
+        removedDevIds.push(deviceId);
+      }
+    }
+  }
+  // If there are any errors in the array, we log the details and inform which
+  // cpes failed to be removed in the response
+  let errCount = Object.keys(failedAtRemoval).length;
+  if (errCount > 0) {
+    console.log(failedAtRemoval);
+    return {
+      success: false,
+      removedIds: removedDevIds,
+      message: t('couldntRemoveSomeDevices', {amount: errCount}),
+      errors: failedAtRemoval,
+    };
+  }
+  return {
+    success: true,
+    removedIds: removedDevIds,
+  };
+};
+
 deviceListController.delDeviceReg = async function(req, res) {
   try {
     let matchedConfig = await Config.findOne(
@@ -1442,58 +1502,68 @@ deviceListController.delDeviceReg = async function(req, res) {
       req.body.ids = removeList;
       return await deviceListController.delDeviceAndBlockLicense(req, res);
     }
-    let devices = await DeviceModel.findByMacOrSerial(removeList);
-    if (devices.length === 0) {
+    // Else: Only remove from database
+    let delRetObj = await delDeviceOnDatabase(removeList);
+    if (!delRetObj.success) {
       return res.status(500).json({
         success: false,
         type: 'danger',
-        message: t('cpesNotFound', {errorline: __line}),
+        message: delRetObj.message,
+        errors: delRetObj.errors,
+      });
+    } else {
+      // No errors present, simply return success
+      return res.status(200).json({
+        success: true,
+        type: 'success',
+        message: t('operationSuccessful'),
       });
     }
-    // We gonna push the error messages to an Array, then we must log to the
-    // console the errors inside this Array, if not empty.
-    let failedAtRemoval = {};
-    for (let device of devices) {
-      // Cannot delete mesh masters with associated slaves
-      let deviceId = device._id;
-      if (device.use_tr069) {
-        deviceId = device.serial_tr069;
-      }
-      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        failedAtRemoval[deviceId] =
-          t('cantDeleteMeshWithSecondaries', {errorline: __line});
-      } else {
-        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
-        if (!removalOK) {
-          failedAtRemoval[deviceId] =
-            t('operationUnsuccessful', {errorline: __line});
-        }
-      }
-    }
-    // If there are any errors in the array, we log the details and inform which
-    // cpes failed to be removed in the response
-    let errCount = Object.keys(failedAtRemoval).length;
-    if (errCount > 0) {
-      console.log(failedAtRemoval);
-      return res.status(500).json({
-        success: false,
-        type: 'danger',
-        message: t('couldntRemoveSomeDevices', {amount: errCount}),
-        errors: failedAtRemoval,
-      });
-    }
-    // No errors present, simply return success
-    return res.status(200).json({
-      success: true,
-      type: 'success',
-      message: t('operationSuccessful'),
-    });
   } catch (err) {
     return res.status(500).json({
       success: false,
       type: 'danger',
       message: t('operationUnsuccessful', {errorline: __line}),
     });
+  }
+};
+
+deviceListController.delDeviceAndBlockLicense = async function(req, res) {
+  // Check request body
+  if (!('ids' in req.body)) {
+    return res.status(500).json({success: false, type: 'error',
+      message: t('jsonInvalidFormat', {errorline: __line})});
+  }
+  try {
+    let devIds = req.body.ids;
+    // Check devices array
+    if (!Array.isArray(devIds)) {
+      devIds = [devIds];
+    }
+    // Delete entries from database
+    let delRetObj = await delDeviceOnDatabase(devIds);
+    if (!delRetObj.success) {
+      return res.status(500).json({
+        success: false,
+        type: 'danger',
+        message: delRetObj.message,
+        errors: delRetObj.errors,
+      });
+    }
+    // Move on to blocking the licenses
+    let retObj =
+      await controlApi.changeLicenseStatus(req.app, true, delRetObj.removedIds);
+    if (!retObj.success) {
+      return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
+    }
+    return res.status(200).json({success: true, type: 'success',
+                                message: t('operationSuccessful')});
+  } catch (err) {
+    return res.status(500).json({success: false, type: 'danger',
+                                 message: t('operationUnsuccessful',
+                                 {errorline: __line})});
   }
 };
 
@@ -4059,80 +4129,6 @@ deviceListController.changeLicenseStatus = async function(req, res) {
   } catch (err) {
     return res.status(500).json({success: false,
                                  message: t('serverError',
-                                 {errorline: __line})});
-  }
-};
-
-deviceListController.delDeviceAndBlockLicense = async function(req, res) {
-  // Check request body
-  if (!('ids' in req.body)) {
-    return res.status(500).json({success: false, type: 'error',
-      message: t('jsonInvalidFormat', {errorline: __line})});
-  }
-  try {
-    let devIds = req.body.ids;
-    // Check devices array
-    if (!Array.isArray(devIds)) {
-      devIds = [devIds];
-    }
-    // Get devices from ids
-    let projection = {
-      _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
-      mesh_master: true, mesh_slaves: true,
-    };
-    let matchedDevices =
-      await DeviceModel.findByMacOrSerial(devIds, false, projection);
-    // Check if get at least one device
-    if (matchedDevices.length === 0) {
-      return res.status(500).json({success: false, type: 'error',
-                                   message: t('cpesNotFound',
-                                   {errorline: __line})});
-    }
-    devIds = [];
-    // Creating an Array for the error messages
-    let failedAtRemoval = {};
-    // Try to remove each device
-    for (let device of matchedDevices) {
-      let deviceId = device._id;
-      if (device.use_tr069) {
-        deviceId = device.serial_tr069;
-      }
-      // If the device is a mesh master, then we must not delete it
-      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-        failedAtRemoval[deviceId] =
-          t('cantDeleteMeshWithSecondaries', {errorline: __line});
-      } else {
-        let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
-        if (!removalOK) {
-          failedAtRemoval[deviceId] =
-            t('operationUnsuccessful', {errorline: __line});
-        } else {
-          devIds.push(deviceId);
-        }
-      }
-    }
-    let errCount = Object.keys(failedAtRemoval).length;
-    if (errCount > 0) {
-      console.log(failedAtRemoval);
-      return res.status(500).json({
-        success: false,
-        type: 'danger',
-        message: t('couldntRemoveSomeDevices', {amount: errCount}),
-        errors: failedAtRemoval,
-      });
-    }
-    // Move on to blocking the licenses
-    let retObj = await controlApi.changeLicenseStatus(req.app, true, devIds);
-    if (!retObj.success) {
-      return res.status(500).json({success: false, type: 'danger',
-                                 message: t('operationUnsuccessful',
-                                 {errorline: __line})});
-    }
-    return res.status(200).json({success: true, type: 'success',
-                                message: t('operationSuccessful')});
-  } catch (err) {
-    return res.status(500).json({success: false, type: 'danger',
-                                 message: t('operationUnsuccessful',
                                  {errorline: __line})});
   }
 };
