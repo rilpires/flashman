@@ -3406,10 +3406,12 @@ deviceListController.getPortForward = function(req, res) {
     }
 
     if (matchedDevice.use_tr069) {
+      let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
         compatibility: permissions.grantPortForwardOpts,
+        xmlWarning: cpe.modelPermissions().stavixXMLConfig.portForward,
       });
     }
 
