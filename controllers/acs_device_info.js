@@ -1440,7 +1440,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (cpe.modelPermissions().usesStavixXMLConfig) {
+      if (cpe.modelPermissions().stavixXMLConfig.portForward) {
         xmlTargets.push('port-forward');
       } else {
         let entriesDiff = 0;
@@ -1464,7 +1464,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       }
     }
     if (
-      cpe.modelPermissions().usesStavixXMLConfig &&
+      cpe.modelPermissions().stavixXMLConfig.webCredentials &&
       config.tr069.web_login && config.tr069.web_password
     ) {
       // Trigger xml config syncing for

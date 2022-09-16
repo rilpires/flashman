@@ -18,8 +18,11 @@ fastwirelessModel.modelPermissions = function() {
   ];
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.usesStavixXMLConfig = true;
   permissions.lan.LANDeviceHasAssocTree = false;
+  permissions.stavixXMLConfig = {
+    portForward: false,
+    webCredentials: true,
+  };
   permissions.firmwareUpgrades = {
     'V2.0.08-191129': [],
   };
