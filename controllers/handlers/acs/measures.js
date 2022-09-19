@@ -23,11 +23,13 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   }
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
-  let projection = recvField + ',' + sentField;
+  let projection = recvField.replace(/\.\*.*/g, '') + ','
+    + sentField.replace(/\.\*.*/g, '');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -50,12 +52,16 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         }
       }
       let success = false;
-      if (utilHandlers.checkForNestedKey(data, recvField+'._value') &&
-          utilHandlers.checkForNestedKey(data, sentField+'._value')) {
+      if (utilHandlers.checkForNestedKey(data, recvField+'._value', useLastIndexOnWildcard) &&
+          utilHandlers.checkForNestedKey(data, sentField+'._value', useLastIndexOnWildcard)) {
         success = true;
         wanBytes = {
-          recv: utilHandlers.getFromNestedKey(data, recvField+'._value'),
-          sent: utilHandlers.getFromNestedKey(data, sentField+'._value'),
+          recv: utilHandlers.getFromNestedKey(
+            data, recvField+'._value', useLastIndexOnWildcard,
+          ),
+          sent: utilHandlers.getFromNestedKey(
+            data, sentField+'._value', useLastIndexOnWildcard,
+          ),
         };
       }
       if (success) {
@@ -182,24 +188,28 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let upTimeField1 = fields.wan.uptime.replace('*', 1);
-  let upTimeField2 = fields.wan.uptime.replace('*', 2);
-  let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
-  let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let upTimeField1;
+  let upTimeField2;
+  let upTimePPPField1;
+  let upTimePPPField2;
   let rxPowerField;
   let txPowerField;
   let rxPowerFieldEpon;
   let txPowerFieldEpon;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
-      ',' + upTimeField1 +
-      ',' + upTimeField2 +
-      ',' + upTimePPPField1 +
-      ',' + upTimePPPField2 +
-      ',' + PPPoEUser1 +
-      ',' + PPPoEUser2;
+    ',' + PPPoEUser1 + ',' + PPPoEUser2;
+
+  if (cpe.modelPermissions().wan.hasUptimeField) {
+    upTimeField1 = fields.wan.uptime.replace('*', 1);
+    upTimeField2 = fields.wan.uptime.replace('*', 2);
+    upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
+    upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+    projection += ',' + upTimeField1 + ',' + upTimeField2 +
+      ',' + upTimePPPField1 + ',' + upTimePPPField2;
+  }
 
   if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
     rxPowerField = fields.wan.pon_rxpower;

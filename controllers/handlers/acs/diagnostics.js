@@ -90,7 +90,6 @@ const calculatePingDiagnostic = async function(
 ) {
   pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
   let diagState = pingKeys.diag_state;
-
   if (['Requested', 'None'].includes(diagState)) return;
 
   let result = {};
@@ -98,7 +97,7 @@ const calculatePingDiagnostic = async function(
     (e) => e.host === pingKeys.host,
   );
 
-  if (['Complete', 'Complete\n'].includes(diagState)) {
+  if (['Complete', 'Complete\n', 'Completed'].includes(diagState)) {
     const loss = parseInt(pingKeys.failure_count * 100 /
       (pingKeys.success_count + pingKeys.failure_count));
     if (isNaN(loss)) {

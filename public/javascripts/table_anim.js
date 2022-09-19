@@ -3260,14 +3260,12 @@ anlixDocumentReady.add(function() {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.sysuptime)),
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
@@ -3300,9 +3298,14 @@ anlixDocumentReady.add(function() {
                 `<div class="badge bg-danger">${st}</div>`;
             }
             row.find('.device-pon-signal')
-            .removeClass('grey-text pending-update')
             .html(ponSignalRxPower+'<br>'+ponSignalStatus);
           }
+          row.find('.device-sys-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-wan-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-pon-signal')
+            .removeClass('grey-text pending-update');
         });
       },
     });

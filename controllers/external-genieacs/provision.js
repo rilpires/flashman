@@ -29,27 +29,52 @@ Command to update provision on genie:
 
 const now = Date.now();
 
-const updateConfiguration = function(fields) {
+const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   // Request field updates from the CPE
   let result = {};
   Object.keys(fields).forEach((key)=>{
     let resp = declare(fields[key], {value: now, writable: now});
     if (resp.value) {
-      let value = resp.value[0];
-      result[key] = {value: value, writable: resp.writable};
+      let target = resp;
+      if (useLastIndexOnWildcard) {
+        for (let i of resp) {
+          target = i;
+        }
+      }
+      result[key] = {value: target.value[0], writable: target.writable};
     }
   });
   return result;
 };
 
+
+// Collect basic CPE information from database
 let genieID = declare('DeviceID.ID', {value: 1}).value[0];
+log('Provision for device ' + genieID + ' started at ' + now.toString());
 let oui = declare('DeviceID.OUI', {value: 1}).value[0];
 let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
-let modelName = declare('InternetGatewayDevice.DeviceInfo.ModelName', {value: 1}).value[0];
-let firmwareVersion = declare('InternetGatewayDevice.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
-let hardwareVersion = declare('InternetGatewayDevice.DeviceInfo.HardwareVersion', {value: 1}).value[0];
 
-log('Provision for device ' + genieID + ' started at ' + now.toString());
+// Detect TR-098 or TR-181 data model based on database value
+let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
+log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
+let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
+
+// Apply connection request credentials preset configuration
+let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+let currentUsername = declare(usernameField, {value: 1}).value[0];
+if (currentUsername !== 'anlix') {
+  declare(usernameField, null, {value: 'anlix'});
+}
+let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+let currentPassword = declare(passwordField, {value: 1}).value[0];
+if (currentPassword !== 'landufrj123') {
+  declare(passwordField, null, {value: 'landufrj123'});
+}
+
+// Collect extra information for Flashman model detection
+let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1}).value[0];
+let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
+let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1}).value[0];
 
 let args = {
   oui: oui,
@@ -60,30 +85,37 @@ let args = {
   acs_id: genieID,
 };
 
+// Get configs and model fields from Flashman via HTTP request
 let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
 
+// Error contacting Flashman - could be network issue or unknown model
 if (!result.success || !result.fields) {
   log('Provision sync fields for device ' + genieID + ' failed: ' + result.message);
   log('OUI identified: ' + oui);
   log('Model identified: ' + modelClass);
   return;
 }
+// Flashman did not ask for a full provision sync - provision is done
 if (!result.measure) {
   return;
 }
 
+// Collect all CPE data through provision to send to Flashman
+// Expected to run on creation, fware upgrade and cpe reset recovery
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
 let data = {
-  common: updateConfiguration(fields.common),
-  wan: updateConfiguration(fields.wan),
-  lan: updateConfiguration(fields.lan),
-  wifi2: updateConfiguration(fields.wifi2),
-  wifi5: updateConfiguration(fields.wifi5),
-  mesh2: updateConfiguration(fields.mesh2),
-  mesh5: updateConfiguration(fields.mesh5),
+  common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
+  wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
+  lan: updateConfiguration(fields.lan, result.useLastIndexOnWildcard),
+  wifi2: updateConfiguration(fields.wifi2, result.useLastIndexOnWildcard),
+  wifi5: updateConfiguration(fields.wifi5, result.useLastIndexOnWildcard),
+  mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
+  mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 args = {acs_id: genieID, data: data};
+
+// Send data to Flashman via HTTP request
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
