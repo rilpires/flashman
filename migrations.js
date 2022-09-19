@@ -36,7 +36,7 @@ module.exports = (app) => {
           for (let idx = 0; idx < users.length; idx++) {
             User.findOneAndUpdate(
               {_id: objectId(users[idx]._id)},
-              {is_hidden: false});
+              {is_hidden: false}).exec();
           }
         }
       },
