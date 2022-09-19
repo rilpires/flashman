@@ -9,8 +9,8 @@ const xmlFailTest = function(idx) {
   };
   let initXml = fs.readFileSync('./test/assets/config_file_stavix_'+
     idx+'.xml', 'utf8');
-  return acsHandlers
-    .digestXmlConfig(device, initXml, ['port-forward']);
+  let result = acsHandlers.digestXmlConfig(device, initXml, ['port-forward']);
+  return result.didChange ? result.xml : '';
 };
 
 describe('TR-069 GenieACS communication methods', () => {
@@ -58,7 +58,7 @@ describe('TR-069 GenieACS communication methods', () => {
       DirNamesMap.set(dn);
     });
     let finiXml = acsHandlers
-      .digestXmlConfig(device, initXml, ['port-forward']);
+      .digestXmlConfig(device, initXml, ['port-forward']).xml;
     let searchPortFwTbl = new RegExp('Dir Name="PORT_FW_TBL"', 'g');
     let searchPortFwEnable = new RegExp('PORT_FW_ENABLE" Value="[0-9]');
     let finiDirNamesList = finiXml.match(searchDirNames);
@@ -90,7 +90,7 @@ describe('TR-069 GenieACS communication methods', () => {
       DirNamesMap.set(dn);
     });
     let finiXml = acsHandlers
-      .digestXmlConfig(device, initXml, ['port-forward']);
+      .digestXmlConfig(device, initXml, ['port-forward']).xml;
     let searchPortFwTbl = new RegExp('Dir Name="PORT_FW_TBL"', 'g');
     let searchPortFwEnable = new RegExp('PORT_FW_ENABLE" Value="[0-9]');
     let finiDirNamesList = finiXml.match(searchDirNames);
@@ -144,7 +144,7 @@ describe('TR-069 GenieACS communication methods', () => {
       DirNamesMap.set(dn);
     });
     let finiXml = acsHandlers
-      .digestXmlConfig(device, initXml, ['web-admin']);
+      .digestXmlConfig(device, initXml, ['web-admin']).xml;
     let searchUser = new RegExp('SUSER_NAME" Value="[0-9A-Za-z_]*');
     let searchPassword = new RegExp('SUSER_PASSWORD" Value="[0-9A-Za-z_]*');
     let finiDirNamesList = finiXml.match(searchDirNames);
@@ -190,7 +190,7 @@ describe('TR-069 GenieACS communication methods', () => {
       DirNamesMap.set(dn);
     });
     let finiXml = acsHandlers
-      .digestXmlConfig(device, initXml, ['port-forward', 'web-admin']);
+      .digestXmlConfig(device, initXml, ['port-forward', 'web-admin']).xml;
     let searchPortFwTbl = new RegExp('Dir Name="PORT_FW_TBL"', 'g');
     let searchPortFwEnable = new RegExp('PORT_FW_ENABLE" Value="[0-9]');
     let finiDirNamesList = finiXml.match(searchDirNames);

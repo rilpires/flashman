@@ -104,9 +104,12 @@ basicCPEModel.modelPermissions = function() {
       setEncryptionForCable: false, // special flag for cable mesh
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
-    usesStavixXMLConfig: false, // flag for stavix-like models with xml config
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
     needInterfaceInPortFoward: false, // flag for devices that need interf tree
+    stavixXMLConfig: {
+      portForward: false, // uses xml for port forward editing
+      webCredentials: false, // uses xml for web credentials editing
+    },
   };
 };
 

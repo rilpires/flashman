@@ -22,6 +22,10 @@ uneeModel.modelPermissions = function() {
   };
   permissions.onlineAfterReset = true;
   permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.stavixXMLConfig = {
+    portForward: false,
+    webCredentials: true,
+  };
   return permissions;
 };
 
