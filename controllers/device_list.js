@@ -2858,8 +2858,11 @@ deviceListController.createDeviceReg = function(req, res) {
       isSsidPrefixEnabled = checkResponse.enablePrefix;
       let ssidPrefix = checkResponse.prefixToUse;
 
-      genericValidate(ssidPrefix+ssid,
-        validator.validateSSID, 'ssid');
+      genericValidate(
+        ssidPrefix+ssid,
+        (s)=>validator.validateSSID(s, false, true),
+        'ssid',
+      );
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
