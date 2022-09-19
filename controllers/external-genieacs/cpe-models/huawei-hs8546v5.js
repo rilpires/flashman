@@ -16,6 +16,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.speedTestLimit = 800;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48,
+    52, 56, 60, 64, 149, 153, 157, 161];
   permissions.firmwareUpgrades = {
     'V5R019C00S050': [],
   };
