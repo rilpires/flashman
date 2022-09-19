@@ -262,6 +262,7 @@ const createRegistry = async function(req, cpe, permissions) {
   // Force a web credentials sync
   let webAdminUser;
   let webAdminPass;
+  let syncXmlConfigs = false;
   if (
     data.common.web_admin_username &&
     data.common.web_admin_username.writable &&
@@ -270,6 +271,13 @@ const createRegistry = async function(req, cpe, permissions) {
     webAdminUser = matchedConfig.tr069.web_login;
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_login &&
+    cpe.isAllowedWebadminUsername(matchedConfig.tr069.web_login)
+  ) {
+    webAdminUser = matchedConfig.tr069.web_login;
+    syncXmlConfigs = true;
   }
   if (
     data.common.web_admin_password &&
@@ -279,6 +287,12 @@ const createRegistry = async function(req, cpe, permissions) {
     webAdminPass = matchedConfig.tr069.web_password;
     changes.common.web_admin_password = matchedConfig.tr069.web_password;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_password
+  ) {
+    webAdminPass = matchedConfig.tr069.web_password;
+    syncXmlConfigs = true;
   }
 
   let wanMtu;
@@ -435,6 +449,9 @@ const createRegistry = async function(req, cpe, permissions) {
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
     }
+  }
+  if (syncXmlConfigs) {
+    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
   }
 
   if (createPrefixErrNotification) {
@@ -1066,20 +1083,25 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process LAN configuration - current IP and subnet mask
-  if (data.lan.router_ip) {
-    if (data.lan.router_ip.value && !device.lan_subnet) {
+  let canChangeLAN = cpe.modelPermissions().lan.configWrite;
+  if (data.lan.router_ip && data.lan.router_ip.value) {
+    if (!canChangeLAN || !device.lan_subnet) {
       device.lan_subnet = data.lan.router_ip.value;
-    } else if (device.lan_subnet !== data.lan.router_ip.value) {
+    } else if (canChangeLAN && device.lan_subnet !== data.lan.router_ip.value) {
       changes.lan.router_ip = device.lan_subnet;
       hasChanges = true;
     }
   }
-  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  if (subnetNumber > 0 && !device.lan_netmask) {
-    device.lan_netmask = subnetNumber;
-  } else if (device.lan_netmask !== subnetNumber) {
-    changes.lan.subnet_mask = device.lan_netmask;
-    hasChanges = true;
+  if (data.lan.subnet_mask && data.lan.subnet_mask.value) {
+    let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+    if (subnetNumber > 0 && (!canChangeLAN || !device.lan_netmask)) {
+      device.lan_netmask = subnetNumber;
+    } else if (
+      subnetNumber > 0 && canChangeLAN && device.lan_netmask !== subnetNumber
+    ) {
+      changes.lan.subnet_mask = device.lan_netmask;
+      hasChanges = true;
+    }
   }
 
   // Process Wi-Fi enable fields - careful with non-boolean values
@@ -1438,12 +1460,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (cpe.modelPermissions().usesStavixXMLConfig) {
-        xmlTargets.push('port-forward');
-      } else {
+      // Stavix XML devices should not sync port forward daily
+      if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
         if (device.connection_type === 'pppoe' &&
             data.wan.port_mapping_entries_ppp) {
@@ -1464,24 +1484,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (
-      cpe.modelPermissions().usesStavixXMLConfig &&
-      config.tr069.web_login && config.tr069.web_password
-    ) {
-      // Trigger xml config syncing for
-      // web admin user and password
-      device.web_admin_username = config.tr069.web_login;
-      device.web_admin_password = config.tr069.web_password;
-      if (!cpe.isAllowedWebadminUsername(config.tr069.web_login)) {
-        // this model can't have two users as "admin", if this happens you
-        // can't access it anymore and will be only using normal user account
-        device.web_admin_username = 'root';
-      }
-      await device.save().catch((err) => {
-        console.log('Error saving device daily sync to database: ' + err);
-      });
-      xmlTargets.push('web-admin');
-    } else {
+    // Stavix XML devices should not sync web credentials daily
+    if (!cpe.modelPermissions().stavixXMLConfig.webCredentials) {
       // Send web admin password correct setup for those CPEs that always
       // retrieve blank on this field
       if (typeof config.tr069.web_password !== 'undefined' &&
@@ -1497,9 +1501,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
       await acsAccessControlHandler.changeAcRules(device);
-    }
-    if (xmlTargets.length > 0) {
-      acsXMLConfigHandler.configFileEditing(device, xmlTargets);
     }
   }
 };
