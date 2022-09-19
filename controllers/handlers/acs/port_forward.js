@@ -201,7 +201,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let model = device.model;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   // redirect to config file binding instead of setParametervalues
-  if (cpe.modelPermissions().usesStavixXMLConfig) {
+  if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }

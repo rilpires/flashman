@@ -1049,5 +1049,6 @@
 	"updateSingleDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos. El CPE no debe apagarse durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
 	"updateSlaveDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos para cada CPE. Esta actualización afectará a todos los {{slaveCount}} enrutadores de la red en malla y tardará unos {{slaveCount3}} minutos en total. No se debe apagar ningún CPE durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
 	"updateDeviceMeshError": "El proceso de actualización de la red en malla se interrumpió. No recomendamos dejar los CPE de malla de la misma red en diferentes versiones, así que asegúrese de que esta actualización se reanude pronto.",
-	"updateDeviceFirmwareErrorWithMAC": "Ocurrió un error al descargar el firmware de CPE con MAC {{errorMac}}. Vuelva a intentarlo o cancele el procedimiento."
+	"updateDeviceFirmwareErrorWithMAC": "Ocurrió un error al descargar el firmware de CPE con MAC {{errorMac}}. Vuelva a intentarlo o cancele el procedimiento.",
+	"portOpeningRebootAlert": "¡Cuidado! Este modelo requiere un reinicio para aplicar los cambios de configuración de reenvío de puertas."
 }
