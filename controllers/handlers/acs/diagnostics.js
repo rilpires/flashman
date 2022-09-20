@@ -592,10 +592,9 @@ const startSiteSurveyDiagnose = async function(acsID) {
   }
 };
 
-const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
-  await delay(5000);
+  // Wait for 5s to pool results
+  await new Promise((resolve) => setTimeout(resolve, 5000));
   let task = {
     name: 'getParameterValues',
     parameterNames: fields.diagnostics.sitesurvey.diag_state,
