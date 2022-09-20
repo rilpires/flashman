@@ -13,7 +13,6 @@ tendaModel.modelPermissions = function() {
   permissions.features.stun = true;
   permissions.lan.needEnableConfig = true;
   permissions.wan.speedTestLimit = 180;
-  permissions.wan.pingTestMicroSeconds = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.mustBeEnabledToConfigure = true;
@@ -108,6 +107,10 @@ tendaModel.convertChannelToTask = function(channel, fields, masterKey) {
     ]);
   }
   return values;
+};
+
+tendaModel.convertPingTestResult = function(latency) {
+  return (parseInt(latency) / 1000).toString(); // Results are in microseconds
 };
 
 tendaModel.getModelFields = function() {

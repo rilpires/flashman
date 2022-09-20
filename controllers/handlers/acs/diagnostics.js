@@ -138,12 +138,7 @@ const calculatePingDiagnostic = async function(
       debug('calculatePingDiagnostic loss is not an number!!!');
     }
     const count = parseInt(pingKeys.success_count + pingKeys.failure_count);
-    if (cpe.modelPermissions().wan.pingTestMicroSeconds) {
-      currentPingTest.lat = (parseInt(
-        pingKeys.avg_resp_time)/1000).toString();
-    } else {
-      currentPingTest.lat = pingKeys.avg_resp_time.toString();
-    }
+    currentPingTest.lat = cpe.convertPingTestResult(pingKeys.avg_resp_time);
     currentPingTest.loss = loss.toString();
     currentPingTest.count = count.toString();
 
