@@ -609,7 +609,8 @@ acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
   return;
 };
 
-acsDiagnosticsHandler.triggerDiagnosticResults = async function(acsID, device) {
+acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
+  let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let fieldToFetch = '';
@@ -624,6 +625,8 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(acsID, device) {
     case 'sitesurvey':
       fieldToFetch = fields.diagnostics.sitesurvey.root;
       break;
+    default:
+      return;
   }
   if (typeof fieldToFetch === 'string') fieldToFetch = [fieldToFetch];
   let task = {

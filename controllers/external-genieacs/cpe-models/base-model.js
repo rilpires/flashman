@@ -687,7 +687,7 @@ basicCPEModel.getModelFields = function() {
           'PeriodOfFullLoading',
       },
       sitesurvey: {
-        // Each device may have they proper fields
+        // These fields have no defaults, as they are always vendor-dependent
         root: '',
         diag_state: [],
         result: [],

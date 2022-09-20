@@ -1644,7 +1644,7 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  acsDiagnosticsHandler.triggerDiagnosticResults(acsID, device);
+  acsDiagnosticsHandler.triggerDiagnosticResults(device);
 };
 
 acsDeviceInfoController.requestLogs = function(device) {
