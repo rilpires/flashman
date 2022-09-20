@@ -157,8 +157,9 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-deviceListController.sendCustomPing
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomPing = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -218,8 +219,9 @@ deviceListController.sendCustomPing
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendGenericPing
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericPing = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -249,8 +251,9 @@ deviceListController.sendGenericPing
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendCustomSpeedTest
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomSpeedTest = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -323,8 +326,9 @@ deviceListController.sendCustomSpeedTest
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericSpeedTest
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericSpeedTest = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -366,8 +370,9 @@ deviceListController.sendGenericSpeedTest
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendCustomTraceRoute
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomTraceRoute = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -430,8 +435,9 @@ deviceListController.sendCustomTraceRoute
   return await initiateTracerouteTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericTraceRoute
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericTraceRoute = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -455,8 +461,9 @@ deviceListController.sendGenericTraceRoute
   return await initiateTracerouteTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericSiteSurvey
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericSiteSurvey = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
