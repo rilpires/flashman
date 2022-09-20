@@ -639,7 +639,7 @@
 	"neighboringNetworksFor": "Networks Around",
 	"networksInXGhz": "Networks at {{-x}}GHz",
 	"showsitesurveyAlertInfo": "The best channel recommendation must be changed manually. The \"auto\" mechanism of the CPE may differ from the recommendation presented here.",
-	"showsitesurveyTR069WarningInfo": "In TR-069 site survey the Wi-Fi must be enabled to the query works.",
+	"showsitesurveyTR069WarningInfo": "The Wi-Fi must be enabled for the TR-069 site survey command to work.",
 	"updatingNeighbouringNetworks...": "Updating networks around...",
 	"noNeighbouringNetworksFound": "No neighboring networks found",
 	"Channel=X": "Channel: {{-x}}",
