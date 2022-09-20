@@ -572,7 +572,7 @@ const initiateSpeedTest = async function(device, username, sessionID) {
   }
 };
 
-// This should be called right after sendCustomPingTest or sendGenericPingTest
+// This should be called right after sendGenericSiteSurvey
 // Common validations and device.save goes here
 const initiateSiteSurvey = async function(device, username, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
@@ -1944,19 +1944,6 @@ deviceListController.sendCommandMsg = async function(req, res) {
             message: t('cpeWithoutCommand'),
           });
         }
-        break;
-      case 'sitesurvey':
-        if (!permissions.grantSiteSurvey) {
-          return res.status(200).json({
-            success: false,
-            message: t('cpeWithoutCommand'),
-          });
-        }
-        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-          sio.anlixWaitForSiteSurveyNotification(
-            req.sessionID, req.params.id.toUpperCase());
-        }
-        return await deviceListController.sendGenericSpeedTestAPI(req, res);
         break;
       default:
         // Message not implemented
