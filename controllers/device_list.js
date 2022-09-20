@@ -2912,8 +2912,11 @@ deviceListController.createDeviceReg = function(req, res) {
       isSsidPrefixEnabled = checkResponse.enablePrefix;
       let ssidPrefix = checkResponse.prefixToUse;
 
-      genericValidate(ssidPrefix+ssid,
-        validator.validateSSID, 'ssid');
+      genericValidate(
+        ssidPrefix+ssid,
+        (s)=>validator.validateSSID(s, false, true),
+        'ssid',
+      );
       genericValidate(password, validator.validateWifiPassword, 'password');
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
@@ -3460,10 +3463,12 @@ deviceListController.getPortForward = function(req, res) {
     }
 
     if (matchedDevice.use_tr069) {
+      let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
         compatibility: permissions.grantPortForwardOpts,
+        xmlWarning: cpe.modelPermissions().stavixXMLConfig.portForward,
       });
     }
 

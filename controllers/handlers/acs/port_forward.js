@@ -265,7 +265,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
   let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
-  if (cpe.modelPermissions().usesStavixXMLConfig) {
+  if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
     return;
   }

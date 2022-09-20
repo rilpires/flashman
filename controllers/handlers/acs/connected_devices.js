@@ -104,8 +104,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         success = false;
       }
       if (success) {
-        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
-        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
+        let iface2 = fields.wifi2.channel.replace('.Channel', '');
+        let iface5 = fields.wifi5.channel.replace('.Channel', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -191,6 +191,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
+            ).replace(
+              /Radio\.[0-9*]+\./g,
+              'Radio.' + iface + '.',
             );
             let assocIndexes = utilHandlers.getFromNestedKey(
               data, assocField,
@@ -222,8 +225,10 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               // is active
               device.wifiActive = true;
               if (iface == iface2) {
+                device.wifi = true;
                 device.wifi_freq = 2.4;
               } else if (iface == iface5) {
+                device.wifi = true;
                 device.wifi_freq = 5;
               }
               // Collect rssi, if available

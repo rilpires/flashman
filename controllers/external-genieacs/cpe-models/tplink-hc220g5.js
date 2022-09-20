@@ -145,12 +145,12 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_mac = 'Device.Hosts.Host.*.PhysAddress';
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
-  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.1.AP.2.' +
-    'AssociatedDevice.*';
-  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.1.AP.2.' +
+  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+    'AssociatedDevice';
+  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
     'AssociatedDevice.*.MACAddress';
   fields.devices.host_active = 'Device.Hosts.Host.*.Active';
-  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.1.AP.2.' +
+  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
     'AssociatedDevice.*.SignalStrength';
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {
