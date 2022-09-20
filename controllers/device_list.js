@@ -4352,16 +4352,15 @@ deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   }
 };
 deviceListController.sendGenericSiteSurveyAPI = async function(req, res) {
-  let matchedDevice;
-  try {
-    matchedDevice = await DeviceModel.findById(req.params.id.toUpperCase());
-  } catch (e) {
-    matchedDevice = null;
+  let devRes = await commonDeviceFind(req);
+  if (devRes.success) {
+    let commandResponse = await deviceListController.sendGenericSiteSurvey(
+      devRes.matchedDevice, req.user.name, req.sessionID,
+    );
+    return res.status(200).json(commandResponse);
+  } else {
+    return res.status(200).json(devRes);
   }
-  let commandResponse = await deviceListController.sendGenericSiteSurvey(
-    matchedDevice, req.user.name, req.sessionID,
-  );
-  return res.status(200).json(commandResponse);
 };
 
 deviceListController.exportDevicesCsv = async function(req, res) {
