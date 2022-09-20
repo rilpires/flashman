@@ -221,12 +221,13 @@ const calculateFreq = function(rawChannel) {
   const startChannel2Ghz = 1;
   const startChannel5GHz = 36;
   let intRawChannel = parseInt(rawChannel);
-  let finalFreq = 2412; // 2.4 GHz
-  if (Math.floor(intRawChannel / startChannel5GHz) != 0) { // 5.0 GHz
-    finalFreq = 5180;
-    finalFreq += (intRawChannel - startChannel5GHz) * 5;
+  let finalFreq;
+  if (intRawChannel >= 36) {
+    // 5GHz networks
+    finalFreq = 5180 + ((intRawChannel - startChannel5GHz) * 5);
   } else {
-    finalFreq += (intRawChannel - startChannel2Ghz) * 5;
+    // 2.4GHz networks
+    finalFreq = 2412 + ((intRawChannel - startChannel2Ghz) * 5);
   }
   return finalFreq;
 };
