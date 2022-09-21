@@ -535,7 +535,7 @@ const startSiteSurveyDiagnose = async function(acsID) {
 
   if (!cpe.isToDoPoolingInState()) {
     if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
-      if(device.wifi_state) {
+      if (device.wifi_state) {
         params.push([
           fields.diagnostics.sitesurvey.diag_state[0],
           'Requested', 'xsd:string']);
