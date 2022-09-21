@@ -259,26 +259,21 @@ const calculateSiteSurveyDiagnostic = async function(
 
   if (diagState.every((x) => x === 'None')) {
     await saveCurrentDiagnostic(device, 'error', false);
-    console.log('Error retrieving site survey data (None)!');
     return;
   } else if (diagState.some((x) => x.match(/requested/i))) {
     if (cpe.isToDoPoolingInState() &&
         device.current_diagnostic.recursion_state > 0) {
       device.current_diagnostic.recursion_state--;
-      console.log('Pooling state: '+
-        device.current_diagnostic.recursion_state);
       saveCurrentDiagnostic(device, 'initiating', true);
       acsDiagnosticsHandler.doPoolingInState(device.acs_id,
         cpe.getModelFields());
       return;
     } else {
       await saveCurrentDiagnostic(device, 'error', false);
-      console.log('Timeout in pooling site survey data!');
       return;
     }
   } else if (diagState.some((x) => x.match(/erro/i))) {
     await saveCurrentDiagnostic(device, 'error', false);
-    console.log('Error retrieving site survey data (Error)!');
   } else if (diagState.some((x) => x.match(/complete/i))) {
     apsData.forEach((ap) => {
       let outDev = {};
@@ -333,7 +328,6 @@ const calculateSiteSurveyDiagnostic = async function(
     await saveCurrentDiagnostic(device, 'done', false);
   } else {
     await saveCurrentDiagnostic(device, 'error', false);
-    console.log('Error retrieving site survey data!');
   }
   // if someone is waiting for this message, send the information
   sio.anlixSendSiteSurveyNotifications(device._id.toUpperCase(), outData);
@@ -406,7 +400,6 @@ const calculateSpeedDiagnostic = async function(
         case 'Error_InitConnectionFailed':
         case 'Error_NoResponse':
         case 'Error_Other':
-          console.log('Failure at TR-069 speedtest:', speedKeys.diag_state);
           result = {
             downSpeed: '503 Server',
             user: device.current_diagnostic.user,
@@ -560,7 +553,6 @@ const startSiteSurveyDiagnose = async function(acsID) {
   }
 
   if (params.length == 0) {
-    console.log('Any wifi is enabled!');
     saveCurrentDiagnostic(device, 'error', false);
     return;
   }
@@ -570,7 +562,6 @@ const startSiteSurveyDiagnose = async function(acsID) {
   };
   let result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
-    console.log('(1) Error starting site survey diagnose for ' + acsID);
     saveCurrentDiagnostic(device, 'error', false);
   }
   if (cpe.isToDoPoolingInState()) {
@@ -584,7 +575,6 @@ const startSiteSurveyDiagnose = async function(acsID) {
       };
       result = await TasksAPI.addTask(acsID, task);
       if (!result.success) {
-        console.log('(2) Error starting site survey diagnose for ' + acsID);
         saveCurrentDiagnostic(device, 'error', false);
       }
     }
