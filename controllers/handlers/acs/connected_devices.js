@@ -150,10 +150,14 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // check if it has the tree of connected devices. If so, we store that
           // device as non-active and revisit this information later. If not, we
           //  store that device as active to preserve legacy behavior
-          if (cpe.modelPermissions().lan.LANDeviceCanTrustActive) {
-            let hostActiveKey = fields.devices.host_active.replace('*', i);
+          let hostActiveKey = fields.devices.host_active.replace('*', i);
+          hostActiveKey += '._value';
+          if (
+            cpe.modelPermissions().lan.LANDeviceCanTrustActive &&
+            utilHandlers.checkForNestedKey(data, hostActiveKey)
+          ) {
             let hostActive = utilHandlers.getFromNestedKey(
-              data, hostActiveKey+'._value',
+              data, hostActiveKey,
             );
             if (typeof hostActive === 'string') {
               let trueValues = ['true', '1'];
