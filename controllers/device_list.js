@@ -582,6 +582,20 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
       message: t('cpeWithoutCommand'),
     };
   }
+  if (device.use_tr069) {
+    // TR-069 devices must have SSID enabled to start site survey
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    if (
+      cpe.modelPermissions().siteSurvey.requiresWifiEnable &&
+      !device.wifi_state &&
+      (!cpe.modelPermissions().wifi.dualBand || !device.wifi_state_5ghz)
+    ) {
+      return {
+        success: false,
+        message: t('showsitesurveyTR069WarningInfo'),
+      };
+    }
+  }
 
   // Validated from here. Saving device & validating stuffs
   await device.save().catch((err) => {
