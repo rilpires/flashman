@@ -36,6 +36,7 @@ const tr069Models = {
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
+  huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
@@ -162,9 +163,12 @@ const instantiateCPEByModel = function(
   } else if (['WS5200-21', 'WS5200-40'].includes(modelName)) {
     // Huawei WS5200 v2 / v3
     return {success: true, cpe: tr069Models.huaweiWS5200Model};
-  } else if (modelName === 'WS7001-40' || modelName === 'WS7000-42') {
-    // Huawei AX2 / AX2S
+  } else if (modelName === 'WS7001-40') {
+    // Huawei AX2
     return {success: true, cpe: tr069Models.huaweiWS7001Model};
+  } else if (modelName === 'WS7000-42') {
+    // Huawei AX2S
+    return {success: true, cpe: tr069Models.huaweiWS7000Model};
   } else if (modelName === 'WS7100-30') {
     // Huawei AX3
     return {success: true, cpe: tr069Models.huaweiWS7100Model};
