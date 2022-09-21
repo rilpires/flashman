@@ -162,8 +162,8 @@ const instantiateCPEByModel = function(
   } else if (['WS5200-21', 'WS5200-40'].includes(modelName)) {
     // Huawei WS5200 v2 / v3
     return {success: true, cpe: tr069Models.huaweiWS5200Model};
-  } else if (modelName === 'WS7001-40') {
-    // Huawei AX2
+  } else if (modelName === 'WS7001-40' || modelName === 'WS7000-42') {
+    // Huawei AX2 / AX2S
     return {success: true, cpe: tr069Models.huaweiWS7001Model};
   } else if (modelName === 'WS7100-30') {
     // Huawei AX3
