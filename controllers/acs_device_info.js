@@ -571,6 +571,7 @@ acsDeviceInfoController.requestSync = async function(device) {
   // Basic fields that should be updated often
   dataToFetch.basic = true;
   parameterNames.push(fields.common.ip);
+  parameterNames.push(fields.common.version);
   parameterNames.push(fields.common.uptime);
   parameterNames.push(fields.common.acs_url);
   parameterNames.push(fields.common.interval);
@@ -742,6 +743,9 @@ const fetchSyncResult =
         let common = fields.common;
         acsData.common.ip = getFieldFromGenieData(
           data, common.ip, useLastIndexOnWildcard,
+        );
+        acsData.common.version = getFieldFromGenieData(
+          data, common.version, useLastIndexOnWildcard,
         );
         acsData.common.uptime = getFieldFromGenieData(
           data, common.uptime, useLastIndexOnWildcard,

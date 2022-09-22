@@ -24,6 +24,7 @@ nokiaModel.modelPermissions = function() {
   ];
   permissions.firmwareUpgrades = {
     '3FE49568IJIJ23': ['3FE49568HJIL97'],
+    '3FE49568HJIJ86': ['3FE49568HJIL97'],
     '3FE49568HJIL97': [],
   };
   return permissions;
