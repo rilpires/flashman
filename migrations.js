@@ -5,12 +5,13 @@ const Device = require('./models/device');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
 let DeviceVersion = require('./models/device_version');
-let updater = require('./controllers/update_flashman');
 const Config = require('./models/config');
 
 
 module.exports = async (app) => {
-  if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+  if (parseInt(process.env.NODE_APP_INSTANCE) === 0 ||
+      parseInt(process.env.FLM_DOCKER_INSTANCE) === 0
+  ) {
     // Check default config
     controlApi.checkPubKey(app).then(() => {
       // Get message configs from control
@@ -19,9 +20,9 @@ module.exports = async (app) => {
 
     // put default values in old config
     let config = await Config.findOne(
-      {is_default: true}).catch(
+      {is_default: true}).exec().catch(
       (err) => {
-        debug('MQTT AUTH ERROR: Config not found!');
+        console.log('Error fetching Config from database!');
       },
     );
     if (config) {
@@ -199,14 +200,5 @@ module.exports = async (app) => {
          await Device.syncIndexes();
        }
     }).catch(console.error);
-
-    /* Update main and diagnostics, provision and preset,
-      whenever flashman (re)boot */
-    updater.updateGenieACS({
-      'updateGenie': false,
-      'updateProvision': true,
-      'updatePreset': true,
-    });
-    updater.updateProvisionsPresets();
   }
 };

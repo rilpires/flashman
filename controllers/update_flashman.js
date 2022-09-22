@@ -131,7 +131,7 @@ const updateGenieRepo = function(ref) {
   });
 };
 
-updateController.updateGenieACS = function(upgrades) {
+const updateGenieACS = function(upgrades) {
   return new Promise((resolve, reject) => {
     let field = 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval';
     Config.findOne({is_default: true}).then((config)=>{
@@ -513,7 +513,7 @@ const updateFlashman = function(automatic, res) {
                     return Promise.reject(rejectedValue);
                   })
                   .then(()=>{
-                    return updateController.updateGenieACS(genieUpgrades);
+                    return updateGenieACS(genieUpgrades);
                   }, (rejectedValue)=>{
                     return Promise.reject(rejectedValue);
                   })
