@@ -1,3 +1,5 @@
+/* global __line */
+
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
@@ -22,11 +24,14 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
+  let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let query = {_id: acsID};
-  let projection = recvField + ',' + sentField;
+  let projection = recvField.replace(/\.\*.*/g, '') + ','
+    + sentField.replace(/\.\*.*/g, '');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
@@ -49,12 +54,16 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         }
       }
       let success = false;
-      if (utilHandlers.checkForNestedKey(data, recvField+'._value') &&
-          utilHandlers.checkForNestedKey(data, sentField+'._value')) {
+      if (utilHandlers.checkForNestedKey(data, recvField+'._value', useLastIndexOnWildcard) &&
+          utilHandlers.checkForNestedKey(data, sentField+'._value', useLastIndexOnWildcard)) {
         success = true;
         wanBytes = {
-          recv: utilHandlers.getFromNestedKey(data, recvField+'._value'),
-          sent: utilHandlers.getFromNestedKey(data, sentField+'._value'),
+          recv: utilHandlers.getFromNestedKey(
+            data, recvField+'._value', useLastIndexOnWildcard,
+          ),
+          sent: utilHandlers.getFromNestedKey(
+            data, sentField+'._value', useLastIndexOnWildcard,
+          ),
         };
       }
       if (success) {
@@ -71,7 +80,7 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
           console.log('Error saving device wan bytes: ' + err);
         });
       }
-      sio.anlixSendWanBytesNotification(mac, {wanbytes: wanBytes});
+      sio.anlixSendStatisticsNotification(mac, {wanbytes: wanBytes});
     });
   });
   req.end();
@@ -87,7 +96,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
             message: t('cpeFindError', {errorline: __line})};
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
   let rxPowerFieldEpon = '';
@@ -143,14 +153,10 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
         if (ponSignal.rxpower) {
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.rxpower,
-          );
+          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
         }
         if (ponSignal.txpower) {
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.txpower,
-          );
+          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
         }
         ponSignal = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
@@ -158,6 +164,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           ponSignal.txpower,
         );
         deviceEdit.pon_signal_measure = ponSignal;
+        deviceEdit.pon_rxpower = ponSignal.rxpower;
+        deviceEdit.pon_txpower = ponSignal.txpower;
         await deviceEdit.save().catch((err) => {
           console.log('Error saving pon signal: ' + err);
         });
@@ -180,25 +188,30 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let upTimeField1 = fields.wan.uptime.replace('*', 1);
-  let upTimeField2 = fields.wan.uptime.replace('*', 2);
-  let upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
-  let upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
   let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
+  let upTimeField1;
+  let upTimeField2;
+  let upTimePPPField1;
+  let upTimePPPField2;
   let rxPowerField;
   let txPowerField;
   let rxPowerFieldEpon;
   let txPowerFieldEpon;
   let query = {_id: acsID};
   let projection = fields.common.uptime +
-      ',' + upTimeField1 +
-      ',' + upTimeField2 +
-      ',' + upTimePPPField1 +
-      ',' + upTimePPPField2 +
-      ',' + PPPoEUser1 +
-      ',' + PPPoEUser2;
+    ',' + PPPoEUser1 + ',' + PPPoEUser2;
+
+  if (cpe.modelPermissions().wan.hasUptimeField) {
+    upTimeField1 = fields.wan.uptime.replace('*', 1);
+    upTimeField2 = fields.wan.uptime.replace('*', 2);
+    upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
+    upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
+    projection += ',' + upTimeField1 + ',' + upTimeField2 +
+      ',' + upTimePPPField1 + ',' + upTimePPPField2;
+  }
 
   if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
     rxPowerField = fields.wan.pon_rxpower;
@@ -281,14 +294,11 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
         deviceEdit.last_contact = Date.now();
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
+
         if (successRxPower) {
           // covert rx and tx signal
-          ponSignal.rxpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.rxpower,
-          );
-          ponSignal.txpower = acsMeasuresHandler.convertToDbm(
-            deviceEdit.model, ponSignal.txpower,
-          );
+          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
           // send then
           let config = await Config.findOne(
             {is_default: true}, {tr069: true},
@@ -373,39 +383,6 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);
     return original;
-  }
-};
-
-acsMeasuresHandler.convertToDbm = function(model, rxPower) {
-  switch (model) {
-    case 'HG9': {
-      rxPower = parseFloat(rxPower.split(' ')[0]);
-      if (isNaN(rxPower)) {
-        debug('rxPower is not an number!!!');
-      }
-      return rxPower;
-    }
-    case 'IGD':
-    case 'P20':
-    case 'FW323DAC':
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL':
-    case 'G-140W-C':
-    case 'G-140W-CS':
-    case 'G-140W-UD':
-    case 'DM985-424 HW3': {
-      rxPower = parseFloat((10 * Math.log10(rxPower*0.0001)).toFixed(3));
-      if (isNaN(rxPower)) {
-        debug('rxPower is not a number!!!');
-      }
-      return rxPower;
-    }
-    case 'GONUAC001':
-    case 'GONUAC002':
-    default:
-      return rxPower;
   }
 };
 

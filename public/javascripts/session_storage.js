@@ -36,6 +36,18 @@ const setFirmwareStorage = function(key, val) {
   setCommonStorage('firmware', key, val);
 };
 
+const setFactoryCredentialsStorage = function(key, val) {
+  setCommonStorage('factoryCredentials', key, val);
+};
+
+const setPingHostsList = function(key, val) {
+  setCommonStorage('pingHosts', key, val);
+};
+
+const setDefaultPingHostsList = function(key, val) {
+  setCommonStorage('defaultPingHosts', key, val);
+};
+
 const getPortForwardStorage = function(key) {
   return getCommonStorage('portForwardTr069', key);
 };
@@ -46,6 +58,18 @@ const getConfigStorage = function(key) {
 
 const getFirmwareStorage = function(key) {
   return getCommonStorage('firmware', key);
+};
+
+const getFactoryCredentialsStorage = function(key) {
+  return getCommonStorage('factoryCredentials', key);
+};
+
+const getPingHostsList = function(key) {
+  return getCommonStorage('pingHosts', key);
+};
+
+const getDefaultPingHostsList = function(key) {
+  return getCommonStorage('defaultPingHosts', key);
 };
 
 const deletePortForwardStorage = function() {
@@ -60,12 +84,33 @@ const deleteFirmwareStorage = function() {
   deleteCommonStorage('firmware');
 };
 
+const deleteFactoryCredentialsStorage = function() {
+  deleteCommonStorage('factoryCredentials');
+};
+
+const deletePingHostsList = function() {
+  deleteCommonStorage('pingHosts');
+};
+
+const deleteDefaultPingHostsList = function() {
+  deleteCommonStorage('defaultPingHosts');
+};
+
 export {setPortForwardStorage,
         setConfigStorage,
         setFirmwareStorage,
+        setPingHostsList,
+        setDefaultPingHostsList,
+        setFactoryCredentialsStorage,
         getPortForwardStorage,
         getConfigStorage,
         getFirmwareStorage,
+        getFactoryCredentialsStorage,
+        getPingHostsList,
+        getDefaultPingHostsList,
         deletePortForwardStorage,
         deleteConfigStorage,
-        deleteFirmwareStorage};
+        deleteFirmwareStorage,
+        deleteFactoryCredentialsStorage,
+        deletePingHostsList,
+        deleteDefaultPingHostsList};

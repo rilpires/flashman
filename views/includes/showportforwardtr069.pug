@@ -11,6 +11,9 @@
           span.white-text &times;
       #port-forward-tr069-modal-alert.d-none.p-3.bg-danger.text-white
       .modal-body
+        #port-forward-tr069-modal-reboot-info.d-none.row.p-3.alert.alert-danger.mb-3(aria-alert="true")
+          .fas.fa-exclamation-triangle.fa-lg
+          span &nbsp; #{t('portOpeningRebootAlert')}
         #port-forward-tr069-modal-compat-info.d-none.row.p-3.alert.alert-info(aria-alert="true")
           .row
             .col-11

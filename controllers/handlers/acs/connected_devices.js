@@ -9,27 +9,6 @@ let acsConnDevicesHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-const convertWifiRate = function(model, rate) {
-  switch (model) {
-    case 'F660':
-    case 'F670L':
-    case 'F680':
-    case 'ST-1001-FL': {
-      rate = parseInt(rate) / 1000;
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-      return rate;
-    }
-    default: {
-      rate = parseInt(rate);
-      if (isNaN(rate)) {
-        debug('rate is NaN beware!!!');
-      }
-    }
-  }
-};
-
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
   let device = await DeviceModel.findById(mac.toUpperCase());
@@ -80,12 +59,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
     return;
   }
   let mac = device._id;
-  let splitID = acsID.split('-');
-  let model = device.model;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -111,7 +89,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
       let success = true;
       let hostKeys = [];
       let hostCountField = hostsField+'.HostNumberOfEntries._value';
-      // Make sure we have a host count and assodicated devices fields
+      // Make sure we have a host count and associated devices fields
       if (utilHandlers.checkForNestedKey(data, hostCountField) &&
           utilHandlers.checkForNestedKey(data, assocField)) {
         utilHandlers.getFromNestedKey(data, hostCountField);
@@ -128,8 +106,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         success = false;
       }
       if (success) {
-        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
-        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
+        let iface2 = fields.wifi2.channel.replace('.Channel', '');
+        let iface5 = fields.wifi5.channel.replace('.Channel', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -159,30 +137,47 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect layer 2 interface
           let ifaceKey = fields.devices.host_layer2.replace('*', i);
           let l2iface = utilHandlers.getFromNestedKey(data, ifaceKey+'._value');
-          if (model === 'DM985-424 HW3') {
-            if (l2iface === '802.11') {
-              device.wifi = true;
-            }
-          } else {
-            let cmpIface2 = iface2;
-            if (model === 'GWR-1200AC') {
-              // For some reason it uses index 6 instead of 2 here
-              cmpIface2 = iface2.replace(/2/g, '6');
-            }
-            // Some models leave the dot in the layer2 interface name
-            if (l2iface === cmpIface2 || l2iface === cmpIface2 + '.') {
-              device.wifi = true;
+          let status = cpe.isDeviceConnectedViaWifi(l2iface, iface2, iface5);
+          if (status.includes('wifi')) {
+            device.wifi = true;
+            if (status === 'wifi2') {
               device.wifi_freq = 2.4;
-            } else if (l2iface === iface5 || l2iface === iface5 + '.') {
-              device.wifi = true;
+            } else if (status === 'wifi5') {
               device.wifi_freq = 5;
             }
+          }
+          // Collect host active if field can be trusted. If the field is
+          // reliable, we break the flow to those devices that are inactive, and
+          // store the rest as active. If the field is not reliable, we have to
+          // check if it has the tree of connected devices. If so, we store that
+          // device as non-active and revisit this information later. If not, we
+          //  store that device as active to preserve legacy behavior
+          let hostActiveKey = fields.devices.host_active.replace('*', i);
+          hostActiveKey += '._value';
+          if (
+            cpe.modelPermissions().lan.LANDeviceCanTrustActive &&
+            utilHandlers.checkForNestedKey(data, hostActiveKey)
+          ) {
+            let hostActive = utilHandlers.getFromNestedKey(
+              data, hostActiveKey,
+            );
+            if (typeof hostActive === 'string') {
+              let trueValues = ['true', '1'];
+              hostActive = (trueValues.includes(hostActive.toLowerCase()));
+            }
+            if (!hostActive) {
+              return;
+            }
+            device.wifiActive = true;
+          } else {
+            device.wifiActive =
+              !cpe.modelPermissions().lan.LANDeviceHasAssocTree;
           }
           // Push basic device information
           devices.push(device);
         });
 
-        if (fields.devices.host_rssi || fields.devices.host_snr) {
+        if (cpe.modelPermissions().lan.LANDeviceHasAssocTree) {
           // Change iface identifiers to use only numerical identifier
           iface2 = iface2.split('.');
           iface5 = iface5.split('.');
@@ -194,18 +189,33 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           ));
           interfaces = interfaces.filter((i)=>i[0]!='_');
           if (fields.devices.associated_5) {
-            if (model == 'AC10') {
-              interfaces.push('2');
-            } else {
-              interfaces.push('5');
-            }
+            let splitField = fields.devices.associated_5.split('.');
+            interfaces.push(splitField[splitField.length - 2]);
           }
-          interfaces.forEach((iface) => {
+          for (let iface of interfaces) {
             // Get active indexes, filter metadata fields
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
+            ).replace(
+              /Radio\.[0-9*]+\./g,
+              'Radio.' + iface + '.',
             );
+            let ifaceFreq;
+            if (iface == iface2) {
+              ifaceFreq = 2.4;
+            } else if (iface == iface5) {
+              ifaceFreq = 5;
+            }
+            if (
+              !utilHandlers.checkForNestedKey(data, assocField) && ifaceFreq
+            ) {
+              // Device missing associated fields for this interface
+              // Mark devices for this interface as active, missing data
+              devices.forEach((d)=>{
+                if (d.wifi && d.wifi_freq === ifaceFreq) d.wifiActive = true;
+              });
+            }
             let assocIndexes = utilHandlers.getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
@@ -213,7 +223,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               assocIndexes = [];
             }
             assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
-            assocIndexes.forEach((index) => {
+            for (let index of assocIndexes) {
               // Collect associated mac
               let macKey = fields.devices.assoc_mac;
               macKey = macKey.replace('*', iface).replace('*', index);
@@ -224,43 +234,28 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 macVal = macVal.toUpperCase();
               } else {
                 // MAC is mandatory
-                return;
+                continue;
               }
               let device = devices.find((d)=>d.mac.toUpperCase()===macVal);
-              if (!device) return;
-              // Mark device as a wifi device
+              if (!device) continue;
+              // If the execution flow reaches this point, it means that the
+              // host stored in the Associated Devices tree exists in the host
+              // list for that device, which means the connection for that host
+              // is active
+              device.wifiActive = true;
               device.wifi = true;
-              if (iface == iface2) {
-                device.wifi_freq = 2.4;
-              } else if (iface == iface5) {
-                device.wifi_freq = 5;
-              }
+              device.wifi_freq = ifaceFreq;
               // Collect rssi, if available
               if (fields.devices.host_rssi) {
                 let rssiKey = fields.devices.host_rssi;
                 rssiKey = rssiKey.replace('*', iface).replace('*', index);
-                device.rssi = utilHandlers.getFromNestedKey(
+                let rssiValue = utilHandlers.getFromNestedKey(
                   data, rssiKey+'._value',
                 );
-                if (typeof device.rssi !== 'undefined') {
-                  // Casts to string if is a number so we can replace 'dBm'
-                  if (typeof device.rssi === 'number') {
-                    device.rssi = device.rssi.toString();
-                  }
-                  device.rssi = device.rssi.replace('dBm', '');
-                  // Cast back to number to avoid converting issues
-                  device.rssi = parseInt(device.rssi);
-                  if (isNaN(parseInt(device.rssi))) {
-                    debug(`device.rssi is NaN beware!!!`);
-                  }
-                  // Convert wrong positive values to negative for Greatek
-                  if (model == 'GONUAC002' && device.rssi > 0) {
-                    device.rssi = -device.rssi;
-                  }
-                }
+                device.rssi = cpe.convertRssiValue(rssiValue);
               }
-              // Collect snr, if available
-              if (fields.devices.host_snr) {
+              // Collect explicit snr, if available - fallback on rssi value
+              if (cpe.modelPermissions().lan.LANDeviceHasSNR) {
                 let snrKey = fields.devices.host_snr;
                 snrKey = snrKey.replace('*', iface).replace('*', index);
                 device.snr = utilHandlers.getFromNestedKey(
@@ -286,6 +281,12 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 } else if (modeVal.includes('g')) {
                   device.wifi_mode = 'G';
                 }
+                // Skip this device when following flag is enabled and mode
+                // value is empty
+                if (cpe.modelPermissions().lan.LANDeviceSkipIfNoWifiMode &&
+                    modeVal == '') {
+                  device.wifiActive = false;
+                }
               }
               // Collect connection speed, if available
               if (fields.devices.host_rate) {
@@ -294,7 +295,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                 device.rate = utilHandlers.getFromNestedKey(
                   data, rateKey+'._value',
                 );
-                device.rate = convertWifiRate(model, device.rate);
+                device.rate = cpe.convertWifiRate(device.rate);
               }
               if (device.mac == device.name &&
                 fields.devices.alt_host_name) {
@@ -304,9 +305,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
                   data, nameKey+'._value',
                 );
               }
-            });
-          });
+            }
+          }
         }
+        // Filter devices by active, always including wired connections
+        devices = devices.filter((d) => !d.wifi || d.wifiActive);
         await saveDeviceData(mac, devices).catch(debug);
       }
       sio.anlixSendOnlineDevNotifications(mac, null);

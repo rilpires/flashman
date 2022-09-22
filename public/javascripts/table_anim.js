@@ -29,10 +29,13 @@ let refreshExtRefType = function(event) {
   $(event.target).addClass('active primary-color');
 
   if ($(this).text() == t('personIdentificationSystem')) {
-    inputField.mask(t('personIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('personIdentificationMask')).trigger('keyup');
   } else if ($(this).text() == t('enterpriseIdentificationSystem')) {
-    inputField.mask(t('enterpriseIdentificationMask')).keyup();
+    $(document).off('keyup.' + inputField.attr('id'));
+    inputField.mask(t('enterpriseIdentificationMask')).trigger('keyup');
   } else {
+    $(document).off('keyup.' + inputField.attr('id'));
     inputField.unmask();
   }
 };
@@ -106,7 +109,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
       alertLink.removeClass('d-none');
       alertLink.off('click').click(function(event) {
         let options = {
-          type: 'warning',
+          icon: 'warning',
           confirmButtonText: data.action_title,
           confirmButtonColor: '#4db6ac',
           cancelButtonText: t('Cancel'),
@@ -121,7 +124,7 @@ let changeDeviceStatusOnTable = function(table, macaddr, data) {
         } else {
           options.text = data.message;
         }
-        swal(options).then(function(result) {
+        swal.fire(options).then(function(result) {
           if (result.value) {
             let deleteNotification = function() {
               $.ajax({type: 'POST', url: '/notification/del',
@@ -189,15 +192,17 @@ anlixDocumentReady.add(function() {
   let grantSpeedMeasure = false;
   let grantDeviceRemoval = false;
   let grantDeviceMassRemoval = false;
+  let grantDeviceLicenseBlock = false;
   let grantFactoryReset = false;
   let grantDeviceId = false;
   let grantPassShow = false;
   let grantOpmodeEdit = false;
   let grantVlan = 0;
-  let grantWanBytes = false;
+  let grantStatistics = false;
   let grantShowSearchSummary = false;
   let grantWanType = false;
   let grantSlaveDisassociate = false;
+  let mustBlockLicenseAtRemoval = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -222,13 +227,14 @@ anlixDocumentReady.add(function() {
     grantSiteSurveyAccess = role.grantSiteSurvey;
     grantDeviceRemoval = role.grantDeviceRemoval;
     grantDeviceMassRemoval = role.grantDeviceMassRemoval;
+    grantDeviceLicenseBlock = role.grantDeviceLicenseBlock;
     grantFactoryReset = role.grantFactoryReset;
     grantDeviceId = role.grantDeviceId;
     grantPassShow = role.grantPassShow;
     grantSpeedMeasure = role.grantMeasureDevices;
     grantOpmodeEdit = role.grantOpmodeEdit;
     grantVlan = role.grantVlan;
-    grantWanBytes = role.grantWanBytesView;
+    grantStatistics = role.grantStatisticsView;
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
@@ -396,9 +402,27 @@ anlixDocumentReady.add(function() {
         upgradeStatus.find('.status-error').addClass('d-none');
         // Deactivate cancel button
         row.find('.btn-group .btn-cancel-update').attr('disabled', true);
+        // Enable all disassoc buttons
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', false);
+          });
+        }
       } else {
         // Deactivate dropdown
         row.find('.device-update .dropdown-toggle').attr('disabled', true);
+        // Disable all disassoc buttons
+        if (row.next().data('slaves').length > 0) {
+          let slaveList = JSON.parse(row.next()
+            .data('slaves').replaceAll('$', '"'));
+          slaveList.forEach((s) => {
+            $('tr[id="'+s+'"]').find('.btn-disassoc')
+              .attr('disabled', true);
+          });
+        }
         // Update waiting status
         let upgradeStatus = row.find('span.upgrade-status');
         upgradeStatus.find('.status-none').addClass('d-none');
@@ -515,7 +539,14 @@ anlixDocumentReady.add(function() {
         row.find('.device-status').removeClass('green-text red-text grey-text')
                                   .addClass(res.status_color + '-text');
         let wanip = res.wan_ip;
-        row.find('.device-wan-ip').html(wanip);
+        let wanipv6 = res.wan_ipv6;
+
+        // Assign both ipv4 and ipv6 to row
+        row.find('.device-wan-ip').html(
+          wanip +
+          (wanipv6 ? '<br><h6 style="font-size:70%">' + wanipv6 + '</h6>' : ''),
+        );
+
         row.find('.device-ip').html(res.ip);
         row.find('.device-installed-release').html(res.installed_release);
         row.find('.device-pppoe-user').html(res.pppoe_user);
@@ -842,6 +873,8 @@ anlixDocumentReady.add(function() {
         uid+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
+        (device.wan_ipv6 ?
+          '<br><h6 style="font-size:70%">' + device.wan_ipv6 + '</h6>' : '') +
       '</td><td class="text-center device-ip">'+
         device.ip+
       '</td><td class="text-center device-installed-release">'+
@@ -873,12 +906,26 @@ anlixDocumentReady.add(function() {
     '</button>';
   };
 
-  const buildDisassociateSlave = function() {
+  const buildDisassociateSlave = function(enable) {
     return '<button class="btn btn-danger btn-sm btn-disassoc m-0" '+
-    'type="button">'+
+    'type="button"'+ (enable ? '' : 'disabled') + '>' +
       '<i class="fas fa-minus-circle"></i>'+
       '<span>&nbsp; '+t('Disassociate')+'</span>'+
     '</button>';
+  };
+
+  const buildMoreInfo = function(index, name) {
+    return '<div class="row">'+
+      '<div class="col text-right">'+
+        '<button class="btn btn-primary mx-0 more-info-' +
+            name +
+            '-button" type="button">'+
+          '<i class="fas fa-file-alt fa-lg"></i><span>&nbsp; '+
+            t('MoreInfo')+
+          '</span>'+
+        '</button>'+
+      '</div>'+
+    '</div>';
   };
 
   const buildFormSubmit = function(index, mesh) {
@@ -956,7 +1003,7 @@ anlixDocumentReady.add(function() {
           '<input class="form-control py-0 added-margin" type="text" '+
             'id="edit_external_reference-'+idIndex+
             '" placeholder="'+t('clientIdOptional')+'" '+
-            'maxlength="64" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
+            'maxlength="256" value="$REPLACE_ID_VAL" $REPLACE_EN_ID>'+
           '</input>'+
           '<div class="invalid-feedback"></div>'+
         '</div>'+
@@ -1033,33 +1080,14 @@ anlixDocumentReady.add(function() {
                     '<option value="auto" $REPLACE_SELECTED_CHANNEL5_auto$>'+
                       t('auto')+
                     '</option>'+
-                    '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
-                      '36'+
-                    '</option>'+
-                    '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
-                      '40'+
-                    '</option>'+
-                    '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
-                      '44'+
-                    '</option>'+
-                    '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
-                      '48'+
-                    '</option>'+
-                    '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
-                      '149'+
-                    '</option>'+
-                    '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
-                      '153'+
-                    '</option>'+
-                    '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
-                      '157'+
-                    '</option>'+
-                    '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
-                      '161'+
-                    '</option>'+
-                    '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
-                      '165'+
-                    '</option>'+
+                    device.permissions.grantWifi5ChannelList.reduce(
+                      (result, channel)=>result+(
+                        '<option value="' + channel +
+                          '" $REPLACE_SELECTED_CHANNEL5_' + channel + '$>' +
+                          channel +
+                        '</option>'),
+                      '',
+                    )+
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -1079,12 +1107,29 @@ anlixDocumentReady.add(function() {
           '<div class="invalid-feedback"></div>'+
         '</div>'+
         '<div class="md-form input-entry">'+
-          '<label class="active">'+
-            ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
-          '</label>'+
-          '<input class="form-control" type="text" maxlength="32" '+
-          'disabled value="'+device.version+'">'+
-          '<div class="invalid-feedback"></div>'+
+          // If the model has hardware version info, then
+          // renders two columns on a row to display firmware and
+          // hardware versions side by side
+          '<div class="row">'+
+            '<div class="col">'+
+              // Firmware version info
+              '<label class="active">'+
+                ((isTR069) ? t('firmwareVersion') : t('flashboxVersion'))+
+              '</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>'+
+            // Display hardware version info, if exists
+            ((isTR069 && device.hw_version) ?
+            '<div class="col">'+
+              // Hardware version info
+              '<label class="active">'+t('hardwareVersion')+'</label>'+
+              '<input class="form-control" type="text" maxlength="32" '+
+              'disabled value="'+device.hw_version+'">'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>' : '') +
+          '</div>'+
         '</div>'+
         (mesh > -1 ?
           '<div class="md-form">'+
@@ -1247,6 +1292,8 @@ anlixDocumentReady.add(function() {
           displayAlertMsg(res);
           return;
         }
+        setConfigStorage(
+          'mustBlockLicenseAtRemoval', res.mustBlockLicenseAtRemoval);
         setConfigStorage('ssidPrefix', res.ssidPrefix);
         setConfigStorage('isSsidPrefixEnabled', res.isSsidPrefixEnabled);
         // ssid prefix in new device form
@@ -1345,8 +1392,14 @@ anlixDocumentReady.add(function() {
           }
           let isTR069 = device.use_tr069;
           let ponRXPower = device.pon_rxpower;
-          let grantWifiBand = device.permissions.grantWifiBand;
-          let grantWifiBandAuto = device.permissions.grantWifiBandAuto;
+          let grantWifiModeRead = device.permissions.grantWifiModeRead;
+          let grantWifiModeEdit = device.permissions.grantWifiModeEdit;
+          let grantWifiBandRead2 = device.permissions.grantWifiBandRead2;
+          let grantWifiBandRead5 = device.permissions.grantWifiBandRead5;
+          let grantWifiBandEdit2 = device.permissions.grantWifiBandEdit2;
+          let grantWifiBandEdit5 = device.permissions.grantWifiBandEdit5;
+          let grantWifiBandAuto2 = device.permissions.grantWifiBandAuto2;
+          let grantWifiBandAuto5 = device.permissions.grantWifiBandAuto5;
           let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
@@ -1365,19 +1418,29 @@ anlixDocumentReady.add(function() {
           let grantResetDevices = device.permissions.grantResetDevices;
           let grantPortForward = device.permissions.grantPortForward;
           let grantPingTest = device.permissions.grantPingTest;
+          let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
           let grantVlanSupport = device.permissions.grantVlanSupport;
-          let grantWanBytesSupport = device.permissions.grantWanBytesSupport;
+          let grantStatisticsSupport =
+            device.permissions.grantStatisticsSupport;
           let grantPonSignalSupport = device.permissions.grantPonSignalSupport;
           let grantMeshMode = device.permissions.grantMeshMode;
-          let grantMeshV2PrimMode = device.permissions.grantMeshV2PrimaryMode;
+          let grantMeshV2PrimModeCable = device.permissions
+            .grantMeshV2PrimaryModeCable;
+          let grantMeshV2PrimModeWifi = device.permissions
+            .grantMeshV2PrimaryModeWifi;
           let grantBlockWiredDevices =
             device.permissions.grantBlockWiredDevices;
           let grantBlockDevices = device.permissions.grantBlockDevices;
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
+          let grantDiacritics = device.permissions.grantDiacritics;
+          let grantSsidSpaces = device.permissions.grantSsidSpaces;
+          // WAN and LAN Information
+          let grantWanLanInformation =
+            device.permissions.grantWanLanInformation;
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -1448,14 +1511,20 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-slaves="'+
             ((device.mesh_slaves) ?
               JSON.stringify(device.mesh_slaves).replace(/"/g, '$') : '')+'"';
+          formAttr += ' data-validate-wifi-diacritics="'+grantDiacritics+'"';
+          formAttr += ' data-validate-wifi-space="'+grantSsidSpaces+'"';
           formAttr += ' data-validate-wifi="'+
             (isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+
             (isSuperuser || grantPPPoEInfo >= 1)+'"';
           formAttr += ' data-validate-ipv6-enabled="'+
             grantWifiPowerHiddenIpv6Box+'"';
-          formAttr += ' data-validate-wifi-band="'+
-            (grantWifiBand && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-mode="'+
+            (grantWifiModeEdit && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-2ghz="'+
+            (grantWifiBandEdit2 && (isSuperuser || grantWifiInfo >= 1))+'"';
+          formAttr += ' data-validate-wifi-band-5ghz="'+
+            (grantWifiBandEdit5 && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-5ghz="'+
             (grantWifi5ghz && (isSuperuser || grantWifiInfo >= 1))+'"';
           formAttr += ' data-validate-wifi-power="'+
@@ -1549,10 +1618,10 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_ICON', 'fa-project-diagram')
           .replace('$REPLACE_TEXT', t('manageVlans'));
 
-          let wanBytesAction = baseAction
-          .replace('$REPLACE_BTN_CLASS', 'btn-wan-bytes-modal')
+          let statisticsAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-statistics-modal')
           .replace('$REPLACE_ICON', 'fa-chart-line')
-          .replace('$REPLACE_TEXT', t('wanBytes'));
+          .replace('$REPLACE_TEXT', t('cpeStatistics'));
 
           let ponSignalAction = baseAction
           .replace('$REPLACE_BTN_CLASS', 'btn-pon-signal-modal')
@@ -1568,6 +1637,11 @@ anlixDocumentReady.add(function() {
           .replace('$REPLACE_BTN_CLASS', 'btn-data_collecting-device-modal')
           .replace('$REPLACE_ICON', 'fa-chart-bar')
           .replace('$REPLACE_TEXT', t('dataCollecting'));
+
+          let tracerouteAction = baseAction
+          .replace('$REPLACE_BTN_CLASS', 'btn-traceroute-test-modal')
+          .replace('$REPLACE_ICON', 'fa-list')
+          .replace('$REPLACE_TEXT', t('tracerouteTest'));
 
           let idxMenu = 0;
           let sideMenu = [];
@@ -1622,8 +1696,8 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += vlanAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if ((isSuperuser || grantWanBytes) && grantWanBytesSupport) {
-            sideMenu[idxMenu] += wanBytesAction;
+          if ((isSuperuser || grantStatistics) && grantStatisticsSupport) {
+            sideMenu[idxMenu] += statisticsAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && isSuperuser && enableDataCollecting) {
@@ -1632,6 +1706,10 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069 && grantPonSignalSupport) {
             sideMenu[idxMenu] += ponSignalAction;
+            idxMenu = ((idxMenu == 0) ? 1 : 0);
+          }
+          if (grantTraceroute) {
+            sideMenu[idxMenu] += tracerouteAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
           if (!isTR069 && slaves.length == 0 &&
@@ -1800,6 +1878,7 @@ anlixDocumentReady.add(function() {
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
+            '$REPLACE_WAN_INFO'+
           '</div>';
           if (device.connection_type &&
               device.connection_type.toUpperCase() === 'PPPOE'
@@ -1840,6 +1919,15 @@ anlixDocumentReady.add(function() {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', pppoeForm);
           } else {
             wanTab = wanTab.replace('$REPLACE_PPPOE_FORM', '');
+          }
+
+          if (grantWanLanInformation) {
+            wanTab = wanTab.replace(
+              '$REPLACE_WAN_INFO',
+              buildMoreInfo(index, 'wan'),
+            );
+          } else {
+            wanTab = wanTab.replace('$REPLACE_WAN_INFO', '');
           }
 
           let lanTab = '<div class="edit-tab d-none" id="tab_lan-'+index+'">'+
@@ -1889,6 +1977,7 @@ anlixDocumentReady.add(function() {
                 '</div>'+
               '</div>'+
             '</div>'+
+            '$REPLACE_LAN_INFO'+
           '</div>';
           if (device.bridge_mode_enabled || !grantDeviceLanEdit ||
               (!isSuperuser && !grantLanEditAccess)
@@ -1907,6 +1996,15 @@ anlixDocumentReady.add(function() {
           lanTab = lanTab.replace(selectTarget, 'selected="selected"');
           lanTab = lanTab.replace(/\$REPLACE_SELECTED_.*?\$/g, '');
 
+          if (grantWanLanInformation) {
+            lanTab = lanTab.replace(
+              '$REPLACE_LAN_INFO',
+              buildMoreInfo(index, 'lan'),
+            );
+          } else {
+            lanTab = lanTab.replace('$REPLACE_LAN_INFO', '');
+          }
+
           let meshForm = '<div class="md-form">'+
             '<div class="input-group">'+
               '<div class="md-selectfield form-control my-0">'+
@@ -1922,6 +2020,7 @@ anlixDocumentReady.add(function() {
                   '<option value="1" $REPLACE_SELECTED_MESH_1$>'+
                     t('Cable')+
                   '</option>'+
+                  (grantMeshV2PrimModeWifi ?
                   '<option value="2" $REPLACE_SELECTED_MESH_2$>'+
                     t('cableAndWifiXGhz', {x: 2.4})+
                   '</option>'+
@@ -1931,9 +2030,8 @@ anlixDocumentReady.add(function() {
                     '</option>'+
                     '<option value="4" $REPLACE_SELECTED_MESH_4$>'+
                       t('cableAndBothWifi')+
-                    '</option>' :
-                    ''
-                  )+
+                    '</option>' : ''
+                  ) : '') +
                 '</select>'+
               '</div>'+
             '</div>'+
@@ -2117,7 +2215,8 @@ anlixDocumentReady.add(function() {
                                           'selected="selected"');
             opmodeTab = opmodeTab.replace('$REPLACE_SELECTED_BRIDGE', '');
           }
-          if (grantMeshMode || grantMeshV2PrimMode) {
+          if (grantMeshMode || grantMeshV2PrimModeCable
+              || grantMeshV2PrimModeWifi) {
             selectTarget = '$REPLACE_SELECTED_MESH_' + device.mesh_mode;
             meshForm = meshForm.replace(selectTarget, 'selected="selected"');
             meshForm = meshForm.replace(/\$REPLACE_SELECTED_MESH_.*?\$/g, '');
@@ -2220,33 +2319,14 @@ anlixDocumentReady.add(function() {
                           '$REPLACE_SELECTED_CHANNEL5_auto$>'+
                           t('auto')+
                         '</option>'+
-                        '<option value="36" $REPLACE_SELECTED_CHANNEL5_36$>'+
-                          '36'+
-                        '</option>'+
-                        '<option value="40" $REPLACE_SELECTED_CHANNEL5_40$>'+
-                          '40'+
-                        '</option>'+
-                        '<option value="44" $REPLACE_SELECTED_CHANNEL5_44$>'+
-                          '44'+
-                        '</option>'+
-                        '<option value="48" $REPLACE_SELECTED_CHANNEL5_48$>'+
-                          '48'+
-                        '</option>'+
-                        '<option value="149" $REPLACE_SELECTED_CHANNEL5_149$>'+
-                          '149'+
-                        '</option>'+
-                        '<option value="153" $REPLACE_SELECTED_CHANNEL5_153$>'+
-                          '153'+
-                        '</option>'+
-                        '<option value="157" $REPLACE_SELECTED_CHANNEL5_157$>'+
-                          '157'+
-                        '</option>'+
-                        '<option value="161" $REPLACE_SELECTED_CHANNEL5_161$>'+
-                          '161'+
-                        '</option>'+
-                        '<option value="165" $REPLACE_SELECTED_CHANNEL5_165$>'+
-                          '165'+
-                        '</option>'+
+                        device.permissions.grantWifi5ChannelList.reduce(
+                          (result, channel)=>result+(
+                            '<option value="' + channel +
+                              '" $REPLACE_SELECTED_CHANNEL5_' + channel + '$>' +
+                              channel +
+                            '</option>'),
+                          '',
+                        ) +
                       '</select>'+
                       '<small class="text-muted" '+
                         '$AUTO_CHANNEL_SELECTED_VISIBILITY5$>'+
@@ -2296,61 +2376,71 @@ anlixDocumentReady.add(function() {
                 '$REPLACE_WIFI5_HIDDEN'+
               '</div>'+
               '<div class="col-6">'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">'+t('bandwidth')+'</label>'+
-                      '<select class="browser-default md-select" '+
-                        'id="edit_wifi5_band-'+index+'" '+
-                        '$REPLACE_WIFI5_EN>'+
-                        (grantWifiBandAuto ?
-                          '<option value="auto" $REPLACE_SELECTED_BAND5_auto$>'+
-                            t('auto')+
-                          '</option>' :
-                          ''
-                        )+
-                        '<option value="VHT80" $REPLACE_SELECTED_BAND5_VHT80$>'+
-                          '80 MHz'+
-                        '</option>'+
-                        '<option value="VHT40" $REPLACE_SELECTED_BAND5_VHT40$>'+
-                          '40 MHz'+
-                        '</option>'+
-                        '<option value="VHT20" $REPLACE_SELECTED_BAND5_VHT20$>'+
-                          '20 MHz'+
-                        '</option>'+
-                      '</select>'+
-                      '<small class="text-muted" '+
-                        '$AUTO_BAND_SELECTED_VISIBILITY5$>'+
-                          (device.wifi_last_band_5ghz ?
-                            t('bandwidthChoosenByAuto',
-                              {x: device.wifi_last_band_5ghz}) :
+                (grantWifiBandRead5 ?
+                  '<div class="md-form">'+
+                    '<div class="input-group">'+
+                      '<div class="md-selectfield form-control my-0">'+
+                        '<label class="active">'+t('bandwidth')+'</label>'+
+                        '<select class="browser-default md-select" '+
+                          'id="edit_wifi5_band-'+index+'" '+
+                          '$REPLACE_WIFI5_BAND_EN>'+
+                          (grantWifiBandAuto5 ?
+                            '<option value="auto" ' +
+                              '$REPLACE_SELECTED_BAND5_auto$>'+
+                              t('auto')+
+                            '</option>' :
                             ''
                           )+
-                      '</small>'+
+                          '<option value="VHT80" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT80$>'+
+                            '80 MHz'+
+                          '</option>'+
+                          '<option value="VHT40" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT40$>'+
+                            '40 MHz'+
+                          '</option>'+
+                          '<option value="VHT20" ' +
+                            '$REPLACE_SELECTED_BAND5_VHT20$>'+
+                            '20 MHz'+
+                          '</option>'+
+                        '</select>'+
+                        '<small class="text-muted" '+
+                          '$AUTO_BAND_SELECTED_VISIBILITY5$>'+
+                            (device.wifi_last_band_5ghz ?
+                              t('bandwidthChoosenByAuto',
+                                {x: device.wifi_last_band_5ghz}) :
+                              ''
+                            )+
+                        '</small>'+
+                      '</div>'+
                     '</div>'+
-                  '</div>'+
-                '</div>'+
-                '<div class="md-form">'+
-                  '<div class="input-group">'+
-                    '<div class="md-selectfield form-control my-0">'+
-                      '<label class="active">'+
-                        t('operationMode')+
-                      '</label>'+
-                      '<select class="browser-default md-select" '+
-                        'id="edit_wifi5_mode-'+index+'" '+
-                        '$REPLACE_WIFI5_BAND_EN'+
-                      '>'+
-                        '$REPLACE_WIFI5_AX_MODE' +
-                        '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
-                          'AC'+
-                        '</option>'+
-                        '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>'+
-                          'N'+
-                        '</option>'+
-                      '</select>'+
+                  '</div>' :
+                  ''
+                ) +
+                (grantWifiModeRead ?
+                  '<div class="md-form">'+
+                    '<div class="input-group">'+
+                      '<div class="md-selectfield form-control my-0">'+
+                        '<label class="active">'+
+                          t('operationMode')+
+                        '</label>'+
+                        '<select class="browser-default md-select" '+
+                          'id="edit_wifi5_mode-'+index+'" '+
+                          '$REPLACE_WIFI5_MODE_EN'+
+                        '>'+
+                          '$REPLACE_WIFI5_AX_MODE' +
+                          '<option value="11ac" $REPLACE_SELECTED_MODE5_11ac$>'+
+                            'AC'+
+                          '</option>'+
+                          '<option value="11na" $REPLACE_SELECTED_MODE5_11na$>'+
+                            'N'+
+                          '</option>'+
+                        '</select>'+
+                      '</div>'+
                     '</div>'+
-                  '</div>'+
-                '</div>'+
+                  '</div>' :
+                  ''
+                ) +
                 '$REPLACE_WIFI5_POWER'+
               '</div>'+
             '</div>';
@@ -2493,60 +2583,67 @@ anlixDocumentReady.add(function() {
                       '$REPLACE_WIFI2_HIDDEN'+
                     '</div>'+
                     '<div class="col-6">'+
-                      '<div class="md-form">'+
-                        '<div class="input-group">'+
-                          '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">'+t('bandwidth')+'</label>'+
-                            '<select class="browser-default md-select" '+
-                              'id="edit_wifi_band-'+index+'" '+
-                              '$REPLACE_WIFI_EN'+
-                            '>'+
-                              (grantWifiBandAuto ?
-                                '<option value="auto" '+
-                                  '$REPLACE_SELECTED_BAND_auto$>'+
-                                  'auto'+
-                                '</option>':
-                                ''
-                              )+
-                              '<option value="HT40" '+
-                                '$REPLACE_SELECTED_BAND_HT40$>'+
-                                  '40 MHz'+
-                              '</option>'+
-                              '<option value="HT20" '+
-                                '$REPLACE_SELECTED_BAND_HT20$>'+
-                                  '20 MHz'+
-                              '</option>'+
-                            '</select>'+
-                            '<small class="text-muted" '+
-                              '$AUTO_BAND_SELECTED_VISIBILITY$>'+
-                                (device.wifi_last_band ?
-                                  t('bandwidthChoosenByAuto',
-                                    {x: device.wifi_last_band}) :
+                      (grantWifiBandRead2 ?
+                        '<div class="md-form">'+
+                          '<div class="input-group">'+
+                            '<div class="md-selectfield form-control my-0">'+
+                              '<label class="active">'+t('bandwidth')+
+                              '</label>'+
+                              '<select class="browser-default md-select" '+
+                                'id="edit_wifi_band-'+index+'" '+
+                                '$REPLACE_WIFI_BAND_EN'+
+                              '>'+
+                                (grantWifiBandAuto2 ?
+                                  '<option value="auto" '+
+                                    '$REPLACE_SELECTED_BAND_auto$>'+
+                                    'auto'+
+                                  '</option>':
                                   ''
                                 )+
-                            '</small>'+
-                          '</div>'+
-                        '</div>'+
-                      '</div>'+
-                      '<div class="md-form">'+
-                        '<div class="input-group">'+
-                          '<div class="md-selectfield form-control my-0">'+
-                            '<label class="active">'+
-                              t('operationMode')+
-                            '</label>'+
-                            '<select class="browser-default md-select" '+
-                              'id="edit_wifi_mode-'+index+'" '+
-                              '$REPLACE_WIFI_BAND_EN>'+
-                                '<option value="11n" '+
-                                  '$REPLACE_SELECTED_MODE_11n$>BGN'+
+                                '<option value="HT40" '+
+                                  '$REPLACE_SELECTED_BAND_HT40$>'+
+                                    '40 MHz'+
                                 '</option>'+
-                                '<option value="11g" '+
-                                  '$REPLACE_SELECTED_MODE_11g$>G'+
+                                '<option value="HT20" '+
+                                  '$REPLACE_SELECTED_BAND_HT20$>'+
+                                    '20 MHz'+
                                 '</option>'+
-                            '</select>'+
+                              '</select>'+
+                              '<small class="text-muted" '+
+                                '$AUTO_BAND_SELECTED_VISIBILITY$>'+
+                                  (device.wifi_last_band ?
+                                    t('bandwidthChoosenByAuto',
+                                      {x: device.wifi_last_band}) :
+                                    ''
+                                  )+
+                              '</small>'+
+                            '</div>'+
                           '</div>'+
-                        '</div>'+
-                      '</div>'+
+                        '</div>' :
+                        ''
+                      ) +
+                      (grantWifiModeRead ?
+                        '<div class="md-form">'+
+                          '<div class="input-group">'+
+                            '<div class="md-selectfield form-control my-0">'+
+                              '<label class="active">'+
+                                t('operationMode')+
+                              '</label>'+
+                              '<select class="browser-default md-select" '+
+                                'id="edit_wifi_mode-'+index+'" '+
+                                '$REPLACE_WIFI_MODE_EN>'+
+                                  '<option value="11n" '+
+                                    '$REPLACE_SELECTED_MODE_11n$>BGN'+
+                                  '</option>'+
+                                  '<option value="11g" '+
+                                    '$REPLACE_SELECTED_MODE_11g$>G'+
+                                  '</option>'+
+                              '</select>'+
+                            '</div>'+
+                          '</div>'+
+                        '</div>' :
+                        ''
+                      ) +
                       '$REPLACE_WIFI2_POWER'+
                     '</div>'+
                   '</div>'+
@@ -2638,22 +2735,33 @@ anlixDocumentReady.add(function() {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI_EN/g, '');
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_EN/g, '');
           }
-          if (device.mesh_mode > 1 && grantMeshV2PrimMode) {
+          if (device.mesh_mode > 1 && (grantMeshV2PrimModeCable ||
+            grantMeshV2PrimModeWifi)) {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g,
                                       'disabled');
           } else {
             wifiTab = wifiTab.replace(/\$REPLACE_WIFI5_CHANNEL_EN/g, '');
           }
-          if (!grantWifiBand || (!isSuperuser && grantWifiInfo <= 1)) {
+          if (!grantWifiModeEdit || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', 'disabled');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', 'disabled');
+          } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_MODE_EN', '');
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_MODE_EN', '');
+          }
+          if (!grantWifiBandEdit2 || (!isSuperuser && grantWifiInfo <= 1)) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', 'disabled');
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
           } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_BAND_EN', '');
+          }
+          if (!grantWifiBandEdit5 || (!isSuperuser && grantWifiInfo <= 1)) {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', 'disabled');
+          } else {
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_BAND_EN', '');
           }
           if (!grantWifiState || (!isSuperuser && grantWifiInfo <= 1) ||
-              (device.mesh_mode > 1 && grantMeshV2PrimMode)
-          ) {
+              (device.mesh_mode > 1 && (grantMeshV2PrimModeCable ||
+              grantMeshV2PrimModeWifi))) {
             wifiTab = wifiTab.replace('$REPLACE_WIFI_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_STATE_EN', 'disabled');
             wifiTab = wifiTab.replace('$REPLACE_SSID_PREFIX_ENABLED_EN',
@@ -2920,11 +3028,13 @@ anlixDocumentReady.add(function() {
                 } else {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS', '');
                 }
-                if (grantMeshV2PrimMode) {
+                if (grantMeshV2PrimModeCable || grantMeshV2PrimModeWifi) {
                   let disassocSlaveButton = '<td></td>';
                   if (isSuperuser || grantSlaveDisassociate) {
-                    disassocSlaveButton = '<td>' +
-                                          buildDisassociateSlave() + '</td>';
+                    disassocSlaveButton =
+                      '<td>' +
+                      buildDisassociateSlave(device.do_update_status == 1) +
+                      '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',
                                             disassocSlaveButton);
@@ -2951,15 +3061,29 @@ anlixDocumentReady.add(function() {
                     slaveDev.external_reference.kind ===
                     t('personIdentificationSystem')
                 ) {
-                  $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask(t('personIdentificationMask')).keyup();
+                  $(document).on(
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
+                    '#edit_external_reference-' + index + '_' + slaveIdx,
+                    (event) => {
+                      $(event.target).mask(t('personIdentificationMask'));
+                    },
+                  );
+                  $('#edit_external_reference-' + index + '_' + slaveIdx)
+                    .trigger('keyup');
                 } else if (
                   slaveDev.external_reference &&
                   slaveDev.external_reference.kind ===
                   t('enterpriseIdentificationSystem')
                 ) {
-                  $('#edit_external_reference-' + index + '-' + slaveIdx)
-                  .mask(t('enterpriseIdentificationMask')).keyup();
+                  $(document).on(
+                    'keyup.edit_external_reference-' + index + '_' + slaveIdx,
+                    '#edit_external_reference-' + index + '_' + slaveIdx,
+                    (event) => {
+                      $(event.target).mask(t('enterpriseIdentificationMask'));
+                    },
+                  );
+                  $('#edit_external_reference-' + index + '_' + slaveIdx)
+                    .trigger('keyup');
                 }
               }
               slaveIdx++;
@@ -3021,15 +3145,21 @@ anlixDocumentReady.add(function() {
             device.external_reference &&
             device.external_reference.kind === t('personIdentificationSystem')
           ) {
-            $('#edit_external_reference-' + index)
-            .mask(t('personIdentificationMask')).keyup();
+            $(document).on('keyup.edit_external_reference-' + index,
+                           '#edit_external_reference-' + index, (event) => {
+              $(event.target).mask(t('personIdentificationMask'));
+            });
+            $('#edit_external_reference-' + index).trigger('keyup');
           } else if (
             device.external_reference &&
             device.external_reference.kind ===
             t('enterpriseIdentificationSystem')
           ) {
-            $('#edit_external_reference-' + index)
-            .mask(t('enterpriseIdentificationMask')).keyup();
+            $(document).on('keyup.edit_external_reference-' + index,
+                           '#edit_external_reference-' + index, (event) => {
+              $(event.target).mask(t('enterpriseIdentificationMask'));
+            });
+            $('#edit_external_reference-' + index).trigger('keyup');
           }
 
           index += 1;
@@ -3130,14 +3260,12 @@ anlixDocumentReady.add(function() {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.sysuptime)),
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
@@ -3170,9 +3298,14 @@ anlixDocumentReady.add(function() {
                 `<div class="badge bg-danger">${st}</div>`;
             }
             row.find('.device-pon-signal')
-            .removeClass('grey-text pending-update')
             .html(ponSignalRxPower+'<br>'+ponSignalStatus);
           }
+          row.find('.device-sys-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-wan-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-pon-signal')
+            .removeClass('grey-text pending-update');
         });
       },
     });
@@ -3196,74 +3329,197 @@ anlixDocumentReady.add(function() {
     loadDevicesTable(pageNum, filterList);
   });
 
+  let deviceRemovalSwal = function(isMultiple = false) {
+    mustBlockLicenseAtRemoval = (
+      getConfigStorage('mustBlockLicenseAtRemoval') === true ||
+      getConfigStorage('mustBlockLicenseAtRemoval') === 'true'
+    ) ? true : false;
+
+    let hasBlockPermission = (isSuperuser || grantDeviceLicenseBlock);
+    let denyButtonText = t('Remove');
+    let willShowDeleteAndBlock = true;
+    let willShowDelete = true;
+
+    let alertDiv =
+      '<div class="alert alert-danger text-center">' +
+        '<div class="fas fa-exclamation-triangle fa-lg"></div>' +
+        '<span>&nbsp;&nbsp;$REPLACE_TEXT</span>' +
+      '</div>';
+
+    if (mustBlockLicenseAtRemoval) {
+      willShowDeleteAndBlock = false;
+      denyButtonText = t('removeAndBlock');
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('adminSetLicenseToBeBlockedAtDeviceRemovalWarning'),
+      );
+    } else if (!hasBlockPermission) {
+      willShowDeleteAndBlock = false;
+      alertDiv = '';
+    } else if (isMultiple) {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDevicesAndBlockLicensesWarning'),
+      );
+    } else {
+      alertDiv = alertDiv.replace(
+        '$REPLACE_TEXT', t('removeDeviceAndBlockLicenseWarning'),
+      );
+    }
+
+    return {
+      icon: 'warning',
+      title: t('Attention!'),
+      text: t('sureYouWantToRemoveRegister?'),
+      // Remove and block button
+      confirmButtonText: t('removeAndBlock'),
+      confirmButtonColor: '#ff3547',
+      showConfirmButton: willShowDeleteAndBlock,
+      // Just remove button
+      denyButtonText: denyButtonText,
+      denyButtonColor: '#f2ab63',
+      showDenyButton: willShowDelete,
+      // Cancel button
+      cancelButtonText: t('Cancel'),
+      cancelButtonColor: '#4db6ac',
+      showCancelButton: true,
+      // Helper at footer
+      footer: alertDiv,
+    };
+  };
+
   $(document).on('click', '.btn-trash', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    swal({
-      type: 'warning',
-      title: t('Attention!'),
-      text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
-      confirmButtonColor: '#4db6ac',
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
-      showCancelButton: true,
-    }).then((result)=>{
-      if (result.value) {
+    swal.fire(deviceRemovalSwal(false)).then((result)=>{
+      if (result.isConfirmed) {
+        // Block and delete...
         $.ajax({
-          url: '/devicelist/delete',
-          type: 'post',
+          url: '/devicelist/deleteandblock',
+          type: 'POST',
           traditional: true,
-          data: {ids: [id]},
-          success: function(res) {
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
-            swal({
-              type: res.type,
+          dataType: 'json',
+          data: {'block': true, 'ids': [id]},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
+      } else if (result.isDenied) {
+        // Just delete...
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: [id]},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+        });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
     });
   });
 
   $(document).on('click', '#btn-trash-multiple', function(event) {
-    swal({
-      type: 'warning',
-      title: t('Attention!'),
-      text: t('sureYouWantToRemoveRegister?'),
-      confirmButtonText: t('OK'),
-      confirmButtonColor: '#4db6ac',
-      cancelButtonText: t('Cancel'),
-      cancelButtonColor: '#f2ab63',
-      showCancelButton: true,
-    }).then((result)=>{
-      if (result.value) {
+    swal.fire(deviceRemovalSwal(true)).then((result)=>{
+      if (result.isConfirmed) {
+        // Block and delete...
         $.ajax({
+          url: '/devicelist/deleteandblock',
           type: 'POST',
-          url: '/devicelist/delete',
           traditional: true,
-          data: {ids: selectedDevices},
-          success: function(res) {
-            $('#btn-trash-multiple').addClass('disabled');
-            let pageNum = parseInt($('#curr-page-link').html());
-            let filterList = $('#devices-search-input').val();
-            filterList += ',' + columnToSort + ',' + columnSortType;
-            loadDevicesTable(pageNum, filterList);
-            swal({
-              type: res.type,
+          dataType: 'json',
+          data: {'block': true, 'ids': selectedDevices},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
             });
           },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
         });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
+      } else if (result.isDenied) {
+        // Just delete...
+        $.ajax({
+          type: 'POST',
+          url: '/devicelist/delete',
+          traditional: true,
+          data: {ids: selectedDevices},
+          success: (res) => {
+            swal.fire({
+              icon: 'success',
+              title: res.message,
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+          error: (xhr, status, error) => {
+            swal.fire({
+              icon: 'warning',
+              title: t('internalError'),
+              text: xhr.responseJSON ? xhr.responseJSON.message : '',
+              confirmButtonColor: '#4db6ac',
+              confirmButtonText: t('OK'),
+            });
+          },
+        });
+        $('#btn-trash-multiple').addClass('disabled');
+        let pageNum = parseInt($('#curr-page-link').html());
+        let filterList = $('#devices-search-input').val();
+        filterList += ',' + columnToSort + ',' + columnSortType;
+        loadDevicesTable(pageNum, filterList);
       }
+      selectedDevices = [];
     });
   });
 
@@ -3283,8 +3539,8 @@ anlixDocumentReady.add(function() {
         abortMsg = t('factoryResetAbortMessage');
       }
     }
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('thisCpeWillLoseAllItsConfigurations'),
       confirmButtonText: t('OK'),
@@ -3294,17 +3550,17 @@ anlixDocumentReady.add(function() {
       showCancelButton: true,
     }).then((result)=>{
       if (abort) {
-        swal({
-          type: 'warning',
+        swal.fire({
+          icon: 'warning',
           title: t('Attention!'),
           text: abortMsg,
           confirmButtonColor: '#4db6ac',
           confirmButtonText: t('OK'),
         });
       } else if (result.value) {
-        swal({
+        swal.fire({
           title: t('gettingStockFirmwareReady...'),
-          onOpen: () => {
+          didOpen: () => {
             swal.showLoading();
           },
         });
@@ -3317,8 +3573,8 @@ anlixDocumentReady.add(function() {
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
             swal.close();
-            swal({
-              type: 'success',
+            swal.fire({
+              icon: 'success',
               title: t('processSuccessfullyStarted'),
               text: t('factoryResetRebootInstructions'),
               confirmButtonColor: '#4db6ac',
@@ -3327,8 +3583,8 @@ anlixDocumentReady.add(function() {
           },
           error: function(err) {
             swal.close();
-            swal({
-              type: 'error',
+            swal.fire({
+              icon: 'error',
               title: t('errorOccurred'),
               text: t('couldnotRestoreStockFirmwareTryAgain'),
               confirmButtonColor: '#4db6ac',
@@ -3343,8 +3599,8 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-disassoc', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('routerDisassociateMeshConfirmation'),
       confirmButtonText: t('OK'),
@@ -3364,8 +3620,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: (res.success ? 'success':'error'),
+            swal.fire({
+              icon: (res.success) ? 'success' : 'error',
               title: res.message,
               confirmButtonColor: '#4db6ac',
               confirmButtonText: t('OK'),
@@ -3376,8 +3632,8 @@ anlixDocumentReady.add(function() {
             let filterList = $('#devices-search-input').val();
             filterList += ',' + columnToSort + ',' + columnSortType;
             loadDevicesTable(pageNum, filterList);
-            swal({
-              type: 'error',
+            swal.fire({
+              icon: 'error',
               title: t('internalError'),
               text: (xhr.responseJSON ? xhr.responseJSON.message : ''),
               confirmButtonColor: '#4db6ac',

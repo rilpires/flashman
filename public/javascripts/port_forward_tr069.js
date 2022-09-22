@@ -77,6 +77,10 @@ let showIncompatibilityMessage = function(compatibility) {
       .addClass('d-block');
     compatInfoMessage
       .html(message);
+  } else {
+    compatInfoDiv
+      .removeClass('d-block')
+      .addClass('d-none');
   }
   if (!compatibility.simpleSymmetric) {
     portInputs[0].disabled = portInputs[1].disabled =
@@ -707,6 +711,15 @@ anlixDocumentReady.add(function() {
             getPortForwardStorage('serialId'));
           $('#port-forward-tr069-modal').modal('show');
           showIncompatibilityMessage(res.compatibility);
+          if (res.xmlWarning) {
+            $('#port-forward-tr069-modal-reboot-info')
+              .removeClass('d-none')
+              .addClass('d-block');
+          } else {
+            $('#port-forward-tr069-modal-reboot-info')
+              .removeClass('d-block')
+              .addClass('d-none');
+          }
         } else {
           let badge = $(event.target).closest('.actions-opts')
                                      .find('.badge-warning');
@@ -736,25 +749,25 @@ anlixDocumentReady.add(function() {
       contentType: 'application/json',
       success: function(res) {
         if (res.success) {
-          swal({
+          swal.fire({
             title: t('Success!'),
-            type: 'success',
+            icon: 'success',
             confirmButtonColor: '#4db6ac',
           });
         } else {
-          swal({
+          swal.fire({
             title: t('failedToApplyPortOpenning'),
             text: res.message,
-            type: 'error',
+            icon: 'error',
             confirmButtonColor: '#4db6ac',
           });
         }
       },
       error: function(xhr, status, error) {
-        swal({
+        swal.fire({
           title: t('failedToApplyPortOpenning'),
           text: error,
-          type: 'error',
+          icon: 'error',
           confirmButtonColor: '#4db6ac',
         });
       },

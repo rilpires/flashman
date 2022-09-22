@@ -40,7 +40,7 @@ notificationController.delNotification = function(req, res) {
       return res.status(500).json({success: false,
                                    message: t('operationUnsuccessful')});
     }
-    if (notification.genieDeviceId !== undefined) {
+    if (notification && notification.genieDeviceId !== undefined) {
       TasksAPI.deleteCacheAndFaultsForDevice(notification.genieDeviceId);
     }
     return res.status(200).json({success: true});

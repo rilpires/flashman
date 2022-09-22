@@ -10,13 +10,13 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
-const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
 const utilHandlers = require('./controllers/handlers/util');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const TasksAPI = require('./controllers/external-genieacs/tasks-api');
 
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
@@ -29,35 +29,14 @@ const runMigrations = require('./migrations');
 
 let app = express();
 
-// Express OpenAPI docs generator handling responses first
-const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
-const isOnProduction = (process.env.production === 'true');
-
-let MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
-let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
-
-let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
-                              process.env.FLM_DOCKER_INSTANCE || 0);
-
-if (!isOnProduction) {
-  expressOasGenerator.handleResponses(
-    app,
-    {
-      mongooseModels: mongoose.modelNames(),
-      swaggerDocumentOptions: {
-        customCss: `
-          .swagger-ui .topbar {
-            background-color: #4db6ac;
-          }
-        `},
-      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
-      alwaysServeDocs: false,
-    },
-  );
-}
-
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
+
+const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
+const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
+const instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
 
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
@@ -70,6 +49,7 @@ mongoose.connect(
    useUnifiedTopology: true,
    useFindAndModify: false,
    useCreateIndex: true,
+   maxPoolSize: 200,
 });
 mongoose.set('useCreateIndex', true);
 
@@ -214,11 +194,6 @@ app.use(fileUpload());
 
 app.use('/', index);
 
-// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
-if (!isOnProduction) {
-  expressOasGenerator.handleRequests();
-}
-
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   let err = new Error('Not Found');
@@ -269,13 +244,15 @@ if (instanceNumber === 0 && (
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
   app.listen(parseInt(schedulePort), function() {
+    // Runs every day at 20:00 - automatic update
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
     late8pmRule.minute = 0;
-    // Schedule automatic update
     schedule.scheduleJob(late8pmRule, function() {
       updater.update();
     });
+
+    // Runs every day at 00:00 - sync data with anlix control
     let midnightRule = new schedule.RecurrenceRule();
     midnightRule.hour = 0;
     midnightRule.minute = utilHandlers.getRandomInt(10, 50);
@@ -287,11 +264,34 @@ if (instanceNumber === 0 && (
       updater.updateLicenseApiSecret(app);
     });
 
+    // Runs every day at 04:00 - contact offline TR069 devices
+    let early4amRule = new schedule.RecurrenceRule();
+    early4amRule.hour = 4;
+    early4amRule.minute = 0;
+    schedule.scheduleJob(early4amRule, function() {
+      // Issue a command to offline ONUs to try and fix exp. backoff bug
+      // This is only relevant for a few ONU models, and currently this is
+      // out best fix available...
+      acsDeviceController.pingOfflineDevices();
+    });
+
+    // Runs every day at 05:00 - clean up tasks in genieacs database
+    let early5amRule = new schedule.RecurrenceRule();
+    early5amRule.hour = 5;
+    early5amRule.minute = 0;
+    schedule.scheduleJob(early5amRule, function() {
+      // After issuing a command to offline ONUs to try and fix exp. backoff bug
+      // its necessary to clean tasks that will not be effective. Lots of
+      // tasks generated a great mongoDB CPU overhead
+      TasksAPI.deleteGetParamTasks();
+    });
+
+    /* Routines to execute on each startup/reload of main flashman proccess */
     acsDeviceController.reportOnuDevices(app);
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
-
+    updater.updateApiUserLogin(app);
     // Only used at scenarios where Flashman was installed directly on a host
     // Undefined - Covers legacy host install cases
     if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
@@ -305,16 +305,6 @@ if (instanceNumber === 0 && (
       // Force an update check to alert user on app startup
       updater.checkUpdate();
     }
-
-    let early4amRule = new schedule.RecurrenceRule();
-    early4amRule.hour = 4;
-    early4amRule.minute = 0;
-    schedule.scheduleJob(early4amRule, function() {
-      // Issue a command to offline ONUs to try and fix exp. backoff bug
-      // This is only relevant for a few ONU models, and currently this is
-      // out best fix available...
-      acsDeviceController.pingOfflineDevices();
-    });
   });
 }
 

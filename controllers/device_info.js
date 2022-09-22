@@ -47,6 +47,7 @@ const createRegistry = async function(req, res) {
   let errors = [];
   let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
   let wanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
+  let wanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
   let wanSpeed = util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
   let wanDuplex =
     util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
@@ -134,7 +135,9 @@ const createRegistry = async function(req, res) {
     return res.status(400).end();
   }
 
-  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
+  let matchedConfig =
+    await Config.findOne({is_default: true},
+                         {device_update_schedule: false}).lean().catch(
     function(err) {
       console.error('Error creating entry: ' + err);
       return res.status(500).end();
@@ -150,17 +153,26 @@ const createRegistry = async function(req, res) {
   // -> 'new registry' scenario
   let checkResponse = deviceHandlers.checkSsidPrefix(
     matchedConfig, ssid, ssid5ghz, false, true);
-  /* if in the check is not enabled but hash exists and is
-    enabled in config, so we have an error */
-  createPrefixErrNotification = !checkResponse.enablePrefix &&
-    matchedConfig.personalizationHash !== '' &&
-    matchedConfig.isSsidPrefixEnabled;
+  // The function already returns what SSID we should be saving in the database
+  // and what the local flag value should be, based on the global flag and SSID
+  // values.
   isSsidPrefixEnabled = checkResponse.enablePrefix;
-  ssidPrefix = checkResponse.prefix;
-  // clean ssid
+  ssidPrefix = checkResponse.prefixToUse;
   ssid = checkResponse.ssid2;
-  ssid5ghz = checkResponse.ssid5;
-
+  if (is5ghzCapable) {
+    ssid5ghz = checkResponse.ssid5;
+  }
+  // If the global flag was set to true and the function returned a false value
+  // for the local flag, this means the prefix could not be activated - thus we
+  // issue a warning notification for this device
+  createPrefixErrNotification = (
+    !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled
+  );
+  let permissions = DeviceVersion.devicePermissionsNotRegisteredFirmware(
+    version, is5ghzCapable, model,
+  );
   // Validate fields
   genericValidate(macAddr, validator.validateMac, 'mac', null, errors);
   if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
@@ -173,41 +185,64 @@ const createRegistry = async function(req, res) {
     genericValidate(pppoePassword, validator.validatePassword,
                     'pppoe_password', matchedConfig.pppoePassLength, errors);
   }
-  genericValidate(ssidPrefix + ssid, validator.validateSSID,
-                  'ssid', null, errors);
-  genericValidate(password, validator.validateWifiPassword,
-                  'password', null, errors);
+  genericValidate(
+    ssidPrefix + ssid,
+    (s)=>validator.validateSSID(
+      s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+    ),
+    'ssid', null, errors,
+  );
+  genericValidate(
+    password,
+    (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
+    'password', null, errors,
+  );
   genericValidate(channel, validator.validateChannel,
                   'channel', null, errors);
 
-  let permissions = DeviceVersion.findByVersion(version, is5ghzCapable,
-                                                model);
-  if (permissions.grantWifiBand) {
-    genericValidate(band, validator.validateBand,
-                    'band', null, errors);
+  if (permissions.grantWifiModeEdit) {
     genericValidate(mode, validator.validateMode,
                     'mode', null, errors);
+  }
+  if (permissions.grantWifiBandEdit2) {
+    genericValidate(band, validator.validateBand,
+                    'band', null, errors);
   }
   if (permissions.grantWifiPowerHiddenIpv6Box) {
     genericValidate(power, validator.validatePower,
                     'power', null, errors);
   }
   if (permissions.grantWifi5ghz) {
-    genericValidate(ssidPrefix + ssid5ghz, validator.validateSSID,
-                    'ssid5ghz', null, errors);
-    genericValidate(password5ghz, validator.validateWifiPassword,
-                    'password5ghz', null, errors);
-    genericValidate(channel5ghz, validator.validateChannel,
-                    'channel5ghz', null, errors);
-    genericValidate(band5ghz, validator.validateBand,
-                    'band5ghz', null, errors);
+    genericValidate(
+      ssidPrefix + ssid5ghz,
+      (s)=>validator.validateSSID(
+        s, permissions.grantDiacritics, permissions.grantSsidSpaces,
+      ),
+      'ssid5ghz', null, errors,
+    );
+    genericValidate(
+      password5ghz,
+      (p)=>validator.validateWifiPassword(p, permissions.grantDiacritics),
+      'password5ghz', null, errors,
+    );
+    genericValidate(
+      channel5ghz,
+      (ch)=>validator.validateChannel(ch, permissions.grantWifi5ChannelList),
+      'channel5ghz', null, errors,
+    );
+    if (permissions.grantWifiBandEdit5) {
+      genericValidate(band5ghz, validator.validateBand,
+                      'band5ghz', null, errors);
+    }
 
     // Fix for devices that uses 11a as 11ac mode
     if (mode5ghz == '11a') {
       mode5ghz = '11ac';
     }
-    genericValidate(mode5ghz, validator.validateMode,
-                    'mode5ghz', null, errors);
+    if (permissions.grantWifiModeEdit) {
+      genericValidate(mode5ghz, validator.validateMode,
+                      'mode5ghz', null, errors);
+    }
     if (permissions.grantWifiPowerHiddenIpv6Box) {
       genericValidate(power5ghz, validator.validatePower,
                       'power5ghz', null, errors);
@@ -227,6 +262,17 @@ const createRegistry = async function(req, res) {
       genericValidate(bridgeFixDNS, validator.validateIP,
                       'bridge_fix_ip', null, errors);
     }
+  }
+
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
   }
 
   if (errors.length < 1) {
@@ -265,6 +311,7 @@ const createRegistry = async function(req, res) {
       'wifi_state_5ghz': wifiState5ghz,
       'wifi_hidden_5ghz': wifiHidden5ghz,
       'wan_ip': wanIp,
+      'wan_ipv6': wanIpv6,
       'wan_negociated_speed': wanSpeed,
       'wan_negociated_duplex': wanDuplex,
       'ipv6_enabled': wanIpv6Enabled,
@@ -286,6 +333,7 @@ const createRegistry = async function(req, res) {
       'bssid_mesh5': bssidMesh5,
       'wps_is_active': wpsState,
       'isSsidPrefixEnabled': isSsidPrefixEnabled,
+      'ping_hosts': defaultPingHosts,
     };
     if (vlanParsed !== undefined) {
       deviceObj.vlan = vlanParsed;
@@ -303,10 +351,10 @@ const createRegistry = async function(req, res) {
     if (createPrefixErrNotification) {
       // Notify if ssid prefix was impossible to be assigned
       let matchedNotif = await Notification
-      .findOne({'message_code': 5, 'target': deviceObj._id})
-      .catch(function(err) {
-        console.error('Error fetching database: ' + err);
-      });
+        .findOne({'message_code': 5, 'target': deviceObj._id})
+        .catch(function(err) {
+          console.error('Error fetching database: ' + err);
+        });
       if (!matchedNotif || matchedNotif.allow_duplicate) {
         let notification = new Notification({
           'message': t('ssidPrefixInvalidLength', {errorline: __line}),
@@ -324,13 +372,15 @@ const createRegistry = async function(req, res) {
         );
       }
     }
-    let response = {'do_update': false,
-                    'do_newprobe': true,
-                    'release_id:': installedRelease,
-                    'mesh_mode': meshMode,
-                    'mesh_id': newMeshId,
-                    'mesh_key': newMeshKey,
-                    'wifi_ssid': ssidPrefix + ssid};
+    let response = {
+      'do_update': false,
+      'do_newprobe': true,
+      'release_id:': installedRelease,
+      'mesh_mode': meshMode,
+      'mesh_id': newMeshId,
+      'mesh_key': newMeshKey,
+      'wifi_ssid': ssidPrefix + ssid,
+    };
     if (vlanDidChange) {
       let vlanToDevice = vlanController.convertFlashmanVlan(
         model, JSON.stringify(vlanParsed));
@@ -396,13 +446,13 @@ deviceInfoController.syncDate = function(req, res) {
 
   let parsedate = parseInt(devDate);
   if (!isNaN(parsedate)) {
-    let locDate = new Date(parsedate*1000);
+    let locDate = new Date(parsedate * 1000);
     let atDate = Date.now();
     let diffDate = atDate - locDate;
     // adjust router clock if difference is more than
     // a minute ahead or more than an hour behind
     let serverDate = Math.floor(Date.now() / 1000);
-    if ((diffDate < -(60*1000)) || (diffDate>(60*60*1000))) {
+    if ((diffDate < -(60 * 1000)) || (diffDate > (60 * 60 * 1000))) {
       res.status(200).json({'need_update': 1, 'new_date': serverDate});
     } else {
       res.status(200).json({'need_update': 0, 'new_date': serverDate});
@@ -436,23 +486,37 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         // validate 2.4GHz because feature of ssid prefix
         let config;
         try {
-          config = await Config.findOne({is_default: true}).lean();
+          config = await Config.findOne({is_default: true},
+                                        {device_update_schedule: false}).lean();
           if (!config) throw new Error('Config not found');
         } catch (error) {
           console.log(error.message);
         }
+        const is5ghzCapable =
+          (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
+        let permissionsCurrVersion =
+          DeviceVersion.devicePermissionsNotRegisteredFirmware(
+            matchedDevice.version, is5ghzCapable, matchedDevice.model,
+          );
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
           config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
           matchedDevice.isSsidPrefixEnabled);
-        matchedDevice.wifi_ssid = checkResponse.ssid2;
-        matchedDevice.wifi_ssid_5ghz = checkResponse.ssid5;
-        matchedDevice.isSsidPrefixEnabled = checkResponse.enablePrefix;
-        let ssidPrefix = checkResponse.prefix;
+        // This function returns what prefix we should be using for this device,
+        // based on the local flag and what the saved SSID values are. We use
+        // the prefix to then prepend it to the saved SSID, so we can compare it
+        // to what the CPE sent to Flashman, and send the correct value to CPE
+        let ssidPrefix = checkResponse.prefixToUse;
         const validator = new Validator();
         let ssid2ghz = util.returnObjOrEmptyStr(matchedDevice.wifi_ssid);
-        genericValidate(ssidPrefix + ssid2ghz, validator.validateSSID,
-                        'ssid', null, errors);
+        genericValidate(
+          ssidPrefix + ssid2ghz,
+          (s)=>validator.validateSSID(
+            s, permissionsCurrVersion.grantDiacritics,
+            permissionsCurrVersion.grantSsidSpaces,
+          ),
+          'ssid', null, errors,
+        );
 
         // Update old entries
         if (typeof matchedDevice.do_update_parameters === 'undefined') {
@@ -475,7 +539,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let lanNetmask =
           parseInt(util.returnObjOrNum(req.body.lan_netmask, 24));
         if (((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
-            lanSubnet != '') || (changeLAN === '1')) {
+             lanSubnet != '') || (changeLAN === '1')
+        ) {
           deviceSetQuery.lan_subnet = lanSubnet;
           matchedDevice.lan_subnet = lanSubnet; // Used in device response
         }
@@ -541,7 +606,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let sentBridgeIp =
           util.returnObjOrEmptyStr(req.body.bridge_fix_ip).trim();
         if (typeof req.body.bridge_fix_ip !== 'undefined' &&
-            sentBridgeIp !== matchedDevice.bridge_mode_ip) {
+            sentBridgeIp !== matchedDevice.bridge_mode_ip
+        ) {
           deviceSetQuery.bridge_mode_ip = sentBridgeIp;
           // Used in device response
           matchedDevice.bridge_mode_ip = sentBridgeIp;
@@ -549,7 +615,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let sentBridgeGateway =
           util.returnObjOrEmptyStr(req.body.bridge_fix_gateway).trim();
         if (typeof req.body.bridge_fix_gateway !== 'undefined' &&
-            sentBridgeGateway !== matchedDevice.bridge_mode_gateway) {
+            sentBridgeGateway !== matchedDevice.bridge_mode_gateway
+        ) {
           deviceSetQuery.bridge_mode_gateway = sentBridgeGateway;
           // Used in device response
           matchedDevice.bridge_mode_gateway = sentBridgeGateway;
@@ -557,15 +624,14 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let sentBridgeDns =
           util.returnObjOrEmptyStr(req.body.bridge_fix_dns).trim();
         if (typeof req.body.bridge_fix_dns !== 'undefined' &&
-            sentBridgeDns !== matchedDevice.bridge_mode_dns) {
+            sentBridgeDns !== matchedDevice.bridge_mode_dns
+        ) {
           deviceSetQuery.bridge_mode_dns = sentBridgeDns;
           // Used in device response
           matchedDevice.bridge_mode_dns = sentBridgeDns;
         }
 
         // Store if device has dual band capability
-        const is5ghzCapable =
-          (util.returnObjOrEmptyStr(req.body.wifi_5ghz_capable).trim() == '1');
         if (is5ghzCapable != matchedDevice.wifi_is_5ghz_capable) {
           deviceSetQuery.wifi_is_5ghz_capable = is5ghzCapable;
         }
@@ -574,13 +640,15 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         if (matchedDevice.version != sentVersion) {
           // Legacy registration only. Register advanced wireless
           // values for routers with versions older than 0.13.0.
-          let permissionsSentVersion = DeviceVersion.findByVersion(
-            sentVersion, is5ghzCapable, (bodyModel + bodyModelVer));
-          let permissionsCurrVersion = DeviceVersion.findByVersion(
-            matchedDevice.version, is5ghzCapable, matchedDevice.model);
+          let permissionsSentVersion =
+            DeviceVersion.devicePermissionsNotRegisteredFirmware(
+              sentVersion, is5ghzCapable, (bodyModel + bodyModelVer),
+            );
 
-          if ( permissionsSentVersion.grantWifiBand &&
-              !permissionsCurrVersion.grantWifiBand) {
+          if (
+            permissionsSentVersion.grantWifiModeEdit &&
+            !permissionsCurrVersion.grantWifiModeEdit
+          ) {
             let band =
               util.returnObjOrEmptyStr(req.body.wifi_band).trim();
             let mode =
@@ -602,8 +670,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               }
             }
           }
-          if ( permissionsSentVersion.grantWifi5ghz &&
-              !permissionsCurrVersion.grantWifi5ghz) {
+          if (permissionsSentVersion.grantWifi5ghz &&
+            !permissionsCurrVersion.grantWifi5ghz) {
             let ssid5ghz =
               util.returnObjOrEmptyStr(req.body.wifi_ssid_5ghz).trim();
             let password5ghz =
@@ -615,12 +683,17 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             let mode5ghz =
               util.returnObjOrStr(req.body.wifi_mode_5ghz, '11ac').trim();
 
-            genericValidate(ssidPrefix+ssid5ghz, validator.validateSSID,
+            genericValidate(ssidPrefix + ssid5ghz, validator.validateSSID,
                             'ssid5ghz', null, errors);
             genericValidate(password5ghz, validator.validateWifiPassword,
                             'password5ghz', null, errors);
-            genericValidate(channel5ghz, validator.validateChannel,
-                            'channel5ghz', null, errors);
+            genericValidate(
+              channel5ghz,
+              (ch)=>validator.validateChannel(
+                ch, permissionsSentVersion.grantWifi5ChannelList,
+              ),
+              'channel5ghz', null, errors,
+            );
             genericValidate(band5ghz, validator.validateBand,
                             'band5ghz', null, errors);
 
@@ -659,7 +732,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               }
             }
           }
-          if ( permissionsSentVersion.grantWifiPowerHiddenIpv6Box &&
+          if (permissionsSentVersion.grantWifiPowerHiddenIpv6Box &&
               !permissionsCurrVersion.grantWifiPowerHiddenIpv6Box) {
             let power = parseInt(util.returnObjOrNum(req.body.wifi_power, 100));
             genericValidate(power, validator.validatePower,
@@ -671,7 +744,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               }
             }
 
-            if ( permissionsSentVersion.grantWifi5ghz &&
+            if (permissionsSentVersion.grantWifi5ghz &&
                 !permissionsCurrVersion.grantWifi5ghz) {
               let power5ghz =
                 parseInt(util.returnObjOrNum(req.body.wifi_power_5ghz, 100));
@@ -708,49 +781,86 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
 
         // Parameters *NOT* available to be modified by REST API
+
+        // WAN IPv4
         let sentWanIp = util.returnObjOrEmptyStr(req.body.wan_ip).trim();
         if (sentWanIp !== matchedDevice.wan_ip) {
           deviceSetQuery.wan_ip = sentWanIp;
         }
+
+        // WAN IPv6
+        let sentWanIpv6 = util.returnObjOrEmptyStr(req.body.wan_ipv6).trim();
+        if (sentWanIpv6 !== matchedDevice.wan_ipv6) {
+          deviceSetQuery.wan_ipv6 = sentWanIpv6;
+        }
+
+        // WAN Negociated Speed
         let sentWanNegociatedSpeed =
-        util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
+          util.returnObjOrEmptyStr(req.body.wan_negociated_speed).trim();
         if (sentWanNegociatedSpeed !== matchedDevice.wan_negociated_speed) {
           deviceSetQuery.wan_negociated_speed = sentWanNegociatedSpeed;
         }
+
+        // WAN Negociated Transference
         let sentWanNegociatedDuplex =
-        util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
+          util.returnObjOrEmptyStr(req.body.wan_negociated_duplex).trim();
         if (sentWanNegociatedDuplex !== matchedDevice.wan_negociated_duplex) {
           deviceSetQuery.wan_negociated_duplex = sentWanNegociatedDuplex;
         }
+
+        // IP
         if (matchedDevice.ip !== ip) {
           deviceSetQuery.ip = ip;
         }
+
+        // System Uptime
         let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
         deviceSetQuery.sys_up_time = sysUpTime;
+
+        // WAN Uptime
         let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
         deviceSetQuery.wan_up_time = wanUpTime;
+
+        // WPS State
         let wpsState = (
           parseInt(util.returnObjOrNum(req.body.wpsstate, 0)) === 1);
         deviceSetQuery.wps_is_active = wpsState;
 
+        // CPU and Memory usage
+        let cpuUsage = (
+          parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+        );
+        let memoryUsage = (
+          parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+        );
+
+        // Check if CPU and Memory came valid
+        if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+          deviceSetQuery.cpu_usage = cpuUsage;
+        }
+
+        if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+          deviceSetQuery.memory_usage = memoryUsage;
+        }
+
         let sentWifiLastChannel =
-        util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
+          util.returnObjOrEmptyStr(req.body.wifi_curr_channel).trim();
         if (sentWifiLastChannel !== matchedDevice.wifi_last_channel) {
           deviceSetQuery.wifi_last_channel = sentWifiLastChannel;
         }
         let sentWifiLastChannel5G =
-        util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
+          util.returnObjOrEmptyStr(req.body.wifi_curr_channel_5ghz).trim();
         if (sentWifiLastChannel5G !== matchedDevice.wifi_last_channel_5ghz) {
           deviceSetQuery.wifi_last_channel_5ghz = sentWifiLastChannel5G;
         }
 
         let sentWifiLastBand =
-        util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
+          util.returnObjOrEmptyStr(req.body.wifi_curr_band).trim();
         if (sentWifiLastBand !== matchedDevice.wifi_last_band) {
           deviceSetQuery.wifi_last_band = sentWifiLastBand;
         }
         let sentWifiLastBand5G =
-        util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
+          util.returnObjOrEmptyStr(req.body.wifi_curr_band_5ghz).trim();
         if (sentWifiLastBand5G !== matchedDevice.wifi_last_band_5ghz) {
           deviceSetQuery.wifi_last_band_5ghz = sentWifiLastBand5G;
         }
@@ -827,27 +937,28 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         }
 
         let blockedDevices = util.deepCopyObject(matchedDevice.lan_devices)
-        .filter(
-          function(lanDevice) {
-            if (lanDevice.is_blocked) {
-              return true;
-            } else {
-              return false;
-            }
-          },
-        );
+          .filter(
+            function(lanDevice) {
+              if (lanDevice.is_blocked) {
+                return true;
+              } else {
+                return false;
+              }
+            },
+          );
         let namedDevices = util.deepCopyObject(matchedDevice.lan_devices)
-        .filter(
-          function(lanDevice) {
-            if ('name' in lanDevice && lanDevice.name != '') {
-              return true;
-            } else {
-              return false;
-            }
-          },
-        );
+          .filter(
+            function(lanDevice) {
+              if ('name' in lanDevice && lanDevice.name != '') {
+                return true;
+              } else {
+                return false;
+              }
+            },
+          );
 
-        Config.findOne({is_default: true}).lean()
+        Config.findOne({is_default: true},
+                       {device_update_schedule: false}).lean()
         .exec(async function(err, matchedConfig) {
           // data collecting parameters to be sent to device.
           // initiating with default values.
@@ -869,7 +980,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           for (let key in matchedConfig.data_collecting) {
             dataCollecting[key] = matchedConfig.data_collecting[key];
           }
-          // combining 'Device' and 'Config' if data_collecting exists in Config
+          // combining 'Device' and 'Config' if
+          // data_collecting exists in Config
           if (matchedDevice.data_collecting !== undefined) {
             // parameters from device model.
             let d = matchedDevice.data_collecting;
@@ -883,13 +995,15 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             // preference for device value if it exists.
             d.ping_fqdn !== undefined && (p.ping_fqdn = d.ping_fqdn);
           } else {
-            // if data collecting doesn't exist, device won't collect anything.
+            // if data collecting doesn't exist,
+            // device won't collect anything.
             dataCollecting.is_active = false;
           }
 
-          const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-            return map[matchedDevice._id];
-          });
+          const isDevOn =
+            Object.values(mqtt.unifiedClientsMap).some((map) => {
+              return map[matchedDevice._id];
+            });
 
           let fetchedVlans = '';
           let vlanHash = '';
@@ -930,7 +1044,8 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             'pppoe_password':
               util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
-            'lan_netmask': util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
+            'lan_netmask':
+              util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
             'wifi_ssid': wifiSsid2ghz,
             'wifi_password':
               util.returnObjOrEmptyStr(matchedDevice.wifi_password),
@@ -1001,7 +1116,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           // eslint-disable-next-line guard-for-in
           for (let parameter in dcRes) {
             // console.log('parameter', parameter, dcRes[parameter])
-            resJson['data_collecting_'+parameter] = dcRes[parameter];
+            resJson['data_collecting_' + parameter] = dcRes[parameter];
           }
 
           // Only answer ipv6 status if flashman knows current state
@@ -1019,11 +1134,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               } else {
                 // Convert to date string
                 deviceSetQuery.last_contact =
-                new Date(deviceSetQuery.last_contact).toISOString();
+                  new Date(deviceSetQuery.last_contact).toISOString();
                 // Send modified fields if device traps are activated
                 if (Object.keys(deviceSetQuery).length > 0 &&
-                    matchedConfig.traps_callbacks &&
-                    matchedConfig.traps_callbacks.devices_crud
+                  matchedConfig.traps_callbacks &&
+                  matchedConfig.traps_callbacks.devices_crud
                 ) {
                   let callbacks = matchedConfig.traps_callbacks.devices_crud;
                   const promises = callbacks.map((deviceCrud) => {
@@ -1191,32 +1306,33 @@ deviceInfoController.registerMqtt = function(req, res) {
         // Send notification
         Notification.findOne({
           'message_code': 1,
-          'target': matchedDevice._id},
-        function(err, matchedNotif) {
-          if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
-            let notification = new Notification({
-              'message': t('firmwareHasBeenModifiedLocally',
-                {errorline: __line}),
-              'message_code': 1,
-              'severity': 'alert',
-              'type': 'communication',
-              'action_title': t('permitCommunication'),
-              'action_url': '/devicelist/command/' +
-                            matchedDevice._id + '/rstmqtt',
-              'allow_duplicate': false,
-              'target': matchedDevice._id,
-            });
-            notification.save(function(err) {
-              if (!err) {
-                sio.anlixSendDeviceStatusNotification(matchedDevice._id,
-                                                      notification);
-              }
-            });
-          } else {
-            sio.anlixSendDeviceStatusNotification(matchedDevice._id,
-                                                  matchedNotif);
-          }
-        });
+          'target': matchedDevice._id,
+        },
+          function(err, matchedNotif) {
+            if (!err && (!matchedNotif || matchedNotif.allow_duplicate)) {
+              let notification = new Notification({
+                'message': t('firmwareHasBeenModifiedLocally',
+                  {errorline: __line}),
+                'message_code': 1,
+                'severity': 'alert',
+                'type': 'communication',
+                'action_title': t('permitCommunication'),
+                'action_url': '/devicelist/command/' +
+                  matchedDevice._id + '/rstmqtt',
+                'allow_duplicate': false,
+                'target': matchedDevice._id,
+              });
+              notification.save(function(err) {
+                if (!err) {
+                  sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                        notification);
+                }
+              });
+            } else {
+              sio.anlixSendDeviceStatusNotification(matchedDevice._id,
+                                                    matchedNotif);
+            }
+          });
         return res.status(404).json({is_registered: 0});
       }
     });
@@ -1320,12 +1436,12 @@ deviceInfoController.receiveLog = function(req, res) {
   DeviceModel.findById(id, async function(err, matchedDevice) {
     if (err) {
       console.log('Log Receiving for device ' +
-        id + ' failed: Cant get device profile.');
+                  id + ' failed: Cant get device profile.');
       return res.status(400).json({processed: 0});
     }
     if (!matchedDevice) {
       console.log('Log Receiving for device ' +
-        id + ' failed: No device found.');
+                  id + ' failed: No device found.');
       return res.status(404).json({processed: 0});
     }
 
@@ -1357,7 +1473,7 @@ deviceInfoController.receiveLog = function(req, res) {
     } else if (bootType == 'LIVE') {
       sio.anlixSendLiveLogNotifications(id, req.body);
       console.log('Log Receiving for device ' +
-        id + ' successfully. LIVE');
+                  id + ' successfully. LIVE');
     }
 
     if (dbSaveOk) {
@@ -1457,14 +1573,11 @@ deviceInfoController.receiveDevices = async function(req, res) {
     let outData = [];
     let routersData = undefined;
 
-    const permissions = DeviceVersion.findByVersion(
-      matchedDevice.version,
-      matchedDevice.wifi_is_5ghz_capable,
-      matchedDevice.model,
-    );
+    const permissions = DeviceVersion.devicePermissions(matchedDevice);
 
     // In mesh v2 there is a new layout of the flashbox response
-    const meshV2 = (permissions.grantMeshV2PrimaryMode ||
+    const meshV2 = (permissions.grantMeshV2PrimaryModeCable ||
+      permissions.grantMeshV2PrimaryModeWifi ||
       permissions.grantMeshV2SecondaryMode);
 
     if ('mesh_routers' in req.body) {
@@ -1521,7 +1634,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
         }
         if (devReg) {
           if ((upConnDev.hostname) && (upConnDev.hostname != '') &&
-              (upConnDev.hostname != '!')
+            (upConnDev.hostname != '!')
           ) {
             devReg.dhcp_name = upConnDev.hostname;
           }
@@ -1547,7 +1660,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
             }
           } else {
             devReg.conn_type = ([0, 1].includes(upConnDev.conn_type) ?
-                                upConnDev.conn_type : null);
+                                                upConnDev.conn_type : null);
           }
           devReg.last_seen = Date.now();
           devReg.conn_speed = upConnDev.conn_speed;
@@ -1701,8 +1814,10 @@ deviceInfoController.receiveDevices = async function(req, res) {
         });
         let masterDevice = await DeviceModel.findOne(
           {'_id': masterMac},
-          {'mesh_onlinedevs_remaining': true,
-          'do_update_status': true},
+          {
+            'mesh_onlinedevs_remaining': true,
+            'do_update_status': true,
+          },
         );
         // end of critical region
         mutexRelease();
@@ -1787,8 +1902,8 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         if (upConnDev.signal) {
           upConnDev.signal = parseInt(upConnDev.signal);
         }
-        let devWidth=20;
-        let devVHT=false;
+        let devWidth = 20;
+        let devVHT = false;
 
         if (upConnDev.largura_HT) {
           if (upConnDev.largura_HT === 'any') {
@@ -1799,9 +1914,9 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         }
 
         if (upConnDev.largura_VHT) {
-          let VHTWifth=parseInt(upConnDev.largura_VHT);
+          let VHTWifth = parseInt(upConnDev.largura_VHT);
           if (VHTWifth > 0) {
-            devVHT=true;
+            devVHT = true;
             devWidth = VHTWifth;
           }
         }
@@ -1848,6 +1963,9 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
   });
 };
 
+// This is called from flashbox when fetching which targets
+// to traceroute. When no customized test is in progress,
+// return device.ping_hosts. Else, current_diagnostic.targets
 deviceInfoController.getPingHosts = function(req, res) {
   if (req.body.secret == req.app.locals.secret) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
@@ -1861,7 +1979,14 @@ deviceInfoController.getPingHosts = function(req, res) {
           'failed: No device found.');
         return res.status(404).json({success: false});
       }
-      if (matchedDevice.ping_hosts) {
+      if (matchedDevice.current_diagnostic.in_progress &&
+        matchedDevice.current_diagnostic.customized
+      ) {
+        return res.status(200).json({
+          'sucess': true,
+          'hosts': matchedDevice.current_diagnostic.targets,
+        });
+      } else if (matchedDevice.ping_hosts) {
         return res.status(200).json({
           'success': true,
           'hosts': matchedDevice.ping_hosts,
@@ -1873,9 +1998,55 @@ deviceInfoController.getPingHosts = function(req, res) {
       }
     });
   } else {
-    console.log('Router ' + req.body.id + ' Get Port Forwards ' +
+    console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
       'failed: Client Secret not match!');
     return res.status(401).json({success: false});
+  }
+};
+
+
+// Return the speedtest host
+deviceInfoController.getCustomSpeedtestHost = function(request, response) {
+  // Verify secret and find device
+  if (request.body.secret == request.app.locals.secret) {
+    DeviceModel.findById(request.body.id, function(err, matchedDevice) {
+      // Error trying to find the device
+      if (err) {
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
+          'failed: Cant get device profile.');
+        return response.status(400).json({success: false});
+      }
+
+      // Could not find the device
+      if (!matchedDevice) {
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
+          'failed: No device found.');
+        return response.status(404).json({success: false});
+      }
+
+      // Check and send the URL
+      if (matchedDevice.current_diagnostic.type == 'speedtest' &&
+        matchedDevice.current_diagnostic.in_progress &&
+        matchedDevice.current_diagnostic.customized
+      ) {
+        return response.status(200).json({
+          'success': true,
+          'host': matchedDevice.current_diagnostic.targets[0],
+        });
+
+        // Empty URL
+      } else {
+        console.log('Router ' + request.body.id + ' getCustomSpeedtestHost '
+          + 'failed: Device isn\'t running a custom speedtest');
+        return response.status(404).json({success: false});
+      }
+    });
+
+    // Invalid secret
+  } else {
+    console.log('Router ' + request.body.id + ' getCustomSpeedtestHost ' +
+      'failed: Client Secret not match!');
+    return response.status(401).json({success: false});
   }
 };
 
@@ -1940,40 +2111,61 @@ deviceInfoController.receivePingResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    let result = {};
+    // Filling the result object
+    // Sync with ACS
+    // count in firmware is 100
+    Object.keys(req.body.results).map((k) => {
+      let p = req.body.results[k];
+      if (p) {
+        result[k] = {
+          lat: p.lat,
+          loss: p.loss,
+          count: '100',
+          completed: true,
+        };
+      }
+    });
+
     // If ping command was sent from a customized api call,
     // we don't want to propagate it to the generic webhook
-    if (matchedDevice.temp_command_trap &&
-        matchedDevice.temp_command_trap.ping_hosts &&
-        matchedDevice.temp_command_trap.ping_hosts.length > 0
+    if (matchedDevice.current_diagnostic.customized &&
+        matchedDevice.current_diagnostic.type == 'ping' &&
+        matchedDevice.current_diagnostic.in_progress
     ) {
-      matchedDevice.temp_command_trap.ping_hosts = [];
-      if (matchedDevice.temp_command_trap.webhook_url != '') {
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
         let requestOptions = {};
-        requestOptions.url = matchedDevice.temp_command_trap.webhook_url;
+        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
         requestOptions.method = 'PUT';
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'ping_results': req.body.results,
+          'ping_results': result,
         };
-        if (matchedDevice.temp_command_trap.webhook_user &&
-            matchedDevice.temp_command_trap.webhook_secret
+        if (matchedDevice.current_diagnostic.webhook_user &&
+          matchedDevice.current_diagnostic.webhook_secret
         ) {
           requestOptions.auth = {
-            user: matchedDevice.temp_command_trap.webhook_user,
-            pass: matchedDevice.temp_command_trap.webhook_secret,
+            user: matchedDevice.current_diagnostic.webhook_user,
+            pass: matchedDevice.current_diagnostic.webhook_secret,
           };
         }
-        request(requestOptions);
+        request(requestOptions).then(() => { }, () => { });
       }
-      // Not waiting for this save
-      matchedDevice.save().catch((err) => {
-        console.log('Error saving device after ping command: ' + err);
-      });
     } else {
       // Not a customized ping call, send to generic trap
-      deviceHandlers.sendPingToTraps(id, req.body);
+      deviceHandlers.sendPingToTraps(id, {results: result});
     }
+
+    // Clearing out diagnostic fields
+    matchedDevice.current_diagnostic.stage = 'done';
+    matchedDevice.current_diagnostic.in_progress = false;
+    matchedDevice.current_diagnostic.last_modified_at = new Date();
+
+    // Not waiting for this save
+    matchedDevice.save().catch((err) => {
+      console.log('Error saving device after ping command: ' + err);
+    });
 
     // We don't need to wait
     return res.status(200).json({processed: 1});
@@ -2036,7 +2228,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
 
     let deviceMac = req.body.mac;
     let deviceName = req.body.name;
-    let lanDevice = matchedDevice.lan_devices.find((d)=>d.mac===deviceMac);
+    let lanDevice = matchedDevice.lan_devices.find((d) => d.mac === deviceMac);
     if (lanDevice) {
       lanDevice.upnp_name = deviceName;
       lanDevice.last_seen = Date.now();
@@ -2086,21 +2278,273 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
     if (!matchedDevice) {
       return res.status(404).json({processed: 0});
     }
+
+    // System Uptime
     let sysUpTime = parseInt(util.returnObjOrNum(req.body.sysuptime, 0));
     matchedDevice.sys_up_time = sysUpTime;
+
+    // Wan Uptime
     let wanUpTime = parseInt(util.returnObjOrNum(req.body.wanuptime, 0));
     matchedDevice.wan_up_time = wanUpTime;
+
+    // Wan Bytes
     if (util.isJSONObject(req.body.wanbytes)) {
       matchedDevice.wan_bytes = req.body.wanbytes;
     }
+
+    // CPU and Memory usage
+    if (util.isJSONObject(req.body.resources)) {
+      let cpuUsage = (
+        parseInt(util.returnObjOrNum(req.body.cpu_usage, 101))
+      );
+      let memoryUsage = (
+        parseInt(util.returnObjOrNum(req.body.memory_usage, 101))
+      );
+
+      // Check if CPU and Memory came valid
+      if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
+        matchedDevice.cpu_usage = cpuUsage;
+      }
+
+      if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
+        matchedDevice.memory_usage = memoryUsage;
+      }
+    }
+
+    // Save
     await matchedDevice.save().catch((err) => {
       return res.status(500).json({processed: 0});
     });
     sio.anlixSendUpStatusNotification(id, req.body);
-    sio.anlixSendWanBytesNotification(id, req.body);
+    sio.anlixSendStatisticsNotification(id, req.body);
     return res.status(200).json({processed: 1});
   });
 };
+
+
+// WAN Information
+deviceInfoController.receiveWanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Default Gateway IPv4
+    let defaultGatewayV4 = util.returnObjOrEmptyStr(req.body.default_gateway_v4)
+      .trim();
+    matchedDevice.default_gateway_v4 = defaultGatewayV4;
+
+    // Default Gateway IPv6
+    let defaultGatewayV6 = util.returnObjOrEmptyStr(req.body.default_gateway_v6)
+      .trim();
+    matchedDevice.default_gateway_v6 = defaultGatewayV6;
+
+    // DNS Server
+    let dnsServer = util.returnObjOrEmptyStr(req.body.dns_server).trim();
+    matchedDevice.dns_server = dnsServer;
+
+    // PPPoE MAC
+    let pppoeMac = util.returnObjOrEmptyStr(req.body.pppoe_mac).trim();
+    matchedDevice.pppoe_mac = pppoeMac;
+
+    // PPPoE IP
+    let pppoeIp = util.returnObjOrEmptyStr(req.body.pppoe_ip).trim();
+    matchedDevice.pppoe_ip = pppoeIp;
+
+    // IPv4 Address
+    let ipv4Address = util.returnObjOrEmptyStr(req.body.ipv4_address).trim();
+    matchedDevice.wan_ip = ipv4Address;
+
+    // IPv4 Mask
+    // Assigns 0, if mask is not valid
+    let ipv4Mask = parseInt(util.returnObjOrNum(req.body.ipv4_mask, 0));
+    matchedDevice.wan_ipv4_mask = ipv4Mask;
+
+    // IPv6 Address
+    let ipv6Address = util.returnObjOrEmptyStr(req.body.ipv6_address).trim();
+    matchedDevice.wan_ipv6 = ipv6Address;
+
+    // IPv6 Mask
+    // Assigns 0, if mask is not valid
+    let ipv6Mask = parseInt(util.returnObjOrNum(req.body.ipv6_mask, 0));
+    matchedDevice.wan_ipv6_mask = ipv6Mask;
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendWanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
+// LAN Information
+deviceInfoController.receiveLanInfo = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+
+    // Prefix Delegation Address
+    let prefixDelegationAddr = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_addr)
+      .trim();
+    matchedDevice.prefix_delegation_addr = prefixDelegationAddr;
+
+    // Prefix Delegation Mask
+    let prefixDelegationMask = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_mask)
+      .trim();
+    matchedDevice.prefix_delegation_mask = prefixDelegationMask;
+
+    // Prefix Delegation Local Address
+    let prefixDelegationLocal = util
+      .returnObjOrEmptyStr(req.body.prefix_delegation_local)
+      .trim();
+    matchedDevice.prefix_delegation_local = prefixDelegationLocal;
+
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      return res.status(500).json({processed: 0});
+    });
+
+    // Send socket IO notification
+    sio.anlixSendLanInfoNotification(id, req.body);
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
+
+// Traceroute
+deviceInfoController.receiveTraceroute = function(req, res) {
+  let id = req.headers['x-anlix-id'];
+  let envsec = req.headers['x-anlix-sec'];
+
+  if (process.env.FLM_BYPASS_SECRET == undefined) {
+    if (envsec != req.app.locals.secret) {
+      console.log('Error Receiving Devices: Secret not match!');
+      return res.status(404).json({processed: 0});
+    }
+  }
+
+  DeviceModel.findById(id, async function(err, matchedDevice) {
+    if (err) {
+      return res.status(400).json({processed: 0});
+    }
+    if (!matchedDevice) {
+      return res.status(404).json({processed: 0});
+    }
+
+    // Get the current test
+    let currentTest = matchedDevice.traceroute_results.find(
+      (test) => test.address === req.body.address,
+    );
+
+    // Could not find the test, return with not processed
+    if (!currentTest) {
+      return res.status(200).json({processed: 0});
+    }
+
+    // If the tries per hop came is not empty
+    if (!isNaN(req.body.tries_per_hop)) {
+      // Fill the traceroute result
+      currentTest.all_hops_tested = req.body.all_hops_tested;
+      currentTest.reached_destination = req.body.reached_destination;
+      currentTest.tries_per_hop = req.body.tries_per_hop;
+      currentTest.hops = req.body.hops;
+    }
+
+    // Setting the completed flag & updating last_modified_at
+    // We may want to indicate that the diagnostic is completed with
+    // in_progress==false
+    currentTest.completed = true;
+    matchedDevice.current_diagnostic.last_modified_at = new Date();
+    let isLastResult = matchedDevice.traceroute_results
+      .filter(((result) => !result.completed)).length == 0;
+    if (isLastResult) {
+      matchedDevice.current_diagnostic.stage = 'done';
+      matchedDevice.current_diagnostic.in_progress = false;
+    }
+
+    // Save
+    await matchedDevice.save().catch((err) => {
+      console.log('Error saving traceroute test to database: ' + err);
+    });
+
+    // Soft copying result
+    let trapResult = {
+      address: currentTest.address,
+      all_hops_testes: currentTest.all_hops_tested,
+      reached_destination: currentTest.reached_destination,
+      tries_per_hop: currentTest.tries_per_hop,
+      hops: currentTest.hops,
+    };
+
+    // Propagating to the proper callback(s)
+    if (matchedDevice.current_diagnostic.customized &&
+        matchedDevice.current_diagnostic.type == 'traceroute' &&
+        !matchedDevice.current_diagnostic.in_progress
+    ) {
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
+        let requestOptions = {};
+        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': matchedDevice._id,
+          'type': 'device',
+          'traceroute_result': trapResult,
+        };
+        if (matchedDevice.current_diagnostic.webhook_user &&
+          matchedDevice.current_diagnostic.webhook_secret
+        ) {
+          requestOptions.auth = {
+            user: matchedDevice.current_diagnostic.webhook_user,
+            pass: matchedDevice.current_diagnostic.webhook_secret,
+          };
+        }
+        request(requestOptions).then(() => { }, () => { });
+      }
+    } else {
+      deviceHandlers.sendTracerouteToTraps(id, trapResult);
+    }
+
+    return res.status(200).json({processed: 1});
+  });
+};
+
 
 deviceInfoController.receiveWpsResult = function(req, res) {
   let id = req.headers['x-anlix-id'];

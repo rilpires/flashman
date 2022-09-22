@@ -2,10 +2,12 @@ const controlApi = require('./controllers/external-api/control');
 const User = require('./models/user');
 const Role = require('./models/role');
 const Device = require('./models/device');
+const DevicesAPI = require('./controllers/external-genieacs/devices-api');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
-let DeviceVersion = require('./models/device_version');
+const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
+const objectId = require('mongoose').Types.ObjectId;
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
@@ -20,7 +22,7 @@ module.exports = async (app) => {
 
     // put default values in old config
     let config = await Config.findOne(
-      {is_default: true}).exec().catch(
+      {is_default: true}, {device_update_schedule: false}).exec().catch(
       (err) => {
         console.log('Error fetching Config from database!');
       },
@@ -82,9 +84,22 @@ module.exports = async (app) => {
         newSuperUser.save();
       }
     });
-    // Check default role existence
-    Role.find({}, function(err, roles) {
-      if (err || !roles || 0 === roles.length) {
+    // Use lean to check missing on Users
+    User.find({is_hidden: {$exists: false}}, {_id: true}).lean()
+      .exec(function(err, users) {
+        if (!err && users && users.length > 0) {
+          for (let idx = 0; idx < users.length; idx++) {
+            User.findOneAndUpdate(
+              {_id: objectId(users[idx]._id)},
+              {is_hidden: false}).exec();
+          }
+        }
+      },
+    );
+    // Check roles
+    Role.findOne({}, function(err, role) {
+      // Check default role existence
+      if (!err && !role) {
         let managerRole = new Role({
           name: 'Gerente',
           grantWifiInfo: 2,
@@ -107,12 +122,64 @@ module.exports = async (app) => {
           grantOpmodeEdit: true,
           grantVlan: 2,
           grantVlanProfileEdit: true,
-          grantWanBytesView: true,
+          grantStatisticsView: true,
           grantCsvExport: true,
           grantFirmwareBetaUpgrade: true,
           grantFirmwareRestrictedUpgrade: true,
         });
         managerRole.save();
+      }
+    });
+    Role.findOne({name: 'anlix-statistics-api'}, function(err, apiRole) {
+      // Check API role existence
+      if (!err && !apiRole) {
+        let apiRole = new Role({
+          name: 'anlix-statistics-api',
+          is_hidden: true,
+          grantAPIAccess: true,
+          grantWanType: true,
+          grantWifiInfo: 2,
+          grantPPPoEInfo: 2,
+          grantLanEdit: true,
+          grantDeviceId: true,
+          grantOpmodeEdit: true,
+        });
+        apiRole.save();
+      }
+    });
+    // Use lean to check missing fields on Roles
+    Role.find({}).lean().exec(function(err, roles) {
+      if (!err && roles && roles.length > 0) {
+        for (let idx = 0; idx < roles.length; idx++) {
+          if (typeof roles[idx].grantShowRowsPerPage == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantShowRowsPerPage: true}, (err) => {
+                console.log('Role updated');
+              });
+          }
+          if (typeof roles[idx].grantStatisticsView == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantStatisticsView: roles[idx].grantWanBytesView},
+              (err) => {
+                console.log('Role updated: Renamed grantWanBytesView');
+                Role.collection.update(
+                  {name: roles[idx].name},
+                  {$unset: {grantWanBytesView: 1}},
+                  (err) => {
+                    console.log('Role updated: Removed grantWanBytesView');
+                  });
+              });
+          }
+          if (typeof roles[idx].is_hidden == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {is_hidden: false}, (err) => {
+                console.log('Role visibility updated');
+              });
+          }
+        }
       }
     });
     // Check migration for devices checked for upgrade
@@ -125,13 +192,14 @@ module.exports = async (app) => {
       {connection_type: 'dhcp', pppoe_user: {$ne: ''}},
       {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
       {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
+      {wifi_mode: {$nin: ['11g', '11n']}},
     ]},
     {installed_release: true, do_update: true,
      do_update_status: true, release: true,
      mesh_key: true, mesh_id: true,
      bridge_mode_enabled: true, connection_type: true,
      pppoe_user: true, pppoe_password: true,
-     isSsidPrefixEnabled: true, bssid_mesh2: true,
+     isSsidPrefixEnabled: true, bssid_mesh2: true, wifi_mode: true,
      bssid_mesh5: true, use_tr069: true, _id: true, model: true},
     function(err, devices) {
       if (!err && devices) {
@@ -168,6 +236,12 @@ module.exports = async (app) => {
             devices[idx].pppoe_password = '';
             saveDevice = true;
           }
+          // Fix bugged wifi mode for TR-069 devices - createRegistry had 5ghz
+          // flag set for both networks instead of just 5ghz
+          if (!['11n', '11g'].includes(devices[idx].wifi_mode)) {
+            devices[idx].wifi_mode = '11n';
+            saveDevice = true;
+          }
           /*
             Check isSsidPrefixEnabled existence and
             set it to default (false for old devices regs)
@@ -181,24 +255,39 @@ module.exports = async (app) => {
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
-            let meshBSSIDs = DeviceVersion.getMeshBSSIDs(
-              devices[idx].model, devices[idx]._id);
-            devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
-            devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
-            saveDevice = true;
-          }
-          if (saveDevice) {
-            devices[idx].save();
+            let cpe =
+              DevicesAPI.instantiateCPEByModelFromDevice(devices[idx]).cpe;
+            acsMeshDeviceHandler.getMeshBSSIDs(cpe, devices[idx]._id)
+              .then((meshBSSIDs) => {
+                devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
+                devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
+                devices[idx].save();
+              });
+          } else {
+            if (saveDevice) {
+              devices[idx].save();
+            }
           }
         }
       }
     });
     /* Check if not exists indexes and sync them */
     Device.collection.getIndexes({full: true}).then(async (idxs) => {
-       if (idxs.length < 4) {
-         console.log('Creating devices indexes');
-         await Device.syncIndexes();
-       }
+      let neededIndexes = ['_id_', 'serial_tr069_1',
+                           'alt_uid_tr069_1', 'acs_id_1',
+                           'pppoe_user_1', 'external_reference.data_1'];
+      let idxNames = idxs.map((idx) => idx.name);
+      let reloadIndexes = false;
+      for (let neededIdx of neededIndexes) {
+        if (!(idxNames.includes(neededIdx))) {
+          reloadIndexes = true;
+          break;
+        }
+      }
+      if (reloadIndexes) {
+        console.log('Creating devices indexes');
+        await Device.syncIndexes();
+      }
     }).catch(console.error);
   }
 };

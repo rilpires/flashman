@@ -38,6 +38,8 @@ if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
     }
     // Always watch for tasks associated with this instance
     watchGenieTasks();
+    // Always clean old Get Parameters Tasks. This improves performance
+    genie.deleteGetParamTasks();
     /* we should never close connection to database. it will be close when
      application stops. */
   });
@@ -162,6 +164,17 @@ genie.deleteCacheAndFaultsForDevice = async function(genieDeviceId) {
   await genieDB.collection('faults').deleteMany({_id: re});
 };
 
+// Delete all "Get" tasks. ** USE IT WISELY! **
+genie.deleteGetParamTasks = async function() {
+  try {
+    let ret = await genieDB.collection('tasks').deleteMany(
+      {name: 'getParameterValues'});
+    console.log('Number of deleted Get tasks: ' + ret.deletedCount);
+  } catch (err) {
+    console.log('Error deleting Get parameters tasks: ' + err);
+  }
+};
+
 // if allSettled is not defined in Promise, we define it here.
 if (Promise.allSettled === undefined) {
   Promise.allSettled = function allSettled(promises) {
@@ -268,6 +281,13 @@ genie.putPreset = async function(preset) {
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(presetjson)},
   }, presetjson);
+};
+
+genie.deletePreset = async function(presetId) {
+  return genie.request({
+    method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+    path: `/presets/${encodeURIComponent(presetId)}`,
+  });
 };
 
 genie.addOrDeleteObject = async function(

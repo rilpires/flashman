@@ -91,7 +91,7 @@ router.route('/uilastlog/:id').get(
 // Send a message using MQTT
 router.route('/command/:id/:msg').post(
   authController.ensurePermission('grantDeviceActions'),
-  deviceListController.sendMqttMsg);
+  deviceListController.sendCommandMsg);
 
 // For user Interface - Set/Get Port forward
 router.route('/uiportforward/:id').get(
@@ -99,19 +99,30 @@ router.route('/uiportforward/:id').get(
                                   .post(
   deviceListController.setPortForward);
 
-// Set/Get Speed test results
+// Get/Execute Speed test results
 router.route('/speedtest/:id').get(
   authController.ensurePermission('grantMeasureDevices'),
   deviceListController.getSpeedtestResults)
                               .post(
   authController.ensurePermission('grantMeasureDevices', 2),
-  deviceListController.doSpeedTest);
+  deviceListController.sendGenericSpeedTestAPI);
 
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(
   deviceListController.getPingHostsList)
                                   .post(
   deviceListController.setPingHostsList);
+
+// Set/Get Default Ping hosts list
+router.route('/defaultpinghostslist')
+.get(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.getDefaultPingHosts,
+)
+.post(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.setDefaultPingHosts,
+);
 
 router.route('/landevices/:id').get(
   deviceListController.getLanDevices);
@@ -129,10 +140,22 @@ router.route('/landevice/block').post(
 router.route('/license').post(
   deviceListController.updateLicenseStatus);
 
+// Set license status of desired CPEs
+router.route('/deleteandblock').post(
+  authController.ensurePermission('grantDeviceRemoval'),
+  authController.ensurePermission('grantDeviceLicenseBlock'),
+  deviceListController.delDeviceAndBlockLicense,
+);
+
 router.route('/export').get(
   deviceListController.exportDevicesCsv);
 
-router.route('/ponsignal/:deviceId').get(
-  deviceListController.receivePonSignalMeasure);
+// WAN Informations
+router.route('/waninfo/:id').get(
+  deviceListController.getWanInfo);
+
+// LAN Informations
+router.route('/laninfo/:id').get(
+  deviceListController.getLanInfo);
 
 module.exports = router;

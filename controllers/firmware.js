@@ -7,7 +7,7 @@ let Firmware = require('../models/firmware');
 const Role = require('../models/role');
 const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
-const DeviceVersion = require('../models/device_version');
+const DevicesAPI = require('./external-genieacs/devices-api');
 const t = require('./language').i18next.t;
 const util = require('./handlers/util');
 
@@ -90,7 +90,8 @@ firmwareController.index = function(req, res) {
     } else {
       indexContent.superuser = user.is_superuser;
     }
-    Config.findOne({is_default: true}, function(err, matchedConfig) {
+    Config.findOne({is_default: true}, {device_update_schedule: false},
+    function(err, matchedConfig) {
       if (err || !matchedConfig) {
         indexContent.update = false;
       } else {
@@ -105,7 +106,7 @@ firmwareController.index = function(req, res) {
           return res.render('error', indexContent);
         }
         indexContent.role = role;
-        indexContent.tr069Infos = DeviceVersion.getTr069ModelsAndVersions();
+        indexContent.tr069Infos = DevicesAPI.getTR069UpgradeableModels();
         return res.render('firmware', indexContent);
       });
     });
@@ -267,7 +268,7 @@ firmwareController.uploadFirmware = async function(req, res) {
     fnameFields = parseFilename(firmwarefile.name);
   } else if (isTR069) {
     fnameFields = {};
-    fnameFields.vendor = DeviceVersion.getVendorByModel(req.body.productclass);
+    fnameFields.vendor = req.body.productvendor;
     fnameFields.model = req.body.productclass;
     fnameFields.version = req.body.version;
     fnameFields.release = req.body.version;

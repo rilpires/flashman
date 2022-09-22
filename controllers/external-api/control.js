@@ -24,7 +24,8 @@ controlController.checkPubKey = async function(app) {
   try {
     let pubKeyUrl = controlApiAddr + '/flashman/pubkey/register';
     // Check default config
-    let matchedConfig = await Config.findOne({is_default: true});
+    let matchedConfig = await Config.findOne({is_default: true},
+                                             {auth_privkey: true});
     // Check config existence and create one if not found
     if (!matchedConfig) {
       await newConfig.save().catch((err) => {
@@ -51,7 +52,8 @@ controlController.getMessageConfig = async function(app) {
   let matchedConfig = null;
 
   try {
-    matchedConfig = await Config.findOne({is_default: true});
+    matchedConfig = await Config.findOne({is_default: true},
+                                         {messaging_configs: true});
     if (!matchedConfig) {
       console.error('Error obtaining message config');
       return;
@@ -272,7 +274,8 @@ controlController.meshLicenseCredit = async function(slaveId) {
   let matchedConfig = null;
 
   try {
-    matchedConfig = await Config.findOne({is_default: true});
+    matchedConfig = await Config.findOne({is_default: true},
+      {company: true, licenseApiSecret: true});
     if (!matchedConfig) {
       console.error('Error obtaining message config');
       return {success: false, message:
@@ -298,6 +301,31 @@ controlController.meshLicenseCredit = async function(slaveId) {
       if (res.success) {
         return resolve({
           success: true,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: err.message});
+    });
+  });
+};
+
+controlController.getApiUserLogin = function(app) {
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/user/flashmanapiinfo',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({
+          success: true,
+          apiUser: res.flashmanApiUser,
+          apiPass: res.flashmanApiPass,
+          company: res.company,
         });
       } else {
         return resolve({success: false, message: res.message});

@@ -3,6 +3,7 @@ const express = require('express');
 const userController = require('../controllers/user');
 const authController = require('../controllers/auth');
 
+// eslint-disable-next-line new-cap
 let router = express.Router();
 
 router.use( // all paths will use these middlewares.
@@ -54,10 +55,10 @@ router.route('/get/one/:id').get(
   userController.getUserById);
 
 router.route('/new').post(
-  userController.postUser)
+  userController.postUser);
 
 router.route('/del').post(
-  userController.deleteUser)
+  userController.deleteUser);
 
 router.route('/role/get/all').get(
   userController.getRoles);

@@ -144,11 +144,16 @@ const getConfig = async function(lean=true, needActive=true) {
 
 const getDevice = async function(mac, lean=false) {
   let device = null;
+  const projection = {
+    port_mapping: false, ap_survey: false,
+    pingtest_results: false, speedtest_results: false,
+    firstboot_log: false, lastboot_log: false,
+  };
   try {
     if (lean) {
-      device = await DeviceModel.findById(mac.toUpperCase()).lean();
+      device = await DeviceModel.findById(mac.toUpperCase(), projection).lean();
     } else {
-      device = await DeviceModel.findById(mac.toUpperCase());
+      device = await DeviceModel.findById(mac.toUpperCase(), projection);
     }
   } catch (err) {
     console.log(err);
@@ -626,6 +631,17 @@ scheduleController.getDevicesReleases = async function(req, res) {
 
   let finalQuery = null;
   let deviceList = [];
+  const deviceProjection = {
+    _id: true,
+    mesh_master: true,
+    mesh_slaves: true,
+    model: true,
+    use_tr069: true,
+    version: true,
+    wifi_is_5ghz_capable: true,
+    acs_id: true,
+  };
+
   if (!useCsv) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
      queryContents);
@@ -658,11 +674,12 @@ scheduleController.getDevicesReleases = async function(req, res) {
   if (useCsv) {
     queryPromise = Promise.resolve(deviceList);
   } else if (useAllDevices) {
-    queryPromise = DeviceModel.find(finalQuery).lean();
+    queryPromise = DeviceModel.find(finalQuery, deviceProjection).lean();
   } else {
     queryPromise = DeviceModel.paginate(finalQuery, {
       page: pageNumber,
       limit: pageCount,
+      projection: deviceProjection,
       lean: true,
     });
   }
@@ -705,9 +722,11 @@ scheduleController.getDevicesReleases = async function(req, res) {
               let slaveDevice = matchedDevices.find(
                 (d) => d._id === device.mesh_slaves[i],
               );
-              let slaveModel = slaveDevice.model.replace('N/', '');
-              if (!models.includes(slaveModel)) {
-                models.push(slaveModel);
+              if (slaveDevice && ('model' in slaveDevice)) {
+                let slaveModel = slaveDevice.model.replace('N/', '');
+                if (!models.includes(slaveModel)) {
+                  models.push(slaveModel);
+                }
               }
             }
             meshNetworks.push({
@@ -842,6 +861,16 @@ scheduleController.startSchedule = async function(req, res) {
 
   let finalQuery = null;
   let deviceList = [];
+  const deviceProjection = {
+    _id: true,
+    mesh_master: true,
+    mesh_slaves: true,
+    model: true,
+    use_tr069: true,
+    version: true,
+    wifi_is_5ghz_capable: true,
+    acs_id: true,
+  };
 
   const userRole = await Role.findOne(
     {name: util.returnObjOrEmptyStr(req.user.role)});
@@ -878,11 +907,12 @@ scheduleController.startSchedule = async function(req, res) {
   if (useCsv) {
     queryPromise = Promise.resolve(deviceList);
   } else if (useAllDevices) {
-    queryPromise = DeviceModel.find(finalQuery).lean();
+    queryPromise = DeviceModel.find(finalQuery, deviceProjection).lean();
   } else {
     queryPromise = DeviceModel.paginate(finalQuery, {
       page: pageNumber,
       limit: pageCount,
+      projection: deviceProjection,
       lean: true,
     });
   }
@@ -912,11 +942,13 @@ scheduleController.startSchedule = async function(req, res) {
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
-            let slaveModel = slaveDevice.model.replace('N/', '');
-            valid = modelsAvailable.includes(slaveModel);
-            const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
-              slaveDevice, matchedRelease.flashbox_version);
-            if (!allowMeshUpgrade) valid = false;
+            if (slaveDevice && ('model' in slaveDevice)) {
+              let slaveModel = slaveDevice.model.replace('N/', '');
+              valid = modelsAvailable.includes(slaveModel);
+              const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
+                slaveDevice, matchedRelease.flashbox_version);
+              if (!allowMeshUpgrade) valid = false;
+            }
           });
           if (!valid) return false;
         }

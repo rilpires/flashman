@@ -10,11 +10,6 @@ let acsXMLConfigHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-acsXMLConfigHandler.onlineAfterReset = ['MP-G421R'];
-acsXMLConfigHandler.xmlConfigModels = [
-  'GONUAC001', 'GONUAC002', '121AC', 'HG9', 'IGD', 'MP_G421R',
-];
-
 const createNewPortFwTbl = function(pm) {
   return {'@_Name': 'PORT_FW_TBL', 'Value': [{
         '@_Name': 'InstanceNum', '@_Value': '0',
@@ -55,14 +50,14 @@ const setXmlPortForward = function(jsonConfigFile, device) {
   if (i < 0) {
     console.log('Error: failed MIB_TABLE index finding at '
       +device.serial_tr069);
-    return '';
+    return false;
   }
   let j = jsonConfigFile['Config']['Dir'][i]['Value']
   .findIndex((e) => e['@_Name'] == 'PORT_FW_ENABLE');
   if (j < 0) {
     console.log('Error: failed PORT_FW_ENABLE index finding at '
       +device.serial_tr069);
-    return '';
+    return false;
   }
   jsonConfigFile['Config']['Dir'][i]['Value'][j]['@_Value']
    = (device.port_mapping.length == 0)?'0':'1';
@@ -72,7 +67,7 @@ const setXmlPortForward = function(jsonConfigFile, device) {
   if (i < 0) {
     console.log('Error: failed PORT_FW_TBL index finding at '+
       device.serial_tr069);
-    return '';
+    return false;
   }
   // delete others PORT_FW_TBL
   jsonConfigFile['Config']['Dir'] =
@@ -87,7 +82,7 @@ const setXmlPortForward = function(jsonConfigFile, device) {
     jsonConfigFile['Config']['Dir'].splice(i, 0,
       {'@_Name': 'PORT_FW_TBL'});
   }
-  return jsonConfigFile;
+  return true;
 };
 
 const setXmlWebAdmin = function(jsonConfigFile, device) {
@@ -97,7 +92,7 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   if (mibIndex < 0) {
     console.log('Error: failed MIB_TABLE index finding at '
       +device.serial_tr069);
-    return '';
+    return false;
   }
 
   let passwordIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
@@ -105,7 +100,7 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   if (passwordIndex < 0) {
     console.log('Error: failed SUSER_PASSWORD index finding at '
       +device.serial_tr069);
-    return '';
+    return false;
   }
 
   let nameIndex = jsonConfigFile['Config']['Dir'][mibIndex]['Value']
@@ -113,20 +108,24 @@ const setXmlWebAdmin = function(jsonConfigFile, device) {
   if (nameIndex < 0) {
     console.log('Error: failed SUSER_NAME index finding at '
       +device.serial_tr069);
-    return '';
+    return false;
   }
 
-  // set web login
-  // this login can clash if the username is "admin"
-  // beware if you're having trouble to login on web interface
-  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][nameIndex]['@_Value']
-    = device.web_admin_username;
+  let mibValue = jsonConfigFile['Config']['Dir'][mibIndex]['Value'];
+  let currentUser = mibValue[nameIndex]['@_Value'];
+  let currentPass = mibValue[passwordIndex]['@_Value'];
 
-  // set web password
-  jsonConfigFile['Config']['Dir'][mibIndex]['Value'][passwordIndex]['@_Value']
-    = device.web_admin_password;
+  let didChange = false;
+  if (device.web_admin_username && currentUser !== device.web_admin_username) {
+    didChange = true;
+    mibValue[nameIndex]['@_Value'] = device.web_admin_username;
+  }
+  if (device.web_admin_password && currentPass !== device.web_admin_password) {
+    didChange = true;
+    mibValue[passwordIndex]['@_Value'] = device.web_admin_password;
+  }
 
-  return jsonConfigFile;
+  return didChange;
 };
 
 acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
@@ -144,11 +143,14 @@ acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
   if (xml2js.validate(rawXml) === true) {
     // parse xml to json
     let jsonConfigFile = xml2js.parse(rawXml, opts);
+    let didChange = false;
     if (target.includes('port-forward')) {
-      jsonConfigFile = setXmlPortForward(jsonConfigFile, device);
+      let portChange = setXmlPortForward(jsonConfigFile, device);
+      didChange = didChange || portChange;
     }
     if (target.includes('web-admin')) {
-      jsonConfigFile = setXmlWebAdmin(jsonConfigFile, device);
+      let credentialChange = setXmlWebAdmin(jsonConfigFile, device);
+      didChange = didChange || credentialChange;
     }
     // parse json to xml
     opts = {
@@ -158,10 +160,13 @@ acsXMLConfigHandler.digestXmlConfig = function(device, rawXml, target) {
       supressEmptyNode: false,
     };
     let js2xml = new XmlParser(opts);
-    return js2xml.parse(jsonConfigFile)
-      .replace(/(([\n\t\r])|(\s\s\n)|(\s\s))/g, '');
+    let finalXml = js2xml.parse(jsonConfigFile);
+    finalXml = finalXml.replace(/(([\n\t\r])|(\s\s\n)|(\s\s))/g, '');
+    return {
+      didChange: didChange, xml: finalXml,
+    };
   } else {
-    return '';
+    return {didChange: false};
   }
 };
 
@@ -208,14 +213,14 @@ const fetchAndEditConfigFile = async function(acsID, target) {
         rawConfigFile = utilHandlers.getFromNestedKey(
           rawConfigFile, configField+'._value',
         );
-        let xmlConfigFile = acsXMLConfigHandler.digestXmlConfig(
+        let xmlConfigResult = acsXMLConfigHandler.digestXmlConfig(
           device, rawConfigFile, target,
         );
-        if (xmlConfigFile != '') {
+        if (xmlConfigResult.didChange && xmlConfigResult.xml !== '') {
           // set xml config file to genieacs
           let task = {
             name: 'setParameterValues',
-            parameterValues: [[configField, xmlConfigFile, 'xsd:string']],
+            parameterValues: [[configField, xmlConfigResult.xml, 'xsd:string']],
           };
           let result = await TasksAPI.addTask(acsID, task);
           if (!result || !result.success) {

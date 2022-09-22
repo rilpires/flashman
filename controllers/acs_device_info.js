@@ -38,18 +38,6 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
-const convertSubnetMaskToRange = function(mask) {
-  // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
-  if (mask === '255.255.255.0' || mask === 24) {
-    return {min: '33', max: '254'};
-  } else if (mask === '255.255.255.128' || mask === 25) {
-    return {min: '161', max: '254'};
-  } else if (mask === '255.255.255.192' || mask === 26) {
-    return {min: '225', max: '254'};
-  }
-  return {};
-};
-
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -60,10 +48,12 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'bg':
     case 'b,g':
     case 'b/g':
+    case 'g-only':
       return '11g';
     case '11bgn':
     case '11a':
     case '11na':
+    case '11n':
     case 'a':
     case 'n':
     case 'g,n':
@@ -82,8 +72,11 @@ const convertWifiMode = function(mode, is5ghz) {
     case 'a,n,ac':
     case 'a/n/ac':
     case 'ac,n,a':
+    case 'ac,a,n':
+    case 'ac,n':
     case 'an+ac':
       return (is5ghz) ? '11ac' : undefined;
+    case '11ax':
     case 'ax':
     case 'a/n/ac/ax':
       return (is5ghz) ? '11ax' : undefined;
@@ -92,64 +85,10 @@ const convertWifiMode = function(mode, is5ghz) {
   }
 };
 
-const convertWifiBand = function(model, band, mode, is5ghz) {
-  let isAC = convertWifiMode(mode, is5ghz) === '11ac';
-  switch (band) {
-    // Number input
-    case '0':
-      if (model === 'EG8145X6' || model === 'HG8121H') return 'auto';
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '1':
-      if (model === 'HG8121H') return 'HT20';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT20' : 'HT20';
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '2':
-      if (model === 'HG8121H') return 'HT40';
-      if (model === 'EG8145X6') return (isAC) ? 'VHT40' : 'HT40';
-      return 'auto';
-    case '3':
-      return (isAC) ? 'VHT80' : undefined;
-    // String input
-    case 'auto':
-    case 'Auto':
-    case '20/40MHz Coexistence':
-      return 'auto';
-    case '20M':
-    case '20MHz':
-    case '20Mhz':
-      return (isAC) ? 'VHT20' : 'HT20';
-    case '40M':
-    case '40MHz':
-    case '40Mhz':
-    case '20/40MHz':
-      return (isAC) ? 'VHT40' : 'HT40';
-    case '80M':
-    case '80MHz':
-    case '80Mhz':
-    case '20/40/80MHz':
-      return (isAC) ? 'VHT80' : undefined;
-    case '160MHz':
-    default:
-      return undefined;
-  }
-};
-
-const extractGreatekCredentials = function(config) {
-  let usernameRegex = /SUSER_NAME(.+?)\//g;
-  let passwordRegex = /SUSER_PASSWORD(.+?)\//g;
-  let usernameMatches = config.match(usernameRegex);
-  let passwordMatches = config.match(passwordRegex);
-  let username;
-  let password;
-  if (usernameMatches.length > 0) {
-    username = usernameMatches[0].split('=')[1];
-    username = username.substring(1, username.length - 2);
-  }
-  if (passwordMatches.length > 0) {
-    password = passwordMatches[0].split('=')[1];
-    password = password.substring(1, password.length - 2);
-  }
-  return {username: username, password: password};
+const convertWifiBand = function(cpe, band, mode, is5ghz) {
+  let convertedMode = convertWifiMode(mode, is5ghz);
+  let isAC = (convertedMode === '11ac' || convertedMode === '11ax');
+  return cpe.convertWifiBandToFlashman(band, isAC);
 };
 
 const processHostFromURL = function(url) {
@@ -168,12 +107,14 @@ const processHostFromURL = function(url) {
   return hostAndPort.split(':')[0];
 };
 
-const createRegistry = async function(req, permissions) {
+const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    data.wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
     if (typeof data.wan.pppoe_enable.value === 'string') {
       hasPPPoE = (utilHandlers.isTrueValueString(data.wan.pppoe_enable.value));
     } else if (typeof data.wan.pppoe_enable.value === 'number') {
@@ -197,8 +138,8 @@ const createRegistry = async function(req, permissions) {
   }
   let splitID = req.body.acs_id.split('-');
 
-  let matchedConfig = await Config.findOne({is_default: true}).lean().catch(
-    function(err) {
+  let matchedConfig = await Config.findOne({is_default: true},
+    {device_update_schedule: false}).lean().catch(function(err) {
       console.error('Error creating entry: ' + err);
       return false;
     },
@@ -209,10 +150,7 @@ const createRegistry = async function(req, permissions) {
   }
   let macAddr = data.common.mac.value.toUpperCase();
   let model = (data.common.model) ? data.common.model.value : '';
-  let wifi5Capable = false;
-  if (data.wifi5.ssid && data.wifi5.ssid.value) {
-    wifi5Capable = true;
-  }
+  let wifi5Capable = cpe.modelPermissions().wifi.dualBand;
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
@@ -223,33 +161,27 @@ const createRegistry = async function(req, permissions) {
   // -> 'new registry' scenario
   let checkResponse = deviceHandlers.checkSsidPrefix(
     matchedConfig, ssid, ssid5ghz, false, true);
-  /* if in the check is not enabled but hash exists and is
-    enabled in config, so we have an error */
-  createPrefixErrNotification = !checkResponse.enablePrefix &&
-    matchedConfig.personalizationHash !== '' &&
-    matchedConfig.isSsidPrefixEnabled;
+  // The function already returns what SSID we should be saving in the database
+  // and what the local flag value should be, based on the global flag and SSID
+  // values.
   isSsidPrefixEnabled = checkResponse.enablePrefix;
-  // cleaned ssid
   ssid = checkResponse.ssid2;
   if (wifi5Capable) {
     ssid5ghz = checkResponse.ssid5;
   }
+  // If the global flag was set to true and the function returned a false value
+  // for the local flag, this means the prefix could not be activated - thus we
+  // issue a warning notification for this device
+  createPrefixErrNotification = (
+    !checkResponse.enablePrefix &&
+    matchedConfig.personalizationHash !== '' &&
+    matchedConfig.isSsidPrefixEnabled
+  );
 
   // Check for an alternative UID to replace serial field
   let altUid;
   if (data.common.alt_uid) {
     altUid = data.common.alt_uid.value;
-  }
-
-  // Greatek does not expose these fields normally, only under this config file,
-  // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config && data.common.greatek_config.value) {
-    let webCredentials = extractGreatekCredentials(
-      data.common.greatek_config.value);
-    data.common.web_admin_username = {};
-    data.common.web_admin_password = {};
-    data.common.web_admin_username.value = webCredentials.username;
-    data.common.web_admin_password.value = webCredentials.password;
   }
 
   let newMeshId = meshHandlers.genMeshID();
@@ -270,7 +202,7 @@ const createRegistry = async function(req, permissions) {
       meshBSSIDs.mesh5 = data.mesh5.bssid.value.toUpperCase();
     }
   } else {
-    meshBSSIDs = DeviceVersion.getMeshBSSIDs(model, macAddr);
+    meshBSSIDs = await acsMeshDeviceHandler.getMeshBSSIDs(cpe, macAddr);
   }
 
   // Get channel information here to avoid ternary mess
@@ -296,57 +228,47 @@ const createRegistry = async function(req, permissions) {
   }
 
   // Remove DHCP uptime for Archer C6
-  let wanUptime = (hasPPPoE) ?
-    data.wan.uptime_ppp.value : data.wan.uptime.value;
-  if (!hasPPPoE && model == 'Archer C6') {
-    wanUptime = undefined;
+  let wanUptime;
+  if (cpe.modelPermissions().wan.hasUptimeField) {
+    if (hasPPPoE && data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
+      wanUptime = data.wan.uptime_ppp.value;
+    } else if (data.wan.uptime && data.wan.uptime.value) {
+      wanUptime = data.wan.uptime.value;
+    }
+    if (!hasPPPoE && !cpe.modelPermissions().wan.dhcpUptime) {
+      wanUptime = undefined;
+    }
   }
 
-  let serialTR069 = splitID[splitID.length - 1];
-  // Convert Hurakall serial information
-  if (model === 'ST-1001-FL') {
-    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
-    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
-    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
-    // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((prefix) => {
-      prefix = parseInt(prefix, 16);
-      if (isNaN(prefix)) {
-        debug('prefix on serialPrefix is not an number');
-      }
-      return String.fromCharCode(prefix);
-    });
-    // join parts in final format
-    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
-  } else if (model === 'GWR-1200AC') {
-    serialTR069 = macAddr;
+  let wanIP;
+  if (hasPPPoE && data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
+    wanIP = data.wan.wan_ip_ppp.value;
+  } else if (data.wan.wan_ip && data.wan.wan_ip.value) {
+    wanIP = data.wan.wan_ip.value;
   }
+
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], macAddr,
+  );
 
   // Collect PON signal, if available
   let rxPowerPon;
   let txPowerPon;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    rxPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_rxpower.value,
-    );
+    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower.value);
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    rxPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_rxpower_epon.value,
-    );
+    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    txPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_txpower.value,
-    );
+    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower.value);
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    txPowerPon = acsMeasuresHandler.convertToDbm(
-      model, data.wan.pon_txpower_epon.value,
-    );
+    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
   }
 
   // Force a web credentials sync
   let webAdminUser;
   let webAdminPass;
+  let syncXmlConfigs = false;
   if (
     data.common.web_admin_username &&
     data.common.web_admin_username.writable &&
@@ -355,6 +277,13 @@ const createRegistry = async function(req, permissions) {
     webAdminUser = matchedConfig.tr069.web_login;
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_login &&
+    cpe.isAllowedWebadminUsername(matchedConfig.tr069.web_login)
+  ) {
+    webAdminUser = matchedConfig.tr069.web_login;
+    syncXmlConfigs = true;
   }
   if (
     data.common.web_admin_password &&
@@ -364,6 +293,12 @@ const createRegistry = async function(req, permissions) {
     webAdminPass = matchedConfig.tr069.web_password;
     changes.common.web_admin_password = matchedConfig.tr069.web_password;
     doChanges = true;
+  } else if (
+    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    matchedConfig.tr069.web_password
+  ) {
+    webAdminPass = matchedConfig.tr069.web_password;
+    syncXmlConfigs = true;
   }
 
   let wanMtu;
@@ -373,13 +308,19 @@ const createRegistry = async function(req, permissions) {
     wanMtu = data.wan.mtu.value;
   }
 
+  // Collect WAN max transmit rate, if available
+  let wanRate;
+  if (data.wan.rate && data.wan.rate.value) {
+    wanRate = cpe.convertWanRate(data.wan.rate.value);
+  }
+
   let mode2;
   let band2;
   if (data.wifi2.mode && data.wifi2.mode.value) {
-    mode2 = convertWifiMode(data.wifi2.mode.value, true);
+    mode2 = convertWifiMode(data.wifi2.mode.value, false);
     if (data.wifi2.band && data.wifi2.band.value) {
       band2 = convertWifiBand(
-        model, data.wifi2.band.value, data.wifi2.mode.value, true,
+        cpe, data.wifi2.band.value, data.wifi2.mode.value, true,
       );
     }
   }
@@ -390,9 +331,20 @@ const createRegistry = async function(req, permissions) {
     mode5 = convertWifiMode(data.wifi5.mode.value, true);
     if (data.wifi5.band && data.wifi5.band.value) {
       band5 = convertWifiBand(
-        model, data.wifi5.band.value, data.wifi5.mode.value, true,
+        cpe, data.wifi5.band.value, data.wifi5.mode.value, true,
       );
     }
+  }
+
+  let defaultPingHosts = matchedConfig.default_ping_hosts;
+  // If config doesn't have a default, we force it to the legacy value here
+  if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
+    defaultPingHosts = [
+      'www.google.com',
+      'www.youtube.com',
+      'www.facebook.com',
+      'www.instagram.com',
+    ];
   }
 
   let newDevice = new DeviceModel({
@@ -404,6 +356,7 @@ const createRegistry = async function(req, permissions) {
     acs_id: req.body.acs_id,
     model: model,
     version: data.common.version.value,
+    hw_version: data.common.hw_version.value,
     installed_release: data.common.version.value,
     release: data.common.version.value,
     connection_type: (hasPPPoE) ? 'pppoe' : 'dhcp',
@@ -434,9 +387,8 @@ const createRegistry = async function(req, permissions) {
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     ip: (cpeIP) ? cpeIP : undefined,
-    wan_ip: (hasPPPoE) ? data.wan.wan_ip_ppp.value : data.wan.wan_ip.value,
-    wan_negociated_speed: (data.wan.rate && data.wan.rate.value) ?
-      data.wan.rate.value : undefined,
+    wan_ip: wanIP,
+    wan_negociated_speed: wanRate,
     wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
       data.wan.duplex.value : undefined,
     sys_up_time: data.common.uptime.value,
@@ -452,6 +404,7 @@ const createRegistry = async function(req, permissions) {
     mesh_id: newMeshId,
     bssid_mesh2: meshBSSIDs.mesh2,
     bssid_mesh5: meshBSSIDs.mesh5,
+    ping_hosts: defaultPingHosts,
   });
   try {
     await newDevice.save();
@@ -491,10 +444,7 @@ const createRegistry = async function(req, permissions) {
     changes.stun.port = 3478;
     doChanges = true;
   }
-  /* For Tenda AC10 model is mandatory to set
-   LANHostConfigManagement.DHCPServerConfigurable field
-   to be allowed to change CPE IP and Subnet Mask */
-  if (model == 'AC10') {
+  if (cpe.modelPermissions().lan.needEnableConfig) {
     changes.lan.enable_config = '1';
   }
   if (doChanges) {
@@ -505,6 +455,9 @@ const createRegistry = async function(req, permissions) {
     if (!acceptLocalChanges) {
       acsDeviceInfoController.updateInfo(newDevice, changes);
     }
+  }
+  if (syncXmlConfigs) {
+    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
   }
 
   if (createPrefixErrNotification) {
@@ -586,19 +539,16 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     console.log('Error saving last contact and last tr-069 sync');
   });
   if (doSync) {
-    requestSync(device);
+    acsDeviceInfoController.requestSync(device);
   }
 };
 
 // Builds and sends getParameterValues task to cpe - should only ask for
 // parameters that make sense in this cpe's context
-const requestSync = async function(device) {
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
-  let permissions = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  );
+acsDeviceInfoController.requestSync = async function(device) {
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let permissions = DeviceVersion.devicePermissions(device);
   let dataToFetch = {
     basic: false,
     alt_uid: false,
@@ -611,6 +561,8 @@ const requestSync = async function(device) {
     lan: false,
     wifi2: false,
     wifi5: false,
+    wifiMode: false,
+    wifiBand: false,
     mesh2: false,
     mesh5: false,
     port_forward: false,
@@ -621,6 +573,7 @@ const requestSync = async function(device) {
   // Basic fields that should be updated often
   dataToFetch.basic = true;
   parameterNames.push(fields.common.ip);
+  parameterNames.push(fields.common.version);
   parameterNames.push(fields.common.uptime);
   parameterNames.push(fields.common.acs_url);
   parameterNames.push(fields.common.interval);
@@ -645,8 +598,10 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wan.duplex);
   parameterNames.push(fields.wan.wan_ip);
   parameterNames.push(fields.wan.wan_ip_ppp);
-  parameterNames.push(fields.wan.uptime);
-  parameterNames.push(fields.wan.uptime_ppp);
+  if (cpe.modelPermissions().wan.hasUptimeField) {
+    parameterNames.push(fields.wan.uptime);
+    parameterNames.push(fields.wan.uptime_ppp);
+  }
   parameterNames.push(fields.wan.mtu);
   parameterNames.push(fields.wan.mtu_ppp);
   if (fields.wan.vlan) {
@@ -674,10 +629,12 @@ const requestSync = async function(device) {
   parameterNames.push(fields.wifi2.password);
   parameterNames.push(fields.wifi2.channel);
   parameterNames.push(fields.wifi2.auto);
-  if (fields.wifi2.mode) {
+  if (fields.wifi2.mode && permissions.grantWifiModeRead) {
+    dataToFetch.wifiMode = true;
     parameterNames.push(fields.wifi2.mode);
   }
-  if (fields.wifi2.band) {
+  if (fields.wifi2.band && permissions.grantWifiBandRead2) {
+    dataToFetch.wifiBand = true;
     parameterNames.push(fields.wifi2.band);
   }
   if (device.wifi_is_5ghz_capable) {
@@ -688,10 +645,12 @@ const requestSync = async function(device) {
     parameterNames.push(fields.wifi5.password);
     parameterNames.push(fields.wifi5.channel);
     parameterNames.push(fields.wifi5.auto);
-    if (fields.wifi5.mode) {
+    if (fields.wifi5.mode && permissions.grantWifiModeRead) {
+      dataToFetch.wifiMode = true;
       parameterNames.push(fields.wifi5.mode);
     }
-    if (fields.wifi5.band) {
+    if (fields.wifi5.band && permissions.grantWifiBandRead5) {
+      dataToFetch.wifiBand = true;
       parameterNames.push(fields.wifi5.band);
     }
   }
@@ -730,24 +689,33 @@ const requestSync = async function(device) {
   }
   // Send task to GenieACS
   let task = {name: 'getParameterValues', parameterNames: parameterNames};
-  let cback = (acsID)=>fetchSyncResult(acsID, dataToFetch, parameterNames);
+  let cback = (acsID)=>fetchSyncResult(acsID, dataToFetch, parameterNames, cpe);
   TasksAPI.addTask(device.acs_id, task, cback);
 };
 
 // Extract data from raw GenieACS json output, in value/writable format
-const getFieldFromGenieData = function(data, field) {
+const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
   if (typeof field === 'undefined') return {};
-  let obj = utilHandlers.getFromNestedKey(data, field);
+  let obj = utilHandlers.getFromNestedKey(data, field, useLastIndexOnWildcard);
   if (typeof obj === 'undefined') return {};
+  if (!('_value' in obj) || !('_writable' in obj)) return {};
   return {value: obj['_value'], writable: obj['_writable']};
 };
 
 // Collect sync data from cpe using genie database api - should then format it
 // according to legacy genieacs provision format and send it to syncDeviceData
-const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
+const fetchSyncResult =
+  async function(acsID, dataToFetch, parameterNames, cpe) {
   let query = {_id: acsID};
+  let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
-  parameterNames = parameterNames.map((p)=>p.replace(/\*/g, '1'));
+  parameterNames = parameterNames.map((p) => {
+    if (useLastIndexOnWildcard) {
+      p.replace(/\.\*.*/g, '');
+    } else {
+      p.replace(/\*/g, '1');
+    }
+  });
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
@@ -775,110 +743,204 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
       };
       if (dataToFetch.basic) {
         let common = fields.common;
-        acsData.common.ip = getFieldFromGenieData(data, common.ip);
-        acsData.common.uptime = getFieldFromGenieData(data, common.uptime);
-        acsData.common.acs_url = getFieldFromGenieData(data, common.acs_url);
-        acsData.common.interval = getFieldFromGenieData(data, common.interval);
+        acsData.common.ip = getFieldFromGenieData(
+          data, common.ip, useLastIndexOnWildcard,
+        );
+        acsData.common.version = getFieldFromGenieData(
+          data, common.version, useLastIndexOnWildcard,
+        );
+        acsData.common.uptime = getFieldFromGenieData(
+          data, common.uptime, useLastIndexOnWildcard,
+        );
+        acsData.common.acs_url = getFieldFromGenieData(
+          data, common.acs_url, useLastIndexOnWildcard,
+        );
+        acsData.common.interval = getFieldFromGenieData(
+          data, common.interval, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.alt_uid) {
         acsData.common.alt_uid = getFieldFromGenieData(
-          data, fields.common.alt_uid,
+          data, fields.common.alt_uid, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.web_admin_user) {
         acsData.common.web_admin_username = getFieldFromGenieData(
-          data, fields.common.web_admin_username,
+          data, fields.common.web_admin_username, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.web_admin_pass) {
         acsData.common.web_admin_password = getFieldFromGenieData(
-          data, fields.common.web_admin_password,
+          data, fields.common.web_admin_password, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.wan) {
         let wan = fields.wan;
-        // Remove * from each wan field
-        Object.keys(wan).forEach((k)=>wan[k]=wan[k].replace(/\*/g, '1'));
         acsData.wan.pppoe_enable = getFieldFromGenieData(
-          data, wan.pppoe_enable,
+          data, wan.pppoe_enable, useLastIndexOnWildcard,
         );
-        acsData.wan.pppoe_user = getFieldFromGenieData(data, wan.pppoe_user);
-        acsData.wan.pppoe_pass = getFieldFromGenieData(data, wan.pppoe_pass);
-        acsData.wan.rate = getFieldFromGenieData(data, wan.rate);
-        acsData.wan.duplex = getFieldFromGenieData(data, wan.duplex);
-        acsData.wan.wan_ip = getFieldFromGenieData(data, wan.wan_ip);
-        acsData.wan.wan_ip_ppp = getFieldFromGenieData(data, wan.wan_ip_ppp);
-        acsData.wan.uptime = getFieldFromGenieData(data, wan.uptime);
-        acsData.wan.uptime_ppp = getFieldFromGenieData(data, wan.uptime_ppp);
-        acsData.wan.mtu = getFieldFromGenieData(data, wan.mtu);
-        acsData.wan.mtu_ppp = getFieldFromGenieData(data, wan.mtu_ppp);
+        acsData.wan.pppoe_user = getFieldFromGenieData(
+          data, wan.pppoe_user, useLastIndexOnWildcard,
+          );
+        acsData.wan.pppoe_pass = getFieldFromGenieData(
+          data, wan.pppoe_pass, useLastIndexOnWildcard,
+        );
+        acsData.wan.rate = getFieldFromGenieData(
+          data, wan.rate, useLastIndexOnWildcard,
+        );
+        acsData.wan.duplex = getFieldFromGenieData(
+          data, wan.duplex, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_ip = getFieldFromGenieData(
+          data, wan.wan_ip, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_ip_ppp = getFieldFromGenieData(
+          data, wan.wan_ip_ppp, useLastIndexOnWildcard,
+        );
+        acsData.wan.uptime = getFieldFromGenieData(
+          data, wan.uptime, useLastIndexOnWildcard,
+        );
+        acsData.wan.uptime_ppp = getFieldFromGenieData(
+          data, wan.uptime_ppp, useLastIndexOnWildcard,
+        );
+        acsData.wan.mtu = getFieldFromGenieData(
+          data, wan.mtu, useLastIndexOnWildcard,
+        );
+        acsData.wan.mtu_ppp = getFieldFromGenieData(
+          data, wan.mtu_ppp, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.vlan) {
-        acsData.wan.vlan = getFieldFromGenieData(data, fields.wan.vlan);
+        acsData.wan.vlan = getFieldFromGenieData(
+          data, fields.wan.vlan, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.bytes) {
         let wan = fields.wan;
-        acsData.wan.recv_bytes = getFieldFromGenieData(data, wan.recv_bytes);
-        acsData.wan.sent_bytes = getFieldFromGenieData(data, wan.sent_bytes);
+        acsData.wan.recv_bytes = getFieldFromGenieData(
+          data, wan.recv_bytes, useLastIndexOnWildcard,
+        );
+        acsData.wan.sent_bytes = getFieldFromGenieData(
+          data, wan.sent_bytes, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.pon) {
         let wan = fields.wan;
-        acsData.wan.pon_rxpower = getFieldFromGenieData(data, wan.pon_rxpower);
-        acsData.wan.pon_txpower = getFieldFromGenieData(data, wan.pon_txpower);
+        acsData.wan.pon_rxpower = getFieldFromGenieData(
+          data, wan.pon_rxpower, useLastIndexOnWildcard,
+        );
+        acsData.wan.pon_txpower = getFieldFromGenieData(
+          data, wan.pon_txpower, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.lan) {
         let lan = fields.lan;
-        acsData.lan.router_ip = getFieldFromGenieData(data, lan.router_ip);
-        acsData.lan.subnet_mask = getFieldFromGenieData(data, lan.subnet_mask);
+        acsData.lan.router_ip = getFieldFromGenieData(
+          data, lan.router_ip, useLastIndexOnWildcard);
+        acsData.lan.subnet_mask = getFieldFromGenieData(
+          data, lan.subnet_mask, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.wifi2) {
         let wifi2 = fields.wifi2;
-        acsData.wifi2.enable = getFieldFromGenieData(data, wifi2.enable);
-        acsData.wifi2.bssid = getFieldFromGenieData(data, wifi2.bssid);
-        acsData.wifi2.ssid = getFieldFromGenieData(data, wifi2.ssid);
-        acsData.wifi2.password = getFieldFromGenieData(data, wifi2.password);
-        acsData.wifi2.channel = getFieldFromGenieData(data, wifi2.channel);
-        acsData.wifi2.auto = getFieldFromGenieData(data, wifi2.auto);
-        acsData.wifi2.mode = getFieldFromGenieData(data, wifi2.mode);
-        acsData.wifi2.band = getFieldFromGenieData(data, wifi2.band);
+        acsData.wifi2.enable = getFieldFromGenieData(
+          data, wifi2.enable, useLastIndexOnWildcard,
+        );
+        acsData.wifi2.bssid = getFieldFromGenieData(
+          data, wifi2.bssid, useLastIndexOnWildcard,
+        );
+        acsData.wifi2.ssid = getFieldFromGenieData(
+          data, wifi2.ssid, useLastIndexOnWildcard,
+        );
+        acsData.wifi2.password = getFieldFromGenieData(
+          data, wifi2.password, useLastIndexOnWildcard,
+        );
+        acsData.wifi2.channel = getFieldFromGenieData(
+          data, wifi2.channel, useLastIndexOnWildcard,
+        );
+        acsData.wifi2.auto = getFieldFromGenieData(
+          data, wifi2.auto, useLastIndexOnWildcard,
+        );
+        if (dataToFetch.wifiMode) {
+          acsData.wifi2.mode = getFieldFromGenieData(
+            data, wifi2.mode, useLastIndexOnWildcard,
+          );
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi2.band = getFieldFromGenieData(
+            data, wifi2.band, useLastIndexOnWildcard,
+          );
+        }
       }
       if (dataToFetch.wifi5) {
         let wifi5 = fields.wifi5;
-        acsData.wifi5.enable = getFieldFromGenieData(data, wifi5.enable);
-        acsData.wifi5.bssid = getFieldFromGenieData(data, wifi5.bssid);
-        acsData.wifi5.ssid = getFieldFromGenieData(data, wifi5.ssid);
-        acsData.wifi5.password = getFieldFromGenieData(data, wifi5.password);
-        acsData.wifi5.channel = getFieldFromGenieData(data, wifi5.channel);
-        acsData.wifi5.auto = getFieldFromGenieData(data, wifi5.auto);
-        acsData.wifi5.mode = getFieldFromGenieData(data, wifi5.mode);
-        acsData.wifi5.band = getFieldFromGenieData(data, wifi5.band);
+        acsData.wifi5.enable = getFieldFromGenieData(
+          data, wifi5.enable, useLastIndexOnWildcard,
+        );
+        acsData.wifi5.bssid = getFieldFromGenieData(
+          data, wifi5.bssid, useLastIndexOnWildcard,
+        );
+        acsData.wifi5.ssid = getFieldFromGenieData(
+          data, wifi5.ssid, useLastIndexOnWildcard,
+        );
+        acsData.wifi5.password = getFieldFromGenieData(
+          data, wifi5.password, useLastIndexOnWildcard,
+        );
+        acsData.wifi5.channel = getFieldFromGenieData(
+          data, wifi5.channel, useLastIndexOnWildcard,
+        );
+        acsData.wifi5.auto = getFieldFromGenieData(
+          data, wifi5.auto, useLastIndexOnWildcard,
+        );
+        if (dataToFetch.wifiMode) {
+          acsData.wifi5.mode = getFieldFromGenieData(
+            data, wifi5.mode, useLastIndexOnWildcard,
+          );
+        }
+        if (dataToFetch.wifiBand) {
+          acsData.wifi5.band = getFieldFromGenieData(
+            data, wifi5.band, useLastIndexOnWildcard,
+          );
+        }
       }
       if (dataToFetch.mesh2) {
         let mesh2 = fields.mesh2;
-        acsData.mesh2.enable = getFieldFromGenieData(data, mesh2.enable);
-        acsData.mesh2.bssid = getFieldFromGenieData(data, mesh2.bssid);
-        acsData.mesh2.ssid = getFieldFromGenieData(data, mesh2.ssid);
+        acsData.mesh2.enable = getFieldFromGenieData(
+          data, mesh2.enable, useLastIndexOnWildcard,
+        );
+        acsData.mesh2.bssid = getFieldFromGenieData(
+          data, mesh2.bssid, useLastIndexOnWildcard,
+        );
+        acsData.mesh2.ssid = getFieldFromGenieData(
+          data, mesh2.ssid, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.mesh5) {
         let mesh5 = fields.mesh5;
-        acsData.mesh5.enable = getFieldFromGenieData(data, mesh5.enable);
-        acsData.mesh5.bssid = getFieldFromGenieData(data, mesh5.bssid);
-        acsData.mesh5.ssid = getFieldFromGenieData(data, mesh5.ssid);
+        acsData.mesh5.enable = getFieldFromGenieData(
+          data, mesh5.enable, useLastIndexOnWildcard,
+        );
+        acsData.mesh5.bssid = getFieldFromGenieData(
+          data, mesh5.bssid, useLastIndexOnWildcard,
+        );
+        acsData.mesh5.ssid = getFieldFromGenieData(
+          data, mesh5.ssid, useLastIndexOnWildcard,
+        );
       }
       if (dataToFetch.port_forward) {
         acsData.wan.port_mapping_entries_dhcp = getFieldFromGenieData(
-          data, fields.wan.port_mapping_entries_dhcp,
+          data, fields.wan.port_mapping_entries_dhcp, useLastIndexOnWildcard,
         );
         acsData.wan.port_mapping_entries_ppp = getFieldFromGenieData(
-          data, fields.wan.port_mapping_entries_ppp,
+          data, fields.wan.port_mapping_entries_ppp, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.stun) {
         acsData.common.stun_enable = getFieldFromGenieData(
-          data, fields.common.stun_enable,
+          data, fields.common.stun_enable, useLastIndexOnWildcard,
         );
         acsData.common.stun_udp_conn_req_addr = getFieldFromGenieData(
-          data, fields.common.stun_udp_conn_req_addr,
+          data, fields.common.stun_udp_conn_req_addr, useLastIndexOnWildcard,
         );
       }
       let device;
@@ -890,9 +952,7 @@ const fetchSyncResult = async function(acsID, dataToFetch, parameterNames) {
       if (!device || !device.use_tr069) {
         return;
       }
-      let permissions = DeviceVersion.findByVersion(
-        device.version, device.wifi_is_5ghz_capable, device.model,
-      );
+      let permissions = DeviceVersion.devicePermissions(device);
       syncDeviceData(acsID, device, acsData, permissions);
     });
   });
@@ -910,6 +970,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
       message: t('fieldNameMissing', {name: 'mac', errorline: __line}),
     });
   }
+  let splitID = req.body.acs_id.split('-');
+  let model = splitID.slice(1, splitID.length-1).join('-');
   // Convert mac field from - to : if necessary
   if (data.common.mac.value.includes('-')) {
     data.common.mac.value = data.common.mac.value.replace(/-/g, ':');
@@ -917,18 +979,14 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   let device = await DeviceModel.findById(data.common.mac.value.toUpperCase());
   // Fetch functionalities of CPE
   let permissions = null;
-  if (!device && data.common.version && data.common.model) {
-    permissions = DeviceVersion.findByVersion(
-      data.common.version.value,
-      (data.wifi5.ssid ? true : false),
-      data.common.model.value,
+  if (!device && data.common.model &&
+      data.common.version && data.common.hw_version) {
+    permissions = DeviceVersion.devicePermissionsNotRegistered(
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
     );
   } else {
-    permissions = DeviceVersion.findByVersion(
-      device.version,
-      device.wifi_is_5ghz_capable,
-      device.model,
-    );
+    permissions = DeviceVersion.devicePermissions(device);
   }
   if (!permissions) {
     return res.status(500).json({
@@ -937,7 +995,11 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     });
   }
   if (!device) {
-    if (await createRegistry(req, permissions)) {
+    let cpe = DevicesAPI.instantiateCPEByModel(
+      model, data.common.model.value,
+      data.common.version.value, data.common.hw_version.value,
+    ).cpe;
+    if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
     } else {
       return res.status(500).json({
@@ -972,30 +1034,14 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let hasChanges = false;
   let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
   // Always update serial info based on ACS ID
-  let serialTR069 = splitID[splitID.length - 1];
-  if (device.model === 'ST-1001-FL') {
-    // Convert Hurakall serial information
-    let serialPrefix = serialTR069.substring(0, 8); // 4 chars in base 16
-    let serialSuffix = serialTR069.substring(8); // remaining chars in utf8
-    serialPrefix = serialPrefix.match(/[0-9]{2}/g); // split in groups of 2
-    // decode from base16 to utf8
-    serialPrefix = serialPrefix.map((prefix) => {
-      prefix = parseInt(prefix, 16);
-      if (isNaN(prefix)) {
-        debug('prefix on serialPrefix are not an number');
-      }
-      return String.fromCharCode(prefix);
-    });
-    // join parts in final format
-    serialTR069 = (serialPrefix.join('') + serialSuffix).toUpperCase();
-  } else if (device.model === 'GWR-1200AC') {
-    serialTR069 = device._id;
-  }
+  let serialTR069 = cpe.convertGenieSerial(
+    splitID[splitID.length - 1], device._id,
+  );
   device.serial_tr069 = serialTR069;
 
   // Update model, if data available
@@ -1017,6 +1063,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
   }
 
+  // Update hardware version, if data available
+  if (data.common.hw_version && data.common.hw_version.value) {
+    device.hw_version = data.common.hw_version.value.trim();
+  }
+
   // Update secure tr069 flag, if data available
   if (data.common.acs_url && data.common.acs_url.value) {
     device.secure_tr069 = data.common.acs_url.value.includes('https');
@@ -1026,17 +1077,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.common.alt_uid && data.common.alt_uid.value) {
     let altUid = data.common.alt_uid.value;
     device.alt_uid_tr069 = altUid;
-  }
-
-  // Greatek does not expose these fields normally, only under this config file,
-  // a XML with proprietary format. We parse it using regex to get what we want
-  if (data.common.greatek_config && data.common.greatek_config.value) {
-    let webCredentials =
-      extractGreatekCredentials(data.common.greatek_config.value);
-    data.common.web_admin_username = {};
-    data.common.web_admin_password = {};
-    data.common.web_admin_username.value = webCredentials.username;
-    data.common.web_admin_password.value = webCredentials.password;
   }
 
   // Process CPE IP information
@@ -1069,6 +1109,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Process wan connection type, but only if data sent
   let hasPPPoE = null;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
+    data.wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
     if (typeof data.wan.pppoe_enable.value === 'string') {
       hasPPPoE = utilHandlers.isTrueValueString(data.wan.pppoe_enable.value);
     } else if (typeof data.wan.pppoe_enable.value === 'number') {
@@ -1122,7 +1164,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
     // Do not store DHCP uptime for Archer C6
     if (
-      data.wan.uptime && data.wan.uptime.value && device.model != 'Archer C6'
+      data.wan.uptime && data.wan.uptime.value &&
+      cpe.modelPermissions().wan.dhcpUptime
     ) {
       device.wan_up_time = data.wan.uptime.value;
     }
@@ -1139,27 +1182,32 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.wan_vlan_id = data.wan.vlan.value;
   }
   if (data.wan.rate && data.wan.rate.value) {
-    device.wan_negociated_speed = data.wan.rate.value;
+    device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }
   if (data.wan.duplex && data.wan.duplex.value) {
     device.wan_negociated_duplex = data.wan.duplex.value;
   }
 
   // Process LAN configuration - current IP and subnet mask
-  if (data.lan.router_ip) {
-    if (data.lan.router_ip.value && !device.lan_subnet) {
+  let canChangeLAN = cpe.modelPermissions().lan.configWrite;
+  if (data.lan.router_ip && data.lan.router_ip.value) {
+    if (!canChangeLAN || !device.lan_subnet) {
       device.lan_subnet = data.lan.router_ip.value;
-    } else if (device.lan_subnet !== data.lan.router_ip.value) {
+    } else if (canChangeLAN && device.lan_subnet !== data.lan.router_ip.value) {
       changes.lan.router_ip = device.lan_subnet;
       hasChanges = true;
     }
   }
-  let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
-  if (subnetNumber > 0 && !device.lan_netmask) {
-    device.lan_netmask = subnetNumber;
-  } else if (device.lan_netmask !== subnetNumber) {
-    changes.lan.subnet_mask = device.lan_netmask;
-    hasChanges = true;
+  if (data.lan.subnet_mask && data.lan.subnet_mask.value) {
+    let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+    if (subnetNumber > 0 && (!canChangeLAN || !device.lan_netmask)) {
+      device.lan_netmask = subnetNumber;
+    } else if (
+      subnetNumber > 0 && canChangeLAN && device.lan_netmask !== subnetNumber
+    ) {
+      changes.lan.subnet_mask = device.lan_netmask;
+      hasChanges = true;
+    }
   }
 
   // Process Wi-Fi enable fields - careful with non-boolean values
@@ -1175,7 +1223,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       changes.wifi2.enable = device.wifi_state;
       // When enabling Wi-Fi set beacon type
       if (device.wifi_state) {
-        changes.wifi2.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        changes.wifi2.beacon_type = cpe.getBeaconType();
       }
       hasChanges = true;
     }
@@ -1192,23 +1240,28 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       changes.wifi5.enable = device.wifi_state_5ghz;
       // When enabling Wi-Fi set beacon type
       if (device.wifi_state_5ghz) {
-        changes.wifi5.beacon_type = DevicesAPI.getBeaconTypeByModel(model);
+        changes.wifi5.beacon_type = cpe.getBeaconType();
       }
       hasChanges = true;
     }
   }
 
   // Verify ssid prefix necessity - remove prefix from database object
-  let checkResponse = await getSsidPrefixCheck(device);
-  let ssidPrefix = checkResponse.prefix;
-  device.wifi_ssid = checkResponse.ssid2;
-  device.wifi_ssid_5ghz = checkResponse.ssid5;
+  let checkPrefixLocal = await getSsidPrefixCheck(device);
+  // This function returns what prefix we should be using for this device, based
+  // on the local flag and what the saved SSID values are. We use the prefix to
+  // then prepend it to the saved SSID, so we can compare it to what the CPE
+  // sent to Flashman
+  let ssidPrefix = checkPrefixLocal.prefixToUse;
 
   // Compare prefix database SSIDs with device's current SSIDs
   if (data.wifi2.ssid && data.wifi2.ssid.value) {
     if (!device.wifi_ssid) {
       device.wifi_ssid = data.wifi2.ssid.value.trim();
     }
+    // If database prefix + SSID differs from received SSID, we force a sync
+    // based on what is in database. Changes structure should receive ONLY
+    // the part that isn't the prefix
     if (ssidPrefix + device.wifi_ssid.trim() !== data.wifi2.ssid.value.trim()) {
       changes.wifi2.ssid = device.wifi_ssid.trim();
       hasChanges = true;
@@ -1218,6 +1271,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_ssid_5ghz) {
       device.wifi_ssid_5ghz = data.wifi5.ssid.value.trim();
     }
+    // If database prefix + SSID differs from received SSID, we force a sync
+    // based on what is in database. Changes structure should receive ONLY
+    // the part that isn't the prefix
     if (ssidPrefix + device.wifi_ssid_5ghz.trim() !==
         data.wifi5.ssid.value.trim()
     ) {
@@ -1309,16 +1365,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode) {
       device.wifi_mode = mode2;
     } else if (device.wifi_mode !== mode2) {
-      changes.wifi2.mode = device.wifi_mode;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi2.mode = device.wifi_mode;
+        hasChanges = true;
+      } else {
+        device.wifi_mode = mode2;
+      }
     }
-    if (data.wifi2.band && data.wifi2.band.value) {
-      let band2 = convertWifiBand(model, data.wifi2.band.value,
-       data.wifi2.mode.value, false);
-      if (data.wifi2.band.value && !device.wifi_band) {
-        device.wifi_band = band2;
-      } else if (device.wifi_band !== band2) {
+  }
+  if (data.wifi2.band && data.wifi2.band.value) {
+    let mode2 = (device.wifi_mode) ? device.wifi_mode : '11n';
+    let band2 = convertWifiBand(cpe, data.wifi2.band.value, mode2, false);
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band === 'auto' && !permissions.grantWifiBandAuto2
+    );
+    if (band2 && (!device.wifi_band || autoWithNoPermission)) {
+      device.wifi_band = band2;
+    } else if (device.wifi_band !== band2) {
+      if (permissions.grantWifiBandEdit2) {
         changes.wifi2.band = device.wifi_band;
+        hasChanges = true;
+      } else {
+        device.wifi_band = band2;
       }
     }
   }
@@ -1327,16 +1396,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (!device.wifi_mode_5ghz) {
       device.wifi_mode_5ghz = mode5;
     } else if (device.wifi_mode_5ghz !== mode5) {
-      changes.wifi5.mode = device.wifi_mode_5ghz;
-      hasChanges = true;
+      if (permissions.grantWifiModeEdit) {
+        changes.wifi5.mode = device.wifi_mode_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_mode_5ghz = mode5;
+      }
     }
-    if (data.wifi5.band && data.wifi5.mode) {
-      let band5 = convertWifiBand(model, data.wifi5.band.value,
-       data.wifi5.mode.value, true);
-      if (data.wifi5.band.value && !device.wifi_band_5ghz) {
-        device.wifi_band_5ghz = band5;
-      } else if (device.wifi_band_5ghz !== band5) {
+  }
+  if (data.wifi5.band && data.wifi5.band.value) {
+    let mode5 = (device.wifi_mode_5ghz) ? device.wifi_mode_5ghz : '11ac';
+    let band5 = convertWifiBand(cpe, data.wifi5.band.value, mode5, true);
+    // Special legacy case - remove auto from database if no longer supported
+    let autoWithNoPermission = (
+      device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5
+    );
+    if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
+      device.wifi_band_5ghz = band5;
+    } else if (device.wifi_band_5ghz !== band5) {
+      if (permissions.grantWifiBandEdit5) {
         changes.wifi5.band = device.wifi_band_5ghz;
+        hasChanges = true;
+      } else {
+        device.wifi_band_5ghz = band5;
       }
     }
   }
@@ -1364,7 +1446,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (permissions.grantMeshV2HardcodedBssid &&
     (!device.bssid_mesh2 || !device.bssid_mesh5)) {
-    const meshBSSIDs = DeviceVersion.getMeshBSSIDs(device.model, device._id);
+    const meshBSSIDs =
+      await acsMeshDeviceHandler.getMeshBSSIDs(cpe, device._id);
     device.bssid_mesh2 = meshBSSIDs.mesh2.toUpperCase();
     device.bssid_mesh5 = meshBSSIDs.mesh5.toUpperCase();
   }
@@ -1383,25 +1466,17 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let isPonRxValOk = false;
   let isPonTxValOk = false;
   if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_rxpower.value,
-    );
+    device.pon_rxpower = cpe.convertToDbm(data.wan.pon_rxpower.value);
     isPonRxValOk = true;
   } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    device.pon_rxpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_rxpower_epon.value,
-    );
+    device.pon_rxpower = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
     isPonRxValOk = true;
   }
   if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_txpower.value,
-    );
+    device.pon_txpower = cpe.convertToDbm(data.wan.pon_txpower.value);
     isPonTxValOk = true;
   } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    device.pon_txpower = acsMeasuresHandler.convertToDbm(
-      device.model, data.wan.pon_txpower_epon.value,
-    );
+    device.pon_txpower = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
     isPonTxValOk = true;
   }
   if (isPonRxValOk && isPonTxValOk) {
@@ -1491,12 +1566,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    let xmlTargets = [];
     // Every day fetch device port forward entries
     if (permissions.grantPortForward) {
-      if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
-        xmlTargets.push('port-forward');
-      } else {
+      // Stavix XML devices should not sync port forward daily
+      if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
         if (device.connection_type === 'pppoe' &&
             data.wan.port_mapping_entries_ppp) {
@@ -1517,21 +1590,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         }
       }
     }
-    if (acsXMLConfigHandler.xmlConfigModels.includes(device.model)) {
-      // Trigger xml config syncing for
-      // web admin user and password
-      device.web_admin_username = config.tr069.web_login;
-      device.web_admin_password = config.tr069.web_password;
-      if (model === 'MP_G421R' && config.tr069.web_login === 'admin') {
-        // this model can't have two users as "admin", if this happens you
-        // can't access it anymore and will be only using normal user account
-        device.web_admin_username = 'root';
-      }
-      await device.save().catch((err) => {
-        console.log('Error saving device daily sync to database: ' + err);
-      });
-      xmlTargets.push('web-admin');
-    } else {
+    // Stavix XML devices should not sync web credentials daily
+    if (!cpe.modelPermissions().stavixXMLConfig.webCredentials) {
       // Send web admin password correct setup for those CPEs that always
       // retrieve blank on this field
       if (typeof config.tr069.web_password !== 'undefined' &&
@@ -1547,9 +1607,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
       await acsAccessControlHandler.changeAcRules(device);
-    }
-    if (xmlTargets.length > 0) {
-      acsXMLConfigHandler.configFileEditing(device, xmlTargets);
     }
   }
 };
@@ -1593,7 +1650,8 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let task = {
     name: 'getParameterValues',
     parameterNames: [
@@ -1609,7 +1667,8 @@ acsDeviceInfoController.requestLogs = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let logField = DevicesAPI.getModelFieldsFromDevice(device).fields.log;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let logField = cpe.getModelFields().log;
   let task = {
     name: 'getParameterValues',
     parameterNames: [logField],
@@ -1617,11 +1676,12 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
-acsDeviceInfoController.requestWanBytes = function(device) {
+acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
   let task = {
@@ -1634,26 +1694,47 @@ acsDeviceInfoController.requestWanBytes = function(device) {
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
 };
 
+acsDeviceInfoController.requestPonData = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let rxPowerField = fields.wan.pon_rxpower;
+  let txPowerField = fields.wan.pon_txpower;
+  let taskParameterNames = [rxPowerField, txPowerField];
+  if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
+    taskParameterNames.push(fields.wan.pon_rxpower_epon);
+    taskParameterNames.push(fields.wan.pon_txpower_epon);
+  }
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: taskParameterNames,
+  };
+  TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
+};
+
 acsDeviceInfoController.requestUpStatus = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let task = {
     name: 'getParameterValues',
     parameterNames: [
       fields.common.uptime,
     ],
   };
-  if (device.connection_type === 'pppoe') {
-    task.parameterNames.push(fields.wan.uptime_ppp);
-    task.parameterNames.push(fields.wan.pppoe_user);
-  } else if (device.connection_type === 'dhcp') {
-    task.parameterNames.push(fields.wan.uptime);
+  if (cpe.modelPermissions().wan.hasUptimeField) {
+    if (device.connection_type === 'pppoe') {
+      task.parameterNames.push(fields.wan.uptime_ppp);
+      task.parameterNames.push(fields.wan.pppoe_user);
+    } else if (device.connection_type === 'dhcp') {
+      task.parameterNames.push(fields.wan.uptime);
+    }
   }
-  let permissions = DeviceVersion.findByVersion(
-    device.version, device.wifi_is_5ghz_capable, device.model,
-  );
+  let permissions = DeviceVersion.devicePermissions(device);
   if (permissions.grantPonSignalSupport) {
     task.parameterNames.push(fields.wan.pon_rxpower);
     task.parameterNames.push(fields.wan.pon_txpower);
@@ -1669,13 +1750,13 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  let totalAssocField = fields.devices.assoc_total;
   let task = {
     name: 'getParameterValues',
-    parameterNames: [hostsField, assocField, totalAssocField],
+    parameterNames: [hostsField, assocField],
   };
   if (fields.devices.associated_5) {
     task.parameterNames.push(fields.devices.associated_5);
@@ -1686,7 +1767,8 @@ acsDeviceInfoController.requestConnectedDevices = function(device) {
 const getSsidPrefixCheck = async function(device) {
   let config;
   try {
-    config = await Config.findOne({is_default: true}).lean();
+    config = await Config.findOne({is_default: true},
+                                  {device_update_schedule: false}).lean();
     if (!config) throw new Error('Config not found');
   } catch (error) {
     console.log(error.message);
@@ -1704,20 +1786,22 @@ acsDeviceInfoController.updateInfo = async function(
   if (!device || !device.use_tr069 || !device.acs_id) return;
   // let mac = device._id;
   let acsID = device.acs_id;
-  let splitID = acsID.split('-');
-  let model = splitID.slice(1, splitID.length-1).join('-');
-  let modelName = device.model;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let rebootAfterUpdate = false;
   let task = {name: 'setParameterValues', parameterValues: []};
   let ssidPrefixObj = await getSsidPrefixCheck(device);
-  let ssidPrefix = ssidPrefixObj.prefix;
-  // The following model does not accept admin as a superuser name
-  // Leave default superuser name
-  if (modelName === 'EMG3524-T10A' &&
-      changes.common.web_admin_username === 'admin') {
+  // This function returns what prefix we should be using for this device, based
+  // on the local flag and what the saved SSID values are. We use the prefix to
+  // then prepend it to the saved SSID, so we send the full SSID in the task
+  let ssidPrefix = ssidPrefixObj.prefixToUse;
+  if (
+    changes.common && changes.common.web_admin_username &&
+    !cpe.isAllowedWebadminUsername(changes.common.web_admin_username)
+  ) {
     delete changes.common.web_admin_username;
   }
   // Some Nokia models have a bug where changing the SSID without changing the
@@ -1742,75 +1826,23 @@ acsDeviceInfoController.updateInfo = async function(
       if (key === 'channel') {
         // Special case since channel relates to 2 fields
         let channel = changes[masterKey][key];
-        let auto = channel === 'auto';
-        if (model == 'AC10') {
-          // Special case - fields are treated as strings
-          task.parameterValues.push([
-            fields[masterKey]['auto'], (auto)? '1':'0', 'xsd:string',
-          ]);
-          if (!auto) {
-            task.parameterValues.push([
-              fields[masterKey][key], channel, 'xsd:string',
-            ]);
-          }
-        } else if (model === 'ST-1001-FL') {
-          // Special case - there is no auto field, use channel 0
-          if (auto) channel = '0';
-          const parsedChannel = parseInt(channel);
-          // this should never happen if auto is true
-          if (isNaN(parsedChannel)) {
-            debug('Wrong channel, auto but not an number!!!');
-          }
-          task.parameterValues.push([
-            fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
-          ]);
-        } else {
-          task.parameterValues.push([
-            fields[masterKey]['auto'], auto, 'xsd:boolean',
-          ]);
-          if (!auto) {
-            const parsedChannel = parseInt(channel);
-            if (isNaN(parsedChannel)) {
-              debug('Wrong channel, not auto but not an number!!!');
-            }
-            task.parameterValues.push([
-              fields[masterKey][key], parsedChannel, 'xsd:unsignedInt',
-            ]);
-          }
+        let values = cpe.convertChannelToTask(channel, fields, masterKey);
+        if (values.length > 0) {
+          task.parameterValues = task.parameterValues.concat(values);
+          hasChanges = true;
         }
-        hasChanges = true;
         return;
       }
-      if ((key === 'router_ip' || key === 'subnet_mask') &&
-          !hasUpdatedDHCPRanges) {
-        // Special case for lan ip/mask since we need to update dhcp range
-        let dhcpRanges = convertSubnetMaskToRange(device.lan_netmask);
-        if (dhcpRanges.min && dhcpRanges.max) {
-          let subnet = device.lan_subnet;
-          let networkPrefix = subnet.split('.').slice(0, 3).join('.');
-          let minIP = networkPrefix + '.' + dhcpRanges.min;
-          let maxIP = networkPrefix + '.' + dhcpRanges.max;
-          // We must not set this field for these models in order to keep the
-          // LAN configuration properly working.
-          if (modelName != 'EC220-G5') {
-            task.parameterValues.push([
-              fields['lan']['dns_servers'], subnet, 'xsd:string',
-            ]);
-          }
-          // These models automaticaly updates these fields, so they can't be
-          // modified.
-          if (modelName != 'G-2425G-A') {
-            task.parameterValues.push([
-              fields['lan']['ip_routers'], subnet, 'xsd:string',
-            ]);
-            task.parameterValues.push([
-              fields['lan']['lease_min_ip'], minIP, 'xsd:string',
-            ]);
-            task.parameterValues.push([
-              fields['lan']['lease_max_ip'], maxIP, 'xsd:string',
-            ]);
-          }
-          hasUpdatedDHCPRanges = true; // Avoid editing this field twice
+      if (
+        (key === 'router_ip' || key === 'subnet_mask') && !hasUpdatedDHCPRanges
+      ) {
+        // Special case for lan ip/mask, we need to update dhcp range and dns
+        let values = cpe.convertLanEditToTask(
+          device, fields, cpe.modelPermissions(),
+        );
+        if (values.length > 0) {
+          task.parameterValues = task.parameterValues.concat(values);
+          hasUpdatedDHCPRanges = true; // Avoid editing these fields twice
           hasChanges = true;
         }
       }
@@ -1821,13 +1853,19 @@ acsDeviceInfoController.updateInfo = async function(
         if (ssidPrefix != '') {
           changes[masterKey][key] = ssidPrefix+changes[masterKey][key];
         }
-        // In IGD aka FW323DAC, need reboot when change 2.4GHz wifi settings
-        if (masterKey === 'wifi2' && model === 'IGD' && modelName === 'IGD') {
+        if (
+          masterKey === 'wifi2' &&
+          cpe.modelPermissions().wifi.rebootAfterWiFi2SSIDChange
+        ) {
           rebootAfterUpdate = true;
         }
       }
-      let convertedValue = DevicesAPI.convertField(
-        masterKey, key, splitID[0], modelName, changes[masterKey][key],
+      let convertedValue = cpe.convertField(
+        masterKey, key, // key to be changed, eg: wifi2, ssid
+        changes[masterKey][key], // new value
+        cpe.getFieldType, // convert type function
+        cpe.convertWifiMode, // convert wifi mode function
+        cpe.convertWifiBand, // convert wifi band function
       );
       task.parameterValues.push([
         fields[masterKey][key], // tr-069 field name
@@ -1864,6 +1902,9 @@ acsDeviceInfoController.updateInfo = async function(
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
+  setTimeout(()=>{
+    TasksAPI.deleteGetParamTasks();
+  }, (60 * 60 * 1000)); // One hour
   return res.status(200).json({
     type: 'success',
     message: t('operationStartSuccessful'),
@@ -1894,7 +1935,8 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   // Issue a task for every offline device to try and force it to reconnect
   for (let i = 0; i < offlineDevices.length; i++) {
     let id = offlineDevices[i].acs_id;
-    let fields = DevicesAPI.getModelFieldsFromDevice(offlineDevices[i]).fields;
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(offlineDevices[i]).cpe;
+    let fields = cpe.getModelFields();
     let task = {
       name: 'getParameterValues',
       parameterNames: [fields.common.uptime],
@@ -1979,11 +2021,9 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
   const meshChannel = 7;
   const meshChannel5GHz = 40; // Value has better results on some routers
 
-  const hasMeshVAPObject = DeviceVersion.findByVersion(
-    device.version,
-    device.wifi_is_5ghz_capable,
-    device.model,
-  ).grantMeshVAPObject;
+  let permissions = DeviceVersion.devicePermissions(device);
+  const hasMeshVAPObject = permissions.grantMeshVAPObject;
+  const hasMeshV2ModeWifi = permissions.grantMeshV2PrimaryModeWifi;
   /*
     If device doesn't have SSID Object by default, then
     we need to check if it has been created already.
@@ -1993,7 +2033,8 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     objects don't exist yet this will cause an error!
   */
   let createOk = {populate: false};
-  if (!hasMeshVAPObject && targetMode > 0) {
+  if (!hasMeshVAPObject && hasMeshV2ModeWifi
+     && targetMode > 1) {
     createOk = await acsMeshDeviceHandler.createVirtualAPObjects(device);
     if (!createOk.success) {
       return {success: false, msg: createOk.msg};

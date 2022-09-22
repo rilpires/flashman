@@ -11,7 +11,8 @@ const randomBackoff = function(factor, offset) {
 };
 
 const getMessagingConfig = async function() {
-  let config = await Config.findOne({is_default: true}).lean();
+  let config = await Config.findOne({is_default: true},
+                                    {messaging_configs: true}).lean();
   if (!config || !config.messaging_configs.functions_fqdn ||
       !config.messaging_configs.secret_token) {
     return null;
@@ -21,6 +22,7 @@ const getMessagingConfig = async function() {
 
 const getTokensFromDevice = function(device) {
   // Filter devices that have a FCM uid registered
+  if (!device.lan_devices) return;
   return device.lan_devices.filter((d)=>d.fcm_uid).map((d)=>d.fcm_uid);
 };
 

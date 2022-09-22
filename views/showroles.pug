@@ -104,6 +104,12 @@ block content
                       option(value=2)= t('allowMany')
                 .md-form
                   .md-selectfield.form-control.my-0
+                    label= t('cpeLicenseBlockAtRemoval')
+                    select.browser-default.md-select(name="grant-block-license-at-removal")
+                      option(value="false")= t('Block')
+                      option(value="true")= t('Allow')
+                .md-form
+                  .md-selectfield.form-control.my-0
                     label= t('cpesRegistersAddition')
                     select.browser-default.md-select(name="grant-device-add")
                       option(value="false")= t('Block')
@@ -136,8 +142,8 @@ block content
                       option(value=2)= t('viewAndMakeActions')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('wanTrafficPlotsAccess')
-                    select.browser-default.md-select(name="grant-wan-bytes")
+                    label= t('cpeStatisticsPlotsAccess')
+                    select.browser-default.md-select(name="grant-statistics")
                       option(value="false")= t('Block')
                       option(value="true")= t('Allow')
                 .md-form
@@ -209,6 +215,12 @@ block content
                   .md-selectfield.form-control.my-0
                     label= t('cpeStatusTotal')
                     select.browser-default.md-select(name="grant-search-summary")
+                      option(value="false")= t('cannotView')
+                      option(value="true")= t('View')
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label= t('rowsPerPage')
+                    select.browser-default.md-select(name="grant-rows-per-page")
                       option(value="false")= t('cannotView')
                       option(value="true")= t('View')
               .col-12.col-lg-6

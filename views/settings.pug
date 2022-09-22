@@ -1,6 +1,9 @@
 extends layout
 
 block content
+  include includes/showfactorycredentials
+  include includes/showdefaulthostsconfig
+
   form#config-flashman-form.needs-validation(
     method="post",
     action="/upgrade/config",
@@ -27,7 +30,7 @@ block content
 
           #general.card-body.collapse.out
             .row
-              .col-md.col-12.pl-0.pr-md-4.pr-0
+              .col-md-6.pl-0.pr-md-4.pr-0
                 .md-form.input-entry
                   label= t('minimumAmountOfPppoePaswordChars')
                   input#minlength-pass-pppoe.form-control(
@@ -52,7 +55,13 @@ block content
                   label.custom-control-label.text-muted(for="autoupdate")
                     | #{t('letFLashmanAutomaticallyUpdate')}
                   .invalid-feedback
-              .col-md.col-12.pl-0.pr-0
+              .col-md-6.pl-0.pr-0
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label= t('mustBlockLicenseAtDeviceRemoval')
+                    select.browser-default.md-select(name="must-block-license-at-removal")
+                      option(value="false")= t('No')
+                      option(value="true")= t('Yes')
                 .md-form
                   .md-selectfield.form-control.my-0
                     label= t('FlashmanLanguage')
@@ -60,10 +69,16 @@ block content
                       option(value="en") 🇬🇧 English
                       option(value="es") 🇪🇸 Español
                       option(value="pt-BR") 🇧🇷 Português brasileiro
-                #is-ssid-prefix-enabled-col.d-none
-                  .alert.alert-info
-                    .fas.fa-info-circle.fa-lg
-                    span &nbsp; #{t('hintUseTheSameSsidPrefixFromFlashboxFirmwarePreset')}
+                .row
+                  #default-hosts-config-button.button.btn.btn-primary.mt-2.mx-auto
+                    .fas.fa-stethoscope.fa-lg
+                    span &nbsp; #{t('defaultHostsConfig')}
+            #is-ssid-prefix-enabled-col.mt-3.mb-1.d-none
+              .row.alert.alert-danger
+                .col-md-6.my-auto
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; #{t('warningPrefixWiFi')}
+                .col-md-6.my-auto
                   .md-form.input-entry#ssid-prefix-box
                     label= t('ssidPrefix')
                     input#ssid-prefix.form-control(
@@ -72,11 +87,10 @@ block content
                       oninput="checkSsidPrefixValidity()"
                     )
                     #error-ssid-prefix.invalid-feedback= t('ssidPrefixInvalidFeedback')
-                  .custom-control.custom-checkbox
+                  .custom-control.custom-checkbox.mb-2
                     input#is-ssid-prefix-enabled.custom-control-input(
                       name="is-ssid-prefix-enabled",
                       type="checkbox",
-                      onchange="changeSsidPrefixInputDisableness(this)"
                     )
                     label.custom-control-label.text-muted(for="is-ssid-prefix-enabled")
                       | #{t('enableSsidPrefixInCpesWifi')}
@@ -203,7 +217,12 @@ block content
                     select.browser-default.md-select(name="flashman-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
-                
+                if (superuser || (role && role.grantMonitorManage))
+                  .row
+                    #factory-credentials-button.button.btn.btn-primary.mt-2.mx-auto
+                      .fas.fa-key.fa-lg
+                      span &nbsp; #{t('factoryCredentialsPresetLabel')}
+
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
               data-toggle="collapse",
@@ -244,6 +263,7 @@ block content
                     )
                       a.md-addon.fas.fa-question-circle
                     .invalid-feedback= t('insertValidPassword')
+                  span &nbsp;
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(
                       name="onu_web_remote",

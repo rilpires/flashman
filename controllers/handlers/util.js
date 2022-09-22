@@ -5,26 +5,98 @@ const t = require('../language').i18next.t;
 
 let utilHandlers = {};
 
-utilHandlers.checkForNestedKey = function(data, key) {
+// Patterns external reference obj based on actual language and ext. ref. kind
+utilHandlers.getExtRefPattern = function(kind, data) {
+  switch (kind.toLowerCase()) {
+    case (t('personIdentificationSystem').toLowerCase()):
+      return {
+        kind: t('personIdentificationSystem'),
+        data: data.replace(
+          new RegExp(t('personIdentificationPattern')),
+          t('personIdentificationPatternGroups'),
+        ).toUpperCase(),
+      };
+    case (t('enterpriseIdentificationSystem').toLowerCase()):
+      return {
+        kind: t('enterpriseIdentificationSystem'),
+        data: data.replace(
+          new RegExp(t('enterpriseIdentificationPattern')),
+          t('enterpriseIdentificationPatternGroups'),
+        ).toUpperCase(),
+      };
+    default:
+      return {
+        kind: t('Other'),
+        data: data,
+      };
+  }
+};
+
+const orderNumericGenieKeys = function(keys) {
+  let onlyNumbers = keys.filter((k)=>!k.includes('_') && !isNaN(parseInt(k)));
+  return onlyNumbers.sort((a, b)=>a-b);
+};
+
+utilHandlers.checkForNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return false;
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current.hasOwnProperty(splitKey[i])) return false;
+    if (splitKey[i] === '*') {
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
+      if (useLastIndexOnWildcard) {
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
+      }
+      splitKey[i] = targetIndex;
+    }
+    if (!current.hasOwnProperty(splitKey[i])) {
+      return false;
+    }
     current = current[splitKey[i]];
   }
   return true;
 };
 
-utilHandlers.getFromNestedKey = function(data, key) {
+utilHandlers.getFromNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return undefined;
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current.hasOwnProperty(splitKey[i])) return undefined;
+    if (splitKey[i] === '*') {
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
+      if (useLastIndexOnWildcard) {
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
+      }
+      splitKey[i] = targetIndex;
+    }
+    if (!current.hasOwnProperty(splitKey[i])) {
+      return undefined;
+    }
     current = current[splitKey[i]];
   }
   return current;
+};
+
+utilHandlers.getLastIndexOfNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
+  let orderedKeys = orderNumericGenieKeys(Object.keys(tree));
+  let lastIndex = orderedKeys.length - 1;
+  return {
+    success: (lastIndex >= 0),
+    lastIndex: (lastIndex >= 0) ? orderedKeys[lastIndex] : undefined,
+  };
 };
 
 utilHandlers.isJSONObject = function(val) {
@@ -81,7 +153,8 @@ utilHandlers.flashboxVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 utilHandlers.flashboxDevVerRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
 utilHandlers.hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 utilHandlers.vlanNameRegex = /^[A-Za-z][A-Za-z\-0-9_]+$/;
-utilHandlers.fqdnLengthRegex = /^([0-9a-z]{1,63}\.){0,3}([0-9a-z]{1,62})$/;
+// eslint-disable-next-line max-len
+utilHandlers.fqdnLengthRegex = /^([0-9a-z][-0-9a-z]{0,62}\.)+([0-9a-z][-0-9a-z]{0,62})$/;
 utilHandlers.macRegex = /^([0-9A-Fa-f]{2}:){5}([0-9A-Fa-f]{2})$/;
 // eslint-disable-next-line max-len
 utilHandlers.ipv4Regex = /^(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(?:\.(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}$/;
@@ -92,7 +165,7 @@ const domainNameRegex = /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)
 // eslint-disable-next-line max-len
 utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$/;
 // eslint-disable-next-line max-len
-utilHandlers.urlRegex = /^(?:http(s)?:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
+utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
 // eslint-disable-next-line max-len
 utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}-[a-z]{3})\.(bin)$/;
 // Matches DD/DD/DDDD DD:DD format

@@ -24,7 +24,9 @@ const fullSupportPortForwawrdOpts = {
 
 describe('DeviceVersion API', () => {
   test('findByVersion on 0.30.0', () => {
-    let permissions = DeviceVersion.findByVersion('0.30.0', true, 'ARCHERC5V4');
+    let permissions = DeviceVersion.devicePermissions(
+      {version: '0.30.0', wifi_is_5ghz_capable: true, model: 'ARCHERC5V4'},
+    );
 
     expect(permissions.grantViewLogs).toStrictEqual(true);
     expect(permissions.grantResetDevices).toStrictEqual(true);
@@ -32,8 +34,9 @@ describe('DeviceVersion API', () => {
     expect(permissions.grantPortForwardAsym).toStrictEqual(true);
     expect(permissions.grantPortOpenIpv6).toStrictEqual(true);
     expect(permissions.grantWifi5ghz).toStrictEqual(true);
-    expect(permissions.grantWifiBand).toStrictEqual(true);
-    expect(permissions.grantWifiBandAuto).toStrictEqual(true);
+    expect(permissions.grantWifiBandEdit2).toStrictEqual(true);
+    expect(permissions.grantWifiBandEdit5).toStrictEqual(true);
+    expect(permissions.grantWifiBandAuto2).toStrictEqual(true);
     expect(permissions.grantWifiState).toStrictEqual(true);
     expect(permissions.grantWifiPowerHiddenIpv6Box).toStrictEqual(true);
     expect(permissions.grantWifiExtendedChannels).toStrictEqual(false);
@@ -48,7 +51,7 @@ describe('DeviceVersion API', () => {
     expect(permissions.grantBlockDevices).toStrictEqual(true);
     expect(permissions.grantOpmode).toStrictEqual(true);
     expect(permissions.grantVlanSupport).toStrictEqual(false);
-    expect(permissions.grantWanBytesSupport).toStrictEqual(true);
+    expect(permissions.grantStatisticsSupport).toStrictEqual(true);
     expect(permissions.grantPonSignalSupport).toStrictEqual(false);
     expect(permissions.grantMeshMode).toStrictEqual(true);
     expect(permissions.grantUpdateAck).toStrictEqual(true);
@@ -59,15 +62,24 @@ describe('DeviceVersion API', () => {
   // TR-069 tests
 
   test('findByVersion on ZTE F670L', () => {
-    let permissionsP1T4 = DeviceVersion.findByVersion(
-      'V1.1.20P1T4', true, 'F670L',
-    );
-    let permissionsP1T18 = DeviceVersion.findByVersion(
-      'V1.1.20P1T18', true, 'F670L',
-    );
-    let permissionsP3N3 = DeviceVersion.findByVersion(
-      'V1.1.20P3N3', true, 'F670L',
-    );
+    let permissionsP1T4 = DeviceVersion.devicePermissions({
+      version: 'V1.1.20P1T4',
+      wifi_is_5ghz_capable: true,
+      model: 'F670L',
+      acs_id: '000000-F670L-000000',
+    });
+    let permissionsP1T18 = DeviceVersion.devicePermissions({
+      version: 'V1.1.20P1T18',
+      wifi_is_5ghz_capable: true,
+      model: 'F670L',
+      acs_id: '000000-F670L-000000',
+    });
+    let permissionsP3N3 = DeviceVersion.devicePermissions({
+      version: 'V1.1.20P3N3',
+      wifi_is_5ghz_capable: true,
+      model: 'F670L',
+      acs_id: '000000-F670L-000000',
+    });
 
     [permissionsP1T4, permissionsP1T18, permissionsP3N3].forEach((permission)=>{
       expect(permission.grantPortForward).toStrictEqual(true);
@@ -84,12 +96,18 @@ describe('DeviceVersion API', () => {
   });
 
   test('findByVersion on ZTE H198A', () => {
-    let permissionsC5 = DeviceVersion.findByVersion(
-      'V3.0.0C5_MUL', true, 'ZXHN H198A V3.0',
-    );
-    let permissionsC6 = DeviceVersion.findByVersion(
-      'V3.0.0C6_MUL', true, 'ZXHN H198A V3.0',
-    );
+    let permissionsC5 = DeviceVersion.devicePermissions({
+      version: 'V3.0.0C5_MUL',
+      wifi_is_5ghz_capable: true,
+      model: 'ZXHN H198A V3.0',
+      acs_id: '000000-ZXHN%20H198A%20V3%2E0-000000',
+    });
+    let permissionsC6 = DeviceVersion.devicePermissions({
+      version: 'V3.0.0C6_MUL',
+      wifi_is_5ghz_capable: true,
+      model: 'ZXHN H198A V3.0',
+      acs_id: '000000-ZXHN%20H198A%20V3%2E0-000000',
+    });
 
     [permissionsC5, permissionsC6].forEach((permission)=>{
       expect(permission.grantPortForward).toStrictEqual(true);
@@ -106,9 +124,12 @@ describe('DeviceVersion API', () => {
   });
 
   test('findByVersion on GONUAC001', () => {
-    let permissions123 = DeviceVersion.findByVersion(
-      'V1.2.3', true, 'GONUAC001',
-    );
+    let permissions123 = DeviceVersion.devicePermissions({
+      version: 'V1.2.3',
+      wifi_is_5ghz_capable: true,
+      model: 'GONUAC001',
+      acs_id: '000000-GONUAC001-000000',
+    });
 
     [permissions123].forEach((permission)=>{
       expect(permission.grantPortForward).toStrictEqual(true);
@@ -118,15 +139,16 @@ describe('DeviceVersion API', () => {
       expect(permission.grantSpeedTestLimit).toStrictEqual(250);
       expect(permission.grantBlockDevices).toStrictEqual(false);
       expect(permission.grantPonSignalSupport).toStrictEqual(true);
-      expect(permission.grantPortForwardOpts).toStrictEqual(
-        fullSupportPortForwawrdOpts);
     });
   });
 
   test('findByVersion on G-140W-C', () => {
-    let permissionsA89 = DeviceVersion.findByVersion(
-      '3FE46343AFIA89', true, 'G-140W-C',
-    );
+    let permissionsA89 = DeviceVersion.devicePermissions({
+      version: '3FE46343AFIA89',
+      wifi_is_5ghz_capable: true,
+      model: 'G-140W-C',
+      acs_id: '000000-G%2D140W%2DC-000000',
+    });
 
     [permissionsA89].forEach((permission)=>{
       expect(permission.grantPortForward).toStrictEqual(false);
@@ -141,9 +163,12 @@ describe('DeviceVersion API', () => {
   });
 
   test('findByVersion on HG8245Q2', () => {
-    let permissionsV3 = DeviceVersion.findByVersion(
-      'V3R017C10S100', true, 'HG8245Q2',
-    );
+    let permissionsV3 = DeviceVersion.devicePermissions({
+      version: 'V3R017C10S100',
+      wifi_is_5ghz_capable: true,
+      model: 'HG8245Q2',
+      acs_id: '000000-HG8245Q2-000000',
+    });
 
     [permissionsV3].forEach((permission)=>{
       expect(permission.grantPortForward).toStrictEqual(true);

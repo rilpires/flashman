@@ -22,6 +22,7 @@ let userSchema = new mongoose.Schema({
   maxElementsPerPage: {type: Number, default: 10},
   visibleColumnsOnPage: {type: [Number], default: [4, 5, 6, 7, 8]},
   is_superuser: {type: Boolean, default: false},
+  is_hidden: {type: Boolean, default: false},
   role: {type: String, required: false},
   deviceCertifications: [{
     finished: {type: Boolean, default: true},
@@ -114,7 +115,8 @@ userSchema.pre('save', function(callback) {
   // Verify modified fields and trigger trap
   if (attrsList.length > 0) {
     // Send modified fields if callback exists
-    Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+    Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+    .exec(function(err, defConfig) {
       if (err || !defConfig.traps_callbacks ||
                  (!defConfig.traps_callbacks.users_crud &&
                  !defConfig.traps_callbacks.certifications_crud)) {
@@ -209,7 +211,8 @@ userSchema.post('remove', function(user, callback) {
   let requestOptions = {};
 
   // Send modified fields if callback exists
-  Config.findOne({is_default: true}).lean().exec(function(err, defConfig) {
+  Config.findOne({is_default: true}, {traps_callbacks: true}).lean()
+  .exec(function(err, defConfig) {
     if (err || !defConfig.traps_callbacks ||
                !defConfig.traps_callbacks.user_crud) {
       return callback(err);

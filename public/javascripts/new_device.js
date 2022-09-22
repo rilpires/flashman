@@ -1,4 +1,5 @@
 import {anlixDocumentReady} from '../src/common.index.js';
+import {displayAlertMsg} from './common_actions.js';
 import 'jquery-mask-plugin';
 import Validator from './device_validator.js';
 import {getConfigStorage} from './session_storage.js';
@@ -56,6 +57,7 @@ let validateNewDevice = function() {
     channel: {field: '#new_wifi_channel'},
     band: {field: '#new_wifi_band'},
     mode: {field: '#new_wifi_mode'},
+    ext_reference: {field: '#new_external_reference'},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -77,11 +79,17 @@ let validateNewDevice = function() {
     genericValidate(pppoePassword, validator.validatePassword,
                     errors.pppoe_password, pppoePassLength);
   }
-  genericValidate(ssidPrefix+ssid, validator.validateSSID, errors.ssid);
+  genericValidate(
+    ssidPrefix+ssid,
+    (s)=>validator.validateSSID(s, false, true),
+    errors.ssid,
+  );
   genericValidate(password, validator.validateWifiPassword, errors.password);
   genericValidate(channel, validator.validateChannel, errors.channel);
   genericValidate(band, validator.validateBand, errors.band);
   genericValidate(mode, validator.validateMode, errors.mode);
+  genericValidate({kind: externalReferenceType, data: externalReferenceData},
+    validator.validateExtReference, errors.ext_reference);
 
   let hasNoErrors = function(key) {
     return errors[key].messages.length < 1;
@@ -133,6 +141,8 @@ let validateNewDevice = function() {
             keyToError[key].messages.push(pair[key]);
           });
           renderDeviceErrors(errors);
+        } else if ('success' in resp && !resp.success) {
+          displayAlertMsg({type: 'danger', message: resp.message});
         }
       },
     });

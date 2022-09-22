@@ -52,6 +52,8 @@ module.exports = {
     settings: [
       './public/src/common.index.js',
       './public/javascripts/settings_actions.js',
+      './public/javascripts/factory_credentials.js',
+      './public/javascripts/default_ping_hosts_config.js',
     ],
     index: [
       './public/src/common.index.js',
@@ -65,15 +67,18 @@ module.exports = {
       './public/javascripts/show_devices_logs_actions.js',
       './public/javascripts/show_ping_test_actions.js',
       './public/javascripts/show_speed_test_actions.js',
-      './public/javascripts/show_wan_bytes_actions.js',
+      './public/javascripts/show_statistics_actions.js',
       './public/javascripts/show_lan_devices_actions.js',
       './public/javascripts/show_site_survey_actions.js',
       './public/javascripts/show_upgrade_schedule_actions.js',
       './public/javascripts/show_data_collecting_actions.js',
       './public/javascripts/show_pon_signal_actions.js',
       './public/javascripts/show_vlan_actions.js',
+      './public/javascripts/show_wan_info.js',
+      './public/javascripts/show_lan_info.js',
       './public/javascripts/update_device.js',
       './public/javascripts/table_anim.js',
+      './public/javascripts/show_traceroute_test_action.js',
     ],
   },
   output: {

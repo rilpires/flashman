@@ -215,13 +215,12 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
   if (!device || !device.use_tr069) {
     return;
   }
-  let permissions = DeviceVersion.findByVersion(
-    device.version, device.wifi_is_5ghz_capable, device.model,
-  );
+  let permissions = DeviceVersion.devicePermissions(device);
 
   let maxId = 0;
   let acRulesResult = {};
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
 
   let supportedWlans = ['wifi2'];
   let acSubtreeRoots = {'wifi2': fields.access_control.wifi2};
@@ -396,11 +395,10 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
   // Make sure that this device is abled to do access control
-  let permissions = DeviceVersion.findByVersion(
-    device.version, device.wifi_is_5ghz_capable, device.model,
-  );
+  let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions || !permissions.grantBlockDevices) return;
-  let fields = DevicesAPI.getModelFieldsFromDevice(device).fields;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
   if (!fields) return;
   // ===== Get blockedDevices and AC rules trees =====
   // Creates the structures related to WLAN subtrees

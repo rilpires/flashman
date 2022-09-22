@@ -23,7 +23,8 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     // Do not store messages to deliver when device is offline
     maxSessionDelivery: 0,
   });
-  mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2});
+  mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2,
+                 concurrency: 500});
   // Fix broker id in case of instance restart
   mqtts.id = instanceName + instanceNumber;
 } else {
@@ -272,7 +273,23 @@ mqtts.authenticate = function(client, username, password, cb) {
 
 // TODO: Refactor functions bellow.
 // All those functions have the same code.
-// Create a common publish function.
+// Use this common publish function to avoiding repeating code.
+mqtts.commonPublishPacket = function(id, qos, retain, payload) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: qos,
+      retain: retain,
+      payload: payload,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message ' + payload + ' to ' + id);
+  }
+
+  return serverId === null;
+};
+
 
 mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   const serverId = findServerId(id);
@@ -372,6 +389,55 @@ mqtts.anlixMessageRouterOnlineLanDevs = function(id) {
   }
 };
 
+
+// WAN Information
+mqtts.anlixMessageRouterWanInfo = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: false,
+      payload: 'waninfo',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message WANINFO to ' + id);
+  }
+};
+
+
+// LAN Information
+mqtts.anlixMessageRouterLanInfo = function(id) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: false,
+      payload: 'laninfo',
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message LANINFO to ' + id);
+  }
+};
+
+
+// Traceroute
+mqtts.anlixMessageRouterTraceroute = function(
+  id,
+  maxHops,
+  numberProbes,
+  maxTime,
+) {
+  const payload = 'traceroute ' +
+    maxHops + ' ' +
+    numberProbes + ' ' +
+    maxTime;
+
+  mqtts.commonPublishPacket(id, 2, false, payload);
+};
+
+
 mqtts.anlixMessageRouterSiteSurvey = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {
@@ -456,15 +522,32 @@ mqtts.anlixMessageRouterWifiState = function(id, state, wirelessRadio) {
   }
 };
 
-mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+mqtts.anlixMessageRouterSpeedTest = function(id, ip, username) {
   const serverId = findServerId(id);
   if (serverId !== null) {
-    const name = user.name.replace(/ /g, '_');
+    const name = username.replace(/ /g, '_');
     const packet = {
       id: id,
       qos: 2,
       retain: true,
       payload: 'speedtest ' + ip + ' ' + name + ' 3 15',
+      // Fix parallel connections to 3 and timeout to 15 seconds
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message SPEEDTEST to ' + id);
+  }
+};
+
+
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, username) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const name = username.replace(/ /g, '_');
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'rawspeedtest ' + name + ' 3 15',
       // Fix parallel connections to 3 and timeout to 15 seconds
     };
     toPublishPacket(serverId, packet);

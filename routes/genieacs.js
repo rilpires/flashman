@@ -2,6 +2,7 @@ const express = require('express');
 const authController = require('../controllers/auth');
 let genieDeviceInfoController = require('../controllers/acs_device_info');
 
+// eslint-disable-next-line new-cap
 let router = express.Router();
 
 router.route('/device/inform').post(genieDeviceInfoController.informDevice);

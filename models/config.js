@@ -13,6 +13,8 @@ let configSchema = new mongoose.Schema({
     functions_fqdn: String,
     secret_token: String,
   },
+  blockLicenseAtDeviceRemoval: {
+    type: Boolean, required: true, default: false},
   tr069: {
     server_url: String,
     web_login: String,
@@ -30,6 +32,15 @@ let configSchema = new mongoose.Schema({
     stun_enable: {type: Boolean, default: false},
     insecure_enable: {type: Boolean, default: false},
     has_never_enabled_insecure: {type: Boolean, default: true},
+    onu_factory_credentials: {
+      timestamp: {type: Date},
+      credentials: [{
+        vendor: {type: String},
+        model: {type: String},
+        username: {type: String},
+        password: {type: String},
+      }],
+    },
   },
   certification: {
     // WAN steps required here are:
@@ -55,6 +66,7 @@ let configSchema = new mongoose.Schema({
     wifi_devices: Boolean,
     ping_and_wan: Boolean,
   },
+  default_ping_hosts: {type: [String]},
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
     is_aborted: {type: Boolean, default: false},
