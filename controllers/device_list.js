@@ -4209,11 +4209,16 @@ deviceListController.getLanInfo = async function(request, response) {
 
 const commonDeviceFind = async function(req) {
   try {
+    let msgtype = req.params.msg.toLowerCase();
     let devId = req.params.id.toUpperCase();
     let retDevs = await DeviceModel.findByMacOrSerial(devId);
     if (Array.isArray(retDevs) && retDevs.length > 0) {
       let device = retDevs[0];
-      if (device && !device.use_tr069) {
+      if (
+        device && !device.use_tr069 &&
+        msgtype !== 'rstapp' &&
+        msgtype !== 'rstmqtt'
+      ) {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[devId];
         });
