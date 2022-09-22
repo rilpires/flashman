@@ -4214,11 +4214,7 @@ const commonDeviceFind = async function(req) {
     let retDevs = await DeviceModel.findByMacOrSerial(devId);
     if (Array.isArray(retDevs) && retDevs.length > 0) {
       let device = retDevs[0];
-      if (
-        device && !device.use_tr069 &&
-        msgtype !== 'rstapp' &&
-        msgtype !== 'rstmqtt'
-      ) {
+      if (device && !device.use_tr069 && msgtype !== 'rstmqtt') {
         const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
           return map[devId];
         });
