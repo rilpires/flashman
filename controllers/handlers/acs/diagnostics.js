@@ -27,30 +27,6 @@ const getAllNestedKeysFromObject = function(data, target, genieFields) {
   return result;
 };
 
-const getAllNestedKeysFromMultipleObjects = function(data, target, base) {
-  let result = [];
-  let resultKeys = [];
-  base.result.forEach((res) => {
-    let resultKeysRaw = utilHandlers.getFromNestedKey(data, res);
-    if (resultKeysRaw) {
-      resultKeys = Object.keys(resultKeysRaw);
-    }
-    resultKeys = resultKeys.filter((k)=>k[0] && k[0]!=='_');
-    resultKeys.forEach((i)=>{
-      let obj = {};
-      Object.keys(target).forEach((key)=>{
-        if (target[key] === '') return;
-        let field = res+'.'+i+'.'+target[key] + '._value';
-        if (utilHandlers.checkForNestedKey(data, field)) {
-          obj[key] = utilHandlers.getFromNestedKey(data, field);
-        }
-      });
-      result.push(obj);
-    });
-  });
-  return result;
-};
-
 const saveCurrentDiagnostic = async function(device, msg, progress) {
   device.current_diagnostic.stage = msg;
   device.current_diagnostic.in_progress = progress;
