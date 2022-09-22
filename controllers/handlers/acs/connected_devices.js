@@ -196,6 +196,21 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
             );
+            let ifaceFreq;
+            if (iface == iface2) {
+              ifaceFreq = 2.4;
+            } else if (iface == iface5) {
+              ifaceFreq = 5;
+            }
+            if (
+              !utilHandlers.checkForNestedKey(data, assocField) && ifaceFreq
+            ) {
+              // Device missing associated fields for this interface
+              // Mark devices for this interface as active, missing data
+              devices.forEach((d)=>{
+                if (d.wifi && d.wifi_freq === ifaceFreq) d.wifiActive = true;
+              });
+            }
             let assocIndexes = utilHandlers.getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
@@ -223,13 +238,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               // list for that device, which means the connection for that host
               // is active
               device.wifiActive = true;
-              // Mark device as a wifi device
               device.wifi = true;
-              if (iface == iface2) {
-                device.wifi_freq = 2.4;
-              } else if (iface == iface5) {
-                device.wifi_freq = 5;
-              }
+              device.wifi_freq = ifaceFreq;
               // Collect rssi, if available
               if (fields.devices.host_rssi) {
                 let rssiKey = fields.devices.host_rssi;
