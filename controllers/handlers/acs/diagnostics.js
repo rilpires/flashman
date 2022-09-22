@@ -666,22 +666,26 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
 
-  for (let masterKey in diagNecessaryKeys) {
-    if (
-      diagNecessaryKeys.hasOwnProperty(masterKey) &&
-      fields.diagnostics.hasOwnProperty(masterKey)
-    ) {
-      let keys = diagNecessaryKeys[masterKey];
-      let genieFields = fields.diagnostics[masterKey];
-      for (let key in keys) {
-        if (genieFields.hasOwnProperty(key)) {
-          if (typeof genieFields[key] === 'string') {
-            parameters.push(genieFields[key]);
-          } else if (Array.isArray(genieFields[key])) {
-            parameters = parameters.concat(genieFields[key]);
-          }
-        }
-      }
+  let diagType = device.current_diagnostic.type;
+  let keys = [];
+  let genieFields = [];
+  if (diagType === 'ping') {
+    keys = diagNecessaryKeys.ping;
+    genieFields = fields.diagnostics.ping;
+  } else if (diagType === 'speedtest') {
+    keys = diagNecessaryKeys.speedtest;
+    genieFields = fields.diagnostics.speedtest;
+  } else if (diagType === 'traceroute') {
+    keys = diagNecessaryKeys.traceroute;
+    genieFields = fields.diagnostics.traceroute;
+  } else if (diagType === 'sitesurvey') {
+    keys = diagNecessaryKeys.sitesurvey;
+    genieFields = fields.diagnostics.sitesurvey;
+  }
+  for (let key in keys) {
+    if (genieFields.hasOwnProperty(key)) {
+      // Remove wildcards, fetch everything before them
+      parameters.push(genieFields[key].replace(/\.\*.*/g, ''));
     }
   }
 
@@ -704,7 +708,6 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
       try {
         let data = JSON.parse(body)[0];
         let permissions = DeviceVersion.devicePermissions(device);
-        let diagType = device.current_diagnostic.type;
         if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
         } else if (!device.current_diagnostic.in_progress) {
@@ -721,10 +724,10 @@ acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
             device, data, diagNecessaryKeys.speedtest,
             fields.diagnostics.speedtest,
           );
-        } else if (permissions.grantTraceTest && diagType=='traceroute') {
+        } else if (permissions.grantTraceTest && diagType == 'traceroute') {
           // TODO
           // await calculateTraceDiagnostic(/* to-do */);
-        } else if (permissions.grantSiteSurvey && diagType=='sitesurvey') {
+        } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
           await calculateSiteSurveyDiagnostic(
             device, cpe, data, fields.diagnostics.sitesurvey,
           );
