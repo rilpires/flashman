@@ -114,13 +114,6 @@ nokiaModel.getModelFields = function() {
 
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
-  fields.diagnostics.sitesurvey.diag_state = ['InternetGatewayDevice.'+
-    'X_ALU-COM_NeighboringWiFiDiagnostic.DiagnosticsState'];
-  fields.diagnostics.sitesurvey.result = ['InternetGatewayDevice.'+
-    'X_ALU-COM_NeighboringWiFiDiagnostic.Result'];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
-  fields.diagnostics.sitesurvey.ssid = 'SSID';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   fields.diagnostics.sitesurvey.mode = 'OperatingStandards';

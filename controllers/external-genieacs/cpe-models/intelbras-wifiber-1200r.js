@@ -20,6 +20,8 @@ intelbrasModel.modelPermissions = function() {
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
+  permissions.siteSurvey.survey2Index = '6';
+  permissions.siteSurvey.survey5Index = '1';
   permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.bandWrite2 = false;
   permissions.wifi.bandWrite5 = false;
@@ -123,17 +125,7 @@ intelbrasModel.getModelFields = function() {
   });
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'LANDevice.1.WIFI';
-  fields.diagnostics.sitesurvey.diag_state = ['InternetGatewayDevice'+
-    '.LANDevice.1.WIFI.DiagnosticsState'];
-  fields.diagnostics.sitesurvey.result = [
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.1.X_ITBS_NeighborAP',
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.6.X_ITBS_NeighborAP',
-  ];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
-  fields.diagnostics.sitesurvey.ssid = 'SSID';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
-  fields.diagnostics.sitesurvey.signal = 'RSSI';
-  fields.diagnostics.sitesurvey.band = 'BandWidth';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ITBS_NeighborAP';
   return fields;
 };
 

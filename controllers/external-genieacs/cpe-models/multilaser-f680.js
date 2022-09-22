@@ -14,6 +14,10 @@ multilaserModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.requiresSeparateTasks = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.list5ghzChannels = [
@@ -56,10 +60,6 @@ multilaserModel.convertToDbm = function(power) {
 
 multilaserModel.convertWifiRate = function(rate) {
   return parseInt(rate) / 1000;
-};
-
-multilaserModel.isToDoPoolingInState = function() {
-  return true;
 };
 
 multilaserModel.getModelFields = function() {
@@ -110,20 +110,8 @@ multilaserModel.getModelFields = function() {
   );
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'LANDevice.1.WIFI';
-  fields.diagnostics.sitesurvey.diag_state = [
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.1.DiagnosticsState',
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.2.DiagnosticsState',
-  ];
-  fields.diagnostics.sitesurvey.result = [
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.1.X_ZTE-COM_NeighborAP',
-    'InternetGatewayDevice.LANDevice.1.WIFI.Radio.2.X_ZTE-COM_NeighborAP',
-  ];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
-  fields.diagnostics.sitesurvey.ssid = 'SSID';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
-  fields.diagnostics.sitesurvey.signal = 'RSSI';
-  fields.diagnostics.sitesurvey.band = 'BandWidth';
-  fields.diagnostics.sitesurvey.mode = 'Standard';
+  fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   return fields;
 };
 

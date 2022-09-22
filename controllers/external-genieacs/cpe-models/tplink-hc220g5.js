@@ -167,13 +167,6 @@ tplinkModel.getModelFields = function() {
 
   fields.diagnostics.sitesurvey.root = 'Device.WiFi.'+
     'NeighboringWiFiDiagnostic';
-  fields.diagnostics.sitesurvey.diag_state = ['Device.WiFi.'+
-    'NeighboringWiFiDiagnostic.DiagnosticsState'];
-  fields.diagnostics.sitesurvey.result = ['Device.WiFi.'+
-    'NeighboringWiFiDiagnostic.Result'];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
-  fields.diagnostics.sitesurvey.ssid = 'SSID';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   return fields;

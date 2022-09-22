@@ -12,6 +12,8 @@ tendaModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.lan.needEnableConfig = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   permissions.wan.speedTestLimit = 180;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -173,21 +175,9 @@ tendaModel.getModelFields = function() {
   fields.mesh5 = {};
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
     '.1.X_CT-COM_Radio';
-  fields.diagnostics.sitesurvey.diag_state = [
-    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1'+
-      '.WLANNeighbor.DiagnosticsState',
-    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2'+
-      '.WLANNeighbor.DiagnosticsState',
-  ];
-  fields.diagnostics.sitesurvey.result = [
-    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.WLANNeighbor.Result',
-    'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2.WLANNeighbor.Result',
-  ];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
+  fields.diagnostics.sitesurvey.diag_state = '*.WLANNeighbor.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = '*.WLANNeighbor.Result';
   fields.diagnostics.sitesurvey.ssid = 'SSIDName';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
-  fields.diagnostics.sitesurvey.signal = 'RSSI';
-  fields.diagnostics.sitesurvey.mode = 'Standard';
   return fields;
 };
 

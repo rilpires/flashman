@@ -104,6 +104,12 @@ basicCPEModel.modelPermissions = function() {
       objectExists: false, // special flag for mesh xml object
       setEncryptionForCable: false, // special flag for cable mesh
     },
+    siteSurvey: {
+      requiresPolling: false, // Flashman must poll for result in genieacs
+      requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
+      survey2Index: '', // For devices with split state/result fields (2.4GHz)
+      survey5Index: '', // For devices with split state/result fields (5GHz)
+    },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
     needInterfaceInPortFoward: false, // flag for devices that need interf tree
@@ -452,10 +458,6 @@ basicCPEModel.getPortForwardRuleName = function(index) {
   return 'Anlix_PortForwarding_' + index.toString();
 };
 
-basicCPEModel.isToDoPoolingInState = function() {
-  return false;
-};
-
 // Map TR-069 XML fields to Flashman fields
 basicCPEModel.getModelFields = function() {
   return {
@@ -691,16 +693,16 @@ basicCPEModel.getModelFields = function() {
           'PeriodOfFullLoading',
       },
       sitesurvey: {
-        // These fields have no defaults, as they are always vendor-dependent
+        // Some of these fields have no defaults, as they are vendor-specific
         root: '',
-        diag_state: [],
-        result: [],
-        mac: '',
-        ssid: '',
-        channel: '',
-        signal: '',
-        band: '',
-        mode: '',
+        diag_state: 'DiagnosticsState',
+        result: 'Result',
+        mac: 'BSSID',
+        ssid: 'SSID',
+        channel: 'Channel',
+        signal: 'RSSI',
+        band: 'BandWidth',
+        mode: 'Standard',
       },
     },
   };

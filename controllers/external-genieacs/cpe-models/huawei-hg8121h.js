@@ -138,13 +138,6 @@ huaweiModel.getModelFields = function() {
     'WLANConfiguration.3.LowerLayers';
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
     '.1.WiFi.NeighboringWiFiDiagnostic';
-  fields.diagnostics.sitesurvey.diag_state = ['InternetGatewayDevice.LANDevice'+
-    '.1.WiFi.NeighboringWiFiDiagnostic.DiagnosticsState'];
-  fields.diagnostics.sitesurvey.result = ['InternetGatewayDevice.LANDevice'+
-    '.1.WiFi.NeighboringWiFiDiagnostic.Result'];
-  fields.diagnostics.sitesurvey.mac = 'BSSID';
-  fields.diagnostics.sitesurvey.ssid = 'SSID';
-  fields.diagnostics.sitesurvey.channel = 'Channel';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
