@@ -235,7 +235,50 @@ const calculateFreq = function(rawChannel) {
 const calculateSiteSurveyDiagnostic = async function(
   device, cpe, data, siteSurveyFields,
 ) {
-  let id = device.acs_id;
+  let rootField = siteSurveyFields.root;
+  // We must first check the diagnostic state for errors
+  let stateField = rootField + '.' + siteSurveyFields.diag_state;
+  let stateFieldList;
+  // Make sure we clear wildcards with the appropriate index
+  if (stateField.includes('*')) {
+    stateFieldList = [
+      stateField.replace('*', cpe.modelPermissions().siteSurvey.survey2Index),
+      stateField.replace('*', cpe.modelPermissions().siteSurvey.survey5Index),
+    ];
+  } else {
+    stateFieldList = [stateField];
+  }
+  let stateValues = stateFieldList.map((field)=>{
+    return utilHandlers.getFromNestedKey(data, field + '._value');
+  });
+  // If this model requires polling and some state is still requested, loop poll
+  if (
+    cpe.modelPermissions().siteSurvey.requiresPolling &&
+    stateValues.some((v)=>v.match(/requested/i)) &&
+    device.current_diagnostic.recursion_state > 0
+  ) {
+    device.current_diagnostic.recursion_state--;
+    saveCurrentDiagnostic(device, 'initiating', true);
+    doPoolingInState(device.acs_id, stateField);
+    return;
+  }
+  // Otherwise, if the diagnostic is not complete, we save the result as error
+  if (!stateValues.some((v)=>v.match(/complete/i))) {
+    await saveCurrentDiagnostic(device, 'error', false);
+    return;
+  }
+  // We can now read the results from the data provided and store it in database
+  let resultField = rootField + '.' + siteSurveyFields.result;
+  let resultFieldList;
+  // Make sure we clear wildcards with the appropriate index
+  if (resultField.includes('*')) {
+    resultFieldList = [
+      resultField.replace('*', cpe.modelPermissions().siteSurvey.survey2Index),
+      resultField.replace('*', cpe.modelPermissions().siteSurvey.survey5Index),
+    ];
+  } else {
+    resultFieldList = [resultField];
+  }
   let siteSurveyObjKeys = {
     mac: siteSurveyFields.mac,
     ssid: siteSurveyFields.ssid,
@@ -244,96 +287,83 @@ const calculateSiteSurveyDiagnostic = async function(
     band: siteSurveyFields.band,
     mode: siteSurveyFields.mode,
   };
-
-  let apsData = getAllNestedKeysFromMultipleObjects(data,
-    siteSurveyObjKeys, siteSurveyFields);
-  let diagState = [];
-  siteSurveyFields.diag_state.forEach((key)=>{
-    if (utilHandlers.checkForNestedKey(data, key + '._value')) {
-      diagState.push(utilHandlers.getFromNestedKey(
-        data, key + '._value',
-      ));
-    }
-  });
-  let outData = [];
-
-  if (diagState.every((x) => x === 'None')) {
-    await saveCurrentDiagnostic(device, 'error', false);
-    return;
-  } else if (diagState.some((x) => x.match(/requested/i))) {
-    if (cpe.isToDoPoolingInState() &&
-        device.current_diagnostic.recursion_state > 0) {
-      device.current_diagnostic.recursion_state--;
-      saveCurrentDiagnostic(device, 'initiating', true);
-      acsDiagnosticsHandler.doPoolingInState(device.acs_id,
-        cpe.getModelFields());
-      return;
-    } else {
-      await saveCurrentDiagnostic(device, 'error', false);
-      return;
-    }
-  } else if (diagState.some((x) => x.match(/erro/i))) {
-    await saveCurrentDiagnostic(device, 'error', false);
-  } else if (diagState.some((x) => x.match(/complete/i))) {
-    apsData.forEach((ap) => {
-      let outDev = {};
-
-      let devReg = device.getAPSurveyDevice(ap.mac.toLowerCase());
-      if (ap.channel) {
-        ap.freq = calculateFreq(ap.channel);
-      }
-      if (ap.signal) {
-        ap.signal = parseInt(ap.signal);
-      }
-      let devWidth=20;
-      let devVHT=false;
-
-      if (ap.mode && ap.mode.includes('ac')) {
-        devVHT=true;
-      }
-
-      if (ap.band &&
-          ap.band !== 'Auto' &&
-          ap.band.match('[0-9]+') != null) {
-        // '20MHz' | '40MHz' | '80MHz'
-        devWidth = parseInt(ap.band.match('[0-9]+')[0]);
-      }
-
-      if (devReg) {
-        devReg.ssid = ap.ssid;
-        devReg.freq = ap.freq;
-        devReg.signal = ap.signal;
-        devReg.width = devWidth;
-        devReg.VHT = devVHT;
-        devReg.last_seen = Date.now();
-        if (!devReg.first_seen) {
-          devReg.first_seen = Date.now();
+  let neighborAPs = [];
+  // Iterate on each result field, for separate interfaces
+  resultFieldList.forEach((field)=>{
+    let results = utilHandlers.getFromNestedKey(data, field);
+    // Filter out meta keys and iterate on the AP indexes
+    Object.keys(results).filter((k)=>k[0]!=='_').forEach((apIndex)=>{
+      let apData = results[apIndex];
+      let result = {};
+      // Fetch each data point for this neighbor ap, but only if available
+      Object.keys(siteSurveyObjKeys).forEach((key)=>{
+        if (apData.hasOwnProperty(siteSurveyObjKeys[key])) {
+          result[key] = apData[siteSurveyObjKeys[key]]['._value'];
         }
-      } else {
-        device.ap_survey.push({
-          mac: ap.mac,
-          ssid: ap.ssid,
-          freq: ap.freq,
-          signal: ap.signal,
-          width: devWidth,
-          VHT: devVHT,
-          first_seen: Date.now(),
-          last_seen: Date.now(),
-        });
-      }
-      outDev.mac = ap.mac;
-      outData.push(outDev);
+      });
+      // Add it to our result structure
+      neighborAPs.push(result);
     });
-    device.last_site_survey = Date.now();
-    await saveCurrentDiagnostic(device, 'done', false);
-  } else {
-    await saveCurrentDiagnostic(device, 'error', false);
-  }
-  // if someone is waiting for this message, send the information
-  sio.anlixSendSiteSurveyNotifications(device._id.toUpperCase(), outData);
-  console.log('Site Survey Receiving for device ' +
-    id + ' successfully.');
-  return;
+  });
+  // Iterate on our result structure to update/create database entries
+  let finalData = [];
+  neighborAPs.forEach((ap)=>{
+    // Make sure we have a mac and ssid
+    if (!ap.mac || !ap.ssid) {
+      return;
+    }
+    // Convert channel to frequency
+    if (ap.channel) {
+      ap.freq = calculateFreq(ap.channel);
+    }
+    // Make sure signal is an integer
+    if (ap.signal) {
+      ap.signal = parseInt(ap.signal);
+    }
+    // Set default values for bandwidth and vht
+    let devWidth = 20;
+    let devVHT = false;
+    // Bandwidth becomes numerical value received, if received at all
+    // Sample values: '20MHz' | '40MHz' | '80MHz'
+    if (ap.band && ap.band !== 'Auto' && ap.band.match('[0-9]+') != null) {
+      devWidth = parseInt(ap.band.match('[0-9]+')[0]);
+    }
+    // VHT becomes true if neighbor ap reports its mode as AC
+    if (ap.mode && ap.mode.includes('ac')) {
+      devVHT = true;
+    }
+    // Check if this AP is already registered in database, so we know whether to
+    // update it or create an entry for it
+    let devReg = device.getAPSurveyDevice(ap.mac.toLowerCase());
+    if (devReg) {
+      devReg.ssid = ap.ssid;
+      devReg.freq = ap.freq;
+      devReg.signal = ap.signal;
+      devReg.width = devWidth;
+      devReg.VHT = devVHT;
+      devReg.last_seen = Date.now();
+      if (!devReg.first_seen) {
+        devReg.first_seen = Date.now();
+      }
+    } else {
+      device.ap_survey.push({
+        mac: ap.mac.toLowerCase(),
+        ssid: ap.ssid,
+        freq: ap.freq,
+        signal: ap.signal,
+        width: devWidth,
+        VHT: devVHT,
+        first_seen: Date.now(),
+        last_seen: Date.now(),
+      });
+    }
+    finalData.push({mac: ap.mac.toLowerCase()});
+  });
+  device.last_site_survey = Date.now();
+  await saveCurrentDiagnostic(device, 'done', false);
+  // Send information to socket.io connections
+  sio.anlixSendSiteSurveyNotifications(device._id.toUpperCase(), finalData);
+  console.log('Site Survey for device ' + device.acs_id + ' received.');
 };
 
 
@@ -524,73 +554,61 @@ const startSiteSurveyDiagnose = async function(acsID) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
+
+  // Diagnostic state field must be added to the root field
+  let rootField = fields.diagnostics.sitesurvey.root;
+  let stateField = rootField + '.' + fields.diagnostics.sitesurvey.diag_state;
+  // In case we have a wildcard, CPE must specify the indexes for each network
   let params = [];
-
-  if (!cpe.isToDoPoolingInState()) {
-    if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
-      if (device.wifi_state) {
-        params.push([
-          fields.diagnostics.sitesurvey.diag_state[0],
-          'Requested', 'xsd:string']);
-      }
-      if (device.wifi_state_5ghz) {
-        params.push([
-          fields.diagnostics.sitesurvey.diag_state[1],
-          'Requested', 'xsd:string']);
-      }
-    } else {
-      if (device.wifi_state || device.wifi_state_5ghz) {
-        params.push([
-          fields.diagnostics.sitesurvey.diag_state[0],
-          'Requested', 'xsd:string']);
-      }
-    }
+  if (stateField.includes('*')) {
+    params = [
+      stateField.replace('*', cpe.modelPermissions().siteSurvey.survey2Index),
+      stateField.replace('*', cpe.modelPermissions().siteSurvey.survey5Index),
+    ];
   } else {
-    if (device.wifi_state || device.wifi_state_5ghz) {
-      params.push([fields.diagnostics.sitesurvey.diag_state[0],
-        'Requested', 'xsd:string']);
-    }
+    params = [stateField];
   }
 
-  if (params.length == 0) {
-    saveCurrentDiagnostic(device, 'error', false);
-    return;
+  // Map param fields to task - some devices reject setting both fields at the
+  // same time, so we split into two tasks based on the cpe flag
+  let task = {name: 'setParameterValues'};
+  if (cpe.modelPermissions().siteSurvey.requiresSeparateTasks) {
+    task.parameterValues = [params[0], 'Requested', 'xsd:string'];
+  } else {
+    task.parameterValues = params.map((p)=>[p, 'Requested', 'xsd:string']);
   }
-  let task = {
-    name: 'setParameterValues',
-    parameterValues: params,
-  };
   let result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     saveCurrentDiagnostic(device, 'error', false);
   }
-  if (cpe.isToDoPoolingInState()) {
-    if (fields.diagnostics.sitesurvey.diag_state.length > 1) {
-      params = []; result = {};
-      params.push([fields.diagnostics.sitesurvey.diag_state[1],
-        'Requested', 'xsd:string']);
-      task = {
-        name: 'setParameterValues',
-        parameterValues: params,
-      };
-      result = await TasksAPI.addTask(acsID, task);
-      if (!result.success) {
-        saveCurrentDiagnostic(device, 'error', false);
-      }
+
+  // Send the second field if we only sent one of them above
+  if (cpe.modelPermissions().siteSurvey.requiresSeparateTasks) {
+    let task = {
+      name: 'setParameterValues',
+      parameterValues: [params[1], 'Requested', 'xsd:string'],
+    };
+    let result = await TasksAPI.addTask(acsID, task);
+    if (!result.success) {
+      saveCurrentDiagnostic(device, 'error', false);
     }
-    acsDiagnosticsHandler.doPoolingInState(acsID, fields);
+  }
+
+  // Some CPEs don't respond with a diagnostic success event, so we manually
+  // poll for the result state
+  if (cpe.modelPermissions().siteSurvey.requiresPolling) {
+    doPoolingInState(acsID, stateField);
   }
 };
 
-acsDiagnosticsHandler.doPoolingInState = async function(acsID, fields) {
+const doPoolingInState = async function(acsID, stateField) {
   // Wait for 5s to pool results
   await new Promise((resolve) => setTimeout(resolve, 5000));
   let task = {
     name: 'getParameterValues',
-    parameterNames: fields.diagnostics.sitesurvey.diag_state,
+    parameterNames: stateField,
   };
-  TasksAPI.addTask(acsID, task,
-    acsDiagnosticsHandler.fetchDiagnosticsFromGenie);
+  TasksAPI.addTask(acsID, task, fetchDiagnosticsFromGenie);
   return;
 };
 
@@ -613,17 +631,14 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
     default:
       return;
   }
-  if (typeof fieldToFetch === 'string') fieldToFetch = [fieldToFetch];
   let task = {
     name: 'getParameterValues',
-    parameterNames: fieldToFetch,
+    parameterNames: [fieldToFetch],
   };
-  TasksAPI.addTask(
-    acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
-  );
+  TasksAPI.addTask(acsID, task, fetchDiagnosticsFromGenie);
 };
 
-acsDiagnosticsHandler.fetchDiagnosticsFromGenie = async function(acsID) {
+const fetchDiagnosticsFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID});
@@ -809,12 +824,9 @@ acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {
   let fields = cpe.getModelFields();
   let siteSurveyDiagnostics = fields.diagnostics.sitesurvey.root;
   // We need to update the parameter values before we fire the speedtest
-  if (typeof siteSurveyDiagnostics === 'string') {
-    siteSurveyDiagnostics = [siteSurveyDiagnostics];
-  }
   let task = {
     name: 'getParameterValues',
-    parameterNames: siteSurveyDiagnostics,
+    parameterNames: [siteSurveyDiagnostics],
   };
   const result = await TasksAPI.addTask(acsID, task, startSiteSurveyDiagnose);
   if (result.success) {
