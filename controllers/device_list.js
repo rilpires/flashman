@@ -586,7 +586,6 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
     // TR-069 devices must have SSID enabled to start site survey
     let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
     if (
-      cpe.modelPermissions().siteSurvey.requiresWifiEnable &&
       !device.wifi_state &&
       (!cpe.modelPermissions().wifi.dualBand || !device.wifi_state_5ghz)
     ) {
