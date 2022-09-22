@@ -4209,7 +4209,10 @@ deviceListController.getLanInfo = async function(request, response) {
 
 const commonDeviceFind = async function(req) {
   try {
-    let msgtype = req.params.msg.toLowerCase();
+    let msgtype = 'generic';
+    if (req.params.msg) {
+      msgtype = req.params.msg.toLowerCase();
+    }
     let devId = req.params.id.toUpperCase();
     let retDevs = await DeviceModel.findByMacOrSerial(devId);
     if (Array.isArray(retDevs) && retDevs.length > 0) {
