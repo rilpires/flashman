@@ -7,11 +7,11 @@ const utilHandlers = require('./controllers/handlers/util');
 let DeviceVersion = require('./models/device_version');
 const Config = require('./models/config');
 
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
 
 module.exports = async (app) => {
-  if (parseInt(process.env.NODE_APP_INSTANCE) === 0 ||
-      parseInt(process.env.FLM_DOCKER_INSTANCE) === 0
-  ) {
+  if (instanceNumber === 0) {
     // Check default config
     controlApi.checkPubKey(app).then(() => {
       // Get message configs from control

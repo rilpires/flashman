@@ -6,6 +6,13 @@ const Notification = require('./models/notification');
 const Config = require('./models/config');
 const debug = require('debug')('MQTT');
 
+/**
+ * Instance number will help identifying broker instance
+ */
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
+let instanceName = process.env.name || 'broker';
+
 let mqtts = null;
 if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     (process.env.FLM_USE_MQTT_PERSISTENCE === true ||
@@ -18,9 +25,9 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
   });
   mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2});
   // Fix broker id in case of instance restart
-  mqtts.id = process.env.name + process.env.NODE_APP_INSTANCE;
+  mqtts.id = instanceName + instanceNumber;
 } else {
-  debug('Instance ID is: ' + process.env.NODE_APP_INSTANCE);
+  debug('Instance ID is: ' + instanceNumber);
   mqtts = aedes({queueLimit: 2});
 }
 
