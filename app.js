@@ -292,9 +292,11 @@ if (instanceNumber === 0 && (
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
 
-    if (typeof process.env.FLM_IS_A_DOCKER_RUN !== 'undefined' &&
+    // Only used at scenarios where Flashman was installed directly on a host
+    // Undefined - Covers legacy host install cases
+    if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
         process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
-      // Restart genieacs service whenever Flashman is restarted
+      // Restart TR-069 services whenever Flashman is restarted
       if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
         updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
       } else {
