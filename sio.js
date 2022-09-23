@@ -7,9 +7,12 @@ const debug = require('debug')('SIO');
 
 const sio = new Server();
 
+const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
+const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
+
 // Redis use for comm between multiple processes
 if (process.env.FLM_USE_MQTT_PERSISTENCE) {
-  sio.pubClient = createClient({host: 'localhost', port: 6379});
+  sio.pubClient = createClient({host: REDISHOST, port: REDISPORT});
   sio.subClient = sio.pubClient.duplicate();
 
   sio.adapter(createAdapter(sio.pubClient, sio.subClient));
