@@ -6,6 +6,9 @@ const Notification = require('./models/notification');
 const Config = require('./models/config');
 const debug = require('debug')('MQTT');
 
+const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
+const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
+
 /**
  * Instance number will help identifying broker instance
  */
@@ -18,8 +21,13 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     (process.env.FLM_USE_MQTT_PERSISTENCE === true ||
      process.env.FLM_USE_MQTT_PERSISTENCE === 'true')
 ) {
-  const mq = require('mqemitter-redis')();
+  const mq = require('mqemitter-redis')({
+    host: REDISHOST,
+    port: REDISPORT,
+  });
   const persistence = require('aedes-persistence-redis')({
+    host: REDISHOST,
+    port: REDISPORT,
     // Do not store messages to deliver when device is offline
     maxSessionDelivery: 0,
   });
