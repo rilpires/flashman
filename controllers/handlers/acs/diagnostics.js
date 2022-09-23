@@ -274,7 +274,7 @@ const calculateSiteSurveyDiagnostic = async function(
       // Fetch each data point for this neighbor ap, but only if available
       Object.keys(siteSurveyObjKeys).forEach((key)=>{
         if (apData.hasOwnProperty(siteSurveyObjKeys[key])) {
-          result[key] = apData[siteSurveyObjKeys[key]]['._value'];
+          result[key] = apData[siteSurveyObjKeys[key]]['_value'];
         }
       });
       // Add it to our result structure
@@ -676,7 +676,12 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
   for (let key in keys) {
     if (genieFields.hasOwnProperty(key)) {
       // Remove wildcards, fetch everything before them
-      parameters.push(genieFields[key].replace(/\.\*.*/g, ''));
+      let param = genieFields[key];
+      if (diagType === 'sitesurvey') {
+        // Site survey uses fields relative to root node
+        param = fields.diagnostics.sitesurvey.root + '.' + param;
+      }
+      parameters.push(param.replace(/\.\*.*/g, ''));
     }
   }
 
