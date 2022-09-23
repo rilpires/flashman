@@ -45,7 +45,7 @@ RUN npm install --production=false ; \
     rm -rf /app/public/scss ; \
     npm install --production
 
-ENV production=false \
+ENV production=true \
     name="flashman" \
     TZ="America/Sao_Paulo" \
     NODE_ENV="production" \
