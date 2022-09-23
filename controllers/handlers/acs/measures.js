@@ -310,6 +310,8 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
             thresholdCriticalHigh:
               config.tr069.pon_signal_threshold_critical_high,
           };
+          deviceEdit.pon_rxpower = ponSignal.rxpower;
+          deviceEdit.pon_txpower = ponSignal.txpower;
           // append to device data structure
           ponSignal = acsMeasuresHandler.appendPonSignal(
             deviceEdit.pon_signal_measure,
