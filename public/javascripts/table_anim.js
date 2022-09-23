@@ -1408,6 +1408,7 @@ anlixDocumentReady.add(function() {
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantWifiExtendedChannels =
             device.permissions.grantWifiExtendedChannels;
+          let grantWifi5ChannelList = device.permissions.grantWifi5ChannelList;
           let grantDeviceLanRead = device.permissions.grantLanRead;
           let grantDeviceLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
@@ -1544,6 +1545,8 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
           formAttr += ' data-has-extended-channels="'+
             grantWifiExtendedChannels+'"';
+          formAttr += ' data-5ghz-channels="'+
+            grantWifi5ChannelList.join('-')+'"';
           formAttr += ' data-device-model="'+
             (device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+
