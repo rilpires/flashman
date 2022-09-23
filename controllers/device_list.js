@@ -3840,11 +3840,20 @@ deviceListController.getSiteSurvey = function(req, res) {
       return apDevice;
     });
 
+    let channel2 = matchedDevice.wifi_last_channel;
+    let channel5 = matchedDevice.wifi_last_channel_5ghz;
+    if (!channel2) {
+      channel2 = matchedDevice.wifi_channel;
+    }
+    if (!channel5) {
+      channel5 = matchedDevice.wifi_channel_5ghz;
+    }
+
     return res.status(200).json({
       success: true,
       ap_devices: enrichedSiteSurvey,
-      wifi_last_channel: matchedDevice.wifi_last_channel,
-      wifi_last_channel_5ghz: matchedDevice.wifi_last_channel_5ghz,
+      wifi_last_channel: channel2,
+      wifi_last_channel_5ghz: channel5,
     });
   });
 };
