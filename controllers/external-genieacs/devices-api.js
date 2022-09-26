@@ -45,6 +45,7 @@ const tr069Models = {
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
+  multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
@@ -65,7 +66,6 @@ const tr069Models = {
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
-  zteZxhnF670lV9Model: require('./cpe-models/zte-zxhn-f670l-v9'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
