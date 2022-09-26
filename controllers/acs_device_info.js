@@ -702,8 +702,9 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
 
 // Collect sync data from cpe using genie database api - should then format it
 // according to legacy genieacs provision format and send it to syncDeviceData
-const fetchSyncResult =
-  async function(acsID, dataToFetch, parameterNames, cpe) {
+const fetchSyncResult = async function(
+  acsID, dataToFetch, parameterNames, cpe,
+) {
   let query = {_id: acsID};
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
