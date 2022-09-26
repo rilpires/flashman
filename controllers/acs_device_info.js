@@ -709,9 +709,9 @@ const fetchSyncResult =
   // Remove * from each field - projection does not work with wildcards
   parameterNames = parameterNames.map((p) => {
     if (useLastIndexOnWildcard) {
-      p.replace(/\.\*.*/g, '');
+      return p.replace(/\.\*.*/g, '');
     } else {
-      p.replace(/\*/g, '1');
+      return p.replace(/\*/g, '1');
     }
   });
   let projection = parameterNames.join(',');
