@@ -268,7 +268,8 @@ const getModelFields = function(
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
-    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
+    useLastIndexOnWildcard:
+      cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -303,9 +304,11 @@ const getDeviceFields = async function(args, callback) {
 const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
+  // Only used at scenarios where Flashman was installed directly on a host
+  // Undefined - Covers legacy host install cases
   if (shareLoad && numInstances > 1 &&
-      typeof process.env.FLM_IS_A_DOCKER_RUN !== 'undefined' &&
-      process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
+      (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
+      process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true')) {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn
     // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
