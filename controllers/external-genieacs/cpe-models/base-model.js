@@ -43,6 +43,7 @@ basicCPEModel.modelPermissions = function() {
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs
+      siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
       upnp: false, // will enable upnp configs (to be implemented)
@@ -102,6 +103,12 @@ basicCPEModel.modelPermissions = function() {
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
       objectExists: false, // special flag for mesh xml object
       setEncryptionForCable: false, // special flag for cable mesh
+    },
+    siteSurvey: {
+      requiresPolling: false, // Flashman must poll for result in genieacs
+      requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
+      survey2Index: '', // For devices with split state/result fields (2.4GHz)
+      survey5Index: '', // For devices with split state/result fields (5GHz)
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
@@ -329,6 +336,11 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
     ]);
   }
   return values;
+};
+
+// Used to convert the ping test result value for devices with different formats
+basicCPEModel.convertPingTestResult = function(latency) {
+  return latency; // No conversion necessary
 };
 
 // Used to convert the speed test result for devices that do not FullLoad
@@ -679,6 +691,18 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+      },
+      sitesurvey: {
+        // Some of these fields have no defaults, as they are vendor-specific
+        root: '',
+        diag_state: 'DiagnosticsState',
+        result: 'Result',
+        mac: 'BSSID',
+        ssid: 'SSID',
+        channel: 'Channel',
+        signal: 'RSSI',
+        band: 'BandWidth',
+        mode: 'Standard',
       },
     },
   };

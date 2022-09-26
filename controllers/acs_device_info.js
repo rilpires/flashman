@@ -702,8 +702,9 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
 
 // Collect sync data from cpe using genie database api - should then format it
 // according to legacy genieacs provision format and send it to syncDeviceData
-const fetchSyncResult =
-  async function(acsID, dataToFetch, parameterNames, cpe) {
+const fetchSyncResult = async function(
+  acsID, dataToFetch, parameterNames, cpe,
+) {
   let query = {_id: acsID};
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
@@ -1310,6 +1311,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Collect Wi-Fi channel information, converting auto mode
   if (data.wifi2.channel && data.wifi2.channel.value) {
     let channel2 = data.wifi2.channel.value.toString();
+    if (channel2 !== '0' && channel2.match(/[0-9]+/)) {
+      device.wifi_last_channel = channel2;
+    }
     if (data.wifi2.auto && typeof data.wifi2.auto.value !== 'undefined') {
       // Explicit auto option, use that
       if (typeof data.wifi2.auto.value === 'boolean') {
@@ -1334,6 +1338,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (data.wifi5.channel && data.wifi5.channel.value) {
     let channel5 = data.wifi5.channel.value.toString();
+    if (channel5 !== '0' && channel5.match(/[0-9]+/)) {
+      device.wifi_last_channel_5ghz = channel5;
+    }
     if (data.wifi5.auto && typeof data.wifi5.auto.value !== 'undefined') {
       // Explicit auto option, use that
       if (typeof data.wifi5.auto.value === 'boolean') {
@@ -1648,17 +1655,7 @@ acsDeviceInfoController.requestDiagnosticsResults = async function(req, res) {
   // We don't need to wait to free up tr-069 session
   res.status(200).json({success: true});
 
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let fields = cpe.getModelFields();
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [
-      fields.diagnostics.ping.root, fields.diagnostics.speedtest.root,
-    ],
-  };
-  TasksAPI.addTask(
-    acsID, task, acsDiagnosticsHandler.fetchDiagnosticsFromGenie,
-  );
+  acsDiagnosticsHandler.triggerDiagnosticResults(device);
 };
 
 acsDeviceInfoController.requestLogs = function(device) {
