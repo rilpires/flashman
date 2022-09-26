@@ -10,6 +10,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.lan.blockLANDevices = true;
   permissions.lan.LANDeviceHasSNR = true;
@@ -92,6 +93,11 @@ multilaserModel.getModelFields = function() {
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
+  fields.diagnostics.sitesurvey.band = 'Bandwidth';
   return fields;
 };
 
