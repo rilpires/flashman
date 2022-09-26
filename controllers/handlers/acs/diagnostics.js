@@ -549,24 +549,24 @@ const startSiteSurveyDiagnose = async function(acsID) {
   // same time, so we split into two tasks based on the cpe flag
   let task = {name: 'setParameterValues'};
   if (cpe.modelPermissions().siteSurvey.requiresSeparateTasks) {
-    task.parameterValues = [params[0], 'Requested', 'xsd:string'];
+    task.parameterValues = [[params[0], 'Requested', 'xsd:string']];
   } else {
     task.parameterValues = params.map((p)=>[p, 'Requested', 'xsd:string']);
   }
   let result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
-    saveCurrentDiagnostic(device, 'error', false);
+    return saveCurrentDiagnostic(device, 'error', false);
   }
 
   // Send the second field if we only sent one of them above
   if (cpe.modelPermissions().siteSurvey.requiresSeparateTasks) {
     let task = {
       name: 'setParameterValues',
-      parameterValues: [params[1], 'Requested', 'xsd:string'],
+      parameterValues: [[params[1], 'Requested', 'xsd:string']],
     };
     let result = await TasksAPI.addTask(acsID, task);
     if (!result.success) {
-      saveCurrentDiagnostic(device, 'error', false);
+      return saveCurrentDiagnostic(device, 'error', false);
     }
   }
 
