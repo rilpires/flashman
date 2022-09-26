@@ -10,9 +10,14 @@ multilaserModel.modelPermissions = function() {
   permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.siteSurvey = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.requiresSeparateTasks = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.list5ghzChannels = [
@@ -21,12 +26,6 @@ multilaserModel.modelPermissions = function() {
     149, 153, 157, 161,
   ];
   permissions.wifi.modeWrite = false;
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
-  ];
   permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
@@ -113,6 +112,10 @@ multilaserModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   return fields;
 };
 

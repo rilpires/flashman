@@ -2,26 +2,25 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145X6'};
+huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8546V5'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.features.speedTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
-  permissions.features.speedTest = true;
-  permissions.lan.LANDeviceHasSNR = true;
-  permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.wan.speedTestLimit = 850;
-  permissions.wifi.axWiFiMode = true;
-  permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
-  ];
+  permissions.features.speedTest = true;
+  permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.speedTestLimit = 800;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48,
+    52, 56, 60, 64, 149, 153, 157, 161];
   permissions.firmwareUpgrades = {
-    'V5R020C00S060': [],
+    'V5R019C00S050': [],
   };
   return permissions;
 };
@@ -44,7 +43,6 @@ huaweiModel.convertWifiMode = function(mode) {
     case '11ac':
       return '11ac';
     case '11ax':
-      return '11ax';
     default:
       return '';
   }
@@ -61,7 +59,7 @@ huaweiModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '3';
     case 'auto':
-      return (is5ghz) ? '3' : '0';
+      return '0';
     default:
       return '';
   }
@@ -121,6 +119,7 @@ huaweiModel.getModelFields = function() {
   fields.wifi5.password = fields.wifi5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
   );
+  delete fields.diagnostics.speedtest.num_of_conn;
   fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.mesh2.password = fields.mesh2.password.replace(
@@ -140,9 +139,8 @@ huaweiModel.getModelFields = function() {
     '3.BasicDataTransmitRates';
   fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.3.LowerLayers';
-
-  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice.1'+
-    '.WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+    '.1.WiFi.NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   fields.diagnostics.sitesurvey.mode = 'OperatingStandards';

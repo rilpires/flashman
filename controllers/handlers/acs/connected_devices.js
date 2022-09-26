@@ -61,7 +61,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -104,8 +104,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         success = false;
       }
       if (success) {
-        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
-        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
+        let iface2 = fields.wifi2.channel.replace('.Channel', '');
+        let iface5 = fields.wifi5.channel.replace('.Channel', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -195,6 +195,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
+            ).replace(
+              /Radio\.[0-9*]+\./g,
+              'Radio.' + iface + '.',
             );
             let ifaceFreq;
             if (iface == iface2) {

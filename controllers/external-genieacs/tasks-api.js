@@ -278,6 +278,13 @@ genie.putPreset = async function(preset) {
   }, presetjson);
 };
 
+genie.deletePreset = async function(presetId) {
+  return genie.request({
+    method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+    path: `/presets/${encodeURIComponent(presetId)}`,
+  });
+};
+
 genie.addOrDeleteObject = async function(
   deviceid, acObject, taskType, callback=null,
 ) {

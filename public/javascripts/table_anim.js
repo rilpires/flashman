@@ -1408,6 +1408,7 @@ anlixDocumentReady.add(function() {
             device.permissions.grantWifiPowerHiddenIpv6Box;
           let grantWifiExtendedChannels =
             device.permissions.grantWifiExtendedChannels;
+          let grantWifi5ChannelList = device.permissions.grantWifi5ChannelList;
           let grantDeviceLanRead = device.permissions.grantLanRead;
           let grantDeviceLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
@@ -1544,6 +1545,8 @@ anlixDocumentReady.add(function() {
           formAttr += ' data-has-5ghz="'+grantWifi5ghz+'"';
           formAttr += ' data-has-extended-channels="'+
             grantWifiExtendedChannels+'"';
+          formAttr += ' data-5ghz-channels="'+
+            grantWifi5ChannelList.join('-')+'"';
           formAttr += ' data-device-model="'+
             (device.model ? device.model : '')+'"';
           formAttr += ' data-device-version="'+
@@ -1680,9 +1683,7 @@ anlixDocumentReady.add(function() {
             sideMenu[idxMenu] += devicesAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
-          if (!isTR069 && (isSuperuser || grantSiteSurveyAccess) &&
-              grantSiteSurvey
-          ) {
+          if ((isSuperuser || grantSiteSurveyAccess) && grantSiteSurvey) {
             sideMenu[idxMenu] += siteSurveyAction;
             idxMenu = ((idxMenu == 0) ? 1 : 0);
           }
@@ -3260,14 +3261,12 @@ anlixDocumentReady.add(function() {
           let row = $('[id="' + macaddr + '"]');
           if (data.sysuptime) {
             row.find('.device-sys-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.sysuptime)),
             );
           }
           if (data.wanuptime) {
             row.find('.device-wan-up-time')
-            .removeClass('grey-text pending-update')
             .html(
               secondsTimeSpanToHMS(parseInt(data.wanuptime)),
             );
@@ -3300,9 +3299,14 @@ anlixDocumentReady.add(function() {
                 `<div class="badge bg-danger">${st}</div>`;
             }
             row.find('.device-pon-signal')
-            .removeClass('grey-text pending-update')
             .html(ponSignalRxPower+'<br>'+ponSignalStatus);
           }
+          row.find('.device-sys-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-wan-up-time')
+            .removeClass('grey-text pending-update');
+          row.find('.device-pon-signal')
+            .removeClass('grey-text pending-update');
         });
       },
     });

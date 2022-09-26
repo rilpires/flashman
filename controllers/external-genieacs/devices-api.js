@@ -34,8 +34,10 @@ const tr069Models = {
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
+  huaweiHS8546V5Model: require('./cpe-models/huawei-hs8546v5'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
+  huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
@@ -43,6 +45,7 @@ const tr069Models = {
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
+  multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
@@ -60,6 +63,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
@@ -114,6 +118,10 @@ const instantiateCPEByModelFromDevice = function(device) {
 const instantiateCPEByModel = function(
   modelSerial, modelName, fwVersion, hwVersion,
 ) {
+  // Treat special cases where fwVersion and hwVersion are invalid
+  if (!fwVersion) fwVersion = '';
+  if (!hwVersion) hwVersion = '';
+  // Giant if-chain looking for model - sorted alphabetically by comments
   if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
@@ -158,12 +166,18 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG8245Q2') {
     // Huawei HG8245Q2
     return {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
+  } else if (modelName === 'HS8546V5') {
+    // Huawei HS8546V5
+    return {success: true, cpe: tr069Models.huaweiHS8546V5Model};
   } else if (['WS5200-21', 'WS5200-40'].includes(modelName)) {
     // Huawei WS5200 v2 / v3
     return {success: true, cpe: tr069Models.huaweiWS5200Model};
   } else if (modelName === 'WS7001-40') {
     // Huawei AX2
     return {success: true, cpe: tr069Models.huaweiWS7001Model};
+  } else if (modelName === 'WS7000-42') {
+    // Huawei AX2S
+    return {success: true, cpe: tr069Models.huaweiWS7000Model};
   } else if (modelName === 'WS7100-30') {
     // Huawei AX3
     return {success: true, cpe: tr069Models.huaweiWS7100Model};
@@ -182,6 +196,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
+  } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
+    // Multilaser ZTE F670L V9.0
+    return {success: true, cpe: tr069Models.multilaserF670LV9Model};
   } else if (modelName === 'F670L') {
     // Multilaser ZTE F670L
     return {success: true, cpe: tr069Models.multilaserF670LModel};
@@ -236,6 +253,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'HC220-G5') {
+    // TP-Link HC220-G5
+    return {success: true, cpe: tr069Models.tplinkHC220G5Model};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
@@ -259,6 +279,7 @@ const getModelFields = function(
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
+    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -286,6 +307,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 
