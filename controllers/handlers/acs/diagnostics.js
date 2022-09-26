@@ -235,7 +235,7 @@ const calculateSiteSurveyDiagnostic = async function(
   ) {
     device.current_diagnostic.recursion_state--;
     saveCurrentDiagnostic(device, 'initiating', true);
-    doPoolingInState(device.acs_id, stateField);
+    doPoolingInState(device.acs_id, rootField);
     return;
   }
   // Otherwise, if the diagnostic is not complete, we save the result as error
@@ -573,16 +573,16 @@ const startSiteSurveyDiagnose = async function(acsID) {
   // Some CPEs don't respond with a diagnostic success event, so we manually
   // poll for the result state
   if (cpe.modelPermissions().siteSurvey.requiresPolling) {
-    doPoolingInState(acsID, stateField);
+    doPoolingInState(acsID, rootField);
   }
 };
 
-const doPoolingInState = async function(acsID, stateField) {
+const doPoolingInState = async function(acsID, rootField) {
   // Wait for 5s to pool results
   await new Promise((resolve) => setTimeout(resolve, 5000));
   let task = {
     name: 'getParameterValues',
-    parameterNames: stateField,
+    parameterNames: [rootField],
   };
   TasksAPI.addTask(acsID, task, fetchDiagnosticsFromGenie);
   return;
