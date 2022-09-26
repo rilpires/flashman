@@ -520,7 +520,7 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
 const startSiteSurveyDiagnose = async function(acsID) {
   let device;
   try {
-    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+    device = await DeviceModel.findOne({acs_id: acsID});
   } catch (err) {
     return {success: false, message: err.message + ' in ' + acsID};
   }
