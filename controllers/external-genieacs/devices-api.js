@@ -118,6 +118,10 @@ const instantiateCPEByModelFromDevice = function(device) {
 const instantiateCPEByModel = function(
   modelSerial, modelName, fwVersion, hwVersion,
 ) {
+  // Treat special cases where fwVersion and hwVersion are invalid
+  if (!fwVersion) fwVersion = '';
+  if (!hwVersion) hwVersion = '';
+  // Giant if-chain looking for model - sorted alphabetically by comments
   if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     return {success: true, cpe: tr069Models.datacomDM985Model};
