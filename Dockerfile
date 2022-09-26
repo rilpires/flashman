@@ -1,4 +1,4 @@
-FROM node:12.22.12-bullseye-slim AS stage-1
+FROM node:12.22.12-bullseye-slim
 
 WORKDIR /app
 
