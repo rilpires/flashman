@@ -192,7 +192,10 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     return {success: true, cpe: tr069Models.multilaserF660Model};
-  } else if (modelName === 'F670L' && hwVersion.includes('V1')) {
+  } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
+    // Multilaser ZTE F670L V9.0
+    return {success: true, cpe: tr069Models.multilaserF670LV9Model};
+  } else if (modelName === 'F670L') {
     // Multilaser ZTE F670L
     return {success: true, cpe: tr069Models.multilaserF670LModel};
   } else if (modelName === 'F680') {
@@ -255,9 +258,6 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     return {success: true, cpe: tr069Models.zteZT199Model};
-  } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
-    // ZTE ZXHN F670L V9.0
-    return {success: true, cpe: tr069Models.zteZxhnF670lV9Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     return {success: true, cpe: tr069Models.zyxelEMG3524Model};
