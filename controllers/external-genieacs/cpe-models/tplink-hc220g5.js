@@ -11,6 +11,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.stun = false;
   permissions.wan.speedTestLimit = 900;
@@ -163,6 +164,11 @@ tplinkModel.getModelFields = function() {
   });
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
+
+  fields.diagnostics.sitesurvey.root = 'Device.WiFi.'+
+    'NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   return fields;
 };
 

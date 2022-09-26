@@ -157,8 +157,9 @@ const getOnlineCountMesh = function(query, lastHour) {
   });
 };
 
-deviceListController.sendCustomPing
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomPing = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -218,8 +219,9 @@ deviceListController.sendCustomPing
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendGenericPing
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericPing = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -249,8 +251,9 @@ deviceListController.sendGenericPing
   return await initiatePingCommand(device, username, sessionID);
 };
 
-deviceListController.sendCustomSpeedTest
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomSpeedTest = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -323,8 +326,9 @@ deviceListController.sendCustomSpeedTest
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericSpeedTest
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericSpeedTest = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -366,8 +370,9 @@ deviceListController.sendGenericSpeedTest
   return await initiateSpeedTest(device, username, sessionID);
 };
 
-deviceListController.sendCustomTraceRoute
-  = async function(device, reqBody, username, sessionID) {
+deviceListController.sendCustomTraceRoute = async function(
+  device, reqBody, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -430,8 +435,9 @@ deviceListController.sendCustomTraceRoute
   return await initiateTracerouteTest(device, username, sessionID);
 };
 
-deviceListController.sendGenericTraceRoute
-  = async function(device, username, sessionID) {
+deviceListController.sendGenericTraceRoute = async function(
+  device, username, sessionID,
+) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
     return err;
@@ -453,6 +459,31 @@ deviceListController.sendGenericTraceRoute
   };
 
   return await initiateTracerouteTest(device, username, sessionID);
+};
+
+deviceListController.sendGenericSiteSurvey = async function(
+  device, username, sessionID,
+) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
+  }
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'sitesurvey',
+    stage: 'initiating',
+    customized: false,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    user: username,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  return await initiateSiteSurvey(device, username, sessionID);
 };
 
 // This should be called right after sendCustomPingTest or sendGenericPingTest
@@ -537,6 +568,48 @@ const initiateSpeedTest = async function(device, username, sessionID) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], username);
     }
+    return {success: true};
+  }
+};
+
+// This should be called right after sendGenericSiteSurvey
+// Common validations and device.save goes here
+const initiateSiteSurvey = async function(device, username, sessionID) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions.grantSiteSurvey) {
+    return {
+      success: false,
+      message: t('cpeWithoutCommand'),
+    };
+  }
+  if (device.use_tr069) {
+    // TR-069 devices must have SSID enabled to start site survey
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+    if (
+      !device.wifi_state &&
+      (!cpe.modelPermissions().wifi.dualBand || !device.wifi_state_5ghz)
+    ) {
+      return {
+        success: false,
+        message: t('showsitesurveyTR069WarningInfo'),
+      };
+    }
+  }
+
+  // Validated from here. Saving device & validating stuffs
+  await device.save().catch((err) => {
+    console.log('Error saving device after site survey command: ' + err);
+  });
+  if (sessionID && sio.anlixConnections[sessionID]) {
+    sio.anlixWaitForSiteSurveyNotification(
+      sessionID, device._id.toUpperCase(),
+    );
+  }
+
+  if (device.use_tr069) {
+    return await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
+  } else {
+    mqtt.anlixMessageRouterSiteSurvey(device._id.toUpperCase());
     return {success: true};
   }
 };
@@ -1653,6 +1726,8 @@ deviceListController.sendCommandMsg = async function(req, res) {
       return await deviceListController.sendGenericPingAPI(req, res);
     case 'speedtest':
       return await deviceListController.sendGenericSpeedTestAPI(req, res);
+    case 'sitesurvey':
+      return await deviceListController.sendGenericSiteSurveyAPI(req, res);
   }
 
   let devRes = await commonDeviceFind(req);
@@ -1883,19 +1958,6 @@ deviceListController.sendCommandMsg = async function(req, res) {
           });
         }
         break;
-      case 'sitesurvey':
-        if (!permissions.grantSiteSurvey) {
-          return res.status(200).json({
-            success: false,
-            message: t('cpeWithoutCommand'),
-          });
-        }
-        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
-          sio.anlixWaitForSiteSurveyNotification(
-            req.sessionID, req.params.id.toUpperCase());
-        }
-        mqtt.anlixMessageRouterSiteSurvey(req.params.id.toUpperCase());
-        break;
       default:
         // Message not implemented
         console.log('REST API MQTT Message not recognized (' + msgtype + ')');
@@ -1909,7 +1971,6 @@ deviceListController.sendCommandMsg = async function(req, res) {
     return res.status(200).json(devRes);
   }
 };
-
 
 deviceListController.getFirstBootLog = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
@@ -3779,11 +3840,20 @@ deviceListController.getSiteSurvey = function(req, res) {
       return apDevice;
     });
 
+    let channel2 = matchedDevice.wifi_last_channel;
+    let channel5 = matchedDevice.wifi_last_channel_5ghz;
+    if (!channel2) {
+      channel2 = matchedDevice.wifi_channel;
+    }
+    if (!channel5) {
+      channel5 = matchedDevice.wifi_channel_5ghz;
+    }
+
     return res.status(200).json({
       success: true,
       ap_devices: enrichedSiteSurvey,
-      wifi_last_channel: matchedDevice.wifi_last_channel,
-      wifi_last_channel_5ghz: matchedDevice.wifi_last_channel_5ghz,
+      wifi_last_channel: channel2,
+      wifi_last_channel_5ghz: channel5,
     });
   });
 };
@@ -4294,6 +4364,17 @@ deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericTraceRoute(
+      devRes.matchedDevice, req.user.name, req.sessionID,
+    );
+    return res.status(200).json(commandResponse);
+  } else {
+    return res.status(200).json(devRes);
+  }
+};
+deviceListController.sendGenericSiteSurveyAPI = async function(req, res) {
+  let devRes = await commonDeviceFind(req);
+  if (devRes.success) {
+    let commandResponse = await deviceListController.sendGenericSiteSurvey(
       devRes.matchedDevice, req.user.name, req.sessionID,
     );
     return res.status(200).json(commandResponse);

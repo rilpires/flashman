@@ -12,6 +12,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
@@ -19,6 +20,8 @@ intelbrasModel.modelPermissions = function() {
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
+  permissions.siteSurvey.survey2Index = '6';
+  permissions.siteSurvey.survey5Index = '1';
   permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.bandWrite2 = false;
   permissions.wifi.bandWrite5 = false;
@@ -120,6 +123,9 @@ intelbrasModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ITBS_NeighborAP';
   return fields;
 };
 
