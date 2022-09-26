@@ -1311,6 +1311,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Collect Wi-Fi channel information, converting auto mode
   if (data.wifi2.channel && data.wifi2.channel.value) {
     let channel2 = data.wifi2.channel.value.toString();
+    if (channel2 !== '0' && channel2.match(/[0-9]+/)) {
+      device.wifi_last_channel = channel2;
+    }
     if (data.wifi2.auto && typeof data.wifi2.auto.value !== 'undefined') {
       // Explicit auto option, use that
       if (typeof data.wifi2.auto.value === 'boolean') {
@@ -1335,6 +1338,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (data.wifi5.channel && data.wifi5.channel.value) {
     let channel5 = data.wifi5.channel.value.toString();
+    if (channel5 !== '0' && channel5.match(/[0-9]+/)) {
+      device.wifi_last_channel_5ghz = channel5;
+    }
     if (data.wifi5.auto && typeof data.wifi5.auto.value !== 'undefined') {
       // Explicit auto option, use that
       if (typeof data.wifi5.auto.value === 'boolean') {
