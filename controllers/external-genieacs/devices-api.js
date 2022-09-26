@@ -36,6 +36,7 @@ const tr069Models = {
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
+  huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
@@ -60,6 +61,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
@@ -164,6 +166,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'WS7001-40') {
     // Huawei AX2
     return {success: true, cpe: tr069Models.huaweiWS7001Model};
+  } else if (modelName === 'WS7000-42') {
+    // Huawei AX2S
+    return {success: true, cpe: tr069Models.huaweiWS7000Model};
   } else if (modelName === 'WS7100-30') {
     // Huawei AX3
     return {success: true, cpe: tr069Models.huaweiWS7100Model};
@@ -236,6 +241,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     return {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'HC220-G5') {
+    // TP-Link HC220-G5
+    return {success: true, cpe: tr069Models.tplinkHC220G5Model};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     return {success: true, cpe: tr069Models.uneeStavixModel};
@@ -259,6 +267,7 @@ const getModelFields = function(
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
+    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -286,6 +295,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 

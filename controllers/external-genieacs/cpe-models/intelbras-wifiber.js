@@ -8,8 +8,12 @@ intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
+  permissions.features.portForward = true;
   permissions.features.ponSignal = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
@@ -19,6 +23,10 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.stavixXMLConfig = {
+    portForward: true,
+    webCredentials: false,
+  };
   permissions.firmwareUpgrades = {
     'V210414': ['1.0-210917'],
     '1.0-210917': [],
@@ -90,6 +98,12 @@ intelbrasModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.X_ITBS_WiFi'+
+    '.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 

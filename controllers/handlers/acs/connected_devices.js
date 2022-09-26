@@ -61,7 +61,7 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
   let hostsField = fields.devices.hosts;
   let assocField = fields.devices.associated;
-  assocField = assocField.split('.').slice(0, -2).join('.');
+  assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
@@ -104,8 +104,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         success = false;
       }
       if (success) {
-        let iface2 = fields.wifi2.ssid.replace('.SSID', '');
-        let iface5 = fields.wifi5.ssid.replace('.SSID', '');
+        let iface2 = fields.wifi2.channel.replace('.Channel', '');
+        let iface5 = fields.wifi5.channel.replace('.Channel', '');
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};
@@ -150,10 +150,14 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // check if it has the tree of connected devices. If so, we store that
           // device as non-active and revisit this information later. If not, we
           //  store that device as active to preserve legacy behavior
-          if (cpe.modelPermissions().lan.LANDeviceCanTrustActive) {
-            let hostActiveKey = fields.devices.host_active.replace('*', i);
+          let hostActiveKey = fields.devices.host_active.replace('*', i);
+          hostActiveKey += '._value';
+          if (
+            cpe.modelPermissions().lan.LANDeviceCanTrustActive &&
+            utilHandlers.checkForNestedKey(data, hostActiveKey)
+          ) {
             let hostActive = utilHandlers.getFromNestedKey(
-              data, hostActiveKey+'._value',
+              data, hostActiveKey,
             );
             if (typeof hostActive === 'string') {
               let trueValues = ['true', '1'];
@@ -191,7 +195,25 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             assocField = fields.devices.associated.replace(
               /WLANConfiguration\.[0-9*]+\./g,
               'WLANConfiguration.' + iface + '.',
+            ).replace(
+              /Radio\.[0-9*]+\./g,
+              'Radio.' + iface + '.',
             );
+            let ifaceFreq;
+            if (iface == iface2) {
+              ifaceFreq = 2.4;
+            } else if (iface == iface5) {
+              ifaceFreq = 5;
+            }
+            if (
+              !utilHandlers.checkForNestedKey(data, assocField) && ifaceFreq
+            ) {
+              // Device missing associated fields for this interface
+              // Mark devices for this interface as active, missing data
+              devices.forEach((d)=>{
+                if (d.wifi && d.wifi_freq === ifaceFreq) d.wifiActive = true;
+              });
+            }
             let assocIndexes = utilHandlers.getFromNestedKey(data, assocField);
             if (assocIndexes) {
               assocIndexes = Object.keys(assocIndexes);
@@ -219,13 +241,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               // list for that device, which means the connection for that host
               // is active
               device.wifiActive = true;
-              // Mark device as a wifi device
               device.wifi = true;
-              if (iface == iface2) {
-                device.wifi_freq = 2.4;
-              } else if (iface == iface5) {
-                device.wifi_freq = 5;
-              }
+              device.wifi_freq = ifaceFreq;
               // Collect rssi, if available
               if (fields.devices.host_rssi) {
                 let rssiKey = fields.devices.host_rssi;

@@ -8,7 +8,10 @@ tendaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
   permissions.wan.pingTestSingleAttempt = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48];
   permissions.wifi.bandRead2 = false;
   permissions.wifi.bandRead5 = false;
@@ -18,6 +21,10 @@ tendaModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.stavixXMLConfig = {
+    portForward: true,
+    webCredentials: true,
+  };
   permissions.firmwareUpgrades = {
     'v1.0.1': [],
   };

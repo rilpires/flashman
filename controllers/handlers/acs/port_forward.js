@@ -4,6 +4,7 @@ const TasksAPI = require('../../external-genieacs/tasks-api');
 const acsXMLConfigHandler = require('./xmlconfig.js');
 const utilHandlers = require('../util.js');
 const http = require('http');
+const debug = require('debug')('ACS_DEVICES_MEASURES');
 
 let acsPortForwardHandler = {};
 
@@ -189,8 +190,69 @@ acsPortForwardHandler.checkPortForwardRules = async function(device) {
   }
 };
 
+acsPortForwardHandler.getLastIndexInterface = async function(
+  device, acsID, rulesDiffLength, key,
+) {
+  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+key;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  let req = http.request(options, (resp)=>{
+    resp.setEncoding('utf8');
+    let data = '';
+    let lastIndex = 0;
+    resp.on('data', (chunk)=>data+=chunk);
+    resp.on('end', async () => {
+      if (data.length > 0) {
+        try {
+          data = JSON.parse(data)[0];
+        } catch (err) {
+          debug(err);
+          data = '';
+        }
+      }
+      let success = false;
+      let wildcardFlag = cpe.modelPermissions().useLastIndexOnWildcard;
+      if (utilHandlers.checkForNestedKey(data, key, wildcardFlag)) {
+        let ret = utilHandlers.getLastIndexOfNestedKey(data, key, wildcardFlag);
+        success = ret.success;
+        lastIndex = ret.lastIndex;
+      }
+      if (success && lastIndex) {
+        return acsPortForwardHandler.changePortForwardRules(
+          device, rulesDiffLength, key + '.' + lastIndex + '.',
+        );
+      }
+    });
+  });
+  req.end();
+};
+
+acsPortForwardHandler.getIPInterface = async function(
+  device, rulesDiffLength, key,
+) {
+  let acsID = device.acs_id;
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [key],
+  };
+  let callback = (acsID) => acsPortForwardHandler.getLastIndexInterface(
+    device, acsID, rulesDiffLength, key,
+  );
+  let result = await TasksAPI.addTask(acsID, task, callback);
+  if (!result || !result.success) {
+    return;
+  }
+};
+
 acsPortForwardHandler.changePortForwardRules = async function(
-  device, rulesDiffLength,
+  device, rulesDiffLength, interfaceValue = null,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -200,9 +262,20 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let acsID = device.acs_id;
   let model = device.model;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
+  let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
-  if (cpe.modelPermissions().usesStavixXMLConfig) {
+  if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
+    return;
+  }
+  // For TP Link HC220 G5 device, it is necessary to pass the
+  // last index interface tree
+  if (cpe.modelPermissions().needInterfaceInPortFoward &&
+      interfaceValue === null) {
+    acsPortForwardHandler.getIPInterface(
+      device, rulesDiffLength, interfaceRoot,
+    );
     return;
   }
   let fields = cpe.getModelFields();
@@ -288,8 +361,8 @@ acsPortForwardHandler.changePortForwardRules = async function(
     const iterateTemplate = portMappingTemplate + '.' + (i+1) + '.';
     Object.entries(fields.port_mapping_fields).forEach((v) => {
       updateTasks.parameterValues.push([
-        iterateTemplate+v[1][0],
-        device.port_mapping[i][v[1][1]], v[1][2]]);
+        iterateTemplate+v[1][0], device.port_mapping[i][v[1][1]], v[1][2],
+      ]);
     });
     Object.entries(fields.port_mapping_values).forEach((v) => {
       if (v[0] == 'description') {
@@ -297,12 +370,20 @@ acsPortForwardHandler.changePortForwardRules = async function(
         v[1][1] = ruleName;
       }
       updateTasks.parameterValues.push([
-        iterateTemplate+v[1][0], v[1][1], v[1][2]]);
+        iterateTemplate+v[1][0], v[1][1], v[1][2],
+      ]);
     });
+    if (cpe.modelPermissions().needInterfaceInPortFoward && interfaceValue) {
+      updateTasks.parameterValues.push([
+        interfaceKey,
+        interfaceValue,
+        'xsd:string',
+      ]);
+    }
   }
   // just send tasks if there are port mappings to fill/set
   if (updateTasks.parameterValues.length > 0) {
-    console.log('[#] -> U('+updateTasks.parameterValues.length+') in '+acsID);
+    console.log('[#] -> U('+currentLength+') in '+acsID);
     await TasksAPI.addTask(acsID, updateTasks);
   }
 };

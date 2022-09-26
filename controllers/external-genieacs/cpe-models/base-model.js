@@ -43,6 +43,7 @@ basicCPEModel.modelPermissions = function() {
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs
+      siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
       upnp: false, // will enable upnp configs (to be implemented)
@@ -74,6 +75,7 @@ basicCPEModel.modelPermissions = function() {
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
+      hasUptimeField: true, // flag to handle devices that don't have uptime
     },
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
@@ -102,8 +104,19 @@ basicCPEModel.modelPermissions = function() {
       objectExists: false, // special flag for mesh xml object
       setEncryptionForCable: false, // special flag for cable mesh
     },
+    siteSurvey: {
+      requiresPolling: false, // Flashman must poll for result in genieacs
+      requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
+      survey2Index: '', // For devices with split state/result fields (2.4GHz)
+      survey5Index: '', // For devices with split state/result fields (5GHz)
+    },
     onlineAfterReset: false, // flag for devices that stay online post reset
-    usesStavixXMLConfig: false, // flag for stavix-like models with xml config
+    useLastIndexOnWildcard: false, // flag for devices that uses last index,
+    needInterfaceInPortFoward: false, // flag for devices that need interf tree
+    stavixXMLConfig: {
+      portForward: false, // uses xml for port forward editing
+      webCredentials: false, // uses xml for web credentials editing
+    },
   };
 };
 
@@ -264,6 +277,18 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
+basicCPEModel.convertIGDtoDevice = function(fields) {
+  Object.keys(fields).forEach((k) => {
+    if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {
+      return basicCPEModel.convertIGDtoDevice(fields[k]);
+    } else if (!Array.isArray(fields[k])) {
+      fields[k] = fields[k].replace(/InternetGatewayDevice/g, 'Device');
+    }
+  });
+
+  return fields;
+};
+
 basicCPEModel.getWPAEncryptionMode = function() {
   return '';
 };
@@ -311,6 +336,11 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
     ]);
   }
   return values;
+};
+
+// Used to convert the ping test result value for devices with different formats
+basicCPEModel.convertPingTestResult = function(latency) {
+  return latency; // No conversion necessary
 };
 
 // Used to convert the speed test result for devices that do not FullLoad
@@ -398,6 +428,10 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
     return 'wifi5';
   }
   return 'cable';
+};
+
+basicCPEModel.convertPPPoEEnable = function(value) {
+  return value;
 };
 
 // Used when fetching connected devices' rssi data, it might need conversions
@@ -619,8 +653,6 @@ basicCPEModel.getModelFields = function() {
         'AssociatedDevice.*.LastDataTransmitRate',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice',
-      assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
-        'TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
         'AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
@@ -659,6 +691,18 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+      },
+      sitesurvey: {
+        // Some of these fields have no defaults, as they are vendor-specific
+        root: '',
+        diag_state: 'DiagnosticsState',
+        result: 'Result',
+        mac: 'BSSID',
+        ssid: 'SSID',
+        channel: 'Channel',
+        signal: 'RSSI',
+        band: 'BandWidth',
+        mode: 'Standard',
       },
     },
   };

@@ -32,26 +32,71 @@ utilHandlers.getExtRefPattern = function(kind, data) {
   }
 };
 
-utilHandlers.checkForNestedKey = function(data, key) {
+const orderNumericGenieKeys = function(keys) {
+  let onlyNumbers = keys.filter((k)=>!k.includes('_') && !isNaN(parseInt(k)));
+  return onlyNumbers.sort((a, b)=>a-b);
+};
+
+utilHandlers.checkForNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return false;
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current.hasOwnProperty(splitKey[i])) return false;
+    if (splitKey[i] === '*') {
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
+      if (useLastIndexOnWildcard) {
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
+      }
+      splitKey[i] = targetIndex;
+    }
+    if (!current.hasOwnProperty(splitKey[i])) {
+      return false;
+    }
     current = current[splitKey[i]];
   }
   return true;
 };
 
-utilHandlers.getFromNestedKey = function(data, key) {
+utilHandlers.getFromNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
   if (!data) return undefined;
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
-    if (!current.hasOwnProperty(splitKey[i])) return undefined;
+    if (splitKey[i] === '*') {
+      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let targetIndex;
+      if (useLastIndexOnWildcard) {
+        targetIndex = orderedKeys[orderedKeys.length - 1];
+      } else {
+        targetIndex = orderedKeys[0];
+      }
+      splitKey[i] = targetIndex;
+    }
+    if (!current.hasOwnProperty(splitKey[i])) {
+      return undefined;
+    }
     current = current[splitKey[i]];
   }
   return current;
+};
+
+utilHandlers.getLastIndexOfNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
+  let orderedKeys = orderNumericGenieKeys(Object.keys(tree));
+  let lastIndex = orderedKeys.length - 1;
+  return {
+    success: (lastIndex >= 0),
+    lastIndex: (lastIndex >= 0) ? orderedKeys[lastIndex] : undefined,
+  };
 };
 
 utilHandlers.isJSONObject = function(val) {

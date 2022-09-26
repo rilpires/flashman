@@ -21,6 +21,7 @@
 	"acsPingError": "Error: no se pudo activar la medida de ping TR-069 ({{errorline}})",
 	"acsSpeedTestFileUnavailable": "Error: no se pudo obtener el archivo de medida más rápido ({{errorline}})",
 	"acsSpeedTestError": "Error: no se pudo activar la prueba de velocidad TR-069 ({{errorline}})",
+	"acsSiteSurveyError": "Error: No se pudo disparar la inspección del sitio TR-069 ({{errorline}})",
 	"nothingToReport": "Ninguno para informar ({{errorline}})",
 	"noMoreTr069Licences": "Su cuenta no tiene licencias para TR-069 CPE. Comuníquese con su representante de ventas ({{errorline}})",
 	"tr069LicencesLeft": "A su cuenta solo le quedan {{n}} licencias CPE TR-069. Comuníquese con su representante de ventas ({{errorline}})",
@@ -643,6 +644,7 @@
 	"neighboringNetworksFor": "Redes alrededor",
 	"networksInXGhz": "Redes en {{-x}}GHz",
 	"showsitesurveyAlertInfo": "La recomendación del mejor canal debe cambiarse manualmente. El mecanismo \"auto\" del CPE puede diferir de la recomendación que se presenta aquí",
+	"showsitesurveyTR069WarningInfo": "En el redes alrededor para TR-069, los Wi-Fis deben estar habilitados para que la consulta funcione.",
 	"updatingNeighbouringNetworks...": "Actualizando redes alrededor de...",
 	"noNeighbouringNetworksFound": "No se encontraron redes vecinas",
 	"Channel=X": "Canal: {{-x}}",
@@ -1049,5 +1051,6 @@
 	"updateSingleDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos. El CPE no debe apagarse durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
 	"updateSlaveDeviceTimeWarning": "La actualización del firmware tarda aproximadamente 3 minutos para cada CPE. Esta actualización afectará a todos los {{slaveCount}} enrutadores de la red en malla y tardará unos {{slaveCount3}} minutos en total. No se debe apagar ningún CPE durante este procedimiento. Comunica tu nombre de usuario antes de continuar.",
 	"updateDeviceMeshError": "El proceso de actualización de la red en malla se interrumpió. No recomendamos dejar los CPE de malla de la misma red en diferentes versiones, así que asegúrese de que esta actualización se reanude pronto.",
-	"updateDeviceFirmwareErrorWithMAC": "Ocurrió un error al descargar el firmware de CPE con MAC {{errorMac}}. Vuelva a intentarlo o cancele el procedimiento."
+	"updateDeviceFirmwareErrorWithMAC": "Ocurrió un error al descargar el firmware de CPE con MAC {{errorMac}}. Vuelva a intentarlo o cancele el procedimiento.",
+	"portOpeningRebootAlert": "¡Cuidado! Este modelo requiere un reinicio para aplicar los cambios de configuración de reenvío de puertas."
 }

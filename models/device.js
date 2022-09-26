@@ -281,13 +281,14 @@ let deviceSchema = new Schema({
   current_diagnostic: {
     type: {
       type: String,
-      enum: ['speedtest', 'ping', 'traceroute'],
+      enum: ['speedtest', 'ping', 'traceroute', 'sitesurvey'],
     },
     stage: {
       type: String,
       enum: ['', 'estimative', 'measure', 'initiating', 'error', 'done'],
     },
     customized: {type: Boolean},
+    recursion_state: {type: Number, default: 5},
     in_progress: {type: Boolean},
     started_at: {type: Date},
     last_modified_at: {type: Date},
@@ -318,7 +319,6 @@ let deviceSchema = new Schema({
     ipv6_enabled: {type: Boolean, default: false},
     ipv6_mode: {type: String, default: ''},
   },
-
   // They are expressed in percentage, without %
   // The value of 101 is invalid, used to represent a not setted state
   cpu_usage: {type: Number, min: 0, max: 101, default: 101},
