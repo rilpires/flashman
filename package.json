@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.47.5",
+  "version": "2.48.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -18,7 +18,7 @@
   "genieacs": {
     "ref": "fa95d7a310b7faaccf574d6de53e134558cdab69",
     "presetHash": "cb7162a7df7fcadb60e32a70c484fca0",
-    "provisionHash": "dc336596ef8b0161e3e638739288f8a5"
+    "provisionHash": "73ae03f5d5494aaebe19eaad436f8163"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",

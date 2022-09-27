@@ -7,8 +7,14 @@ tendaModel.identifier = {vendor: 'Tenda', model: 'AC10'};
 tendaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.portForward = true;
+  permissions.features.pingTest = true;
+  permissions.features.siteSurvey = true;
+  permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.lan.needEnableConfig = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
+  permissions.wan.speedTestLimit = 180;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.mustBeEnabledToConfigure = true;
@@ -105,6 +111,10 @@ tendaModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
+tendaModel.convertPingTestResult = function(latency) {
+  return (parseInt(latency) / 1000).toString(); // Results are in microseconds
+};
+
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
@@ -163,6 +173,11 @@ tendaModel.getModelFields = function() {
     '.WLANConfiguration.*.AssociatedDevice.*.X_CT-COM_DhcpName';
   fields.mesh2 = {};
   fields.mesh5 = {};
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+    '.1.X_CT-COM_Radio';
+  fields.diagnostics.sitesurvey.diag_state = '*.WLANNeighbor.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = '*.WLANNeighbor.Result';
+  fields.diagnostics.sitesurvey.ssid = 'SSIDName';
   return fields;
 };
 
