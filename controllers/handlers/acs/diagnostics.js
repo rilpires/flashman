@@ -44,6 +44,13 @@ const getNextPingTest = function(device) {
   return (found) ? found.host : '';
 };
 
+const getNextTraceTarget = function(device) {
+  let found = device.traceroute_results.find(
+    (traceTest) => !traceTest.completed,
+  );
+  return (found) ? found.address : '';
+};
+
 const getSpeedtestFile = async function(device, bandEstimative) {
   let matchedConfig = await Config.findOne(
     {is_default: true}, {measureServerIP: true, measureServerPort: true},
@@ -436,7 +443,6 @@ const startPingDiagnose = async function(acsID) {
   }
 
   let pingHostUrl = getNextPingTest(device);
-  // We don't expect it to be empty here
   if (!pingHostUrl) {
     return;
   }
@@ -516,6 +522,62 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
   const result = await TasksAPI.addTask(acsID, task);
   if (!result.success) {
     console.log('Error starting speedtest diagnose for ' + acsID);
+  }
+};
+
+const startTracerouteDiagnose = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID});
+  } catch (err) {
+    return {success: false, message: err.message + ' in ' + acsID};
+  }
+  if (!device) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+
+
+  let tracerouteTarget = getNextTraceTarget(device);
+  if (!tracerouteTarget) {
+    // We'are done here
+    return;
+  }
+
+  let fields = cpe.getModelFields();
+  let rootField = fields.diagnostics.traceroute.root;
+  let diagnStateField = rootField + '.'
+    + fields.diagnostics.traceroute.diag_state;
+  let diagnTargetField = rootField + '.'
+    + fields.diagnostics.traceroute.target;
+  let diagnTriesField = rootField + '.'
+    + fields.diagnostics.traceroute.tries_per_hop;
+  let diagnTimeoutField = rootField + '.'
+    + fields.diagnostics.traceroute.timeout;
+  let diagnMaxHops = rootField + '.'
+  + fields.diagnostics.traceroute.max_hop_count;
+
+  let triesPerHop = 3; // device.traceroute_number_probes
+  let timeout = device.traceroute_max_wait * 1000;
+  let maxHops = device.traceroute_max_hops;
+
+  let parameterValues = [
+    [diagnStateField, 'Requested', 'xsd:string'],
+    [diagnTargetField, tracerouteTarget, 'xsd:string'],
+    [diagnTriesField, triesPerHop, 'xsd:unsignedInt'],
+    [diagnTimeoutField, timeout, 'xsd:unsignedInt'],
+    [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
+  ];
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: parameterValues,
+  };
+
+  const result = await TasksAPI.addTask(acsID, task);
+  if (!result.success) {
+    console.log('Error starting traceroute diagnose for ' + acsID);
   }
 };
 
@@ -792,9 +854,29 @@ acsDiagnosticsHandler.fireSpeedDiagnose = async function(device) {
 };
 
 acsDiagnosticsHandler.fireTraceDiagnose = async function(device) {
-  return {
-    success: false, message: t('notAvailable'),
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return {
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    };
+  }
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let traceRouteRootField = fields.diagnostics.traceroute.root;
+  // We need to update the parameter values before we fire the traceroute
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [traceRouteRootField],
   };
+  const result = await TasksAPI.addTask(acsID, task, startTracerouteDiagnose);
+  if (result.success) {
+    return {success: true, message: t('operationSuccessful')};
+  } else {
+    return {
+      success: false, message: t('acsSpeedTestError', {errorline: __line}),
+    };
+  }
 };
 
 acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {

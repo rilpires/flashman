@@ -46,6 +46,7 @@ basicCPEModel.modelPermissions = function() {
       siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
+      traceroute: false, // will enable traceroute diagnostics
       upnp: false, // will enable upnp configs (to be implemented)
       wanBytes: true, // will enable wan bytes plot
       wps: false, // will enable wps configs (to be implemented)
@@ -109,6 +110,9 @@ basicCPEModel.modelPermissions = function() {
       requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
       survey2Index: '', // For devices with split state/result fields (2.4GHz)
       survey5Index: '', // For devices with split state/result fields (5GHz)
+    },
+    traceroute: {
+      // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
@@ -691,6 +695,24 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+      },
+      traceroute: {
+        root: 'InternetGatewayDevice.TraceRouteDiagnostics',
+        diag_state: 'DiagnosticsState',
+        interface: 'Interface',
+        target: 'Host',
+        tries_per_hop: 'NumberOfTries',
+        timeout: 'Timeout',
+        data_block_size: 'DataBlockSize',
+        diff_serv: 'DSCP',
+        max_hop_count: 'MaxHopCount',
+        response_time: 'ResponseTime',
+        number_of_hops: 'RouteHopsNumberOfEntries',
+        hops_root: 'RouteHops',
+        hop_host: 'HopHost',
+        hop_ip_address: 'HopHostAddress',
+        hop_error_code: 'HopErrorCode',
+        hop_rtt_times: 'HopRTTimes',
       },
       sitesurvey: {
         // Some of these fields have no defaults, as they are vendor-specific
