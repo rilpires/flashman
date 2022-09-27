@@ -9,11 +9,12 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // IN CONTROLLERS/UPDATE_FLASHMAN.JS! THIS LINE IS ALTERED AUTOMATICALLY WHEN
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
-const API_URL = 'http://localhost:$PORT/acs/';
 /* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
  environment.genieacs.json or in shell environment with the same value
  that is in environment.config.json */
 const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
+const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
+  +':$PORT/acs/';
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
@@ -279,7 +280,8 @@ const getModelFields = function(
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
-    useLastIndexOnWildcard: cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
+    useLastIndexOnWildcard:
+      cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -314,6 +316,8 @@ const getDeviceFields = async function(args, callback) {
 const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
+  // Only used at scenarios where Flashman was installed directly on a host
+  // without docker and with more than 1 vCPU
   if (shareLoad && numInstances > 1) {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn

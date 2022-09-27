@@ -24,6 +24,8 @@ const t = require('./language').i18next.t;
 
 
 let acsDeviceInfoController = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const convertSubnetMaskToInt = function(mask) {
   if (mask === '255.255.255.0') {
@@ -719,8 +721,8 @@ const fetchSyncResult = async function(
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{

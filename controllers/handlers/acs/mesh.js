@@ -4,6 +4,8 @@ const utilHandlers = require('../util.js');
 const http = require('http');
 
 let acsMeshDeviceHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const checkMeshObjsCreated = function(device) {
   return new Promise((resolve, reject) => {
@@ -16,8 +18,8 @@ const checkMeshObjsCreated = function(device) {
       `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
     let options = {
       method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
+      hostname: GENIEHOST,
+      port: GENIEPORT,
       path: encodeURI(path),
     };
     let result = {
@@ -72,8 +74,8 @@ const fetchMeshBSSID = function(device, meshMode) {
       `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
     let options = {
       method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
+      hostname: GENIEHOST,
+      port: GENIEPORT,
       path: encodeURI(path),
     };
     let req = http.request(options, (resp)=>{

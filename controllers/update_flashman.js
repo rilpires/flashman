@@ -237,7 +237,7 @@ const updateProvisionsPresets = async function(config) {
   let waitForLegacyPresetDelete;
   try {
     console.log('Removing Genie legacy inform preset...');
-    waitForDiagPreset = tasksApi.deletePreset('inform');
+    waitForLegacyPresetDelete = tasksApi.deletePreset('inform');
   } catch (e) {
     waitForLegacyPresetDelete = Promise.reject();
   }

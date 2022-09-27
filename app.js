@@ -32,12 +32,18 @@ let app = express();
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
 
+const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
+const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
+const instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
+
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
   process.env.FLM_DATABASE_NAME;
 
 mongoose.connect(
-  'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
+  'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
@@ -85,7 +91,7 @@ if (process.env.FLM_COMPANY_SECRET) {
 runMigrations(app);
 
 // Check md5 file hashes on firmware directory
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+if (instanceNumber === 0) {
   fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
     // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
     let fnameSubStrings = filename.split('_');
@@ -219,7 +225,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Check device update schedule, if active must re-initialize
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+if (instanceNumber === 0) {
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
     // Do nothing if no active schedule
@@ -228,7 +234,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   }).lean();
 }
 
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
+if (instanceNumber === 0 && (
     typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
     (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
      process.env.FLM_SCHEDULER_ACTIVE === true))
@@ -286,11 +292,16 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
     updater.updateApiUserLogin(app);
-    // Restart genieacs service whenever Flashman is restarted
-    if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
-      updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
-    } else {
-      updater.rebootGenie(process.env.instances);
+    // Only used at scenarios where Flashman was installed directly on a host
+    // Undefined - Covers legacy host install cases
+    if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
+        process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
+      // Restart TR-069 services whenever Flashman is restarted
+      if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
+        updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
+      } else {
+        updater.rebootGenie(process.env.instances);
+      }
     }
     // Force an update check to alert user on app startup
     updater.checkUpdate();

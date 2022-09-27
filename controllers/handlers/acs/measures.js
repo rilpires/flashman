@@ -10,6 +10,8 @@ const debug = require('debug')('ACS_DEVICES_MEASURES');
 const t = require('../../language').i18next.t;
 
 let acsMeasuresHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   let device;
@@ -33,8 +35,8 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{
@@ -112,8 +114,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{
@@ -225,8 +227,8 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{
