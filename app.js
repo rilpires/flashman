@@ -302,9 +302,9 @@ if (instanceNumber === 0 && (
       } else {
         updater.rebootGenie(process.env.instances);
       }
-      // Force an update check to alert user on app startup
-      updater.checkUpdate();
     }
+    // Force an update check to alert user on app startup
+    updater.checkUpdate();
   });
 }
 
