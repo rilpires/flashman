@@ -708,4 +708,12 @@ basicCPEModel.getModelFields = function() {
   };
 };
 
+// This function can be called to apply changes to the functions declared above
+// based on firmware/hardware versions, to avoid creating entirely new files for
+// very basic changes. "Base" is exactly what is exported below: basicCPEModel.
+// Functions can be altered through a copy of it, returned with altered values
+basicCPEModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  return base;
+};
+
 module.exports = basicCPEModel;
