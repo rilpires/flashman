@@ -195,12 +195,67 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-// TODO
-// const calculateTraceDiagnostic = async function(
-//   device, cpe, data, pingKeys, pingFields,
-// ) {
+const calculateTraceDiagnostic = async function(
+  device, data, traceKeys, traceFields,
+) {
+  traceKeys = getAllNestedKeysFromObject(data, traceKeys, traceFields);
 
-// };
+  let traceResult = device.traceroute_results
+    .where((e)=>!e.completed)
+    .find((e)=>e.target==traceKeys.address);
+
+  if (!traceResult) return;
+  if (['Requested', 'None'].includes(traceKeys.diag_state)) return;
+
+  if (['Complete', 'Complete\n', 'Completed'].includes(traceKeys.diag_state)) {
+    const inNumberOfHops = parseInt(traceKeys.number_of_hops);
+    const traceTarget = traceKeys.target;
+    const inTriesPerHop = traceKeys.tries_per_hop;
+    traceResult.address = traceTarget;
+    traceResult.tries_per_hop = parseInt(inTriesPerHop);
+    traceResult.hops = [];
+    for (let hopIndex = 0; hopIndex < inNumberOfHops; hopIndex++ ) {
+      let inHop = traceKeys.hops_root[hopIndex];
+      let currentHop = {
+        ip: inHop.hop_ip_address ? inHop.hop_ip_address : inHop.hop_host,
+        ms_values: inHop.hop_rtt_times
+          .filter((e)=>!isNaN(e))
+          .map((e)=>e.toString()),
+      };
+      if (currentHop.ms_values.length==0) {
+        traceResult.all_hops_tested = false;
+      }
+      if ([inHop.hop_ip_address, inHop.hop_host].includes(traceTarget)) {
+        traceResult.reached_destination = true;
+      }
+      traceResult.hops.push(currentHop);
+    }
+  }
+  // ALWAYS set to completed
+  traceResult.completed = true;
+
+  device.current_diagnostic.last_modified_at = new Date();
+  if (!getNextTraceTarget(device)) {
+    device.current_diagnostic.stage = 'done';
+    device.current_diagnostic.in_progress = false;
+  } else {
+    device.current_diagnostic.in_progress = true;
+  }
+
+  await device.save().catch((err) => {
+    console.log('Error saving device after traceroute test(tr069): ' + err);
+  });
+
+  // No await needed
+  sio.anlixSendTracerouteNotification(device._id, traceResult);
+  // Sending to proper webhooks. Will only send if all tests are completed tho
+  deviceHandlers.processTracerouteTraps(device);
+
+  if (device.current_diagnostic.in_progress) {
+    startTracerouteDiagnose(device.acs_id);
+  }
+  return;
+};
 
 const calculateFreq = function(rawChannel) {
   const startChannel2Ghz = 1;
@@ -712,6 +767,16 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
       full_load_bytes_rec: '',
       full_load_period: '',
     },
+    traceroute: {
+      number_of_hops: '',
+      target: '',
+      tries_per_hop: '',
+      hops_root: '',
+      hop_host: '',
+      hop_ip_address: '',
+      hop_error_code: '',
+      hop_rtt_times: '',
+    },
     sitesurvey: {
       diag_state: '',
       result: '',
@@ -722,8 +787,8 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
 
   let diagType = device.current_diagnostic.type;
-  let keys = [];
-  let genieFields = [];
+  let keys = {};
+  let genieFields = {};
   if (diagType === 'ping') {
     keys = diagNecessaryKeys.ping;
     genieFields = fields.diagnostics.ping;
@@ -785,8 +850,10 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
             fields.diagnostics.speedtest,
           );
         } else if (permissions.grantTraceTest && diagType == 'traceroute') {
-          // TODO
-          // await calculateTraceDiagnostic(/* to-do */);
+          await calculateTraceDiagnostic(
+            device, data, diagNecessaryKeys.traceroute,
+            fields.diagnostics.traceroute,
+          );
         } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
           await calculateSiteSurveyDiagnostic(
             device, cpe, data, fields.diagnostics.sitesurvey,
