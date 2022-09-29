@@ -112,6 +112,7 @@ basicCPEModel.modelPermissions = function() {
       survey5Index: '', // For devices with split state/result fields (5GHz)
     },
     traceroute: {
+      maxProbePerHop: 3, // Flashman's device.model limit is 5
       // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset

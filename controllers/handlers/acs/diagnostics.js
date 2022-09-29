@@ -17,12 +17,25 @@ let acsDiagnosticsHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-const getAllNestedKeysFromObject = function(data, target, genieFields) {
+// Returns {key: genieFieldValue}
+const getAllNestedKeysFromObject = function(
+  data, keys, genieFieldsFromKey, root,
+) {
   let result = {};
-  Object.keys(target).forEach((key) => {
-    if (utilHandlers.checkForNestedKey(data, genieFields[key] + '._value')) {
+  keys.forEach((key) => {
+    let completeValueField = genieFieldsFromKey[key] + '._value';
+    let completeField = genieFieldsFromKey[key];
+    if (root) {
+      completeValueField = root + '.' + completeValueField;
+      completeField = root + '.' + completeField;
+    }
+    if (utilHandlers.checkForNestedKey(data, completeValueField)) {
       result[key] = utilHandlers.getFromNestedKey(
-        data, genieFields[key] + '._value',
+        data, completeValueField,
+      );
+    } else if (utilHandlers.checkForNestedKey(data, completeField)) {
+      result[key] = utilHandlers.getFromNestedKey(
+        data, completeField,
       );
     }
   });
@@ -107,7 +120,9 @@ const getSpeedtestFile = async function(device, bandEstimative) {
 const calculatePingDiagnostic = async function(
   device, cpe, data, pingKeys, pingFields,
 ) {
-  pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
+  pingKeys = getAllNestedKeysFromObject(
+    data, Object.keys(pingKeys), pingFields,
+  );
   let diagState = pingKeys.diag_state;
   if (['Requested', 'None'].includes(diagState)) return;
 
@@ -195,41 +210,70 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-const calculateTraceDiagnostic = async function(
-  device, data, traceKeys, traceFields,
-) {
-  traceKeys = getAllNestedKeysFromObject(data, traceKeys, traceFields);
+const calculateTraceDiagnostic = async function(device, data, traceFields) {
+  console.log('calculateTraceDiagnostic...');
+
+  // Filling individually each key, since 'getAllNestedKeysFromObject' won't
+  // do any good
+  console.log('data antes:');
+  console.log(data);
+  console.log('traceFields antes:');
+  console.log(traceFields);
+  let rootData = getAllNestedKeysFromObject(
+    data, Object.keys(traceFields), traceFields, traceFields['root'],
+  );
+  console.log('rootData:');
+  console.log(rootData);
 
   let traceResult = device.traceroute_results
-    .where((e)=>!e.completed)
-    .find((e)=>e.target==traceKeys.address);
+    .filter((e)=>!e.completed)
+    .find((e)=>e.address==rootData.target);
 
   if (!traceResult) return;
-  if (['Requested', 'None'].includes(traceKeys.diag_state)) return;
+  if (['Requested', 'None'].includes(rootData.diag_state)) return;
 
-  if (['Complete', 'Complete\n', 'Completed'].includes(traceKeys.diag_state)) {
-    const inNumberOfHops = parseInt(traceKeys.number_of_hops);
-    const traceTarget = traceKeys.target;
-    const inTriesPerHop = traceKeys.tries_per_hop;
+  console.log('Trace result antes:', traceResult);
+
+  if (['Complete', 'Complete\n', 'Completed'].includes(rootData.diag_state)) {
+    const inNumberOfHops = parseInt(rootData.number_of_hops);
+    const traceTarget = rootData.target;
+    const inTriesPerHop = parseInt(rootData.tries_per_hop);
+    const maxHopCount = parseInt(rootData.max_hop_count);
+    let hopSkipped = false;
+    traceResult.reached_destination = true;
+    traceResult.all_hops_tested = true;
     traceResult.address = traceTarget;
-    traceResult.tries_per_hop = parseInt(inTriesPerHop);
+    traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
-    for (let hopIndex = 0; hopIndex < inNumberOfHops; hopIndex++ ) {
-      let inHop = traceKeys.hops_root[hopIndex];
+    console.log('inNumberOfHops: ', inNumberOfHops);
+    for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
+      let inHop = rootData.hops_root[hopIndex.toString()];
+      if (!inHop) {
+        hopSkipped = true;
+        continue;
+      } else if (hopSkipped) {
+        traceResult.all_hops_tested = false;
+      }
+      console.log('inHop antes:', inHop);
+      inHop = getAllNestedKeysFromObject(
+        inHop, Object.keys(traceFields), traceFields,
+      );
+      console.log('inHop dps:', inHop);
+      console.log('inHop rtt times:', inHop.hop_rtt_times );
       let currentHop = {
         ip: inHop.hop_ip_address ? inHop.hop_ip_address : inHop.hop_host,
         ms_values: inHop.hop_rtt_times
-          .filter((e)=>!isNaN(e))
-          .map((e)=>e.toString()),
+          .split(',')
+          .filter((e)=>!isNaN(parseInt(e)))
+          .map((e)=>parseInt(e).toString()),
       };
-      if (currentHop.ms_values.length==0) {
-        traceResult.all_hops_tested = false;
+      if (currentHop.ip) {
+        traceResult.hops.push(currentHop);
       }
-      if ([inHop.hop_ip_address, inHop.hop_host].includes(traceTarget)) {
-        traceResult.reached_destination = true;
-      }
-      traceResult.hops.push(currentHop);
     }
+  } else {
+    traceResult.reached_destination = false;
+    traceResult.all_hops_tested = false;
   }
   // ALWAYS set to completed
   traceResult.completed = true;
@@ -245,6 +289,9 @@ const calculateTraceDiagnostic = async function(
   await device.save().catch((err) => {
     console.log('Error saving device after traceroute test(tr069): ' + err);
   });
+
+
+  console.log('Trace result depois, pre trap:', traceResult);
 
   // No await needed
   sio.anlixSendTracerouteNotification(device._id, traceResult);
@@ -410,7 +457,9 @@ const calculateSiteSurveyDiagnostic = async function(
 const calculateSpeedDiagnostic = async function(
   device, data, speedKeys, speedFields,
 ) {
-  speedKeys = getAllNestedKeysFromObject(data, speedKeys, speedFields);
+  speedKeys = getAllNestedKeysFromObject(
+    data, Object.keys(speedKeys), speedFields,
+  );
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
@@ -613,9 +662,13 @@ const startTracerouteDiagnose = async function(acsID) {
   let diagnMaxHops = rootField + '.'
   + fields.diagnostics.traceroute.max_hop_count;
 
-  let triesPerHop = 3; // device.traceroute_number_probes
+  let triesPerHop = device.traceroute_number_probes;
   let timeout = device.traceroute_max_wait * 1000;
   let maxHops = device.traceroute_max_hops;
+
+  let permissions = cpe.modelPermissions();
+  console.log('traceroute permissions: ' , permissions.traceroute );
+  triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbePerHop);
 
   let parameterValues = [
     [diagnStateField, 'Requested', 'xsd:string'],
@@ -712,13 +765,16 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let fieldToFetch = '';
-
+  console.log('acsDiagnosticsHandler.triggerDiagnosticResults');
   switch (device.current_diagnostic.type) {
     case 'ping':
       fieldToFetch = fields.diagnostics.ping.root;
       break;
     case 'speedtest':
       fieldToFetch = fields.diagnostics.speedtest.root;
+      break;
+    case 'traceroute':
+      fieldToFetch = fields.diagnostics.traceroute.root;
       break;
     case 'sitesurvey':
       fieldToFetch = fields.diagnostics.sitesurvey.root;
@@ -734,6 +790,7 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
 };
 
 const fetchDiagnosticsFromGenie = async function(acsID) {
+  console.log('fetchDiagnosticsFromGenie');
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID});
@@ -768,9 +825,11 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
       full_load_period: '',
     },
     traceroute: {
+      diag_state: '',
       number_of_hops: '',
       target: '',
       tries_per_hop: '',
+      max_hop_count: '',
       hops_root: '',
       hop_host: '',
       hop_ip_address: '',
@@ -806,9 +865,11 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
     if (genieFields.hasOwnProperty(key)) {
       // Remove wildcards, fetch everything before them
       let param = genieFields[key];
+      // sitesurvey & traceroute both uses fields relative to root node
       if (diagType === 'sitesurvey') {
-        // Site survey uses fields relative to root node
         param = fields.diagnostics.sitesurvey.root + '.' + param;
+      } else if (diagType === 'traceroute') {
+        param = fields.diagnostics.traceroute.root + '.' + param;
       }
       parameters.push(param.replace(/\.\*.*/g, ''));
     }
@@ -849,10 +910,9 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
             device, data, diagNecessaryKeys.speedtest,
             fields.diagnostics.speedtest,
           );
-        } else if (permissions.grantTraceTest && diagType == 'traceroute') {
+        } else if (permissions.grantTraceroute && diagType == 'traceroute') {
           await calculateTraceDiagnostic(
-            device, data, diagNecessaryKeys.traceroute,
-            fields.diagnostics.traceroute,
+            device, data, fields.diagnostics.traceroute,
           );
         } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
           await calculateSiteSurveyDiagnostic(

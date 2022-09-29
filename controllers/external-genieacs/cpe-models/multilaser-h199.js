@@ -13,9 +13,11 @@ multilaserModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.traceroute = true;
   permissions.lan.blockLANDevices = true;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
+  permissions.traceroute.maxProbePerHop = 3;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 550;

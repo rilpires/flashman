@@ -540,6 +540,7 @@ deviceHandlers.processTracerouteTraps = function(device) {
   // If all tests are done, it is webhook time
   if (device.current_diagnostic.type == 'traceroute' &&
   device.current_diagnostic.stage == 'done') {
+    console.log('vou mandar pra trap sim');
     // Webhook results object
     let results = {};
     device.traceroute_results.map(function(e) {
@@ -553,6 +554,7 @@ deviceHandlers.processTracerouteTraps = function(device) {
     // Customized webhook
     if (device.current_diagnostic.customized) {
       if (device.current_diagnostic.webhook_url) {
+        console.log('mandando pra customizado');
         let requestOptions = {};
         requestOptions.url = device.current_diagnostic.webhook_url;
         requestOptions.method = 'PUT';
@@ -570,7 +572,7 @@ deviceHandlers.processTracerouteTraps = function(device) {
           };
         }
         // No wait!
-        request(requestOptions).then(() => { }, () => { });
+        request(requestOptions).then(() => {console.log("mandei o req!!");}, () => {console.log('nao deu pra mandar o req :(')});
       }
     } else {
       // Generic trap

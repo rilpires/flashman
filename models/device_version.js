@@ -1817,7 +1817,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSTUN: cpePermissions.features.stun,
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
     grantWanLanInformation: false,
-    grantTraceroute: false,
+    grantTraceroute: cpePermissions.features.traceroute,
   };
   if (permissions.grantPortForward) {
     permissions.grantPortForwardOpts =
