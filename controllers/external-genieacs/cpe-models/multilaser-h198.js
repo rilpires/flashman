@@ -12,6 +12,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.traceroute = true;
   permissions.lan.blockLANDevices = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

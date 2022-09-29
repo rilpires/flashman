@@ -210,7 +210,9 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-const calculateTraceDiagnostic = async function(device, data, traceFields) {
+const calculateTraceDiagnostic = async function(
+  device, cpe, data, traceFields,
+) {
   console.log('calculateTraceDiagnostic...');
 
   // Filling individually each key, since 'getAllNestedKeysFromObject' won't
@@ -240,8 +242,11 @@ const calculateTraceDiagnostic = async function(device, data, traceFields) {
     'Completed',
     'Error_MaxHopCountExceeded',
   ].includes(rootData.diag_state);
+  if (cpe.modelPermissions().traceroute.completeAsRequested &&
+  rootData.diag_state=='Requested') {
+    hasData = true;
+  }
   let hasExceeded = ['Error_MaxHopCountExceeded'].includes(rootData.diag_state);
-
 
   if (hasData || hasExceeded) {
     const inNumberOfHops = parseInt(rootData.number_of_hops);
@@ -252,13 +257,8 @@ const calculateTraceDiagnostic = async function(device, data, traceFields) {
     traceResult.address = traceTarget;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
-    if (hasExceeded) {
-      traceResult.reached_destination = false;
-      traceResult.all_hops_tested = false;
-    } else {
-      traceResult.reached_destination = true;
-      traceResult.all_hops_tested = true;
-    }
+    traceResult.reached_destination = !hasExceeded;
+    traceResult.all_hops_tested = !hasExceeded;
     console.log('inNumberOfHops: ', inNumberOfHops);
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
       let inHop = rootData.hops_root[hopIndex.toString()];
@@ -278,10 +278,10 @@ const calculateTraceDiagnostic = async function(device, data, traceFields) {
         ip: inHop.hop_ip_address ? inHop.hop_ip_address : inHop.hop_host,
         ms_values: inHop.hop_rtt_times
           .split(',')
-          .filter((e)=>!isNaN(parseInt(e)))
-          .map((e)=>parseInt(e).toString()),
+          .filter((e)=>!isNaN(parseFloat(e)))
+          .map((e)=>parseFloat(e).toString()),
       };
-      if (currentHop.ip) {
+      if (currentHop.ip && currentHop.ip!='*') {
         traceResult.hops.push(currentHop);
       }
     }
@@ -681,7 +681,6 @@ const startTracerouteDiagnose = async function(acsID) {
   let maxHops = device.traceroute_max_hops;
 
   let permissions = cpe.modelPermissions();
-  console.log('traceroute permissions: ' , permissions.traceroute );
   triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbePerHop);
 
   let parameterValues = [
@@ -888,7 +887,7 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
       parameters.push(param.replace(/\.\*.*/g, ''));
     }
   }
-
+  
   let query = {_id: acsID};
   let path = '/devices/?query=' + JSON.stringify(query) +
     '&projection=' + parameters.join(',');
@@ -926,7 +925,7 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
           );
         } else if (permissions.grantTraceroute && diagType == 'traceroute') {
           await calculateTraceDiagnostic(
-            device, data, fields.diagnostics.traceroute,
+            device, cpe, data, fields.diagnostics.traceroute,
           );
         } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
           await calculateSiteSurveyDiagnostic(

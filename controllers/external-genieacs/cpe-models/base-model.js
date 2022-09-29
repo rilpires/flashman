@@ -113,6 +113,10 @@ basicCPEModel.modelPermissions = function() {
     },
     traceroute: {
       maxProbePerHop: 3, // Flashman's device.model limit is 5
+      // Sometimes... it completes traceroute diagnostic successfully,
+      // and even fills hops values, but DiagnosticState value
+      // is still 'Requested'.
+      completeAsRequested: false,
       // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
