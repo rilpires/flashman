@@ -234,17 +234,31 @@ const calculateTraceDiagnostic = async function(device, data, traceFields) {
 
   console.log('Trace result antes:', traceResult);
 
-  if (['Complete', 'Complete\n', 'Completed'].includes(rootData.diag_state)) {
+  let hasData = [
+    'Complete',
+    'Complete\n',
+    'Completed',
+    'Error_MaxHopCountExceeded',
+  ].includes(rootData.diag_state);
+  let hasExceeded = ['Error_MaxHopCountExceeded'].includes(rootData.diag_state);
+
+
+  if (hasData || hasExceeded) {
     const inNumberOfHops = parseInt(rootData.number_of_hops);
     const traceTarget = rootData.target;
     const inTriesPerHop = parseInt(rootData.tries_per_hop);
     const maxHopCount = parseInt(rootData.max_hop_count);
     let hopSkipped = false;
-    traceResult.reached_destination = true;
-    traceResult.all_hops_tested = true;
     traceResult.address = traceTarget;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
+    if (hasExceeded) {
+      traceResult.reached_destination = false;
+      traceResult.all_hops_tested = false;
+    } else {
+      traceResult.reached_destination = true;
+      traceResult.all_hops_tested = true;
+    }
     console.log('inNumberOfHops: ', inNumberOfHops);
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
       let inHop = rootData.hops_root[hopIndex.toString()];
