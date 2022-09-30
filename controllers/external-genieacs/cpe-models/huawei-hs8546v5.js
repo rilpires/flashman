@@ -12,6 +12,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.maxProbesPerHop = 99;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.features.speedTest = true;

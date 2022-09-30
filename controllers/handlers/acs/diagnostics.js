@@ -673,7 +673,7 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
-  if (!isNaN(permissions.fixedProbesPerHop)) {
+  if (!permissions.fixedProbesPerHop) {
     parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
   }
 
