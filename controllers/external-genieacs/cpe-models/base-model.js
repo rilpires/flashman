@@ -112,11 +112,15 @@ basicCPEModel.modelPermissions = function() {
       survey5Index: '', // For devices with split state/result fields (5GHz)
     },
     traceroute: {
-      maxProbePerHop: 3, // Flashman's device.model limit is 5
+      maxProbesPerHop: 3, // Flashman's device.model limit is 5
+      // If 'fixedProbesPerHop' is a valid number, it does not allow setting
+      // a custom 'traceroute_number_probes' value, except fixedProbesPerHop
+      fixedProbesPerHop: NaN,
       // Sometimes... it completes traceroute diagnostic successfully,
       // and even fills hops values, but DiagnosticState value
       // is still 'Requested'.
       completeAsRequested: false,
+      hopCountExceededState: 'Error_MaxHopCountExceeded',
       // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
@@ -465,6 +469,16 @@ basicCPEModel.convertRssiValue = function(rssiValue) {
 
 basicCPEModel.getPortForwardRuleName = function(index) {
   return 'Anlix_PortForwarding_' + index.toString();
+};
+
+basicCPEModel.readTracerouteRTTs = function(hopRoot) {
+  let rttTimesField
+    = this.getModelFields().diagnostics.traceroute.hop_rtt_times;
+  let RTTs = hopRoot[rttTimesField]['_value'];
+  return RTTs
+    .split(',')
+    .filter((e)=>!isNaN(parseFloat(e)))
+    .map((e)=>parseFloat(e).toString());
 };
 
 // Map TR-069 XML fields to Flashman fields

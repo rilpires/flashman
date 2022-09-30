@@ -17,30 +17,6 @@ let acsDiagnosticsHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-// Returns {key: genieFieldValue}
-const getAllNestedKeysFromObject = function(
-  data, keys, genieFieldsFromKey, root,
-) {
-  let result = {};
-  keys.forEach((key) => {
-    let completeValueField = genieFieldsFromKey[key] + '._value';
-    let completeField = genieFieldsFromKey[key];
-    if (root) {
-      completeValueField = root + '.' + completeValueField;
-      completeField = root + '.' + completeField;
-    }
-    if (utilHandlers.checkForNestedKey(data, completeValueField)) {
-      result[key] = utilHandlers.getFromNestedKey(
-        data, completeValueField,
-      );
-    } else if (utilHandlers.checkForNestedKey(data, completeField)) {
-      result[key] = utilHandlers.getFromNestedKey(
-        data, completeField,
-      );
-    }
-  });
-  return result;
-};
 
 const saveCurrentDiagnostic = async function(device, msg, progress) {
   device.current_diagnostic.stage = msg;
@@ -120,7 +96,7 @@ const getSpeedtestFile = async function(device, bandEstimative) {
 const calculatePingDiagnostic = async function(
   device, cpe, data, pingKeys, pingFields,
 ) {
-  pingKeys = getAllNestedKeysFromObject(
+  pingKeys = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(pingKeys), pingFields,
   );
   let diagState = pingKeys.diag_state;
@@ -221,7 +197,8 @@ const calculateTraceDiagnostic = async function(
   console.log(data);
   console.log('traceFields antes:');
   console.log(traceFields);
-  let rootData = getAllNestedKeysFromObject(
+  let permissions = cpe.modelPermissions();
+  let rootData = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(traceFields), traceFields, traceFields['root'],
   );
   console.log('rootData:');
@@ -242,25 +219,30 @@ const calculateTraceDiagnostic = async function(
     'Completed',
     'Error_MaxHopCountExceeded',
   ].includes(rootData.diag_state);
-  if (cpe.modelPermissions().traceroute.completeAsRequested &&
+  if (permissions.traceroute.completeAsRequested &&
   rootData.diag_state=='Requested') {
     hasData = true;
   }
-  let hasExceeded = ['Error_MaxHopCountExceeded'].includes(rootData.diag_state);
+  let hasExceeded =
+    (rootData.diag_state == permissions.traceroute.hopCountExceededState);
+
 
   if (hasData || hasExceeded) {
-    const inNumberOfHops = parseInt(rootData.number_of_hops);
+    // const inNumberOfHops = parseInt(rootData.number_of_hops);
     const traceTarget = rootData.target;
     const inTriesPerHop = parseInt(rootData.tries_per_hop);
     const maxHopCount = parseInt(rootData.max_hop_count);
     let hopSkipped = false;
     traceResult.address = traceTarget;
+    traceResult.all_hops_tested = !hasExceeded;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
-    traceResult.reached_destination = !hasExceeded;
-    traceResult.all_hops_tested = !hasExceeded;
-    console.log('inNumberOfHops: ', inNumberOfHops);
+    if (!traceResult.tries_per_hop &&
+    permissions.traceroute.fixedProbesPerHop) {
+      traceResult.tries_per_hop = permissions.traceroute.fixedProbesPerHop;
+    }
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
+      // inHop here is as it is from genie acs tree.
       let inHop = rootData.hops_root[hopIndex.toString()];
       if (!inHop) {
         hopSkipped = true;
@@ -269,22 +251,23 @@ const calculateTraceDiagnostic = async function(
         traceResult.all_hops_tested = false;
       }
       console.log('inHop antes:', inHop);
-      inHop = getAllNestedKeysFromObject(
+      let inHopKeys = utilHandlers.getAllNestedKeysFromObject(
         inHop, Object.keys(traceFields), traceFields,
       );
-      console.log('inHop dps:', inHop);
-      console.log('inHop rtt times:', inHop.hop_rtt_times );
+      console.log('inHopKeys dps:', inHopKeys);
+      let msValues = cpe.readTracerouteRTTs(inHop);
       let currentHop = {
-        ip: inHop.hop_ip_address ? inHop.hop_ip_address : inHop.hop_host,
-        ms_values: inHop.hop_rtt_times
-          .split(',')
-          .filter((e)=>!isNaN(parseFloat(e)))
-          .map((e)=>parseFloat(e).toString()),
+        ip: inHopKeys.hop_ip_address
+              ? inHopKeys.hop_ip_address
+              : inHopKeys.hop_host,
+        ms_values: msValues,
       };
       if (currentHop.ip && currentHop.ip!='*') {
         traceResult.hops.push(currentHop);
       }
     }
+    traceResult.reached_destination
+      = !hasExceeded && traceResult.hops.length > 0;
   } else {
     traceResult.reached_destination = false;
     traceResult.all_hops_tested = false;
@@ -471,7 +454,7 @@ const calculateSiteSurveyDiagnostic = async function(
 const calculateSpeedDiagnostic = async function(
   device, data, speedKeys, speedFields,
 ) {
-  speedKeys = getAllNestedKeysFromObject(
+  speedKeys = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(speedKeys), speedFields,
   );
   let result;
@@ -681,15 +664,18 @@ const startTracerouteDiagnose = async function(acsID) {
   let maxHops = device.traceroute_max_hops;
 
   let permissions = cpe.modelPermissions();
-  triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbePerHop);
+  triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbesPerHop);
 
   let parameterValues = [
     [diagnStateField, 'Requested', 'xsd:string'],
     [diagnTargetField, tracerouteTarget, 'xsd:string'],
-    [diagnTriesField, triesPerHop, 'xsd:unsignedInt'],
     [diagnTimeoutField, timeout, 'xsd:unsignedInt'],
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
+
+  if (!isNaN(permissions.fixedProbesPerHop)) {
+    parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
+  }
 
   let task = {
     name: 'setParameterValues',
@@ -887,7 +873,7 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
       parameters.push(param.replace(/\.\*.*/g, ''));
     }
   }
-  
+
   let query = {_id: acsID};
   let path = '/devices/?query=' + JSON.stringify(query) +
     '&projection=' + parameters.join(',');

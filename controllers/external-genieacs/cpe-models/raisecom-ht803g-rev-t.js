@@ -13,6 +13,10 @@ raisecomModel.modelPermissions = function() {
   permissions.features.portForward = false; // will enable port forward dialogs
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
+  permissions.features.traceroute = true; // will enable speed test dialogs
+
+  permissions.traceroute.fixedProbesPerHop = 3;
+  permissions.traceroute.hopCountExceededState = 'Error_Other';
 
   permissions.wan.speedTestLimit = 300;
 
@@ -129,6 +133,16 @@ raisecomModel.getModelFields = function() {
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
     '*.InterfaceType';
 
+  // traceroute
+  fields.diagnostics.traceroute.root = 'InternetGatewayDevice.' +
+    'X_CT-COM_IPTraceRouteDiagnostics';
+  fields.diagnostics.traceroute.hops_root = 'Hops';
+  fields.diagnostics.traceroute.max_hop_count = 'MaximumHops';
+  fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
+  fields.diagnostics.traceroute.hop_host = 'ResponseIPAddress';
+  fields.diagnostics.traceroute.hop_ip_address = 'ResponseIPAddress';
+
+
   // wan fields
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
@@ -186,6 +200,21 @@ raisecomModel.getModelFields = function() {
   delete fields.diagnostics.speedtest.full_load_period;
 
   return fields;
+};
+
+
+raisecomModel.readTracerouteRTTs = function(hopRoot) {
+  let ret = [];
+  for (let i = 1; i <= 3; i++) {
+    let responseObject = hopRoot[`ResponseTime${i}`];
+    if (responseObject &&
+      typeof(responseObject['_value']) == 'number' &&
+      !isNaN(responseObject['_value'])
+    ) {
+      ret.push(responseObject['_value'].toString());
+    }
+  }
+  return ret;
 };
 
 module.exports = raisecomModel;
