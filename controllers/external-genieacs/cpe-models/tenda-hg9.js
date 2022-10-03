@@ -6,6 +6,7 @@ tendaModel.identifier = {vendor: 'Tenda', model: 'HG9'};
 
 tendaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;

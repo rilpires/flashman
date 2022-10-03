@@ -129,6 +129,7 @@ multilaserModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   fields.diagnostics.sitesurvey.band = 'Bandwidth';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   return fields;
 };
 

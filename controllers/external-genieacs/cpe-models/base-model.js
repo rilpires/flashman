@@ -729,6 +729,7 @@ basicCPEModel.getModelFields = function() {
         max_hop_count: 'MaxHopCount',
         response_time: 'ResponseTime',
         number_of_hops: 'RouteHopsNumberOfEntries',
+        protocol: '',
         hops_root: 'RouteHops',
         hop_host: 'HopHost',
         hop_ip_address: 'HopHostAddress',
