@@ -658,6 +658,8 @@ const startTracerouteDiagnose = async function(acsID) {
     + fields.diagnostics.traceroute.timeout;
   let diagnMaxHops = rootField + '.'
   + fields.diagnostics.traceroute.max_hop_count;
+  let diagnInterface = rootField + '.'
+  + fields.diagnostics.traceroute.interface;
 
   let triesPerHop = device.traceroute_number_probes;
   let timeout = device.traceroute_max_wait * 1000;
@@ -665,6 +667,7 @@ const startTracerouteDiagnose = async function(acsID) {
 
   let permissions = cpe.modelPermissions();
   triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbesPerHop);
+  //triesPerHop = 4;
 
   let parameterValues = [
     [diagnStateField, 'Requested', 'xsd:string'],
@@ -673,8 +676,19 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
-  if (!permissions.fixedProbesPerHop) {
+  if (!permissions.traceroute.fixedProbesPerHop) {
     parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
+  }
+  if (permissions.wan.traceRouteSetInterface) {
+    let interfaceValue;
+    if (device.connection_type === 'dhcp') {
+      interfaceValue = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.1.WANIPConnection.1.';
+    } else {
+      interfaceValue = 'InternetGatewayDevice.WANDevice.1.'
+      +'WANConnectionDevice.1.WANPPPConnection.1';
+    }
+    parameterValues.push([diagnInterface, interfaceValue, 'xsd:string']);
   }
 
   let task = {

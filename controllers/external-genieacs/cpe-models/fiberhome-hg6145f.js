@@ -8,10 +8,14 @@ fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.meshWifi = true;
+  permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.traceroute.maxProbesPerHop = 1;
+  permissions.traceroute.hopCountExceededState = 'Error_CannotResolveHostName';
   permissions.wan.pingTestSetInterface = true;
+  permissions.wan.traceRouteSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.axWiFiMode = true;
