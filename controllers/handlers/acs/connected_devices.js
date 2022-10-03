@@ -6,6 +6,8 @@ const http = require('http');
 const debug = require('debug')('ACS_CONNECTED_DEVICES');
 
 let acsConnDevicesHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const saveDeviceData = async function(mac, landevices) {
   if (!mac || !landevices) return;
@@ -67,8 +69,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let req = http.request(options, (resp)=>{

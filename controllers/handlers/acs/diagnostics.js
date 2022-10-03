@@ -14,6 +14,8 @@ const t = require('../../language').i18next.t;
 const request = require('request-promise-native');
 
 let acsDiagnosticsHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const getAllNestedKeysFromObject = function(data, target, genieFields) {
   let result = {};
@@ -691,8 +693,8 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
   let options = {
     protocol: 'http:',
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   let request = http.request(options, (response) => {

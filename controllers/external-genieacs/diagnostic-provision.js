@@ -1,6 +1,7 @@
 /*
 Command to update provision on genie:
   curl -X PUT -i 'http://localhost:7557/provisions/diagnostic' --data "$(cat controllers/external-genieacs/diagnostic-provision.js)"
+  curl -i 'http://localhost:7557/presets/diagnostic' -X PUT --data "$(cat controllers/external-genieacs/diagnostic-preset.json)"
 */
 
 log('Success: Diagnostics completed.');

@@ -1,5 +1,21 @@
 const basicCPEModel = require('./base-model');
 
+const versionCompare = function(foo, bar) {
+  // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
+  // Remove the leading V in the version so we compare only the numbers
+  let fooVer = foo.slice(1).split('.').map((val) => {
+    return parseInt(val);
+  });
+  let barVer = bar.slice(1).split('.').map((val) => {
+    return parseInt(val);
+  });
+  for (let i = 0; i < fooVer.length; i++) {
+    if (fooVer[i] < barVer[i]) return -1;
+    if (fooVer[i] > barVer[i]) return 1;
+  }
+  return 0;
+};
+
 let greatekModel = Object.assign({}, basicCPEModel);
 
 greatekModel.identifier = {vendor: 'Greatek', model: 'Stavix G421RQ'};
@@ -31,7 +47,17 @@ greatekModel.modelPermissions = function() {
     'V2.2.0': [],
     'V2.2.3': [],
     'V2.2.7': [],
+    'V2.3.5': [],
+    'V2.3.7': [],
   };
+  return permissions;
+};
+
+// Version 2.3.7 now allows direct editing of user/password fields, so we dont
+// rely on xml editing, which causes a reboot and all
+const modelPermissionsPost237 = function() {
+  let permissions = greatekModel.modelPermissions();
+  permissions.stavixXMLConfig.webCredentials = false;
   return permissions;
 };
 
@@ -138,6 +164,26 @@ greatekModel.getModelFields = function() {
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
   return fields;
+};
+
+// Version 2.3.7 now allows direct editing of user/password fields, so we dont
+// rely on xml editing, which causes a reboot and all
+const modelFieldsPost237 = function() {
+  let fields = greatekModel.getModelFields();
+  fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
+    'X_WebUserInfo.AdminName';
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_WebUserInfo.AdminPassword';
+  return fields;
+};
+
+greatekModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  let copy = Object.assign({}, base);
+  if (versionCompare(fwVersion, 'V2.3.7') >= 0) {
+    copy.modelPermissions = modelPermissionsPost237;
+    copy.getModelFields = modelFieldsPost237;
+  }
+  return copy;
 };
 
 module.exports = greatekModel;
