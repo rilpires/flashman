@@ -7,11 +7,12 @@ zteModel.identifier = {vendor: 'ZTE', model: 'F673AV9'};
 zteModel.modelPermissions = function() {
 	let permissions = basicCPEModel.modelPermissions();
 	permissions.features.pingTest = true;
-	permissions.features.speedTest = true;
-	permissions.wan.speedTestLimit = 200;
+	permissions.features.ponSignal = true;
 	permissions.features.portForward = true;
+	permissions.features.speedTest = true;
 	permissions.wan.portForwardPermissions =
 		basicCPEModel.portForwardPermissions.noAsymRanges;
+	permissions.wan.speedTestLimit = 200;
 	permissions.wifi.list5ghzChannels = [
 		36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
 	];
@@ -54,6 +55,10 @@ zteModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+zteModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 zteModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.web_admin_user = 'InternetGatewayDevice.DeviceInfo.' +
@@ -64,6 +69,10 @@ zteModel.getModelFields = function() {
   	'X_CMCC_GponInterfaceConfig.Stats.BytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
   	'X_CMCC_GponInterfaceConfig.Stats.BytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+  	'X_CMCC_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
+  	'X_CMCC_GponInterfaceConfig.TXPower';
   fields.wifi2.band = fields.wifi2.band.replace(
   	/BandWidth/g, 'X_CMCC_ChannelWidth',
   );
