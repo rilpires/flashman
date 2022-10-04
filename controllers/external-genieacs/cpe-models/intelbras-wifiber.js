@@ -13,7 +13,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.traceroute.resolveDns = false;
+  permissions.traceroute.dnsPrefersIpv6 = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;

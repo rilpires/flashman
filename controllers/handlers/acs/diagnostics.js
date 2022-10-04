@@ -660,14 +660,15 @@ const startTracerouteDiagnose = async function(acsID) {
   + fields.diagnostics.traceroute.max_hop_count;
   let diagnInterface = rootField + '.'
   + fields.diagnostics.traceroute.interface;
+  let diagnProtocol = rootField + '.' + fields.diagnostics.traceroute.protocol;
 
+  let shouldSetProtocol = fields.diagnostics.traceroute.protocol.length > 0;
   let triesPerHop = device.traceroute_number_probes;
   let timeout = device.traceroute_max_wait * 1000;
   let maxHops = device.traceroute_max_hops;
 
   let permissions = cpe.modelPermissions();
   triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbesPerHop);
-  //triesPerHop = 4;
 
   let parameterValues = [
     [diagnStateField, 'Requested', 'xsd:string'],
@@ -676,6 +677,9 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
+  if (shouldSetProtocol) {
+    parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
+  }
   if (!permissions.traceroute.fixedProbesPerHop) {
     parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
   }

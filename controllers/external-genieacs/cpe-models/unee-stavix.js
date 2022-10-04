@@ -9,6 +9,8 @@ uneeModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.dnsPrefersIpv6 = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,

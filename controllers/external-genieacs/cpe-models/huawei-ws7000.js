@@ -9,6 +9,7 @@ huaweiModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.traceroute = true;
+  permissions.traceroute.dnsPrefersIpv6 = true;
   permissions.wifi.axWiFiMode = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
