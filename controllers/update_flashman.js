@@ -660,6 +660,32 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
   console.log('Finished migrating prefixes for all devices');
 };
 
+const migrateDeviceInforms = async function(config) {
+  // We must update the devices already in database with new values for their
+  // inform, based on the one configured. We always take up to 10% margin,
+  // chosen randomly so that they immediately spread out over the new interval
+  let inform = config.tr069.inform_interval / 1000; // Always compute in seconds
+  let projection = {_id: 1, acs_id: 1, custom_inform_interval: 1};
+  let devices;
+  try {
+    devices = await Devices.find({use_tr069: true}, projection);
+  } catch (e) {
+    console.log('Error querying devices for inform migration: ' + e);
+    return;
+  }
+  console.log('Starting inform migration for all devices');
+  devices.forEach(async (device)=>{
+    try {
+      let customInform = deviceHandler.makeCustomInformInterval(device, inform);
+      device.custom_inform_interval = customInform;
+      await device.save();
+    } catch (e) {
+      console.log('Error migrating inform for device ' + device._id);
+    }
+  });
+  console.log('Finished migrating inform for all devices');
+};
+
 updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
@@ -827,6 +853,7 @@ updateController.setAutoConfig = async function(req, res) {
     let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
     let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
     let changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
+    let willMigrateDeviceInforms = false;
     // if all fields are numeric,
     if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
      && !isNaN(tr069OfflineThreshold)
@@ -842,6 +869,9 @@ updateController.setAutoConfig = async function(req, res) {
       config.tr069.web_password = onuWebPassword;
       config.tr069.remote_access = onuRemote;
       // transforming from seconds to milliseconds.
+      if (config.tr069.inform_interval !== tr069InformInterval*1000) {
+        willMigrateDeviceInforms = true;
+      }
       config.tr069.inform_interval = tr069InformInterval*1000;
       config.tr069.sync_interval = tr069SyncInterval*1000;
       config.tr069.recovery_threshold = tr069RecoveryThreshold;
@@ -904,6 +934,9 @@ updateController.setAutoConfig = async function(req, res) {
 
     if (willMigrateDevicePrefixes.migrate) {
       migrateDevicePrefixes(config, willMigrateDevicePrefixes.oldPrefix);
+    }
+    if (willMigrateDeviceInforms) {
+      migrateDeviceInforms(config);
     }
 
     // Start / stop insecure GenieACS instance if parameter changed
