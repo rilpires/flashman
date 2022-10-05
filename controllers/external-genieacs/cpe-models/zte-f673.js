@@ -49,7 +49,7 @@ zteModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '3';
     case 'auto':
-      return (is5ghz) ? '3' : '0';
+      return (is5ghz) ? '2' : '0';
     default:
       return '';
   }
