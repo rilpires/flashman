@@ -1412,6 +1412,8 @@ anlixDocumentReady.add(function() {
           let grantDeviceLanRead = device.permissions.grantLanRead;
           let grantDeviceLanEdit = device.permissions.grantLanEdit;
           let grantLanGwEdit = device.permissions.grantLanGwEdit;
+          let grantRebootAfterWANChange =
+            device.permissions.grantRebootAfterWANChange;
           let grantOpmode = device.permissions.grantOpmode;
           let grantPortForwardAsym = device.permissions.grantPortForwardAsym;
           let grantPortOpenIpv6 = device.permissions.grantPortOpenIpv6;
@@ -1878,6 +1880,17 @@ anlixDocumentReady.add(function() {
                 '</div>'+
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
+            '</div>'+
+            '<div class="row">'+
+              '<div class="col-8">'+
+                (grantRebootAfterWANChange ?
+                  '<div class="alert alert-info">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>'+t('needRebootAfterChangeWanWarning')+'</span>'+
+                  '</div>' :
+                  ''
+                )+
+              '</div>'+
             '</div>'+
             '$REPLACE_WAN_INFO'+
           '</div>';
