@@ -68,6 +68,13 @@ deviceHandlers.isApTooOld = function(dateLastSeen) {
   return isTooOld(dateLastSeen, 60);
 };
 
+deviceHandlers.makeCustomInformInterval = function(device, inform) {
+  if (!device.use_tr069) return 0;
+  let hashedID = util.simpleStringHash(device.acs_id);
+  let margin = parseInt(0.1 * inform); // 10% of interval time in variance
+  return inform - (hashedID%margin);
+};
+
 deviceHandlers.syncUpdateScheduler = async function(mac) {
   try {
     let config = await Config.findOne({is_default: true}).lean();
