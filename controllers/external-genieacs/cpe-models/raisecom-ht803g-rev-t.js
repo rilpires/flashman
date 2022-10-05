@@ -203,6 +203,11 @@ raisecomModel.getModelFields = function() {
 };
 
 
+// Despite it being almost the same method as others "X_CT-COM_" prefixed
+// models on traceroute tree, this one always fills latency values with
+// numbers greater than 0 (except on first hops, where latency is
+// usually 0 or 1ms). Looks like there is no way to have intermediary
+// packet loss on this model, it may just repeat last valid value.
 raisecomModel.readTracerouteRTTs = function(hopRoot) {
   let ret = [];
   for (let i = 1; i <= 3; i++) {
