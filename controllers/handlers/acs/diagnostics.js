@@ -189,20 +189,12 @@ const calculatePingDiagnostic = async function(
 const calculateTraceDiagnostic = async function(
   device, cpe, data, traceFields,
 ) {
-  console.log('calculateTraceDiagnostic...');
-
   // Filling individually each key, since 'getAllNestedKeysFromObject' won't
   // do any good
-  console.log('data antes:');
-  console.log(data);
-  console.log('traceFields antes:');
-  console.log(traceFields);
   let permissions = cpe.modelPermissions();
   let rootData = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(traceFields), traceFields, traceFields['root'],
   );
-  console.log('rootData:');
-  console.log(rootData);
 
   let traceResult = device.traceroute_results
     .filter((e)=>!e.completed)
@@ -210,8 +202,6 @@ const calculateTraceDiagnostic = async function(
 
   if (!traceResult) return;
   if (['Requested', 'None'].includes(rootData.diag_state)) return;
-
-  console.log('Trace result antes:', traceResult);
 
   const traceTarget = rootData.target;
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
@@ -294,9 +284,6 @@ const calculateTraceDiagnostic = async function(
   await device.save().catch((err) => {
     console.log('Error saving device after traceroute test(tr069): ' + err);
   });
-
-
-  console.log('Trace result depois, pre trap:', traceResult);
 
   // No await needed
   sio.anlixSendTracerouteNotification(device._id, traceResult);
@@ -790,7 +777,6 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let fieldToFetch = '';
-  console.log('acsDiagnosticsHandler.triggerDiagnosticResults');
   switch (device.current_diagnostic.type) {
     case 'ping':
       fieldToFetch = fields.diagnostics.ping.root;
@@ -815,7 +801,6 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
 };
 
 const fetchDiagnosticsFromGenie = async function(acsID) {
-  console.log('fetchDiagnosticsFromGenie');
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID});
@@ -921,9 +906,6 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
         let permissions = DeviceVersion.devicePermissions(device);
         if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
-        } else if (!device.current_diagnostic.in_progress) {
-          console.log('Genie diagnostic received but ' +
-            'current_diagnostic.in_progress==false');
         } else if (permissions.grantPingTest && diagType == 'ping') {
           await calculatePingDiagnostic(
             device, cpe, data,
