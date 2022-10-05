@@ -1873,8 +1873,11 @@ acsDeviceInfoController.updateInfo = async function(
     });
   });
   // CPEs needs to reboot after change PPPoE parameters
-  if (cpe.modelPermissions().wan.mustRebootAfterChanges &&
-     (changes.wan && changes.wan.pppoe_user || device.pppoe_password)) {
+  if (
+    cpe.modelPermissions().wan.mustRebootAfterChanges &&
+    Object.entries(changes.wan).length > 0 &&
+    (changes.wan.pppoe_user || device.pppoe_password)
+  ) {
     rebootAfterUpdate = true;
   }
   if (!hasChanges) return; // No need to sync data with genie

@@ -10,10 +10,10 @@ zteModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 200;
-  permissions.wan.mustRebootAfterChanges = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
   ];
@@ -21,6 +21,17 @@ zteModel.modelPermissions = function() {
     'V2.0.0P1T4': [],
   };
   return permissions;
+};
+
+// Should be tweaked if the tr-069 xml has special types for some fields
+zteModel.getFieldType = function(masterKey, key) {
+  switch (masterKey+'-'+key) {
+    case 'wifi2-band':
+    case 'wifi5-band':
+      return 'xsd:unsignedInt';
+    default:
+      return basicCPEModel.getFieldType(masterKey, key);
+  }
 };
 
 // WiFi operational modes
@@ -96,7 +107,7 @@ zteModel.getModelFields = function() {
   fields.wifi2.band = fields.wifi2.band.replace(
     /BandWidth/g, 'X_CMCC_ChannelWidth',
   );
-  fields.wifi5.band = fields.wifi2.band.replace(
+  fields.wifi5.band = fields.wifi5.band.replace(
     /BandWidth/g, 'X_CMCC_ChannelWidth',
   );
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1' +
