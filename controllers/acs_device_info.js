@@ -347,6 +347,23 @@ const createRegistry = async function(req, cpe, permissions) {
     ];
   }
 
+  // Update inform interval - compute custom based on config
+  let customInterval = 300;
+  if (data.common.interval && data.common.interval.value) {
+    if (matchedConfig && matchedConfig.tr069) {
+      let interval = parseInt(data.common.interval.value);
+      let configInterval = matchedConfig.tr069.inform_interval;
+      let customInterval = deviceHandlers.makeCustomInformInterval(
+        {use_tr069: true, acs_id: req.body.acs_id},
+        parseInt(configInterval/1000),
+      );
+      if (!isNaN(interval) && interval !== customInterval) {
+        changes.common.interval = customInterval;
+        doChanges = true;
+      }
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -354,6 +371,7 @@ const createRegistry = async function(req, cpe, permissions) {
     serial_tr069: serialTR069,
     alt_uid_tr069: altUid,
     acs_id: req.body.acs_id,
+    custom_inform_interval: customInterval,
     model: model,
     version: data.common.version.value,
     hw_version: data.common.hw_version.value,
@@ -418,21 +436,6 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.wifi2.ssid = ssid;
     changes.wifi5.ssid = ssid5ghz;
     doChanges = true;
-  }
-  // Update inform interval
-  if (data.common.interval && data.common.interval.value) {
-    if (matchedConfig && matchedConfig.tr069) {
-      let interval = parseInt(data.common.interval.value);
-      if (
-        !isNaN(interval) &&
-        interval*1000 !== matchedConfig.tr069.inform_interval
-      ) {
-        changes.common.interval = parseInt(
-          matchedConfig.tr069.inform_interval / 1000,
-        );
-        doChanges = true;
-      }
-    }
   }
   // If has STUN Support in the model and
   // if STUN Enable flag is different from actual configuration
