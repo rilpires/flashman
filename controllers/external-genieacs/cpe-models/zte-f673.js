@@ -14,7 +14,7 @@ zteModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 200;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
   ];
   permissions.firmwareUpgrades = {
     'V2.0.0P1T4': [],
