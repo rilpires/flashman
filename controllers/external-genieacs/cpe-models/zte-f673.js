@@ -22,6 +22,20 @@ zteModel.modelPermissions = function() {
   return permissions;
 };
 
+// WiFi operational modes
+// 2.4Ghz
+// BGN -> bgn
+// GN -> gn
+// BG -> bg
+// N -> n
+// G -> g
+// B -> b
+
+// 5Ghz
+// ANAC -> ac
+// AN -> na
+// N -> ac
+// A -> a
 zteModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -38,6 +52,11 @@ zteModel.convertWifiMode = function(mode) {
   }
 };
 
+// WiFi bandwidth modes
+// 0 -> 20 Mhz
+// 1 -> 40 Mhz
+// 2 -> auto (only for 2.4Ghz WLAN)
+// 3 -> 80 Mhz / auto (only for 5Ghz WLAN)
 zteModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
