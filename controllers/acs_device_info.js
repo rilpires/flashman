@@ -1104,8 +1104,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   // Process inform interval
   if (data.common.interval && data.common.interval.value) {
     let interval = parseInt(data.common.interval.value);
-    if (!isNaN(interval) && interval*1000 !== config.tr069.inform_interval) {
-      changes.common.interval = parseInt(config.tr069.inform_interval/1000);
+    if (!isNaN(interval) && interval !== device.custom_inform_interval) {
+      changes.common.interval = device.custom_inform_interval;
       hasChanges = true;
     }
   }
