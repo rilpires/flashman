@@ -9,6 +9,7 @@ datacomModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
   permissions.features.ponSignal = true;
+  permissions.features.traceroute = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
@@ -55,6 +56,15 @@ datacomModel.isDeviceConnectedViaWifi = function(
 
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  fields.diagnostics.traceroute.root = 'InternetGatewayDevice.' +
+    'X_CT-COM_IPTraceRouteDiagnostics';
+  fields.diagnostics.traceroute.hops_root = 'Hops';
+  fields.diagnostics.traceroute.hop_host = 'ResponseIPAddress';
+  fields.diagnostics.traceroute.hop_ip_address = 'ResponseIPAddress';
+  // Even though 'Mode' field exists, I can't set it to anything
+  // fields.diagnostics.traceroute.protocol = 'Mode';
+  // fields.diagnostics.traceroute.hop_rtt_times = 'ResponseTime1';
+  fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -70,6 +80,25 @@ datacomModel.getModelFields = function() {
   fields.port_mapping_values.protocol[1] = 'BOTH';
   delete fields.port_mapping_fields.external_port_end;
   return fields;
+};
+
+
+datacomModel.readTracerouteRTTs = function(hopRoot) {
+  let ret = [];
+  for (let i = 1; i <= 3; i++) {
+    let responseObject = hopRoot[`ResponseTime${i}`];
+    // Sometimes a probe comes with 0 latency (while others come >100)
+    // This clearly means that probe was a loss.
+    // I've never seen 0 latency on initial hops, only >=1, probably a ceil()
+    if (responseObject &&
+      typeof(responseObject['_value']) == 'number' &&
+      !isNaN(responseObject['_value']) &&
+      responseObject['_value'] > 0
+    ) {
+      ret.push(responseObject['_value'].toString());
+    }
+  }
+  return ret;
 };
 
 module.exports = datacomModel;

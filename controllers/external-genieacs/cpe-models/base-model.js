@@ -473,10 +473,12 @@ basicCPEModel.getPortForwardRuleName = function(index) {
   return 'Anlix_PortForwarding_' + index.toString();
 };
 
-basicCPEModel.readTracerouteRTTs = function(hopRoot) {
+// If you are going to overwrite this function, check out the others
+// specialized ones, maybe there is already a useful one
+basicCPEModel.readTracerouteRTTs = function(genieHopRoot) {
   let rttTimesField
     = this.getModelFields().diagnostics.traceroute.hop_rtt_times;
-  let RTTs = hopRoot[rttTimesField]['_value'];
+  let RTTs = genieHopRoot[rttTimesField]['_value'];
   return RTTs
     .split(',')
     .filter((e)=>!isNaN(parseFloat(e)))

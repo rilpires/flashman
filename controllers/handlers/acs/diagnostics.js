@@ -260,11 +260,9 @@ const calculateTraceDiagnostic = async function(
       } else if (hopSkipped) {
         traceResult.all_hops_tested = false;
       }
-      console.log('inHop antes:', inHop);
       let inHopKeys = utilHandlers.getAllNestedKeysFromObject(
         inHop, Object.keys(traceFields), traceFields,
       );
-      console.log('inHopKeys dps:', inHopKeys);
       let msValues = cpe.readTracerouteRTTs(inHop);
       let currentHop = {
         ip: inHopKeys.hop_ip_address
