@@ -213,6 +213,10 @@ const calculateTraceDiagnostic = async function(
 
   console.log('Trace result antes:', traceResult);
 
+  const traceTarget = rootData.target;
+  const inTriesPerHop = parseInt(rootData.tries_per_hop);
+  const maxHopCount = parseInt(rootData.max_hop_count);
+  const numberOfHops = parseInt(rootData.number_of_hops);
   let hasData = [
     'Complete',
     'Complete\n',
@@ -226,12 +230,18 @@ const calculateTraceDiagnostic = async function(
   let hasExceeded =
     (rootData.diag_state == permissions.traceroute.hopCountExceededState);
 
+  // In the rare case of hop count exceeded, even yet in a model that always
+  // returns 'Complete', the better way to know if destination was reached
+  // is to check if hopCount == maxHopCount. Else, we consider not exceeded
+  if (rootData.diag_state == 'Complete' &&
+      permissions.traceroute.hopCountExceededState=='Complete' &&
+      numberOfHops < maxHopCount
+  ) {
+    hasExceeded = false;
+  }
 
   if (hasData || hasExceeded) {
     // const inNumberOfHops = parseInt(rootData.number_of_hops);
-    const traceTarget = rootData.target;
-    const inTriesPerHop = parseInt(rootData.tries_per_hop);
-    const maxHopCount = parseInt(rootData.max_hop_count);
     let hopSkipped = false;
     traceResult.address = traceTarget;
     traceResult.all_hops_tested = !hasExceeded;
@@ -262,7 +272,7 @@ const calculateTraceDiagnostic = async function(
               : inHopKeys.hop_host,
         ms_values: msValues,
       };
-      if (currentHop.ip && currentHop.ip!='*') {
+      if (currentHop.ip && currentHop.ip!='*' && msValues.length > 0) {
         traceResult.hops.push(currentHop);
       }
     }
