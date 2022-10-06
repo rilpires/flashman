@@ -353,7 +353,7 @@ const createRegistry = async function(req, cpe, permissions) {
     if (matchedConfig && matchedConfig.tr069) {
       let interval = parseInt(data.common.interval.value);
       let configInterval = matchedConfig.tr069.inform_interval;
-      let customInterval = deviceHandlers.makeCustomInformInterval(
+      customInterval = deviceHandlers.makeCustomInformInterval(
         {use_tr069: true, acs_id: req.body.acs_id},
         parseInt(configInterval/1000),
       );
