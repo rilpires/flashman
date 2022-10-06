@@ -5,7 +5,7 @@ const Device = require('./models/device');
 const DevicesAPI = require('./controllers/external-genieacs/devices-api');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
-const deviceHandlers = require('./controllers/handlers/device');
+const deviceHandlers = require('./controllers/handlers/devices');
 const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
 const objectId = require('mongoose').Types.ObjectId;
@@ -203,8 +203,8 @@ module.exports = async (app) => {
      pppoe_user: true, pppoe_password: true,
      isSsidPrefixEnabled: true, bssid_mesh2: true, wifi_mode: true,
      bssid_mesh5: true, use_tr069: true, _id: true, model: true,
-     custom_inform_interval: true},
-    function(err, devices) {
+     custom_inform_interval: true, acs_id: true},
+    async function(err, devices) {
       if (!err && devices) {
         for (let idx = 0; idx < devices.length; idx++) {
           let saveDevice = false;
@@ -265,7 +265,7 @@ module.exports = async (app) => {
             saveDevice = true;
           }
           if (saveDevice) {
-            devices[idx].save();
+            await devices[idx].save();
           }
           /*
             Check if tr-069 device has mesh bssids registered
