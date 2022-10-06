@@ -665,7 +665,7 @@ const migrateDeviceInforms = async function(config) {
   // inform, based on the one configured. We always take up to 10% margin,
   // chosen randomly so that they immediately spread out over the new interval
   let inform = config.tr069.inform_interval / 1000; // Always compute in seconds
-  let projection = {_id: 1, acs_id: 1, custom_inform_interval: 1};
+  let projection = {_id: 1, acs_id: 1, use_tr069: 1, custom_inform_interval: 1};
   let devices;
   try {
     devices = await Devices.find({use_tr069: true}, projection);
