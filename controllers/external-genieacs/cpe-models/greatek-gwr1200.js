@@ -1,5 +1,20 @@
 const basicCPEModel = require('./base-model');
 
+const versionCompare = function(foo, bar) {
+  // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
+  let fooVer = foo.split('.').map((val) => {
+    return parseInt(val);
+  });
+  let barVer = bar.split('.').map((val) => {
+    return parseInt(val);
+  });
+  for (let i = 0; i < fooVer.length; i++) {
+    if (fooVer[i] < barVer[i]) return -1;
+    if (fooVer[i] > barVer[i]) return 1;
+  }
+  return 0;
+};
+
 let greatekModel = Object.assign({}, basicCPEModel);
 
 greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
@@ -28,9 +43,25 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    '638.112.100.1383': ['638.112.100.1435'],
-    '638.112.100.1435': ['638.112.100.1383'],
+    '638.112.100.1383': ['638.112.100.1435', '638.112.100.1460'],
+    '638.112.100.1435': ['638.112.100.1383', '638.112.100.1460'],
+    '638.112.100.1460': ['638.112.100.1383', '638.112.100.1435'],
   };
+  return permissions;
+};
+
+// Version 638.112.100.1460 now allows read/write of wifi mode and band, as well
+// as editing lan configurations
+const modelPermissionsPost1460 = function() {
+  let permissions = greatekModel.modelPermissions();
+  permissions.lan.configWrite = true;
+  permissions.lan.needConfigOnLANChange = true;
+  permissions.wifi.bandRead2 = true;
+  permissions.wifi.bandRead5 = true;
+  permissions.wifi.bandWrite2 = true;
+  permissions.wifi.bandWrite5 = true;
+  permissions.wifi.bandAuto2 = true;
+  permissions.wifi.modeWrite = true;
   return permissions;
 };
 
@@ -45,6 +76,23 @@ greatekModel.convertWifiMode = function(mode) {
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+    default:
+      return '';
+  }
+};
+
+greatekModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    case 'auto':
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }
@@ -94,6 +142,14 @@ greatekModel.getModelFields = function() {
   fields.common.stun_udp_conn_req_addr =
   'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   return fields;
+};
+
+greatekModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  let copy = Object.assign({}, base);
+  if (versionCompare(fwVersion, '638.112.100.1460') >= 0) {
+    copy.modelPermissions = modelPermissionsPost1460;
+  }
+  return copy;
 };
 
 module.exports = greatekModel;

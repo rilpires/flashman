@@ -29,6 +29,7 @@ basicCPEModel.portForwardPermissions = {
 };
 
 // Must be changed for every model, used when importing firmwares
+// MUST MATCH APP VENDOR AND MODEL EXACTLY!
 basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 
 // Must be tweaked by models to reflect their features and permissions
@@ -66,6 +67,7 @@ basicCPEModel.modelPermissions = function() {
       LANDeviceSkipIfNoWifiMode: false, // will skip devices with no host mode
                                       // info (developed for Nokia models)
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
+      needConfigOnLANChange: false, // will force lan enable on edit (GWR1200)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
@@ -406,6 +408,9 @@ basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
       values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
       values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
     }
+    if (permissions.lan.needConfigOnLANChange) {
+      values.push([fields['lan']['config_enable'], true, 'xsd:boolean']);
+    }
   }
   return values;
 };
@@ -577,6 +582,8 @@ basicCPEModel.getModelFields = function() {
       remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
     lan: {
+      config_enable: 'InternetGatewayDevice.LANDevice.1.' +
+        'LANHostConfigManagement.IPInterface.1.Enable',
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.'+
         'IPInterface.1.IPInterfaceIPAddress',
       subnet_mask: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.'+
@@ -752,6 +759,14 @@ basicCPEModel.getModelFields = function() {
       },
     },
   };
+};
+
+// This function can be called to apply changes to the functions declared above
+// based on firmware/hardware versions, to avoid creating entirely new files for
+// very basic changes. "Base" is exactly what is exported below: basicCPEModel.
+// Functions can be altered through a copy of it, returned with altered values
+basicCPEModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  return base;
 };
 
 module.exports = basicCPEModel;
