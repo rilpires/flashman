@@ -13,7 +13,9 @@ tplinkModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.features.stun = false;
+  permissions.traceroute.hopCountExceededState = 'Completed';
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
   permissions.firmwareUpgrades = {
@@ -162,6 +164,13 @@ tplinkModel.getModelFields = function() {
     fields.diagnostics.speedtest[k] = fields.diagnostics.speedtest[k].replace(
       'DownloadDiagnostics', 'IP.Diagnostics.DownloadDiagnostics');
   });
+  // Traceroute
+  fields.diagnostics.traceroute.root = 'Device.IP.Diagnostics.TraceRoute';
+  fields.diagnostics.traceroute.hop_host = 'Host',
+  fields.diagnostics.traceroute.hop_ip_address = 'HostAddress',
+  fields.diagnostics.traceroute.hop_error_code = 'ErrorCode',
+  fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes',
+
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
 
