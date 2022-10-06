@@ -125,6 +125,7 @@ basicCPEModel.modelPermissions = function() {
       completeAsRequested: false,
       hopCountExceededState: 'Error_MaxHopCountExceeded',
       dnsPrefersIpv6: false, // If no IPv6 interface is available, no guarantees
+      dataBlockSizeToSet: NaN, // If NaN, use default value
       // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset

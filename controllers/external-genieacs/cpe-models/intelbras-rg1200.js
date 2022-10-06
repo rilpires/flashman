@@ -18,6 +18,8 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
   permissions.features.siteSurvey = true;
+  permissions.features.traceroute = false;
+  // permissions.traceroute.dataBlockSizeToSet = 38;
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
   permissions.siteSurvey.survey2Index = '1';
@@ -97,6 +99,8 @@ intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   // stun fields:
   // These should only be added whenever they exist, for legacy reasons:
+  fields.common.mac = 'InternetGatewayDevice.LANDevice.1.'+
+    'LANEthernetInterfaceConfig.1.MACAddress',
   fields.common.web_admin_user = 'InternetGatewayDevice.User.1.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
   fields.common.stun_enable =

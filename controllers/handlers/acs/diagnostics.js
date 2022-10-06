@@ -652,9 +652,11 @@ const startTracerouteDiagnose = async function(acsID) {
   let diagnTimeoutField = rootField + '.'
     + fields.diagnostics.traceroute.timeout;
   let diagnMaxHops = rootField + '.'
-  + fields.diagnostics.traceroute.max_hop_count;
+    + fields.diagnostics.traceroute.max_hop_count;
   let diagnInterface = rootField + '.'
-  + fields.diagnostics.traceroute.interface;
+    + fields.diagnostics.traceroute.interface;
+  let diagnDataBlockSize = rootField + '.'
+    + fields.diagnostics.traceroute.data_block_size;
   let diagnProtocol = rootField + '.' + fields.diagnostics.traceroute.protocol;
 
   let shouldSetProtocol = fields.diagnostics.traceroute.protocol.length > 0;
@@ -672,6 +674,15 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
+  if (!isNaN(permissions.traceroute.dataBlockSizeToSet)) {
+    parameterValues.push(
+      [
+        diagnDataBlockSize,
+        permissions.traceroute.dataBlockSizeToSet.toString(),
+        'xsd:string',
+      ],
+    );
+  }
   if (shouldSetProtocol) {
     parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
   }
