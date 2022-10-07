@@ -7,13 +7,12 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
-  permissions.features.portForward = false; // Bug at IP address after
-                                            // changes at LAN config
+  permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.lan.blockLANDevices = false; // Bug at rules id
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymRanges;
+    basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
