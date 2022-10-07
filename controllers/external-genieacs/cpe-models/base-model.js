@@ -729,7 +729,7 @@ basicCPEModel.getModelFields = function() {
       },
       /**
        * <---- Traceroute ---->
-       * ip_version:
+       *  ip_version:
        *    this field is rarely present as an option to set IPv4 or IPv6.
        *    We only want IPv4, so don't bother filling this fields when the
        *    default value is already as '4' or 'IPv4', something like that.

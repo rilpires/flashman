@@ -9,6 +9,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 800;
