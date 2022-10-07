@@ -658,8 +658,11 @@ const startTracerouteDiagnose = async function(acsID) {
   let diagnDataBlockSize = rootField + '.'
     + fields.diagnostics.traceroute.data_block_size;
   let diagnProtocol = rootField + '.' + fields.diagnostics.traceroute.protocol;
+  let diagnIpVersion = rootField + '.'
+    + fields.diagnostics.traceroute.ip_version;
 
   let shouldSetProtocol = fields.diagnostics.traceroute.protocol.length > 0;
+  let shouldSetIpVersion = fields.diagnostics.traceroute.ip_version.length > 0;
   let triesPerHop = device.traceroute_number_probes;
   let timeout = device.traceroute_max_wait * 1000;
   let maxHops = device.traceroute_max_hops;
@@ -683,7 +686,14 @@ const startTracerouteDiagnose = async function(acsID) {
       ],
     );
   }
+  if (shouldSetIpVersion) {
+    console.log('Setando ip version');
+    parameterValues.push(
+      [diagnIpVersion, 'IPv4', 'xsd:string'],
+    );
+  }
   if (shouldSetProtocol) {
+    console.log('Setando protocol!');
     parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
   }
   if (!permissions.traceroute.fixedProbesPerHop) {

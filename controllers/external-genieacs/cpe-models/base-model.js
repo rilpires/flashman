@@ -727,6 +727,17 @@ basicCPEModel.getModelFields = function() {
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
       },
+      /**
+       * <---- Traceroute ---->
+       * ip_version:
+       *    this field is rarely present as an option to set IPv4 or IPv6.
+       *    We only want IPv4, so don't bother filling this fields when the
+       *    default value is already as '4' or 'IPv4', something like that.
+       *    For now, this field sets the field as 'IPv4'(string), when present.
+       *  protocol:
+       *    We prefer ICMP over UDP (most likely the default). If this field is
+       *    present, we set it to 'ICMP'(string).
+       */
       traceroute: {
         root: 'InternetGatewayDevice.TraceRouteDiagnostics',
         diag_state: 'DiagnosticsState',
@@ -740,6 +751,7 @@ basicCPEModel.getModelFields = function() {
         response_time: 'ResponseTime',
         number_of_hops: 'RouteHopsNumberOfEntries',
         protocol: '',
+        ip_version: '',
         hops_root: 'RouteHops',
         hop_host: 'HopHost',
         hop_ip_address: 'HopHostAddress',
