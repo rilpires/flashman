@@ -115,18 +115,31 @@ basicCPEModel.modelPermissions = function() {
       survey5Index: '', // For devices with split state/result fields (5GHz)
     },
     traceroute: {
-      maxProbesPerHop: 3, // Flashman's device.model limit is 5
-      // If 'fixedProbesPerHop' is a valid number, it does not allow setting
-      // a custom 'traceroute_number_probes' value, except fixedProbesPerHop
+      /**
+      * - maxProbesPerHop:
+      *     We won't allow setting 'traceroute_number_probes' w/ a lower value.
+      * - fixedProbesPerHop:
+      *     If 'fixedProbesPerHop' is a valid number, it does not allow setting
+      *     a custom 'traceroute_number_probes' value, except fixedProbesPerHop
+      * - completeAsRequested:
+      *     This will allow flashman to proceed with traceroute diagnostic even
+      *     when 'DiagnosticsState' field is 'Requested'
+      * - hopCountExceededState:
+      *     The 'DiagnosticsState' value that appears when traceroute hops 
+      *     wasnt enough.
+      * - ipv6HasPriority:
+      *     If no IPv6 interface is available, who knows
+      * - protocol:
+      *     Although we prioritize ICMP when available, UDP is most likely
+      *     the only protocol supported
+      **/
+      maxProbesPerHop: 3,
       fixedProbesPerHop: NaN,
-      // Sometimes... it completes traceroute diagnostic successfully,
-      // and even fills hops values, but DiagnosticState value
-      // is still 'Requested'.
       completeAsRequested: false,
       hopCountExceededState: 'Error_MaxHopCountExceeded',
-      dnsPrefersIpv6: false, // If no IPv6 interface is available, no guarantees
+      ipv6HasPriority: false,
+      protocol: 'UDP',
       dataBlockSizeToSet: NaN, // If NaN, use default value
-      // allowTriesPerHop: 0, //
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,

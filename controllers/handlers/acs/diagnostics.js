@@ -687,13 +687,11 @@ const startTracerouteDiagnose = async function(acsID) {
     );
   }
   if (shouldSetIpVersion) {
-    console.log('Setando ip version');
     parameterValues.push(
       [diagnIpVersion, 'IPv4', 'xsd:string'],
     );
   }
   if (shouldSetProtocol) {
-    console.log('Setando protocol!');
     parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
   }
   if (!permissions.traceroute.fixedProbesPerHop) {
