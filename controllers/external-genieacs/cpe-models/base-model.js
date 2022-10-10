@@ -78,6 +78,7 @@ basicCPEModel.modelPermissions = function() {
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
       hasUptimeField: true, // flag to handle devices that don't have uptime
+      mustRebootAfterChanges: false, // must reboot after change wan parameters
     },
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],

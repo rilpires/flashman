@@ -67,6 +67,7 @@ const tr069Models = {
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
+  zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
@@ -264,6 +265,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
+  } else if (modelName === 'F673AV9') {
+    // ZTE F673AV9
+    result = {success: true, cpe: tr069Models.zteF673Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     result = {success: true, cpe: tr069Models.zyxelEMG3524Model};

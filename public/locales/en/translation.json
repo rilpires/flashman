@@ -788,6 +788,7 @@
 	"cpeIp": "CPE IP",
 	"networkIp": "Network IP",
 	"networkIpCalculationDescription": "Network IP will be calculated from the chosen CPE IP and Mask",
+	"needRebootAfterChangeWanWarning": "This CPE needs to reboot after WAN settings are modified",
 	"Mask": "Mask",
 	"routerMode": "Router Mode",
 	"bridgeApMode": "Bridge Mode / AP Mode",
