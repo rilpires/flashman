@@ -9,6 +9,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];

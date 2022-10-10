@@ -16,6 +16,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.stun = false;
   permissions.traceroute.hopCountExceededState = 'Completed';
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
   permissions.firmwareUpgrades = {

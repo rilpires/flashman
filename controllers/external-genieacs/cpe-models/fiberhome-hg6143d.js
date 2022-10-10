@@ -12,10 +12,11 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
+  permissions.features.portForward = true;
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Complete';
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.speedTestLimit = 700;
-  permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.bandWrite2 = false;

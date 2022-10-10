@@ -17,6 +17,7 @@ raisecomModel.modelPermissions = function() {
 
   permissions.traceroute.fixedProbesPerHop = 3;
   permissions.traceroute.hopCountExceededState = 'Error_Other';
+  permissions.traceroute.protocol = 'ICMP';
 
   permissions.wan.speedTestLimit = 300;
 

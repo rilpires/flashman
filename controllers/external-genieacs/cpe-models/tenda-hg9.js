@@ -11,6 +11,7 @@ tendaModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.traceroute.ipv6HasPriority = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;

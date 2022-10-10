@@ -28,6 +28,7 @@ raisecomModel.modelPermissions = function() {
 
   // traceroute
   permissions.traceroute.hopCountExceededState = 'Complete';
+  permissions.traceroute.protocol = 'ICMP';
 
   // wifi permissions
   permissions.wifi.list5ghzChannels =

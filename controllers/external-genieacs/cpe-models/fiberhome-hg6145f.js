@@ -14,6 +14,7 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Error_CannotResolveHostName';
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.traceRouteSetInterface = true;
   permissions.wan.portForwardPermissions =

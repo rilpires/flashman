@@ -14,6 +14,7 @@ zteModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.features.traceroute = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.lan.blockLANDevices = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
