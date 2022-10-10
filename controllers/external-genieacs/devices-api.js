@@ -45,6 +45,7 @@ const tr069Models = {
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
+  multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -199,6 +200,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
+  } else if (modelName === 'F6600') {
+    // Multilaser ZTE F6600
+    result = {success: true, cpe: tr069Models.multilaserF6600Model};
   } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
     // Multilaser ZTE F670L V9.0
     result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
