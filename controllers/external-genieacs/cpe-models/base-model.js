@@ -119,23 +119,24 @@ basicCPEModel.modelPermissions = function() {
       /**
       * - maxProbesPerHop:
       *     We won't allow setting 'traceroute_number_probes' w/ a lower value.
-      * - fixedProbesPerHop:
-      *     If 'fixedProbesPerHop' is a valid number, it does not allow setting
-      *     a custom 'traceroute_number_probes' value, except fixedProbesPerHop
+      * - minProbesPerHop:
+      *     We won't allow setting 'traceroute_number_probes' w/ a bigger value
       * - completeAsRequested:
       *     This will allow flashman to proceed with traceroute diagnostic even
       *     when 'DiagnosticsState' field is 'Requested'
       * - hopCountExceededState:
-      *     The 'DiagnosticsState' value that appears when traceroute hops 
+      *     The 'DiagnosticsState' value that appears when traceroute hops
       *     wasnt enough.
       * - ipv6HasPriority:
-      *     If no IPv6 interface is available, who knows
+      *     This model will traceroute by IPv6 when available. Some models
+      *     will simply not complete when IPv6 link is not up against a IPv6
+      *     solved hostname.
       * - protocol:
       *     Although we prioritize ICMP when available, UDP is most likely
       *     the only protocol supported
       **/
       maxProbesPerHop: 3,
-      fixedProbesPerHop: NaN,
+      minProbesPerHop: 1,
       completeAsRequested: false,
       hopCountExceededState: 'Error_MaxHopCountExceeded',
       ipv6HasPriority: false,

@@ -237,10 +237,15 @@ const calculateTraceDiagnostic = async function(
     traceResult.all_hops_tested = !hasExceeded;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
-    if (!traceResult.tries_per_hop &&
-    permissions.traceroute.fixedProbesPerHop) {
-      traceResult.tries_per_hop = permissions.traceroute.fixedProbesPerHop;
+    // Clamping tries_per_hop
+    if (traceResult.tries_per_hop < permissions.traceroute.minProbesPerHop) {
+      traceResult.tries_per_hop = permissions.traceroute.minProbesPerHop;
     }
+    if (traceResult.tries_per_hop > permissions.traceroute.maxProbesPerHop) {
+      traceResult.tries_per_hop = permissions.traceroute.maxProbesPerHop;
+    }
+    // Filling every hop result. Note we loop from 1 to maxHopCount - it is a
+    // safe way to iterate over every hop, skipping fields when not available
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
       // inHop here is as it is from genie acs tree.
       let inHop = rootData.hops_root[hopIndex.toString()];
@@ -694,7 +699,7 @@ const startTracerouteDiagnose = async function(acsID) {
   if (shouldSetProtocol) {
     parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
   }
-  if (!permissions.traceroute.fixedProbesPerHop) {
+  if (!permissions.traceroute.minProbesPerHop) {
     parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
   }
   if (permissions.wan.traceRouteSetInterface) {

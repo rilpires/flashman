@@ -15,7 +15,7 @@ raisecomModel.modelPermissions = function() {
   permissions.features.speedTest = true; // will enable speed test dialogs
   permissions.features.traceroute = true; // will enable speed test dialogs
 
-  permissions.traceroute.fixedProbesPerHop = 3;
+  permissions.traceroute.minProbesPerHop = 3;
   permissions.traceroute.hopCountExceededState = 'Error_Other';
   permissions.traceroute.protocol = 'ICMP';
 
