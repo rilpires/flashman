@@ -189,8 +189,6 @@ const calculatePingDiagnostic = async function(
 const calculateTraceDiagnostic = async function(
   device, cpe, data, traceFields,
 ) {
-  // Filling individually each key, since 'getAllNestedKeysFromObject' won't
-  // do any good
   let permissions = cpe.modelPermissions();
   let rootData = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(traceFields), traceFields, traceFields['root'],
@@ -201,7 +199,6 @@ const calculateTraceDiagnostic = async function(
     .find((e)=>e.address==rootData.target);
 
   if (!traceResult) return;
-  if (['Requested', 'None'].includes(rootData.diag_state)) return;
 
   const traceTarget = rootData.target;
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
@@ -674,6 +671,7 @@ const startTracerouteDiagnose = async function(acsID) {
 
   let permissions = cpe.modelPermissions();
   triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbesPerHop);
+  triesPerHop = Math.max(triesPerHop, permissions.traceroute.minProbesPerHop);
 
   let parameterValues = [
     [diagnStateField, 'Requested', 'xsd:string'],

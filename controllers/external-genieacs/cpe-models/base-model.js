@@ -129,7 +129,7 @@ basicCPEModel.modelPermissions = function() {
       *     wasnt enough.
       * - ipv6HasPriority:
       *     This model will traceroute by IPv6 when available. Some models
-      *     will simply not complete when IPv6 link is not up against a IPv6
+      *     will simply not complete when IPv6 link is not up against an IPv6
       *     solved hostname.
       * - protocol:
       *     Although we prioritize ICMP when available, UDP is most likely
