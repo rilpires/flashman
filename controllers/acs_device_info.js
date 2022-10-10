@@ -1876,7 +1876,7 @@ acsDeviceInfoController.updateInfo = async function(
   if (
     cpe.modelPermissions().wan.mustRebootAfterChanges &&
     Object.entries(changes.wan).length > 0 &&
-    (changes.wan.pppoe_user || device.pppoe_password)
+    (changes.wan.pppoe_user || changes.wan.pppoe_pass)
   ) {
     rebootAfterUpdate = true;
   }
