@@ -264,6 +264,30 @@ if (instanceNumber === 0 && (
       updater.updateLicenseApiSecret(app);
     });
 
+    // Runs every day at 02:00 - auto adjust inform interval based on cpe count
+    // and number of instances
+    let early2amRule = new schedule.RecurrenceRule();
+    early2amRule.hour = 2;
+    early2amRule.minute = 0;
+    schedule.scheduleJob(early2amRule, function() {
+      let instances;
+      if (
+        typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
+        process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true'
+      ) {
+        if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
+          instances = process.env.FLM_CWMP_CALLBACK_INSTANCES;
+        } else {
+          instances = process.env.instances;
+        }
+      } else {
+        // Docker installation - only 1 instance for now
+        // (TODO: needs to account for scale later)
+        instances = '1';
+      }
+      updater.autoAdjustInformInterval(instances);
+    });
+
     // Runs every day at 04:00 - contact offline TR069 devices
     let early4amRule = new schedule.RecurrenceRule();
     early4amRule.hour = 4;
