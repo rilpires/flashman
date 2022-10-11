@@ -45,6 +45,7 @@ const tr069Models = {
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
+  multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -67,6 +68,7 @@ const tr069Models = {
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
+  zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
@@ -198,6 +200,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
+  } else if (modelName === 'F6600') {
+    // Multilaser ZTE F6600
+    result = {success: true, cpe: tr069Models.multilaserF6600Model};
   } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
     // Multilaser ZTE F670L V9.0
     result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
@@ -264,6 +269,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
+  } else if (modelName === 'F673AV9') {
+    // ZTE F673AV9
+    result = {success: true, cpe: tr069Models.zteF673Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     result = {success: true, cpe: tr069Models.zyxelEMG3524Model};
