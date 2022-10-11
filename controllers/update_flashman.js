@@ -345,12 +345,12 @@ const startInsecureGenieACS = function() {
   exec('pm2 start genieacs-cwmp-http');
 };
 
-updateController.rebootGenie = function(instances) {
-  // Treat bugged case where pm2 may fail to provide the number of instances
-  // correctly - it may be 0 or undefined, and we must then rely on both the
-  // envitonment.config.json file and nproc to tell us how many flashman
-  // instances there are
-  Config.findOne({is_default: true}).then((config)=>{
+// Treat bugged case where pm2 may fail to provide the number of instances
+// correctly - it may be 0 or undefined, and we must then rely on both the
+// envitonment.config.json file and nproc to tell us how many flashman
+// instances there are
+const getInstanceCount = function(instances) {
+  return new Promise((resolve)=>{
     exec('nproc', (err, stdout, stderr)=>{
       instances = parseInt(instances);
       if (isNaN(instances)) {
@@ -365,28 +365,66 @@ updateController.rebootGenie = function(instances) {
       } else {
         instances = instances.toString(); // Merely for type safety
       }
-      // We do a stop/start instead of restart to avoid racing conditions when
-      // genie's worker processes are killed and then respawned - this prevents
-      // issues with CPEs connections since exceptions lead to buggy exp.backoff
-      let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
-      exec(pm2Command, async (err, stdout, stderr)=>{
-        // Replace genieacs instances config with what flashman gives us
-        let replace = 'const INSTANCES_COUNT = .*;';
-        let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-        let sedExpr = 's/' + replace + '/' + newText + '/';
-        let targetFile = 'controllers/external-genieacs/devices-api.js';
-        let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+      resolve(instances);
+    });
+  });
+};
 
-        // Update genieACS provisions and presets
-        console.log('Updating genieACS provisions and presets');
-        await updateProvisionsPresets(config);
+const roundToNearest30 = (n) => n + (30 - (n % 30));
 
-        exec(sedCommand, (err, stdout, stderr)=>{
-          exec('pm2 start genieacs-cwmp');
-          if (config.tr069.insecure_enable) {
-            exec('pm2 start genieacs-cwmp-http');
-          }
-        });
+updateController.autoAdjustInformInterval = async function(instances) {
+  instances = parseInt(await getInstanceCount(instances));
+  if (isNaN(instances)) instances = 1;
+  if (instances > 1) instances -= 1;
+  let deviceCount = Devices.countDocuments({use_tr069: true}).exec();
+  let devicesPerInstance = deviceCount / instances;
+  // Target a 200ms response time to be extra safe (can adjust this later)
+  let targetInform = parseInt(devicesPerInstance * 0.2);
+  // Round interval to nearest 30s
+  let roundedInform = roundToNearest30(targetInform);
+  let roundedSync = roundToNearest30(parseInt(roundedInform * 1.5));
+  // Minimum interval is 120
+  let finalInform = (roundedInform > 120) ? roundedInform : 120;
+  let finalSync = (roundedSync > 120) ? roundedSync : 120;
+  try {
+    let config = await Config.findOne({is_default: true});
+    if (!config) {
+      console.log('Error reading config from database on inform autoupdate');
+      return;
+    }
+    config.tr069.inform_interval = finalInform;
+    config.tr069.sync_interval = finalSync;
+    await config.save();
+    migrateDeviceInforms(config);
+  } catch (e) {
+    console.log('Excetion autoupdating inform interval: ' + e);
+  }
+};
+
+updateController.rebootGenie = async function(instances) {
+  instances = await getInstanceCount(instances);
+  Config.findOne({is_default: true}).then((config)=>{
+    // We do a stop/start instead of restart to avoid racing conditions when
+    // genie's worker processes are killed and then respawned - this prevents
+    // issues with CPEs connections since exceptions lead to buggy exp.backoff
+    let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
+    exec(pm2Command, async (err, stdout, stderr)=>{
+      // Replace genieacs instances config with what flashman gives us
+      let replace = 'const INSTANCES_COUNT = .*;';
+      let newText = 'const INSTANCES_COUNT = ' + instances + ';';
+      let sedExpr = 's/' + replace + '/' + newText + '/';
+      let targetFile = 'controllers/external-genieacs/devices-api.js';
+      let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+      // Update genieACS provisions and presets
+      console.log('Updating genieACS provisions and presets');
+      await updateProvisionsPresets(config);
+
+      exec(sedCommand, (err, stdout, stderr)=>{
+        exec('pm2 start genieacs-cwmp');
+        if (config.tr069.insecure_enable) {
+          exec('pm2 start genieacs-cwmp-http');
+        }
       });
     });
   });
