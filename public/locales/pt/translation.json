@@ -796,6 +796,7 @@
 	"cpeIp": "IP do CPE",
 	"networkIp": "IP da Rede",
 	"networkIpCalculationDescription": "IP da rede será calculado a partir do IP do CPE e Máscara escolhidos",
+	"needRebootAfterChangeWanWarning": "Este CPE precisa reiniciar após as configurações da WAN serem modificadas",
 	"Mask": "Máscara",
 	"routerMode": "Modo Roteador",
 	"bridgeApMode": "Modo Bridge / Modo AP",

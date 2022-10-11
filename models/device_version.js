@@ -1764,6 +1764,10 @@ const grantSsidSpaces = function(version, model) {
   return true;
 };
 
+const grantRebootAfterWANChange = function() {
+  return false;
+};
+
 const convertTR069Permissions = function(cpePermissions) {
   let permissions = {
     grantViewLogs: false,
@@ -1818,6 +1822,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
     grantWanLanInformation: false,
     grantTraceroute: false,
+    grantRebootAfterWANChange: cpePermissions.wan.mustRebootAfterChanges,
   };
   if (permissions.grantPortForward) {
     permissions.grantPortForwardOpts =
@@ -1916,6 +1921,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   result.grantWanLanInformation = grantWanLanInformation(version);
   result.grantTraceroute = grantTraceroute(version);
+  result.grantRebootAfterWANChange = grantRebootAfterWANChange();
   return result;
 };
 
