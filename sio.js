@@ -5,7 +5,7 @@ const {createAdapter} = require('@socket.io/redis-adapter');
 const sharedsession = require('express-socket.io-session');
 const debug = require('debug')('SIO');
 
-const sio = new Server();
+const sio = new Server({transports: ['websocket', 'polling']});
 
 const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
 const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
