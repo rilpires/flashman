@@ -216,6 +216,10 @@ utilHandlers.escapeRegExp = function(string) {
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
+utilHandlers.simpleStringHash = function(string) {
+  return string.split('').reduce((hash, char)=>hash+=char.charCodeAt(0), 0);
+};
+
 utilHandlers.parseDate = function(dateString) {
   // dd/mm/aaaa hh:mm
   let dayAndTime = dateString.split(' ');
