@@ -47,6 +47,7 @@ basicCPEModel.modelPermissions = function() {
       siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
+      traceroute: false, // will enable traceroute diagnostics
       upnp: false, // will enable upnp configs (to be implemented)
       wanBytes: true, // will enable wan bytes plot
       wps: false, // will enable wps configs (to be implemented)
@@ -74,6 +75,7 @@ basicCPEModel.modelPermissions = function() {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface
+      traceRouteSetInterface: false, // traceroute will set device interface
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
@@ -112,6 +114,34 @@ basicCPEModel.modelPermissions = function() {
       requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
       survey2Index: '', // For devices with split state/result fields (2.4GHz)
       survey5Index: '', // For devices with split state/result fields (5GHz)
+    },
+    traceroute: {
+      /**
+      * - maxProbesPerHop:
+      *     We won't allow setting 'traceroute_number_probes' w/ a lower value.
+      * - minProbesPerHop:
+      *     We won't allow setting 'traceroute_number_probes' w/ a bigger value
+      * - completeAsRequested:
+      *     This will allow flashman to proceed with traceroute diagnostic even
+      *     when 'DiagnosticsState' field is 'Requested'
+      * - hopCountExceededState:
+      *     The 'DiagnosticsState' value that appears when traceroute hops
+      *     wasnt enough.
+      * - ipv6HasPriority:
+      *     This model will traceroute by IPv6 when available. Some models
+      *     will simply not complete when IPv6 link is not up against an IPv6
+      *     solved hostname.
+      * - protocol:
+      *     Although we prioritize ICMP when available, UDP is most likely
+      *     the only protocol supported
+      **/
+      maxProbesPerHop: 3,
+      minProbesPerHop: 1,
+      completeAsRequested: false,
+      hopCountExceededState: 'Error_MaxHopCountExceeded',
+      ipv6HasPriority: false,
+      protocol: 'UDP',
+      dataBlockSizeToSet: NaN, // If NaN, use default value
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
@@ -464,6 +494,18 @@ basicCPEModel.getPortForwardRuleName = function(index) {
   return 'Anlix_PortForwarding_' + index.toString();
 };
 
+// If you are going to overwrite this function, check out the others
+// specialized ones, maybe there is already a useful one
+basicCPEModel.readTracerouteRTTs = function(genieHopRoot) {
+  let rttTimesField
+    = this.getModelFields().diagnostics.traceroute.hop_rtt_times;
+  let RTTs = genieHopRoot[rttTimesField]['_value'];
+  return RTTs
+    .split(',')
+    .filter((e)=>!isNaN(parseFloat(e)))
+    .map((e)=>parseFloat(e).toString());
+};
+
 // Map TR-069 XML fields to Flashman fields
 basicCPEModel.getModelFields = function() {
   return {
@@ -699,6 +741,37 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+      },
+      /**
+       * <---- Traceroute ---->
+       *  ip_version:
+       *    this field is rarely present as an option to set IPv4 or IPv6.
+       *    We only want IPv4, so don't bother filling this fields when the
+       *    default value is already as '4' or 'IPv4', something like that.
+       *    For now, this field sets the field as 'IPv4'(string), when present.
+       *  protocol:
+       *    We prefer ICMP over UDP (most likely the default). If this field is
+       *    present, we set it to 'ICMP'(string).
+       */
+      traceroute: {
+        root: 'InternetGatewayDevice.TraceRouteDiagnostics',
+        diag_state: 'DiagnosticsState',
+        interface: 'Interface',
+        target: 'Host',
+        tries_per_hop: 'NumberOfTries',
+        timeout: 'Timeout',
+        data_block_size: 'DataBlockSize',
+        diff_serv: 'DSCP',
+        max_hop_count: 'MaxHopCount',
+        response_time: 'ResponseTime',
+        number_of_hops: 'RouteHopsNumberOfEntries',
+        protocol: '',
+        ip_version: '',
+        hops_root: 'RouteHops',
+        hop_host: 'HopHost',
+        hop_ip_address: 'HopHostAddress',
+        hop_error_code: 'HopErrorCode',
+        hop_rtt_times: 'HopRTTimes',
       },
       sitesurvey: {
         // Some of these fields have no defaults, as they are vendor-specific

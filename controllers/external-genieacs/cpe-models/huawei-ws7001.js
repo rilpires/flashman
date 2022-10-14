@@ -8,6 +8,9 @@ huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.ipv6HasPriority = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.axWiFiMode = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,

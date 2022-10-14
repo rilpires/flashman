@@ -26,7 +26,10 @@ greatekModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.mesh.setEncryptionForCable = true;
+  permissions.traceroute.ipv6HasPriority = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 250;

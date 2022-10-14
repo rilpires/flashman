@@ -11,6 +11,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;

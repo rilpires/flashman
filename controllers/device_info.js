@@ -2514,31 +2514,11 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     };
 
     // Propagating to the proper callback(s)
-    if (matchedDevice.current_diagnostic.customized &&
-        matchedDevice.current_diagnostic.type == 'traceroute' &&
-        !matchedDevice.current_diagnostic.in_progress
-    ) {
-      if (matchedDevice.current_diagnostic.webhook_url != '') {
-        let requestOptions = {};
-        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': matchedDevice._id,
-          'type': 'device',
-          'traceroute_result': trapResult,
-        };
-        if (matchedDevice.current_diagnostic.webhook_user &&
-          matchedDevice.current_diagnostic.webhook_secret
-        ) {
-          requestOptions.auth = {
-            user: matchedDevice.current_diagnostic.webhook_user,
-            pass: matchedDevice.current_diagnostic.webhook_secret,
-          };
-        }
-        request(requestOptions).then(() => { }, () => { });
-      }
-    } else {
-      deviceHandlers.sendTracerouteToTraps(id, trapResult);
+    deviceHandlers.processTracerouteTraps(matchedDevice);
+
+    // Notifying websocket
+    if (!matchedDevice.current_diagnostic.customized) {
+      sio.anlixSendTracerouteNotification(id, trapResult);
     }
 
     return res.status(200).json({processed: 1});
