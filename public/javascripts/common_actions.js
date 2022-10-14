@@ -3,7 +3,7 @@ import 'bootstrap/js/src/modal';
 import {io} from 'socket.io-client';
 
 const t = i18next.t;
-const socket = io();
+const socket = io({transports: ['websocket']});
 
 const displayAlertMsg = function(res) {
   $('#frame-modal-alert .modal-dialog').removeClass(
