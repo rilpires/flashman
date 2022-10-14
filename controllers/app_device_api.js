@@ -6,7 +6,6 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
-const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
@@ -118,7 +117,8 @@ let appSet = function(req, res, processFunction) {
       }
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
         let acRulesRes = {'success': false};
-        acRulesRes = await acsAccessControlHandler.changeAcRules(matchedDevice);
+        let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+        acRulesRes = await cpe.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have

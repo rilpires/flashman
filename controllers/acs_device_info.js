@@ -10,7 +10,6 @@ const Config = require('../models/config');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const utilHandlers = require('./handlers/util.js');
-const acsAccessControlHandler = require('./handlers/acs/access_control.js');
 const acsPortForwardHandler = require('./handlers/acs/port_forward.js');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics.js');
 const acsMeshDeviceHandler = require('./handlers/acs/mesh.js');
@@ -1616,7 +1615,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
     if (permissions.grantBlockDevices) {
       console.log('Will update device Access Control Rules');
-      await acsAccessControlHandler.changeAcRules(device);
+      await cpe.changeAcRules(device);
     }
   }
 };

@@ -1,4 +1,6 @@
 const basicCPEModel = require('./base-model');
+const acsAccessControlHandler =
+  require('../../handlers/acs/mac_access_control.js');
 
 let zteModel = Object.assign({}, basicCPEModel);
 
@@ -9,7 +11,8 @@ zteModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.lan.blockLANDevices = false; // Bug at rules id
+  permissions.lan.blockLANDevices = true; // Bug at rules id
+  permissions.lan.acRulesAreSequencial = false;
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -24,6 +27,8 @@ zteModel.modelPermissions = function() {
   };
   return permissions;
 };
+
+zteModel.changeAcRules = acsAccessControlHandler.changeAcRules;
 
 zteModel.convertWifiMode = function(mode) {
   switch (mode) {

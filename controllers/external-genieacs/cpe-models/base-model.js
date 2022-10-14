@@ -55,6 +55,8 @@ basicCPEModel.modelPermissions = function() {
       'v0.0.0': [],
     },
     lan: {
+      acRulesAreSequencial: true, // access control rules IDs are sequential
+                                  // between 2.4Ghz and 5Ghz WLAN interfaces
       configRead: true, // will display current lan configuration
       configWrite: true, // can change current lan configuration
       blockLANDevices: false, // will enable block device buttons
@@ -122,6 +124,8 @@ basicCPEModel.modelPermissions = function() {
     },
   };
 };
+
+basicCPEModel.changeAcRules = undefined;
 
 // Should be tweaked if the tr-069 xml has special types for some fields
 basicCPEModel.getFieldType = function(masterKey, key) {
