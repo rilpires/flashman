@@ -19,11 +19,17 @@ const tls = require('tls');
 /* APP */
 
 /**
+ * This is only relevant if process is running directly on a host by pm2
+ * otherwise will be zero
+ */
+let pm2InstanceNumber = parseInt(process.env.NODE_APP_INSTANCE || 0);
+
+/**
  * Get port from environment and store in Express.
  */
 
 let port = normalizePort(process.env.FLM_WEB_PORT || '8000');
-port = port + parseInt(process.env.NODE_APP_INSTANCE);
+port = port + pm2InstanceNumber;
 app.set('port', port);
 
 /**
@@ -217,14 +223,13 @@ function watchChangeCert(interval, filename, needrestart) {
       } else {
         console.log('Error reading file certificates! Using old ones...');
       }
-    };
+    }
   });
 }
 
 // Embedded MQTT server
 if (process.env.FLM_MQTT_PORT) {
-  mqttsPort = parseInt(process.env.FLM_MQTT_PORT) +
-              parseInt(process.env.NODE_APP_INSTANCE);
+  mqttsPort = parseInt(process.env.FLM_MQTT_PORT) + pm2InstanceNumber;
 } else {
   let mqttsJsonParams = {};
   try {
@@ -241,8 +246,7 @@ if (process.env.FLM_MQTT_PORT) {
       throw err;
     }
   }
-  mqttsPort = parseInt(mqttsJsonParams.port) +
-              parseInt(process.env.NODE_APP_INSTANCE);
+  mqttsPort = parseInt(mqttsJsonParams.port) + pm2InstanceNumber;
 }
 
 let mqttsDomain = '';

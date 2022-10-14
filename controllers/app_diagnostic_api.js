@@ -1,11 +1,11 @@
 /* global __line */
+const Validator = require('../public/javascripts/device_validator');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
 const UserModel = require('../models/user');
 const Notification = require('../models/notification');
 const Role = require('../models/role');
 const ConfigModel = require('../models/config');
-const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const keyHandlers = require('./handlers/keys');
 const utilHandlers = require('./handlers/util');
 const deviceHandlers = require('./handlers/devices');
@@ -17,6 +17,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const fs = require('fs');
 const controlApi = require('./external-api/control');
+const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
 let diagAppAPIController = {};
@@ -142,6 +143,10 @@ const generateSessionCredential = async (user) => {
     session.onuUserLogin = trConf.web_login_user || '';
     session.onuUserPassword = trConf.web_password_user || '';
     session.onuRemote = trConf.remote_access;
+    session.onuPonThreshold = trConf.pon_signal_threshold;
+    session.onuPonThresholdCritical = trConf.pon_signal_threshold_critical;
+    session.onuPonThresholdCriticalHigh =
+      trConf.pon_signal_threshold_critical_high;
   }
   return session;
 };
@@ -210,6 +215,16 @@ diagAppAPIController.configureWifi = async function(req, res) {
           t('configFindError', {errorline: __line})});
       }
 
+      let permissions = DeviceVersion.devicePermissions(device);
+
+      // Add legacy permissions for backwards compatibility with old apps
+      permissions.grantWifiBandEdit = (
+        permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+      );
+      permissions.grantWifiBand = (
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
+      );
+
       let createPrefixErrNotification = false;
       // What only matters in this case is the deviceEnabled flag
       if (device.isSsidPrefixEnabled &&
@@ -227,6 +242,11 @@ diagAppAPIController.configureWifi = async function(req, res) {
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
           matchedConfig, ssid2ghz, ssid5ghz, device.isSsidPrefixEnabled);
+        // This function returns if we should enable the local prefix flag and
+        // what ssids we should save on the database, based on what was sent
+        // from app form. The app always sends SSID without the prefix, so if
+        // this function returned FALSE for enablePrefix, we should generate a
+        // warning for this issue
         createPrefixErrNotification = !checkResponse.enablePrefix;
         isSsidPrefixEnabled = checkResponse.enablePrefix;
         ssid2ghz = checkResponse.ssid2;
@@ -267,27 +287,41 @@ diagAppAPIController.configureWifi = async function(req, res) {
         changes.wifi2.channel = content.wifi_channel.trim();
         updateParameters = true;
       }
-      if (content.wifi_band) {
-        device.wifi_band = content.wifi_band.trim();
-        changes.wifi2.band = content.wifi_band.trim();
-        updateParameters = true;
+      if (content.wifi_band && permissions.grantWifiBandEdit2) {
+        // discard change to auto when model doesnt support it
+        if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
+          device.wifi_band = content.wifi_band.trim();
+          changes.wifi2.band = content.wifi_band.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_mode) {
+      if (content.wifi_mode && permissions.grantWifiModeEdit) {
         device.wifi_mode = content.wifi_mode.trim();
         changes.wifi2.mode = content.wifi_mode.trim();
         updateParameters = true;
       }
       if (content.wifi_channel_5ghz) {
-        device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
-        changes.wifi5.channel = content.wifi_channel_5ghz.trim();
-        updateParameters = true;
+        // discard change to invalid 5ghz channel for this model
+        let validator = new Validator();
+        if (validator.validateChannel(
+          content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
+        ).valid) {
+          device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
+          changes.wifi5.channel = content.wifi_channel_5ghz.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_band_5ghz) {
-        device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
-        changes.wifi5.band = content.wifi_band_5ghz.trim();
-        updateParameters = true;
+      if (content.wifi_band_5ghz && permissions.grantWifiBandEdit5) {
+        // discard change to auto when model doesnt support it
+        if (
+          content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5
+        ) {
+          device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
+          changes.wifi5.band = content.wifi_band_5ghz.trim();
+          updateParameters = true;
+        }
       }
-      if (content.wifi_mode_5ghz) {
+      if (content.wifi_mode_5ghz && permissions.grantWifiModeEdit) {
         device.wifi_mode_5ghz = content.wifi_mode_5ghz.trim();
         changes.wifi5.mode = content.wifi_mode_5ghz.trim();
         updateParameters = true;
@@ -444,8 +478,16 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
         return res.status(403).json({'error':
           t('cpeIsNotMeshSlave', {errorline: __line})});
       }
-      deviceHandlers.removeDeviceFromDatabase(device);
-      return res.status(200).json({'success': true});
+      if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        return res.status(500).json({success: false, type: 'danger',
+                                     message: t('cantDeleteMeshWithSecondaries',
+                                     {errorline: __line})});
+      }
+      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      if (!removalOK) {
+        return res.status(500).json({'error':
+          t('operationUnsuccessful', {errorline: __line})});
+      }
     } else {
       return res.status(403).json({'error':
         t('macUndefined', {errorline: __line})});
@@ -455,6 +497,7 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
     return res.status(500).json({'error':
       t('serverError', {errorline: __line})});
   }
+  return res.status(200).json({'success': true});
 };
 
 diagAppAPIController.receiveCertification = async (req, res) => {
@@ -492,19 +535,21 @@ diagAppAPIController.receiveCertification = async (req, res) => {
       } else {
         device = await DeviceModel.findById(req.body.mac);
       }
-      if (
-        content.current.latitude && content.current.longitude &&
-        !device.stop_coordinates_update
-      ) {
-        device.latitude = content.current.latitude;
-        device.longitude = content.current.longitude;
-        device.last_location_date = new Date();
+      if (device) {
+        if (
+          content.current.latitude && content.current.longitude &&
+          !device.stop_coordinates_update
+        ) {
+          device.latitude = content.current.latitude;
+          device.longitude = content.current.longitude;
+          device.last_location_date = new Date();
+        }
+        if (content.current.contractType && content.current.contract) {
+          device.external_reference.kind = content.current.contractType;
+          device.external_reference.data = content.current.contract;
+        }
+        await device.save();
       }
-      if (content.current.contractType && content.current.contract) {
-        device.external_reference.kind = content.current.contractType;
-        device.external_reference.data = content.current.contract;
-      }
-      await device.save();
       pushCertification(certifications, content.current, true);
     }
     // Save changes to database and respond
@@ -610,13 +655,31 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
         device.wifi_ssid_5ghz,
         device.isSsidPrefixEnabled,
       );
-
+      // This function returns what prefix we should be using for this device,
+      // based on the local flag and what the saved SSID values are. We send the
+      // prefix and this local flag to the app, to tell it whether the user
+      // should be locked in the prefix or not
       let prefixObj = {
-        name: checkResponse.prefix,
+        name: checkResponse.prefixToUse,
         grant: checkResponse.enablePrefix,
       };
 
       let permissions = DeviceVersion.devicePermissions(device);
+
+      // Add legacy permissions for backwards compatibility with old apps
+      permissions.grantWifiBandEdit = (
+        permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+      );
+      permissions.grantWifiBand = (
+        permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
+      );
+
+      // Legacy permission for old apps that didn't differentiate between cable
+      // and wifi mesh permissions
+      permissions.grantMeshV2PrimaryMode = (
+        permissions.grantMeshV2PrimaryModeCable ||
+        permissions.grantMeshV2PrimaryModeWifi
+      );
 
       if (config.certification.speedtest_step_required) {
         if (config && config.measureServerIP) {
@@ -1078,7 +1141,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode use_tr069 last_contact')
+  'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
   .catch((err) => {
     return res.status(500).json({
       success: false,
@@ -1107,6 +1170,12 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
     return res.status(403).json({
       success: false,
       message: t('secondaryIndicatedCpeNotInPrimaryList', {errorline: __line}),
+    });
+  }
+  if (matchedMaster.do_update_status != 1) {
+    return res.status(403).json({
+      success: false,
+      message: t('cannotDisassocWhileUpdating', {errorline: __line}),
     });
   }
 
@@ -1237,7 +1306,7 @@ diagAppAPIController.getSpeedTest = function(req, res) {
   });
 };
 
-diagAppAPIController.doSpeedTest = function(req, res) {
+diagAppAPIController.sendDiagnosticSpeedTest = function(req, res) {
   DeviceModel.findByMacOrSerial(req.body.mac).exec(
   async (err, matchedDevice) => {
     if (err) {
@@ -1283,34 +1352,7 @@ diagAppAPIController.doSpeedTest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      let config;
-      try {
-        config = await ConfigModel.findOne(
-          {is_default: true}, {measureServerIP: true, measureServerPort: true},
-        ).lean();
-        if (!config) throw new Error('Config not found');
-      } catch (err) {
-        console.log(err.message);
-      }
-
-      if (config && config.measureServerIP) {
-        if (matchedDevice.use_tr069) {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = req.user.name;
-          matchedDevice.current_speedtest.stage = 'estimative';
-          try {
-            await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
-          } catch (err) {
-            console.log('Error saving speed test estimative: ' + err);
-          }
-        } else {
-          // Send mqtt message to perform speedtest
-          let url = config.measureServerIP + ':' + config.measureServerPort;
-          mqtt.anlixMessageRouterSpeedTest(req.body.mac, url,
-                                           {name: req.user.name});
-        }
-      }
+      sendGenericSpeedTest(matchedDevice, req.user.name);
     }, 1.5*1000);
   });
 };

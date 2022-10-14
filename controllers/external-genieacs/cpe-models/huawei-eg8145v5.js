@@ -7,21 +7,19 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145V5'};
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 850;
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x8',
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
   ];
   permissions.firmwareUpgrades = {
     'V5R019C10S350': ['V5R020C00S280'],
@@ -136,6 +134,12 @@ huaweiModel.getModelFields = function() {
     '3.BasicDataTransmitRates';
   fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.3.LowerLayers';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice.1'+
+    '.WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 

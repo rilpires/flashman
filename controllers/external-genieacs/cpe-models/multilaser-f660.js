@@ -11,10 +11,11 @@ multilaserModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.dualBand = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     'V7.1.10P1T1': [],
     'V7.1.10P1T2': ['V7.1.10P1N8'],

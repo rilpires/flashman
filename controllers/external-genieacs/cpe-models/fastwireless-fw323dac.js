@@ -11,7 +11,18 @@ fastwirelessModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 250;
   permissions.wifi.rebootAfterWiFi2SSIDChange = true;
-  permissions.usesStavixXMLConfig = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
+    149, 153, 157, 161, 165,
+  ];
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.lan.LANDeviceHasAssocTree = false;
+  permissions.stavixXMLConfig = {
+    portForward: false,
+    webCredentials: true,
+  };
   permissions.firmwareUpgrades = {
     'V2.0.08-191129': [],
   };
@@ -31,6 +42,37 @@ fastwirelessModel.convertWifiMode = function(mode) {
     case '11ax':
     default:
       return '';
+  }
+};
+
+fastwirelessModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '0';
+    case 'HT40':
+    case 'VHT40':
+      return '1';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return (is5ghz) ? '3' : '1';
+    default:
+      return '';
+  }
+};
+
+fastwirelessModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '1':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
   }
 };
 
@@ -61,6 +103,10 @@ fastwirelessModel.getModelFields = function() {
     'X_CT-COM_GponInterfaceConfig.TXPower';
   fields.wan.pon_txpower_epon = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_EponInterfaceConfig.TXPower';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
+    'ChannelWidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
+    'ChannelWidth';
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k];
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');

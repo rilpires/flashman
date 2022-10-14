@@ -311,4 +311,29 @@ controlController.meshLicenseCredit = async function(slaveId) {
   });
 };
 
+controlController.getApiUserLogin = function(app) {
+  return new Promise((resolve) => {
+    request({
+      url: controlApiAddr + '/user/flashmanapiinfo',
+      method: 'POST',
+      json: {
+        'secret': app.locals.secret,
+      },
+    }).then((res) => {
+      if (res.success) {
+        return resolve({
+          success: true,
+          apiUser: res.flashmanApiUser,
+          apiPass: res.flashmanApiPass,
+          company: res.company,
+        });
+      } else {
+        return resolve({success: false, message: res.message});
+      }
+    }, (err) => {
+      return resolve({success: false, message: err.message});
+    });
+  });
+};
+
 module.exports = controlController;

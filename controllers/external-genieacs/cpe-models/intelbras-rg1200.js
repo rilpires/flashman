@@ -17,13 +17,16 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
+  permissions.features.siteSurvey = true;
   permissions.lan.listLANDevices = false;
   permissions.lan.configWrite = false;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 120;
-  permissions.wifi.modeRead = true;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
-
+  permissions.lan.LANDeviceHasAssocTree = false;
   // firmware upgrade permissions
   permissions.firmwareUpgrades = {
     '2.1.4': [],
@@ -107,6 +110,10 @@ intelbrasModel.getModelFields = function() {
     'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.1.FrequencyWidth';
   fields.wifi5.band = // modes: "20M", "40M", "80M", "Auto20M40M80M"
     'InternetGatewayDevice.LANDevice.1.X_CT-COM_Radio.2.FrequencyWidth';
+  // site survey fields:
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice.1.' +
+    'X_CT-COM_Radio.*.WLANNeighbor';
+  fields.diagnostics.sitesurvey.ssid = 'SSIDName';
   // speedtest fields:
   delete fields.diagnostics.speedtest.num_of_conn;
   delete fields.diagnostics.speedtest.down_transports;

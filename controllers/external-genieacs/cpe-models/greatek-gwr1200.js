@@ -1,11 +1,27 @@
 const basicCPEModel = require('./base-model');
 
+const versionCompare = function(foo, bar) {
+  // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
+  let fooVer = foo.split('.').map((val) => {
+    return parseInt(val);
+  });
+  let barVer = bar.split('.').map((val) => {
+    return parseInt(val);
+  });
+  for (let i = 0; i < fooVer.length; i++) {
+    if (fooVer[i] < barVer[i]) return -1;
+    if (fooVer[i] > barVer[i]) return 1;
+  }
+  return 0;
+};
+
 let greatekModel = Object.assign({}, basicCPEModel);
 
 greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
@@ -15,9 +31,34 @@ greatekModel.modelPermissions = function() {
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.speedTestLimit = 300;
   permissions.lan.configWrite = false;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    '638.112.100.1383': [],
+    '638.112.100.1383': ['638.112.100.1435', '638.112.100.1460'],
+    '638.112.100.1435': ['638.112.100.1383', '638.112.100.1460'],
+    '638.112.100.1460': ['638.112.100.1383', '638.112.100.1435'],
   };
+  return permissions;
+};
+
+// Version 638.112.100.1460 now allows read/write of wifi mode and band, as well
+// as editing lan configurations
+const modelPermissionsPost1460 = function() {
+  let permissions = greatekModel.modelPermissions();
+  permissions.lan.configWrite = true;
+  permissions.lan.needConfigOnLANChange = true;
+  permissions.wifi.bandRead2 = true;
+  permissions.wifi.bandRead5 = true;
+  permissions.wifi.bandWrite2 = true;
+  permissions.wifi.bandWrite5 = true;
+  permissions.wifi.bandAuto2 = true;
+  permissions.wifi.modeWrite = true;
   return permissions;
 };
 
@@ -32,6 +73,23 @@ greatekModel.convertWifiMode = function(mode) {
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+    default:
+      return '';
+  }
+};
+
+greatekModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20MHz';
+    case 'HT40':
+    case 'VHT40':
+      return '40MHz';
+    case 'VHT80':
+      return '80MHz';
+    case 'auto':
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }
@@ -67,6 +125,8 @@ greatekModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   delete fields.diagnostics.speedtest.num_of_conn;
   // Port forwarding fields
   fields.port_mapping_fields.external_port_end =
@@ -79,6 +139,14 @@ greatekModel.getModelFields = function() {
   fields.common.stun_udp_conn_req_addr =
   'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   return fields;
+};
+
+greatekModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  let copy = Object.assign({}, base);
+  if (versionCompare(fwVersion, '638.112.100.1460') >= 0) {
+    copy.modelPermissions = modelPermissionsPost1460;
+  }
+  return copy;
 };
 
 module.exports = greatekModel;

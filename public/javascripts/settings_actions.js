@@ -56,9 +56,7 @@ window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
   let validator = new Validator();
 
-  let validField = validator
-    .validateSSIDPrefix(ssidPrefixInput.value,
-      $('#is-ssid-prefix-enabled').is(':checked'));
+  let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
 
   if (!validField.valid) {
     setSsidPrefixError();
@@ -66,16 +64,6 @@ window.checkSsidPrefixValidity = function() {
     resetSsidPrefixError();
   }
 };
-
-window.changeSsidPrefixInputDisableness = function(value) {
-  let ssidPrefixBox = document.getElementById('ssid-prefix-box');
-  if (value.checked) {
-    ssidPrefixBox.style.display = 'block';
-  } else {
-    ssidPrefixBox.style.display = 'none';
-  }
-};
-
 
 const setSsidPrefixError = function() {
   ssidPrefixInput.setCustomValidity(t('ssidPrefixInvalidFeedback'));
@@ -120,8 +108,7 @@ let configFlashman = function(event) {
     allValid = false; // we won't send the configurations.
   }
   if (getConfigStorage('isClientPayingPersonalizationApp')) {
-    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value,
-      $('#is-ssid-prefix-enabled').is(':checked'));
+    let validField = validator.validateSSIDPrefix(ssidPrefixInput.value);
     // check ssid prefix value
     if (ssidPrefixInput.validity.valid && !validField.valid) {
       setSsidPrefixError();
@@ -291,6 +278,16 @@ anlixDocumentReady.add(function() {
       }
       $(`select[name=selected-language] option[value=${resp.language}]`)
         .attr('selected', '');
+      if (resp.blockLicenseAtDeviceRemoval) {
+        let blockLicenseAtRemoval = (
+          resp.blockLicenseAtDeviceRemoval === true ||
+          resp.blockLicenseAtDeviceRemoval === 'true'
+        ) ? true : false;
+        $(`select[name=must-block-license-at-removal] `+
+          `option[value=${blockLicenseAtRemoval}]`)
+        .attr('selected', 'selected');
+        setConfigStorage('blockLicenseAtDeviceRemoval', blockLicenseAtRemoval);
+      }
     },
   });
 
@@ -299,8 +296,8 @@ anlixDocumentReady.add(function() {
     if (
       input.target.checked && getConfigStorage('hasNeverEnabledInsecureTR069')
     ) {
-      swal({
-        type: 'warning',
+      swal.fire({
+        icon: 'warning',
         title: t('Attention!'),
         html: t('enablingTr069HttpCommunicationMustReadAndAgreeConditions'),
         confirmButtonText: t('Enable'),
@@ -327,5 +324,9 @@ anlixDocumentReady.add(function() {
 
   $('#factory-credentials-button').on('click', function(event) {
     $('#factory-credentials-modal').modal('show');
+  });
+
+  $('#default-hosts-config-button').on('click', function(event) {
+    $('#default-hosts-config-modal').modal('show');
   });
 });

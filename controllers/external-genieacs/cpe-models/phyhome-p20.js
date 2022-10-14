@@ -11,6 +11,18 @@ phyhomeModel.modelPermissions = function() {
   permissions.lan.configWrite = false;
   permissions.wifi.dualBand = false;
   permissions.wifi.ssidWrite = false;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
+  ];
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeRead = false;
+  permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceHasAssocTree = false;
   return permissions;
 };
 

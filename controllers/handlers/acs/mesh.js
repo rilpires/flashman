@@ -4,6 +4,8 @@ const utilHandlers = require('../util.js');
 const http = require('http');
 
 let acsMeshDeviceHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 const checkMeshObjsCreated = function(device) {
   return new Promise((resolve, reject) => {
@@ -16,8 +18,8 @@ const checkMeshObjsCreated = function(device) {
       `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
     let options = {
       method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
+      hostname: GENIEHOST,
+      port: GENIEPORT,
       path: encodeURI(path),
     };
     let result = {
@@ -72,8 +74,8 @@ const fetchMeshBSSID = function(device, meshMode) {
       `/devices/?query=${JSON.stringify(query)}&projection=${projection}`;
     let options = {
       method: 'GET',
-      hostname: 'localhost',
-      port: 7557,
+      hostname: GENIEHOST,
+      port: GENIEPORT,
       path: encodeURI(path),
     };
     let req = http.request(options, (resp)=>{
@@ -260,7 +262,7 @@ acsMeshDeviceHandler.getMeshBSSIDs = async function(cpe, mac) {
   let meshBSSIDs = {mesh2: '', mesh5: ''};
   let permissions = cpe.modelPermissions();
   if (
-    permissions.features.mesh &&
+    permissions.features.meshWifi &&
     permissions.mesh.bssidOffsets2Ghz &&
     permissions.mesh.bssidOffsets5Ghz
   ) {
@@ -269,7 +271,7 @@ acsMeshDeviceHandler.getMeshBSSIDs = async function(cpe, mac) {
     for (let i = 0; i < macOctets2.length; i++) {
       macOctets2[i] = (
         parseInt(`0x${macOctets2[i]}`) +
-        parseInt(permissions.mesh.bssidOffsets2Ghz)
+        parseInt(permissions.mesh.bssidOffsets2Ghz[i])
       ).toString(16).toUpperCase();
       // We need the second hex digit for BSSID addresses
       if (macOctets2[i].length === 1) {
@@ -277,7 +279,7 @@ acsMeshDeviceHandler.getMeshBSSIDs = async function(cpe, mac) {
       }
       macOctets5[i] = (
         parseInt(`0x${macOctets5[i]}`) +
-        parseInt(permissions.mesh.bssidOffsets5Ghz)
+        parseInt(permissions.mesh.bssidOffsets5Ghz[i])
       ).toString(16).toUpperCase();
       // We need the second hex digit for BSSID addresses
       if (macOctets5[i].length === 1) {

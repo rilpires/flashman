@@ -7,20 +7,25 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F680'};
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.firmwareUpgrade = true;
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.siteSurvey = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.requiresSeparateTasks = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x0',
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128,
+    149, 153, 157, 161,
   ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x2', '0x0', '0x0', '0x0', '0x0', '0x2',
-  ];
+  permissions.wifi.modeWrite = false;
   permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'V6.0.10P3N9': ['V6.0.10P3N12B'],
@@ -103,6 +108,10 @@ multilaserModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   return fields;
 };
 

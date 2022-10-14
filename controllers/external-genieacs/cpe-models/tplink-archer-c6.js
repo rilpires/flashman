@@ -9,6 +9,8 @@ tplinkModel.modelPermissions = function() {
   permissions.features.firmwareUpgrade = false;
   permissions.features.pingTest = true;
   permissions.wan.dhcpUptime = false;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '1.0.14 Build 20211118 rel.43110(5553)': [],
   };
@@ -31,10 +33,31 @@ tplinkModel.convertWifiMode = function(mode) {
   }
 };
 
+tplinkModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20M';
+    case 'HT40':
+    case 'VHT40':
+      return '40M';
+    case 'VHT80':
+      return '80M';
+    case 'auto':
+      return 'Auto';
+    default:
+      return '';
+  }
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.mac = 'InternetGatewayDevice.LANDevice.1.'+
     'LANHostConfigManagement.MACAddress';
+  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
+    '.X_TP_Bandwidth';
+  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
+    '.X_TP_Bandwidth';
   Object.keys(fields.wifi5).forEach((k)=>{
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '2');
   });

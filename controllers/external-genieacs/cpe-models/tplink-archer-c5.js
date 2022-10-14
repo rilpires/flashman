@@ -14,10 +14,14 @@ tplinkModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.dhcpUptime = false;
   permissions.wan.speedTestLimit = 200;
+  permissions.wifi.allowDiacritics = true;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
+  permissions.wifi.modeWrite = false;
   permissions.lan.configWrite = false;
   permissions.firmwareUpgrades = {
     '3.16.0 0.9.1 v600c.0 Build 200427 Rel.33156n': [],
   };
+  permissions.lan.LANDeviceHasAssocTree = false;
   return permissions;
 };
 

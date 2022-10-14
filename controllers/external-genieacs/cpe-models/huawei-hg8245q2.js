@@ -6,21 +6,19 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8245Q2'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.mesh = true;
+  permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 250;
-  permissions.mesh.bssidOffsets2Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x7',
-  ];
-  permissions.mesh.bssidOffsets5Ghz = [
-    '0x0', '0x0', '0x0', '0x0', '0x0', '0x8',
+  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
   ];
   permissions.firmwareUpgrades = {
     'V3R017C10S100': [],

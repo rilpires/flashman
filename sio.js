@@ -7,10 +7,19 @@ const debug = require('debug')('SIO');
 
 const sio = new Server();
 
+const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
+const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
+
 // Redis use for comm between multiple processes
 if (process.env.FLM_USE_MQTT_PERSISTENCE) {
-  sio.pubClient = createClient({host: 'localhost', port: 6379});
+  sio.pubClient = createClient({socket: {host: REDISHOST, port: REDISPORT}});
   sio.subClient = sio.pubClient.duplicate();
+  sio.pubClient.on('error', (err) => {
+    console.log('Error on SIO publish client: ' + err.message);
+  });
+  sio.subClient.on('error', (err) => {
+    console.log('Error on SIO subscribe client: ' + err.message);
+  });
 
   sio.adapter(createAdapter(sio.pubClient, sio.subClient));
 }
@@ -20,9 +29,10 @@ const SIO_NOTIFICATION_ONLINEDEVS = 'ONLINEDEVS';
 const SIO_NOTIFICATION_DEVICE_STATUS = 'DEVICESTATUS';
 const SIO_NOTIFICATION_PING_TEST = 'PINGTEST';
 const SIO_NOTIFICATION_UP_STATUS = 'UPSTATUS';
-const SIO_NOTIFICATION_WAN_BYTES = 'WANBYTES';
+const SIO_NOTIFICATION_STATISTICS = 'STATISTICS';
 const SIO_NOTIFICATION_WAN_INFO = 'WANINFO';
 const SIO_NOTIFICATION_LAN_INFO = 'LANINFO';
+const SIO_NOTIFICATION_TRACEROUTE = 'TRACEROUTE';
 const SIO_NOTIFICATION_SPEED_TEST = 'SPEEDTEST';
 const SIO_NOTIFICATION_SPEED_ESTIMATIVE = 'SPEEDESTIMATIVE';
 const SIO_NOTIFICATION_PON_SIGNAL = 'PONSIGNAL';
@@ -244,22 +254,22 @@ sio.anlixSendUpStatusNotification = function(macaddr, upStatusData) {
   return found;
 };
 
-sio.anlixWaitForWanBytesNotification = function(session, macaddr) {
+sio.anlixWaitForStatisticsNotification = function(session, macaddr) {
   if (!session) {
     return false;
   }
   if (!macaddr) {
     return false;
   }
-  registerNotification(session, SIO_NOTIFICATION_WAN_BYTES, macaddr);
+  registerNotification(session, SIO_NOTIFICATION_STATISTICS, macaddr);
   return true;
 };
 
-sio.anlixSendWanBytesNotification = function(macaddr, upStatusData) {
+sio.anlixSendStatisticsNotification = function(macaddr, upStatusData) {
   if (!macaddr) {
     return false;
   }
-  let found = emitNotification(SIO_NOTIFICATION_WAN_BYTES,
+  let found = emitNotification(SIO_NOTIFICATION_STATISTICS,
                                macaddr, upStatusData, macaddr);
   return found;
 };
@@ -314,6 +324,33 @@ sio.anlixSendLanInfoNotification = function(macaddr, lanInfoData) {
 
   let found = emitNotification(SIO_NOTIFICATION_LAN_INFO,
                                macaddr, lanInfoData, macaddr);
+
+  return found;
+};
+
+
+// Traceroute
+sio.anlixWaitForTracerouteNotification = function(session, macaddr) {
+  if (!session) {
+    return false;
+  }
+
+  if (!macaddr) {
+    return false;
+  }
+
+  registerNotification(session, SIO_NOTIFICATION_TRACEROUTE, macaddr);
+
+  return true;
+};
+
+sio.anlixSendTracerouteNotification = function(macaddr, tracerouteData) {
+  if (!macaddr) {
+    return false;
+  }
+
+  let found = emitNotification(SIO_NOTIFICATION_TRACEROUTE,
+                               macaddr, tracerouteData, macaddr);
 
   return found;
 };

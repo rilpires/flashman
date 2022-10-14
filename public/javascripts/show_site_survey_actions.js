@@ -6,10 +6,20 @@ const t = i18next.t;
 anlixDocumentReady.add(function() {
   let siteSurveyGlobalTimer;
 
-  const refreshSiteSurvey = function(deviceId, isBridge, hasExtendedChannels) {
+  const refreshSiteSurvey = function(
+    deviceId, isBridge, hasExtendedChannels, channels5ghz,
+  ) {
     $('#site-survey-hlabel').text(deviceId);
     $('#site-survey').modal();
     $('.btn-sync-ssurvey').prop('disabled', true);
+    $('.btn-show-2-ghz-aps').addClass('disabled');
+    $('.btn-show-5-ghz-aps').addClass('disabled');
+    $('#site-survey').removeAttr('data-ap-devices-list');
+    $('#site-survey').removeData('ap-devices-list');
+    $('#site-survey-placeholder').show();
+    $('#site-survey-placeholder-none').hide();
+    $('#2-ghz-aps').hide();
+    $('#5-ghz-aps').hide();
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/sitesurvey',
       type: 'post',
@@ -21,28 +31,22 @@ anlixDocumentReady.add(function() {
           $('#site-survey').data('cleanup', true);
           $('.btn-sync-ssurvey > i').addClass('animated rotateOut infinite');
         } else {
-          $('#site-survey').removeAttr('data-ap-devices-list');
-          $('#site-survey').removeData('ap-devices-list');
-          $('#2-ghz-aps').empty();
-          $('#5-ghz-aps').empty();
-          $('#site-survey-placeholder').show();
-          $('#site-survey-placeholder-none').hide();
-          fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
+          $('#site-survey-placeholder').hide();
+          $('#site-survey-placeholder-none').show();
+          $('.btn-sync-ssurvey').prop('disabled', false);
         }
       },
       error: function(xhr, status, error) {
-        $('#site-survey').removeAttr('data-ap-devices-list');
-        $('#site-survey').removeData('ap-devices-list');
-        $('#2-ghz-aps').empty();
-        $('#5-ghz-aps').empty();
-        $('#site-survey-placeholder').show();
-        $('#site-survey-placeholder-none').hide();
-        fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels);
+        $('#site-survey-placeholder').hide();
+        $('#site-survey-placeholder-none').show();
+        $('.btn-sync-ssurvey').prop('disabled', false);
       },
     });
   };
 
-  const fetchSiteSurvey = function(deviceId, isBridge, hasExtendedChannels) {
+  const fetchSiteSurvey = function(
+    deviceId, isBridge, hasExtendedChannels, channels5ghz,
+  ) {
     $.ajax({
       type: 'GET',
       url: '/devicelist/sitesurvey/' + deviceId,
@@ -74,8 +78,11 @@ anlixDocumentReady.add(function() {
                                    JSON.stringify(apDevices));
           }
 
-          renderSiteSurvey(apDevices, isBridge, res.wifi_last_channel,
-                           res.wifi_last_channel_5ghz, hasExtendedChannels);
+          renderSiteSurvey(
+            apDevices, isBridge,
+            res.wifi_last_channel, res.wifi_last_channel_5ghz,
+            hasExtendedChannels, channels5ghz,
+          );
         } else {
           displayAlertMsg(res);
         }
@@ -113,8 +120,10 @@ anlixDocumentReady.add(function() {
     return finalChannel;
   };
 
-  const renderSiteSurvey = function(apDevices, isBridge, wifi2GhzChannel,
-                                    wifi5GhzChannel, hasExtendedChannels,
+  const renderSiteSurvey = function(
+    apDevices, isBridge,
+    wifi2GhzChannel, wifi5GhzChannel,
+    hasExtendedChannels, channels5ghz,
   ) {
     $('#site-survey-placeholder').hide();
     let apDevs2GhzRow = $('#2-ghz-aps');
@@ -136,18 +145,14 @@ anlixDocumentReady.add(function() {
     let best5GhzChannel = 0;
     let ap2GhzCountDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0};
-    let ap5GhzCountDict = {36: 0, 40: 0, 44: 0, 48: 0, 149: 0, 153: 0,
-                           157: 0, 161: 0, 165: 0};
     let ap2GhzScoreDict = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0,
                            9: 0, 10: 0, 11: 0};
-    let ap5GhzScoreDict = {36: 0, 40: 0, 44: 0, 48: 0, 149: 0, 153: 0,
-                           157: 0, 161: 0, 165: 0};
-    if (hasExtendedChannels) {
-      ap2GhzCountDict[12] = 0;
-      ap2GhzCountDict[13] = 0;
-      ap2GhzScoreDict[12] = 0;
-      ap2GhzScoreDict[13] = 0;
-    }
+    let ap5GhzCountDict = {};
+    let ap5GhzScoreDict = {};
+    channels5ghz.split('-').forEach((c)=>{
+      ap5GhzCountDict[c] = 0;
+      ap5GhzScoreDict[c] = 0;
+    });
     let channels2Ghz = Object.keys(ap2GhzCountDict).map(Number);
     let channels5Ghz = Object.keys(ap5GhzCountDict).map(Number);
     let channels5GhzLower = [];
@@ -426,13 +431,16 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-site-survey-modal', function(event) {
     let row = $(event.target).parents('tr');
     let id = row.data('deviceid');
+    let isTR069 = row.data('is-tr069') === true;
     let isBridge = row.data('bridge-enabled') === t('Yes');
     let has5ghz = row.data('has-5ghz');
     let hasExtendedChannels = row.data('has-extended-channels');
+    let channels5ghz = row.data('5ghz-channels');
     if (!has5ghz) {
       $('.btn-show-5-ghz-aps').addClass('disabled').prop('disabled', true);
     }
     $('#site-survey').attr('data-has-extended-channels', hasExtendedChannels);
+    $('#site-survey').attr('data-5ghz-channels', channels5ghz);
 
     $('#isBridgeDiv').html(row.data('bridge-enabled'));
     $('#site-survey-placeholder-none').hide();
@@ -441,17 +449,44 @@ anlixDocumentReady.add(function() {
     $('#2-ghz-aps').show();
     $('#5-ghz-aps').hide();
 
-    // Refresh devices status
-    refreshSiteSurvey(id, isBridge, hasExtendedChannels);
+    // Show warning
+    if (!isTR069) $('#tr09-warning').hide();
+
+    let idx = row.data('index');
+    if (!row.find('#edit_wifi_state-'+idx)[0].checked ||
+        (row.find('#edit_wifi5_state-'+idx).length > 0 &&
+        !row.find('#edit_wifi5_state-'+idx)[0].checked)) {
+      swal.fire({
+        icon: 'warning',
+        title: t('Attention!'),
+        text: t('showsitesurveyTR069WarningInfo'),
+        confirmButtonText: t('Proceed'),
+        confirmButtonColor: '#4db6ac',
+        cancelButtonText: t('Cancel'),
+        cancelButtonColor: '#f2ab63',
+        showCancelButton: true,
+      }).then((result)=>{
+        if (result.value) {
+          refreshSiteSurvey(id, isBridge, hasExtendedChannels, channels5ghz);
+        } else {
+          $('#site-survey').modal('hide');
+          return;
+        }
+      });
+    } else {
+      // Refresh devices status
+      refreshSiteSurvey(id, isBridge, hasExtendedChannels, channels5ghz);
+    }
   });
 
   $(document).on('click', '.btn-sync-ssurvey', function(event) {
     let id = $('#site-survey-hlabel').text();
     let isBridge = $('#isBridgeDiv').html() === t('Yes');
     let hasExtendedChannels = $('#site-survey').data('has-extended-channels');
+    let channels5ghz = $('#site-survey').data('5ghz-channels');
 
     clearTimeout(siteSurveyGlobalTimer);
-    refreshSiteSurvey(id, isBridge, hasExtendedChannels);
+    refreshSiteSurvey(id, isBridge, hasExtendedChannels, channels5ghz);
   });
 
   $(document).on('click', '.btn-show-2-ghz-aps', function(event) {
@@ -473,6 +508,14 @@ anlixDocumentReady.add(function() {
     if (($('#site-survey').data('bs.modal') || {})._isShown) {
       let id = $('#site-survey-hlabel').text();
       if (id == macaddr) {
+        $('.btn-sync-ssurvey').prop('disabled', false);
+        $('.btn-show-2-ghz-aps').removeClass('disabled');
+        $('.btn-show-5-ghz-aps').removeClass('disabled');
+        $('.btn-show-5-ghz-aps').removeClass('active');
+        $('.btn-show-2-ghz-aps').addClass('active');
+        $('#site-survey-placeholder').hide();
+        $('#2-ghz-aps').show();
+        $('#5-ghz-aps').show();
         if ($('#site-survey').data('cleanup') == true) {
           // Clear old data
           $('#site-survey').data('cleanup', false);
@@ -482,8 +525,15 @@ anlixDocumentReady.add(function() {
           $('#site-survey').removeData('ap-devices-list');
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
-          $('#site-survey-placeholder').show();
-          $('#site-survey-placeholder-none').hide();
+          if (data.length == 0) {
+            $('#site-survey-placeholder-none').show();
+            $('.btn-show-5-ghz-aps').addClass('disabled');
+            $('.btn-show-2-ghz-aps').addClass('disabled');
+            $('#2-ghz-aps').hide();
+            $('#5-ghz-aps').hide();
+          } else {
+            $('#site-survey-placeholder-none').hide();
+          }
         } else {
           $('#2-ghz-aps').empty();
           $('#5-ghz-aps').empty();
@@ -491,8 +541,9 @@ anlixDocumentReady.add(function() {
         let isBridge = $('#isBridgeDiv').html() === t('Yes');
         let hasExtendedChannels =
           $('#site-survey').data('has-extended-channels');
+        let channels5ghz = $('#site-survey').data('5ghz-channels');
         clearTimeout(siteSurveyGlobalTimer);
-        fetchSiteSurvey(macaddr, isBridge, hasExtendedChannels);
+        fetchSiteSurvey(macaddr, isBridge, hasExtendedChannels, channels5ghz);
       }
     }
   });

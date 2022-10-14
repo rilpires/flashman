@@ -9,11 +9,19 @@ nokiaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 850;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+  ];
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.firmwareUpgrades = {
     '3FE49025IJHK03': [],
   };
@@ -37,9 +45,6 @@ nokiaModel.convertWifiMode = function(mode) {
 };
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
-  if (!is5ghz) {
-    return '20MHz';
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -50,7 +55,7 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      return '80MHz';
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }
@@ -69,7 +74,9 @@ nokiaModel.getModelFields = function() {
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+    'WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
+    '.WLANConfiguration.*.AssociatedDevice.*.OperatingStandard';
   fields.common.web_admin_username = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
@@ -92,6 +99,12 @@ nokiaModel.getModelFields = function() {
     'TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ALU-COM_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 

@@ -10,6 +10,8 @@ const debug = require('debug')('ACS_ACCESS_CONTROL');
 const t = require('../../language').i18next.t;
 
 let acsAccessControlHandler = {};
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Adds a new rule in the rules tree of each WLAN and assumes an id for this
 // rule from the id of the last rule.
@@ -87,8 +89,8 @@ const getAcRuleTrees = async function(
     '&projection='+Object.values(acSubtreeRoots).join(',');
   let options = {
     method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
+    hostname: GENIEHOST,
+    port: GENIEPORT,
     path: encodeURI(path),
   };
   // Projection Promise

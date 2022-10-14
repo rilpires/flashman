@@ -29,6 +29,7 @@ basicCPEModel.portForwardPermissions = {
 };
 
 // Must be changed for every model, used when importing firmwares
+// MUST MATCH APP VENDOR AND MODEL EXACTLY!
 basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 
 // Must be tweaked by models to reflect their features and permissions
@@ -38,10 +39,12 @@ basicCPEModel.modelPermissions = function() {
     features: {
       customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
-      mesh: false, // can create a mesh network with Anlix firmwares
+      meshCable: true, // can create a cable mesh network with Anlix firmwares
+      meshWifi: false, // can create a wifi mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog
       ponSignal: false, // will measure pon rx/tx power
       portForward: false, // will enable port forward dialogs
+      siteSurvey: false, // will enable site survey dialogs
       speedTest: false, // will enable speed test dialogs
       stun: false, // will automatically apply stun configurations if configured
       upnp: false, // will enable upnp configs (to be implemented)
@@ -57,12 +60,15 @@ basicCPEModel.modelPermissions = function() {
       blockLANDevices: false, // will enable block device buttons
       blockWiredLANDevices: false, // support for blocking non-wireless devices
       listLANDevices: true, // list connected LAN devices
-      listLANDevicesSNR: false, // has explicit SNR field on connected devices
+      LANDeviceCanTrustActive: true, // has host active field trustworthy
+      LANDeviceHasSNR: false, // has explicit SNR field on connected devices
+      LANDeviceHasAssocTree: true, // devices that have the Assoc Devices tree
+      LANDeviceSkipIfNoWifiMode: false, // will skip devices with no host mode
+                                      // info (developed for Nokia models)
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
+      needConfigOnLANChange: false, // will force lan enable on edit (GWR1200)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
-      skipIfNoWifiMode: false, // will skip devices with no host mode info
-                               // (developed for Nokia models)
     },
     wan: {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
@@ -71,15 +77,24 @@ basicCPEModel.modelPermissions = function() {
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
+      hasUptimeField: true, // flag to handle devices that don't have uptime
+      mustRebootAfterChanges: false, // must reboot after change wan parameters
     },
     wifi: {
+      list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
+      allowDiacritics: false, // allows accented chars for ssid and password
+      allowSpaces: true, // allows space char for ssid
       dualBand: true, // specifies if model has 2 different Wi-Fi radios
       axWiFiMode: false, // will enable AX mode for 5GHz Wi-Fi network
       extended2GhzChannels: true, // allow channels 12 and 13
       ssidRead: true, // will display current wifi ssid and password
       ssidWrite: true, // can change current wifi ssid and password
-      bandRead: true, // will display current wifi band
-      bandWrite: true, // can change current wifi band
+      bandRead2: true, // will display current wifi 2.4 band
+      bandRead5: true, // will display current wifi 5 band
+      bandWrite2: true, // can change current wifi 2.4 band
+      bandWrite5: true, // can change current wifi 5 band
+      bandAuto2: true, // can change current wifi 2.4 band to auto mode
+      bandAuto5: true, // can change current wifi 5 band to auto mode
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
@@ -90,9 +105,21 @@ basicCPEModel.modelPermissions = function() {
       bssidOffsets5Ghz: ['0x0', '0x0', '0x0', '0x0', '0x0', '0x0'],
       hardcodedBSSIDOffset: false, // special flag for mesh BSSIDs
       objectExists: false, // special flag for mesh xml object
+      setEncryptionForCable: false, // special flag for cable mesh
+    },
+    siteSurvey: {
+      requiresPolling: false, // Flashman must poll for result in genieacs
+      requiresSeparateTasks: false, // Flashman must split 2.4 and 5ghz tasks
+      survey2Index: '', // For devices with split state/result fields (2.4GHz)
+      survey5Index: '', // For devices with split state/result fields (5GHz)
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
-    usesStavixXMLConfig: false, // flag for stavix-like models with xml config
+    useLastIndexOnWildcard: false, // flag for devices that uses last index,
+    needInterfaceInPortFoward: false, // flag for devices that need interf tree
+    stavixXMLConfig: {
+      portForward: false, // uses xml for port forward editing
+      webCredentials: false, // uses xml for web credentials editing
+    },
   };
 };
 
@@ -253,6 +280,26 @@ basicCPEModel.getBeaconType = function() {
   return '11i';
 };
 
+basicCPEModel.convertIGDtoDevice = function(fields) {
+  Object.keys(fields).forEach((k) => {
+    if (typeof fields[k] === 'object' && !Array.isArray(fields[k])) {
+      return basicCPEModel.convertIGDtoDevice(fields[k]);
+    } else if (!Array.isArray(fields[k])) {
+      fields[k] = fields[k].replace(/InternetGatewayDevice/g, 'Device');
+    }
+  });
+
+  return fields;
+};
+
+basicCPEModel.getWPAEncryptionMode = function() {
+  return '';
+};
+
+basicCPEModel.getIeeeEncryptionMode = function() {
+  return '';
+};
+
 // Used to override GenieACS serial in some way, used only on Hurakall for now
 basicCPEModel.convertGenieSerial = function(serial, mac) {
   // No conversion necessary
@@ -294,6 +341,28 @@ basicCPEModel.convertChannelToTask = function(channel, fields, masterKey) {
   return values;
 };
 
+// Used to convert the ping test result value for devices with different formats
+basicCPEModel.convertPingTestResult = function(latency) {
+  return latency; // No conversion necessary
+};
+
+// Used to convert the speed test result for devices that do not FullLoad
+basicCPEModel.convertSpeedValueBasic = function(endTime, beginTime, bytesRec) {
+  // 10**3 => seconds to miliseconds (because of valueOf() notation)
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  let deltaTime = (endTime - beginTime) / (10**3);
+  return (8/(1024**2)) * (bytesRec/deltaTime);
+};
+
+// Used to convert the speed test result for devices that do FullLoad
+basicCPEModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**6 => microsecond to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**6))/(1024**2)) * (bytesRec/period);
+};
+
 // Used when computing dhcp ranges
 const convertSubnetMaskToRange = function(mask) {
   // Convert masks to dhcp ranges - reserve 32+1 addresses for fixed ip/gateway
@@ -324,6 +393,9 @@ basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
       values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
       values.push([fields['lan']['lease_min_ip'], minIP, 'xsd:string']);
       values.push([fields['lan']['lease_max_ip'], maxIP, 'xsd:string']);
+    }
+    if (permissions.lan.needConfigOnLANChange) {
+      values.push([fields['lan']['config_enable'], true, 'xsd:boolean']);
     }
   }
   return values;
@@ -364,6 +436,10 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
   return 'cable';
 };
 
+basicCPEModel.convertPPPoEEnable = function(value) {
+  return value;
+};
+
 // Used when fetching connected devices' rssi data, it might need conversions
 basicCPEModel.convertRssiValue = function(rssiValue) {
   // Return undefined in case anything goes wrong
@@ -396,6 +472,7 @@ basicCPEModel.getModelFields = function() {
         'MACAddress',
       model: 'InternetGatewayDevice.DeviceInfo.ModelName',
       version: 'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
+      hw_version: 'InternetGatewayDevice.DeviceInfo.HardwareVersion',
       uptime: 'InternetGatewayDevice.DeviceInfo.UpTime',
       ip: 'InternetGatewayDevice.ManagementServer.ConnectionRequestURL',
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
@@ -479,6 +556,8 @@ basicCPEModel.getModelFields = function() {
       remote_host: ['RemoteHost', '0.0.0.0', 'xsd:string'],
     },
     lan: {
+      config_enable: 'InternetGatewayDevice.LANDevice.1.' +
+        'LANHostConfigManagement.IPInterface.1.Enable',
       router_ip: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.'+
         'IPInterface.1.IPInterfaceIPAddress',
       subnet_mask: 'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.'+
@@ -573,6 +652,7 @@ basicCPEModel.getModelFields = function() {
       host_ip: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress',
       host_layer2: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
         'Layer2Interface',
+      host_active: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Active',
       host_rssi: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalStrength',
       host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
@@ -581,8 +661,6 @@ basicCPEModel.getModelFields = function() {
         'AssociatedDevice.*.LastDataTransmitRate',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice',
-      assoc_total: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
-        'TotalAssociations',
       assoc_mac: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.'+
         'AssociatedDevice.*.AssociatedDeviceMACAddress',
     },
@@ -622,8 +700,28 @@ basicCPEModel.getModelFields = function() {
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
       },
+      sitesurvey: {
+        // Some of these fields have no defaults, as they are vendor-specific
+        root: '',
+        diag_state: 'DiagnosticsState',
+        result: 'Result',
+        mac: 'BSSID',
+        ssid: 'SSID',
+        channel: 'Channel',
+        signal: 'RSSI',
+        band: 'BandWidth',
+        mode: 'Standard',
+      },
     },
   };
+};
+
+// This function can be called to apply changes to the functions declared above
+// based on firmware/hardware versions, to avoid creating entirely new files for
+// very basic changes. "Base" is exactly what is exported below: basicCPEModel.
+// Functions can be altered through a copy of it, returned with altered values
+basicCPEModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  return base;
 };
 
 module.exports = basicCPEModel;

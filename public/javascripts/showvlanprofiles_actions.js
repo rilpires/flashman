@@ -165,8 +165,8 @@ anlixDocumentReady.add(function() {
   });
 
   $(document).on('click', '.btn-trash', async function(event) {
-    swal({
-      type: 'warning',
+    swal.fire({
+      icon: 'warning',
       title: t('Attention!'),
       text: t('vlanDeleteWarning'),
       confirmButtonText: t('Proceed'),
@@ -186,8 +186,8 @@ anlixDocumentReady.add(function() {
       }
       if (updatesFailed === true) {
         swal.close();
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('errorDeletingVlanProfile'),
           text: t('cannotDeleteVlanProfileCpesDidNotUpdateVlanConfiguration'),
           confirmButtonColor: '#4db6ac',
@@ -200,8 +200,8 @@ anlixDocumentReady.add(function() {
           data: {ids: selectedItens},
           success: function(res) {
             swal.close();
-            swal({
-              type: 'success',
+            swal.fire({
+              icon: 'success',
               title: t('operationSuccessful'),
               confirmButtonColor: '#4db6ac',
             });

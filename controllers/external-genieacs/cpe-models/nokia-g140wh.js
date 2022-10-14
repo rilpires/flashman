@@ -10,13 +10,16 @@ nokiaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.listLANDevicesSNR = true;
-  permissions.lan.skipIfNoWifiMode = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 650;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+  ];
   permissions.firmwareUpgrades = {
     '3FE48077HJIJ86': ['3FE48077HJIL96'],
     '3FE48077HJIL96': [],
@@ -107,6 +110,12 @@ nokiaModel.getModelFields = function() {
     'TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ALU-COM_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 

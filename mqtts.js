@@ -6,22 +6,37 @@ const Notification = require('./models/notification');
 const Config = require('./models/config');
 const debug = require('debug')('MQTT');
 
+const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
+const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
+
+/**
+ * Instance number will help identifying broker instance
+ */
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
+let instanceName = process.env.name || 'broker';
+
 let mqtts = null;
 if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     (process.env.FLM_USE_MQTT_PERSISTENCE === true ||
      process.env.FLM_USE_MQTT_PERSISTENCE === 'true')
 ) {
-  const mq = require('mqemitter-redis')();
+  const mq = require('mqemitter-redis')({
+    host: REDISHOST,
+    port: REDISPORT,
+  });
   const persistence = require('aedes-persistence-redis')({
+    host: REDISHOST,
+    port: REDISPORT,
     // Do not store messages to deliver when device is offline
     maxSessionDelivery: 0,
   });
   mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2,
                  concurrency: 500});
   // Fix broker id in case of instance restart
-  mqtts.id = process.env.name + process.env.NODE_APP_INSTANCE;
+  mqtts.id = instanceName + instanceNumber;
 } else {
-  debug('Instance ID is: ' + process.env.NODE_APP_INSTANCE);
+  debug('Instance ID is: ' + instanceNumber);
   mqtts = aedes({queueLimit: 2});
 }
 
@@ -266,7 +281,23 @@ mqtts.authenticate = function(client, username, password, cb) {
 
 // TODO: Refactor functions bellow.
 // All those functions have the same code.
-// Create a common publish function.
+// Use this common publish function to avoiding repeating code.
+mqtts.commonPublishPacket = function(id, qos, retain, payload) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const packet = {
+      id: id,
+      qos: qos,
+      retain: retain,
+      payload: payload,
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message ' + payload + ' to ' + id);
+  }
+
+  return serverId === null;
+};
+
 
 mqtts.anlixMessageRouterUpdate = function(id, hashSuffix) {
   const serverId = findServerId(id);
@@ -399,6 +430,22 @@ mqtts.anlixMessageRouterLanInfo = function(id) {
 };
 
 
+// Traceroute
+mqtts.anlixMessageRouterTraceroute = function(
+  id,
+  maxHops,
+  numberProbes,
+  maxTime,
+) {
+  const payload = 'traceroute ' +
+    maxHops + ' ' +
+    numberProbes + ' ' +
+    maxTime;
+
+  mqtts.commonPublishPacket(id, 2, false, payload);
+};
+
+
 mqtts.anlixMessageRouterSiteSurvey = function(id) {
   const serverId = findServerId(id);
   if (serverId !== null) {
@@ -483,15 +530,32 @@ mqtts.anlixMessageRouterWifiState = function(id, state, wirelessRadio) {
   }
 };
 
-mqtts.anlixMessageRouterSpeedTest = function(id, ip, user) {
+mqtts.anlixMessageRouterSpeedTest = function(id, ip, username) {
   const serverId = findServerId(id);
   if (serverId !== null) {
-    const name = user.name.replace(/ /g, '_');
+    const name = username.replace(/ /g, '_');
     const packet = {
       id: id,
       qos: 2,
       retain: true,
       payload: 'speedtest ' + ip + ' ' + name + ' 3 15',
+      // Fix parallel connections to 3 and timeout to 15 seconds
+    };
+    toPublishPacket(serverId, packet);
+    debug('MQTT SEND Message SPEEDTEST to ' + id);
+  }
+};
+
+
+mqtts.anlixMessageRouterSpeedTestRaw = function(id, username) {
+  const serverId = findServerId(id);
+  if (serverId !== null) {
+    const name = username.replace(/ /g, '_');
+    const packet = {
+      id: id,
+      qos: 2,
+      retain: true,
+      payload: 'rawspeedtest ' + name + ' 3 15',
       // Fix parallel connections to 3 and timeout to 15 seconds
     };
     toPublishPacket(serverId, packet);

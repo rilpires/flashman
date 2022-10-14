@@ -10,6 +10,7 @@ dlinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 180;
+  permissions.lan.LANDeviceHasAssocTree = false;
   permissions.firmwareUpgrades = {
     '3.0.3': [],
   };

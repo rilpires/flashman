@@ -7,7 +7,18 @@ zyxelModel.identifier = {vendor: 'Zyxel', model: 'EMG3524-T10A'};
 zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
+  permissions.features.siteSurvey = true;
   permissions.features.stun = true;
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.requiresSeparateTasks = true;
+  permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
+  permissions.wifi.bandRead2 = false;
+  permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     'V1.42(ABXU.1)b6_0118': [],
   };
@@ -73,6 +84,11 @@ zyxelModel.getModelFields = function() {
       /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
     );
   });
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ZYXEL_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   return fields;
 };
 

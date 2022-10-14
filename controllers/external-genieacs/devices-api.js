@@ -9,11 +9,12 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // IN CONTROLLERS/UPDATE_FLASHMAN.JS! THIS LINE IS ALTERED AUTOMATICALLY WHEN
 // FLASHMAN IS RESTARTED FOR ANY REASON
 const INSTANCES_COUNT = 1;
-const API_URL = 'http://localhost:$PORT/acs/';
 /* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
  environment.genieacs.json or in shell environment with the same value
  that is in environment.config.json */
 const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
+const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
+  +':$PORT/acs/';
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
@@ -26,6 +27,7 @@ const tr069Models = {
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
+  fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
@@ -34,14 +36,19 @@ const tr069Models = {
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
+  huaweiHS8546V5Model: require('./cpe-models/huawei-hs8546v5'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
+  huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
+  multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
+  multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
@@ -51,14 +58,18 @@ const tr069Models = {
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
+  raisecomRevNModel: require('./cpe-models/raisecom-ht803g-rev-n'),
+  raisecomRevTModel: require('./cpe-models/raisecom-ht803g-rev-t'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
+  zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
@@ -104,142 +115,191 @@ const instantiateCPEByModelFromDevice = function(device) {
   let model = splitID.slice(1, splitID.length-1).join('-');
   let modelName = device.model;
   let fwVersion = device.version;
-  return instantiateCPEByModel(model, modelName, fwVersion);
+  let hwVersion = device.hw_version;
+  return instantiateCPEByModel(model, modelName, fwVersion, hwVersion);
 };
 
-const instantiateCPEByModel = function(modelSerial, modelName, fwVersion) {
+const instantiateCPEByModel = function(
+  modelSerial, modelName, fwVersion, hwVersion,
+) {
+  // Treat special cases where fwVersion and hwVersion are invalid
+  if (!fwVersion) fwVersion = '';
+  if (!hwVersion) hwVersion = '';
+  let result = {success: false, cpe: basicCPEModel};
+  // Giant if-chain looking for model - sorted alphabetically by comments
   if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
-    return {success: true, cpe: tr069Models.datacomDM985Model};
+    result = {success: true, cpe: tr069Models.datacomDM985Model};
   } else if (modelName === 'DM986-414') {
     // Datacom DM986-414
-    return {success: true, cpe: tr069Models.datacomDM986Model};
+    result = {success: true, cpe: tr069Models.datacomDM986Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
-    return {success: true, cpe: tr069Models.dlinkDir615Model};
+    result = {success: true, cpe: tr069Models.dlinkDir615Model};
   } else if (modelName === 'DIR-841') {
     // D-Link DIR-841
-    return {success: true, cpe: tr069Models.dlinkDir841Model};
+    result = {success: true, cpe: tr069Models.dlinkDir841Model};
   } else if (modelName === 'DIR-842') {
     // D-Link DIR-842
-    return {success: true, cpe: tr069Models.dlinkDir842Model};
+    result = {success: true, cpe: tr069Models.dlinkDir842Model};
   } else if (
     (modelSerial === 'IGD' && modelName === 'IGD') || modelName === 'FW323DAC'
   ) {
     // FastWireless FW323DAC
-    return {success: true, cpe: tr069Models.fastwirelessFW323DACModel};
+    result = {success: true, cpe: tr069Models.fastwirelessFW323DACModel};
+  } else if (modelName === 'HG6143D') {
+    // Fiberhome HG6143D
+    result = {success: true, cpe: tr069Models.fiberhomeHG6143DModel};
   } else if (modelName === 'HG6145F') {
     // Fiberhome HG6145F
-    return {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
+    result = {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
   } else if (modelName === 'HG6245D') {
     // Fiberhome HG6245D
-    return {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
+    result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
   } else if (modelName === 'GWR-1200AC') {
     // Greatek GWR1200
-    return {success: true, cpe: tr069Models.greatekGwr1200Model};
+    result = {success: true, cpe: tr069Models.greatekGwr1200Model};
   } else if (['GONUAC001', 'GONUAC002'].includes(modelName)) {
     // Greatek Stavix
-    return {success: true, cpe: tr069Models.greatekStavixModel};
+    result = {success: true, cpe: tr069Models.greatekStavixModel};
   } else if (modelName === 'EG8145V5') {
     // Huawei EG8145V5
-    return {success: true, cpe: tr069Models.huaweiEG8145V5Model};
+    result = {success: true, cpe: tr069Models.huaweiEG8145V5Model};
   } else if (modelName === 'EG8145X6') {
     // Huawei EG8145X6
-    return {success: true, cpe: tr069Models.huaweiEG8145X6Model};
+    result = {success: true, cpe: tr069Models.huaweiEG8145X6Model};
   } else if (modelName === 'HG8121H') {
     // Huawei HG8121H
-    return {success: true, cpe: tr069Models.huaweiHG8121HModel};
+    result = {success: true, cpe: tr069Models.huaweiHG8121HModel};
   } else if (modelName === 'HG8245Q2') {
     // Huawei HG8245Q2
-    return {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
+    result = {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
+  } else if (modelName === 'HS8546V5') {
+    // Huawei HS8546V5
+    result = {success: true, cpe: tr069Models.huaweiHS8546V5Model};
   } else if (['WS5200-21', 'WS5200-40'].includes(modelName)) {
     // Huawei WS5200 v2 / v3
-    return {success: true, cpe: tr069Models.huaweiWS5200Model};
+    result = {success: true, cpe: tr069Models.huaweiWS5200Model};
   } else if (modelName === 'WS7001-40') {
     // Huawei AX2
-    return {success: true, cpe: tr069Models.huaweiWS7001Model};
+    result = {success: true, cpe: tr069Models.huaweiWS7001Model};
+  } else if (modelName === 'WS7000-42') {
+    // Huawei AX2S
+    result = {success: true, cpe: tr069Models.huaweiWS7000Model};
   } else if (modelName === 'WS7100-30') {
     // Huawei AX3
-    return {success: true, cpe: tr069Models.huaweiWS7100Model};
+    result = {success: true, cpe: tr069Models.huaweiWS7100Model};
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
-    return {success: true, cpe: tr069Models.hurakallST1001FLModel};
+    result = {success: true, cpe: tr069Models.hurakallST1001FLModel};
   } else if (modelName === 'ACtion RG1200') {
     // Intelbras RG-1200
-    return {success: true, cpe: tr069Models.intelbrasRG1200Model};
+    result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
-    return {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+    result = {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+  } else if (modelName === '1200R') {
+    // Intelbras WiFiber 1200R InMesh
+    result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
-    return {success: true, cpe: tr069Models.multilaserF660Model};
+    result = {success: true, cpe: tr069Models.multilaserF660Model};
+  } else if (modelName === 'F6600') {
+    // Multilaser ZTE F6600
+    result = {success: true, cpe: tr069Models.multilaserF6600Model};
+  } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
+    // Multilaser ZTE F670L V9.0
+    result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
   } else if (modelName === 'F670L') {
     // Multilaser ZTE F670L
-    return {success: true, cpe: tr069Models.multilaserF670LModel};
+    result = {success: true, cpe: tr069Models.multilaserF670LModel};
   } else if (modelName === 'F680') {
     // Multilaser ZTE F680
-    return {success: true, cpe: tr069Models.multilaserF680Model};
+    result = {success: true, cpe: tr069Models.multilaserF680Model};
   } else if (modelName === 'ZXHN H198A V3.0') {
     // Multilaser ZTE H198
-    return {success: true, cpe: tr069Models.multilaserH198Model};
+    result = {success: true, cpe: tr069Models.multilaserH198Model};
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
-    return {success: true, cpe: tr069Models.multilaserH199Model};
+    result = {success: true, cpe: tr069Models.multilaserH199Model};
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
-    return {success: true, cpe: tr069Models.nokiaBeaconOneModel};
+    result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
   } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(modelName)) {
     // Nokia G-140W-C and family
-    return {success: true, cpe: tr069Models.nokiaG140WCModel};
+    result = {success: true, cpe: tr069Models.nokiaG140WCModel};
   } else if (modelName === 'G-140W-H') {
     // Nokia G-140W-H
-    return {success: true, cpe: tr069Models.nokiaG140WHModel};
+    result = {success: true, cpe: tr069Models.nokiaG140WHModel};
   } else if (modelName === 'G-1425G-A') {
     // Nokia G-1425G-A
-    return {success: true, cpe: tr069Models.nokiaG1425GAModel};
+    result = {success: true, cpe: tr069Models.nokiaG1425GAModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
-    return {success: true, cpe: tr069Models.nokiaG2425Model};
+    result = {success: true, cpe: tr069Models.nokiaG2425Model};
   } else if (modelName === 'P20') {
     // Phyhome P20
-    return {success: true, cpe: tr069Models.phyhomeP20Model};
+    result = {success: true, cpe: tr069Models.phyhomeP20Model};
+  } else if (modelName === 'HT803G-WS2' && hwVersion == 'N.00') {
+    // Raisecom HT803G-WS2 REV N
+    result = {success: true, cpe: tr069Models.raisecomRevNModel};
+  } else if (modelName === 'HT803G-WS2') {
+    // Raisecom HT803G-WS2 REV T
+    result = {success: true, cpe: tr069Models.raisecomRevTModel};
   } else if (modelSerial === 'AC10') {
     // Tenda AC10
-    return {success: true, cpe: tr069Models.tendaAC10Model};
+    result = {success: true, cpe: tr069Models.tendaAC10Model};
   } else if (modelName === 'HG9') {
     // Tenda HG9
-    return {success: true, cpe: tr069Models.tendaHG9Model};
+    result = {success: true, cpe: tr069Models.tendaHG9Model};
   } else if (modelName === 'TK-ONU-AC-D') {
     // Think TK-ONU-AC-D
-    return {success: true, cpe: tr069Models.thinkTkOnuAcDModel};
+    result = {success: true, cpe: tr069Models.thinkTkOnuAcDModel};
   } else if (modelSerial === 'IGD' && modelName === 'Archer C5') {
     // TP-Link Archer C5
-    return {success: true, cpe: tr069Models.tplinkArcherC5};
+    result = {success: true, cpe: tr069Models.tplinkArcherC5};
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
-    return {success: true, cpe: tr069Models.tplinkArcherC6};
+    result = {success: true, cpe: tr069Models.tplinkArcherC6};
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
-    return {success: true, cpe: tr069Models.tplinkEC220G5Model};
+    result = {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'HC220-G5') {
+    // TP-Link HC220-G5
+    result = {success: true, cpe: tr069Models.tplinkHC220G5Model};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
-    return {success: true, cpe: tr069Models.uneeStavixModel};
+    result = {success: true, cpe: tr069Models.uneeStavixModel};
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
-    return {success: true, cpe: tr069Models.zteZT199Model};
+    result = {success: true, cpe: tr069Models.zteZT199Model};
+  } else if (modelName === 'F673AV9') {
+    // ZTE F673AV9
+    result = {success: true, cpe: tr069Models.zteF673Model};
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
-    return {success: true, cpe: tr069Models.zyxelEMG3524Model};
+    result = {success: true, cpe: tr069Models.zyxelEMG3524Model};
   }
-  return {success: false, cpe: basicCPEModel};
+  if (result.success) {
+    // Apply fware / hware version differences for extra permissions / fields
+    let cpe = result.cpe;
+    result.cpe = cpe.applyVersionDifferences(cpe, fwVersion, hwVersion);
+  }
+  return result;
 };
 
-const getModelFields = function(oui, model, modelName, firmwareVersion) {
-  let cpeResult = instantiateCPEByModel(model, modelName, firmwareVersion);
+const getModelFields = function(
+  oui, model, modelName, firmwareVersion, hardwareVersion,
+) {
+  let cpeResult = instantiateCPEByModel(
+    model, modelName, firmwareVersion, hardwareVersion,
+  );
   return {
     success: cpeResult.success,
     message: (cpeResult.success) ? '' : 'Unknown Model',
     fields: cpeResult.cpe.getModelFields(),
+    useLastIndexOnWildcard:
+      cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
   };
 };
 
@@ -257,7 +317,8 @@ const getDeviceFields = async function(args, callback) {
     return callback(null, flashRes);
   }
   let fieldsResult = getModelFields(
-    params.oui, params.model, params.modelName, params.firmwareVersion,
+    params.oui, params.model, params.modelName,
+    params.firmwareVersion, params.hardwareVersion,
   );
   if (!fieldsResult['success']) {
     return callback(null, fieldsResult);
@@ -266,12 +327,15 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 
 const computeFlashmanUrl = function(shareLoad=true) {
   let url = API_URL;
   let numInstances = INSTANCES_COUNT;
+  // Only used at scenarios where Flashman was installed directly on a host
+  // without docker and with more than 1 vCPU
   if (shareLoad && numInstances > 1) {
     // More than 1 instance - share load between instances 1 and N-1
     // We ignore instance 0 for the same reason we ignore it for router syn

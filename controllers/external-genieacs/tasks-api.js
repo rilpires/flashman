@@ -11,8 +11,13 @@ const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
 
 
-let GENIEHOST = 'localhost';
-let GENIEPORT = 7557;
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
+let MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
+let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
 
 let taskWatchlist = {};
 let lastTaskWatchlistClean = Date.now();
@@ -23,11 +28,11 @@ let genie = {}; // to be exported.
 // tasks collection when necessary.
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-  mongodb.MongoClient.connect('mongodb://localhost:27017',
+  mongodb.MongoClient.connect('mongodb://' + MONGOHOST + ':' + MONGOPORT,
     {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
     genieDB = client.db('genieacs');
     // Only watch faults if flashman instance is the first one dispatched
-    if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+    if (parseInt(instanceNumber) === 0) {
       console.log('Watching for faults in GenieACS database');
       watchGenieFaults(); // start watcher for genie faults.
     }
@@ -276,6 +281,13 @@ genie.putPreset = async function(preset) {
     headers: {'Content-Type': 'application/json', 'Content-Length':
      Buffer.byteLength(presetjson)},
   }, presetjson);
+};
+
+genie.deletePreset = async function(presetId) {
+  return genie.request({
+    method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+    path: `/presets/${encodeURIComponent(presetId)}`,
+  });
 };
 
 genie.addOrDeleteObject = async function(

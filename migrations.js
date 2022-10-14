@@ -7,15 +7,71 @@ const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
 const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
+const objectId = require('mongoose').Types.ObjectId;
 
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
 
-module.exports = (app) => {
-  if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+module.exports = async (app) => {
+  if (instanceNumber === 0) {
     // Check default config
     controlApi.checkPubKey(app).then(() => {
       // Get message configs from control
       controlApi.getMessageConfig(app);
     });
+
+    // put default values in old config
+    let config = await Config.findOne(
+      {is_default: true}, {device_update_schedule: false}).exec().catch(
+      (err) => {
+        console.log('Error fetching Config from database!');
+      },
+    );
+    if (config) {
+      if (typeof config.isSsidPrefixEnabled === 'undefined') {
+        config.isSsidPrefixEnabled = false;
+      }
+      if (typeof config.ssidPrefix === 'undefined') {
+        config.ssidPrefix = '';
+      }
+      let vlans = [];
+      for (let i = 0; i < config.vlans_profiles.length; i++) {
+        vlans.push(config.vlans_profiles[i].vlan_id);
+      }
+      // 1 is the mandatory lan vlan id
+      if (! vlans.includes(1)) {
+        config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
+      }
+      let cbacks = config.traps_callbacks;
+      if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
+        const deviceCrud = utilHandlers.deepCopyObject(cbacks.device_crud);
+        cbacks.device_crud.url = '';
+        cbacks.devices_crud.push(deviceCrud);
+      }
+      if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
+        const userCrud = utilHandlers.deepCopyObject(cbacks.user_crud);
+        cbacks.user_crud.url = '';
+        cbacks.users_crud.push(userCrud);
+      }
+      if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
+        const roleCrud = utilHandlers.deepCopyObject(cbacks.role_crud);
+        cbacks.role_crud.url = '';
+        cbacks.roles_crud.push(roleCrud);
+      }
+      if (
+        cbacks.certification_crud.url &&
+        cbacks.certifications_crud.length == 0
+      ) {
+        const certCrud = utilHandlers.deepCopyObject(
+          cbacks.certification_crud,
+        );
+        cbacks.certification_crud.url = '';
+        cbacks.certifications_crud.push(certCrud);
+      }
+      // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
+      // *** DO NOT TOUCH ***
+      await config.save();
+    }
 
     // Check administration user existence
     User.find({is_superuser: true}, function(err, matchedUsers) {
@@ -28,10 +84,22 @@ module.exports = (app) => {
         newSuperUser.save();
       }
     });
+    // Use lean to check missing on Users
+    User.find({is_hidden: {$exists: false}}, {_id: true}).lean()
+      .exec(function(err, users) {
+        if (!err && users && users.length > 0) {
+          for (let idx = 0; idx < users.length; idx++) {
+            User.findOneAndUpdate(
+              {_id: objectId(users[idx]._id)},
+              {is_hidden: false}).exec();
+          }
+        }
+      },
+    );
     // Check roles
     Role.findOne({}, function(err, role) {
       // Check default role existence
-      if (err || !role) {
+      if (!err && !role) {
         let managerRole = new Role({
           name: 'Gerente',
           grantWifiInfo: 2,
@@ -54,7 +122,7 @@ module.exports = (app) => {
           grantOpmodeEdit: true,
           grantVlan: 2,
           grantVlanProfileEdit: true,
-          grantWanBytesView: true,
+          grantStatisticsView: true,
           grantCsvExport: true,
           grantFirmwareBetaUpgrade: true,
           grantFirmwareRestrictedUpgrade: true,
@@ -62,15 +130,53 @@ module.exports = (app) => {
         managerRole.save();
       }
     });
-    // Use lean to check missing fields
+    Role.findOne({name: 'anlix-statistics-api'}, function(err, apiRole) {
+      // Check API role existence
+      if (!err && !apiRole) {
+        let apiRole = new Role({
+          name: 'anlix-statistics-api',
+          is_hidden: true,
+          grantAPIAccess: true,
+          grantWanType: true,
+          grantWifiInfo: 2,
+          grantPPPoEInfo: 2,
+          grantLanEdit: true,
+          grantDeviceId: true,
+          grantOpmodeEdit: true,
+        });
+        apiRole.save();
+      }
+    });
+    // Use lean to check missing fields on Roles
     Role.find({}).lean().exec(function(err, roles) {
-      if (!err && roles) {
+      if (!err && roles && roles.length > 0) {
         for (let idx = 0; idx < roles.length; idx++) {
           if (typeof roles[idx].grantShowRowsPerPage == 'undefined') {
             Role.findOneAndUpdate(
               {name: roles[idx].name},
               {grantShowRowsPerPage: true}, (err) => {
                 console.log('Role updated');
+              });
+          }
+          if (typeof roles[idx].grantStatisticsView == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {grantStatisticsView: roles[idx].grantWanBytesView},
+              (err) => {
+                console.log('Role updated: Renamed grantWanBytesView');
+                Role.collection.update(
+                  {name: roles[idx].name},
+                  {$unset: {grantWanBytesView: 1}},
+                  (err) => {
+                    console.log('Role updated: Removed grantWanBytesView');
+                  });
+              });
+          }
+          if (typeof roles[idx].is_hidden == 'undefined') {
+            Role.findOneAndUpdate(
+              {name: roles[idx].name},
+              {is_hidden: false}, (err) => {
+                console.log('Role visibility updated');
               });
           }
         }
@@ -149,16 +255,18 @@ module.exports = (app) => {
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
-            let cpe = DevicesAPI.instantiateCPEByModelFromDevice(
-              devices[idx]).cpe;
-            let meshBSSIDs = acsMeshDeviceHandler.getMeshBSSIDs(
-              cpe, devices[idx]._id);
-            devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
-            devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
-            saveDevice = true;
-          }
-          if (saveDevice) {
-            devices[idx].save();
+            let cpe =
+              DevicesAPI.instantiateCPEByModelFromDevice(devices[idx]).cpe;
+            acsMeshDeviceHandler.getMeshBSSIDs(cpe, devices[idx]._id)
+              .then((meshBSSIDs) => {
+                devices[idx].bssid_mesh2 = meshBSSIDs.mesh2;
+                devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
+                devices[idx].save();
+              });
+          } else {
+            if (saveDevice) {
+              devices[idx].save();
+            }
           }
         }
       }
@@ -181,55 +289,5 @@ module.exports = (app) => {
         await Device.syncIndexes();
       }
     }).catch(console.error);
-
-    // put default values in old config
-    Config.findOne({is_default: true}, {device_update_schedule: false},
-    function(err, config) {
-      if (!err && config) {
-        if (typeof config.isSsidPrefixEnabled === 'undefined') {
-          config.isSsidPrefixEnabled = false;
-        }
-        if (typeof config.ssidPrefix === 'undefined') {
-          config.ssidPrefix = '';
-        }
-        let vlans = [];
-        for (let i = 0; i < config.vlans_profiles.length; i++) {
-          vlans.push(config.vlans_profiles[i].vlan_id);
-        }
-        // 1 is the mandatory lan vlan id
-        if (! vlans.includes(1)) {
-          config.vlans_profiles.push({vlan_id: 1, profile_name: 'LAN'});
-        }
-        let cbacks = config.traps_callbacks;
-        if (cbacks.device_crud.url && cbacks.devices_crud.length == 0) {
-          const deviceCrud = utilHandlers.deepCopyObject(cbacks.device_crud);
-          cbacks.device_crud.url = '';
-          cbacks.devices_crud.push(deviceCrud);
-        }
-        if (cbacks.user_crud.url && cbacks.users_crud.length == 0) {
-          const userCrud = utilHandlers.deepCopyObject(cbacks.user_crud);
-          cbacks.user_crud.url = '';
-          cbacks.users_crud.push(userCrud);
-        }
-        if (cbacks.role_crud.url && cbacks.roles_crud.length == 0) {
-          const roleCrud = utilHandlers.deepCopyObject(cbacks.role_crud);
-          cbacks.role_crud.url = '';
-          cbacks.roles_crud.push(roleCrud);
-        }
-        if (
-          cbacks.certification_crud.url &&
-          cbacks.certifications_crud.length == 0
-        ) {
-          const certCrud = utilHandlers.deepCopyObject(
-            cbacks.certification_crud,
-          );
-          cbacks.certification_crud.url = '';
-          cbacks.certifications_crud.push(certCrud);
-        }
-        // THIS SAVE CREATES DEFAULT FIELDS ON DATABASE
-        // *** DO NOT TOUCH ***
-        config.save();
-      }
-    });
   }
 };

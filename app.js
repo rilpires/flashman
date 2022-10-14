@@ -10,7 +10,6 @@ const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
-const expressOasGenerator = require('express-oas-generator');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
 const md5File = require('md5-file');
@@ -30,35 +29,21 @@ const runMigrations = require('./migrations');
 
 let app = express();
 
-// Express OpenAPI docs generator handling responses first
-const {SPEC_OUTPUT_FILE_BEHAVIOR} = expressOasGenerator;
-const isOnProduction = (process.env.production === 'true');
-if (!isOnProduction) {
-  expressOasGenerator.handleResponses(
-    app,
-    {
-      mongooseModels: mongoose.modelNames(),
-      swaggerDocumentOptions: {
-        customCss: `
-          .swagger-ui .topbar {
-            background-color: #4db6ac;
-          }
-        `},
-      specOutputFileBehaviour: SPEC_OUTPUT_FILE_BEHAVIOR.PRESERVE,
-      alwaysServeDocs: false,
-    },
-  );
-}
-
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
+
+const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
+const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
+const instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+                              process.env.FLM_DOCKER_INSTANCE || 0);
 
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
   process.env.FLM_DATABASE_NAME;
 
 mongoose.connect(
-  'mongodb://' + process.env.FLM_MONGODB_HOST + ':27017/' + databaseName,
+  'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
@@ -106,7 +91,7 @@ if (process.env.FLM_COMPANY_SECRET) {
 runMigrations(app);
 
 // Check md5 file hashes on firmware directory
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+if (instanceNumber === 0) {
   fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
     // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
     let fnameSubStrings = filename.split('_');
@@ -209,11 +194,6 @@ app.use(fileUpload());
 
 app.use('/', index);
 
-// NEVER PUT THIS FUNCTION BELOW 404 HANDLER!
-if (!isOnProduction) {
-  expressOasGenerator.handleRequests();
-}
-
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
   let err = new Error('Not Found');
@@ -245,7 +225,7 @@ app.use(function(err, req, res, next) {
 });
 
 // Check device update schedule, if active must re-initialize
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
+if (instanceNumber === 0) {
   Config.findOne({is_default: true}, function(err, matchedConfig) {
     if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
     // Do nothing if no active schedule
@@ -254,7 +234,7 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0) {
   }).lean();
 }
 
-if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
+if (instanceNumber === 0 && (
     typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
     (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
      process.env.FLM_SCHEDULER_ACTIVE === true))
@@ -264,13 +244,15 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     schedulePort = process.env.FLM_SCHEDULE_PORT;
   }
   app.listen(parseInt(schedulePort), function() {
+    // Runs every day at 20:00 - automatic update
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
     late8pmRule.minute = 0;
-    // Schedule automatic update
     schedule.scheduleJob(late8pmRule, function() {
       updater.update();
     });
+
+    // Runs every day at 00:00 - sync data with anlix control
     let midnightRule = new schedule.RecurrenceRule();
     midnightRule.hour = 0;
     midnightRule.minute = utilHandlers.getRandomInt(10, 50);
@@ -281,6 +263,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       updater.updateAppPersonalization(app);
       updater.updateLicenseApiSecret(app);
     });
+
+    // Runs every day at 04:00 - contact offline TR069 devices
     let early4amRule = new schedule.RecurrenceRule();
     early4amRule.hour = 4;
     early4amRule.minute = 0;
@@ -290,6 +274,8 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
       // out best fix available...
       acsDeviceController.pingOfflineDevices();
     });
+
+    // Runs every day at 05:00 - clean up tasks in genieacs database
     let early5amRule = new schedule.RecurrenceRule();
     early5amRule.hour = 5;
     early5amRule.minute = 0;
@@ -305,12 +291,17 @@ if (parseInt(process.env.NODE_APP_INSTANCE) === 0 && (
     userController.checkAccountIsBlocked(app);
     updater.updateAppPersonalization(app);
     updater.updateLicenseApiSecret(app);
-    updater.updateLicenseApiSecret(app);
-    // Restart genieacs service whenever Flashman is restarted
-    if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
-      updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
-    } else {
-      updater.rebootGenie(process.env.instances);
+    updater.updateApiUserLogin(app);
+    // Only used at scenarios where Flashman was installed directly on a host
+    // Undefined - Covers legacy host install cases
+    if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
+        process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
+      // Restart TR-069 services whenever Flashman is restarted
+      if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
+        updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
+      } else {
+        updater.rebootGenie(process.env.instances);
+      }
     }
     // Force an update check to alert user on app startup
     updater.checkUpdate();

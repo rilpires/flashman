@@ -1,20 +1,20 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
+const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const acsAccessControlHandler = require('./handlers/acs/access_control');
-const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
-const acsXMLConfigHandler = require('./handlers/acs/xmlconfig');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
 const fs = require('fs');
+const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
 let appDeviceAPIController = {};
@@ -176,6 +176,7 @@ let appSet = function(req, res, processFunction) {
 };
 
 let processWifi = function(content, device, rollback, tr069Changes) {
+  let permissions = DeviceVersion.devicePermissions(device);
   let updateParameters = false;
   if (content.pppoe_user) {
     rollback.pppoe_user = device.pppoe_user;
@@ -219,31 +220,43 @@ let processWifi = function(content, device, rollback, tr069Changes) {
     tr069Changes.wifi2.channel = content.wifi_channel;
     updateParameters = true;
   }
-  if (content.wifi_band) {
-    rollback.wifi_band = device.wifi_band;
-    device.wifi_band = content.wifi_band;
-    tr069Changes.wifi2.band = content.wifi_band;
-    updateParameters = true;
+  if (content.wifi_band && permissions.grantWifiBandEdit2) {
+    // discard change to auto when model doesnt support it
+    if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
+      rollback.wifi_band = device.wifi_band;
+      device.wifi_band = content.wifi_band;
+      tr069Changes.wifi2.band = content.wifi_band;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_mode) {
+  if (content.wifi_mode && permissions.grantWifiModeEdit) {
     rollback.wifi_mode = device.wifi_mode;
     device.wifi_mode = content.wifi_mode;
     tr069Changes.wifi2.mode = content.wifi_mode;
     updateParameters = true;
   }
   if (content.wifi_channel_5ghz) {
-    rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
-    device.wifi_channel_5ghz = content.wifi_channel_5ghz;
-    tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
-    updateParameters = true;
+    // discard change to invalid 5ghz channel for this model
+    let validator = new Validator();
+    if (validator.validateChannel(
+      content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
+    ).valid) {
+      rollback.wifi_channel_5ghz = device.wifi_channel_5ghz;
+      device.wifi_channel_5ghz = content.wifi_channel_5ghz;
+      tr069Changes.wifi5.channel = content.wifi_channel_5ghz;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_band_5ghz) {
-    rollback.wifi_band_5ghz = device.wifi_band_5ghz;
-    device.wifi_band_5ghz = content.wifi_band_5ghz;
-    tr069Changes.wifi5.band = content.wifi_band_5ghz;
-    updateParameters = true;
+  if (content.wifi_band_5ghz && permissions.grantWifiBandEdit5) {
+    // discard change to auto when model doesnt support it
+    if (content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5) {
+      rollback.wifi_band_5ghz = device.wifi_band_5ghz;
+      device.wifi_band_5ghz = content.wifi_band_5ghz;
+      tr069Changes.wifi5.band = content.wifi_band_5ghz;
+      updateParameters = true;
+    }
   }
-  if (content.wifi_mode_5ghz) {
+  if (content.wifi_mode_5ghz && permissions.grantWifiModeEdit) {
     rollback.wifi_mode_5ghz = device.wifi_mode_5ghz;
     device.wifi_mode_5ghz = content.wifi_mode_5ghz;
     tr069Changes.wifi5.mode = content.wifi_mode_5ghz;
@@ -599,6 +612,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
     timestamp: formattedNow,
     model: device.model,
     firmware: device.version,
+    hardwareVersion: device.hw_version,
     mac: device._id,
     serial: device.serial_tr069,
     alt_uid: (device.alt_uid_tr069) ? device.alt_uid_tr069 : '',
@@ -856,7 +870,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     let lastMeasureID;
     let lastErrorID;
     let previous = matchedDevice.speedtest_results;
-    if (previous.length > 0) {
+    if (previous && previous.length > 0) {
       lastMeasureID = previous[previous.length - 1]._id;
     } else {
       lastMeasureID = '';
@@ -880,34 +894,7 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      let config;
-      try {
-        config = await Config.findOne(
-          {is_default: true}, {measureServerIP: true, measureServerPort: true},
-        ).lean();
-        if (!config) throw new Error('Config not found');
-      } catch (err) {
-        console.log(err.message);
-      }
-
-      if (config && config.measureServerIP) {
-         if (matchedDevice.use_tr069) {
-          matchedDevice.current_speedtest.timestamp = new Date();
-          matchedDevice.current_speedtest.user = 'App_Cliente';
-          matchedDevice.current_speedtest.stage = 'estimative';
-          try {
-            await matchedDevice.save();
-            acsDiagnosticsHandler.fireSpeedDiagnose(matchedDevice._id);
-          } catch (err) {
-            console.log('Error speed test procedure: ' + err);
-          }
-        } else {
-          // Send mqtt message to perform speedtest
-          let url = config.measureServerIP + ':' + config.measureServerPort;
-          mqtt.anlixMessageRouterSpeedTest(req.body.id, url,
-                                           {name: 'App_Cliente'});
-        }
-      }
+      sendGenericSpeedTest(matchedDevice, 'App_Cliente');
     }, 1.5*1000);
   });
 };
@@ -1022,7 +1009,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
           matchedDeviceEdit.last_location_date = new Date();
         }
         try {
-          await matchedDevice.save();
+          await matchedDeviceEdit.save();
         } catch (err) {
           console.log('Error saving location or FCM: ' + err);
         }
@@ -1031,6 +1018,13 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
 
     // Fetch permissions and wifi configuration from database
     let permissions = DeviceVersion.devicePermissions(matchedDevice);
+
+    permissions.grantWifiBandEdit = (
+      permissions.grantWifiBandEdit2 || permissions.grantWifiBandEdit5
+    );
+    permissions.grantWifiBand = (
+      permissions.grantWifiBandEdit || permissions.grantWifiModeEdit
+    );
 
     // Override some permissions if device in bridge mode
     if (matchedDevice.bridge_mode_enabled) {
@@ -1081,8 +1075,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     let checkResponse = deviceHandlers.checkSsidPrefix(
       config, matchedDevice.wifi_ssid, matchedDevice.wifi_ssid_5ghz,
       matchedDevice.isSsidPrefixEnabled);
+    // This function returns what prefix we should be using for this device,
+    // based on the local flag and what the saved SSID values are. We send the
+    // prefix and this local flag to the app, to tell it whether the user should
+    // be locked in the prefix or not
     let prefixObj = {};
-    prefixObj.name = checkResponse.prefix;
+    prefixObj.name = checkResponse.prefixToUse;
     prefixObj.grant = checkResponse.enablePrefix;
 
     let response = {
@@ -1094,6 +1092,7 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
       prefix: prefixObj,
       model: matchedDevice.model,
       version: matchedDevice.version,
+      hardwareVersion: matchedDevice.hw_version,
       release: matchedDevice.installed_release,
       devices_timestamp: matchedDevice.last_devices_refresh,
       has_access: isDevOn,
@@ -1454,6 +1453,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
         mac: device._id,
         model: device.model,
         firmwareVer: device.version,
+        hardwareVer: device.hw_version,
       };
       if (configUser) {
         result.customLogin = configUser;

@@ -22,6 +22,7 @@ const getCallback = function(event) {
             'credentialsInfo', res.credentials.credentials,
           );
           buildMappingTable();
+          factoryCredentialsTableToggle();
         }
         if (res.vendors_info) {
           // Build vendors and models dropdowns
@@ -34,8 +35,8 @@ const getCallback = function(event) {
         }
       } else {
         // Show a modal warning
-        swal({
-          type: res.type,
+        swal.fire({
+          icon: (res.type === 'danger') ? 'warning' : res.type,
           title: res.message,
           confirmButtonColor: '#4db6ac',
         });
@@ -55,13 +56,23 @@ const setCallback = function(event) {
     contentType: 'application/json',
     success: function(res) {
       // Show a modal warning
-      swal({
-        type: res.type,
+      swal.fire({
+        icon: (res.type === 'danger') ? 'warning' : res.type,
         title: res.message,
         confirmButtonColor: '#4db6ac',
       });
     },
   });
+};
+
+const factoryCredentialsTableToggle = function() {
+  if (getFactoryCredentialsStorage('credentialsInfo').length > 0) {
+    $('#factory-credentials-table-none').hide();
+    $('#factory-credentials-table').show();
+  } else if (getFactoryCredentialsStorage('credentialsInfo').length == 0) {
+    $('#factory-credentials-table-none').show();
+    $('#factory-credentials-table').hide();
+  }
 };
 
 // Triggers for the web components
@@ -81,6 +92,7 @@ anlixDocumentReady.add(function() {
     setFactoryCredentialsStorage('credentialsInfo', []);
     // Cleaning the front-end table
     $('#factory-credentials-table').empty();
+    factoryCredentialsTableToggle();
   });
 
   // Dropdown of vendors
@@ -121,17 +133,17 @@ anlixDocumentReady.add(function() {
       const username = $('#factory-credentials-user-input').val();
       const password = $('#factory-credentials-password-input').val();
 
-      if (!username || username == '') {
+      if (!username || username === '') {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('emptyUserError'),
           confirmButtonColor: '#4db6ac',
         });
-      } else if (!password || password == '') {
+      } else if (!password || password === '') {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('emptyPasswordError'),
           confirmButtonColor: '#4db6ac',
         });
@@ -141,8 +153,8 @@ anlixDocumentReady.add(function() {
         credentialsInfo.filter((item) => item.model == selectedModel).length > 0
       ) {
         // Show a modal warning
-        swal({
-          type: 'error',
+        swal.fire({
+          icon: 'error',
           title: t('duplicatedCredentials', {model: selectedModel}),
           confirmButtonColor: '#4db6ac',
         });
@@ -156,6 +168,10 @@ anlixDocumentReady.add(function() {
         // Set storaged credentials info adding the new credential
         credentialsInfo.push(newCredential);
         setFactoryCredentialsStorage('credentialsInfo', credentialsInfo);
+        // Clear inputs
+        $('#factory-credentials-user-input').val('');
+        $('#factory-credentials-password-input').val('');
+        factoryCredentialsTableToggle();
       }
     },
   );
@@ -275,4 +291,5 @@ window.removeCredentialsFromTable = function(input) {
   setFactoryCredentialsStorage('credentialsInfo', newCredentialsInfo);
   // Removing the credential config line from the fron-end table
   credentialsTable.find('[data-id="' + id + '"]').remove();
+  factoryCredentialsTableToggle();
 };

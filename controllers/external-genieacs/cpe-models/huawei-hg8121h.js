@@ -10,10 +10,12 @@ huaweiModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
-  permissions.lan.listLANDevicesSNR = true;
+  permissions.features.siteSurvey = true;
+  permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.speedTestLimit = 150;
   permissions.wifi.dualBand = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.firmwareUpgrades = {
     'V3R018C00S128': [],
   };
@@ -134,6 +136,11 @@ huaweiModel.getModelFields = function() {
     '3.BasicDataTransmitRates';
   fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.3.LowerLayers';
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+    '.1.WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 

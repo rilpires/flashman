@@ -10,15 +10,21 @@ nokiaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.listLANDevicesSNR = true;
-  permissions.lan.skipIfNoWifiMode = true;
+  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 750;
+  permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+  ];
   permissions.firmwareUpgrades = {
     '3FE49568IJIJ23': ['3FE49568HJIL97'],
+    '3FE49568HJIJ86': ['3FE49568HJIL97'],
     '3FE49568HJIL97': [],
   };
   return permissions;
@@ -41,9 +47,6 @@ nokiaModel.convertWifiMode = function(mode) {
 };
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
-  if (!is5ghz) {
-    return '20MHz';
-  }
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -54,11 +57,7 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
     case 'VHT80':
       return '80MHz';
     case 'auto':
-      if (is5ghz) {
-        return '80MHz';
-      } else {
-        return '20MHz';
-      }
+      return (is5ghz) ? '80MHz' : 'Auto';
     default:
       return '';
   }
@@ -84,8 +83,6 @@ nokiaModel.getModelFields = function() {
     'X_ALU_COM_ChannelBandWidthExtend';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'X_ALU_COM_ChannelBandWidthExtend';
-  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.*.AssociatedDevice.*.X_ALU-COM_SNR';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.LastDataDownlinkRate';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1'+
@@ -114,6 +111,12 @@ nokiaModel.getModelFields = function() {
     'TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ALU-COM_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 
