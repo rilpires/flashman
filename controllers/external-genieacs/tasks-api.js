@@ -291,14 +291,14 @@ genie.deletePreset = async function(presetId) {
 };
 
 genie.addOrDeleteObject = async function(
-  deviceid, acObject, taskType, callback=null,
+  deviceid, acObject, taskType, callback=null, requestConn=true,
 ) {
   let task = {
     name: taskType,
     objectName: acObject,
   };
   try {
-    let ret = await genie.addTask(deviceid, task, callback);
+    let ret = await genie.addTask(deviceid, task, callback, requestConn);
     if (!ret || !ret.success || !ret.executed) {
       return false;
     }
