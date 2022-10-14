@@ -34,6 +34,39 @@ fiberhomeModel.modelPermissions = function() {
   return permissions;
 };
 
+fiberhomeModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return 'g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'an';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto': // This model's 5ghz auto is only 20/40
+      return '0';
+    default:
+      return '';
+  }
+};
+
 fiberhomeModel.convertWifiBandToFlashman = function(band, isAC) {
   switch (band) {
     // String input
