@@ -2,20 +2,28 @@ const basicCPEModel = require('./base-model');
 
 let fiberhomeModel = Object.assign({}, basicCPEModel);
 
-fiberhomeModel.identifier = 'Fiberhome HG6245D';
+fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6245D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
-  permissions.features.pingTest = true;
+  permissions.features.customAppPassword = false;
+  permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
+  permissions.features.pingTest = true;
+  permissions.features.speedTest = true;
+  permissions.wan.speedTestLimit = 700;
   permissions.features.portForward = true;
-  permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.firmwareUpgrades = {
-    'RP2661': [],
-  };
+  permissions.wifi.bandWrite2 = false;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+    149, 153, 157, 161,
+  ];
+  permissions.wifi.modeRead = true;
+  permissions.wifi.modeWrite = true;
+  permissions.wan.pingTestSetInterface = true;
   return permissions;
 };
 
@@ -35,6 +43,39 @@ fiberhomeModel.convertWifiMode = function(mode) {
   }
 };
 
+fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto': // This model's 5ghz auto is only 20/40
+      return '0';
+    default:
+      return '';
+  }
+};
+
+fiberhomeModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
 fiberhomeModel.getBeaconType = function() {
   return '11i';
 };
@@ -43,19 +84,11 @@ fiberhomeModel.convertToDbm = function(power) {
   return parseFloat(power).toFixed(3);
 };
 
-// *************************************
-// ** NEED TO REVIEW IF ITS NECESSARY **
-// *************************************
-fiberhomeModel.convertChannelToTask = function(channel, fields, masterKey) {
-  if (channel === 'auto') {
-    channel = '0';
-  }
-  let values = [];
-  const parsedChannel = parseInt(channel);
-  values.push([
-    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
-  ]);
-  return values;
+fiberhomeModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 10**3 => milliseconds to second
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return ((8*(10**3))/(1024**2)) * (bytesRec/period);
 };
 
 fiberhomeModel.convertWifiRate = function(rate) {
@@ -80,7 +113,10 @@ fiberhomeModel.getModelFields = function() {
     'X_FH_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.TXPower';
-  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.port_mapping_values.protocol[1] = 'ALL';
+  fields.port_mapping_fields.internal_port_end = [
+    'X_FH_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt',
+  ];
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];
