@@ -10,54 +10,28 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
   permissions.features.pingTest = true;
-  permissions.features.speedTest = true;
-  permissions.wan.speedTestLimit = 700;
   permissions.features.portForward = true;
+  permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.bandWrite2 = false;
+  permissions.wifi.bandWrite5 = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
     149, 153, 157, 161,
   ];
-  permissions.wifi.modeRead = true;
-  permissions.wifi.modeWrite = true;
-  permissions.wan.pingTestSetInterface = true;
+  permissions.wifi.modeWrite = false;
+  permissions.wifi.bandAuto2 = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.mesh.hardcodedBSSIDOffset = true;
+  permissions.mesh.bssidOffsets2Ghz = [
+    '-0x86', '0x0', '0x0', '0x0', '0x0', '0x1',
+  ];
+  permissions.mesh.bssidOffsets5Ghz = [
+    '-0x7E', '0x0', '0x0', '0x0', '0x0', '0x5',
+  ];
   return permissions;
-};
-
-fiberhomeModel.convertWifiMode = function(mode) {
-  switch (mode) {
-    case '11g':
-      return 'g';
-    case '11n':
-      return 'n';
-    case '11na':
-      return 'an';
-    case '11ac':
-      return 'ac';
-    case '11ax':
-    default:
-      return '';
-  }
-};
-
-fiberhomeModel.convertWifiBand = function(band, is5ghz=false) {
-  switch (band) {
-    case 'HT20':
-    case 'VHT20':
-      return '1';
-    case 'HT40':
-    case 'VHT40':
-      return '2';
-    case 'VHT80':
-      return '3';
-    case 'auto': // This model's 5ghz auto is only 20/40
-      return '0';
-    default:
-      return '';
-  }
 };
 
 fiberhomeModel.convertWifiBandToFlashman = function(band, isAC) {
@@ -82,13 +56,6 @@ fiberhomeModel.getBeaconType = function() {
 
 fiberhomeModel.convertToDbm = function(power) {
   return parseFloat(power).toFixed(3);
-};
-
-fiberhomeModel.convertSpeedValueFullLoad = function(period, bytesRec) {
-  // 10**3 => milliseconds to second
-  // 8 => byte to bit
-  // 1024**2 => bit to megabit
-  return ((8*(10**3))/(1024**2)) * (bytesRec/period);
 };
 
 fiberhomeModel.convertWifiRate = function(rate) {
