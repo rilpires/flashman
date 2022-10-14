@@ -16,6 +16,7 @@ let deviceSchema = new Schema({
   alt_uid_tr069: {type: String, sparse: true},
   acs_id: {type: String, sparse: true},
   acs_sync_loops: {type: Number, default: 0},
+  custom_inform_interval: {type: Number},
   last_tr069_sync: Date,
   // Used to signal inform to sync all data after recovering from hard reset
   recovering_tr069_reset: {type: Boolean, default: false},

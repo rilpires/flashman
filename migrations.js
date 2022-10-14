@@ -5,6 +5,7 @@ const Device = require('./models/device');
 const DevicesAPI = require('./controllers/external-genieacs/devices-api');
 const meshHandlers = require('./controllers/handlers/mesh');
 const utilHandlers = require('./controllers/handlers/util');
+const deviceHandlers = require('./controllers/handlers/devices');
 const acsMeshDeviceHandler = require('./controllers/handlers/acs/mesh');
 const Config = require('./models/config');
 const objectId = require('mongoose').Types.ObjectId;
@@ -193,6 +194,7 @@ module.exports = async (app) => {
       {$and: [{bssid_mesh2: {$exists: false}}, {use_tr069: true}]},
       {$and: [{bssid_mesh5: {$exists: false}}, {use_tr069: true}]},
       {wifi_mode: {$nin: ['11g', '11n']}},
+      {$and: [{use_tr069: true}, {custom_inform_interval: {$exists: false}}]},
     ]},
     {installed_release: true, do_update: true,
      do_update_status: true, release: true,
@@ -200,8 +202,9 @@ module.exports = async (app) => {
      bridge_mode_enabled: true, connection_type: true,
      pppoe_user: true, pppoe_password: true,
      isSsidPrefixEnabled: true, bssid_mesh2: true, wifi_mode: true,
-     bssid_mesh5: true, use_tr069: true, _id: true, model: true},
-    function(err, devices) {
+     bssid_mesh5: true, use_tr069: true, _id: true, model: true,
+     custom_inform_interval: true, acs_id: true},
+    async function(err, devices) {
       if (!err && devices) {
         for (let idx = 0; idx < devices.length; idx++) {
           let saveDevice = false;
@@ -251,7 +254,22 @@ module.exports = async (app) => {
             saveDevice = true;
           }
           /*
+            Check if tr-069 device doesnt have a custom inform interval,
+            calculated based on the config's inform interval
+          */
+          if (devices[idx].use_tr069 && !devices[idx].custom_inform_interval) {
+            let customInform = deviceHandlers.makeCustomInformInterval(
+              devices[idx], parseInt(config.tr069.inform_interval/1000),
+            );
+            devices[idx].custom_inform_interval = customInform;
+            saveDevice = true;
+          }
+          if (saveDevice) {
+            await devices[idx].save();
+          }
+          /*
             Check if tr-069 device has mesh bssids registered
+            Leave this one for last because its save is asynchronous
           */
           if (devices[idx].use_tr069 &&
             (!devices[idx].bssid_mesh2 || !devices[idx].bssid_mesh5)) {
@@ -263,10 +281,6 @@ module.exports = async (app) => {
                 devices[idx].bssid_mesh5 = meshBSSIDs.mesh5;
                 devices[idx].save();
               });
-          } else {
-            if (saveDevice) {
-              devices[idx].save();
-            }
           }
         }
       }

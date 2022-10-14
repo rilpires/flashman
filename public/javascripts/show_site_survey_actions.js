@@ -12,6 +12,14 @@ anlixDocumentReady.add(function() {
     $('#site-survey-hlabel').text(deviceId);
     $('#site-survey').modal();
     $('.btn-sync-ssurvey').prop('disabled', true);
+    $('.btn-show-2-ghz-aps').addClass('disabled');
+    $('.btn-show-5-ghz-aps').addClass('disabled');
+    $('#site-survey').removeAttr('data-ap-devices-list');
+    $('#site-survey').removeData('ap-devices-list');
+    $('#site-survey-placeholder').show();
+    $('#site-survey-placeholder-none').hide();
+    $('#2-ghz-aps').hide();
+    $('#5-ghz-aps').hide();
     $.ajax({
       url: '/devicelist/command/' + deviceId + '/sitesurvey',
       type: 'post',
@@ -23,29 +31,15 @@ anlixDocumentReady.add(function() {
           $('#site-survey').data('cleanup', true);
           $('.btn-sync-ssurvey > i').addClass('animated rotateOut infinite');
         } else {
-          $('#site-survey').removeAttr('data-ap-devices-list');
-          $('#site-survey').removeData('ap-devices-list');
-          $('#2-ghz-aps').hide();
-          $('#5-ghz-aps').hide();
-          $('.btn-show-5-ghz-aps').addClass('disabled');
-          $('.btn-show-2-ghz-aps').addClass('disabled');
           $('#site-survey-placeholder').hide();
           $('#site-survey-placeholder-none').show();
-          fetchSiteSurvey(
-            deviceId, isBridge, hasExtendedChannels, channels5ghz,
-          );
+          $('.btn-sync-ssurvey').prop('disabled', false);
         }
       },
       error: function(xhr, status, error) {
-        $('#site-survey').removeAttr('data-ap-devices-list');
-        $('#site-survey').removeData('ap-devices-list');
-        $('#2-ghz-aps').hide();
-        $('#5-ghz-aps').hide();
-        $('.btn-show-5-ghz-aps').addClass('disabled');
-        $('.btn-show-2-ghz-aps').addClass('disabled');
         $('#site-survey-placeholder').hide();
         $('#site-survey-placeholder-none').show();
-        fetchSiteSurvey(deviceId, isBridge, hasExtendedChannels, channels5ghz);
+        $('.btn-sync-ssurvey').prop('disabled', false);
       },
     });
   };
@@ -514,6 +508,14 @@ anlixDocumentReady.add(function() {
     if (($('#site-survey').data('bs.modal') || {})._isShown) {
       let id = $('#site-survey-hlabel').text();
       if (id == macaddr) {
+        $('.btn-sync-ssurvey').prop('disabled', false);
+        $('.btn-show-2-ghz-aps').removeClass('disabled');
+        $('.btn-show-5-ghz-aps').removeClass('disabled');
+        $('.btn-show-5-ghz-aps').removeClass('active');
+        $('.btn-show-2-ghz-aps').addClass('active');
+        $('#site-survey-placeholder').hide();
+        $('#2-ghz-aps').show();
+        $('#5-ghz-aps').show();
         if ($('#site-survey').data('cleanup') == true) {
           // Clear old data
           $('#site-survey').data('cleanup', false);
@@ -530,7 +532,6 @@ anlixDocumentReady.add(function() {
             $('#2-ghz-aps').hide();
             $('#5-ghz-aps').hide();
           } else {
-            $('#site-survey-placeholder').show();
             $('#site-survey-placeholder-none').hide();
           }
         } else {

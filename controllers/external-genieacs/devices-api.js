@@ -29,6 +29,7 @@ const tr069Models = {
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
+  fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
@@ -45,6 +46,7 @@ const tr069Models = {
   intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
+  multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -151,6 +153,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG6145F') {
     // Fiberhome HG6145F
     result = {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
+  } else if (modelName === 'HG6245D') {
+    // Fiberhome HG6245D
+    result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
   } else if (modelName === 'GWR-1200AC') {
     // Greatek GWR1200
     result = {success: true, cpe: tr069Models.greatekGwr1200Model};
@@ -199,6 +204,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
+  } else if (modelName === 'F6600') {
+    // Multilaser ZTE F6600
+    result = {success: true, cpe: tr069Models.multilaserF6600Model};
   } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
     // Multilaser ZTE F670L V9.0
     result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
