@@ -870,7 +870,7 @@
 	"insertValidIp": "Please enter a valid IP",
 	"speedMeasureServerPort": "Speed measurement server port",
 	"insertValidPort": "Please enter a valid port",
-	"technicianAppConfigurations": "Settings for technician app",
+	"technicianAppConfigurations": "Settings for technician app (Android and Desktop)",
 	"opticalSignalYellowAlertDbm": "Optical signal yellow alert (dBm)",
 	"insertValidDbmNumber": "Please enter a valid dBm number",
 	"opticalSignalRedAlertDbm": "Optical signal red alert (dBm)",
