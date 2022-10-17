@@ -13,7 +13,9 @@ huaweiModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

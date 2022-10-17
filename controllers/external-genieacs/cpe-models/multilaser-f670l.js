@@ -11,6 +11,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.siteSurvey = true;
+  permissions.features.traceroute = true;
   permissions.features.portForward = true;
   permissions.lan.blockLANDevices = true;
   permissions.lan.LANDeviceHasSNR = true;
@@ -18,6 +19,7 @@ multilaserModel.modelPermissions = function() {
   permissions.siteSurvey.requiresSeparateTasks = true;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.list5ghzChannels = [

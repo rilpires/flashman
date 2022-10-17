@@ -13,6 +13,7 @@ raisecomModel.modelPermissions = function() {
   permissions.features.ponSignal = true; // will measure pon rx/tx power
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.meshCable = true; // will enable mesh over cable
+  permissions.features.traceroute = true; // will enable traceroute
   permissions.features.stun = true; // will automatically apply stun
                                     // configurations if configured
 
@@ -24,6 +25,10 @@ raisecomModel.modelPermissions = function() {
   // speedtest limit, values above show as "limit+ Mbps"
   permissions.wan.speedTestLimit = 30;
   // speed test disabled. speedtest limits for this device are too low
+
+  // traceroute
+  permissions.traceroute.hopCountExceededState = 'Complete';
+  permissions.traceroute.protocol = 'ICMP';
 
   // wifi permissions
   permissions.wifi.list5ghzChannels =

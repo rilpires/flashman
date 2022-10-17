@@ -68,6 +68,13 @@ deviceHandlers.isApTooOld = function(dateLastSeen) {
   return isTooOld(dateLastSeen, 60);
 };
 
+deviceHandlers.makeCustomInformInterval = function(device, inform) {
+  if (!device.use_tr069) return 0;
+  let hashedID = util.simpleStringHash(device.acs_id);
+  let margin = parseInt(0.1 * inform); // 10% of interval time in variance
+  return inform - (hashedID%margin);
+};
+
 deviceHandlers.syncUpdateScheduler = async function(mac) {
   try {
     let config = await Config.findOne({is_default: true}).lean();
@@ -532,46 +539,86 @@ deviceHandlers.sendPingToTraps = function(id, results) {
   });
 };
 
-// This is a single result.
-deviceHandlers.sendTracerouteToTraps = function(id, result) {
-  // No await needed
-  sio.anlixSendTracerouteNotification(id, result);
-  let query = {is_default: true};
-  let projection = {traps_callbacks: true};
-  Config.findOne(query, projection, function(err, matchedConfig) {
-    if (!err && matchedConfig) {
-      if (matchedConfig.traps_callbacks &&
-          matchedConfig.traps_callbacks.devices_crud
-      ) {
-        let callbacks = matchedConfig.traps_callbacks.devices_crud;
-        const promises = callbacks.map((deviceCrud) => {
-          let requestOptions = {};
-          let callbackUrl = deviceCrud.url;
-          let callbackAuthUser = deviceCrud.user;
-          let callbackAuthSecret = deviceCrud.secret;
-          if (callbackUrl) {
-            requestOptions.url = callbackUrl;
-            requestOptions.method = 'PUT';
-            requestOptions.json = {
-              'id': id,
-              'type': 'device',
-              'changes': {
-                'traceroute_result': result,
-              },
-            };
-            if (callbackAuthUser && callbackAuthSecret) {
-              requestOptions.auth = {
-                user: callbackAuthUser,
-                pass: callbackAuthSecret,
-              };
-            }
-            return request(requestOptions);
-          }
-        });
-        Promise.all(promises).then((resp) => {}, (err) => {});
+// This is almost like 'sendPingToTraps' approach. It is called on a slightly
+// different moment, right after updating device's "current_diagnostic" field
+// I think it is a good idea to substitute sendPingToTraps to this approach,
+// merging same piece of code being called from tr069/firmware devices
+deviceHandlers.processTracerouteTraps = function(device) {
+  // If all tests are done, it is webhook time
+  if (device.current_diagnostic.type == 'traceroute' &&
+  device.current_diagnostic.stage == 'done') {
+    // Webhook results object
+    let results = {};
+    device.traceroute_results.map(function(e) {
+      results[e.address] = {
+        all_hops_tested: e.all_hops_tested,
+        reached_destination: e.reached_destination,
+        tries_per_hop: e.tries_per_hop,
+        hops: e.hops,
+      };
+    });
+    // Customized webhook
+    if (device.current_diagnostic.customized) {
+      if (device.current_diagnostic.webhook_url) {
+        let requestOptions = {};
+        requestOptions.url = device.current_diagnostic.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': device._id,
+          'type': 'device',
+          'traceroute_results': {results: results},
+        };
+        if (device.current_diagnostic.webhook_user &&
+          device.current_diagnostic.webook_secret
+        ) {
+          requestOptions.auth = {
+            user: device.current_diagnostic.webhook_user,
+            pass: device.current_diagnostic.webhook_secret,
+          };
+        }
+        // No wait!
+        request(requestOptions).then(() => {}, (reason) => {});
       }
+    } else {
+      // Generic trap
+      let query = {is_default: true};
+      let projection = {traps_callbacks: true};
+      Config.findOne(query, projection, function(err, matchedConfig) {
+        if (!err && matchedConfig) {
+          if (matchedConfig.traps_callbacks &&
+              matchedConfig.traps_callbacks.devices_crud
+          ) {
+            let callbacks = matchedConfig.traps_callbacks.devices_crud;
+            const promises = callbacks.map((deviceCrud) => {
+              let requestOptions = {};
+              let callbackUrl = deviceCrud.url;
+              let callbackAuthUser = deviceCrud.user;
+              let callbackAuthSecret = deviceCrud.secret;
+              if (callbackUrl) {
+                requestOptions.url = callbackUrl;
+                requestOptions.method = 'PUT';
+                requestOptions.json = {
+                  'id': device._id,
+                  'type': 'device',
+                  'changes': {
+                    'traceroute_results': {results: results},
+                  },
+                };
+                if (callbackAuthUser && callbackAuthSecret) {
+                  requestOptions.auth = {
+                    user: callbackAuthUser,
+                    pass: callbackAuthSecret,
+                  };
+                }
+                return request(requestOptions);
+              }
+            });
+            Promise.all(promises).then((resp) => {}, (err) => {});
+          }
+        }
+      });
     }
-  });
+  }
 };
 
 const sendSpeedtestResultToCustomTrap = async function(device, result) {

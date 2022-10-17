@@ -6,8 +6,10 @@ nokiaModel.identifier = {vendor: 'Nokia', model: 'G-140W-C'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];
@@ -99,6 +101,7 @@ nokiaModel.getModelFields = function() {
     'X_CMCC_TeleComAccount.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
     'X_CMCC_TeleComAccount.Password';
+  fields.diagnostics.traceroute.protocol = 'Mode';
   fields.wifi2.password = fields.wifi2.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );

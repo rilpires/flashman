@@ -10,6 +10,8 @@ tplinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.portForward = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.dhcpUptime = false;

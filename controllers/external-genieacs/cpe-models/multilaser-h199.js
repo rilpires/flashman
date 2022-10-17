@@ -13,9 +13,12 @@ multilaserModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.traceroute = true;
   permissions.lan.blockLANDevices = true;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
+  permissions.traceroute.maxProbesPerHop = 3;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 550;
@@ -127,6 +130,7 @@ multilaserModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   fields.diagnostics.sitesurvey.band = 'Bandwidth';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   return fields;
 };
 

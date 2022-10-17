@@ -87,6 +87,31 @@ utilHandlers.getFromNestedKey = function(
   return current;
 };
 
+// Returns {key: genieFieldValue}
+utilHandlers.getAllNestedKeysFromObject = function(
+  data, keys, genieFieldsFromKey, root,
+) {
+  let result = {};
+  keys.forEach((key) => {
+    let completeValueField = genieFieldsFromKey[key] + '._value';
+    let completeField = genieFieldsFromKey[key];
+    if (root) {
+      completeValueField = root + '.' + completeValueField;
+      completeField = root + '.' + completeField;
+    }
+    if (utilHandlers.checkForNestedKey(data, completeValueField)) {
+      result[key] = utilHandlers.getFromNestedKey(
+        data, completeValueField,
+      );
+    } else if (utilHandlers.checkForNestedKey(data, completeField)) {
+      result[key] = utilHandlers.getFromNestedKey(
+        data, completeField,
+      );
+    }
+  });
+  return result;
+};
+
 utilHandlers.getLastIndexOfNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -214,6 +239,10 @@ utilHandlers.getRandomInt = function(min, max) {
 utilHandlers.escapeRegExp = function(string) {
   // $& means the whole matched string
   return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+utilHandlers.simpleStringHash = function(string) {
+  return string.split('').reduce((hash, char)=>hash+=char.charCodeAt(0), 0);
 };
 
 utilHandlers.parseDate = function(dateString) {

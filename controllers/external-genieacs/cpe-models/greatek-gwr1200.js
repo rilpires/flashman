@@ -26,6 +26,9 @@ greatekModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.maxProbesPerHop = 1;
+  permissions.traceroute.hopCountExceededState = 'Complete';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.portForwardQueueTasks = true;
@@ -40,9 +43,18 @@ greatekModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    '638.112.100.1383': ['638.112.100.1435', '638.112.100.1460'],
-    '638.112.100.1435': ['638.112.100.1383', '638.112.100.1460'],
-    '638.112.100.1460': ['638.112.100.1383', '638.112.100.1435'],
+    '638.112.100.1383': [
+      '638.112.100.1435', '638.112.100.1460', '638.112.100.1461',
+    ],
+    '638.112.100.1435': [
+      '638.112.100.1383', '638.112.100.1460', '638.112.100.1461',
+    ],
+    '638.112.100.1460': [
+      '638.112.100.1383', '638.112.100.1435', '638.112.100.1461',
+    ],
+    '638.112.100.1461': [
+      '638.112.100.1383', '638.112.100.1435', '638.112.100.1460',
+    ],
   };
   return permissions;
 };

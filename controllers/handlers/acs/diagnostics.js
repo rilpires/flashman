@@ -17,17 +17,6 @@ let acsDiagnosticsHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-const getAllNestedKeysFromObject = function(data, target, genieFields) {
-  let result = {};
-  Object.keys(target).forEach((key) => {
-    if (utilHandlers.checkForNestedKey(data, genieFields[key] + '._value')) {
-      result[key] = utilHandlers.getFromNestedKey(
-        data, genieFields[key] + '._value',
-      );
-    }
-  });
-  return result;
-};
 
 const saveCurrentDiagnostic = async function(device, msg, progress) {
   device.current_diagnostic.stage = msg;
@@ -42,6 +31,13 @@ const saveCurrentDiagnostic = async function(device, msg, progress) {
 const getNextPingTest = function(device) {
   let found = device.pingtest_results.find((pingTest) => !pingTest.completed);
   return (found) ? found.host : '';
+};
+
+const getNextTraceTarget = function(device) {
+  let found = device.traceroute_results.find(
+    (traceTest) => !traceTest.completed,
+  );
+  return (found) ? found.address : '';
 };
 
 const getSpeedtestFile = async function(device, bandEstimative) {
@@ -100,7 +96,9 @@ const getSpeedtestFile = async function(device, bandEstimative) {
 const calculatePingDiagnostic = async function(
   device, cpe, data, pingKeys, pingFields,
 ) {
-  pingKeys = getAllNestedKeysFromObject(data, pingKeys, pingFields);
+  pingKeys = utilHandlers.getAllNestedKeysFromObject(
+    data, Object.keys(pingKeys), pingFields,
+  );
   let diagState = pingKeys.diag_state;
   if (['Requested', 'None'].includes(diagState)) return;
 
@@ -188,12 +186,117 @@ const calculatePingDiagnostic = async function(
   return;
 };
 
-// TODO
-// const calculateTraceDiagnostic = async function(
-//   device, cpe, data, pingKeys, pingFields,
-// ) {
+const calculateTraceDiagnostic = async function(
+  device, cpe, data, traceFields,
+) {
+  let permissions = cpe.modelPermissions();
+  let rootData = utilHandlers.getAllNestedKeysFromObject(
+    data, Object.keys(traceFields), traceFields, traceFields['root'],
+  );
 
-// };
+  let traceResult = device.traceroute_results
+    .filter((e)=>!e.completed)
+    .find((e)=>e.address==rootData.target);
+
+  if (!traceResult) return;
+
+  const traceTarget = rootData.target;
+  const inTriesPerHop = parseInt(rootData.tries_per_hop);
+  const maxHopCount = parseInt(rootData.max_hop_count);
+  const numberOfHops = parseInt(rootData.number_of_hops);
+  let hasData = [
+    'Complete',
+    'Complete\n',
+    'Completed',
+    'Error_MaxHopCountExceeded',
+  ].includes(rootData.diag_state);
+  if (permissions.traceroute.completeAsRequested &&
+  rootData.diag_state=='Requested') {
+    hasData = true;
+  }
+  let hasExceeded =
+    (rootData.diag_state == permissions.traceroute.hopCountExceededState);
+
+  // In the rare case of hop count exceeded, even yet in a model that always
+  // returns 'Complete', the better way to know if destination was reached
+  // is to check if hopCount == maxHopCount. Else, we consider not exceeded
+  if (rootData.diag_state == 'Complete' &&
+      permissions.traceroute.hopCountExceededState=='Complete' &&
+      numberOfHops < maxHopCount
+  ) {
+    hasExceeded = false;
+  }
+
+  if (hasData || hasExceeded) {
+    // const inNumberOfHops = parseInt(rootData.number_of_hops);
+    let hopSkipped = false;
+    traceResult.address = traceTarget;
+    traceResult.all_hops_tested = !hasExceeded;
+    traceResult.tries_per_hop = inTriesPerHop;
+    traceResult.hops = [];
+    // Clamping tries_per_hop
+    if (traceResult.tries_per_hop < permissions.traceroute.minProbesPerHop) {
+      traceResult.tries_per_hop = permissions.traceroute.minProbesPerHop;
+    }
+    if (traceResult.tries_per_hop > permissions.traceroute.maxProbesPerHop) {
+      traceResult.tries_per_hop = permissions.traceroute.maxProbesPerHop;
+    }
+    // Filling every hop result. Note we loop from 1 to maxHopCount - it is a
+    // safe way to iterate over every hop, skipping fields when not available
+    for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
+      // inHop here is as it is from genie acs tree.
+      let inHop = rootData.hops_root[hopIndex.toString()];
+      if (!inHop) {
+        hopSkipped = true;
+        continue;
+      } else if (hopSkipped) {
+        traceResult.all_hops_tested = false;
+      }
+      let inHopKeys = utilHandlers.getAllNestedKeysFromObject(
+        inHop, Object.keys(traceFields), traceFields,
+      );
+      let msValues = cpe.readTracerouteRTTs(inHop);
+      let currentHop = {
+        ip: inHopKeys.hop_ip_address
+              ? inHopKeys.hop_ip_address
+              : inHopKeys.hop_host,
+        ms_values: msValues,
+      };
+      if (currentHop.ip && currentHop.ip!='*' && msValues.length > 0) {
+        traceResult.hops.push(currentHop);
+      }
+    }
+    traceResult.reached_destination
+      = !hasExceeded && traceResult.hops.length > 0;
+  } else {
+    traceResult.reached_destination = false;
+    traceResult.all_hops_tested = false;
+  }
+  // ALWAYS set to completed
+  traceResult.completed = true;
+
+  device.current_diagnostic.last_modified_at = new Date();
+  if (!getNextTraceTarget(device)) {
+    device.current_diagnostic.stage = 'done';
+    device.current_diagnostic.in_progress = false;
+  } else {
+    device.current_diagnostic.in_progress = true;
+  }
+
+  await device.save().catch((err) => {
+    console.log('Error saving device after traceroute test(tr069): ' + err);
+  });
+
+  // No await needed
+  sio.anlixSendTracerouteNotification(device._id, traceResult);
+  // Sending to proper webhooks. Will only send if all tests are completed tho
+  deviceHandlers.processTracerouteTraps(device);
+
+  if (device.current_diagnostic.in_progress) {
+    startTracerouteDiagnose(device.acs_id);
+  }
+  return;
+};
 
 const calculateFreq = function(rawChannel) {
   const startChannel2Ghz = 1;
@@ -348,7 +451,9 @@ const calculateSiteSurveyDiagnostic = async function(
 const calculateSpeedDiagnostic = async function(
   device, data, speedKeys, speedFields,
 ) {
-  speedKeys = getAllNestedKeysFromObject(data, speedKeys, speedFields);
+  speedKeys = utilHandlers.getAllNestedKeysFromObject(
+    data, Object.keys(speedKeys), speedFields,
+  );
   let result;
   let speedValueBasic;
   let speedValueFullLoad;
@@ -436,7 +541,6 @@ const startPingDiagnose = async function(acsID) {
   }
 
   let pingHostUrl = getNextPingTest(device);
-  // We don't expect it to be empty here
   if (!pingHostUrl) {
     return;
   }
@@ -519,6 +623,106 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
   }
 };
 
+const startTracerouteDiagnose = async function(acsID) {
+  let device;
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID});
+  } catch (err) {
+    return {success: false, message: err.message + ' in ' + acsID};
+  }
+  if (!device) {
+    return {success: false, message: t('cpeFindError', {errorline: __line})};
+  }
+
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+
+
+  let tracerouteTarget = getNextTraceTarget(device);
+  if (!tracerouteTarget) {
+    // We'are done here
+    return;
+  }
+
+  let fields = cpe.getModelFields();
+  let rootField = fields.diagnostics.traceroute.root;
+  let diagnStateField = rootField + '.'
+    + fields.diagnostics.traceroute.diag_state;
+  let diagnTargetField = rootField + '.'
+    + fields.diagnostics.traceroute.target;
+  let diagnTriesField = rootField + '.'
+    + fields.diagnostics.traceroute.tries_per_hop;
+  let diagnTimeoutField = rootField + '.'
+    + fields.diagnostics.traceroute.timeout;
+  let diagnMaxHops = rootField + '.'
+    + fields.diagnostics.traceroute.max_hop_count;
+  let diagnInterface = rootField + '.'
+    + fields.diagnostics.traceroute.interface;
+  let diagnDataBlockSize = rootField + '.'
+    + fields.diagnostics.traceroute.data_block_size;
+  let diagnProtocol = rootField + '.' + fields.diagnostics.traceroute.protocol;
+  let diagnIpVersion = rootField + '.'
+    + fields.diagnostics.traceroute.ip_version;
+
+  let shouldSetProtocol = fields.diagnostics.traceroute.protocol.length > 0;
+  let shouldSetIpVersion = fields.diagnostics.traceroute.ip_version.length > 0;
+  let triesPerHop = device.traceroute_number_probes;
+  let timeout = device.traceroute_max_wait * 1000;
+  let maxHops = device.traceroute_max_hops;
+
+  let permissions = cpe.modelPermissions();
+  triesPerHop = Math.min(triesPerHop, permissions.traceroute.maxProbesPerHop);
+  triesPerHop = Math.max(triesPerHop, permissions.traceroute.minProbesPerHop);
+
+  let parameterValues = [
+    [diagnStateField, 'Requested', 'xsd:string'],
+    [diagnTargetField, tracerouteTarget, 'xsd:string'],
+    [diagnTimeoutField, timeout, 'xsd:unsignedInt'],
+    [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
+  ];
+
+  if (!isNaN(permissions.traceroute.dataBlockSizeToSet)) {
+    parameterValues.push(
+      [
+        diagnDataBlockSize,
+        permissions.traceroute.dataBlockSizeToSet.toString(),
+        'xsd:string',
+      ],
+    );
+  }
+  if (shouldSetIpVersion) {
+    parameterValues.push(
+      [diagnIpVersion, 'IPv4', 'xsd:string'],
+    );
+  }
+  if (shouldSetProtocol) {
+    parameterValues.push([diagnProtocol, 'ICMP', 'xsd:string']);
+  }
+  if (!permissions.traceroute.minProbesPerHop) {
+    parameterValues.push([diagnTriesField, triesPerHop, 'xsd:unsignedInt']);
+  }
+  if (permissions.wan.traceRouteSetInterface) {
+    let interfaceValue;
+    if (device.connection_type === 'dhcp') {
+      interfaceValue = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.1.WANIPConnection.1.';
+    } else {
+      interfaceValue = 'InternetGatewayDevice.WANDevice.1.'
+      +'WANConnectionDevice.1.WANPPPConnection.1';
+    }
+    parameterValues.push([diagnInterface, interfaceValue, 'xsd:string']);
+  }
+
+  let task = {
+    name: 'setParameterValues',
+    parameterValues: parameterValues,
+  };
+
+  const result = await TasksAPI.addTask(acsID, task);
+  if (!result.success) {
+    console.log('Error starting traceroute diagnose for ' + acsID);
+  }
+};
+
 const startSiteSurveyDiagnose = async function(acsID) {
   let device;
   try {
@@ -595,13 +799,15 @@ acsDiagnosticsHandler.triggerDiagnosticResults = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let fieldToFetch = '';
-
   switch (device.current_diagnostic.type) {
     case 'ping':
       fieldToFetch = fields.diagnostics.ping.root;
       break;
     case 'speedtest':
       fieldToFetch = fields.diagnostics.speedtest.root;
+      break;
+    case 'traceroute':
+      fieldToFetch = fields.diagnostics.traceroute.root;
       break;
     case 'sitesurvey':
       fieldToFetch = fields.diagnostics.sitesurvey.root;
@@ -650,6 +856,18 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
       full_load_bytes_rec: '',
       full_load_period: '',
     },
+    traceroute: {
+      diag_state: '',
+      number_of_hops: '',
+      target: '',
+      tries_per_hop: '',
+      max_hop_count: '',
+      hops_root: '',
+      hop_host: '',
+      hop_ip_address: '',
+      hop_error_code: '',
+      hop_rtt_times: '',
+    },
     sitesurvey: {
       diag_state: '',
       result: '',
@@ -660,8 +878,8 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
 
   let diagType = device.current_diagnostic.type;
-  let keys = [];
-  let genieFields = [];
+  let keys = {};
+  let genieFields = {};
   if (diagType === 'ping') {
     keys = diagNecessaryKeys.ping;
     genieFields = fields.diagnostics.ping;
@@ -679,9 +897,11 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
     if (genieFields.hasOwnProperty(key)) {
       // Remove wildcards, fetch everything before them
       let param = genieFields[key];
+      // sitesurvey & traceroute both uses fields relative to root node
       if (diagType === 'sitesurvey') {
-        // Site survey uses fields relative to root node
         param = fields.diagnostics.sitesurvey.root + '.' + param;
+      } else if (diagType === 'traceroute') {
+        param = fields.diagnostics.traceroute.root + '.' + param;
       }
       parameters.push(param.replace(/\.\*.*/g, ''));
     }
@@ -708,9 +928,6 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
         let permissions = DeviceVersion.devicePermissions(device);
         if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
-        } else if (!device.current_diagnostic.in_progress) {
-          console.log('Genie diagnostic received but ' +
-            'current_diagnostic.in_progress==false');
         } else if (permissions.grantPingTest && diagType == 'ping') {
           await calculatePingDiagnostic(
             device, cpe, data,
@@ -722,9 +939,10 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
             device, data, diagNecessaryKeys.speedtest,
             fields.diagnostics.speedtest,
           );
-        } else if (permissions.grantTraceTest && diagType == 'traceroute') {
-          // TODO
-          // await calculateTraceDiagnostic(/* to-do */);
+        } else if (permissions.grantTraceroute && diagType == 'traceroute') {
+          await calculateTraceDiagnostic(
+            device, cpe, data, fields.diagnostics.traceroute,
+          );
         } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
           await calculateSiteSurveyDiagnostic(
             device, cpe, data, fields.diagnostics.sitesurvey,
@@ -792,9 +1010,29 @@ acsDiagnosticsHandler.fireSpeedDiagnose = async function(device) {
 };
 
 acsDiagnosticsHandler.fireTraceDiagnose = async function(device) {
-  return {
-    success: false, message: t('notAvailable'),
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return {
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    };
+  }
+  let acsID = device.acs_id;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let traceRouteRootField = fields.diagnostics.traceroute.root;
+  // We need to update the parameter values before we fire the traceroute
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: [traceRouteRootField],
   };
+  const result = await TasksAPI.addTask(acsID, task, startTracerouteDiagnose);
+  if (result.success) {
+    return {success: true, message: t('operationSuccessful')};
+  } else {
+    return {
+      success: false, message: t('acsSpeedTestError', {errorline: __line}),
+    };
+  }
 };
 
 acsDiagnosticsHandler.fireSiteSurveyDiagnose = async function(device) {

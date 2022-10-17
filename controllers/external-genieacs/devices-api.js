@@ -29,6 +29,7 @@ const tr069Models = {
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
+  fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
@@ -152,6 +153,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG6145F') {
     // Fiberhome HG6145F
     result = {success: true, cpe: tr069Models.fiberhomeHG6145FModel};
+  } else if (modelName === 'HG6245D') {
+    // Fiberhome HG6245D
+    result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
   } else if (modelName === 'GWR-1200AC') {
     // Greatek GWR1200
     result = {success: true, cpe: tr069Models.greatekGwr1200Model};
