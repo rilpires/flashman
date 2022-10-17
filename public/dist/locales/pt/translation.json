@@ -27,7 +27,7 @@
 	"tr069LicencesLeft": "Sua conta está com apenas {{n}} licenças CPE TR-069 sobrando. Entre em contato com seu representante comercial ({{errorline}})",
 	"firmwareVersionNotFound": "Não existe firmware com essa versão ({{errorline}})",
 	"firmwareInsertError": "Erro ao adicionar firmware ({{errorline}})",
-	"errorSendingMeshParamtersToCpe": "Erro ao enviar parâmetros mesh para a CPE ({{errorline}})",
+	"errorSendingMeshParamtersToCpe": "Erro ao enviar parâmetros mesh para a CPE",
 	"appNotFound": "App não encontrado ({{errorline}})",
 	"appUnauthorized": "App não autorizado ({{errorline}})",
 	"cpeUnauthorized": "CPE não autorizado ({{errorline}})",
