@@ -3,19 +3,23 @@
 const TasksAPI = require('../../external-genieacs/tasks-api');
 const DeviceVersion = require('../../../models/device_version');
 const DevicesAPI = require('../../external-genieacs/devices-api');
-const DeviceModel = require('../../../models/device');
 const utilHandlers = require('../util.js');
 const http = require('http');
-const debug = require('debug')('ACS_ACCESS_CONTROL');
 const t = require('../../language').i18next.t;
 
 let acsAccessControlHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
-// Auxiliary Array functions
+// Auxiliary Array functions.
 const sort = (arr1) => arr1.sort((a, b) => a-b);
 const difference = (arr1, arr2) => arr1.filter((x) => !arr2.includes(x));
+// Auxiliary error constructor.
+const sendError = (code, line) => ({
+  'success': false,
+  'error_code': code,
+  'message': t(code, {errorline: line}),
+});
 
 // If there is a gap at Genie's AC rules, return an array containing the rules
 // from the gap to the end. {[1, 2, 4, 5] will return [4, 5]}
@@ -60,11 +64,9 @@ const checkRules = function(arr1, n) {
   }
 };
 
-let root = 'InternetGatewayDevice.Firewall.X_ZTE-COM_MacFilterService.Filter';
-
 // Generate AC rule for Genie's patterns with the blocked device MAC address
 // and Genie's rule index (id).
-const newRule = function(mac, id) {
+const newRule = function(mac, id, root) {
   if (mac == '') return [];
   try {
     let rule = [];
@@ -87,7 +89,7 @@ const newRule = function(mac, id) {
 // Try to delete (backwards) AC rules from Genie's database. Enquee deleteObject
 // tasks until reach last deleteObject task. Then request a connection at the
 // last task, to run all enqueed tasks.
-const deleteRules = async function(acsID, arr1) {
+const deleteRules = async function(acsID, arr1, root) {
   try {
     for (let i = arr1.length-1; i > 0; i--) {
       let rule = [root, arr1[0]].join('.');
@@ -112,7 +114,7 @@ const deleteRules = async function(acsID, arr1) {
 // Try to add AC rules to Genie's database. Enquee addObject tasks until reach
 // last addObject task. Then request a connection at the last task, to run all
 // enqueed tasks.
-const addRules = async function(acsID, arr1) {
+const addRules = async function(acsID, arr1, root) {
   try {
     for (let i = 0; i < arr1.length-1; i++) {
       let rule = root;
@@ -136,7 +138,7 @@ const addRules = async function(acsID, arr1) {
 
 // Send a setParameterValues task to GenieACS. The parameters are created using
 // the newRule function, that generates an AC rule at Genie's patterns.
-const setRules = async function(acsID, arr1) {
+const setRules = async function(acsID, arr1, root) {
   try {
     let task = {
       name: 'setParameterValues',
@@ -162,48 +164,42 @@ const setRules = async function(acsID, arr1) {
 };
 
 // Configure a new set AC of rules at Genie's database based on Flashman's
-// blocked devices
-const configureAC = async function(acsID, rules = null, blockedDevices) {
-  // Error constructor
-  const sendError = (line) => ({
-    'success': false,
-    'error_code': 'acRuleDefaultError',
-    'message': t('acRuleDefaultError', {errorline: line}),
-  });
+// blocked devices.
+const configureAC = async function(acsID, rules = null, blockedDevices, root) {
   try {
     let n = blockedDevices.length;
     if (rules) {
       let result = checkRules(rules, n);
       if (result.to_delete.length > 0) { // Rules needed to be removed.
-        let res = await deleteRules(acsID, result.to_delete);
+        let res = await deleteRules(acsID, result.to_delete, root);
         // If rules are successfully removed, set new rules array without the
         // removed ones.
         if (res) rules = difference(rules, result.to_delete);
-        else return sendError(__line);
+        else return sendError('acRuleDefaultError', __line);
       }
       if (result.to_add.length > 0) { // Rules needed to be added.
-        let res = await addRules(acsID, result.to_add);
+        let res = await addRules(acsID, result.to_add, root);
         // If rules are successfully added, set rules array with the new rules.
         if (res) rules = rules.concat(result.to_add);
-        else return sendError(__line);
+        else return sendError('acRuleDefaultError', __line);
       }
     }
-    if (rules.length != n) { // An inconsistency exists
+    if (rules.length != n) { // An inconsistency exists.
       console.log('Error for device:', acsID);
       console.log('There is an inconsistency between the number of rules in',
                   'Genie\'s and Flashman\'s databases');
-      return sendError(__line);
+      return sendError('acRuleDefaultError', __line);
     }
-    await setRules(acsID, blockedDevices);
+    await setRules(acsID, blockedDevices, root);
     return {'success': true};
   } catch (e) {
     console.log('Error for device:', acsID);
     console.log('Exception catched running AC configuration:', e);
-    return sendError(__line);
+    return sendError('acRuleDefaultError', __line);
   }
 };
 
-const getAcRuleIds = async function(acsID) {
+const getAcRuleIds = async function(acsID, root) {
   let query = {_id: acsID};
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+root;
   let options = {
@@ -212,7 +208,7 @@ const getAcRuleIds = async function(acsID) {
     port: GENIEPORT,
     path: encodeURI(path),
   };
-  // Projection Promise
+  // Projection Promise.
   return new Promise(function(resolve, reject) {
     let req = http.request(options, (resp)=>{
       resp.setEncoding('utf8');
@@ -224,13 +220,13 @@ const getAcRuleIds = async function(acsID) {
       resp.on('end', async () => {
         if (data.length > 0) {
           try {
-            // Get data after the request ends
+            // Get data after the request ends.
             data = JSON.parse(data)[0];
             let rulesIDs = [];
             if (utilHandlers.checkForNestedKey(data, root)) {
               let ACTree = utilHandlers.getFromNestedKey(data, root);
               Object.entries(ACTree).forEach((rule) => {
-                // Checks for a real rule ID, that not starts with underscore
+                // Checks for a real rule ID, that not starts with underscore.
                 if (rule[0] && !rule[0].startsWith('_')) {
                   rulesIDs.push(rule[0]);
                 }
@@ -250,35 +246,32 @@ const getAcRuleIds = async function(acsID) {
 };
 
 acsAccessControlHandler.changeAcRules = async function(device) {
-  // Error constructor
-  const sendError = (line) => ({
-    'success': false,
-    'error_code': 'acRuleGetError',
-    'message': t('acRuleGetError', {errorline: line}),
-  });
-  // Make sure we only work with TR-069 devices with a valid ID
+  // Make sure we only work with TR-069 devices with a valid ID.
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
-  // Make sure that this device is abled to do access control
+  // Make sure that this device is abled to do access control.
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions || !permissions.grantBlockDevices) return;
-  // Instantiate CPE by model
+  // Instantiate CPE by model.
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   if (!fields) return;
-  let blockedDevices = // Get CPE blocked devices
+  let blockedDevices = // Get CPE blocked devices.
     Object.values(device.lan_devices).filter((d)=>d.is_blocked);
-  // Check for number of rules limits
+  // Check for number of rules limits.
   if (blockedDevices.length >= 64) {
     console.log('Error for device:', acsID);
     console.log('Number of rules has reached its limits');
-    return {
-      success: false,
-      error_code: 'acRuleLimits',
-      message: t('acRuleLimits', {errorline: __line}),
-    };
+    return sendError('acRuleLimits', __line);
   }
-  // Update CPE AC rules tree
+  // Getting AC tree root.
+  if (!fields.access_control || fields.access_control.length == 0) {
+    console.log('Error for device:', acsID);
+    console.log('Undefined AC tree root');
+    return sendError('acRuleDefaultError', __line);
+  }
+  let root = fields.access_control;
+  // Update CPE AC rules tree.
   let task = {
     name: 'getParameterValues',
     parameterNames: Object.values(root),
@@ -286,21 +279,21 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   let res = await TasksAPI.addTask(acsID, task);
   if (!res || !res.success) {
     console.log('An error has occurred at', acsID, '(GET) AC rules task');
-    return sendError(__line);
+    return sendError('acRuleGetError', __line);
   }
-  res = await getAcRuleIds(acsID);
+  res = await getAcRuleIds(acsID, root);
   if (!res || !res.success) {
     console.log('Error retrieving', acsID, 'AC rules IDs');
-    return sendError(__line);
+    return sendError('acRuleGetError', __line);
   }
-  // Check Genie's AC rules IDs
+  // Check Genie's AC rules IDs.
   if (!res.ids) {
     console.log('Error retrieving', acsID, 'AC rules IDs.',
                 'Received an undefined or null value');
-    return sendError(__line);
+    return sendError('acRuleGetError', __line);
   }
-  // Configure a new set of rules
-  return await configureAC(acsID, res.ids, blockedDevices);
+  // Configure a new set of rules.
+  return await configureAC(acsID, res.ids, blockedDevices, root);
 };
 
 module.exports = acsAccessControlHandler;
