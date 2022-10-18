@@ -16,6 +16,12 @@ const isActiveSearchBtnState = function(active = true) {
   }
 };
 
+// receives a Date object and returns a string formatted in a way that can be ordered by date.
+const buildOrdableDateString = function(date) {
+  return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} `
+    + date.toLocaleTimeString(undefined, {hour12: false});
+}
+
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
   const name = getSearchField();
@@ -50,9 +56,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(cert.mac),
-              $('<td>').html(
-                new Date(cert.localEpochTimestamp).toLocaleString('pt-BR'),
-              ),
+              $('<td>').html(buildOrdableDateString(new Date(cert.localEpochTimestamp))),
               $('<td>').html(userObj.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
@@ -118,10 +122,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(certification.mac),
-              $('<td>').html(
-                new Date(certification.localEpochTimestamp)
-                  .toLocaleString('pt-BR'),
-              ),
+              $('<td>').html(buildOrdableDateString(new Date(certification.localEpochTimestamp))),
               $('<td>').html(unwrappedCert.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
