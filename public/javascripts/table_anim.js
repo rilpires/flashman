@@ -3042,6 +3042,7 @@ anlixDocumentReady.add(function() {
                 infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
                 infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
                                           'lighten-2');
+                infoRow = infoRow.replace('$REPLACE_PILL_ICON', '');
                 infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
                 if (isSuperuser || grantNotificationPopups) {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS',
