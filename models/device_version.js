@@ -1822,7 +1822,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSTUN: cpePermissions.features.stun,
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
     grantWanLanInformation: false,
-    grantTraceroute: false,
+    grantTraceroute: cpePermissions.features.traceroute,
     grantRebootAfterWANChange: cpePermissions.wan.mustRebootAfterChanges,
   };
   if (permissions.grantPortForward) {

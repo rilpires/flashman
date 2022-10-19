@@ -878,7 +878,7 @@
 	"insertValidIp": "Por favor, introduzca una IP válida",
 	"speedMeasureServerPort": "Puerto del servidor de medición de velocidad",
 	"insertValidPort": "Por favor ingrese un puerto válido",
-	"technicianAppConfigurations": "Configuración de app de técnico",
+	"technicianAppConfigurations": "Configuración de app de técnico (Android y Desktop)",
 	"opticalSignalYellowAlertDbm": "Alerta amarilla de señal óptica (dBm)",
 	"insertValidDbmNumber": "Ingrese un número de dBm válido",
 	"opticalSignalRedAlertDbm": "Alerta roja de señal óptica (dBm)",

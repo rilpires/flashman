@@ -9,7 +9,9 @@ tplinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.sendDnsOnLANChange = false;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 230;

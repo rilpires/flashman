@@ -14,6 +14,8 @@ zteModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.features.wlanAccessControl = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 550;
@@ -130,6 +132,7 @@ zteModel.getModelFields = function() {
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   return fields;
 };
 

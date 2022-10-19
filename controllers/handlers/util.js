@@ -87,6 +87,31 @@ utilHandlers.getFromNestedKey = function(
   return current;
 };
 
+// Returns {key: genieFieldValue}
+utilHandlers.getAllNestedKeysFromObject = function(
+  data, keys, genieFieldsFromKey, root,
+) {
+  let result = {};
+  keys.forEach((key) => {
+    let completeValueField = genieFieldsFromKey[key] + '._value';
+    let completeField = genieFieldsFromKey[key];
+    if (root) {
+      completeValueField = root + '.' + completeValueField;
+      completeField = root + '.' + completeField;
+    }
+    if (utilHandlers.checkForNestedKey(data, completeValueField)) {
+      result[key] = utilHandlers.getFromNestedKey(
+        data, completeValueField,
+      );
+    } else if (utilHandlers.checkForNestedKey(data, completeField)) {
+      result[key] = utilHandlers.getFromNestedKey(
+        data, completeField,
+      );
+    }
+  });
+  return result;
+};
+
 utilHandlers.getLastIndexOfNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -165,7 +190,7 @@ const domainNameRegex = /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)
 // eslint-disable-next-line max-len
 utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$/;
 // eslint-disable-next-line max-len
-utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
+utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.%]+$/;
 // eslint-disable-next-line max-len
 utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}-[a-z]{3})\.(bin)$/;
 // Matches DD/DD/DDDD DD:DD format

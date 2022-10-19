@@ -864,7 +864,8 @@ anlixDocumentReady.add(function() {
         '<span>&nbsp;</span><span>&nbsp;</span>'+
         '$REPLACE_NOTIFICATIONS'+
         '</div>'+
-        '<div class="badge teal $REPLACE_COLOR_CLASS_PILL">'+
+        '<div class="badge teal primary-color">'+
+          '$REPLACE_PILL_ICON'+
           '$REPLACE_PILL_TEXT'+
         '</div>'+
       '</td><td class="text-center device-pppoe-user">'+
@@ -1482,18 +1483,24 @@ anlixDocumentReady.add(function() {
           }
           if (isTR069) {
             // Undefined treats legacy cases - which are all HTTPS
-            infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'TR-069');
+            infoRow = infoRow.replace(
+              '$REPLACE_PILL_TEXT', '<span>&nbsp; TR-069</span>',
+            );
             if (
               typeof device.secure_tr069 === 'undefined' || device.secure_tr069
             ) {
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
-                                        'darken-2');
+              infoRow = infoRow.replace(
+                '$REPLACE_PILL_ICON',
+                '<div class="fas fa-lock text-white"></div>',
+              );
             } else {
-              infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
-                                        'darken-4');
+              infoRow = infoRow.replace(
+                '$REPLACE_PILL_ICON',
+                '<div class="fas fa-lock-open text-white"></div>',
+              );
             }
           } else {
-            infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL', 'lighten-2');
+            infoRow = infoRow.replace('$REPLACE_PILL_ICON', '');
             infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
           }
 
@@ -3035,6 +3042,7 @@ anlixDocumentReady.add(function() {
                 infoRow = infoRow.replace('$REPLACE_PONSIGNAL', '<td></td>');
                 infoRow = infoRow.replace('$REPLACE_COLOR_CLASS_PILL',
                                           'lighten-2');
+                infoRow = infoRow.replace('$REPLACE_PILL_ICON', '');
                 infoRow = infoRow.replace('$REPLACE_PILL_TEXT', 'Firmware');
                 if (isSuperuser || grantNotificationPopups) {
                   infoRow = infoRow.replace('$REPLACE_NOTIFICATIONS',

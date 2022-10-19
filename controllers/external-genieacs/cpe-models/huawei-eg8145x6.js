@@ -11,6 +11,7 @@ huaweiModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =

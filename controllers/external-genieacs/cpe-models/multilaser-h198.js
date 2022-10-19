@@ -13,6 +13,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.features.wlanAccessControl = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 100;
@@ -77,6 +79,7 @@ multilaserModel.getModelFields = function() {
     'WLANConfiguration.1.AssociatedDevice';
   fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.5.AssociatedDevice';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   fields.port_mapping_fields.internal_port_end = [
     'X_ZTE-COM_InternalPortEndRange', 'internal_port_start', 'xsd:unsignedInt',
   ];

@@ -367,7 +367,7 @@ const updateValues = function(message) {
     // Assign parameters to html
     $('#' + TRACEROUTE_HTML_RESULT_NAME + number).append(
       RESULT_TABLE_ITEM_HTML
-        .text(hopIdxDisplay + encodeURIComponent(hop.ip))
+        .text(hopIdxDisplay + hop.ip)
         .append(
           RESULT_TABLE_ITEM_VALUE_HTML
           .text(t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)}))

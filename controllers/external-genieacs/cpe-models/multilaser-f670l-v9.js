@@ -13,10 +13,12 @@ multilaserModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.wlanAccessControl = true;
+  permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.portForwardPermissions =
+  permissions.wan.traceRouteSetInterface = true;
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
@@ -98,6 +100,8 @@ multilaserModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   fields.diagnostics.sitesurvey.band = 'Bandwidth';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
+  fields.diagnostics.traceroute.ip_version = 'X_ZTE-COM_Mode';
   return fields;
 };
 
