@@ -99,10 +99,7 @@ const deleteRules = async function(acsID, arr1, root) {
     }
     let rule = [root, arr1[0]].join('.');
     let res = await TasksAPI.addOrDeleteObject(acsID, rule, 'deleteObject');
-    if (!res || !res.success) {
-      console.log('An error has occurred at', acsID, '(DELETE) AC rules task');
-      return false;
-    }
+    if (!res) return false;
   } catch (e) {
     console.log('Error for device:', acsID);
     console.log('Exception catched deleting AC rules:', e);
@@ -117,17 +114,12 @@ const deleteRules = async function(acsID, arr1, root) {
 const addRules = async function(acsID, arr1, root) {
   try {
     for (let i = 0; i < arr1.length-1; i++) {
-      let rule = root;
       let res = // "requestConn" parameter is set to false to enquee tasks.
-        await TasksAPI.addOrDeleteObject(acsID, rule, 'addObject', false);
+        await TasksAPI.addOrDeleteObject(acsID, root, 'addObject', false);
       if (!res) return false;
     }
-    let rule = root;
-    let res = await TasksAPI.addOrDeleteObject(acsID, rule, 'addObject');
-    if (!res || !res.success) {
-      console.log('An error has occurred at', acsID, '(ADD) AC rules task');
-      return false;
-    }
+    let res = await TasksAPI.addOrDeleteObject(acsID, root, 'addObject');
+    if (!res) return false;
   } catch (e) {
     console.log('Error for device:', acsID);
     console.log('Exception catched adding AC rules:', e);
@@ -149,7 +141,8 @@ const setRules = async function(acsID, arr1, root) {
     };
     for (let i = 0; i < arr1.length; i++) {
       let mac = arr1[i]['mac'];
-      task.parameterValues = task.parameterValues.concat(newRule(mac, i+1));
+      task.parameterValues =
+        task.parameterValues.concat(newRule(mac, i+1, root));
     }
     let res = await TasksAPI.addTask(acsID, task);
     if (!res || !res.success) {
@@ -247,15 +240,20 @@ const getAcRuleIds = async function(acsID, root) {
 
 acsAccessControlHandler.changeAcRules = async function(device) {
   // Make sure we only work with TR-069 devices with a valid ID.
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    return sendError('macNotFound', __line);
+  }
   let acsID = device.acs_id;
   // Make sure that this device is abled to do access control.
-  let permissions = DeviceVersion.devicePermissions(device);
-  if (!permissions || !permissions.grantBlockDevices) return;
+  // let permissions = DeviceVersion.devicePermissions(device);
+  // if (!permissions) return sendError('permissionNotFound', __line);
+  // if (!permissions.grantBlockDevices) {
+  //   return sendError('permissionDenied', __line);
+  // }
   // Instantiate CPE by model.
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  if (!fields) return;
+  if (!fields) return sendError('fieldNotFound', __line);
   let blockedDevices = // Get CPE blocked devices.
     Object.values(device.lan_devices).filter((d)=>d.is_blocked);
   // Check for number of rules limits.
@@ -268,7 +266,7 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   if (!fields.access_control || fields.access_control.length == 0) {
     console.log('Error for device:', acsID);
     console.log('Undefined AC tree root');
-    return sendError('acRuleDefaultError', __line);
+    return sendError('fieldNotFound', __line);
   }
   let root = fields.access_control;
   // Update CPE AC rules tree.
@@ -292,8 +290,9 @@ acsAccessControlHandler.changeAcRules = async function(device) {
                 'Received an undefined or null value');
     return sendError('acRuleGetError', __line);
   }
+  let ids = res.ids.map(Number);
   // Configure a new set of rules.
-  return await configureAC(acsID, res.ids, blockedDevices, root);
+  return await configureAC(acsID, ids, blockedDevices, root);
 };
 
 module.exports = acsAccessControlHandler;
