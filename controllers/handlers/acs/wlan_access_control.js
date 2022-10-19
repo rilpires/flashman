@@ -1,7 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 const TasksAPI = require('../../external-genieacs/tasks-api');
-const DeviceVersion = require('../../../models/device_version');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const DeviceModel = require('../../../models/device');
 const utilHandlers = require('../util.js');
@@ -212,14 +211,15 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
   } catch (e) {
     return;
   }
-  if (!device || !device.use_tr069) {
-    return;
-  }
-  let permissions = DeviceVersion.devicePermissions(device);
+  if (!device || !device.use_tr069) return;
+  // Instantiate CPE by model.
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  // Make sure that this device is abled to do access control.
+  let permissions = cpe.modelPermissions();
+  if (!permissions || !permissions.grantBlockDevices) return;
 
   let maxId = 0;
   let acRulesResult = {};
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
 
   let supportedWlans = ['wifi2'];
@@ -284,7 +284,7 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
     }
     maxId = 0;
     wlanAcRulesTrees = {'wifi2': []};
-    if (permissions.grantWifi5ghz) {
+    if (device.wifi_is_5ghz_capable) {
       wlanAcRulesTrees['wifi5'] = [];
     }
   }
@@ -367,13 +367,13 @@ const compareNewACRulesWithTree = async function(acsID, blockedDevices) {
   // to be different
   let allOkWithWifi2 = (rulesToEdit['wifi2'] && (
     rulesToEdit['wifi2'].length == blockedDevices.length));
-  let allOkWithWifi5 = (permissions.grantWifi5ghz && (
+  let allOkWithWifi5 = (device.wifi_is_5ghz_capable && (
     rulesToEdit['wifi5'] && (
     rulesToEdit['wifi5'].length == blockedDevices.length)));
   // At this point the number of rules that exist in each WLAN tree and the
   // number of blocked devices must be equal. Otherwise, it returns an error
   if (allOkWithWifi2) {
-    if (!permissions.grantWifi5ghz || allOkWithWifi5) {
+    if (!device.wifi_is_5ghz_capable || allOkWithWifi5) {
       try {
         await updateAcRules(
           device, supportedWlans, acSubtreeRoots, rulesToEdit, blockedDevices,
@@ -394,10 +394,11 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let serial = device.serial_tr069;
-  // Make sure that this device is abled to do access control
-  let permissions = DeviceVersion.devicePermissions(device);
-  if (!permissions || !permissions.grantBlockDevices) return;
+  // Instantiate CPE by model
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  // Make sure that this device is abled to do access control
+  let permissions = cpe.modelPermissions();
+  if (!permissions || !permissions.features.wlanAccessControl) return;
   let fields = cpe.getModelFields();
   if (!fields) return;
   // ===== Get blockedDevices and AC rules trees =====

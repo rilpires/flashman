@@ -18,6 +18,8 @@ const acsFirmwareHandler = require('./handlers/acs/firmware');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const acsMeshDeviceHandler = require('./handlers/acs/mesh');
+const macAccessControl = require('./handlers/acs/mac_access_control.js');
+const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
@@ -4023,7 +4025,23 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
       if (matchedDevice.use_tr069) {
         let result = {'success': false};
         let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-        result = await cpe.changeAcRules(matchedDevice);
+        let permissions = cpe.modelPermissions();
+        if (!permissions) {
+          return res.status(500).json({
+            success: false,
+            message: t('permissionNotFound', {errorline: __line}),
+          });
+        }
+        if (permissions.features.macAccessControl) {
+          result = await macAccessControl.changeAcRules(matchedDevice);
+        } else if (permissions.features.wlanAccessControl) {
+          result = await wlanAccessControl.changeAcRules(matchedDevice);
+        } else {
+          return res.status(500).json({
+            success: false,
+            message: t('permissionDenied', {errorline: __line}),
+          });
+        }
         if (!result || !result['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have

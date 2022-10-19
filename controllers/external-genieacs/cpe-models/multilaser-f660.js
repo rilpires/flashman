@@ -10,7 +10,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
-  permissions.lan.blockLANDevices = true;
+  permissions.features.wlanAccessControl = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;

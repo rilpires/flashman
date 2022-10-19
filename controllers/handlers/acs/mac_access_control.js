@@ -1,7 +1,6 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 const TasksAPI = require('../../external-genieacs/tasks-api');
-const DeviceVersion = require('../../../models/device_version');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const utilHandlers = require('../util.js');
 const http = require('http');
@@ -244,14 +243,14 @@ acsAccessControlHandler.changeAcRules = async function(device) {
     return sendError('macNotFound', __line);
   }
   let acsID = device.acs_id;
-  // Make sure that this device is abled to do access control.
-  // let permissions = DeviceVersion.devicePermissions(device);
-  // if (!permissions) return sendError('permissionNotFound', __line);
-  // if (!permissions.grantBlockDevices) {
-  //   return sendError('permissionDenied', __line);
-  // }
   // Instantiate CPE by model.
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  // Make sure that this device is abled to do access control.
+  let permissions = cpe.modelPermissions();
+  if (!permissions) return sendError('permissionNotFound', __line);
+  if (!permissions.features.macAccessControl) {
+    return sendError('permissionDenied', __line);
+  }
   let fields = cpe.getModelFields();
   if (!fields) return sendError('fieldNotFound', __line);
   let blockedDevices = // Get CPE blocked devices.

@@ -17,6 +17,8 @@ const acsDeviceLogsHandler = require('./handlers/acs/logs.js');
 const acsConnDevicesHandler = require('./handlers/acs/connected_devices.js');
 const acsMeasuresHandler = require('./handlers/acs/measures.js');
 const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
+const macAccessControl = require('./handlers/acs/mac_access_control.js');
+const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const http = require('http');
 const t = require('./language').i18next.t;
@@ -1613,9 +1615,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         await acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
-    if (permissions.grantBlockDevices) {
-      console.log('Will update device Access Control Rules');
-      await cpe.changeAcRules(device);
+    if (cpe.modelPermissions().features.macAccessControl) {
+      await macAccessControl.changeAcRules(device);
+    } else if (cpe.modelPermissions().features.wlanAccessControl) {
+      await wlanAccessControl.changeAcRules(device);
     }
   }
 };

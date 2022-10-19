@@ -7,6 +7,8 @@ const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
+const macAccessControl = require('./handlers/acs/mac_access_control.js');
+const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
@@ -118,7 +120,27 @@ let appSet = function(req, res, processFunction) {
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
         let acRulesRes = {'success': false};
         let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-        acRulesRes = await cpe.changeAcRules(matchedDevice);
+        let permissions = cpe.modelPermissions();
+        if (!permissions) {
+          return res.status(500).json({
+            is_set: 0,
+            success: false,
+            error_code: 'permissionNotFound',
+            message: t('permissionNotFound', {errorline: __line}),
+          });
+        }
+        if (cpe.modelPermissions().features.macAccessControl) {
+          acRulesRes = await macAccessControl.changeAcRules(matchedDevice);
+        } else if (cpe.modelPermissions().features.wlanAccessControl) {
+          acRulesRes = await wlanAccessControl.changeAcRules(matchedDevice);
+        } else {
+          return res.status(500).json({
+            is_set: 0,
+            success: false,
+            error_code: 'permissionDenied',
+            message: t('permissionDenied', {errorline: __line}),
+          });
+        }
         if (!acRulesRes || !acRulesRes['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have

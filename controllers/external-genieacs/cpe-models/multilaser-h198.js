@@ -12,7 +12,7 @@ multilaserModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
-  permissions.lan.blockLANDevices = true;
+  permissions.features.wlanAccessControl = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 100;

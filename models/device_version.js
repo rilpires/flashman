@@ -1801,9 +1801,9 @@ const convertTR069Permissions = function(cpePermissions) {
     grantSpeedTest: cpePermissions.features.speedTest,
     grantCustomSpeedTest: true,
     grantSpeedTestLimit: cpePermissions.wan.speedTestLimit,
-    grantBlockDevices: cpePermissions.lan.blockLANDevices,
+    grantBlockDevices: cpePermissions.features.macAccessControl ||
+      cpePermissions.features.wlanAccessControl,
     grantBlockWiredDevices: cpePermissions.lan.blockWiredLANDevices,
-    grantACRulesSequentially: cpePermissions.lan.acRulesAreSequencial,
     grantOpmode: cpePermissions.features.meshCable ||
       cpePermissions.features.meshWifi,
     grantVlanSupport: false,
