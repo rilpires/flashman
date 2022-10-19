@@ -10,6 +10,8 @@ zteModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
@@ -121,6 +123,7 @@ zteModel.getModelFields = function() {
   fields.port_mapping_fields.internal_port_start = [
     'InternalPort', 'internal_port_start', 'xsd:unsignedInt',
   ];
+  fields.diagnostics.traceroute.protocol = 'Mode';
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
   return fields;
