@@ -16,6 +16,7 @@ const t = language.i18next.t;
 let Config = require('../models/config');
 let Devices = require('../models/device');
 let User = require('../models/user');
+const Role = require('../models/role');
 
 let updateController = {};
 
@@ -811,85 +812,108 @@ updateController.setAutoConfig = async function(req, res) {
       ponSignalThresholdCriticalHigh;
     let message = t('operationSuccessful');
 
-    // checking tr069 configuration fields.
-    let tr069ServerURL = req.body['tr069-server-url'];
-    let onuWebLogin = req.body['onu-web-login'];
-    if (!onuWebLogin) {
-      // in case of falsey value, use current one
-      onuWebLogin = config.tr069.web_login;
-    }
-    let onuWebPassword = req.body['onu-web-password'];
-    if (!onuWebPassword) {
-      // in case of falsey value, use current one
-      onuWebPassword = config.tr069.web_password;
-    }
-    // validate that it is a strong password, but only if value changes
-    // first character cannot be special character
-    if (onuWebPassword !== config.tr069.web_password) {
-      let passRegex = new RegExp(''
-        + /(?=.{8,16}$)/.source
-        + /(?=.*[A-Z])/.source
-        + /(?=.*[a-z])/.source
-        + /(?=.*[0-9])/.source
-        + /(?=.*[-!@#$%^&*+_.]).*/.source);
-      if (
-        !passRegex.test(onuWebPassword) ||
-        '-!@#$%^&*+_.'.includes(onuWebPassword[0])
-      ) {
-        return res.status(500).json({
-          type: 'danger',
-          message: t('tr069WebPasswordValidationError'),
-        });
-      }
-    }
-    let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
-    // parsing fields to number.
-    let tr069InformInterval = Number(req.body['inform-interval']);
-    let tr069SyncInterval = Number(req.body['sync-interval']);
-    let tr069RecoveryThreshold =
-      Number(req.body['lost-informs-recovery-threshold']);
-    let tr069OfflineThreshold =
-      Number(req.body['lost-informs-offline-threshold']);
-    let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
-    let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
-    let changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
+    
+    ////// checking TR069 configuration fields.
+    // flags that can change depending on TR069 values, after their validation.
     let willMigrateDeviceInforms = false;
-    // if all fields are numeric,
-    if (!isNaN(tr069InformInterval) && !isNaN(tr069RecoveryThreshold)
-     && !isNaN(tr069OfflineThreshold)
-     // and inform interval, recovery and offline values are within boundaries,
-     && tr069InformInterval >= 60 && tr069InformInterval <= 86400
-     && tr069SyncInterval >= 60 && tr069SyncInterval <= 86400
-     && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
-     && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
-     // and recovery is smaller than offline.
-     && tr069RecoveryThreshold < tr069OfflineThreshold) {
-      config.tr069.server_url = tr069ServerURL;
-      config.tr069.web_login = onuWebLogin;
-      config.tr069.web_password = onuWebPassword;
-      config.tr069.remote_access = onuRemote;
-      // transforming from seconds to milliseconds.
-      if (config.tr069.inform_interval !== tr069InformInterval*1000) {
-        willMigrateDeviceInforms = true;
-      }
-      config.tr069.inform_interval = tr069InformInterval*1000;
-      config.tr069.sync_interval = tr069SyncInterval*1000;
-      config.tr069.recovery_threshold = tr069RecoveryThreshold;
-      config.tr069.offline_threshold = tr069OfflineThreshold;
-      config.tr069.pon_signal_threshold = ponSignalThreshold;
-      config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
-      config.tr069.pon_signal_threshold_critical_high =
-        ponSignalThresholdCriticalHigh;
-      config.tr069.stun_enable = STUNEnable;
-      config.tr069.insecure_enable = insecureEnable;
-      config.tr069.has_never_enabled_insecure =
-        (config.tr069.has_never_enabled_insecure && !insecureEnable);
-    } else { // if one single rule doesn't pass the test.
-      // respond error without much explanation.
+    let changedInsecure = false;
+
+    // getting user role to check its TR069 config permission.
+    const roleName = req.user.role;
+    let [role, err] = await go(Role.findOne({name: roleName}).lean().exec());
+    if (err) {
       return res.status(500).json({
         type: 'danger',
-        message: t('fieldsInvalid', {errorline: __line}),
+        message: t('roleFindError'),
       });
+    };
+
+    // if user is superuser, or user has role TR069 config permission, we read,
+    // validate and save TR069 configs. If no permission, we ignore TR069.
+    if (req.user.is_superuser || role.grantMonitorManage) {
+      // reading fields and parsing them to their respective data types.
+      let tr069ServerURL = req.body['tr069-server-url'];
+      let onuWebLogin = req.body['onu-web-login'];
+      if (!onuWebLogin) {
+        // in case of falsey value, use current one
+        onuWebLogin = config.tr069.web_login;
+      }
+      let onuWebPassword = req.body['onu-web-password'];
+      if (!onuWebPassword) {
+        // in case of falsey value, use current one
+        onuWebPassword = config.tr069.web_password;
+      }
+      // validate that it is a strong password, but only if value changes
+      // first character cannot be special character
+      if (onuWebPassword !== config.tr069.web_password) {
+        let passRegex = new RegExp(''
+          + /(?=.{8,16}$)/.source
+          + /(?=.*[A-Z])/.source
+          + /(?=.*[a-z])/.source
+          + /(?=.*[0-9])/.source
+          + /(?=.*[-!@#$%^&*+_.]).*/.source);
+        if (
+          !passRegex.test(onuWebPassword) ||
+          '-!@#$%^&*+_.'.includes(onuWebPassword[0])
+        ) {
+          return res.status(500).json({
+            type: 'danger',
+            message: t('tr069WebPasswordValidationError'),
+          });
+        }
+      }
+      let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
+      let tr069InformInterval = Number(req.body['inform-interval']);
+      let tr069SyncInterval = Number(req.body['sync-interval']);
+      let tr069RecoveryThreshold =
+        Number(req.body['lost-informs-recovery-threshold']);
+      let tr069OfflineThreshold =
+        Number(req.body['lost-informs-offline-threshold']);
+      let STUNEnable = (req.body.stun_enable === 'on') ? true : false;
+      let insecureEnable = (req.body.insecure_enable === 'on') ? true : false;
+      changedInsecure = (insecureEnable !== config.tr069.insecure_enable);
+
+      // validating TR069 fields.
+      // we only take TR069 configs from request if all fields are valid.
+      if (
+        // if inform interval, sync interval, recovery and offline values
+        // are numeric and within boundaries,
+        !isNaN(tr069InformInterval) && !isNaN(tr069SyncInterval)
+        && !isNaN(tr069RecoveryThreshold) && !isNaN(tr069OfflineThreshold)
+        && tr069InformInterval >= 60 && tr069InformInterval <= 86400
+        && tr069SyncInterval >= 60 && tr069SyncInterval <= 86400
+        && tr069RecoveryThreshold >= 1 && tr069RecoveryThreshold <= 100
+        && tr069OfflineThreshold >= 2 && tr069OfflineThreshold <= 300
+        // and recovery is smaller than offline.
+        && tr069RecoveryThreshold < tr069OfflineThreshold
+      ) {
+        config.tr069.server_url = tr069ServerURL;
+        config.tr069.web_login = onuWebLogin;
+        config.tr069.web_password = onuWebPassword;
+        config.tr069.remote_access = onuRemote;
+        // transforming from seconds to milliseconds.
+        if (config.tr069.inform_interval !== tr069InformInterval*1000) {
+          willMigrateDeviceInforms = true;
+        }
+        config.tr069.inform_interval = tr069InformInterval*1000;
+        config.tr069.sync_interval = tr069SyncInterval*1000;
+        config.tr069.recovery_threshold = tr069RecoveryThreshold;
+        config.tr069.offline_threshold = tr069OfflineThreshold;
+        config.tr069.pon_signal_threshold = ponSignalThreshold;
+        config.tr069.pon_signal_threshold_critical = ponSignalThresholdCritical;
+        config.tr069.pon_signal_threshold_critical_high =
+          ponSignalThresholdCriticalHigh;
+        config.tr069.stun_enable = STUNEnable;
+        config.tr069.insecure_enable = insecureEnable;
+        config.tr069.has_never_enabled_insecure =
+          (config.tr069.has_never_enabled_insecure && !insecureEnable);
+      } else { // if one single rule doesn't pass the test.
+        // respond error without much explanation.
+        return res.status(500).json({
+          type: 'danger',
+          message: t('fieldsInvalid', {errorline: __line}),
+        });
+      }
     }
 
     let wanStepRequired = req.body['wan-step-required'] === 'true';
@@ -951,7 +975,7 @@ updateController.setAutoConfig = async function(req, res) {
       message: message,
     });
   } catch (err) {
-    console.log(err.message ? err.message : err);
+    console.error(err);
     return res.status(500).json({
       type: 'danger',
       message: (err.message) ? err.message :
