@@ -8,6 +8,7 @@ tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -69,6 +70,10 @@ tplinkModel.convertRssiValue = function(rssiValue) {
 
 tplinkModel.convertPPPoEEnable = function(pppoe) {
   return (pppoe.toLowerCase() === 'up') ? true : false;
+};
+
+tplinkModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
 tplinkModel.getModelFields = function() {
