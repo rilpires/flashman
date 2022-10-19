@@ -76,6 +76,14 @@ tplinkModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+tplinkModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
+  ifaceIndex, deviceIndex) {
+return assocDevicesKey
+  .replace('*', ifaceIndex)
+  .replace('*', ifaceIndex)
+  .replace('*', deviceIndex);
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields = basicCPEModel.convertIGDtoDevice(fields);
@@ -154,12 +162,14 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_mac = 'Device.Hosts.Host.*.PhysAddress';
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
-  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.1.AP.1.' +
     'AssociatedDevice';
-  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.associated_5 = 'Device.WiFi.MultiAP.APDevice.1.Radio.2.AP.2.' +
+    'AssociatedDevice';
+  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.*.' +
     'AssociatedDevice.*.MACAddress';
   fields.devices.host_active = 'Device.Hosts.Host.*.Active';
-  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.*.' +
     'AssociatedDevice.*.SignalStrength';
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {

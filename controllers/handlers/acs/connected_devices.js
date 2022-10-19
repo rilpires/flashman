@@ -225,8 +225,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
             assocIndexes = assocIndexes.filter((i)=>i[0]!='_');
             for (let index of assocIndexes) {
               // Collect associated mac
-              let macKey = fields.devices.assoc_mac;
-              macKey = macKey.replace('*', iface).replace('*', index);
+              let macKey = cpe.assocDevicesWildcardReplacer(
+                fields.devices.assoc_mac, iface, index);
               let macVal = utilHandlers.getFromNestedKey(
                 data, macKey+'._value',
               );
@@ -247,8 +247,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = ifaceFreq;
               // Collect rssi, if available
               if (fields.devices.host_rssi) {
-                let rssiKey = fields.devices.host_rssi;
-                rssiKey = rssiKey.replace('*', iface).replace('*', index);
+                let rssiKey = cpe.assocDevicesWildcardReplacer(
+                  fields.devices.host_rssi, iface, index);
                 let rssiValue = utilHandlers.getFromNestedKey(
                   data, rssiKey+'._value',
                 );
@@ -256,8 +256,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               }
               // Collect explicit snr, if available - fallback on rssi value
               if (cpe.modelPermissions().lan.LANDeviceHasSNR) {
-                let snrKey = fields.devices.host_snr;
-                snrKey = snrKey.replace('*', iface).replace('*', index);
+                let snrKey = cpe.assocDevicesWildcardReplacer(
+                  fields.devices.host_snr, iface, index);
                 device.snr = utilHandlers.getFromNestedKey(
                   data, snrKey+'._value',
                 );
@@ -290,8 +290,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               }
               // Collect connection speed, if available
               if (fields.devices.host_rate) {
-                let rateKey = fields.devices.host_rate;
-                rateKey = rateKey.replace('*', iface).replace('*', index);
+                let rateKey = cpe.assocDevicesWildcardReplacer(
+                  fields.devices.host_rate, iface, index);
                 device.rate = utilHandlers.getFromNestedKey(
                   data, rateKey+'._value',
                 );
