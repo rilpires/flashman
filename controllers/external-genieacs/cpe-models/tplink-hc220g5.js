@@ -73,6 +73,13 @@ tplinkModel.convertPPPoEEnable = function(pppoe) {
   return (pppoe.toLowerCase() === 'up') ? true : false;
 };
 
+tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /Radio\.[0-9*]+\./g,
+    'Radio.' + ifaceIndex + '.',
+  );
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields = basicCPEModel.convertIGDtoDevice(fields);

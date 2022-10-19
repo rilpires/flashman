@@ -76,6 +76,13 @@ tplinkModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /Radio\.[0-9*]+\.AP\.[0-9*]+\./g,
+    'Radio.' + ifaceIndex + '.AP.' + ifaceIndex + '.',
+  );
+};
+
 tplinkModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
   ifaceIndex, deviceIndex) {
 return assocDevicesKey

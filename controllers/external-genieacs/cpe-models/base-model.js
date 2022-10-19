@@ -470,6 +470,13 @@ basicCPEModel.convertPPPoEEnable = function(value) {
   return value;
 };
 
+basicCPEModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /WLANConfiguration\.[0-9*]+\./g,
+    'WLANConfiguration.' + ifaceIndex + '.',
+  );
+};
+
 basicCPEModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
                                                       ifaceIndex, deviceIndex) {
   return assocDevicesKey.replace('*', ifaceIndex).replace('*', deviceIndex);

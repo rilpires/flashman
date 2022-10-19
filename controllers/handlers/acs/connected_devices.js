@@ -194,13 +194,8 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           }
           for (let iface of interfaces) {
             // Get active indexes, filter metadata fields
-            assocField = fields.devices.associated.replace(
-              /WLANConfiguration\.[0-9*]+\./g,
-              'WLANConfiguration.' + iface + '.',
-            ).replace(
-              /Radio\.[0-9*]+\./g,
-              'Radio.' + iface + '.',
-            );
+            assocField =
+              cpe.assocFieldWildcardReplacer(fields.devices.associated, iface);
             let ifaceFreq;
             if (iface == iface2) {
               ifaceFreq = 2.4;
