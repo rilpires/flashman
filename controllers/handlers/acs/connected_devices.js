@@ -66,6 +66,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
   assocField = assocField.split('.*')[0];
   let query = {_id: acsID};
   let projection = hostsField + ',' + assocField;
+  if (fields.devices.associated_5) {
+    let assoc5Field = fields.devices.associated_5;
+    assoc5Field = assoc5Field.split('.*')[0];
+    projection += projection + ',' + assoc5Field;
+  }
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
     method: 'GET',
