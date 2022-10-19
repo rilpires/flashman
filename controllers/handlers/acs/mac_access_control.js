@@ -246,11 +246,6 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   // Instantiate CPE by model.
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   // Make sure that this device is abled to do access control.
-  let permissions = cpe.modelPermissions();
-  if (!permissions) return sendError('permissionNotFound', __line);
-  if (!permissions.features.macAccessControl) {
-    return sendError('permissionDenied', __line);
-  }
   let fields = cpe.getModelFields();
   if (!fields) return sendError('fieldNotFound', __line);
   let blockedDevices = // Get CPE blocked devices.

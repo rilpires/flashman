@@ -1615,11 +1615,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         await acsDeviceInfoController.updateInfo(device, passChange);
       }
     }
-    if (cpe.modelPermissions().features.macAccessControl) {
-      await macAccessControl.changeAcRules(device);
-    } else if (cpe.modelPermissions().features.wlanAccessControl) {
-      await wlanAccessControl.changeAcRules(device);
-    }
+    await acsDeviceInfoController.changeAcRules(device);
   }
 };
 
@@ -2065,6 +2061,30 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }
   return {success: true};
+};
+
+acsDeviceInfoController.changeAcRules = async function(device) {
+  const cpe = DevicesAPI.instantiateCPEByModelFromDevice(device);
+  if (!cpe) {
+    return {
+      is_set: 0,
+      success: false,
+      error_code: 'cpeNotFound',
+      message: t('cpeNotFound', {errorline: __line}),
+    };
+  }
+  if (cpe.modelPermissions().features.macAccessControl) {
+    return await macAccessControl.changeAcRules(device);
+  } else if (cpe.modelPermissions().features.wlanAccessControl) {
+    return await wlanAccessControl.changeAcRules(device);
+  } else {
+    return {
+      is_set: 0,
+      success: false,
+      error_code: 'permissionDenied',
+      message: t('permissionDenied', {errorline: __line}),
+    };
+  }
 };
 
 module.exports = acsDeviceInfoController;

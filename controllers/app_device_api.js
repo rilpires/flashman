@@ -118,45 +118,9 @@ let appSet = function(req, res, processFunction) {
         commandTimeout = content.command_timeout;
       }
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
-        let acRulesRes = {'success': false};
-        let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-        let permissions = cpe.modelPermissions();
-        if (!permissions) {
-          return res.status(500).json({
-            is_set: 0,
-            success: false,
-            error_code: 'permissionNotFound',
-            message: t('permissionNotFound', {errorline: __line}),
-          });
-        }
-        if (cpe.modelPermissions().features.macAccessControl) {
-          acRulesRes = await macAccessControl.changeAcRules(matchedDevice);
-        } else if (cpe.modelPermissions().features.wlanAccessControl) {
-          acRulesRes = await wlanAccessControl.changeAcRules(matchedDevice);
-        } else {
-          return res.status(500).json({
-            is_set: 0,
-            success: false,
-            error_code: 'permissionDenied',
-            message: t('permissionDenied', {errorline: __line}),
-          });
-        }
-        if (!acRulesRes || !acRulesRes['success']) {
-          // The return of change Access Control has established
-          // error codes. It is possible to make res have
-          // specific messages for each error code.
-          let errorCode = acRulesRes.hasOwnProperty('error_code') ?
-            acRulesRes['error_code'] : 'acRuleDefaultError';
-          let response = {
-            is_set: 0,
-            success: false,
-            error_code: errorCode,
-          };
-          // We need to return a code 200, because the flashman was able to
-          // successfully complete the entire request. So we have to return the
-          // internal error code in the response, as an "error_code".
-          return res.status(200).json(response);
-        }
+        let acRulesRes = await acsController.changeAcRules(matchedDevice);
+        if (acRulesRes.success) return res.status(200).json(acRulesRes);
+        else return res.status(500).json(acRulesRes);
       }
       delete tr069Changes.changeBlockedDevices;
 
