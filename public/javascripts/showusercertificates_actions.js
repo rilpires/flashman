@@ -16,12 +16,6 @@ const isActiveSearchBtnState = function(active = true) {
   }
 };
 
-// receives a Date object and returns a string formatted in a way that can be ordered by date.
-const buildOrdableDateString = function(date) {
-  return `${date.getFullYear()}/${date.getMonth()+1}/${date.getDate()} `
-    + date.toLocaleTimeString(undefined, {hour12: false});
-}
-
 const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const searchType = getSearchType();
   const name = getSearchField();
@@ -56,7 +50,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(cert.mac),
-              $('<td>').html(buildOrdableDateString(new Date(cert.localEpochTimestamp))),
+              $('<td>').html(cert.localEpochTimestamp),
               $('<td>').html(userObj.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
@@ -122,7 +116,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
                 '<div class="fas fa-times-circle fa-2x red-text"></div>',
               ),
               $('<td>').html(certification.mac),
-              $('<td>').html(buildOrdableDateString(new Date(certification.localEpochTimestamp))),
+              $('<td>').html(certification.localEpochTimestamp),
               $('<td>').html(unwrappedCert.name),
               $('<td class="btn-detail">').append(
                 $('<button>').append(
@@ -537,6 +531,26 @@ anlixDocumentReady.add(function() {
     'columnDefs': [
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0, hasTrashButton, 4+hasTrashButton]},
+      {
+        targets: [2+hasTrashButton],
+        render: function ( data, type, row ) {
+          // If display or filter data is requested, format the date
+          if (type === 'display' || type === 'filter') {
+            let date = new Date(Number(data));
+            let value = date.toLocaleString(t('lang'));
+            // if filtering, append month name to returned value.
+            if (type === 'filter') {
+              value += ' '+date.toLocaleString(t('lang'), {month: 'long'});
+            }
+            return value;
+          }
+   
+          // Otherwise the data type requested (`type`) is type detection or
+          // sorting data, for which we want to use the integer, so just return
+          // that, unaltered
+          return data;
+        },
+      },
     ],
     'dom': '<"row" <"col-sm-12 col-md dt-certs-table-btns">> ' +
            '<"row" t>                                          ' +
