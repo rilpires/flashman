@@ -134,8 +134,8 @@ const setRules = async function(acsID, arr1, root) {
     let task = {
       name: 'setParameterValues',
       parameterValues: [
-        [root.replace('Filter', 'Enable'), 'true', 'xsd:boolean'],
-        [root.replace('Filter', 'Mode'), 'Black List', 'xsd:string'],
+        [root.replace(/Filter$/, 'Enable'), true, 'xsd:boolean'],
+        [root.replace(/Filter$/, 'Mode'), 'Black List', 'xsd:string'],
       ],
     };
     for (let i = 0; i < arr1.length; i++) {
