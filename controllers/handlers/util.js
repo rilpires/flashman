@@ -62,6 +62,10 @@ utilHandlers.checkForNestedKey = function(
   return true;
 };
 
+// Iterates from data as a JSON like format and retrieves value or object if
+// it matches the key argument.
+// Example:
+// data: {a: 1, b: {c: {d: 2}}} ; key = 'b.c'; returns {d: 2}
 utilHandlers.getFromNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -93,6 +97,8 @@ utilHandlers.getAllNestedKeysFromObject = function(
 ) {
   let result = {};
   keys.forEach((key) => {
+    if (typeof genieFieldsFromKey[key] === 'undefined') return;
+
     let completeValueField = genieFieldsFromKey[key] + '._value';
     let completeField = genieFieldsFromKey[key];
     if (root) {
