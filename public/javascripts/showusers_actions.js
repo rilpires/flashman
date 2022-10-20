@@ -77,7 +77,7 @@ anlixDocumentReady.add(function() {
       {orderable: false, targets: [0]},
       {
         targets: [3, 4],
-        render: function ( data, type, row ) {
+        render: function (data, type, row) {
           // If 'data' exists and
           // If display or filter data is requested, format the date
           if (data && type === 'display' || type === 'filter') {
