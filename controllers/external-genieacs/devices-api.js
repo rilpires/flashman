@@ -67,6 +67,7 @@ const tr069Models = {
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
+  tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
   uneeStavixModel: require('./cpe-models/unee-stavix'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zteF673Model: require('./cpe-models/zte-f673'),
@@ -267,6 +268,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HC220-G5') {
     // TP-Link HC220-G5
     result = {success: true, cpe: tr069Models.tplinkHC220G5Model};
+  } else if (modelName === 'XC220-G3v') {
+    // TP-Link XC220-G3v
+    result = {success: true, cpe: tr069Models.tplinkXC220G3vModel};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     result = {success: true, cpe: tr069Models.uneeStavixModel};

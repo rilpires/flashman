@@ -472,6 +472,18 @@ basicCPEModel.convertPPPoEEnable = function(value) {
   return value;
 };
 
+basicCPEModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /WLANConfiguration\.[0-9*]+\./g,
+    'WLANConfiguration.' + ifaceIndex + '.',
+  );
+};
+
+basicCPEModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
+                                                      ifaceIndex, deviceIndex) {
+  return assocDevicesKey.replace('*', ifaceIndex).replace('*', deviceIndex);
+};
+
 // Used when fetching connected devices' rssi data, it might need conversions
 basicCPEModel.convertRssiValue = function(rssiValue) {
   // Return undefined in case anything goes wrong
