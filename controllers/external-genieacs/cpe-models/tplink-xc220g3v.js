@@ -13,7 +13,6 @@ tplinkModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.siteSurvey = true;
-  permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.features.stun = false;
   permissions.traceroute.hopCountExceededState = 'Completed';
@@ -194,9 +193,6 @@ tplinkModel.getModelFields = function() {
   fields.diagnostics.traceroute.hop_ip_address = 'HostAddress',
   fields.diagnostics.traceroute.hop_error_code = 'ErrorCode',
   fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes',
-
-  delete fields.diagnostics.speedtest.full_load_bytes_rec;
-  delete fields.diagnostics.speedtest.full_load_period;
 
   fields.diagnostics.sitesurvey.root = 'Device.WiFi.'+
     'NeighboringWiFiDiagnostic';
