@@ -110,7 +110,6 @@ tplinkModel.getModelFields = function() {
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.DHCPv4.Client.1.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
-  fields.wan.uptime = 'Device.IP.Interface.*.X_TP_UpTime'; // VALIDATE *********
   fields.wan.uptime_ppp = 'Device.PPP.Interface.*.X_TP_UpTime';
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
