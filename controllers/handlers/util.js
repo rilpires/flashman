@@ -97,6 +97,8 @@ utilHandlers.getAllNestedKeysFromObject = function(
 ) {
   let result = {};
   keys.forEach((key) => {
+    if (typeof genieFieldsFromKey[key] === 'undefined') return;
+
     let completeValueField = genieFieldsFromKey[key] + '._value';
     let completeField = genieFieldsFromKey[key];
     if (root) {
