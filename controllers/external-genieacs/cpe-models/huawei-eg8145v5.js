@@ -102,6 +102,8 @@ huaweiModel.getModelFields = function() {
     'WANPPPConnection.*.X_HW_VLAN';
   fields.devices.host_cable_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'Hosts.Host.*.X_HW_NegotiatedRate';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_RxRate';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
