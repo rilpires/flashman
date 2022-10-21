@@ -13,6 +13,7 @@ datacomModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.allowDiacritics = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
