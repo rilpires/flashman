@@ -34,11 +34,9 @@ const fetchUsers = function(usersTable) {
             $('<td>').html(userObj.role) :
             $('<td>')
           ),
-          $('<td>').html(new Date(userObj.createdAt)
-                        .toLocaleString('pt-BR')),
+          $('<td>').html(userObj.createdAt),
           (userObj.lastLogin ?
-            $('<td>').html(new Date(userObj.lastLogin)
-                          .toLocaleString('pt-BR')) :
+            $('<td>').html(userObj.lastLogin) :
             $('<td>')
           ),
           $('<td>').append(
@@ -77,6 +75,27 @@ anlixDocumentReady.add(function() {
     'columnDefs': [
       {className: 'text-center', targets: ['_all']},
       {orderable: false, targets: [0]},
+      {
+        targets: [3, 4],
+        render: function (data, type, row) {
+          // If 'data' exists and
+          // If display or filter data is requested, format the date
+          if (data && type === 'display' || type === 'filter') {
+            let date = new Date(data);
+            let value = date.toLocaleString(t('lang'));
+            // if filtering, append month name to returned value.
+            if (type === 'filter') {
+              value += ' '+date.toLocaleString(t('lang'), {month: 'long'});
+            }
+            return value;
+          }
+   
+          // Otherwise the data type requested (`type`) is type detection or
+          // sorting data, for which we want to use the integer, so just return
+          // that, unaltered
+          return data;
+        },
+      },
     ],
     'dom': '<"row" <"col-sm-12 col-md-6 dt-users-table-btns">  ' +
            '       <"col-12 col-md-6 ml-0 pl-0 mt-3 mt-md-0"f>>' +

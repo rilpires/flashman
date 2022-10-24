@@ -62,6 +62,10 @@ utilHandlers.checkForNestedKey = function(
   return true;
 };
 
+// Iterates from data as a JSON like format and retrieves value or object if
+// it matches the key argument.
+// Example:
+// data: {a: 1, b: {c: {d: 2}}} ; key = 'b.c'; returns {d: 2}
 utilHandlers.getFromNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -93,6 +97,8 @@ utilHandlers.getAllNestedKeysFromObject = function(
 ) {
   let result = {};
   keys.forEach((key) => {
+    if (typeof genieFieldsFromKey[key] === 'undefined') return;
+
     let completeValueField = genieFieldsFromKey[key] + '._value';
     let completeField = genieFieldsFromKey[key];
     if (root) {
@@ -190,7 +196,7 @@ const domainNameRegex = /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)
 // eslint-disable-next-line max-len
 utilHandlers.portRegex = /^()([1-9]|[1-5]?[0-9]{2,4}|6[1-4][0-9]{3}|65[1-4][0-9]{2}|655[1-2][0-9]|6553[1-5])$/;
 // eslint-disable-next-line max-len
-utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.]+$/;
+utilHandlers.urlRegex = /^(?:http:\/\/)[\w.-]+(?:\.[\w.-]+)+[\w\-._~:/?#[\]@!$&'()*+,;=.%]+$/;
 // eslint-disable-next-line max-len
 utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_([0-9]{4}-[a-z]{3})\.(bin)$/;
 // Matches DD/DD/DDDD DD:DD format

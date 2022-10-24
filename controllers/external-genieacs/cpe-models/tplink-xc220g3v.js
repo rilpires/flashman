@@ -2,29 +2,27 @@ const basicCPEModel = require('./base-model');
 
 let tplinkModel = Object.assign({}, basicCPEModel);
 
-tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
+tplinkModel.identifier = {vendor: 'TP-Link', model: 'XC220-G3v'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.siteSurvey = true;
-  permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.features.stun = false;
   permissions.traceroute.hopCountExceededState = 'Completed';
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.speedTestLimit = 900;
-  permissions.wan.hasUptimeField = false;
   permissions.firmwareUpgrades = {
-    '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
-    '0.12.0 2.0.0 v605e.0 Build 220629 Rel.75194n': [],
+    '1.2.0 0.8.0 v6062.0 Build 220527 Rel.36860n': [],
   };
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
+    36, 40, 44, 48, 149, 153, 157, 161,
   ];
   permissions.wifi.modeWrite = false;
   permissions.useLastIndexOnWildcard = true;
@@ -73,11 +71,23 @@ tplinkModel.convertPPPoEEnable = function(pppoe) {
   return (pppoe.toLowerCase() === 'up') ? true : false;
 };
 
+tplinkModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
-    /Radio\.[0-9*]+\./g,
-    'Radio.' + ifaceIndex + '.',
+    /Radio\.[0-9*]+\.AP\.[0-9*]+\./g,
+    'Radio.' + ifaceIndex + '.AP.' + ifaceIndex + '.',
   );
+};
+
+tplinkModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
+  ifaceIndex, deviceIndex) {
+return assocDevicesKey
+  .replace('*', ifaceIndex)
+  .replace('*', ifaceIndex)
+  .replace('*', deviceIndex);
 };
 
 tplinkModel.getModelFields = function() {
@@ -90,15 +100,17 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
+  fields.wan.pon_rxpower = 'Device.Optical.Interface.1.' +
+    'X_TP_GPON_Config.RXPower';
+  fields.wan.pon_txpower = 'Device.Optical.Interface.1.' +
+    'X_TP_GPON_Config.TXPower';
   fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
-  fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.DHCPv4.Client.1.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
-  delete fields.wan.uptime;
-  delete fields.wan.uptime_ppp;
+  fields.wan.uptime_ppp = 'Device.PPP.Interface.*.X_TP_UpTime';
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
@@ -155,12 +167,14 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_mac = 'Device.Hosts.Host.*.PhysAddress';
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
-  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.associated = 'Device.WiFi.MultiAP.APDevice.1.Radio.1.AP.1.' +
     'AssociatedDevice';
-  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.associated_5 = 'Device.WiFi.MultiAP.APDevice.1.Radio.2.AP.2.' +
+    'AssociatedDevice';
+  fields.devices.assoc_mac = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.*.' +
     'AssociatedDevice.*.MACAddress';
   fields.devices.host_active = 'Device.Hosts.Host.*.Active';
-  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
+  fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.*.' +
     'AssociatedDevice.*.SignalStrength';
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {
@@ -178,9 +192,6 @@ tplinkModel.getModelFields = function() {
   fields.diagnostics.traceroute.hop_ip_address = 'HostAddress',
   fields.diagnostics.traceroute.hop_error_code = 'ErrorCode',
   fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes',
-
-  delete fields.diagnostics.speedtest.full_load_bytes_rec;
-  delete fields.diagnostics.speedtest.full_load_period;
 
   fields.diagnostics.sitesurvey.root = 'Device.WiFi.'+
     'NeighboringWiFiDiagnostic';

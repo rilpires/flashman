@@ -10,6 +10,7 @@ raisecomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
 
   // features permissions
+  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true; // will measure pon rx/tx power
   permissions.features.pingTest = true; // will enable ping test dialog
   permissions.features.meshCable = true; // will enable mesh over cable
