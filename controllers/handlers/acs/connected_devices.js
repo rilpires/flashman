@@ -154,12 +154,11 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
           // Collect connection speed from devices connected by cable
           if (!device.wifi && cpe.modelPermissions().features.cableRxRate) {
             // Collect connection speed, if available
-            if (fields.devices.host_cable_rate) {
-              let rateKey = fields.devices.host_cable_rate.replace('*', i);
-              device.rate = utilHandlers.getFromNestedKey(
-                data, rateKey+'._value',
-              );
-              device.rate = cpe.convertCableRate(device.rate);
+            let rateKey = fields.devices.host_cable_rate.replace('*', i);
+            rateKey += '._value';
+            if (utilHandlers.checkForNestedKey(data, rateKey)) {
+              let rate = utilHandlers.getFromNestedKey(data, rateKey);
+              device.rate = cpe.convertCableRate(rate);
             }
           }
           // Collect host active if field can be trusted. If the field is
