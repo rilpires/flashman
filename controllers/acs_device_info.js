@@ -2067,7 +2067,6 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   const cpe = DevicesAPI.instantiateCPEByModelFromDevice(device);
   if (!cpe) {
     return {
-      is_set: 0,
       success: false,
       error_code: 'cpeNotFound',
       message: t('cpeNotFound', {errorline: __line}),
@@ -2079,7 +2078,6 @@ acsDeviceInfoController.changeAcRules = async function(device) {
     return await wlanAccessControl.changeAcRules(device);
   } else {
     return {
-      is_set: 0,
       success: false,
       error_code: 'permissionDenied',
       message: t('permissionDenied', {errorline: __line}),
