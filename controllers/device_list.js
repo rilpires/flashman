@@ -4023,34 +4023,16 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
     if (devFound) {
       if (matchedDevice.use_tr069) {
-        let result = {'success': false};
-        let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-        let permissions = cpe.modelPermissions();
-        if (!permissions) {
-          return res.status(500).json({
-            success: false,
-            message: t('permissionNotFound', {errorline: __line}),
-          });
-        }
-        if (permissions.features.macAccessControl) {
-          result = await macAccessControl.changeAcRules(matchedDevice);
-        } else if (permissions.features.wlanAccessControl) {
-          result = await wlanAccessControl.changeAcRules(matchedDevice);
-        } else {
-          return res.status(500).json({
-            success: false,
-            message: t('permissionDenied', {errorline: __line}),
-          });
-        }
+        let result = await acsDeviceInfo.changeAcRules(matchedDevice);
         if (!result || !result['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
           // specific messages for each error code.
-          let errorMessage = result.hasOwnProperty('message') ?
-            result['message'] : t('acRuleDefaultError', {errorline: __line});
+          let message = result.hasOwnProperty('message') ?
+            result['message'] : t('acRuleDefaultError');
           return res.status(500).json({
             success: false,
-            message: errorMessage,
+            message: message,
           });
         }
       }
