@@ -4026,11 +4026,11 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
           // specific messages for each error code.
-          let message = result.hasOwnProperty('message') ?
-            result['message'] : t('acRuleDefaultError');
+          let errorMessage = result.hasOwnProperty('message') ?
+            result['message'] : t('acRuleDefaultError', {errorline: __line});
           return res.status(500).json({
             success: false,
-            message: message,
+            message: errorMessage,
           });
         }
       }
