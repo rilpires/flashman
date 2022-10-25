@@ -597,7 +597,9 @@ const sendTasks = async function(
           timestamp: Date.now(),
         };
       }
-      return {success: true, executed: false, message: 'task scheduled'};
+      // If requestConn was specified as false, return executed as true, since
+      // it wasn't expected to run anyway
+      return {success: true, executed: !requestConn, message: 'task scheduled'};
     } else {
       // something went wrong, log error and return
       console.log('Error adding task to GenieACS: ' + response.data);
