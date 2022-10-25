@@ -2067,14 +2067,7 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 };
 
 acsDeviceInfoController.changeAcRules = async function(device) {
-  const cpe = DevicesAPI.instantiateCPEByModelFromDevice(device);
-  if (!cpe) {
-    return {
-      success: false,
-      error_code: 'cpeNotFound',
-      message: t('cpeNotFound', {errorline: __line}),
-    };
-  }
+  const cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   if (cpe.modelPermissions().features.macAccessControl) {
     return await macAccessControl.changeAcRules(device);
   } else if (cpe.modelPermissions().features.wlanAccessControl) {
