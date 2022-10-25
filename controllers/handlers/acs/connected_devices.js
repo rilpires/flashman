@@ -151,6 +151,16 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
               device.wifi_freq = 5;
             }
           }
+          // Collect connection speed from devices connected by cable
+          if (!device.wifi && cpe.modelPermissions().features.cableRxRate) {
+            // Collect connection speed, if available
+            let rateKey = fields.devices.host_cable_rate.replace('*', i);
+            rateKey += '._value';
+            if (utilHandlers.checkForNestedKey(data, rateKey)) {
+              let rate = utilHandlers.getFromNestedKey(data, rateKey);
+              device.rate = cpe.convertCableRate(rate);
+            }
+          }
           // Collect host active if field can be trusted. If the field is
           // reliable, we break the flow to those devices that are inactive, and
           // store the rest as active. If the field is not reliable, we have to
