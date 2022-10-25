@@ -1616,7 +1616,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       }
     }
     if (permissions.grantBlockDevices) {
-      console.log('Will update device Access Control Rules');
       await acsDeviceInfoController.changeAcRules(device);
     }
   }
