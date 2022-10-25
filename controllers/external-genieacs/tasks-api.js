@@ -304,9 +304,7 @@ genie.addOrDeleteObject = async function(
     }
     return true;
   } catch (e) {
-    console.log(
-      'Error: ' + taskType + ' failure at ' + deviceid,
-    );
+    console.log('Error: ' + taskType + ' failure at ' + deviceid);
   }
   return false;
 };

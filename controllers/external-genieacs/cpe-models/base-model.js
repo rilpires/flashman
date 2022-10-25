@@ -701,6 +701,7 @@ basicCPEModel.getModelFields = function() {
       port: 'InternetGatewayDevice.ManagementServer.STUNServerPort',
     },
     access_control: {
+      mac: 'InternetGatewayDevice.Firewall.MacFilterService',
       wifi2: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
         'AccessControl',
       wifi5: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
