@@ -298,7 +298,7 @@ genie.addOrDeleteObject = async function(
     objectName: acObject,
   };
   try {
-    let ret = await genie.addTask(deviceid, task, callback, requestConn);
+    let ret = await genie.addTask(deviceid, task, callback, 0, requestConn);
     if (!ret || !ret.success || !ret.executed) {
       return false;
     }
