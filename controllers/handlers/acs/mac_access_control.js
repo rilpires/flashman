@@ -75,7 +75,8 @@ const setRules = async function(acsID, rootField, blockedDevices) {
   };
   for (let i = 0; i < blockedDevices.length; i++) {
     let mac = blockedDevices[i].mac;
-    task.parameterValues.concat(newRule(mac, i+1, rootField));
+    let rule = newRule(mac, i+1, rootField);
+    task.parameterValues = task.parameterValues.concat(rule);
   }
   let result = await TasksAPI.addTask(acsID, task);
   if (!result || !result.success) {
@@ -210,7 +211,7 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   let rootField = fields.access_control.mac;
 
   // Update CPE AC rules tree.
-  let task = {name: 'getParameterValues', parameterNames: rootField};
+  let task = {name: 'getParameterValues', parameterNames: [rootField]};
   let cback = (acsID)=>getAcRuleIds(acsID, rootField, blockedDevices);
   let res = await TasksAPI.addTask(acsID, task, cback);
   if (!res || !res.success) {
