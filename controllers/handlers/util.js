@@ -76,7 +76,9 @@ utilHandlers.getFromNestedKey = function(
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
     if (splitKey[i] === '*') {
-      let orderedKeys = orderNumericGenieKeys(Object.keys(current));
+      let orderedKeys = utilHandlers.orderNumericGenieKeys(
+        Object.keys(current),
+      );
       let targetIndex;
       if (useLastIndexOnWildcard) {
         targetIndex = orderedKeys[orderedKeys.length - 1];
@@ -124,7 +126,7 @@ utilHandlers.getLastIndexOfNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
   let tree = utilHandlers.getFromNestedKey(data, key, useLastIndexOnWildcard);
-  let orderedKeys = orderNumericGenieKeys(Object.keys(tree));
+  let orderedKeys = utilHandlers.orderNumericGenieKeys(Object.keys(tree));
   let lastIndex = orderedKeys.length - 1;
   return {
     success: (lastIndex >= 0),
