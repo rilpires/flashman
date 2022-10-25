@@ -257,6 +257,7 @@ const calculateTraceDiagnostic = async function(
       );
       let msValues = cpe.readTracerouteRTTs(inHop);
       let currentHop = {
+        hop_index: hopIndex,
         ip: inHopKeys.hop_ip_address
               ? inHopKeys.hop_ip_address
               : inHopKeys.hop_host,
