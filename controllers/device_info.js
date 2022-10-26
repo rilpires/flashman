@@ -2489,14 +2489,14 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       currentTest.all_hops_tested = req.body.all_hops_tested;
       currentTest.reached_destination = req.body.reached_destination;
       currentTest.tries_per_hop = req.body.tries_per_hop;
-      currentTest.hops = req.body.hops;
       // Some flashbox versions dont send hop_index. We fake it right here
-      if (currentTest.hops.find((hopObj)=>hopObj.hop_index===undefined)) {
-        currentTest.hops = currentTest.hops.map(function(hopObj, arrIndex) {
+      if (req.body.hops.find((hopObj)=>hopObj.hop_index===undefined)) {
+        req.body.hops = req.body.hops.map(function(hopObj, arrIndex) {
           hopObj.hop_index = arrIndex+1;
           return hopObj;
         });
       }
+      currentTest.hops = req.body.hops;
     }
 
     // Setting the completed flag & updating last_modified_at
