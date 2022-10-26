@@ -2158,6 +2158,8 @@ deviceListController.setDeviceReg = function(req, res) {
         util.returnObjOrEmptyStr(content.pppoe_user).toString().trim();
       let pppoePassword =
         util.returnObjOrEmptyStr(content.pppoe_password).toString().trim();
+      let wanMtu = util.returnObjOrNum(content.wan_mtu, 0);
+      let wanVlan = util.returnObjOrNum(content.wan_vlan, 0);
       let ipv6Enabled =
         parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
       let lanSubnet =
@@ -2259,6 +2261,12 @@ deviceListController.setDeviceReg = function(req, res) {
             genericValidate(pppoePassword, validator.validatePassword,
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
+        }
+        if (wanMtu != 0) {
+          genericValidate(wanMtu, validator.validateMtu, 'wan_mtu');
+        }
+        if (wanVlan != 0) {
+          genericValidate(wanVlan, validator.validateVlan, 'wan_vlan');
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -2438,6 +2446,31 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantPPPoEInfo > 1) {
                 changes.wan.pppoe_pass = pppoePassword;
                 matchedDevice.pppoe_password = pppoePassword;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            // Change wan MTU and VLAN
+            if (content.hasOwnProperty('wan_mtu') &&
+                wanMtu != 0 && wanMtu !== matchedDevice.wan_mtu) {
+              if (superuserGrant || true) { // TODO: grantUserWanMtuEdit
+                if (connectionType == 'pppoe') {
+                  changes.wan.mtu_ppp = wanMtu;
+                } else {
+                  changes.wan.mtu = wanMtu;
+                }
+                matchedDevice.wan_mtu = wanMtu;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('wan_vlan') &&
+                wanVlan != 0 && wanVlan !== matchedDevice.wan_vlan_id) {
+              if (superuserGrant || true) { // TODO: grantUserwanVlanEdit
+                changes.wan.vlan = wanVlan;
+                matchedDevice.wan_vlan_id = wanVlan;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
