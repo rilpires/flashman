@@ -220,18 +220,15 @@ const calculateTraceDiagnostic = async function(
   // In the rare case of hop count exceeded, even yet in a model that always
   // returns 'Complete', the better way to know if destination was reached
   // is to check if hopCount == maxHopCount. Else, we consider not exceeded
-  if (rootData.diag_state == 'Complete' &&
-      permissions.traceroute.hopCountExceededState=='Complete' &&
-      numberOfHops < maxHopCount
+  if (rootData.diag_state.includes('Complete') &&
+      permissions.traceroute.hopCountExceededState.includes('Complete')
   ) {
-    hasExceeded = false;
+    hasExceeded = (numberOfHops >= maxHopCount);
   }
 
   if (hasData || hasExceeded) {
     // const inNumberOfHops = parseInt(rootData.number_of_hops);
-    let hopSkipped = false;
     traceResult.address = traceTarget;
-    traceResult.all_hops_tested = !hasExceeded;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
     // Clamping tries_per_hop
@@ -246,12 +243,7 @@ const calculateTraceDiagnostic = async function(
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
       // inHop here is as it is from genie acs tree.
       let inHop = rootData.hops_root[hopIndex.toString()];
-      if (!inHop) {
-        hopSkipped = true;
-        continue;
-      } else if (hopSkipped) {
-        traceResult.all_hops_tested = false;
-      }
+      if (!inHop) continue;
       let inHopKeys = utilHandlers.getAllNestedKeysFromObject(
         inHop, Object.keys(traceFields), traceFields,
       );
@@ -271,10 +263,17 @@ const calculateTraceDiagnostic = async function(
       = !hasExceeded && traceResult.hops.length > 0;
   } else {
     traceResult.reached_destination = false;
-    traceResult.all_hops_tested = false;
   }
   // ALWAYS set to completed
   traceResult.completed = true;
+  traceResult.all_hops_tested = false;
+  if (hasData && !hasExceeded) {
+    // all_hops_tested will only true when we can't find any hop
+    // that hop_index (index starts on 1) differs from array index+1
+    traceResult.all_hops_tested = traceResult.hops.findIndex(
+      (obj, index)=>obj.hop_index!=index+1,
+    ) == -1;
+  }
 
   device.current_diagnostic.last_modified_at = new Date();
   if (!getNextTraceTarget(device)) {
