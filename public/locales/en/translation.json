@@ -875,6 +875,7 @@
 	"insertValidDbmNumber": "Please enter a valid dBm number",
 	"opticalSignalRedAlertDbm": "Optical signal red alert (dBm)",
 	"opticalSignalElevatedRedAlertDbm": "High optical signal red alert (dBm)",
+	"ponSignalConfigAlsoApplyToApp": "The pon signal settings also apply to the Technician App (Android and Desktop)",
 	"disabledWanStepWillBePingTestToCpeGateway": "The step to be disabled on the WAN will be the ping test done to the CPE gateway",
 	"disabledFlashmanRegisterStepWillBeMqttsConnectionTest": "The step to disable in the Flashman registry includes testing for an active MQTTS connection for CPEs using Flashbox firmware",
 	"speedTestExecution": "Running the speed test",

@@ -47,15 +47,6 @@ block content
                     select.browser-default.md-select(name="bypass-mqtt-secret-check")
                       option(value="false")= t('No')
                       option(value="true")= t('Yes')
-                .custom-control.custom-checkbox.mb-2
-                  input#autoupdate.custom-control-input(
-                    name="autoupdate",
-                    type="checkbox"
-                  )
-                  label.custom-control-label.text-muted(for="autoupdate")
-                    | #{t('letFLashmanAutomaticallyUpdate')}
-                  .invalid-feedback
-              .col-md-6.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
                     label= t('mustBlockLicenseAtDeviceRemoval')
@@ -69,6 +60,48 @@ block content
                       option(value="en") 🇬🇧 English
                       option(value="es") 🇪🇸 Español
                       option(value="pt-BR") 🇧🇷 Português brasileiro
+                .custom-control.custom-checkbox.mb-2
+                  input#autoupdate.custom-control-input(
+                    name="autoupdate",
+                    type="checkbox"
+                  )
+                  label.custom-control-label.text-muted(for="autoupdate")
+                    | #{t('letFLashmanAutomaticallyUpdate')}
+                  .invalid-feedback
+              .col-md-6.pl-0.pr-0
+                .md-form.input-entry
+                  label= t('opticalSignalYellowAlertDbm')
+                  input#pon-signal-threshold.form-control(
+                    type="number",
+                    name="pon-signal-threshold",
+                    min=-100,
+                    max=100,
+                    value=-18
+                  )
+                  .invalid-feedback= t('insertValidDbmNumber')
+                .md-form.input-entry
+                  label= t('opticalSignalRedAlertDbm')
+                  input#pon-signal-threshold-critical.form-control(
+                    type="number",
+                    name="pon-signal-threshold-critical",
+                    min=-100,
+                    max=100,
+                    value=-23
+                  )
+                  .invalid-feedback= t('insertValidDbmNumber')
+                .md-form.input-entry
+                  label= t('opticalSignalElevatedRedAlertDbm')
+                  input#pon-signal-threshold-critical-high.form-control(
+                    type="number",
+                    name="pon-signal-threshold-critical-high",
+                    min=-100,
+                    max=100,
+                    value=3
+                  )
+                  .invalid-feedback= t('insertValidDbmNumber')
+                  .alert.alert-info
+                    .fas.fa-info-circle.fa-lg
+                    span &nbsp; #{t('ponSignalConfigAlsoApplyToApp')}
                 .row
                   #default-hosts-config-button.button.btn.btn-primary.mt-2.mx-auto
                     .fas.fa-stethoscope.fa-lg
@@ -144,40 +177,16 @@ block content
           #technicianapp.card-body.collapse.out
             .row
               .col-md-6.col-12.pl-0.pr-md-4.pr-0
-                .md-form.input-entry
-                  label= t('opticalSignalYellowAlertDbm')
-                  input#pon-signal-threshold.form-control(
-                    type="number",
-                    name="pon-signal-threshold",
-                    min=-100,
-                    max=100,
-                    value=-18
-                  )
-                  .invalid-feedback= t('insertValidDbmNumber')
-                .md-form.input-entry
-                  label= t('opticalSignalRedAlertDbm')
-                  input#pon-signal-threshold-critical.form-control(
-                    type="number",
-                    name="pon-signal-threshold-critical",
-                    min=-100,
-                    max=100,
-                    value=-23
-                  )
-                  .invalid-feedback= t('insertValidDbmNumber')
-                .md-form.input-entry
-                  label= t('opticalSignalElevatedRedAlertDbm')
-                  input#pon-signal-threshold-critical-high.form-control(
-                    type="number",
-                    name="pon-signal-threshold-critical-high",
-                    min=-100,
-                    max=100,
-                    value=3
-                  )
-                  .invalid-feedback= t('insertValidDbmNumber')
                 .md-form
                   .md-selectfield.form-control.my-0
                     label= t('mandatoryWanVerification')
                     select.browser-default.md-select(name="wan-step-required")
+                      option(value="true")= t('Enabled')
+                      option(value="false")= t('Disabled')
+                .md-form
+                  .md-selectfield.form-control.my-0
+                    label= t('mandatoryFlashmanRegisterVerification')
+                    select.browser-default.md-select(name="flashman-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
                 .alert.alert-info
@@ -186,6 +195,11 @@ block content
                 .alert.alert-info
                   .fas.fa-info-circle.fa-lg
                   span &nbsp; #{t('disabledFlashmanRegisterStepWillBeMqttsConnectionTest')}
+                if (superuser || (role && role.grantMonitorManage))
+                  .row
+                    #factory-credentials-button.button.btn.btn-primary.mt-2.mx-auto
+                      .fas.fa-key.fa-lg
+                      span &nbsp; #{t('factoryCredentialsPresetLabel')}
               .col-md-6.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -211,17 +225,6 @@ block content
                     select.browser-default.md-select(name="dns-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label= t('mandatoryFlashmanRegisterVerification')
-                    select.browser-default.md-select(name="flashman-step-required")
-                      option(value="true")= t('Enabled')
-                      option(value="false")= t('Disabled')
-                if (superuser || (role && role.grantMonitorManage))
-                  .row
-                    #factory-credentials-button.button.btn.btn-primary.mt-2.mx-auto
-                      .fas.fa-key.fa-lg
-                      span &nbsp; #{t('factoryCredentialsPresetLabel')}
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
