@@ -9,6 +9,7 @@ raisecomModel.identifier = {vendor: 'Raisecom', model: 'HT803G-WS2'};
 raisecomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
 
+  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true; // will measure pon rx/tx power
   permissions.features.portForward = false; // will enable port forward dialogs
   permissions.features.pingTest = true; // will enable ping test dialog

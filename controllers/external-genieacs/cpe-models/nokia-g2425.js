@@ -29,6 +29,12 @@ nokiaModel.modelPermissions = function() {
   return permissions;
 };
 
+const modelPermissionsNoSiteSurvey = function() {
+  let permissions = nokiaModel.modelPermissions();
+  permissions.features.siteSurvey = false;
+  return permissions;
+};
+
 nokiaModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -107,6 +113,14 @@ nokiaModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
+};
+
+nokiaModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+  let copy = Object.assign({}, base);
+  if (fwVersion === '3FE49025HJIL97') {
+    copy.modelPermissions = modelPermissionsNoSiteSurvey;
+  }
+  return copy;
 };
 
 module.exports = nokiaModel;

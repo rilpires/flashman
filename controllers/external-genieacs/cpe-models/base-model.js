@@ -37,6 +37,7 @@ basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
+      cableRxRate: false, // can get RX rate from devices connected by cable
       customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
       meshCable: true, // can create a cable mesh network with Anlix firmwares
@@ -454,6 +455,11 @@ basicCPEModel.convertWifiRate = function(rate) {
   return parseInt(rate);
 };
 
+// Used on devices that list cable rate for each connected device
+basicCPEModel.convertCableRate = function(rate) {
+  return parseInt(rate);
+};
+
 // Used when fetching connected devices to identify if device is cable or wifi
 basicCPEModel.isDeviceConnectedViaWifi = function(
   layer2iface, wifi2iface, wifi5iface,
@@ -468,6 +474,18 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
 
 basicCPEModel.convertPPPoEEnable = function(value) {
   return value;
+};
+
+basicCPEModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /WLANConfiguration\.[0-9*]+\./g,
+    'WLANConfiguration.' + ifaceIndex + '.',
+  );
+};
+
+basicCPEModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
+                                                      ifaceIndex, deviceIndex) {
+  return assocDevicesKey.replace('*', ifaceIndex).replace('*', deviceIndex);
 };
 
 // Used when fetching connected devices' rssi data, it might need conversions
@@ -699,6 +717,8 @@ basicCPEModel.getModelFields = function() {
         'AssociatedDevice.*.SignalStrength',
       host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalNoiseRatio',
+      host_cable_rate: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
+        'NegotiatedRate',
       host_rate: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.LastDataTransmitRate',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +

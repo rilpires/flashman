@@ -6,10 +6,18 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.blockLANDevices = false; // Bug at rules id
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
+  permissions.traceroute.maxProbesPerHop = 3;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -118,6 +126,12 @@ zteModel.getModelFields = function() {
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RxRate';
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'LANDevice.1.WIFI';
+  fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
+  fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
+  fields.diagnostics.sitesurvey.band = 'Bandwidth';
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   return fields;
 };
 
