@@ -1443,6 +1443,10 @@ anlixDocumentReady.add(function() {
           let grantDiacritics = device.permissions.grantDiacritics;
           let grantSsidSpaces = device.permissions.grantSsidSpaces;
           // WAN and LAN Information
+          let grantWanMtuEdit = device.permissions.grantWanMtuEdit;
+          let grantWanVlanEdit = device.permissions.grantWanVlanEdit;
+          let grantWanMtuRead = device.permissions.grantWanMtuRead;
+          let grantWanVlanRead = device.permissions.grantWanVlanRead;
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
 
@@ -1527,6 +1531,8 @@ anlixDocumentReady.add(function() {
             (isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+
             (isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-wan-mtu="'+grantWanMtuEdit+'"';
+          formAttr += ' data-validate-wan-vlan="'+grantWanVlanEdit+'"';
           formAttr += ' data-validate-ipv6-enabled="'+
             grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-mode="'+
@@ -1785,6 +1791,44 @@ anlixDocumentReady.add(function() {
               '</div>'+
             '</div>'+
           '</div>';
+
+          let mtuForm = '';
+          if (grantWanMtuRead) {
+            let isIPoE = (!device.connection_type ||
+              device.connection_type.toUpperCase() !== 'PPPOE');
+            let max = (isIPoE) ? 1500 : 1492;
+            mtuForm =
+            '<div class="col-4">'+
+              '<div class="md-form input-entry">'+
+                '<label class="active">'+'MTU'+'</label>'+
+                '<input id="edit_wan_mtu-'+index+'" '+
+                  'class="form-control" type="number" '+
+                  'max='+max+' min=1 '+
+                  'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
+                  (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
+                '</input>'+
+                '<div class="invalid-feedback"></div>'+
+              '</div>'+
+            '</div>';
+          }
+
+          let vlanForm = '';
+          if (grantWanVlanRead) {
+            vlanForm =
+            '<div class="col-4">'+
+              '<div class="md-form input-entry">'+
+                '<label class="active">'+'VLAN'+'</label>'+
+                '<input id="edit_wan_vlan-'+index+'" '+
+                  'class="form-control" type="number" '+
+                  'max=4095 min=1 '+
+                  'value='+((device.wan_vlan_id) ? device.wan_vlan_id : '')+' '+
+                  (grantWanVlanEdit ? 'active' : 'disabled')+'>'+
+                '</input>'+
+                '<div class="invalid-feedback"></div>'+
+              '</div>'+
+            '</div>';
+          }
+
           if (!device.connection_type ||
               device.connection_type.toUpperCase() !== 'PPPOE') {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', 'd-none');
@@ -1888,6 +1932,13 @@ anlixDocumentReady.add(function() {
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
+            ((grantWanMtuRead || grantWanVlanRead) ?
+              '<div class="row">'+
+                mtuForm+
+                vlanForm+
+              '</div>' :
+              ''
+            )+
             '<div class="row">'+
               '<div class="col-8">'+
                 (grantRebootAfterWANChange ?

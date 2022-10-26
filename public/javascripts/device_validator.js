@@ -325,6 +325,41 @@
       return isOnRange && isIpFormatCorrect;
     };
 
+    Validator.prototype.validateMtu = function(mtuField, isPPPoE) {
+      if (mtuField) {
+        try {
+          let mtuValue = parseInt(mtuField);
+          let max = (isPPPoE) ? 1492 : 1500;
+          if (mtuValue >= 1 && mtuValue <= max) return {valid: true};
+          else {
+            return {
+              valid: false,
+              err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
+            };
+          }
+        } catch (e) {
+          return {valid: false, err: [t('errorOccurred')]};
+        }
+      } else return {valid: false, err: [t('emptyField')]};
+    };
+
+    Validator.prototype.validateVlan = function(vlanField) {
+      if (vlanField) {
+        try {
+          let vlanValue = parseInt(vlanField);
+          if (vlanValue >= 1 && vlanValue <= 4095) return {valid: true};
+          else {
+            return {
+              valid: false,
+              err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4095})],
+            };
+          }
+        } catch (e) {
+          return {valid: false, err: [t('errorOccurred')]};
+        }
+      } else return {valid: false, err: [t('emptyField')]};
+    };
+
     return Validator;
   })();
 
