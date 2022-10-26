@@ -7,19 +7,22 @@ datacomModel.identifier = {vendor: 'Datacom', model: 'DM986-414'};
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wifi.allowDiacritics = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.firmwareUpgrades = {
-    'V4.6.0-210709': [],
+    'V4.6.0-210709': ['V5.4.0-220624'],
+    'V5.4.0-220624': [],
   };
   return permissions;
 };

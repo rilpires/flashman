@@ -6,6 +6,7 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
