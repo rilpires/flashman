@@ -551,9 +551,8 @@ deviceHandlers.processTracerouteTraps = function(device) {
     let results = {};
     device.traceroute_results.map(function(e) {
       let hops = util.deepCopyObject(e.hops);
-      hops.map = hops.map(function(hop) {
+      hops.map(function(hop) {
         if (hop._id) delete hop._id;
-        return hop;
       });
       results[e.address] = {
         all_hops_tested: e.all_hops_tested,
