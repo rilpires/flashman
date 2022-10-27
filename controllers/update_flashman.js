@@ -812,25 +812,28 @@ updateController.setAutoConfig = async function(req, res) {
       ponSignalThresholdCriticalHigh;
     let message = t('operationSuccessful');
 
-    
-    ////// checking TR069 configuration fields.
+    // checking TR069 configuration fields.
     // flags that can change depending on TR069 values, after their validation.
     let willMigrateDeviceInforms = false;
     let changedInsecure = false;
 
-    // getting user role to check its TR069 config permission.
+    // getting user role to check TR069 config permission (suser has no role)
     const roleName = req.user.role;
-    let [role, err] = await go(Role.findOne({name: roleName}).lean().exec());
-    if (err) {
-      return res.status(500).json({
-        type: 'danger',
-        message: t('roleFindError'),
-      });
-    };
+    let role;
+    if (roleName) {
+      try {
+        role = await Role.findOne({name: roleName}).lean().exec();
+      } catch (e) {
+        return res.status(500).json({
+          type: 'danger',
+          message: t('roleFindError'),
+        });
+      }
+    }
 
     // if user is superuser, or user has role TR069 config permission, we read,
     // validate and save TR069 configs. If no permission, we ignore TR069.
-    if (req.user.is_superuser || role.grantMonitorManage) {
+    if (req.user.is_superuser || (role && role.grantMonitorManage)) {
       // reading fields and parsing them to their respective data types.
       let tr069ServerURL = req.body['tr069-server-url'];
       let onuWebLogin = req.body['onu-web-login'];
