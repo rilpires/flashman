@@ -2454,7 +2454,7 @@ deviceListController.setDeviceReg = function(req, res) {
             // Change wan MTU and VLAN
             if (content.hasOwnProperty('wan_mtu') &&
                 wanMtu != 0 && wanMtu !== matchedDevice.wan_mtu) {
-              if (superuserGrant || true) { // TODO: grantUserWanMtuEdit
+              if (superuserGrant || role.grantWanMtuEdit) {
                 if (connectionType == 'pppoe') {
                   changes.wan.mtu_ppp = wanMtu;
                 } else {
@@ -2468,7 +2468,7 @@ deviceListController.setDeviceReg = function(req, res) {
             }
             if (content.hasOwnProperty('wan_vlan') &&
                 wanVlan != 0 && wanVlan !== matchedDevice.wan_vlan_id) {
-              if (superuserGrant || true) { // TODO: grantUserwanVlanEdit
+              if (superuserGrant || role.grantWanVlanEdit) {
                 changes.wan.vlan = wanVlan;
                 matchedDevice.wan_vlan_id = wanVlan;
                 updateParameters = true;
