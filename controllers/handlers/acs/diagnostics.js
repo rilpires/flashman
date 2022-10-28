@@ -224,7 +224,7 @@ const calculateTraceDiagnostic = async function(
   // returns 'Complete', the better way to know if destination was reached
   // is to check if hopCount == maxHopCount. Else, we consider not exceeded
   if (completedStrings.includes(rootData.diag_state) &&
-      permissions.traceroute.hopCountExceededState.includes('Complete')
+      completedStrings.includes(permissions.traceroute.hopCountExceededState)
   ) {
     hasExceeded = (numberOfHops >= maxHopCount);
   }
