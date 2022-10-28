@@ -204,10 +204,13 @@ const calculateTraceDiagnostic = async function(
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
   const maxHopCount = parseInt(rootData.max_hop_count);
   const numberOfHops = parseInt(rootData.number_of_hops);
-  let hasData = [
+  const completedStrings = [
     'Complete',
     'Complete\n',
     'Completed',
+  ];
+  let hasData = [
+    ...completedStrings,
     'Error_MaxHopCountExceeded',
   ].includes(rootData.diag_state);
   if (permissions.traceroute.completeAsRequested &&
@@ -220,7 +223,7 @@ const calculateTraceDiagnostic = async function(
   // In the rare case of hop count exceeded, even yet in a model that always
   // returns 'Complete', the better way to know if destination was reached
   // is to check if hopCount == maxHopCount. Else, we consider not exceeded
-  if (rootData.diag_state.includes('Complete') &&
+  if (completedStrings.includes(rootData.diag_state) &&
       permissions.traceroute.hopCountExceededState.includes('Complete')
   ) {
     hasExceeded = (numberOfHops >= maxHopCount);
