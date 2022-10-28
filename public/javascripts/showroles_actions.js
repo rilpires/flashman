@@ -204,10 +204,23 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text(t('meshSecondaryDisassociation')),
+                        .text(t('enableWanMtuChanges')),
                         $('<select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-slave-disassociate').append(
+                        .attr('name', 'grant-wan-mtu-edit').append(
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
+                        .text(t('enableWanVlanChanges')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-vlan-edit').append(
                           $('<option>').val(false).text(t('Block')),
                           $('<option>').val(true).text(t('Allow')),
                         ),
@@ -305,6 +318,19 @@ anlixDocumentReady.add(function() {
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-statistics').append(
+                          $('<option>').val(false).text(t('Block')),
+                          $('<option>').val(true).text(t('Allow')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
+                        .text(t('meshSecondaryDisassociation')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-slave-disassociate').append(
                           $('<option>').val(false).text(t('Block')),
                           $('<option>').val(true).text(t('Allow')),
                         ),
@@ -782,6 +808,12 @@ anlixDocumentReady.add(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value='+
           roleObj.grantFirmwareRestrictedUpgrade + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-wan-mtu-edit] option[value='+
+          roleObj.grantWanMtuEdit + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-wan-vlan-edit] option[value='+
+          roleObj.grantWanVlanEdit + ']')
         .attr('selected', 'selected');
       });
     } else {

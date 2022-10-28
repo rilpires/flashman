@@ -203,6 +203,8 @@ anlixDocumentReady.add(function() {
   let grantWanType = false;
   let grantSlaveDisassociate = false;
   let mustBlockLicenseAtRemoval = false;
+  let grantUserWanMtuEdit = false;
+  let grantUserWanVlanEdit = false;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -238,6 +240,8 @@ anlixDocumentReady.add(function() {
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
+    grantUserWanMtuEdit = role.grantWanMtuEdit;
+    grantUserWanVlanEdit = role.grantWanVlanEdit;
   }
 
   // Default column to sort rows
@@ -1443,8 +1447,8 @@ anlixDocumentReady.add(function() {
           let grantDiacritics = device.permissions.grantDiacritics;
           let grantSsidSpaces = device.permissions.grantSsidSpaces;
           // WAN and LAN Information
-          let grantWanMtuEdit = device.permissions.grantWanMtuEdit;
-          let grantWanVlanEdit = device.permissions.grantWanVlanEdit;
+          let grantDeviceWanMtuEdit = device.permissions.grantWanMtuEdit;
+          let grantDeviceWanVlanEdit = device.permissions.grantWanVlanEdit;
           let grantWanMtuRead = device.permissions.grantWanMtuRead;
           let grantWanVlanRead = device.permissions.grantWanVlanRead;
           let grantWanLanInformation =
@@ -1454,6 +1458,11 @@ anlixDocumentReady.add(function() {
           let statusClasses = buildStatusClasses(device);
           let statusAttributes = buildStatusAttributes(device);
           let notifications = buildNotification();
+
+          let grantWanMtuEdit =
+            (grantDeviceWanMtuEdit && (isSuperuser || grantUserWanMtuEdit));
+          let grantWanVlanEdit =
+            (grantDeviceWanVlanEdit && (isSuperuser || grantUserWanVlanEdit));
 
           let slaves = [];
           let isSelectableRow = true;
