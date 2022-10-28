@@ -347,11 +347,11 @@
       if (vlanField) {
         try {
           let vlanValue = parseInt(vlanField);
-          if (vlanValue >= 1 && vlanValue <= 4095) return {valid: true};
+          if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
           else {
             return {
               valid: false,
-              err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4095})],
+              err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
             };
           }
         } catch (e) {
