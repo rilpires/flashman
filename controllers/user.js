@@ -178,6 +178,8 @@ userController.postRole = function(req, res) {
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
     grantFirmwareRestrictedUpgrade:
       req.body['grant-firmware-restricted-upgrade'],
+    grantWanMtuEdit: req.body['grant-wan-mtu-edit'],
+    grantWanVlanEdit: req.body['grant-wan-vlan-edit'],
   });
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
@@ -397,6 +399,8 @@ userController.editRole = function(req, res) {
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
     role.grantFirmwareRestrictedUpgrade =
       req.body['grant-firmware-restricted-upgrade'];
+    role.grantWanMtuEdit = req.body['grant-wan-mtu-edit'];
+    role.grantWanVlanEdit = req.body['grant-wan-vlan-edit'];
 
     if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');
