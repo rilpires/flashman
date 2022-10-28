@@ -1047,5 +1047,7 @@
 	"updateDeviceFirmwareErrorWithMAC": "There was an error downloading the firmware from CPE with MAC {{errorMac}}. Please try again or cancel the procedure.",
 	"portOpeningRebootAlert": "Careful! This model requires a reboot in order to apply port forward configuration changes.",
 	"invalidFieldsMustBeInRange": "Invalid value. This field should be in range between {{min}} and {{max}}.",
-	"emptyField": "Field cannot be empty"
+	"emptyField": "Field cannot be empty",
+	"enableWanMtuChanges": "Allow WAN MTU Changes",
+	"enableWanVlanChanges": "Allow WAN VLAN ID Changes"
 }
