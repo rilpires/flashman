@@ -48,6 +48,13 @@ block content
                       option(value=2)= t('viewAndEdit')
                 .md-form
                   .md-selectfield.form-control.my-0
+                    label= t('wanAdvancedInformation')
+                    select.browser-default.md-select(name="grant-wan-advanced-info")
+                      option(value=0)= t('cannotView')
+                      option(value=1)= t('View')
+                      option(value=2)= t('viewAndEdit')
+                .md-form
+                  .md-selectfield.form-control.my-0
                     label= t('viewPasswordWhenEditing')
                     select.browser-default.md-select(name="grant-pass-show")
                       option(value="false")= t('Block')
@@ -153,18 +160,6 @@ block content
                       option(value=0)= t('cannotView')
                       option(value=1)= t('View')
                       option(value=2)= t('viewAndEdit')
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label= t('enableWanMtuChanges')
-                    select.browser-default.md-select(name="grant-wan-mtu-edit")
-                      option(value="false")= t('Block')
-                      option(value="true")= t('Allow')
-                .md-form
-                  .md-selectfield.form-control.my-0
-                    label= t('enableWanVlanChanges')
-                    select.browser-default.md-select(name="grant-wan-vlan-edit")
-                      option(value="false")= t('Block')
-                      option(value="true")= t('Allow')
             h5.text-muted.m-0= t('firmwareUpdatePermissions')
             hr.my-1
             .row.mb-4

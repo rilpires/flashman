@@ -1056,6 +1056,5 @@
 	"portOpeningRebootAlert": "¡Cuidado! Este modelo requiere un reinicio para aplicar los cambios de configuración de reenvío de puertas.",
 	"invalidFieldsMustBeInRange": "Campo inválido. Este campo debe estar contenido entre {{min}} y {{max}}.",
 	"emptyField": "El campo no puede ser vazio",
-	"enableWanMtuChanges": "Permitir cambios de MTU de WAN",
-	"enableWanVlanChanges": "Permitir cambios de ID de VLAN de WAN"
+	"wanAdvancedInformation": "Información avanzadas de WAN"
 }

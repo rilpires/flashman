@@ -150,6 +150,23 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
+                        .text(t('wanAdvancedInformation')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-advanced-info').append(
+                          $('<option>').val(0)
+                          .text(t('cannotView')),
+                          $('<option>').val(1)
+                          .text(t('View')),
+                          $('<option>').val(2)
+                          .text(t('viewAndEdit')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
                         .text(t('viewPasswordWhenEditing')),
                         $('<select>')
                         .addClass('browser-default md-select')
@@ -204,23 +221,10 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
-                        .text(t('enableWanMtuChanges')),
+                        .text(t('meshSecondaryDisassociation')),
                         $('<select>')
                         .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-mtu-edit').append(
-                          $('<option>').val(false).text(t('Block')),
-                          $('<option>').val(true).text(t('Allow')),
-                        ),
-                      ),
-                    ),
-                    $('<div>').addClass('md-form').append(
-                      $('<div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label>')
-                        .text(t('enableWanVlanChanges')),
-                        $('<select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-wan-vlan-edit').append(
+                        .attr('name', 'grant-slave-disassociate').append(
                           $('<option>').val(false).text(t('Block')),
                           $('<option>').val(true).text(t('Allow')),
                         ),
@@ -318,19 +322,6 @@ anlixDocumentReady.add(function() {
                         $('<select>')
                         .addClass('browser-default md-select')
                         .attr('name', 'grant-statistics').append(
-                          $('<option>').val(false).text(t('Block')),
-                          $('<option>').val(true).text(t('Allow')),
-                        ),
-                      ),
-                    ),
-                    $('<div>').addClass('md-form').append(
-                      $('<div>')
-                      .addClass('md-selectfield form-control my-0').append(
-                        $('<label>')
-                        .text(t('meshSecondaryDisassociation')),
-                        $('<select>')
-                        .addClass('browser-default md-select')
-                        .attr('name', 'grant-slave-disassociate').append(
                           $('<option>').val(false).text(t('Block')),
                           $('<option>').val(true).text(t('Allow')),
                         ),
@@ -809,11 +800,8 @@ anlixDocumentReady.add(function() {
         $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value='+
           roleObj.grantFirmwareRestrictedUpgrade + ']')
         .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-wan-mtu-edit] option[value='+
-          roleObj.grantWanMtuEdit + ']')
-        .attr('selected', 'selected');
-        $(rowObj).find('[name=grant-wan-vlan-edit] option[value='+
-          roleObj.grantWanVlanEdit + ']')
+        $(rowObj).find('[name=grant-wan-advanced-info] option[value='+
+          roleObj.grantWanAdvancedInfo + ']')
         .attr('selected', 'selected');
       });
     } else {

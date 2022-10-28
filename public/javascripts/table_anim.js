@@ -203,8 +203,7 @@ anlixDocumentReady.add(function() {
   let grantWanType = false;
   let grantSlaveDisassociate = false;
   let mustBlockLicenseAtRemoval = false;
-  let grantUserWanMtuEdit = false;
-  let grantUserWanVlanEdit = false;
+  let grantWanAdvancedInfo = 0;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -240,8 +239,7 @@ anlixDocumentReady.add(function() {
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
-    grantUserWanMtuEdit = role.grantWanMtuEdit;
-    grantUserWanVlanEdit = role.grantWanVlanEdit;
+    grantWanAdvancedInfo = role.grantWanAdvancedInfo;
   }
 
   // Default column to sort rows
@@ -1446,11 +1444,14 @@ anlixDocumentReady.add(function() {
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
           let grantDiacritics = device.permissions.grantDiacritics;
           let grantSsidSpaces = device.permissions.grantSsidSpaces;
+          // WAN MTU and VLAN Id Information
+          let grantDeviceWanMtuRead = device.permissions.grantWanMtuRead;
+          let grantDeviceWanVlanRead = device.permissions.grantWanVlanRead;
+          let grantDeviceWanMtuEdit =
+            grantDeviceWanMtuRead && device.permissions.grantWanMtuEdit;
+          let grantDeviceWanVlanEdit =
+            grantDeviceWanVlanRead && device.permissions.grantWanVlanEdit;
           // WAN and LAN Information
-          let grantDeviceWanMtuEdit = device.permissions.grantWanMtuEdit;
-          let grantDeviceWanVlanEdit = device.permissions.grantWanVlanEdit;
-          let grantWanMtuRead = device.permissions.grantWanMtuRead;
-          let grantWanVlanRead = device.permissions.grantWanVlanRead;
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
 
@@ -1459,10 +1460,14 @@ anlixDocumentReady.add(function() {
           let statusAttributes = buildStatusAttributes(device);
           let notifications = buildNotification();
 
-          let grantWanMtuEdit =
-            (grantDeviceWanMtuEdit && (isSuperuser || grantUserWanMtuEdit));
-          let grantWanVlanEdit =
-            (grantDeviceWanVlanEdit && (isSuperuser || grantUserWanVlanEdit));
+          let grantWanMtuEdit = (grantDeviceWanMtuEdit &&
+            (isSuperuser || grantWanAdvancedInfo >= 2));
+          let grantWanVlanEdit = (grantDeviceWanVlanEdit &&
+            (isSuperuser || grantWanAdvancedInfo >= 2));
+          let grantWanMtuRead = (grantDeviceWanMtuRead &&
+            (isSuperuser || grantWanAdvancedInfo >= 1));
+          let grantWanVlanRead = (grantDeviceWanVlanRead &&
+            (isSuperuser || grantWanAdvancedInfo >= 1));
 
           let slaves = [];
           let isSelectableRow = true;
@@ -1941,7 +1946,7 @@ anlixDocumentReady.add(function() {
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
-            ((grantWanMtuRead || grantWanVlanRead) ?
+            ((grantDeviceWanMtuRead || grantDeviceWanVlanRead) ?
               '<div class="row">'+
                 mtuForm+
                 vlanForm+
