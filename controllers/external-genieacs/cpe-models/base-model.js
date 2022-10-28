@@ -37,6 +37,7 @@ basicCPEModel.identifier = {vendor: 'NoVendor', model: 'NoName'};
 basicCPEModel.modelPermissions = function() {
   return {
     features: {
+      cableRxRate: false, // can get RX rate from devices connected by cable
       customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: false, // support for tr-069 firmware upgrade
       meshCable: true, // can create a cable mesh network with Anlix firmwares
@@ -51,6 +52,8 @@ basicCPEModel.modelPermissions = function() {
       upnp: false, // will enable upnp configs (to be implemented)
       wanBytes: true, // will enable wan bytes plot
       wps: false, // will enable wps configs (to be implemented)
+      macAccessControl: false,
+      wlanAccessControl: false,
     },
     firmwareUpgrades: {
       'v0.0.0': [],
@@ -454,6 +457,11 @@ basicCPEModel.convertWifiRate = function(rate) {
   return parseInt(rate);
 };
 
+// Used on devices that list cable rate for each connected device
+basicCPEModel.convertCableRate = function(rate) {
+  return parseInt(rate);
+};
+
 // Used when fetching connected devices to identify if device is cable or wifi
 basicCPEModel.isDeviceConnectedViaWifi = function(
   layer2iface, wifi2iface, wifi5iface,
@@ -693,6 +701,7 @@ basicCPEModel.getModelFields = function() {
       port: 'InternetGatewayDevice.ManagementServer.STUNServerPort',
     },
     access_control: {
+      mac: 'InternetGatewayDevice.Firewall.MacFilterService',
       wifi2: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
         'AccessControl',
       wifi5: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
@@ -711,6 +720,8 @@ basicCPEModel.getModelFields = function() {
         'AssociatedDevice.*.SignalStrength',
       host_snr: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.SignalNoiseRatio',
+      host_cable_rate: 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.'+
+        'NegotiatedRate',
       host_rate: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +
         'AssociatedDevice.*.LastDataTransmitRate',
       associated: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.' +

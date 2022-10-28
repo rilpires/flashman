@@ -6,7 +6,6 @@ const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const mqtt = require('../mqtts');
 const DeviceVersion = require('../models/device_version');
-const acsAccessControlHandler = require('./handlers/acs/access_control');
 const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
@@ -117,13 +116,13 @@ let appSet = function(req, res, processFunction) {
         commandTimeout = content.command_timeout;
       }
       if (matchedDevice.use_tr069 && tr069Changes.changeBlockedDevices) {
-        let acRulesRes = {'success': false};
-        acRulesRes = await acsAccessControlHandler.changeAcRules(matchedDevice);
+        let acRulesRes = await acsController.changeAcRules(matchedDevice);
         if (!acRulesRes || !acRulesRes['success']) {
           // The return of change Access Control has established
           // error codes. It is possible to make res have
           // specific messages for each error code.
-          let errorCode = acRulesRes.hasOwnProperty('error_code') ?
+          let errorCode = acRulesRes &&
+            acRulesRes.hasOwnProperty('error_code') ?
             acRulesRes['error_code'] : 'acRuleDefaultError';
           let response = {
             is_set: 0,
@@ -275,6 +274,8 @@ let processPassword = function(content, device, rollback, tr069Changes) {
 };
 
 let processBlacklist = function(content, device, rollback, tr069Changes) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions || !permissions.grantBlockDevices) return false;
   // Legacy checks
   if (content.hasOwnProperty('blacklist_device') &&
       content.blacklist_device.hasOwnProperty('mac') &&
@@ -323,7 +324,6 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(util.macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === true) {
-    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
@@ -333,9 +333,15 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == blackMacDevice) {
         device.lan_devices[idx].last_seen = Date.now();
-        device.lan_devices[idx].is_blocked = true;
-        device.blocked_devices_index = Date.now();
-        return true;
+        // only block a device when is not blocked
+        if (!device.lan_devices[idx].is_blocked) {
+          tr069Changes.changeBlockedDevices = true;
+          device.lan_devices[idx].is_blocked = true;
+          device.blocked_devices_index = Date.now();
+          return true;
+        } else {
+          return false;
+        }
       }
     }
     // Mac address not found
@@ -347,12 +353,15 @@ let processBlacklist = function(content, device, rollback, tr069Changes) {
       last_seen: Date.now(),
     });
     device.blocked_devices_index = Date.now();
+    tr069Changes.changeBlockedDevices = true;
     return true;
   }
   return false;
 };
 
 let processWhitelist = function(content, device, rollback, tr069Changes) {
+  let permissions = DeviceVersion.devicePermissions(device);
+  if (!permissions || !permissions.grantBlockDevices) return false;
   // Legacy checks
   if (content.hasOwnProperty('whitelist_device') &&
       content.whitelist_device.hasOwnProperty('mac') &&
@@ -382,7 +391,6 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
            content.device_configs.mac.match(util.macRegex) &&
            content.device_configs.hasOwnProperty('block') &&
            content.device_configs.block === false) {
-    tr069Changes.changeBlockedDevices = true;
     if (!rollback.lan_devices) {
       rollback.lan_devices = util.deepCopyObject(device.lan_devices);
     }
@@ -392,9 +400,15 @@ let processWhitelist = function(content, device, rollback, tr069Changes) {
     for (let idx = 0; idx < device.lan_devices.length; idx++) {
       if (device.lan_devices[idx].mac == blackMacDevice) {
         device.lan_devices[idx].last_seen = Date.now();
-        device.lan_devices[idx].is_blocked = false;
-        device.blocked_devices_index = Date.now();
-        return true;
+        // only unblock a device when is blocked
+        if (device.lan_devices[idx].is_blocked) {
+          tr069Changes.changeBlockedDevices = true;
+          device.lan_devices[idx].is_blocked = false;
+          device.blocked_devices_index = Date.now();
+          return true;
+        } else {
+          return false;
+        }
       }
     }
   }

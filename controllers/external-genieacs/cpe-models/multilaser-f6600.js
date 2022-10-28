@@ -6,12 +6,13 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.lan.blockLANDevices = false; // Bug at rules id
+  permissions.features.macAccessControl = true;
   permissions.siteSurvey.requiresPolling = true;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
@@ -100,12 +101,8 @@ zteModel.getModelFields = function() {
     'STUNEnable';
   fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
     'ManagementServer.UDPConnectionRequestAddress';
-  fields.access_control.wifi2 = fields.wifi2.ssid.replace(
-    /SSID/g, 'X_ZTE-COM_AccessControl',
-  );
-  fields.access_control.wifi5 = fields.wifi5.ssid.replace(
-    /SSID/g, 'X_ZTE-COM_AccessControl',
-  );
+  fields.access_control.mac = 'InternetGatewayDevice.Firewall.'+
+    'X_ZTE-COM_MacFilterService.Filter';
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
   ];

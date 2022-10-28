@@ -533,7 +533,7 @@ anlixDocumentReady.add(function() {
       {orderable: false, targets: [0, hasTrashButton, 4+hasTrashButton]},
       {
         targets: [2+hasTrashButton],
-        render: function ( data, type, row ) {
+        render: function (data, type, row) {
           // If display or filter data is requested, format the date
           if (type === 'display' || type === 'filter') {
             let date = new Date(Number(data));

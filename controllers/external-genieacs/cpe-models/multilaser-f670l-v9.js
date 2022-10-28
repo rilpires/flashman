@@ -6,14 +6,15 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F670L v9'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
-  permissions.lan.blockLANDevices = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wan.portForwardQueueTasks = true;

@@ -6,6 +6,7 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145X6'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.cableRxRate = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -104,6 +105,10 @@ huaweiModel.getModelFields = function() {
     'X_GponInterafceConfig.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'WANPPPConnection.*.X_HW_VLAN';
+  fields.devices.host_cable_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'Hosts.Host.*.X_HW_NegotiatedRate';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_TxRate';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +

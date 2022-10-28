@@ -2,20 +2,19 @@ const basicCPEModel = require('./base-model');
 
 let zteModel = Object.assign({}, basicCPEModel);
 
-zteModel.identifier = {vendor: 'ZTE', model: 'ZT199'};
+zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'ZT199'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.traceroute.protocol = 'ICMP';
-  permissions.lan.blockLANDevices = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 550;
