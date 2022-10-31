@@ -6,7 +6,6 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'WS7100 / AX3'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.wifi.axWiFiMode = true;
   permissions.wifi.list5ghzChannels = [

@@ -6,7 +6,6 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'WS7001 / AX2'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.traceroute = true;
   permissions.traceroute.ipv6HasPriority = true;
