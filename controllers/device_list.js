@@ -2468,7 +2468,11 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wan_vlan') &&
                 wanVlan != 0 && wanVlan !== matchedDevice.wan_vlan_id) {
               if (superuserGrant || role.grantWanAdvancedInfo >= 2) {
-                changes.wan.vlan = wanVlan;
+                if (connectionType == 'pppoe') {
+                  changes.wan.vlan_ppp = wanVlan;
+                } else {
+                  changes.wan.vlan = wanVlan;
+                }
                 matchedDevice.wan_vlan_id = wanVlan;
                 updateParameters = true;
               } else {
