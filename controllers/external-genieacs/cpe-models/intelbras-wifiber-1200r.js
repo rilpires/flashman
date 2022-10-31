@@ -17,6 +17,10 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 300;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
@@ -107,6 +111,10 @@ intelbrasModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ITBS_VlanMuxID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ITBS_VlanMuxID';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
     '.X_ITBS_BandWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
