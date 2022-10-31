@@ -25,6 +25,7 @@ huaweiModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     'V5R020C00S060': [],
   };
+  permissions.wifi.bandAuto5_160 = true;
   return permissions;
 };
 
@@ -64,6 +65,8 @@ huaweiModel.convertWifiBand = function(band, is5ghz=false) {
       return '3';
     case 'auto':
       return (is5ghz) ? '3' : '0';
+    case 'auto160':
+      return '4';
     default:
       return '';
   }
@@ -80,6 +83,8 @@ huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
       return (isAC) ? 'VHT40' : 'HT40';
     case '3':
       return (isAC) ? 'VHT80' : undefined;
+    case '4':
+      return 'auto160';
     default:
       return undefined;
   }
