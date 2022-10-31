@@ -100,6 +100,7 @@ basicCPEModel.modelPermissions = function() {
       bandWrite5: true, // can change current wifi 5 band
       bandAuto2: true, // can change current wifi 2.4 band to auto mode
       bandAuto5: true, // can change current wifi 5 band to auto mode
+      bandAuto5_160: false, // can change current wifi 5 band to auto mode 160
       modeRead: true, // will display current wifi mode
       modeWrite: true, // can change current wifi mode
       rebootAfterWiFi2SSIDChange: false, // will cause a reboot on ssid change
