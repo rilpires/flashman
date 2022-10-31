@@ -18,6 +18,10 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
@@ -89,6 +93,10 @@ intelbrasModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ITBS_VlanMuxID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ITBS_VlanMuxID';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
     '.X_ITBS_ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
