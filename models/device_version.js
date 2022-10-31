@@ -1787,6 +1787,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWifiBandEdit5: cpePermissions.wifi.bandWrite5,
     grantWifiBandAuto2: cpePermissions.wifi.bandAuto2,
     grantWifiBandAuto5: cpePermissions.wifi.bandAuto5,
+    grantWifiBandAuto5_160: cpePermissions.wifi.bandAuto5_160,
     grantWifi5ChannelList: cpePermissions.wifi.list5ghzChannels,
     grantWifiState: true,
     grantWifiPowerHiddenIpv6Box: false,
@@ -1886,6 +1887,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWifiBandEdit5 = grantWifiBand(version, model);
   result.grantWifiBandAuto2 = grantWifiBandAuto(version, model);
   result.grantWifiBandAuto5 = grantWifiBandAuto(version, model);
+  result.grantWifiBandAuto5_160 = grantWifiBandAuto(version, model);
   result.grantWifi5ChannelList = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   result.grantWifiState = grantWifiState(version, model);
   result.grantWifiPowerHiddenIpv6Box = grantWifiPowerHiddenIpv6(version, model);
