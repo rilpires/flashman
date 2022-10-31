@@ -116,8 +116,8 @@
 
     Validator.prototype.validateBand = function(band) {
       return {
-        valid: ['auto', 'HT20', 'HT40',
-                'VHT20', 'VHT40', 'VHT80'].includes(band),
+        valid: ['auto', 'auto160', 'HT20', 'HT40',
+          'VHT20', 'VHT40', 'VHT80'].includes(band),
         err: [t('willOnlyAcceptValueWifiBandwidth')],
       };
     };
