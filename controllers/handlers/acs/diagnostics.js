@@ -272,9 +272,9 @@ const calculateTraceDiagnostic = async function(
   if (hasData && !hasExceeded) {
     // all_hops_tested will only true when we can't find any hop
     // that hop_index (index starts on 1) differs from array index+1
-    traceResult.all_hops_tested = traceResult.hops.findIndex(
-      (obj, index)=>obj.hop_index!=index+1,
-    ) == -1;
+    traceResult.all_hops_tested = traceResult.hops.some(
+      (obj, index)=>obj.hopIndex !== index+1,
+    );
   }
 
   device.current_diagnostic.last_modified_at = new Date();
