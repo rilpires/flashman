@@ -5,7 +5,8 @@ import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 const t = i18next.t;
 
-// assigning tr069 elements.
+// assigning TR069 elements.
+let tr069Section = document.getElementById('tr');
 let recoveryInput =
   document.getElementById('lost-informs-recovery-threshold');
 let recoveryErrorElement =
@@ -16,10 +17,12 @@ let offlineErrorElement =
   document.getElementById('error-lost-informs-offline-threshold');
 let recoveryOfflineErrorElement =
   document.getElementById('error-recovery-offline-thresholds');
+
+// assigning SSID prefix elements.
 let ssidPrefixInput = document.getElementById('ssid-prefix');
 let ssidPrefixErrorElement = document.getElementById('error-ssid-prefix');
 
-// resets errors and message styles for tr069 recovery and offline iputs.
+// resets errors and message styles for TR069 recovery and offline inputs.
 const resetRecoveryOfflineInputDependencyError = function() {
   recoveryInput.setCustomValidity('');
   offlineInput.setCustomValidity('');
@@ -31,26 +34,29 @@ const resetRecoveryOfflineInputDependencyError = function() {
 // sets custom validity message, hides error element of both recovery and
 // offline inputs and shows an error message that belongs to both input fields.
 const setRecoveryOfflineInputDependencyError = function() {
-  // setting custom validity, which means inpute becomes invalid.
+  // setting custom validity, which means input becomes invalid.
   recoveryInput.setCustomValidity(t('unstableShouldBeLessThanOffline'));
   offlineInput.setCustomValidity(t('OfflineShouldBeBiggerThanUnstable'));
   // we report validity by showing a text right below the inputs and hide
   // each input's individual error text message.
-  recoveryErrorElement.style.display = 'none'; // hiding recovery's error.
-  offlineErrorElement.style.display = 'none'; // hidding offline's error.
-  recoveryOfflineErrorElement.style.display = 'block'; // showing error for both
+  recoveryErrorElement.style.display = 'none'; // hiding recovery  error.
+  offlineErrorElement.style.display = 'none'; // hiding offline error.
+  recoveryOfflineErrorElement.style.display = 'block'; // showing both errors.
 };
 
-// will be called in every input after the first time save button is pressed.
-window.checkrecoveryOfflineInputDependency = function() {
-  // if inputs are valid, as defined by html input, check if recovery value is
-  // bigger, or equal, to offline value.
-  if (Number(recoveryInput.value) >= Number(offlineInput.value)) {
-    setRecoveryOfflineInputDependencyError(); // set error message.
-  } else { // if fields have valid values. we reset errors and message styles.
-    resetRecoveryOfflineInputDependencyError(); // reset error message.
-  }
-};
+// if user received the TR069 section, we will validate it.
+if (tr069Section) {
+  // will be called in every input after the first time save button is pressed.
+  window.checkrecoveryOfflineInputDependency = function() {
+    // if inputs are valid, as defined by html input, check if recovery value
+    // is bigger, or equal, to offline value.
+    if (Number(recoveryInput.value) >= Number(offlineInput.value)) {
+      setRecoveryOfflineInputDependencyError(); // set error message.
+    } else { // if fields have valid values. we reset related elements styles.
+      resetRecoveryOfflineInputDependencyError(); // reset error message.
+    }
+  };
+}
 
 window.checkSsidPrefixValidity = function() {
   // check ssid prefix value
@@ -92,8 +98,8 @@ const forceOfflineCPEReconnect = function() {
 let configFlashman = function(event) {
   let validator = new Validator();
 
-  resetRecoveryOfflineInputDependencyError(); // reseting errors and message
-  // styles for recovery and offline inputs to default values.
+  // resetting errors and message styles to default values.
+  if (tr069Section) resetRecoveryOfflineInputDependencyError();
   resetSsidPrefixError();
 
   // executing browser validation on all fields.
@@ -102,8 +108,11 @@ let configFlashman = function(event) {
   // if browser validation is okay for recovery and offline threshold inputs,
   // check for their values. if one value is not compatible with the other, set
   // error message that belongs to both input fields.
-  if (recoveryInput.validity.valid && offlineInput.validity.valid
-   && Number(recoveryInput.value) >= Number(offlineInput.value)) {
+  if (
+    tr069Section && // if user TR069 received section.
+    recoveryInput.validity.valid && offlineInput.validity.valid &&
+    Number(recoveryInput.value) >= Number(offlineInput.value)
+  ) {
     setRecoveryOfflineInputDependencyError(); // set error message.
     allValid = false; // we won't send the configurations.
   }

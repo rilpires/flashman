@@ -2489,6 +2489,17 @@ deviceInfoController.receiveTraceroute = function(req, res) {
       currentTest.all_hops_tested = req.body.all_hops_tested;
       currentTest.reached_destination = req.body.reached_destination;
       currentTest.tries_per_hop = req.body.tries_per_hop;
+      // Some flashbox versions dont send hop_index. We fill it in sequentially
+      // if that is the case, since we have no missing hop information
+      let hasEmptyHopIndex = req.body.hops.some(
+        (hopObj)=>typeof hopObj.hop_index === 'undefined',
+      );
+      if (hasEmptyHopIndex) {
+        req.body.hops = req.body.hops.map(function(hopObj, arrIndex) {
+          hopObj.hop_index = arrIndex+1;
+          return hopObj;
+        });
+      }
       currentTest.hops = req.body.hops;
     }
 

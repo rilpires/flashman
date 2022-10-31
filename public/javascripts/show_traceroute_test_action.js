@@ -354,23 +354,38 @@ const updateValues = function(message) {
   });
 
   // Loop through all hops
-  for (let hopIndex = 0; hopIndex < message.hops.length; hopIndex++) {
-    let hop = message.hops[hopIndex];
-    let mean = 0;
-    let hopIdxDisplay = hopIndex + 1 + '. ';
+  let maxHopIndex = 0;
+  if (message.hops.length>0) {
+    maxHopIndex = message.hops
+    .reduce((prev, curr)=>prev.hop_index>curr.hop_index?prev:curr).hop_index;
+  }
+  for (let hopIndex = 1; hopIndex <= maxHopIndex; hopIndex++) {
+    let hop = message.hops.find((obj)=>obj.hop_index==hopIndex);
+    let hopText;
+    let latencyText = '?';
 
-    // Loop through all tests
-    for (let testIndex = 0; testIndex < hop.ms_values.length; testIndex++) {
-      mean += hop.ms_values[testIndex] / hop.ms_values.length;
+    if (hop) {
+      if (hop.ms_values.length>0) {
+        let mean = hop.ms_values.reduce(
+          (prev, curr)=>parseFloat(prev)+parseFloat(curr),
+        ) / hop.ms_values.length;
+        latencyText = t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)});
+      } else {
+        latencyText = t('Latency=X', {x: '?'});
+      }
+      hopText = `${hopIndex}. ${hop.ip}`;
+    } else {
+      hopText = `${hopIndex}. ***`;
+      latencyText = t('Latency=X', {x: '?'});
     }
 
     // Assign parameters to html
     $('#' + TRACEROUTE_HTML_RESULT_NAME + number).append(
       RESULT_TABLE_ITEM_HTML
-        .text(hopIdxDisplay + hop.ip)
+        .text(hopText)
         .append(
           RESULT_TABLE_ITEM_VALUE_HTML
-          .text(t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)}))
+          .text(latencyText)
           .clone(),
         )
         .clone(),

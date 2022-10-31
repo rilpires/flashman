@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = {vendor: 'Intelbras', model: 'RG1200'};
+intelbrasModel.identifier = {vendor: 'Intelbras', model: 'Action RG1200AC'};
 
 // Wifi possible channels:
 // 2.4Ghz: 1,2,3,4,5,6,7,8,9,10,11,12,13
@@ -14,7 +14,6 @@ intelbrasModel.identifier = {vendor: 'Intelbras', model: 'RG1200'};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = false; // will enable ping test dialog
   permissions.features.speedTest = true; // will enable speed test dialogs
   permissions.features.siteSurvey = true;

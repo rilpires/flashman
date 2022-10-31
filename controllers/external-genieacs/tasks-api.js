@@ -291,22 +291,20 @@ genie.deletePreset = async function(presetId) {
 };
 
 genie.addOrDeleteObject = async function(
-  deviceid, acObject, taskType, callback=null,
+  deviceid, acObject, taskType, callback=null, requestConn=true,
 ) {
   let task = {
     name: taskType,
     objectName: acObject,
   };
   try {
-    let ret = await genie.addTask(deviceid, task, callback);
+    let ret = await genie.addTask(deviceid, task, callback, 0, requestConn);
     if (!ret || !ret.success || !ret.executed) {
       return false;
     }
     return true;
   } catch (e) {
-    console.log(
-      'Error: ' + taskType + ' failure at ' + deviceid,
-    );
+    console.log('Error: ' + taskType + ' failure at ' + deviceid);
   }
   return false;
 };
@@ -599,7 +597,9 @@ const sendTasks = async function(
           timestamp: Date.now(),
         };
       }
-      return {success: true, executed: false, message: 'task scheduled'};
+      // If requestConn was specified as false, return executed as true, since
+      // it wasn't expected to run anyway
+      return {success: true, executed: !requestConn, message: 'task scheduled'};
     } else {
       // something went wrong, log error and return
       console.log('Error adding task to GenieACS: ' + response.data);

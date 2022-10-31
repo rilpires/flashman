@@ -52,6 +52,8 @@ basicCPEModel.modelPermissions = function() {
       upnp: false, // will enable upnp configs (to be implemented)
       wanBytes: true, // will enable wan bytes plot
       wps: false, // will enable wps configs (to be implemented)
+      macAccessControl: false,
+      wlanAccessControl: false,
     },
     firmwareUpgrades: {
       'v0.0.0': [],
@@ -699,6 +701,7 @@ basicCPEModel.getModelFields = function() {
       port: 'InternetGatewayDevice.ManagementServer.STUNServerPort',
     },
     access_control: {
+      mac: 'InternetGatewayDevice.Firewall.MacFilterService',
       wifi2: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
         'AccessControl',
       wifi5: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +

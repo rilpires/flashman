@@ -204,34 +204,33 @@ const calculateTraceDiagnostic = async function(
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
   const maxHopCount = parseInt(rootData.max_hop_count);
   const numberOfHops = parseInt(rootData.number_of_hops);
-  let hasData = [
+  const completedStrings = [
     'Complete',
     'Complete\n',
     'Completed',
+  ];
+  let hasData = [
+    ...completedStrings,
     'Error_MaxHopCountExceeded',
   ].includes(rootData.diag_state);
   if (permissions.traceroute.completeAsRequested &&
   rootData.diag_state=='Requested') {
     hasData = true;
   }
-  let hasExceeded =
-    (rootData.diag_state == permissions.traceroute.hopCountExceededState);
 
-  // In the rare case of hop count exceeded, even yet in a model that always
-  // returns 'Complete', the better way to know if destination was reached
-  // is to check if hopCount == maxHopCount. Else, we consider not exceeded
-  if (rootData.diag_state == 'Complete' &&
-      permissions.traceroute.hopCountExceededState=='Complete' &&
-      numberOfHops < maxHopCount
-  ) {
-    hasExceeded = false;
+  let exceededState = permissions.traceroute.hopCountExceededState;
+  let hasExceeded = (rootData.diag_state === exceededState);
+  // For models where the hop count exceeded state is in the completed state
+  // list, we must additionally check for the number of hops in the result,
+  // since that is our only way of differentiating a complete diagnostic from a
+  // hops exceeded result
+  if (hasExceeded && completedStrings.includes(exceededState)) {
+    hasExceeded = (numberOfHops >= maxHopCount);
   }
 
   if (hasData || hasExceeded) {
     // const inNumberOfHops = parseInt(rootData.number_of_hops);
-    let hopSkipped = false;
     traceResult.address = traceTarget;
-    traceResult.all_hops_tested = !hasExceeded;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
     // Clamping tries_per_hop
@@ -246,17 +245,13 @@ const calculateTraceDiagnostic = async function(
     for (let hopIndex = 1; hopIndex <= maxHopCount; hopIndex++ ) {
       // inHop here is as it is from genie acs tree.
       let inHop = rootData.hops_root[hopIndex.toString()];
-      if (!inHop) {
-        hopSkipped = true;
-        continue;
-      } else if (hopSkipped) {
-        traceResult.all_hops_tested = false;
-      }
+      if (!inHop) continue;
       let inHopKeys = utilHandlers.getAllNestedKeysFromObject(
         inHop, Object.keys(traceFields), traceFields,
       );
       let msValues = cpe.readTracerouteRTTs(inHop);
       let currentHop = {
+        hop_index: hopIndex,
         ip: inHopKeys.hop_ip_address
               ? inHopKeys.hop_ip_address
               : inHopKeys.hop_host,
@@ -270,10 +265,17 @@ const calculateTraceDiagnostic = async function(
       = !hasExceeded && traceResult.hops.length > 0;
   } else {
     traceResult.reached_destination = false;
-    traceResult.all_hops_tested = false;
   }
   // ALWAYS set to completed
   traceResult.completed = true;
+  traceResult.all_hops_tested = false;
+  if (hasData && !hasExceeded) {
+    // all_hops_tested will only true when we can't find any hop
+    // that hop_index (index starts on 1) differs from array index+1
+    traceResult.all_hops_tested = traceResult.hops.some(
+      (obj, index)=>obj.hopIndex !== index+1,
+    );
+  }
 
   device.current_diagnostic.last_modified_at = new Date();
   if (!getNextTraceTarget(device)) {
