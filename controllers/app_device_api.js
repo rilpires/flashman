@@ -248,7 +248,10 @@ let processWifi = function(content, device, rollback, tr069Changes) {
   }
   if (content.wifi_band_5ghz && permissions.grantWifiBandEdit5) {
     // discard change to auto when model doesnt support it
-    if (content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5) {
+    if (
+      content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5 ||
+      content.wifi_band_5ghz !== 'auto160' || permissions.grantWifiBandAuto5_160
+    ) {
       rollback.wifi_band_5ghz = device.wifi_band_5ghz;
       device.wifi_band_5ghz = content.wifi_band_5ghz;
       tr069Changes.wifi5.band = content.wifi_band_5ghz;

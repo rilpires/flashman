@@ -2572,7 +2572,8 @@ deviceListController.setDeviceReg = function(req, res) {
                 band5ghz !== '' && band5ghz !== matchedDevice.wifi_band_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 // Discard change to 'auto' if not allowed
-                if (band !== 'auto' || permissions.grantWifiBandAuto5) {
+                if (band !== 'auto' || permissions.grantWifiBandAuto5 ||
+                    band != 'auto160' || permissions.grantWifiBandAuto5_160) {
                   changes.wifi5.band = band5ghz;
                   matchedDevice.wifi_band_5ghz = band5ghz;
                   updateParameters = true;

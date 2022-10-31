@@ -1422,7 +1422,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     let autoWithNoPermission = (
       device.wifi_band_5ghz === 'auto' && !permissions.grantWifiBandAuto5
     );
-    if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission)) {
+    let auto160WithNoPermission = (
+      device.wifi_band_5ghz === 'auto160' && !permissions.grantWifiBandAuto5_160
+    );
+    if (band5 && (!device.wifi_band_5ghz || autoWithNoPermission ||
+        auto160WithNoPermission)) {
       device.wifi_band_5ghz = band5;
     } else if (device.wifi_band_5ghz !== band5) {
       if (permissions.grantWifiBandEdit5) {
