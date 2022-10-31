@@ -10,7 +10,6 @@ const Config = require('../models/config');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const utilHandlers = require('./handlers/util.js');
-const acsAccessControlHandler = require('./handlers/acs/access_control.js');
 const acsPortForwardHandler = require('./handlers/acs/port_forward.js');
 const acsDiagnosticsHandler = require('./handlers/acs/diagnostics.js');
 const acsMeshDeviceHandler = require('./handlers/acs/mesh.js');
@@ -18,6 +17,8 @@ const acsDeviceLogsHandler = require('./handlers/acs/logs.js');
 const acsConnDevicesHandler = require('./handlers/acs/connected_devices.js');
 const acsMeasuresHandler = require('./handlers/acs/measures.js');
 const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
+const macAccessControl = require('./handlers/acs/mac_access_control.js');
+const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const http = require('http');
 const t = require('./language').i18next.t;
@@ -1615,8 +1616,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       }
     }
     if (permissions.grantBlockDevices) {
-      console.log('Will update device Access Control Rules');
-      await acsAccessControlHandler.changeAcRules(device);
+      await acsDeviceInfoController.changeAcRules(device);
     }
   }
 };
@@ -1878,7 +1878,7 @@ acsDeviceInfoController.updateInfo = async function(
   // CPEs needs to reboot after change PPPoE parameters
   if (
     cpe.modelPermissions().wan.mustRebootAfterChanges &&
-    Object.entries(changes.wan).length > 0 &&
+    changes.wan && Object.entries(changes.wan).length > 0 &&
     (changes.wan.pppoe_user || changes.wan.pppoe_pass)
   ) {
     rebootAfterUpdate = true;
@@ -2063,6 +2063,21 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }
   return {success: true};
+};
+
+acsDeviceInfoController.changeAcRules = async function(device) {
+  const cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  if (cpe.modelPermissions().features.macAccessControl) {
+    return await macAccessControl.changeAcRules(device);
+  } else if (cpe.modelPermissions().features.wlanAccessControl) {
+    return await wlanAccessControl.changeAcRules(device);
+  } else {
+    return {
+      success: false,
+      error_code: 'permissionDenied',
+      message: t('permissionDenied', {errorline: __line}),
+    };
+  }
 };
 
 module.exports = acsDeviceInfoController;
