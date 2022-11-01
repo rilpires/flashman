@@ -6,6 +6,10 @@ nokiaModel.identifier = {vendor: 'Nokia', model: 'G-2425G-A'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -106,6 +110,7 @@ nokiaModel.getModelFields = function() {
     'TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = fields.wan.vlan; // same key for DHCP and PPPoE vlan ID
 
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
