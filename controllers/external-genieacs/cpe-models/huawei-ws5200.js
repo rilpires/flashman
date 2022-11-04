@@ -6,6 +6,8 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'WS5200'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanMtu = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.traceroute = true;
