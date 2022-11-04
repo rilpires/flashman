@@ -6,6 +6,10 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F670L v9'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
@@ -70,8 +74,12 @@ multilaserModel.getModelFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_WLAN_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
