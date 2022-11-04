@@ -1401,6 +1401,7 @@ anlixDocumentReady.add(function() {
           let grantWifiBandEdit5 = device.permissions.grantWifiBandEdit5;
           let grantWifiBandAuto2 = device.permissions.grantWifiBandAuto2;
           let grantWifiBandAuto5 = device.permissions.grantWifiBandAuto5;
+          let grantWifiBandAuto5_160 = device.permissions.grantWifiBandAuto5_160;
           let grantWifi2ghzEdit = device.permissions.grantWifi2ghzEdit;
           let grantWifi5ghz = device.permissions.grantWifi5ghz;
           let grantWifiState = device.permissions.grantWifiState;
@@ -1445,6 +1446,11 @@ anlixDocumentReady.add(function() {
           // WAN and LAN Information
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
+
+          // Conditioning 5ghz auto text according to auto5 and auto5_160
+          // permissions
+          let autoText = (grantWifiBandAuto5 && grantWifiBandAuto5_160) ?
+            'Auto 20/40/80 MHz' : 'auto';
 
           let rowAttr = buildRowData(device, index);
           let statusClasses = buildStatusClasses(device);
@@ -2408,7 +2414,14 @@ anlixDocumentReady.add(function() {
                           (grantWifiBandAuto5 ?
                             '<option value="auto" ' +
                               '$REPLACE_SELECTED_BAND5_auto$>'+
-                              t('auto')+
+                              t(autoText)+
+                            '</option>' :
+                            ''
+                          )+
+                          (grantWifiBandAuto5_160 ?
+                            '<option value="auto160" ' +
+                              '$REPLACE_SELECTED_BAND5_auto$>'+
+                              t('Auto 20/40/80/160 MHz')+
                             '</option>' :
                             ''
                           )+
