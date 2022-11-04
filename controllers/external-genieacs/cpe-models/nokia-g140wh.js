@@ -18,6 +18,9 @@ nokiaModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 650;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
@@ -117,6 +120,8 @@ nokiaModel.getModelFields = function() {
     'TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
 
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
