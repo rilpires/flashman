@@ -56,16 +56,22 @@ meshHandlers.syncSlaveCustomConfig = function(slave, config) {
     slave.external_reference.kind = config.kind;
     slave.external_reference.data = config.data;
   }
-  if (('channel' in config) && (config.channel !== '') &&
-      ('channel5ghz' in config) && (config.channel5ghz !== '') &&
-      (slave.mesh_mode === 1) // Cable only
-  ) {
-    slave.wifi_channel = config.channel;
-    slave.wifi_channel_5ghz = config.channel5ghz;
+  // Only change channels that are sent - covers cases where slaves are not
+  // dual band. Changing the channel is only available for cable mesh
+  if (slave.mesh_mode === 1) {
+    if ('channel' in config && config.channel !== '') {
+      slave.wifi_channel = config.channel;
+    }
+    if ('channel5ghz' in config && config.channel5ghz !== '') {
+      slave.wifi_channel_5ghz = config.channel5ghz;
+    }
   }
-  if (('power' in config) && (config.power !== '') &&
-      ('power5ghz' in config) && (config.power5ghz !== '')) {
+  // Only change power settings that are sent - covers cases where slaves are
+  // not dual band. This can be freely adjusted for all mesh modes
+  if ('power' in config && config.power !== '') {
     slave.wifi_power = config.power;
+  }
+  if ('power5ghz' in config && config.power5ghz !== '') {
     slave.wifi_power_5ghz = config.power5ghz;
   }
 };
