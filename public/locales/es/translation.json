@@ -883,6 +883,7 @@
 	"insertValidDbmNumber": "Ingrese un número de dBm válido",
 	"opticalSignalRedAlertDbm": "Alerta roja de señal óptica (dBm)",
 	"opticalSignalElevatedRedAlertDbm": "Alerta roja de señal óptica alta (dBm)",
+	"ponSignalConfigAlsoApplyToApp": "La configuración de la señal óptica también se aplica a la App de Técnico (Android y Desktop)",
 	"disabledWanStepWillBePingTestToCpeGateway": "El paso a deshabilitar en la WAN será la prueba de ping realizada a la puerta de enlace del CPE",
 	"disabledFlashmanRegisterStepWillBeMqttsConnectionTest": "El paso para deshabilitar en el registro de Flashman incluye la prueba de una conexión MQTTS activa para los CPE que utilizan el firmware de Flashbox",
 	"speedTestExecution": "Ejecutando la prueba de velocidad",

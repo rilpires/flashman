@@ -550,11 +550,15 @@ deviceHandlers.processTracerouteTraps = function(device) {
     // Webhook results object
     let results = {};
     device.traceroute_results.map(function(e) {
+      let hops = util.deepCopyObject(e.hops);
+      hops.map(function(hop) {
+        if (hop._id) delete hop._id;
+      });
       results[e.address] = {
         all_hops_tested: e.all_hops_tested,
         reached_destination: e.reached_destination,
         tries_per_hop: e.tries_per_hop,
-        hops: e.hops,
+        hops: hops,
       };
     });
     // Customized webhook

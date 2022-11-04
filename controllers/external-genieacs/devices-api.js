@@ -163,7 +163,7 @@ const instantiateCPEByModel = function(
   } else if (['GONUAC001', 'GONUAC002'].includes(modelName)) {
     // Greatek Stavix
     result = {success: true, cpe: tr069Models.greatekStavixModel};
-  } else if (modelName === 'EG8145V5') {
+  } else if (['EG8145V5', 'EG8145V5-V2'].includes(modelName)) {
     // Huawei EG8145V5
     result = {success: true, cpe: tr069Models.huaweiEG8145V5Model};
   } else if (modelName === 'EG8145X6') {

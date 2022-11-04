@@ -6,7 +6,6 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'WS5200'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.traceroute = true;
   permissions.traceroute.protocol = 'ICMP';
