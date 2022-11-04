@@ -6,6 +6,8 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'EC220-G5 v2'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanMtu = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
