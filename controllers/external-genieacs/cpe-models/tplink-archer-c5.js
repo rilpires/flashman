@@ -6,6 +6,8 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'Archer C5 v4'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanMtu = true;
   permissions.features.firmwareUpgrade = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
