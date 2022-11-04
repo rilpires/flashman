@@ -15,6 +15,10 @@ tendaModel.modelPermissions = function() {
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48];
   permissions.wifi.bandRead2 = false;
   permissions.wifi.bandRead5 = false;
@@ -61,6 +65,8 @@ tendaModel.convertToDbm = function(power) {
 tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_TDTC_VLAN';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.1.X_TDTC_VLAN';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'WANGponInterfaceConfig.RXPower';
