@@ -6,6 +6,10 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'XC220-G3v'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
@@ -115,6 +119,8 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
