@@ -17,6 +17,8 @@ tendaModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 180;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanMtu = true;
   permissions.wifi.mustBeEnabledToConfigure = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
@@ -162,6 +164,8 @@ tendaModel.getModelFields = function() {
     '.1.X_CT-COM_ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
     '.2.X_CT-COM_ChannelWidth';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
 
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1'+
     '.WLANConfiguration.1.AssociatedDevice';
