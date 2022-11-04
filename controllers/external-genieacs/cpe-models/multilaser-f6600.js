@@ -6,6 +6,10 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
@@ -81,6 +85,12 @@ zteModel.getModelFields = function() {
     '.X_ZTE-COM_WlanStandard';
   fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
   fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
   fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.' +
