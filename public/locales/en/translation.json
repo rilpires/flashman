@@ -1046,5 +1046,8 @@
 	"updateSlaveDeviceTimeWarning": "The firmware update takes approximately 3 minutes for each CPE. This update will affect all {{slaveCount}} routers in the mesh network, and will take about {{slaveCount3}} minutes in total. No CPE should be turned off during this procedure. Inform your customer before proceeding.",
 	"updateDeviceMeshError": "The mesh network update process was interrupted. We do not recommend leaving mesh CPEs from the same network in different versions, so make sure this update resumes soon.",
 	"updateDeviceFirmwareErrorWithMAC": "There was an error downloading the firmware from CPE with MAC {{errorMac}}. Please try again or cancel the procedure.",
-	"portOpeningRebootAlert": "Careful! This model requires a reboot in order to apply port forward configuration changes."
+	"portOpeningRebootAlert": "Warning! This model requires a reboot in order to apply port forward configuration changes.",
+	"invalidFieldsMustBeInRange": "Invalid value. This field should be in range between {{min}} and {{max}}.",
+	"emptyField": "Field cannot be empty",
+	"wanAdvancedInformation": "Advanced WAN Information"
 }

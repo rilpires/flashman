@@ -85,6 +85,8 @@ let validateEditDevice = function(event) {
   let validateWifi5ghz = row.data('validate-wifi-5ghz');
   let validateWifiPower = row.data('validate-wifi-power');
   let validatePppoe = row.data('validatePppoe');
+  let validateWanMtu = row.data('validate-wan-mtu');
+  let validatewanVlan = row.data('validate-wan-vlan');
   let validateIpv6Enabled = row.data('validate-ipv6-enabled');
   let validateLan = row.data('validate-lan');
   let ipv6Enabled = (
@@ -93,6 +95,8 @@ let validateEditDevice = function(event) {
   let pppoeUser = $('#edit_pppoe_user-' + index.toString()).val();
   let pppoePassword = $('#edit_pppoe_pass-' + index.toString()).val();
   let pppoePassLength = row.data('minlengthPassPppoe');
+  let wanMtu = $('#edit_wan_mtu-' + index.toString()).val();
+  let wanVlan = $('#edit_wan_vlan-' + index.toString()).val();
   let lanSubnet = $('#edit_lan_subnet-' + index.toString()).val();
   let lanNetmask = $('#edit_lan_netmask-' + index.toString()).val();
   let ssid = $('#edit_wifi_ssid-' + index.toString()).val();
@@ -185,6 +189,8 @@ let validateEditDevice = function(event) {
     bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
     mesh_mode: {field: '#edit_meshMode-' + index.toString()},
     external_reference: {field: '#edit_external_reference-' + index.toString()},
+    wan_mtu: {field: '#edit_wan_mtu-' + index.toString()},
+    wan_vlan: {field: '#edit_wan_vlan-' + index.toString()},
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -207,6 +213,12 @@ let validateEditDevice = function(event) {
       genericValidate(pppoePassword, validator.validatePassword,
                       errors.pppoe_password, pppoePassLength);
     }
+  }
+  if (wanMtu && validateWanMtu) {
+    genericValidate(wanMtu, validator.validateMtu, errors.wan_mtu, pppoe);
+  }
+  if (wanVlan && validatewanVlan) {
+    genericValidate(wanVlan, validator.validateVlan, errors.wan_vlan);
   }
   if (validateWifi) {
     if (!isTR069 || password) {
@@ -308,6 +320,12 @@ let validateEditDevice = function(event) {
       data.content.pppoe_user = (pppoe) ? pppoeUser : '';
       data.content.pppoe_password = (pppoe) ? pppoePassword : '';
     }
+    if (validateWanMtu) {
+      data.content.wan_mtu = wanMtu;
+    }
+    if (validatewanVlan) {
+      data.content.wan_vlan = wanVlan;
+    }
     if (validateIpv6Enabled) {
       data.content.ipv6_enabled = ipv6Enabled;
     }
@@ -400,6 +418,8 @@ let validateEditDevice = function(event) {
             power5ghz: errors.power5ghz,
             mesh_mode: errors.mesh_mode,
             external_reference: errors.external_reference,
+            wan_mtu: errors.wan_mtu,
+            wan_vlan: errors.wan_vlan,
           };
           let errorMsgs = '';
           resp.errors.forEach(function(pair) {

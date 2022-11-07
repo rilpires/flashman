@@ -75,6 +75,10 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
+      allowEditWanMtu: false, // can edit wan mtu at flashman's wan tab
+      allowEditWanVlan: false, // can edit wan vlan at flashman's wan tab
+      allowReadWanMtu: true, // can read wan mtu at flashman's wan tab
+      allowReadWanVlan: false, // can read wan vlan at flashman's wan tab
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface

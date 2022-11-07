@@ -103,8 +103,10 @@ fiberhomeModel.getModelFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'X_FH_WANGponLinkConfig.VLANID';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.X_FH_WANGponLinkConfig.VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.X_FH_WANGponLinkConfig.VLANID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
