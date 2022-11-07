@@ -22,6 +22,10 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'Stavix G421RQ'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -136,6 +140,8 @@ greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
     'X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
