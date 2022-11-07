@@ -6,6 +6,10 @@ uneeModel.identifier = {vendor: 'UNEE', model: 'Stavix MPG421R'};
 
 uneeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
@@ -87,6 +91,9 @@ uneeModel.isAllowedWebadminUsername = function(name) {
 
 uneeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
