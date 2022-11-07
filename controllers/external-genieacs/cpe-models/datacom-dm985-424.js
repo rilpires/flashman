@@ -12,6 +12,10 @@ datacomModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
@@ -73,6 +77,10 @@ datacomModel.getModelFields = function() {
     'X_CT-COM_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.'+
     '*.InterfaceType';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+
