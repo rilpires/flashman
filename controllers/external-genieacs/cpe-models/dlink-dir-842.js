@@ -6,6 +6,7 @@ dlinkModel.identifier = {vendor: 'D-Link', model: 'DIR-842'};
 
 dlinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowReadWanMtu = true; // Can only read, can't edit
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
