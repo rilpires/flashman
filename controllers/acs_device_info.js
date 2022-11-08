@@ -308,6 +308,12 @@ const createRegistry = async function(req, cpe, permissions) {
   } else if (!hasPPPoE && data.wan.mtu && data.wan.mtu.value) {
     wanMtu = data.wan.mtu.value;
   }
+  let wanVlan;
+  if (hasPPPoE && data.wan.vlan_ppp && data.wan.vlan_ppp.value) {
+    wanVlan = data.wan.vlan_ppp.value;
+  } else if (!hasPPPoE && data.wan.vlan && data.wan.vlan.value) {
+    wanVlan = data.wan.vlan.value;
+  }
 
   // Collect WAN max transmit rate, if available
   let wanRate;
@@ -383,8 +389,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
-    wan_vlan_id: (data.wan.vlan && data.wan.vlan.value) ?
-      data.wan.vlan.value : undefined,
+    wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
     wifi_ssid: ssid,
     wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
@@ -612,6 +617,10 @@ acsDeviceInfoController.requestSync = async function(device) {
     dataToFetch.vlan = true;
     parameterNames.push(fields.wan.vlan);
   }
+  if (fields.wan.vlan_ppp) {
+    dataToFetch.vlan_ppp = true;
+    parameterNames.push(fields.wan.vlan_ppp);
+  }
   // WAN bytes and PON signal fields
   dataToFetch.bytes = true;
   parameterNames.push(fields.wan.recv_bytes);
@@ -818,6 +827,11 @@ const fetchSyncResult = async function(
       if (dataToFetch.vlan) {
         acsData.wan.vlan = getFieldFromGenieData(
           data, fields.wan.vlan, useLastIndexOnWildcard,
+        );
+      }
+      if (dataToFetch.vlan_ppp) {
+        acsData.wan.vlan_ppp = getFieldFromGenieData(
+          data, fields.wan.vlan_ppp, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.bytes) {
@@ -1162,6 +1176,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.mtu_ppp && data.wan.mtu_ppp.value) {
       device.wan_mtu = data.wan.mtu_ppp.value;
     }
+    if (data.wan.vlan_ppp && data.wan.vlan_ppp.value) {
+      device.wan_vlan_id = data.wan.vlan_ppp.value;
+    }
   } else if (hasPPPoE === false) {
     // Only have to process fields like IP, uptime and MTU
     if (data.wan.wan_ip && data.wan.wan_ip.value) {
@@ -1177,15 +1194,15 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.mtu && data.wan.mtu.value) {
       device.wan_mtu = data.wan.mtu.value;
     }
+    if (data.wan.vlan && data.wan.vlan.value) {
+      device.wan_vlan_id = data.wan.vlan.value;
+    }
     device.pppoe_user = '';
     device.pppoe_password = '';
   }
 
-  // VLAN, Rate and Duplex WAN fields are processed separately, since connection
+  // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
-  if (data.wan.vlan && data.wan.vlan.value) {
-    device.wan_vlan_id = data.wan.vlan.value;
-  }
   if (data.wan.rate && data.wan.rate.value) {
     device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }

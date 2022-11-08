@@ -1818,6 +1818,10 @@ const convertTR069Permissions = function(cpePermissions) {
     grantMeshV2HardcodedBssid: cpePermissions.mesh.hardcodedBSSIDOffset,
     grantMeshVAPObject: cpePermissions.mesh.objectExists,
     grantUpdateAck: false,
+    grantWanMtuEdit: cpePermissions.wan.allowEditWanMtu,
+    grantWanVlanEdit: cpePermissions.wan.allowEditWanVlan,
+    grantWanMtuRead: cpePermissions.wan.allowReadWanMtu,
+    grantWanVlanRead: cpePermissions.wan.allowReadWanVlan,
     grantWpsFunction: false,
     grantSTUN: cpePermissions.features.stun,
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
@@ -1919,8 +1923,12 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   result.grantSTUN = hasSTUNSupport(model);
-  result.grantWiFiAXSupport = grantWiFiAXSupport(model);
+  result.grantWanMtuEdit = false;
+  result.grantWanVlanEdit = false;
+  result.grantWanMtuRead = false;
+  result.grantWanVlanRead = false;
   result.grantWanLanInformation = grantWanLanInformation(version);
+  result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   result.grantTraceroute = grantTraceroute(version);
   result.grantRebootAfterWANChange = grantRebootAfterWANChange();
   return result;

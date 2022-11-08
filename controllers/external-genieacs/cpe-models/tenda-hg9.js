@@ -62,6 +62,8 @@ tendaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.1.X_TDTC_VLAN';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_TDTC_VLAN';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'WANGponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
