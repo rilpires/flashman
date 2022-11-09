@@ -883,6 +883,7 @@
 	"insertValidDbmNumber": "Insira um número em dBm válido",
 	"opticalSignalRedAlertDbm": "Alerta vermelho do sinal óptico (dBm)",
 	"opticalSignalElevatedRedAlertDbm": "Alerta vermelho do sinal óptico elevado (dBm)",
+	"ponSignalConfigAlsoApplyToApp": "As configurações de sinal óptico também valem para o App do Técnico (Android e Desktop)",
 	"disabledWanStepWillBePingTestToCpeGateway": "A etapa a ser desabilitada na WAN será o teste de ping feito para o gateway do CPE",
 	"disabledFlashmanRegisterStepWillBeMqttsConnectionTest": "A etapa a ser desabilitada no registro do Flashman abrange o teste de existência de uma conexão MQTTS ativa para CPEs que utilizem o firmware Flashbox",
 	"speedTestExecution": "Execução do teste de velocidade",
@@ -1053,5 +1054,8 @@
 	"updateSlaveDeviceTimeWarning": "A atualização de firmware dura aproximadamente 3 minutos para cada CPE. Esta atualização afetará todos os {{slaveCount}} roteadores da rede mesh, e durará cerca de {{slaveCount3}} minutos no total. Nenhum CPE deverá ser desligado durante esse procedimento. Comunique seu cliente antes de prosseguir.",
 	"updateDeviceMeshError": "O processo de atualização da rede mesh foi interrompido. Não recomendamos deixar os CPEs mesh da mesma rede em versões diferentes, portanto certifique-se que esta atualização seja retomada em breve.",
 	"updateDeviceFirmwareErrorWithMAC": "Houve um erro ao realizar a transferência do firmware do CPE com o MAC {{errorMac}}. Por favor tente novamente ou cancele o procedimento.",
-	"portOpeningRebootAlert": "Atenção! Este modelo precisa reiniciar para aplicar as alterações de abertura de portas."
+	"portOpeningRebootAlert": "Atenção! Este modelo precisa reiniciar para aplicar as alterações de abertura de portas.",
+	"invalidFieldsMustBeInRange": "Campo inválido. Este campo deve estar entre {{min}} e {{max}}.",
+	"emptyField": "O campo não pode estar vazio",
+	"wanAdvancedInformation": "Informações Avançadas da WAN"
 }

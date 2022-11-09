@@ -1812,34 +1812,30 @@ anlixDocumentReady.add(function() {
               device.connection_type.toUpperCase() !== 'PPPOE');
             let max = (isIPoE) ? 1500 : 1492;
             mtuForm =
-            '<div class="col-4">'+
-              '<div class="md-form input-entry">'+
-                '<label class="active">'+'MTU'+'</label>'+
-                '<input id="edit_wan_mtu-'+index+'" '+
-                  'class="form-control" type="number" '+
-                  'max='+max+' min=1 '+
-                  'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
-                  (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
-                '</input>'+
-                '<div class="invalid-feedback"></div>'+
-              '</div>'+
+            '<div class="md-form input-entry">'+
+              '<label class="active">'+'MTU'+'</label>'+
+              '<input id="edit_wan_mtu-'+index+'" '+
+                'class="form-control" type="number" '+
+                'max='+max+' min=1 '+
+                'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
+                (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
+              '</input>'+
+              '<div class="invalid-feedback"></div>'+
             '</div>';
           }
 
           let vlanForm = '';
           if (grantWanVlanRead) {
             vlanForm =
-            '<div class="col-4">'+
-              '<div class="md-form input-entry">'+
-                '<label class="active">'+'VLAN'+'</label>'+
-                '<input id="edit_wan_vlan-'+index+'" '+
-                  'class="form-control" type="number" '+
-                  'max=4094 min=1 '+
-                  'value='+((device.wan_vlan_id) ? device.wan_vlan_id : '')+' '+
-                  (grantWanVlanEdit ? 'active' : 'disabled')+'>'+
-                '</input>'+
-                '<div class="invalid-feedback"></div>'+
-              '</div>'+
+            '<div class="md-form input-entry">'+
+              '<label class="active">'+'VLAN'+'</label>'+
+              '<input id="edit_wan_vlan-'+index+'" '+
+                'class="form-control" type="number" '+
+                'max=4094 min=1 '+
+                'value='+((device.wan_vlan_id) ? device.wan_vlan_id : '')+' '+
+                (grantWanVlanEdit ? 'active' : 'disabled')+'>'+
+              '</input>'+
+              '<div class="invalid-feedback"></div>'+
             '</div>';
           }
 
@@ -1897,19 +1893,8 @@ anlixDocumentReady.add(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
-                (isTR069 ?
-                  '<div class="md-form input-entry">'+
-                    '<label class="active">'+
-                      t('opticalSignalIntensity')+
-                    '</label>'+
-                    '<input class="form-control" type="text" maxlength="3" '+
-                    'value="'+
-                    ((ponRXPower) ? ponRXPower + ' dBm' : t('notAvailable'))+
-                    '" disabled></input>'+
-                    '<div class="invalid-feedback"></div>'+
-                  '</div>':
-                  ''
-                )+
+                (grantDeviceWanMtuRead ? mtuForm : '')+
+                (grantDeviceWanVlanRead ? vlanForm : '')+
                 '<div class="custom-control custom-checkbox" '+
                   '$REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" '+
@@ -1943,18 +1928,24 @@ anlixDocumentReady.add(function() {
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (isTR069 ?
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">'+
+                      t('opticalSignalIntensity')+
+                    '</label>'+
+                    '<input class="form-control" type="text" maxlength="3" '+
+                    'value="'+
+                    ((ponRXPower) ? ponRXPower + ' dBm' : t('notAvailable'))+
+                    '" disabled></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>':
+                  ''
+                )+
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
-            ((grantDeviceWanMtuRead || grantDeviceWanVlanRead) ?
-              '<div class="row">'+
-                mtuForm+
-                vlanForm+
-              '</div>' :
-              ''
-            )+
             '<div class="row">'+
-              '<div class="col-8">'+
+              '<div class="col-12">'+
                 (grantRebootAfterWANChange ?
                   '<div class="alert alert-info">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+

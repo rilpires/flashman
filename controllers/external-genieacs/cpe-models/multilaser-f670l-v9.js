@@ -16,6 +16,9 @@ multilaserModel.modelPermissions = function() {
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.siteSurvey.requiresPolling = true;
+  permissions.siteSurvey.survey2Index = '1';
+  permissions.siteSurvey.survey5Index = '2';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 300;
@@ -66,6 +69,8 @@ multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig',
   );
@@ -76,8 +81,6 @@ multilaserModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_VLANID';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
-  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_WLAN_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +

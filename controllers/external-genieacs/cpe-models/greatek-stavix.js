@@ -136,8 +136,8 @@ greatekModel.convertRssiValue = function(rssiValue) {
 
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +

@@ -46,7 +46,7 @@ let roleSchema = new mongoose.Schema({
   grantFirmwareBetaUpgrade: {type: Boolean, default: false},
   grantFirmwareRestrictedUpgrade: {type: Boolean, default: false},
   grantSlaveDisassociate: {type: Boolean, required: true, default: false},
-  grantWanAdvancedInfo: {type: Number, required: true, default: 0},
+  grantWanAdvancedInfo: {type: Number, required: true, default: 1},
 });
 
 // Hooks traps notifications

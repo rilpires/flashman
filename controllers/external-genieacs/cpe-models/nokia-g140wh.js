@@ -118,11 +118,10 @@ nokiaModel.getModelFields = function() {
     'RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
     'TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
-
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';

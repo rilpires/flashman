@@ -119,6 +119,8 @@ nokiaModel.getModelFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CMCC_GponInterfaceConfig.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
   fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';

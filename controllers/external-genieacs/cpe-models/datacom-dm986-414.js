@@ -78,8 +78,10 @@ datacomModel.convertWifiBandToFlashman = function(band, isAC) {
 
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_WebUserInfo.UserPassword';
   fields.port_mapping_fields.external_port_end = [

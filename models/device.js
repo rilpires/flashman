@@ -334,6 +334,7 @@ let deviceSchema = new Schema({
     address: {type: String, default: '---'},
     tries_per_hop: {type: Number, default: 0},
     hops: [{
+      hop_index: {type: Number, default: 1},
       ip: {type: String, default: '---'},
       ms_values: [String],
     }],
