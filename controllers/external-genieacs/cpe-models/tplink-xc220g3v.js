@@ -6,14 +6,12 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'XC220-G3v'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.siteSurvey = true;

@@ -6,15 +6,15 @@ fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6245D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = false;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = false;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
+  permissions.wan.allowReadWanMtu = false;
+  permissions.wan.allowEditWanMtu = false;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

@@ -6,10 +6,6 @@ nokiaModel.identifier = {vendor: 'Nokia', model: 'G-1425G-A'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
@@ -19,6 +15,8 @@ nokiaModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 750;

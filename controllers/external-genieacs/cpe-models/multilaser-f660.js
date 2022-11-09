@@ -6,10 +6,6 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F660'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
@@ -17,6 +13,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.dualBand = false;

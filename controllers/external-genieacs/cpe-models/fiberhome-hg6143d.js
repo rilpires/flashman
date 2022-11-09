@@ -6,10 +6,6 @@ fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6143D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
@@ -20,6 +16,8 @@ fiberhomeModel.modelPermissions = function() {
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Complete';
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 700;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

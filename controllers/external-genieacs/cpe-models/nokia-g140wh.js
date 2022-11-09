@@ -15,12 +15,12 @@ nokiaModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.allowEditWanMtu = false;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 650;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];

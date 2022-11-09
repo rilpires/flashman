@@ -12,13 +12,11 @@ tendaModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48];
   permissions.wifi.bandRead2 = false;
   permissions.wifi.bandRead5 = false;

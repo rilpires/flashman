@@ -6,8 +6,6 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowReadWanMtu = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;

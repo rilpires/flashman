@@ -14,13 +14,11 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 300;
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.configWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;

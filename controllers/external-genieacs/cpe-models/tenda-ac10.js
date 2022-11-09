@@ -17,8 +17,6 @@ tendaModel.modelPermissions = function() {
   permissions.wan.speedTestLimit = 180;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowReadWanMtu = true;
   permissions.wifi.mustBeEnabledToConfigure = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;

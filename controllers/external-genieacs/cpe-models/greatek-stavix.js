@@ -22,10 +22,6 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'Stavix G421RQ'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
-  permissions.wan.allowEditWanVlan = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
@@ -34,6 +30,8 @@ greatekModel.modelPermissions = function() {
   permissions.mesh.setEncryptionForCable = true;
   permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 250;

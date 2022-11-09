@@ -6,16 +6,14 @@ uneeModel.identifier = {vendor: 'UNEE', model: 'Stavix MPG421R'};
 
 uneeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
-  permissions.wan.allowEditWanVlan = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,

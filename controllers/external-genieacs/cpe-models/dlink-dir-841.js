@@ -6,10 +6,10 @@ dlinkModel.identifier = {vendor: 'D-Link', model: 'DIR-841'};
 
 dlinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowReadWanMtu = true; // Can only read, can't edit
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
+  permissions.wan.allowEditWanMtu = false; // Can only read, can't edit
   permissions.wan.speedTestLimit = 180;
   permissions.firmwareUpgrades = {
     '3.0.4': [],

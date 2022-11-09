@@ -6,10 +6,6 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.wan.allowEditWanMtu = true;
-  permissions.wan.allowEditWanVlan = true;
-  permissions.wan.allowReadWanMtu = true;
-  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
@@ -22,6 +18,8 @@ zteModel.modelPermissions = function() {
   permissions.siteSurvey.survey5Index = '2';
   permissions.traceroute.maxProbesPerHop = 3;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
