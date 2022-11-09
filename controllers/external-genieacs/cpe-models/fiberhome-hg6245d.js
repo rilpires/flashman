@@ -6,6 +6,10 @@ fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6245D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = false;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = false;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
@@ -105,6 +109,7 @@ fiberhomeModel.getModelFields = function() {
   );
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'X_FH_WANGponLinkConfig.VLANID';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
