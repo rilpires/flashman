@@ -29,6 +29,8 @@ greatekModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Complete';
+  permissions.wan.allowReadWanMtu = false;
+  permissions.wan.allowEditWanMtu = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.portForwardQueueTasks = true;
