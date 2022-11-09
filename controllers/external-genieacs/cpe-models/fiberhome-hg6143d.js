@@ -6,6 +6,10 @@ fiberhomeModel.identifier = {vendor: 'Fiberhome', model: 'HG6143D'};
 
 fiberhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.wan.allowEditWanMtu = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.allowReadWanMtu = true;
+  permissions.wan.allowReadWanVlan = true;
   permissions.features.customAppPassword = false;
   permissions.features.meshWifi = true;
   permissions.features.ponSignal = true;
@@ -102,8 +106,9 @@ fiberhomeModel.getModelFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_FH_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_FH_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_FH_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
