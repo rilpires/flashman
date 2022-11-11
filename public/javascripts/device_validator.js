@@ -332,15 +332,17 @@
     Validator.prototype.validateMtu = function(mtuField, isPPPoE) {
       if (mtuField) {
         try {
-          let mtuValue = parseInt(mtuField);
-          let max = (isPPPoE) ? 1492 : 1500;
-          if (mtuValue >= 1 && mtuValue <= max) return {valid: true};
-          else {
-            return {
-              valid: false,
-              err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
-            };
-          }
+          let mtuValue = Number(mtuField);
+          if (Number.isInteger(mtuValue)) {
+            let max = (isPPPoE) ? 1492 : 1500;
+            if (mtuValue >= 576 && mtuValue <= max) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
         } catch (e) {
           return {valid: false, err: [t('errorOccurred')]};
         }

@@ -1831,7 +1831,7 @@ anlixDocumentReady.add(function() {
               '<label class="active">'+'VLAN'+'</label>'+
               '<input id="edit_wan_vlan-'+index+'" '+
                 'class="form-control" type="number" '+
-                'max=4094 min=1 '+
+                'max=4094 min=576 '+
                 'value='+((device.wan_vlan_id) ? device.wan_vlan_id : '')+' '+
                 (grantWanVlanEdit ? 'active' : 'disabled')+'>'+
               '</input>'+
