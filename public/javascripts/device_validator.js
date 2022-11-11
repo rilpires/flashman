@@ -325,6 +325,10 @@
       return isOnRange && isIpFormatCorrect;
     };
 
+    /* RFC 791: in IPv4 the minimum datagram size is 576.
+      RFC 8200: in IPv6 the minimum datagram size is 1280.
+      RFC 894: In Ethernet the maximum datagram size is 1500.
+      RFC 2516: In PPPoE the maximum datagram size is 1492. */
     Validator.prototype.validateMtu = function(mtuField, isPPPoE) {
       if (mtuField) {
         try {
@@ -343,6 +347,7 @@
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    /* RFC 2674: VLAN values is between 1 and 4094 */
     Validator.prototype.validateVlan = function(vlanField) {
       if (vlanField) {
         try {
