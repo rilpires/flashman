@@ -351,14 +351,16 @@
     Validator.prototype.validateVlan = function(vlanField) {
       if (vlanField) {
         try {
-          let vlanValue = parseInt(vlanField);
-          if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
-          else {
-            return {
-              valid: false,
-              err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
-            };
-          }
+          let vlanValue = Number(vlanField);
+          if (Number.isInteger(vlanValue)) {
+            if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
         } catch (e) {
           return {valid: false, err: [t('errorOccurred')]};
         }
