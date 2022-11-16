@@ -2,6 +2,12 @@ let basicCPEModel = {};
 
 // These should not be copied over to each model, only referenced
 basicCPEModel.portForwardPermissions = {
+  noAsymNoRanges: {
+    simpleSymmetric: true,
+    simpleAsymmetric: false,
+    rangeSymmetric: false,
+    rangeAsymmetric: false,
+  },
   noRanges: {
    simpleSymmetric: true,
    simpleAsymmetric: true,
