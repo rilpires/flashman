@@ -2,10 +2,14 @@ require('../../bin/globals.js');
 const Validator = require('../../public/javascripts/device_validator');
 
 describe('Validate functions used both in front and back end)', () => {
-  /*  mtuField(9) - int valid, int invalid 1, int invalid 2, float,
+  /*
+    input:
+      mtuField(9) - int valid, int invalid 1, int invalid 2, float,
       int string, float string, random string, undefined, null
       isPPPoE(2) - true, false
-      total tests = 11 */
+    output:
+      result - true, false
+    total tests = 11 */
   test('validateMtu: mtuField(int valid), isPPPoE(true)', () => {
     let validator = new Validator();
     let mtuField = 1492;
@@ -87,10 +91,14 @@ describe('Validate functions used both in front and back end)', () => {
     expect(result).toHaveProperty('valid');
     expect(result.valid).toBe(true);
   });
-  /*  vlanField(9) - int valid, int invalid 1,
+  /*
+    input:
+      vlanField(9) - int valid, int invalid 1,
       int invalid 2, float, int string, float string,
       random string, undefined, null
-      total tests = 9 */
+    output:
+      result - true, false
+    total tests = 9 */
   test('validateVlan: vlanField(int valid)', () => {
     let validator = new Validator();
     let vlanField = 23;
