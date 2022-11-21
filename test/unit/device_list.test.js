@@ -7,6 +7,8 @@ const deviceListController = require('../../controllers/device_list');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
+const UserModel = require('../../models/user');
+const FirmwareModel = require('../../models/firmware');
 const utils = require('../utils');
 const t = require('../../controllers/language').i18next.t;
 
@@ -93,7 +95,7 @@ describe('Controllers - Device List', () => {
                 errors : []}),
         [x] - ({success: false, message: t('notEnoughPermissionsForFields'),
                 errors : []}),
-        [o] - ({success: false, message: t('cpeSaveError'), errors : []}),
+        [x] - ({success: false, message: t('cpeSaveError'), errors : []}),
         [ ] - ({[ -- matchedDevice --]}),
         [x] - ({success: false, message: t('fieldsInvalidCheckErrors'),
                 errors : {pppoe_user: ''}}),
@@ -266,9 +268,6 @@ describe('Controllers - Device List', () => {
         return deviceMock;
       }
     };
-    const returnDeviceSaveMock = (query) => {
-      throw new Error('test');
-    };
     const configMock = {
       is_default: true,
       tr069: undefined,
@@ -314,7 +313,6 @@ describe('Controllers - Device List', () => {
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
       .toMatch(tt(t('cpeSaveError', {errorline: __line})));
-    expect(res.json.mock.lastCall[0].errors.length).toBe(0);
   });
 
   test('setDeviceReg: Enabled to modify fields', async () => {
