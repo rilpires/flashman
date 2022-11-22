@@ -322,8 +322,8 @@ let deviceSchema = new Schema({
   },
   // They are expressed in percentage, without %
   // The value of 101 is invalid, used to represent a not setted state
-  cpu_usage: {type: Number, min: 0, max: 101, default: 101},
-  memory_usage: {type: Number, min: 0, max: 101, default: 101},
+  // cpu_usage: {type: Number, min: 0, max: 101, default: 101},
+  // memory_usage: {type: Number, min: 0, max: 101, default: 101},
   resources_usage: {
     cpu_usage: {type: Number, min: 0, max: 101, default: 101},
     memory_usage: {type: Number, min: 0, max: 101, default: 101},
