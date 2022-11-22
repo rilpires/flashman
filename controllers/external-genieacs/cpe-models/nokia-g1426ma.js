@@ -10,7 +10,8 @@ nokiaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
-  permissions.wan.speedTestLimit = 1000;
+  permissions.wan.speedTestLimit = 930;
+  permissions.wan.speedTestSetInterface = true;
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -132,6 +133,7 @@ nokiaModel.getModelFields = function() {
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
   fields.port_mapping_values.protocol[1] = 'TCP';
+  fields.port_mapping_values.remote_host[1] = '';
   return fields;
 };
 
