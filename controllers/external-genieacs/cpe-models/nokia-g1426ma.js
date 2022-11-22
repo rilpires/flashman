@@ -29,6 +29,21 @@ nokiaModel.modelPermissions = function() {
   return permissions;
 };
 
+// 2.4Ghz modes:
+// ax: ax
+// b,g,n: b,g,n
+// b,g: b,g
+// g,n: g,n
+// b: b
+// g: g
+// n: n
+
+// 5Ghz modes:
+// ax: ax
+// ac: ac
+// a: a
+// n,a: n,a
+
 nokiaModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
@@ -36,14 +51,26 @@ nokiaModel.convertWifiMode = function(mode) {
     case '11n':
       return 'b,g,n';
     case '11na':
-      return 'a,n';
+      return 'n,a';
     case '11ac':
-      return 'a,n,ac';
+      return 'ac';
     case '11ax':
+      return 'ax';
     default:
       return '';
   }
 };
+
+// 2.4Ghz band:
+// 0: 20MHz
+// 1: 40MHz
+// 2: 20/40MHz
+
+// 5Ghz band:
+// 0: 20MHz
+// 1: 40MHz
+// 2: 20/40MHz auto
+// 3: 20/40/80MHz auto
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
@@ -124,6 +151,12 @@ nokiaModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+  fields.wifi2.band = fields.wifi2.band.replace(
+    /BandWidth/g, 'X_CMCC_ChannelWidth',
+  );
+  fields.wifi5.band = fields.wifi5.band.replace(
+    /BandWidth/g, 'X_CMCC_ChannelWidth',
+  );
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
@@ -132,6 +165,10 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
   fields.port_mapping_values.protocol[1] = 'TCP';
   fields.port_mapping_values.remote_host[1] = '';
   return fields;
