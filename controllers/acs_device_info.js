@@ -21,6 +21,7 @@ const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const http = require('http');
+const redis = require('../redis')
 const t = require('./language').i18next.t;
 
 
@@ -418,7 +419,10 @@ const createRegistry = async function(req, cpe, permissions) {
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
     created_at: Date.now(),
-    last_contact: Date.now(),
+    cpe_status: {
+      status: 1,
+      last_status_change: Date.now()
+    }, 
     last_tr069_sync: Date.now(),
     isSsidPrefixEnabled: isSsidPrefixEnabled,
     web_admin_username: webAdminUser,
@@ -517,7 +521,9 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       message: t('nonTr069AcsSyncError', {errorline: __line}),
     });
   }
-  device.last_contact = dateNow;
+
+  await redis.contactedCPE(device);
+
   // Devices recovering from hard reset or upgrading their firmware need to go
   // through an immediate full sync
   if (device.do_update || device.recovering_tr069_reset) {
@@ -1571,7 +1577,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Update last contact and sync dates
   let now = Date.now();
-  device.last_contact = now;
+  await redis.contactedCPE(device);
   device.last_tr069_sync = now;
   let previousDaily = device.last_contact_daily;
   let doDailySync = false;

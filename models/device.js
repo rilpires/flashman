@@ -205,6 +205,13 @@ let deviceSchema = new Schema({
   last_contact: Date,
   last_contact_daily: Date,
   last_hardreset: Date,
+  cpe_status: {
+    status: { type: Number, default: 0, enum: [
+      0, // offline
+      1, // online
+    ]},
+    last_status_change: {type: Date, default: Date.now},
+  },
   do_update: Boolean,
   do_update_parameters: Boolean,
   do_update_status: {
