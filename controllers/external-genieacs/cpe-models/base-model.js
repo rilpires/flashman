@@ -154,7 +154,6 @@ basicCPEModel.modelPermissions = function() {
       hopCountExceededState: 'Error_MaxHopCountExceeded',
       ipv6HasPriority: false,
       protocol: 'UDP',
-      dataBlockSizeToSet: NaN, // If NaN, use default value
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
