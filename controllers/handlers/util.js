@@ -2,7 +2,7 @@
 /* global __line */
 
 const t = require('../language').i18next.t;
-const certman = require('../controllers/external-api/certman');
+const certman = require('../external-api/certman');
 const fs = require('fs');
 
 let utilHandlers = {};
