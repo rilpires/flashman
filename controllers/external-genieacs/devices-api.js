@@ -8,7 +8,7 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 // DO NOT CHANGE THIS VARIABLE WITHOUT ALSO CHANGING THE COMMAND THAT ALTERS IT
 // IN CONTROLLERS/UPDATE_FLASHMAN.JS! THIS LINE IS ALTERED AUTOMATICALLY WHEN
 // FLASHMAN IS RESTARTED FOR ANY REASON
-const INSTANCES_COUNT = 8;
+const INSTANCES_COUNT = 1;
 /* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
  environment.genieacs.json or in shell environment with the same value
  that is in environment.config.json */
