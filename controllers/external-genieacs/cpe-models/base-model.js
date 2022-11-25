@@ -2,6 +2,12 @@ let basicCPEModel = {};
 
 // These should not be copied over to each model, only referenced
 basicCPEModel.portForwardPermissions = {
+  noAsymNoRanges: {
+    simpleSymmetric: true,
+    simpleAsymmetric: false,
+    rangeSymmetric: false,
+    rangeAsymmetric: false,
+  },
   noRanges: {
    simpleSymmetric: true,
    simpleAsymmetric: true,
@@ -134,10 +140,6 @@ basicCPEModel.modelPermissions = function() {
       * - hopCountExceededState:
       *     The 'DiagnosticsState' value that appears when traceroute hops
       *     wasnt enough.
-      * - ipv6HasPriority:
-      *     This model will traceroute by IPv6 when available. Some models
-      *     will simply not complete when IPv6 link is not up against an IPv6
-      *     solved hostname.
       * - protocol:
       *     Although we prioritize ICMP when available, UDP is most likely
       *     the only protocol supported
@@ -146,9 +148,7 @@ basicCPEModel.modelPermissions = function() {
       minProbesPerHop: 1,
       completeAsRequested: false,
       hopCountExceededState: 'Error_MaxHopCountExceeded',
-      ipv6HasPriority: false,
       protocol: 'UDP',
-      dataBlockSizeToSet: NaN, // If NaN, use default value
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
