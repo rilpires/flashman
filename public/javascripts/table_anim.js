@@ -3689,14 +3689,17 @@ anlixDocumentReady.add(function() {
 
   $(document).on('click', '#online-status-sum', function(event) {
     $('.tags-input input').focus().val(t('online')).blur();
+    $('#devices-search-form').submit();
     loadDevicesTable(1, t('online'));
   });
   $(document).on('click', '#recovery-status-sum', function(event) {
     $('.tags-input input').focus().val(t('unstable')).blur();
+    $('#devices-search-form').submit();
     loadDevicesTable(1, t('unstable'));
   });
   $(document).on('click', '#offline-status-sum', function(event) {
     $('.tags-input input').focus().val(t('offline')).blur();
+    $('#devices-search-form').submit();
     loadDevicesTable(1, t('offline'));
   });
   // Table column sorts
