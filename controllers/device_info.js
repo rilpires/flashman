@@ -836,11 +836,11 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
 
         // Check if CPU and Memory came valid
         if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
-          deviceSetQuery.cpu_usage = cpuUsage;
+          deviceSetQuery.resources_usage.cpu_usage = cpuUsage;
         }
 
         if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
-          deviceSetQuery.memory_usage = memoryUsage;
+          deviceSetQuery.resources_usage.memory_usage = memoryUsage;
         }
 
         let sentWifiLastChannel =
@@ -2308,11 +2308,11 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
 
       // Check if CPU and Memory came valid
       if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
-        matchedDevice.cpu_usage = cpuUsage;
+        matchedDevice.resources_usage.cpu_usage = cpuUsage;
       }
 
       if (memoryUsage != 101 && memoryUsage >= 0 && memoryUsage <= 100) {
-        matchedDevice.memory_usage = memoryUsage;
+        matchedDevice.resources_usage.memory_usage = memoryUsage;
       }
     }
 

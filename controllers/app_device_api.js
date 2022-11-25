@@ -1447,10 +1447,12 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       {wifi_ssid: noPrefixTargetSSID},
       {wifi_ssid_5ghz: targetSSID},
       {wifi_ssid_5ghz: noPrefixTargetSSID},
-      {wifi_bssid: targetBSSID},
-      {wifi_bssid_5ghz: targetBSSID},
     ],
   };
+  if (typeof targetBSSID === 'string' && targetBSSID !== '') {
+    query['$or'].push({wifi_bssid: targetBSSID});
+    query['$or'].push({wifi_bssid_5ghz: targetBSSID});
+  }
   let projection = {
     _id: 1, acs_id: 1,
     model: 1, version: 1, hw_version: 1,

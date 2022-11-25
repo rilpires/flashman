@@ -226,7 +226,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
     result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
-  } else if (['G-140W-C', 'G-140W-CS', 'G-140W-UD'].includes(modelName)) {
+  } else if (
+    ['G-140W-C', 'G-140W-CS', 'G-140W-UD', 'G6-WIFI-001'].includes(modelName)
+  ) {
     // Nokia G-140W-C and family
     result = {success: true, cpe: tr069Models.nokiaG140WCModel};
   } else if (modelName === 'G-140W-H') {
