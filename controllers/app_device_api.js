@@ -1477,7 +1477,7 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       // information
       let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
       // Format data for app
-      let foundedDeviceResult = {
+      let deviceResult = {
         mac: device._id,
         model: cpe.identifier.model,
         vendor: cpe.identifier.vendor,
@@ -1485,12 +1485,12 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
         hardwareVer: device.hw_version,
       };
       if (configUser) {
-        foundedDeviceResult.customLogin = configUser;
+        deviceResult.customLogin = configUser;
       }
       if (configPassword) {
-        foundedDeviceResult.customPassword = configPassword;
+        deviceResult.customPassword = configPassword;
       }
-      return foundedDeviceResult;
+      return deviceResult;
     });
     return res.status(200).json({
       'secret': newSecret,
