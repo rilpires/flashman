@@ -2,6 +2,7 @@
 /* global __line */
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const SchedulerCommon = require('./update_scheduler_common');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
@@ -1060,7 +1061,13 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Both of these fields need to be in sync
     if (device.version !== device.installed_release) {
       device.installed_release = device.version;
+
+      // Tell the scheduler that it was updated
+      if (device.do_update === true) {
+        SchedulerCommon.successUpdate(device._id);
+      }
     }
+
     // Remove firmware update flags
     if (device.installed_release === device.release) {
       device.do_update = false;

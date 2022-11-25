@@ -1,8 +1,9 @@
 /* global __line */
 
-const SchedulerWatchdog = require('./update_scheduler_watchdog');
+const DevicesAPI = require('./external-genieacs/devices-api');
+const ACSFirmware = require('./handlers/acs/firmware');
+const SchedulerCommon = require('./update_scheduler_common');
 const DeviceModel = require('../models/device');
-const Config = require('../models/config');
 const Role = require('../models/role');
 const DeviceVersion = require('../models/device_version');
 const mqtt = require('../mqtts');
@@ -195,15 +196,42 @@ const markNextForUpdate = async function() {
   }
   let nextDevice = null;
 
+
+  // Steps needed to check if TR069 models are online
+  // Outside the for loop to avoid constantly read the database
+
+  // Get the threshold to still consider it online
+  let onlineThreshold = config.tr069.recovery_threshold;
+
+  // Get online TR069 models
+  let onlineTR069Devices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$gt: onlineThreshold},
+  }, {
+    acs_id: true,
+    model: true,
+  }).lean();
+
+  // Check if there is at least 1 router online
   for (let i = 0; i < devices.length; i++) {
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-      return map[devices[i].mac];
-    });
+    let isDevOn = false;
+    let onlineTR069 = onlineTR069Devices
+      .find((dev) => dev._id === devices[i].mac);
+
+    if (onlineTR069) {
+      isDevOn = true;
+    } else {
+      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+        return map[devices[i].mac];
+      });
+    }
     if (isDevOn) {
       nextDevice = devices[i];
       break;
     }
   }
+
+  // Is it online?
   if (!nextDevice) {
     // No online devices, mark them all as offline
     try {
@@ -217,10 +245,13 @@ const markNextForUpdate = async function() {
     console.log('Scheduler: No online devices to update');
     return {success: true, marked: false};
   }
+
   try {
     let device = await getDevice(nextDevice.mac);
     device.release = config.device_update_schedule.rule.release;
-    if (nextDevice.slave_count) {
+
+    // Mesh upgrade, only upgrade slaves if not TR069
+    if (nextDevice.slave_count && device.use_tr069 === false) {
       let nextState;
       const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
       if (isV1ToV2) {
@@ -247,16 +278,21 @@ const markNextForUpdate = async function() {
           },
         },
       );
+
       mutexRelease();
       console.log(
         'Scheduler: Mesh update scheduled for MAC ' + nextDevice.mac,
       );
+
       const meshUpdateStatus = await meshHandler.beginMeshUpdate(
         device,
       );
+
       if (!meshUpdateStatus.success) {
         throw new Error(t('updateStartFailedMeshNetwork'));
       }
+
+    // Normal upgrade
     } else {
       await SchedulerCommon.configQuery(
         null,
@@ -275,14 +311,24 @@ const markNextForUpdate = async function() {
           },
         },
       );
+
       mutexRelease();
       console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
+
       // Mark device for update
       device.do_update = true;
       device.do_update_status = 0;
       await device.save();
+
+      // Send message to update
       messaging.sendUpdateMessage(device);
-      mqtt.anlixMessageRouterUpdate(device._id);
+
+      if (device.use_tr069 === true) {
+        ACSFirmware.upgradeFirmware(device);
+      } else {
+        mqtt.anlixMessageRouterUpdate(device._id);
+      }
+
       // Start ack timeout
       deviceHandlers.timeoutUpdateAck(device._id, 'update');
     }
@@ -486,6 +532,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
       let devicesByModel = {};
+      let tr069Models = [];
       let meshNetworks = [];
       let onuCount = 0;
       let totalCount = 0;
@@ -497,17 +544,55 @@ scheduleController.getDevicesReleases = async function(req, res) {
         for (let i=0; i<matchedDevices.length; i++) {
           let device = matchedDevices[i];
           totalCount += 1;
-          let model = device.model.replace('N/', '');
+
+          let model = device.model;
+
+          // Only replace for firmware
+          if (device.use_tr069 === false) {
+            model = model.replace('N/', '');
+          }
+
+          // Check if there is any firmware for TR069
           if (device.use_tr069) {
+            // Get the TR069 device model name
+            let tr069Device = DevicesAPI.instantiateCPEByModelFromDevice(
+              device,
+            );
+            let tr069Model = tr069Device.cpe.identifier.model;
+
+            // Get firmware update permissions
+            let firmwarePermissions = tr069Device.cpe
+              .modelPermissions()
+              .firmwareUpgrades;
+
+            // Add the model to the Device list
+            if (!devicesByModel[tr069Model]) {
+              devicesByModel[tr069Model] = {
+                count: 1,
+                firmwares_allowed: firmwarePermissions[device.version],
+              };
+            } else {
+              devicesByModel[tr069Model].count += 1;
+            }
+
+            // Add to the list of tr069 models
+            tr069Models.push(tr069Model);
+
+            // Increment the onu count
             onuCount += 1 + (device.mesh_slaves ?
               device.mesh_slaves.length : 0);
+
+          // Check other cases for firmware and mesh
           } else if (!device.mesh_master && !(device.mesh_slaves
             && device.mesh_slaves.length > 0)) {
             // not a mesh device
             if (!devicesByModel[model]) {
-              devicesByModel[model] = 1;
+              devicesByModel[model] = {
+                count: 1,
+                firmwares_allowed: [],
+              };
             } else {
-              devicesByModel[model] += 1;
+              devicesByModel[model].count += 1;
             }
           } else if (device.mesh_slaves && device.mesh_slaves.length > 0) {
             const allowUpgrade = deviceHandlers.isUpgradePossible(device,
@@ -536,21 +621,47 @@ scheduleController.getDevicesReleases = async function(req, res) {
             });
           }
         }
+
+        // Check which routers can be updated
         releasesAvailable.forEach((release)=>{
+          const validModels = release.model;
+
           let count = 0;
+          let isTR069 = false;
           let meshIncompatibles = 0;
           let meshRolesIncompatibles = 0;
           let missingModels = [];
-          const validModels = release.model;
+
+          // Loop every release and check if it is for a TR069 router
+          validModels.forEach(function eachModel(model) {
+            if (tr069Models.includes(model)) {
+              isTR069 = true;
+            }
+          });
+
+          // Loop through devices
           if (devicesByModel && Object.keys(devicesByModel).length) {
             Object.keys(devicesByModel).forEach(function eachKey(model) {
-              if (validModels.includes(model)) {
-                count += devicesByModel[model];
+              // Verify if the model is in the update list
+              // For TR069, check if firmware is allowed
+              if (
+                validModels.includes(model) &&
+                isTR069 === true &&
+                devicesByModel[model].firmwares_allowed.includes(release.id)
+              ) {
+                count += devicesByModel[model].count;
+
+              // For Flashbox, just allow it if it is in update list
+              } else if (validModels.includes(model) && isTR069 === false) {
+                count += devicesByModel[model].count;
+
+              // Otherwise add to the missing list
               } else {
                 missingModels.push(model);
               }
             });
           }
+
           const releaseMeshVersion =
             DeviceVersion.versionCompare(release.flashbox_version, '0.32.0')
             < 0 ? 1 : 2;
@@ -589,6 +700,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
           releaseInfo.push({
             id: release.id,
             count: count,
+            isTR069: isTR069,
             meshIncompatibles: meshIncompatibles,
             meshRolesIncompatibles: meshRolesIncompatibles,
             missingModels: missingModels,
@@ -728,64 +840,115 @@ scheduleController.startSchedule = async function(req, res) {
         });
       }
       let modelsAvailable = matchedRelease.model;
+
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+
+      // Concatenate mesh siblings/master
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
       matchedDevices = matchedDevices.concat(extraDevices);
+
       matchedDevices = matchedDevices.filter((device)=>{
-        if (device.use_tr069) return false; // Discard TR-069 devices
-        if (device.mesh_master) return false; // Discard mesh slaves
-        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-          // Discard master if any slave has incompatible model
+        // Discard Mesh slaves
+        if (device.mesh_master) return false;
+
+        // Discard mesh if at least one cannot update
+        if (
+          device.mesh_slaves &&
+          device.mesh_slaves.length > 0 &&
+          device.use_tr069 === false
+        ) {
           let valid = true;
+
+          // Loop all mesh slaves for this mesh master
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
+
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+
+            // Check slave
             if (slaveDevice && ('model' in slaveDevice)) {
               let slaveModel = slaveDevice.model.replace('N/', '');
+
+              // Check if there is a firmware for this model
               valid = modelsAvailable.includes(slaveModel);
+
+              // Check if the upgrade can be done in this mesh
               const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
                 slaveDevice, matchedRelease.flashbox_version);
               if (!allowMeshUpgrade) valid = false;
             }
           });
+
           if (!valid) return false;
         }
-        const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
-          device, matchedRelease.flashbox_version);
-        if (!allowMeshUpgrade) return false;
-        let model = device.model.replace('N/', '');
+
+        let model = device.model;
+
+        // Only validate mesh master if it is Flashbox
+        if (device.use_tr069 === false) {
+          const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
+            device, matchedRelease.flashbox_version);
+          if (!allowMeshUpgrade) return false;
+
+          model.replace('N/', '');
+        }
+
+        // If TR069, use the model from ACS
+        if (device.use_tr069) {
+          // Get the TR069 device model name
+          model = DevicesAPI.instantiateCPEByModelFromDevice(
+            device,
+          ).cpe.identifier.model;
+        }
+
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of
            both model name and version. */
         return modelsAvailable.some(
           (modelAndVersion) => modelAndVersion.includes(model));
       });
+
+      // If there is no devices to update, return error
       if (matchedDevices.length === 0) {
         return res.status(500).json({
           success: false,
           message: t('parametersErrorNoCpe', {errorline: __line}),
         });
       }
+
       let slaveCount = {};
       let currentMeshVersion = {};
       let upgradeMeshVersion = {};
+
       let macList = matchedDevices.map((device)=>{
         if (device.mesh_slaves && device.mesh_slaves.length > 0) {
           slaveCount[device._id] = device.mesh_slaves.length;
         } else {
           slaveCount[device._id] = 0;
         }
-        const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
-          device.version, matchedRelease.flashbox_version);
+
+        // Get the firmware version V1 or V2
+        const typeUpgrade = (function getTypeUpgrade() {
+          if (device.use_tr069 === true) {
+            // TR069 will return versions as 0
+            return DeviceVersion.mapFirmwareUpgradeMesh('', '');
+          } else {
+            return DeviceVersion.mapFirmwareUpgradeMesh(
+              device.version, matchedRelease.flashbox_version);
+          }
+        })();
+
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
+
         return device._id;
       });
+
       // Save scheduler configs to database
       let config = null;
       try {
-        config = await getConfig(false, false);
+        config = await SchedulerCommon.getConfig(false, false);
         config.device_update_schedule.is_active = true;
         config.device_update_schedule.is_aborted = false;
         config.device_update_schedule.used_time_range = hasTimeRestriction;
