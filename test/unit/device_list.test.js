@@ -97,8 +97,10 @@ describe('Controllers - Device List', () => {
                 errors : []}),
         [x] - ({success: false, message: t('notEnoughPermissionsForFields'),
                 errors : []}),
+        [x] - Trying modify WAN and MTU values without permission
         [x] - ({success: false, message: t('cpeSaveError'), errors : []}),
         [x] - ({[ -- matchedDevice --]}),
+        [x] - modify WAN and MTU with success
         [x] - ({success: false, message: t('fieldsInvalidCheckErrors'),
                 errors : {pppoe_user: ''}}),
         [x] - ({success: false, message: t('fieldNameInvalid'), errors : []})
@@ -198,7 +200,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
@@ -248,7 +250,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
@@ -317,13 +319,12 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
       .toMatch(tt(t('errorSendingMeshParamtersToCpe', {errorline: __line})));
   });
-
 
   test('setDeviceReg: Ensure bssid collect error', async () => {
     const deviceMock = [{
@@ -393,7 +394,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 5111));
+    await new Promise((resolve)=>setTimeout(resolve, 4555));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].type).toBe('danger');
@@ -456,7 +457,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
@@ -533,11 +534,86 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(200);
     expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
     expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
     expect(res.json.mock.lastCall[0].wifi_ssid_5ghz).toBe('new-wifi-test-5g');
+  });
+
+  test('setDeviceReg: modify WAN and MTU with success', async () => {
+    const deviceMock = [{
+      _id: 'AB:AB:AB:AB:AB:AB',
+      version: '0.42.0',
+      model: 'test',
+      wifi_is_5ghz_capable: true,
+      mesh_mode: 0,
+      pppoe_password: 'dummypass',
+      wan_vlan_id: 1,
+      wan_mtu: 1500,
+    }];
+    const returnDeviceMock = (query) => {
+      if (query.getQuery()['$or'][0]._id['$regex']
+          .toString().includes(deviceMock[0]._id)) {
+        return deviceMock;
+      }
+    };
+    const configMock = {
+      is_default: true,
+      tr069: undefined,
+      certification: undefined,
+    };
+    const returnConfigMock = (query) => {
+      if (query.getQuery().is_default == configMock.is_default) {
+        return configMock;
+      } else {
+        return null;
+      }
+    };
+    const roleMock = {
+      name: 'tester',
+      grantWanAdvancedInfo: 2,
+    };
+    const returnRoleMock = (query) => {
+      if (query.getQuery().name == roleMock.name) {
+        return roleMock;
+      } else {
+        return null;
+      }
+    };
+    const returnModifiedDeviceMock = {};
+    mockingoose(DeviceModel).toReturn(returnDeviceMock, 'find');
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    mockingoose(RoleModel).toReturn(returnRoleMock, 'findOne');
+    mockingoose(DeviceModel).toReturn(returnModifiedDeviceMock, 'save');
+    acsDeviceInfo.updateInfo = function(a, b) {
+      return 'ok';
+    };
+    meshHandlers.syncSlaves = function(a, b) {
+      return 'ok';
+    };
+    const req = {
+      params: {
+        id: 'AB:AB:AB:AB:AB:AB',
+      },
+      body: {
+        content: {
+          wan_mtu: 1492,
+          wan_vlan: 2,
+        },
+      },
+      user: {
+        role: 'tester',
+      },
+    };
+    const res = utils.mockResponse();
+    // Test
+    await deviceListController.setDeviceReg(req, res);
+    await new Promise((resolve)=>setTimeout(resolve, 55));
+    expect(res.status).toHaveBeenCalledWith(200);
+    expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
+    expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
+    expect(res.json.mock.lastCall[0].wan_vlan_id).toBe(2);
   });
 
   test('setDeviceReg: Enabled to modify fields', async () => {
@@ -602,7 +678,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
@@ -667,7 +743,78 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
+    expect(res.status).toHaveBeenCalledWith(403);
+    expect(res.json.mock.lastCall[0].success).toBe(false);
+    expect(res.json.mock.lastCall[0].type).toBe('danger');
+    expect(res.json.mock.lastCall[0].message)
+      .toMatch(tt(t('notEnoughPermissionsForFields', {errorline: __line})));
+  });
+
+  test('setDeviceReg: Trying modify WAN'+
+    ' and MTU values without permission', async () => {
+    const deviceMock = [{
+      _id: 'AB:AB:AB:AB:AB:AB',
+      version: '0.40.0',
+      model: 'W5-1200FV1',
+      wifi_is_5ghz_capable: true,
+      mesh_mode: 2,
+      wan_vlan_id: 10,
+      wan_mtu: 1480,
+      pppoe_password: 'dummypass',
+    }];
+    const returnDeviceMock = (query) => {
+      if (query.getQuery()['$or'][0]._id['$regex']
+          .toString().includes(deviceMock[0]._id)) {
+        return deviceMock;
+      }
+    };
+    const configMock = {
+      is_default: true,
+      tr069: undefined,
+      certification: undefined,
+      pppoePassLength: 10,
+    };
+    const returnConfigMock = (query) => {
+      if (query.getQuery().is_default == configMock.is_default) {
+        return configMock;
+      } else {
+        return null;
+      }
+    };
+    const roleMock = {
+      name: 'tester',
+      grantWanAdvancedInfo: 1,
+    };
+    const returnRoleMock = (query) => {
+      if (query.getQuery().name == roleMock.name) {
+        return roleMock;
+      } else {
+        return null;
+      }
+    };
+    mockingoose(DeviceModel).toReturn(returnDeviceMock, 'find');
+    mockingoose(ConfigModel).toReturn(returnConfigMock, 'findOne');
+    mockingoose(RoleModel).toReturn(returnRoleMock, 'findOne');
+    const req = {
+      params: {
+        id: 'AB:AB:AB:AB:AB:AB',
+      },
+      body: {
+        content: {
+          mesh_mode: 1,
+          wan_mtu: 1490,
+          wan_vlan: 5,
+        },
+      },
+      user: {
+        role: 'tester',
+      },
+    };
+    const res = utils.mockResponse();
+    // Test
+    await deviceListController.setDeviceReg(req, res);
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(403);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].type).toBe('danger');
@@ -733,7 +880,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
@@ -768,7 +915,7 @@ describe('Controllers - Device List', () => {
     const res = utils.mockResponse();
     // Test
     await deviceListController.setDeviceReg(req, res);
-    await new Promise((resolve)=>setTimeout(resolve, 111));
+    await new Promise((resolve)=>setTimeout(resolve, 55));
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
