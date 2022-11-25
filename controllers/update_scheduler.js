@@ -1,5 +1,6 @@
 /* global __line */
 
+const SchedulerWatchdog = require('./update_scheduler_watchdog');
 const DeviceModel = require('../models/device');
 const Config = require('../models/config');
 const Role = require('../models/role');
@@ -19,7 +20,6 @@ const maxRetries = 3;
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
 let mutex = new Mutex();
 let mutexRelease = null;
-let watchdogIntervalID = null;
 let scheduleController = {};
 
 const returnStringOrEmptyStr = function(query) {
@@ -96,27 +96,6 @@ const checkValidRange = function(config) {
       }
     }
   }, false);
-};
-
-const scheduleOfflineWatchdog = function() {
-  // Check for update slots every minute
-  const interval = 1*60*1000;
-  if (watchdogIntervalID) return;
-  /*
-  set interval call a anonymous function that call a single async function,
-  so isn't necessary await
-  */
-  watchdogIntervalID = setInterval(
-  () => markSeveral(),
-  interval);
-};
-
-const removeOfflineWatchdog = function() {
-  // Clear interval if set
-  if (watchdogIntervalID) {
-    clearInterval(watchdogIntervalID);
-    watchdogIntervalID = null;
-  }
 };
 
 const resetMutex = function() {
@@ -204,7 +183,7 @@ scheduleController.recoverFromOffline = async function(config) {
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
   setTimeout(async function() {
     await markSeveral();
-    scheduleOfflineWatchdog();
+    SchedulerWatchdog.scheduleOfflineWatchdog(markSeveral);
   }, 5*60*1000);
 };
 
@@ -383,7 +362,7 @@ scheduleController.initialize = async function(
     console.log(err);
     return {success: false, error: t('saveError', {errorline: __line})};
   }
-  scheduleOfflineWatchdog();
+  SchedulerWatchdog.scheduleOfflineWatchdog(markSeveral);
   return {success: true};
 };
 
@@ -448,7 +427,7 @@ scheduleController.successUpdate = async function(mac) {
   }
   if (rule.done_devices.length+1 === count) {
     // This was last device to enter done state, schedule is done
-    removeOfflineWatchdog();
+    SchedulerWatchdog.removeOfflineWatchdog();
   }
   return {success: true};
 };
@@ -481,7 +460,7 @@ scheduleController.failedDownload = async function(mac, slave='') {
 
       if (rule.done_devices.length+1 === count) {
         // This was last device to enter done state, schedule is done
-        removeOfflineWatchdog();
+        SchedulerWatchdog.removeOfflineWatchdog();
       }
       // Force remove from in progress regardless of slave or not
       pullQuery = {
@@ -612,7 +591,7 @@ scheduleController.abortSchedule = async function(req, res) {
       message: t('saveError', {errorline: __line}),
     });
   }
-  removeOfflineWatchdog();
+  SchedulerWatchdog.removeOfflineWatchdog();
   resetMutex();
   return res.status(200).json({
     success: true,
