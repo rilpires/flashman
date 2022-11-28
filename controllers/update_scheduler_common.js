@@ -7,9 +7,9 @@ const t = require('./language').i18next.t;
 const maxRetries = 3;
 
 let watchdogIntervalID = null;
-let watchdogScheduleController = {};
+let commonScheduleController = {};
 
-watchdogScheduleController.scheduleOfflineWatchdog = function(func) {
+commonScheduleController.scheduleOfflineWatchdog = function(func) {
     // Check for update slots every minute
     const interval = 1*60*1000;
     if (watchdogIntervalID) return;
@@ -23,7 +23,7 @@ watchdogScheduleController.scheduleOfflineWatchdog = function(func) {
 };
 
 
-watchdogScheduleController.removeOfflineWatchdog = function() {
+commonScheduleController.removeOfflineWatchdog = function() {
     // Clear interval if set
     if (watchdogIntervalID) {
       clearInterval(watchdogIntervalID);
@@ -32,7 +32,7 @@ watchdogScheduleController.removeOfflineWatchdog = function() {
 };
 
 
-watchdogScheduleController.getConfig = async function(
+commonScheduleController.getConfig = async function(
   lean=true,
   needActive=true,
 ) {
@@ -55,7 +55,7 @@ watchdogScheduleController.getConfig = async function(
 };
 
 
-watchdogScheduleController.configQuery = function(
+commonScheduleController.configQuery = function(
   setQuery,
   pullQuery,
   pushQuery,
@@ -68,8 +68,8 @@ watchdogScheduleController.configQuery = function(
 };
 
 
-watchdogScheduleController.successUpdate = async function(mac) {
-  let config = await watchdogScheduleController.getConfig();
+commonScheduleController.successUpdate = async function(mac) {
+  let config = await commonScheduleController.getConfig();
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
                                      {errorline: __line})};
@@ -91,7 +91,7 @@ watchdogScheduleController.successUpdate = async function(mac) {
     if (remain === 0) {
       // This is either a regular router or the last device in a mesh network
       // Move from in progress to done, with status ok
-      await watchdogScheduleController.configQuery(
+      await commonScheduleController.configQuery(
         // Make schedule inactive if this is last device to enter done state
         {'device_update_schedule.is_active':
           (rule.done_devices.length+1 !== count)},
@@ -129,14 +129,14 @@ watchdogScheduleController.successUpdate = async function(mac) {
   }
   if (rule.done_devices.length+1 === count) {
     // This was last device to enter done state, schedule is done
-    watchdogScheduleController.removeOfflineWatchdog();
+    commonScheduleController.removeOfflineWatchdog();
   }
   return {success: true};
 };
 
 
-watchdogScheduleController.failedDownload = async function(mac, slave='') {
-  let config = await watchdogScheduleController.getConfig();
+commonScheduleController.failedDownload = async function(mac, slave='') {
+  let config = await commonScheduleController.getConfig();
 
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
@@ -168,7 +168,7 @@ watchdogScheduleController.failedDownload = async function(mac, slave='') {
 
       if (rule.done_devices.length+1 === count) {
         // This was last device to enter done state, schedule is done
-        watchdogScheduleController.removeOfflineWatchdog();
+        commonScheduleController.removeOfflineWatchdog();
       }
       // Force remove from in progress regardless of slave or not
       pullQuery = {
@@ -226,7 +226,7 @@ watchdogScheduleController.failedDownload = async function(mac, slave='') {
       return {success: true};
     }
 
-    await watchdogScheduleController.configQuery(
+    await commonScheduleController.configQuery(
       setQuery,
       pullQuery,
       pushQuery,
@@ -239,4 +239,4 @@ watchdogScheduleController.failedDownload = async function(mac, slave='') {
 };
 
 
-module.exports = watchdogScheduleController;
+module.exports = commonScheduleController;
