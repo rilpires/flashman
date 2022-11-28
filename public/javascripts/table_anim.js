@@ -3111,7 +3111,7 @@ anlixDocumentReady.add(function() {
                   if (isSuperuser || grantSlaveDisassociate) {
                     disassocSlaveButton =
                       '<td>' +
-                      buildDisassociateSlave(device.do_update_status == 1) +
+                      buildDisassociateSlave(slaveDev.do_update_status == 1) +
                       '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',

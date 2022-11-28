@@ -10,7 +10,6 @@ uneeModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
