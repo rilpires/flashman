@@ -222,7 +222,31 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
         meshHandler.updateMeshDevice(slave, fieldsToUpdate);
       } else if (device.use_tr069 === false) {
         meshHandler.updateMeshDevice(mac, fieldsToUpdate);
+
+      // Handle TR-069 Devices
+      } else {
+        // Remove from in_progress, move back to to_do
+        await commonScheduleController.configQuery(
+          null,
+
+          {
+            'device_update_schedule.rule.in_progress_devices': {'mac': mac},
+          },
+
+          {
+            'device_update_schedule.rule.to_do_devices': {
+              'mac': mac,
+              'state': 'retry',
+              'retry_count': retry,
+              'slave_count': device.slave_count,
+              'slave_updates_remaining': device.slave_updates_remaining,
+              'mesh_current': device.mesh_current,
+              'mesh_upgrade': device.mesh_upgrade,
+            },
+          },
+        );
       }
+
       return {success: true};
     }
 

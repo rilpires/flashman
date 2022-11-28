@@ -8,6 +8,7 @@ const http = require('http');
 const mongodb = require('mongodb');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
+const SchedulerCommon = require('../update_scheduler_common');
 const t = require('../language').i18next.t;
 
 
@@ -121,7 +122,7 @@ const watchGenieFaults = async function() {
     } else {
       errorMsg += JSON.stringify(doc);
     }
-    await createNotificationForDevice(errorMsg, doc.device);
+    await createNotificationForDevice(errorMsg, doc.device, doc);
   });
 };
 
@@ -129,10 +130,31 @@ const watchGenieFaults = async function() {
  'stackError' and with the device id 'genieDeviceId' as the notification target
  for that notification. If no 'genieDeviceId' is given, the error is considered
  to be from Genie itself. */
-const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
+const createNotificationForDevice = async function(
+  errorMsg,
+  genieDeviceId,
+  doc,
+) {
   // getting flashman device id related to the genie device id.
-  let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  let device = await DeviceModel.findOne(
+    {acs_id: genieDeviceId},
+    {_id: true, do_update: true},
+  ).exec();
+
   if (!device) return;
+
+  // If the error was related to update, change the state to failed
+  // Do not show notification
+  if (device.do_update === true && doc.code === 'cwmp.9010') {
+    // Delete the task
+    deleteTask(doc._id);
+
+    // Might move to ToDo again or Failed
+    SchedulerCommon.failedDownload(device._id);
+
+    return;
+  }
+
   // check if a notification already exists for this device, dont add a new one
   let hasNotification = await NotificationModel.findOne(
     {target: device._id, type: 'genieacs'},
