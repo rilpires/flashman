@@ -1479,8 +1479,9 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       // Format data for app
       let deviceResult = {
         mac: device._id,
-        model: cpe.identifier.model,
-        vendor: cpe.identifier.vendor,
+        model: device.model,
+        identifierModel: cpe.identifier.model,
+        identifierVendor: cpe.identifier.vendor,
         firmwareVer: device.version,
         hardwareVer: device.hw_version,
       };
