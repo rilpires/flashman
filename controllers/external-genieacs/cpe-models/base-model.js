@@ -81,10 +81,10 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
-      allowEditWanMtu: false, // can edit wan mtu at flashman's wan tab
-      allowEditWanVlan: false, // can edit wan vlan at flashman's wan tab
       allowReadWanMtu: true, // can read wan mtu at flashman's wan tab
+      allowEditWanMtu: true, // can edit wan mtu at flashman's wan tab
       allowReadWanVlan: false, // can read wan vlan at flashman's wan tab
+      allowEditWanVlan: false, // can edit wan vlan at flashman's wan tab
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface
@@ -163,6 +163,10 @@ basicCPEModel.modelPermissions = function() {
 // Should be tweaked if the tr-069 xml has special types for some fields
 basicCPEModel.getFieldType = function(masterKey, key) {
   switch (masterKey+'-'+key) {
+    case 'wan-mtu':
+    case 'wan-mtu_ppp':
+    case 'wan-vlan':
+    case 'wan-vlan_ppp':
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
@@ -584,7 +588,9 @@ basicCPEModel.getModelFields = function() {
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
-        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        //   'GponLinkConfig.VLANIDMark',
+        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
         //   'GponLinkConfig.VLANIDMark',
         // pon_rxpower: 'InternetGatewayDevice.WANDevice.1.'+
         //   'GponInterfaceConfig.RXPower',

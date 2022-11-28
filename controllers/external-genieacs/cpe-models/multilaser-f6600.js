@@ -18,6 +18,8 @@ zteModel.modelPermissions = function() {
   permissions.siteSurvey.survey5Index = '2';
   permissions.traceroute.maxProbesPerHop = 3;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
@@ -81,6 +83,12 @@ zteModel.getModelFields = function() {
     '.X_ZTE-COM_WlanStandard';
   fields.wan.uptime = fields.wan.uptime.replace(/1.Uptime/, '*.Uptime');
   fields.wan.uptime_ppp = fields.wan.uptime_ppp.replace(/1.Uptime/, '*.Uptime');
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
   fields.common.web_admin_username = 'InternetGatewayDevice.User.1.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.User.1.Password';
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.' +
