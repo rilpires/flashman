@@ -11,6 +11,10 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
+  permissions.wan.allowReadWanMtu = false;
+  permissions.wan.allowEditWanMtu = false;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;

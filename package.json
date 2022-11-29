@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.54.0",
+  "version": "2.55.1",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -102,7 +102,7 @@
     "eslint-plugin-jest": "^24.3.6",
     "file-loader": "^6.2.0",
     "jest": "^27.5.1",
-    "mockingoose": "^2.15.2",
+    "mockingoose": "https://github.com/anlix-io/mockingoose.git",
     "mqtt": "1.14.0",
     "nodemon": "^2.0.3",
     "regenerator-runtime": "^0.13.7",

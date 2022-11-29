@@ -325,35 +325,44 @@
       return isOnRange && isIpFormatCorrect;
     };
 
+    /* RFC 791: in IPv4 the minimum datagram size is 576.
+      RFC 8200: in IPv6 the minimum datagram size is 1280.
+      RFC 894: In Ethernet the maximum datagram size is 1500.
+      RFC 2516: In PPPoE the maximum datagram size is 1492. */
     Validator.prototype.validateMtu = function(mtuField, isPPPoE) {
       if (mtuField) {
         try {
-          let mtuValue = parseInt(mtuField);
-          let max = (isPPPoE) ? 1492 : 1500;
-          if (mtuValue >= 1 && mtuValue <= max) return {valid: true};
-          else {
-            return {
-              valid: false,
-              err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
-            };
-          }
+          let mtuValue = Number(mtuField);
+          if (Number.isInteger(mtuValue)) {
+            let max = (isPPPoE) ? 1492 : 1500;
+            if (mtuValue >= 576 && mtuValue <= max) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
         } catch (e) {
           return {valid: false, err: [t('errorOccurred')]};
         }
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    /* RFC 2674: VLAN values is between 1 and 4094 */
     Validator.prototype.validateVlan = function(vlanField) {
       if (vlanField) {
         try {
-          let vlanValue = parseInt(vlanField);
-          if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
-          else {
-            return {
-              valid: false,
-              err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
-            };
-          }
+          let vlanValue = Number(vlanField);
+          if (Number.isInteger(vlanValue)) {
+            if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
         } catch (e) {
           return {valid: false, err: [t('errorOccurred')]};
         }

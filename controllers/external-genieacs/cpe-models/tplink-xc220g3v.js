@@ -10,6 +10,8 @@ tplinkModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.features.siteSurvey = true;
@@ -115,6 +117,8 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
