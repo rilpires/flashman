@@ -304,12 +304,7 @@ meshHandlers.validateMeshMode = async function(
   );
 
   if (device.use_tr069) {
-    let isDevOn = false;
-    // tr069 time thresholds for device status.
-    let tr069Times = await deviceHandlers.buildTr069Thresholds();
-    if (device.last_contact >= tr069Times.recovery) {
-      isDevOn = true;
-    }
+    let isDevOn = (device.cpe_status.status == 1);
     // If CPE is tr-069 it must be online when enabling wifi mesh mode
     if (!isDevOn && isEnablingWifiMesh) {
       errors.push(t('cpeTr069NotOnline', {errorline: __line}));

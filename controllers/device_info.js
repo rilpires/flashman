@@ -316,7 +316,7 @@ const createRegistry = async function(req, res) {
       'wan_negociated_duplex': wanDuplex,
       'ipv6_enabled': wanIpv6Enabled,
       'ip': ip,
-      'last_contact': Date.now(),
+      'last_keepalive': Date.now(),
       'do_update': false,
       'do_update_parameters': false,
       'sys_up_time': sysUpTime,
@@ -880,7 +880,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
           }
         }
 
-        deviceSetQuery.last_contact = Date.now();
+        deviceSetQuery.last_keepalive = Date.now();
 
         let hardReset = util.returnObjOrEmptyStr(req.body.hardreset).trim();
         if (hardReset == '1') {
@@ -1192,7 +1192,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
       } else {
         let ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
         matchedDevice.ip = ip;
-        matchedDevice.last_contact = Date.now();
+        matchedDevice.last_keepalive = Date.now();
         if (matchedDevice.do_update && matchedDevice.do_update_status === 5) {
           // Ack timeout already happened, abort update
           try {

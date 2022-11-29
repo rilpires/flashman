@@ -7,6 +7,7 @@ const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
 const http = require('http');
 const debug = require('debug')('ACS_DEVICES_MEASURES');
+const redis = require('../redis');
 const t = require('../../language').i18next.t;
 
 let acsMeasuresHandler = {};
@@ -67,9 +68,11 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         };
       }
       if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
+        let deviceEdit = await DeviceModel.findById(mac, 'wan_bytes cpe_status');
         if (!deviceEdit) return;
-        deviceEdit.last_contact = Date.now();
+        
+        await redis.contactedCPE(deviceEdit);
+
         wanBytes = acsMeasuresHandler.appendBytesMeasure(
           deviceEdit.wan_bytes,
           wanBytes.recv,
@@ -149,9 +152,10 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         };
       }
       if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
+        let deviceEdit = await DeviceModel.findById(mac, 
+          'cpe_status pon_rxpower pon_txpower pon_signal_measure');
         if (!deviceEdit) return;
-        deviceEdit.last_contact = Date.now();
+        await redis.contactedCPE(deviceEdit);
         if (ponSignal.rxpower) {
           ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
         }
@@ -290,8 +294,9 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
         };
       }
       if (successSys || successWan || successRxPower) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();
+        let deviceEdit = await DeviceModel.findById(mac,
+          'cpe_status sys_up_time wan_up_time pon_rxpower pon_txpower pon_signal_measure');
+        await redis.contactedCPE(deviceEdit);
         deviceEdit.sys_up_time = sysUpTime;
         deviceEdit.wan_up_time = wanUpTime;
 

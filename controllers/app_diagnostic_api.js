@@ -1141,7 +1141,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
+  'mesh_master mesh_slaves mesh_mode do_update_status')
   .catch((err) => {
     return res.status(500).json({
       success: false,

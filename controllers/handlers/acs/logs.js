@@ -56,8 +56,9 @@ acsDeviceLogsHandler.fetchLogFromGenie = async function(acsID) {
       }
       let compressedLog = pako.gzip(data);
       if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();
+        let deviceEdit = await DeviceModel.findById(mac, 
+          'cpe_status lastboot_date lastboot_log');
+        await redis.contactedCPE(device);
         deviceEdit.lastboot_date = Date.now();
         deviceEdit.lastboot_log = Buffer.from(compressedLog);
         await deviceEdit.save().catch((err) => {

@@ -202,9 +202,9 @@ let deviceSchema = new Schema({
   ntp_status: String,
   last_site_survey: Date,
   last_devices_refresh: Date,
-  last_contact: Date,
   last_contact_daily: Date,
   last_hardreset: Date,
+  last_keepalive: Date, // used only by firmware
   cpe_status: {
     status: { type: Number, default: 0, enum: [
       0, // offline

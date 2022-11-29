@@ -85,30 +85,45 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
   // the queries for each status count. they each countain a query to select
   // each router type, flashbox or onu/tr069, inside the $or array.
   let onlineQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$in: mqttClients}},
-      {last_contact: {$gte: tr069Times.recovery}},
+    $or: [ 
+      { // Firmware Devices
+        use_tr069: false,
+        _id: {$in: mqttClients}
+      }, {
+        // TR069 Devices
+        use_tr069: true
+        cpe_status.status: 1
+      },
     ],
   };
   let recoveryQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$nin: mqttClients}, last_contact: {$gte: lastHour.getTime()}},
-      {last_contact: {$lt: tr069Times.recovery, $gte: tr069Times.offline}},
+    $or: [
+      {// Firmware Devices
+        use_tr069: false,
+        _id: {$nin: mqttClients},
+        last_keepalive: {$gte: lastHour.getTime()},
+      }, {
+        // TR069 Devices
+        use_tr069: true
+        cpe_status.status: 0, 
+        cpe_status.last_status_change: {$lt: tr069Times.offline},
+      },
     ],
   };
   let offlineQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$nin: mqttClients}, last_contact: {$lt: lastHour.getTime()}},
-      {last_contact: {$lt: tr069Times.offline}},
+    $or: [
+      {// Firmware Devices
+        use_tr069: false,
+        _id: {$nin: mqttClients},
+        last_keepalive: {$lt: lastHour.getTime()},
+      }, {
+        // TR069 Devices
+        use_tr069: true,
+        cpe_status.status: 0, 
+        cpe_status.last_status_change: {$gte: tr069Times.offline},
+      },
     ],
   };
-  let queries = [onlineQuery, recoveryQuery, offlineQuery];
-  // adding the parameter that will defined the router type for each count.
-  for (let i = 0; i < queries.length; i++) {
-    // a selector for flashbox devices.
-    queries[i].$or[0].use_tr069 = {$ne: true};
-    queries[i].$or[1].use_tr069 = true; // a selector for tr069 devices.
-  }
 
   // issue the count for each status and the mesh count in parallel.
   let counts = await Promise.all([

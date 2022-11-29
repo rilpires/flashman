@@ -1680,23 +1680,23 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
       // Device is not registered, cannot reconfigure
       return res.status(200).json({success: true, isRegister: false});
     }
-    let config = await Config.findOne(
-      {is_default: true}, 'tr069',
-    ).exec().catch((err) => err);
-    let lastContact = device.last_contact;
-    let now = Date.now();
+
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
     let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
     let onlineReset = cpe.modelPermissions().onlineAfterReset;
 
-    if (now - lastContact <= config.tr069.inform_interval && !onlineReset) {
+    if (device.cpe_status.status == 1 && !onlineReset) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
         success: true, isRegister: true, isOnline: true,
       });
     }
+
+    let config = await Config.findOne(
+      {is_default: true}, 'tr069',
+    ).exec().catch((err) => err);
 
     // Build hard reset backup structure for client app
     const certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
@@ -1730,18 +1730,14 @@ appDeviceAPIController.signalResetRecover = async function(req, res) {
       // Device is not registered, cannot reconfigure
       return res.status(200).json({success: true, isRegister: false});
     }
-    let config = await Config.findOne(
-      {is_default: true}, 'tr069',
-    ).lean().exec().catch((err) => err);
-    let lastContact = device.last_contact;
-    let now = Date.now();
+
     // do not send that this specific model is online to client app
     // after reset this model still online on flashman because
     // it configuration is not entirely reseted
     let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
     let onlineReset = cpe.modelPermissions().onlineAfterReset;
 
-    if (now - lastContact <= 2*config.tr069.inform_interval && !onlineReset) {
+    if (device.cpe_status.status == 1 && !onlineReset) {
       // Device is online, no need to reconfigure
       return res.status(200).json({
         success: true, isRegister: true, isOnline: true,

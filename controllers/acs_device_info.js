@@ -21,7 +21,7 @@ const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const http = require('http');
-const redis = require('../redis')
+const redis = require('../redis');
 const t = require('./language').i18next.t;
 
 
@@ -1943,23 +1943,10 @@ acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
 };
 
 acsDeviceInfoController.pingOfflineDevices = async function() {
-  // Get TR-069 configs from database
-  let matchedConfig = await Config.findOne(
-    {is_default: true}, 'tr069',
-  ).lean().exec().catch((err) => err);
-  if (matchedConfig.constructor === Error) {
-    console.log('Error getting user config in database to ping offline CPEs');
-    return;
-  }
-  // Compute offline threshold from options
-  let currentTime = Date.now();
-  let interval = matchedConfig.tr069.inform_interval;
-  let threshold = matchedConfig.tr069.offline_threshold;
-  let offlineThreshold = new Date(currentTime - (interval*threshold));
   // Query database for offline TR-069 CPE devices
   let offlineDevices = await DeviceModel.find({
     use_tr069: true,
-    last_contact: {$lt: offlineThreshold},
+    cpe_status: { status: 0 },
   }, {
     acs_id: true,
   }).lean();
