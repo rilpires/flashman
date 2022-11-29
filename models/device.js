@@ -322,8 +322,10 @@ let deviceSchema = new Schema({
   },
   // They are expressed in percentage, without %
   // The value of 101 is invalid, used to represent a not setted state
-  cpu_usage: {type: Number, min: 0, max: 101, default: 101},
-  memory_usage: {type: Number, min: 0, max: 101, default: 101},
+  resources_usage: {
+    cpu_usage: {type: Number, min: 0, max: 101, default: 101},
+    memory_usage: {type: Number, min: 0, max: 101, default: 101},
+  },
   // Traceroute parameters like max_hops are only valid in firmwares
   traceroute_max_hops: {type: Number, min: 1, max: 50, default: 20},
   traceroute_number_probes: {type: Number, min: 1, max: 5, default: 3},

@@ -1421,9 +1421,14 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
   });
   let configUser;
   let configPassword;
+  let configFactoryCredentials = [];
   if (config) {
     configUser = config.tr069.web_login;
     configPassword = config.tr069.web_password;
+    if ('credentials' in config.tr069.onu_factory_credentials) {
+      configFactoryCredentials =
+        config.tr069.onu_factory_credentials.credentials;
+    }
   } else {
     configUser = '';
     configPassword = '';
@@ -1442,11 +1447,17 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       {wifi_ssid: noPrefixTargetSSID},
       {wifi_ssid_5ghz: targetSSID},
       {wifi_ssid_5ghz: noPrefixTargetSSID},
-      {wifi_bssid: targetBSSID},
-      {wifi_bssid_5ghz: targetBSSID},
     ],
   };
-  let projection = {_id: 1, model: 1, version: 1, pending_app_secret: 1};
+  if (typeof targetBSSID === 'string' && targetBSSID !== '') {
+    query['$or'].push({wifi_bssid: targetBSSID});
+    query['$or'].push({wifi_bssid_5ghz: targetBSSID});
+  }
+  let projection = {
+    _id: 1, acs_id: 1,
+    model: 1, version: 1, hw_version: 1,
+    pending_app_secret: 1,
+  };
   DeviceModel.find(query, projection).exec(function(err, matchedDevices) {
     if (err) {
       return res.status(500).json({'message':
@@ -1462,24 +1473,30 @@ appDeviceAPIController.getDevicesByWifiData = async function(req, res) {
       } catch (err) {
         console.log('Error saving pending secret of device: ' + err);
       }
+      // instantiating cpe by model from device to get model name and vendor
+      // information
+      let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
       // Format data for app
-      let result = {
+      let deviceResult = {
         mac: device._id,
         model: device.model,
+        identifierModel: cpe.identifier.model,
+        identifierVendor: cpe.identifier.vendor,
         firmwareVer: device.version,
         hardwareVer: device.hw_version,
       };
       if (configUser) {
-        result.customLogin = configUser;
+        deviceResult.customLogin = configUser;
       }
       if (configPassword) {
-        result.customPassword = configPassword;
+        deviceResult.customPassword = configPassword;
       }
-      return result;
+      return deviceResult;
     });
     return res.status(200).json({
       'secret': newSecret,
       'foundDevices': foundDevices,
+      'factoryCredentials': configFactoryCredentials,
     });
   });
 };

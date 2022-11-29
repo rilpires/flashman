@@ -79,9 +79,9 @@ intelbrasModel.convertWifiBandToFlashman = function(band, isAC) {
   switch (band) {
     // Strings
     case '20M':
-      return (isAC) ? 'HT20' : 'VHT20';
+      return (isAC) ? 'VHT20' : 'HT20';
     case '40M':
-      return (isAC) ? 'HT40' : 'VHT40';
+      return (isAC) ? 'VHT40' : 'HT40';
     case '80M':
       return (isAC) ? 'VHT80' : undefined;
     case 'Auto20M40M80M':
