@@ -835,6 +835,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         );
 
         // Check if CPU and Memory came valid
+        deviceSetQuery.resources_usage = {};
         if (cpuUsage != 101 && cpuUsage >= 0 && cpuUsage <= 100) {
           deviceSetQuery.resources_usage.cpu_usage = cpuUsage;
         }
