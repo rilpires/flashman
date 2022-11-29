@@ -28,6 +28,70 @@ let acsDeviceInfoController = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
+// Max number of sync requests concorrent (0 = disable)
+const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
+
+// Max time to wait for sync response (default to 30s)
+const SYNCTIME = (process.env.FLM_SYNC_TIME || 30);
+
+let sync_rate_control = new Map();
+
+const addRCSync = function(acsID) {
+  const _now = new Date();
+
+  // RC Disabled
+  if(SYNCMAX == 0)
+    return true;
+
+  for (const _e of sync_rate_control.entries()) {
+    // search for repeted acsID (sanity check, must not occour)
+    if(_e[0] == acsID) {
+      console.log(`RC SYNC: CPE (${_e[0]}) already waiting for SYNC`);
+      return false;
+    }
+    // Search for an old position
+    if(_e[1] + (SYNCTIME*1000) < _now) {
+      console.log(`RC SYNC: CPE (${_e[1]}) timed out! Removing ...`);
+      sync_rate_control.delete(_e[0]);
+    }
+  }
+
+  if(sync_rate_control.size < SYNCMAX) {
+    // we have slots.
+    console.log(`RC SYNC: ADD CPE (${acsID})`);
+    sync_rate_control.set(acsID, _now);
+    return true;
+  }
+
+  // we dont have more slots
+  return false;
+}
+
+const removeRCSync = function(acsID) {
+  const _now = new Date();
+  let _found = false;
+
+  if(SYNCMAX == 0)
+    return;
+
+  for (const _e of sync_rate_control.entries()) {
+    if(_e[0] == acsID) {
+      console.log(`RC SYNC: REMOVE CPE (${acsID})`);
+      sync_rate_control.delete(_e[0]);
+      _found = true;
+    } else {
+      // Search for an old position
+      if(_e[1] + (SYNCTIME*1000) < _now) {
+        console.log(`RC SYNC: CPE (${_e[1]}) timed out! Removing ...`);
+        sync_rate_control.delete(_e[0]);
+      }
+    }
+  }
+
+  if(!_found)
+    console.log(`RC SYNC: Trying to remove inexistent CPE (${acsID})`);
+}
+
 const convertSubnetMaskToInt = function(mask) {
   if (mask === '255.255.255.0') {
     return 24;
@@ -540,8 +604,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     let syncDiff = dateNow - device.last_tr069_sync;
     syncDiff += 10000; // Give an extra 10 seconds to buffer out race conditions
     if (syncDiff >= config.tr069.sync_interval) {
-      device.last_tr069_sync = dateNow;
-      doSync = true;
+      if(addRCSync(id)) {
+        device.last_tr069_sync = dateNow;
+        doSync = true;
+      }
     }
   }
   await device.save().catch((err) => {
@@ -720,6 +786,9 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
 const fetchSyncResult = async function(
   acsID, dataToFetch, parameterNames, cpe,
 ) {
+
+  removeRCSync(acsID);
+
   let query = {_id: acsID};
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
