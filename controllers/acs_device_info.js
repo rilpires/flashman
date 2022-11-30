@@ -34,6 +34,18 @@ const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
 // Max time to wait for sync response (default to 30s)
 const SYNCTIME = (process.env.FLM_SYNC_TIME || 30);
 
+let sync_cpes_stat = 0;
+let sync_time_stat = 0;
+// Show statistics every 10 minutes if have sync
+setInterval(() => {
+  if((SYNCMAX > 0) && (sync_cpes_stat > 0)) {
+    console.log(`RC STAT: CPEs: ${sync_cpes_stat} Time: ${(sync_time_stat/sync_cpes_stat).toFixed(2)} ms`);
+    sync_cpes_stat = 0;
+    sync_time_stat = 0;
+  }
+}, 10 * 60 * 1000);
+
+
 let sync_rate_control = new Map();
 
 const addRCSync = function(acsID) {
@@ -58,6 +70,7 @@ const addRCSync = function(acsID) {
 
   if(sync_rate_control.size < SYNCMAX) {
     // we have slots.
+    sync_cpes_stat++;
     sync_rate_control.set(acsID, _now);
     return true;
   }
@@ -70,16 +83,19 @@ const removeRCSync = function(acsID) {
   if(SYNCMAX == 0)
     return;
 
-  const _timeout = (new Date()) - (SYNCTIME*1000);
+  const _now = new Date();
+  const _timeout = _now - (SYNCTIME*1000);
   let _found = false;
 
   for (const _entry of sync_rate_control.entries()) {
     if(_entry[0] == acsID) {
+      sync_time_stat += _now - _entry[1];
       sync_rate_control.delete(_entry[0]);
       _found = true;
     } else {
       // Search for an old position
       if(_entry[1] < _timeout) {
+        sync_time_stat += _now - _entry[1];
         console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
         sync_rate_control.delete(_entry[0]);
       }
