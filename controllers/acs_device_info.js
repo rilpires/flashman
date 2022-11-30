@@ -43,22 +43,21 @@ const addRCSync = function(acsID) {
   if(SYNCMAX == 0)
     return true;
 
-  for (const _e of sync_rate_control.entries()) {
+  for (const _entry of sync_rate_control.entries()) {
     // search for repeted acsID (sanity check, must not occour)
-    if(_e[0] == acsID) {
-      console.log(`RC SYNC: CPE (${_e[0]}) already waiting for SYNC`);
+    if(_entry[0] == acsID) {
+      console.log(`RC SYNC: CPE (${_entry[0]}) already waiting for SYNC`);
       return false;
     }
     // Search for an old position
-    if(_e[1] + (SYNCTIME*1000) < _now) {
-      console.log(`RC SYNC: CPE (${_e[1]}) timed out! Removing ...`);
-      sync_rate_control.delete(_e[0]);
+    if(_entry[1] + (SYNCTIME*1000) < _now) {
+      console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
+      sync_rate_control.delete(_entry[0]);
     }
   }
 
   if(sync_rate_control.size < SYNCMAX) {
     // we have slots.
-    console.log(`RC SYNC: ADD CPE (${acsID})`);
     sync_rate_control.set(acsID, _now);
     return true;
   }
@@ -68,22 +67,21 @@ const addRCSync = function(acsID) {
 }
 
 const removeRCSync = function(acsID) {
-  const _now = new Date();
-  let _found = false;
-
   if(SYNCMAX == 0)
     return;
 
-  for (const _e of sync_rate_control.entries()) {
-    if(_e[0] == acsID) {
-      console.log(`RC SYNC: REMOVE CPE (${acsID})`);
-      sync_rate_control.delete(_e[0]);
+  const _timeout = (new Date()) - (SYNCTIME*1000);
+  let _found = false;
+
+  for (const _entry of sync_rate_control.entries()) {
+    if(_entry[0] == acsID) {
+      sync_rate_control.delete(_entry[0]);
       _found = true;
     } else {
       // Search for an old position
-      if(_e[1] + (SYNCTIME*1000) < _now) {
-        console.log(`RC SYNC: CPE (${_e[1]}) timed out! Removing ...`);
-        sync_rate_control.delete(_e[0]);
+      if(_entry[1] < _timeout) {
+        console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
+        sync_rate_control.delete(_entry[0]);
       }
     }
   }
