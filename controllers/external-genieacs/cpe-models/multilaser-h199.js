@@ -31,8 +31,10 @@ multilaserModel.modelPermissions = function() {
   permissions.mesh.objectExists = true;
   permissions.firmwareUpgrades = {
     'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
-    'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL'],
-    'V9.1.0P4N1_MUL': [],
+    'V9.1.0P3N1_MUL': ['V9.1.0P4N1_MUL', 'V9.1.0P4N3_MUL'],
+    'V9.1.0P3N2_MUL': ['V9.1.0P4N1_MUL', 'V9.1.0P4N3_MUL'],
+    'V9.1.0P4N1_MUL': ['V9.1.0P4N3_MUL'],
+    'V9.1.0P4N3_MUL': [],
   };
   return permissions;
 };

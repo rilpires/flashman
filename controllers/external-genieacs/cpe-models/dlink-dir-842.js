@@ -10,6 +10,7 @@ dlinkModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.traceroute.hopCountExceededState = 'Complete';
+  permissions.wan.allowEditWanMtu = false; // Can only read, can't edit
   permissions.wan.speedTestLimit = 180;
   permissions.lan.LANDeviceHasAssocTree = false;
   permissions.firmwareUpgrades = {

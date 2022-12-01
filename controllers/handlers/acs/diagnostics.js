@@ -694,15 +694,6 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
-  if (!isNaN(permissions.traceroute.dataBlockSizeToSet)) {
-    parameterValues.push(
-      [
-        diagnDataBlockSize,
-        permissions.traceroute.dataBlockSizeToSet.toString(),
-        'xsd:string',
-      ],
-    );
-  }
   if (shouldSetIpVersion) {
     parameterValues.push(
       [diagnIpVersion, 'IPv4', 'xsd:string'],

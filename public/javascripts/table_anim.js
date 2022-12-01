@@ -1816,7 +1816,7 @@ anlixDocumentReady.add(function() {
               '<label class="active">'+'MTU'+'</label>'+
               '<input id="edit_wan_mtu-'+index+'" '+
                 'class="form-control" type="number" '+
-                'max='+max+' min=1 '+
+                'max='+max+' min=576 '+
                 'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
                 (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
               '</input>'+
@@ -3111,7 +3111,7 @@ anlixDocumentReady.add(function() {
                   if (isSuperuser || grantSlaveDisassociate) {
                     disassocSlaveButton =
                       '<td>' +
-                      buildDisassociateSlave(device.do_update_status == 1) +
+                      buildDisassociateSlave(slaveDev.do_update_status == 1) +
                       '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',
