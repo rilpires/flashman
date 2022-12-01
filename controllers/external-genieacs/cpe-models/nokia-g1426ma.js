@@ -8,14 +8,16 @@ nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.traceroute = true;
   permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 930;
   permissions.wan.speedTestSetInterface = true;
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
-  permissions.features.ponSignal = true;
   permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
@@ -117,6 +119,12 @@ nokiaModel.convertField = function(
   return basicCPEModel.convertField(
     masterKey, key, value, typeFunc, modeFunc, bandFunc,
   );
+};
+
+nokiaModel.convertGenieSerial = function(serial, mac) {
+  // Serial starts with 4E42454C which is "NBEL" in hex. This change matches
+  // vendor label's serial information
+  return 'NBEL' + serial.slice(8);
 };
 
 nokiaModel.getBeaconType = function() {
