@@ -18,6 +18,12 @@ let offlineErrorElement =
 let recoveryOfflineErrorElement =
   document.getElementById('error-recovery-offline-thresholds');
 
+let webLoginInput = document.getElementById('onu-web-login');
+let webPasswordInput = document.getElementById('onu-web-password');
+let webLoginErrorElement = document.getElementById('error-onu-web-login');
+let webPasswordErrorElement =
+  document.getElementById('error-onu-web-password');
+
 // assigning SSID prefix elements.
 let ssidPrefixInput = document.getElementById('ssid-prefix');
 let ssidPrefixErrorElement = document.getElementById('error-ssid-prefix');
@@ -44,6 +50,27 @@ const setRecoveryOfflineInputDependencyError = function() {
   recoveryOfflineErrorElement.style.display = 'block'; // showing both errors.
 };
 
+// reset custom error for login web interface
+const resetLoginWebInterfaceError = function() {
+  webLoginInput.setCustomValidity('');
+  webLoginErrorElement.style.display = 'none';
+};
+// set custom error for login web interface
+const setLoginWebInterfaceError = function() {
+  webLoginInput.setCustomValidity(t('insertValidLogin'));
+  webLoginErrorElement.style.display = 'block';
+};
+// reset custom error for password web interface
+const resetPasswordWebInterfaceError = function() {
+  webPasswordInput.setCustomValidity('');
+  webPasswordErrorElement.style.display = 'none';
+};
+// set custom error for password web interface
+const setPasswordWebInterfaceError = function() {
+  webPasswordInput.setCustomValidity(t('insertValidPassword'));
+  webPasswordErrorElement.style.display = 'block';
+};
+
 // if user received the TR069 section, we will validate it.
 if (tr069Section) {
   // will be called in every input after the first time save button is pressed.
@@ -55,6 +82,27 @@ if (tr069Section) {
     } else { // if fields have valid values. we reset related elements styles.
       resetRecoveryOfflineInputDependencyError(); // reset error message.
     }
+  };
+  window.checkLoginWebInterface = function() {
+    let validator = new Validator();
+    let validLogin = validator.validateUser(webLoginInput.value);
+    if (!validLogin.valid && webLoginInput.value != '') {
+      setLoginWebInterfaceError();
+    } else {
+      resetLoginWebInterfaceError();
+    }
+    return;
+  };
+  window.checkPasswordWebInterface = function() {
+    let validator = new Validator();
+    let validPass = validator
+      .validateWebInterfacePassword(webPasswordInput.value);
+    if (!validPass.valid && webPasswordInput.value != '') {
+      setPasswordWebInterfaceError();
+    } else {
+      resetPasswordWebInterfaceError();
+    }
+    return;
   };
 }
 
@@ -99,7 +147,11 @@ let configFlashman = function(event) {
   let validator = new Validator();
 
   // resetting errors and message styles to default values.
-  if (tr069Section) resetRecoveryOfflineInputDependencyError();
+  if (tr069Section) {
+    resetRecoveryOfflineInputDependencyError();
+    resetLoginWebInterfaceError();
+    resetPasswordWebInterfaceError();
+  }
   resetSsidPrefixError();
 
   // executing browser validation on all fields.
