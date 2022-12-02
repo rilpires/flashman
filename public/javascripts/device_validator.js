@@ -198,6 +198,24 @@
       return ret;
     };
 
+    Validator.prototype.validateWebInterfacePassword =
+     function(pass) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
+        t('onuWebPasswordTooltip'),
+      ];
+      let passRegex = new RegExp(''
+          + /^[^-!@#$%^&*+_.]/.source
+          + /(?=.*[A-Z])/.source
+          + /(?=.*[a-z])/.source
+          + /(?=.*[0-9])/.source
+          + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      let ret = validateRegex(pass, 8, 16, passRegex);
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
     Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
