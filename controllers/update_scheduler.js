@@ -250,6 +250,45 @@ const markNextForUpdate = async function() {
     let device = await getDevice(nextDevice.mac);
     device.release = config.device_update_schedule.rule.release;
 
+    // Get the case when the task is in ToDo but the device is already
+    // with the firmware installed. It may happen during analready done update
+    // but the task was not moved to done.
+    if (device.release === device.installed_release) {
+      let count = config.device_update_schedule.device_count;
+      let rule = config.device_update_schedule.rule;
+
+      await SchedulerCommon.configQuery(
+        // Make schedule inactive if this is last device to enter done state
+        {'device_update_schedule.is_active':
+          (rule.done_devices.length+1 !== count)},
+        // Remove from to do state
+        {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
+        // Move to done
+        {
+          'device_update_schedule.rule.done_devices': {
+            'mac': nextDevice.mac,
+            'state': 'ok',
+            'slave_count': nextDevice.slave_count,
+            'slave_updates_remaining': 0,
+            'mesh_current': nextDevice.mesh_current,
+            'mesh_upgrade': nextDevice.mesh_upgrade,
+          },
+        },
+      );
+
+      mutexRelease();
+      console.log(
+        'Scheduler: Device ' + nextDevice.mac + ' is already updated.',
+      );
+
+      if (rule.done_devices.length+1 === count) {
+        // This was last device to enter done state, schedule is done
+        SchedulerCommon.removeOfflineWatchdog();
+      }
+
+      return {success: true, marked: false};
+    }
+
     // Mesh upgrade, only upgrade slaves if not TR069
     if (nextDevice.slave_count && device.use_tr069 === false) {
       let nextState;
