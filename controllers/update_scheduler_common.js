@@ -263,4 +263,30 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
 };
 
 
+// Return if the device is updating or not
+commonScheduleController.isUpdating = async function(mac) {
+  let config = await commonScheduleController.getConfig();
+
+  // Check if the config is valid
+  if (!config) {
+    return {
+      success: false,
+      error: t('noSchedulingActive', {errorline: __line}),
+    };
+  }
+
+  let rule = config.device_update_schedule.rule;
+  let isUpdating = rule.in_progress_devices.some(
+    (device)=>device.mac === mac,
+  );
+
+
+  return {
+    success: true,
+    updating: isUpdating,
+    version: rule.release,
+  };
+};
+
+
 module.exports = commonScheduleController;

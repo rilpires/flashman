@@ -79,6 +79,7 @@ const watchGenieTasks = async function() {
 const watchGenieFaults = async function() {
   let faultsCollection = genieDB.collection('faults');
   let cacheCollection = genieDB.collection('cache');
+  let tasksCollection = genieDB.collection('tasks');
 
   // delete all existing faults.
   let ret = await faultsCollection.deleteMany();
@@ -90,6 +91,13 @@ const watchGenieFaults = async function() {
   ret = await cacheCollection.deleteMany();
   if (ret.n > 0) {
     console.log('INFO: deleted '+ret.n+' documents in genieacs\'s cache '+
+      'collection.');
+  }
+
+  // delete all genieacs tasks.
+  ret = await tasksCollection.deleteMany();
+  if (ret.n > 0) {
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\'s tasks '+
       'collection.');
   }
 
@@ -114,6 +122,17 @@ const watchGenieFaults = async function() {
       faultsCollection.deleteOne({_id: doc._id});
       return;
     }
+
+    if (doc.code === 'cwmp.9010') {
+      faultsCollection.deleteOne({_id: doc._id});
+      cacheCollection.deleteOne({_id: doc._id});
+      let tasks = tasksCollection.find({device: doc.device, name: 'download'});
+
+      for (let index = 0; index < tasks.length; index++) {
+        deleteTask(tasks[index]._id).catch((error) => console.log(error));
+      }
+    }
+
     let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
@@ -138,20 +157,25 @@ const createNotificationForDevice = async function(
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne(
     {acs_id: genieDeviceId},
-    {_id: true, do_update: true},
+    {_id: true},
   ).exec();
 
   if (!device) return;
 
+  // Check if is part of update procedure
+  let isUpdating = await SchedulerCommon.isUpdating(device._id);
+
   // If the error was related to update, change the state to failed
   // Do not show notification
-  if (device.do_update === true && doc.code === 'cwmp.9010') {
-    // Delete the task
-    deleteTask(doc._id);
-
+  if (
+    isUpdating.success === true &&
+    isUpdating.updating === true &&
+    doc.code === 'cwmp.9010'
+  ) {
     // Might move to ToDo again or Failed
     SchedulerCommon.failedDownload(device._id);
 
+    // Do not show the notification
     return;
   }
 
