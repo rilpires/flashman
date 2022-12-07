@@ -721,9 +721,39 @@ genie.addTask = async function(
     // declaring variable that will hold array of tasks to be
     // delete/substituted.
     let tasksToDelete;
-    // substitutes tasks array with arrays of tasks to be added to genie.
-    [tasks, tasksToDelete] = joinAllTasks(tasks);
-    // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
+
+    // Caution with joinAllTasks, if the parameterId is not an Array, it can
+    // spam tasks to genie and pass task's parameters wrongly
+    // So, filter download to avoid passing to joinAllTasks
+    if (task.name === 'download') {
+      // Download tasks to be deleted
+      tasksToDelete = tasks.filter((task) => {
+        // If the task is the download type and already got an id from genie,
+        // delete it from the tasks
+        if (task.name === 'download' &&
+            task._id !== undefined &&
+            task.device === deviceid
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Now, only add the new download task
+      tasks = [task];
+
+      // Kill every other task
+      for (let index = 0; index < tasksToDelete.length; index++) {
+        deleteTask(tasksToDelete[index]._id);
+      }
+
+      return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
+    } else {
+      // substitutes tasks array with arrays of tasks to be added to genie.
+      [tasks, tasksToDelete] = joinAllTasks(tasks);
+      // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
+    }
 
 
     /* we have to delete old tasks before adding the joined tasks because it
