@@ -1816,7 +1816,7 @@ anlixDocumentReady.add(function() {
               '<label class="active">'+'MTU'+'</label>'+
               '<input id="edit_wan_mtu-'+index+'" '+
                 'class="form-control" type="number" '+
-                'max='+max+' min=1 '+
+                'max='+max+' min=576 '+
                 'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
                 (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
               '</input>'+
@@ -2709,6 +2709,7 @@ anlixDocumentReady.add(function() {
                               '<select class="browser-default md-select" '+
                                 'id="edit_wifi_mode-'+index+'" '+
                                 '$REPLACE_WIFI_MODE_EN>'+
+                                  '$REPLACE_WIFI_AX_MODE' +
                                   '<option value="11n" '+
                                     '$REPLACE_SELECTED_MODE_11n$>BGN'+
                                   '</option>'+
@@ -2948,10 +2949,14 @@ anlixDocumentReady.add(function() {
           }
 
           if (grantWiFiAXSupport) {
-            let axOpt = '<option value="11ax" $REPLACE_SELECTED_MODE5_11ax$>' +
+            let axOpt2 = '<option value="11ax" $REPLACE_SELECTED_MODE_11ax$>' +
               'AX</option>';
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', axOpt);
+            let axOpt5 = '<option value="11ax" $REPLACE_SELECTED_MODE5_11ax$>' +
+              'AX</option>';
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_AX_MODE', axOpt2);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', axOpt5);
           } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_AX_MODE', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', '');
           }
           selectTarget = '$REPLACE_SELECTED_MODE5_' + device.wifi_mode_5ghz;

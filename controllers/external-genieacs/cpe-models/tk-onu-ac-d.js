@@ -61,10 +61,13 @@ tkOnuAcDModel.getBeaconType = function() {
 };
 
 tkOnuAcDModel.convertChannelToTask = function(channel, fields, masterKey) {
-  let auto = (channel === 'auto');
+  if (channel === 'auto') {
+    channel = '0';
+  }
   let values = [];
+  const parsedChannel = parseInt(channel);
   values.push([
-    fields[masterKey]['channel'], (auto) ? '0' : channel, 'xsd:unsignedInt',
+    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
   ]);
   return values;
 };

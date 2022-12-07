@@ -17,6 +17,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
