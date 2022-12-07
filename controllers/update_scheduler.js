@@ -141,18 +141,25 @@ const markSeveral = async function() {
 scheduleController.recoverFromOffline = async function(config) {
   // Move those in doing status downloading back to to_do
   let rule = config.device_update_schedule.rule;
-  let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
+  let pullArray = rule.in_progress_devices.filter(
+    (device)=>device.state === 'downloading',
+  );
   pullArray = pullArray.map((d)=>d.mac.toUpperCase());
   let pushArray = pullArray.map((mac)=>{
     return {mac: mac, state: 'update', retry_count: 0};
   });
-  await SchedulerCommon.configQuery(
-    null,
-    {'device_update_schedule.rule.in_progress_devices': {
-      'mac': {'$in': pullArray},
-    }},
-    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
-  );
+
+  // Make sure it is not empty
+  if (pullArray.length > 0) {
+    await SchedulerCommon.configQuery(
+      null,
+      {'device_update_schedule.rule.in_progress_devices': {
+        'mac': {'$in': pullArray},
+      }},
+      {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
+    );
+  }
+
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
   setTimeout(async function() {
     await markSeveral();
@@ -931,10 +938,9 @@ scheduleController.startSchedule = async function(req, res) {
           if (!allowMeshUpgrade) return false;
 
           model.replace('N/', '');
-        }
 
         // If TR069, use the model from ACS
-        if (device.use_tr069) {
+        } else if (device.use_tr069 === true) {
           // Get the TR069 device model name
           model = DevicesAPI.instantiateCPEByModelFromDevice(
             device,
