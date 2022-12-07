@@ -3,6 +3,7 @@
 const Config = require('../models/config');
 const meshHandler = require('./handlers/mesh');
 const t = require('./language').i18next.t;
+const DeviceModel = require('../models/device');
 
 const maxRetries = 3;
 
@@ -52,6 +53,27 @@ commonScheduleController.getConfig = async function(
     return null;
   }
   return config;
+};
+
+
+commonScheduleController.getDevice = async function(mac, lean=false) {
+  let device = null;
+  const projection = {
+    port_mapping: false, ap_survey: false,
+    pingtest_results: false, speedtest_results: false,
+    firstboot_log: false, lastboot_log: false,
+  };
+  try {
+    if (lean) {
+      device = await DeviceModel.findById(mac.toUpperCase(), projection).lean();
+    } else {
+      device = await DeviceModel.findById(mac.toUpperCase(), projection);
+    }
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
+  return device;
 };
 
 
@@ -146,6 +168,7 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
+  let dev = commonScheduleController.getDevice(mac);
 
   if (!device) {
     return {success: false, error: t('macNotFound',
@@ -177,6 +200,8 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
     }
 
     let pushQuery = null;
+
+    // Reached max retries
     if (device.retry_count >= maxRetries) {
       // Too many retries, add to done, status error
       pushQuery = {
@@ -189,6 +214,21 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
           'mesh_upgrade': device.mesh_upgrade,
         },
       };
+
+      // Set the update status to image download failed
+      dev = await dev;
+
+      if (!dev) {
+        return {
+          success: false,
+          error: t('macNotFound', {errorline: __line}),
+        };
+      } else {
+        dev.do_update_status = 2;
+        await dev.save();
+      }
+
+    // Aborted
     } else if (config.is_aborted) {
       // Avoid racing conditions by checking if device is already added
       let device = rule.done_devices.find((d)=>d.mac === mac);

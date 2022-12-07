@@ -98,29 +98,11 @@ const checkValidRange = function(config) {
   }, false);
 };
 
+
 const resetMutex = function() {
   if (mutex.isLocked()) mutexRelease();
 };
 
-const getDevice = async function(mac, lean=false) {
-  let device = null;
-  const projection = {
-    port_mapping: false, ap_survey: false,
-    pingtest_results: false, speedtest_results: false,
-    firstboot_log: false, lastboot_log: false,
-  };
-  try {
-    if (lean) {
-      device = await DeviceModel.findById(mac.toUpperCase(), projection).lean();
-    } else {
-      device = await DeviceModel.findById(mac.toUpperCase(), projection);
-    }
-  } catch (err) {
-    console.log(err);
-    return null;
-  }
-  return device;
-};
 
 const markSeveral = async function() {
   let config = await SchedulerCommon.getConfig();
@@ -254,7 +236,7 @@ const markNextForUpdate = async function() {
   }
 
   try {
-    let device = await getDevice(nextDevice.mac);
+    let device = await SchedulerCommon.getDevice(nextDevice.mac);
     device.release = config.device_update_schedule.rule.release;
 
     // Get the case when the task is in ToDo but the device is already
@@ -493,7 +475,7 @@ scheduleController.abortSchedule = async function(req, res) {
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
     rule.in_progress_devices.forEach(async (d) => {
-      let device = await getDevice(d.mac);
+      let device = await SchedulerCommon.getDevice(d.mac);
       await meshHandler.syncUpdateCancel(device, 4);
     });
   } catch (err) {
@@ -545,7 +527,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
           if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
-            let device = await getDevice(line.field1, true);
+            let device = await SchedulerCommon.getDevice(line.field1, true);
             return device;
           }
         });
@@ -789,7 +771,9 @@ scheduleController.uploadDevicesFile = function(req, res) {
       let promises = result.map(async (line) => {
         if (!line.field1.match(util.macRegex)) {
           return 0;
-        } else if (await getDevice(line.field1, true) !== null) {
+        } else if (
+          await SchedulerCommon.getDevice(line.field1, true) !== null
+        ) {
           return 1;
         } else {
           return 0;
@@ -844,7 +828,7 @@ scheduleController.startSchedule = async function(req, res) {
           if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
-            let device = await getDevice(line.field1, true);
+            let device = await SchedulerCommon.getDevice(line.field1, true);
             return device;
           }
         });
