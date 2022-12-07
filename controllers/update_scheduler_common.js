@@ -276,6 +276,7 @@ commonScheduleController.isUpdating = async function(mac) {
   }
 
   let rule = config.device_update_schedule.rule;
+
   let isUpdating = rule.in_progress_devices.some(
     (device)=>device.mac === mac,
   );

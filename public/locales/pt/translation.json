@@ -74,7 +74,7 @@
 	"meshSecondaryUpdateError": "Este CPE é secundário em uma rede mesh, sua atualização deve ser feita a partir do CPE principal dessa rede",
 	"functionToSetSlaveToUpdate": "Esta função só deve ser usada para marcar um CPE secundário para atualizar, não para cancelar a atualização",
 	"firmwareDownloadStockError": "Erro baixando a firmware de fábrica",
-	"firmwareDownloadError": "Erro baixando a firmware",
+	"firmwareDownloadError": "Erro baixando a firmware.",
 	"commandOnlyWorksInsideSession": "Esse comando somente funciona em uma sessão!",
 	"connectionTypeShouldBePppoeDhcp": "Tipo de conexão deve ser \"pppoe\" ou \"dhcp\"",
 	"enableWifiToConfigureMesh": "Para configurar esse tipo de mesh é necessário habilitar todos os Wi-Fi",

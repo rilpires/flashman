@@ -177,7 +177,10 @@ const createNotificationForDevice = async function(
 
     // Do not show the notification
     return;
+  } else if (doc.code === 'cwmp.9010') {
+    return;
   }
+
 
   // check if a notification already exists for this device, dont add a new one
   let hasNotification = await NotificationModel.findOne(
