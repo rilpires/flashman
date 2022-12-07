@@ -28,7 +28,7 @@ RUN mkdir -p /app/public/firmwares ; \
 	chown -R node:node /app /app/public/firmwares ; \
     echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections ; \
     apt-get update ; \
-    apt-get install -y --no-install-recommends dialog apt-utils dumb-init ca-certificates ; \
+    apt-get install -y --no-install-recommends dialog apt-utils dumb-init ca-certificates git ; \
     apt-get upgrade -y ; \
     update-ca-certificates ; \
     npm install npm@8 -g ; \
