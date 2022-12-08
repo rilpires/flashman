@@ -20,6 +20,7 @@ COPY /public/javascripts /app/public/javascripts
 COPY /public/locales /app/public/locales
 COPY /public/scss /app/public/scss
 COPY /public/src /app/public/src
+COPY /scripts /app/scripts
 COPY /routes /app/routes
 COPY /views /app/views
 
@@ -28,9 +29,11 @@ RUN mkdir -p /app/public/firmwares ; \
 	chown -R node:node /app /app/public/firmwares ; \
     echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections ; \
     apt-get update ; \
-    apt-get install -y --no-install-recommends dialog apt-utils dumb-init ca-certificates git ; \
+    apt-get install -y --no-install-recommends dialog apt-utils ca-certificates cron dumb-init git python3-pip unzip zip ; \
     apt-get upgrade -y ; \
     update-ca-certificates ; \
+    pip3 install b2 ; \
+    ln -s /usr/local/bin/b2 /usr/bin/b2 ; \
     npm install npm@8 -g ; \
     npm config set fetch-retry-mintimeout 20000 ; \
     npm config set fetch-retry-maxtimeout 120000 ; \
@@ -62,8 +65,15 @@ ENV production=true \
     FLM_ADM_PASS="flashman" \
     FLM_CONCURRENT_UPDATES_LIMIT=5 \
     FLM_WEB_PORT="8000" \
+    FLM_NBI_ADDR="localhost" \
     FLM_GENIE_IGNORED=true \
-    FLM_DOCKER_INSTANCE=1
+    FLM_DOCKER_INSTANCE=1 \
+    FLM_DOCKER_WAIT_GENIE=false \
+    FLM_DOCKER_USE_CRON_BACKUP=false \
+    AIX_PROVIDER="provider" \
+    AIX_B2_BUCKET="" \
+    AIX_B2_ACCOUNT="" \
+    AIX_B2_SECRET=""
 
 EXPOSE 8000
 EXPOSE 1883
