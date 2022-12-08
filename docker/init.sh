@@ -15,7 +15,7 @@ if [ "$FLM_DOCKER_USE_CRON_BACKUP" == "true" ]; then
   echo -n "$AIX_B2_SECRET" > /tmp/AIX_B2_SECRET
   echo "Starting cron service..."
   service cron start
-  crontab -l | { cat; echo "0 4 * * * bash /app/scripts/backup-docker.sh"; } | crontab -
+  crontab -l | { cat; echo "0 4 * * * bash /app/scripts/backup-docker.sh $FLM_IMG_RELEASE_DIR"; } | crontab -
 fi
 
 # Dumb init avoids node process running as the first process which is not
