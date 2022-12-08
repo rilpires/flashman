@@ -1,3 +1,4 @@
+/*
 require('../../bin/globals.js');
 const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
@@ -21,6 +22,7 @@ describe('Controllers - Device List', () => {
   afterAll(async () => {
     await connection.close();
   });
+  */
 
   /* list of functions to mock:
     Config.findOne
@@ -78,7 +80,7 @@ describe('Controllers - Device List', () => {
     output:
       result - true, false
     total test = 4 */
-  test('createRegistry: ', async () => { expect(true).toBe(true); });
+  // test('createRegistry: ', async () => { expect(true).toBe(true); });
   /*
     input:
       device: - valid, invalid
@@ -90,7 +92,7 @@ describe('Controllers - Device List', () => {
     output:
       have been called -> TasksAPI.addTask(device.acs_id, task, cback)
     total test = 2 */
-  test('requestSync: ', async () => { expect(true).toBe(true); });
+  // test('requestSync: ', async () => { expect(true).toBe(true); });
   /*
     input:
       acsID
@@ -100,7 +102,7 @@ describe('Controllers - Device List', () => {
     output:
       have been called -> syncDeviceData(acsID, device, acsData, permissions)
     total test = x (?) */
-  test('fetchSyncResult: ', async () => { expect(true).toBe(true); });
+  // test('fetchSyncResult: ', async () => { expect(true).toBe(true); });
   /*
     input:
       acsID
@@ -110,5 +112,5 @@ describe('Controllers - Device List', () => {
     output:
     have been called -> acsDeviceInfoController.updateInfo(device, changes)
     total test = x (?) */
-  test('syncDeviceData: ', async () => { expect(true).toBe(true); });
-});
+  // test('syncDeviceData: ', async () => { expect(true).toBe(true); });
+// });
