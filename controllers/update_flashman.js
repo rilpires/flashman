@@ -168,7 +168,7 @@ const updateGenieACS = function(upgrades) {
   });
 };
 
-const updateProvisionsPresets = async function(config) {
+updateController.updateProvisionsPresets = async function() {
   let waitForProvision;
   try {
     let provisionScript = fs.readFileSync(
@@ -380,7 +380,7 @@ updateController.rebootGenie = function(instances) {
 
         // Update genieACS provisions and presets
         console.log('Updating genieACS provisions and presets');
-        await updateProvisionsPresets(config);
+        await updateController.updateProvisionsPresets();
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');

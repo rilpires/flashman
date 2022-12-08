@@ -305,6 +305,8 @@ if (instanceNumber === 0 && (
       } else {
         updater.rebootGenie(process.env.instances);
       }
+    } else {
+      updater.updateProvisionsPresets();
     }
     // Force an update check to alert user on app startup
     updater.checkUpdate();
