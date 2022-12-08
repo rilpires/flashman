@@ -20,4 +20,5 @@ fi
 
 # Dumb init avoids node process running as the first process which is not
 # recommended by NodeJS
+su node
 dumb-init node bin/www

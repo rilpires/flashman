@@ -79,4 +79,12 @@ EXPOSE 8000
 EXPOSE 1883
 EXPOSE 8883
 
+# Switch to root because we might need root privileges during the init script,
+# specifically to enable cron if we are configuring automatic backup
+# The init script will then switch back to user node before running Flashman
+# This creates a small vulnerability in which the default user when exec'ing
+# into the container will give you root priviliges, but the application itself
+# is still running unprivileged:
+# https://stackoverflow.com/questions/65574334/docker-is-it-safe-to-switch-to-non-root-user-in-entrypoint
+USER root
 CMD bash /app/init.sh
