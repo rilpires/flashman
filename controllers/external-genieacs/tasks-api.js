@@ -126,7 +126,10 @@ const watchGenieFaults = async function() {
     if (doc.code === 'cwmp.9010') {
       faultsCollection.deleteOne({_id: doc._id});
       cacheCollection.deleteOne({_id: doc._id});
-      let tasks = tasksCollection.find({device: doc.device, name: 'download'});
+      let tasks = await tasksCollection.find({
+        device: doc.device,
+        name: 'download',
+      });
 
       for (let index = 0; index < tasks.length; index++) {
         deleteTask(tasks[index]._id).catch((error) => console.log(error));
