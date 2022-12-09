@@ -16,19 +16,23 @@
     let validateRegex = function(value, minlength, length, regex) {
       let valid = true;
       let err = [];
-
-      if (value.length < minlength) {
-        valid = false;
-        err.push(0);
+      if (typeof value === 'string') {
+        if (value.length < minlength) {
+          valid = false;
+          err.push(0);
+        } else {
+          if (value.length > length) {
+            valid = false;
+            err.push(1);
+          }
+          if (!value.match(regex)) {
+            valid = false;
+            err.push(2);
+          }
+        }
       } else {
-        if (value.length > length) {
-          valid = false;
-          err.push(1);
-        }
-        if (!value.match(regex)) {
-          valid = false;
-          err.push(2);
-        }
+        valid = false;
+        err.push(3);
       }
       return {valid: valid, err: err};
     };
@@ -141,6 +145,7 @@
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('acceptableCharOnly0-9a-zA-Z @ul-.'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -155,6 +160,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: minlength}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(pass, minlength, 64,
                               /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
@@ -171,6 +177,7 @@
         ((spaceChar) ?
           t('acceptableCharsAre0-9a-zA-Z .-ul') : // message with allowed space
           t('acceptableCharsAre0-9a-zA-Z.-ul')), // message with denied space
+        t('mustBeAString'),
       ];
       if (accentedChars) {
         // Remove diacritics before applying the regex test
@@ -190,6 +197,7 @@
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
         t('acceptableCharsAre0-9a-zA-Z .-ul#'),
         t('endingSeparatorMustHaveAtLeastOne.-ul#'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
         /^([a-zA-Z0-9.\-_#\s]+(\.|-|_|#))*$/);
@@ -204,6 +212,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
         t('onuWebPasswordTooltip'),
+        t('mustBeAString'),
       ];
       let passRegex = new RegExp(''
           + /^[^-!@#$%^&*+_.]/.source
@@ -221,6 +230,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
+        t('mustBeAString'),
       ];
       if (accentedChars) {
         // Remove diacritics before applying the regex test
@@ -237,6 +247,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 7}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 15}),
         t('thisFieldMustHaveValidIpFormat'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(ip, 7, 15, /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -248,6 +259,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 255}),
         t('insertValidFqdn'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(fqdn, 1, 255,
         /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i);
