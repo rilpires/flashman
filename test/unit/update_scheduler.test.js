@@ -3,29 +3,95 @@ const {MongoClient} = require('mongodb');
 
 
 // GenieACS
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 let MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
 let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
 
 // Change VALID_DEVICE_ID to a valid deviceID when testing
+// ToDo! This value should be setted according to the test database,
+// but tasks-api is fixed to use the genieacs.
 const VALID_DEVICE_ID = '24FD0D-xPON-495442530DC45D87';
+const INVALID_PARAMETERS = [
+  'AAAAAAAAAAAA',
+  '',
+  null,
+  undefined,
+  [],
+  [0],
+  [null],
+  [undefined],
+  {},
+  {test: undefined},
+  5,
+  0,
+  -5,
+  +Infinity,
+  -Infinity,
+  // Symbol('BBBBBBBBB'),
+  // Symbol(),
+  // Missing BigInt
+  false,
+  true,
+  function(x) {
+    return x;
+  },
+];
 
 
-// Copy of deleteTask in tasks-api.js
-const deleteTask = function(taskid) {
-  return TasksAPI.request({
-    method: 'DELETE',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: '/tasks/'+taskid,
-  });
-};
+const testAddTask = async function(
+  deviceID,
+  task,
+  tasksCollection,
+  expected,
+) {
+  let response = await TasksAPI.addTask(
+    deviceID,
+    task,
+    null,
+    300,
+  );
 
+  // Validating directly from mongo might have unexpected results
+  // let tasks;
+  //
+  // If deviceID and name are valid
+  // if (
+  //   deviceID !== null &&
+  //   deviceID !== undefined &&
+  //
+  //   task !== null &&
+  //   task !== undefined &&
+  //   task.name !== null &&
+  //   task.name !== undefined
+  // ) {
+  //   tasks = await tasksCollection.find({
+  //     device: deviceID,
+  //     name: task.name,
+  //   });
+  //
+  // If only deviceID is valid
+  // } else if (
+  //   deviceID !== null &&
+  //   deviceID !== undefined
+  // ) {
+  //   tasks = await tasksCollection.find({
+  //     device: deviceID,
+  //   });
+  //
+  // If only name is valid
+  // } else if (
+  //   task !== null &&
+  //   task !== undefined &&
+  //   task.name !== null &&
+  //   task.name !== undefined
+  // ) {
+  //   tasks = await tasksCollection.find({
+  //     device: deviceID,
+  //   });
+  // }
 
-const testAddTask = async function() {
-
+  expect(response).toHaveProperty('success', expected.success);
+  // expect(await tasks.count()).toBe(expected.value);
 };
 
 
@@ -50,8 +116,7 @@ describe('TR-069 Update Scheduler Tests', () => {
   // Tests
   test('Validate addTask', async () => {
     let tasksCollection = genieDB.collection('tasks');
-    let tasks = [];
-    let response = {};
+    let invalidTasks = [];
 
     // Tasks
     let validGetParametersTask = {
@@ -94,147 +159,104 @@ describe('TR-069 Update Scheduler Tests', () => {
       ],
     };
 
-    let invalidTask1 = {
+
+    // Loop name
+    for (let index = 0; index < INVALID_PARAMETERS.length; index++) {
+      // Loop parameterValues
+      for (let index2 = 0; index2 < INVALID_PARAMETERS.length; index2++) {
+        // Push all combinations of invalid parameters
+        invalidTasks.push({
+          name: INVALID_PARAMETERS[index],
+          parameterValues: INVALID_PARAMETERS[index2],
+        });
+      }
+
+
+      // Push tasks with a valid name and invalid parameterValues
+      invalidTasks.push({
+        name: 'setParameterValues',
+        parameterValues: INVALID_PARAMETERS[index],
+      });
+
+
+      // Push tasks without parameters
+      invalidTasks.push({
+        name: INVALID_PARAMETERS[index],
+      });
+
+      invalidTasks.push({
+        parameterValues: INVALID_PARAMETERS[index],
+      });
+
+
+      // Push fully invalid tasks
+      invalidTasks.push(INVALID_PARAMETERS[index]);
+    }
+
+
+    // Push task with only one parameter valid
+    invalidTasks.push({
+      parameterValues: [
+        'InternetGatewayDevice.DeviceInfo.SoftwareVersion',
+      ],
+    });
+
+    invalidTasks.push({
       name: 'setParameterValues',
-      parameterValues: null,
-    };
-
-    let invalidTask2 = {
-      name: 'setParameterValues',
-      parameterValues: undefined,
-    };
-
-    let invalidTask3 = {
-      name: 'BBBBBBBBBB',
-      parameterValues: [],
-    };
+    });
 
 
-    // Add a task with an invalid deviceID
-    response = await TasksAPI.addTask(
-      'AAAAAAAAAA',
-      validGetParametersTask,
-      null,
-      300,
-    );
-    tasks = await tasksCollection.find({device: 'AAAAAAAAAA'});
-    expect(response).toHaveProperty('success', false);
-    expect(await tasks.count()).toBe(0);
+    // Test invalid deviceIDs
+    for (let index = 0; index < INVALID_PARAMETERS.length; index++) {
+      await testAddTask(
+        INVALID_PARAMETERS[index],
+        validGetParametersTask,
+        tasksCollection,
+        {success: false, value: 0},
+      );
+    }
 
 
-    // Add a download task
-    response = TasksAPI.addTask(
+    // Test invalid deviceIDs
+    for (let index = 0; index < invalidTasks.length; index++) {
+      await testAddTask(
+        VALID_DEVICE_ID,
+        invalidTasks[index],
+        tasksCollection,
+        {success: false, value: 0},
+      );
+    }
+
+
+    // Test spawning 2 download tasks
+    await testAddTask(
       VALID_DEVICE_ID,
       validDownloadTask,
-      null,
-      300,
+      tasksCollection,
+      {success: true, value: 1},
     );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'download',
-    });
-    expect(await response).toHaveProperty('success', true);
-    expect(await tasks.count()).toBe(1);
 
-
-    // Send another download task
-    response = TasksAPI.addTask(
+    await testAddTask(
       VALID_DEVICE_ID,
       validDownloadTask,
-      null,
-      300,
+      tasksCollection,
+      {success: true, value: 1},
     );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'download',
-    });
-    expect(await response).toHaveProperty('success', true);
-    expect(await tasks.count()).toBe(1);
 
 
-    // Send an random task
-    response = TasksAPI.addTask(
+    // Send 2 different tasks
+    await testAddTask(
       VALID_DEVICE_ID,
       validGetParametersTask,
-      null,
-      300,
+      tasksCollection,
+      {success: true, value: 1},
     );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'getParameterValues',
-    });
-    expect(await response).toHaveProperty('success', true);
-    expect(await tasks.count()).toBe(1);
 
-
-    // Send an invalid task
-    response = TasksAPI.addTask(
-      VALID_DEVICE_ID,
-      invalidTask1,
-      null,
-      300,
-    );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'setParameterValues',
-    });
-    expect(await response).toHaveProperty('success', false);
-    expect(await tasks.count()).toBe(0);
-
-    response = TasksAPI.addTask(
-      VALID_DEVICE_ID,
-      invalidTask2,
-      null,
-      300,
-    );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'setParameterValues',
-    });
-    expect(await response).toHaveProperty('success', false);
-    expect(await tasks.count()).toBe(0);
-
-    response = TasksAPI.addTask(
-      VALID_DEVICE_ID,
-      invalidTask3,
-      null,
-      300,
-    );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'BBBBBBBBBB',
-    });
-    expect(await response).toHaveProperty('success', false);
-    expect(await tasks.count()).toBe(0);
-
-
-    // Send another random task
-    response = TasksAPI.addTask(
+    await testAddTask(
       VALID_DEVICE_ID,
       validTracerouteTask,
-      null,
-      300,
+      tasksCollection,
+      {success: true, value: 1},
     );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'setParameterValues',
-    });
-    expect(await response).toHaveProperty('success', true);
-    expect(await tasks.count()).toBe(1);
-
-
-    // Send download task
-    response = TasksAPI.addTask(
-      VALID_DEVICE_ID,
-      validDownloadTask,
-      null,
-      300,
-    );
-    tasks = await tasksCollection.find({
-      device: VALID_DEVICE_ID,
-      name: 'download',
-    });
-    expect(await response).toHaveProperty('success', true);
-    expect(await tasks.count()).toBe(1);
   });
 });
