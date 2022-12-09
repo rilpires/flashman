@@ -41,6 +41,7 @@ describe('TR-069 Update Scheduler Tests', () => {
     genieDB = genieConnection.db('genieacs');
   });
 
+  // Disconnect from mongo
   afterAll(async () => {
     await genieConnection.close();
   });
@@ -122,7 +123,7 @@ describe('TR-069 Update Scheduler Tests', () => {
 
 
     // Add a download task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       validDownloadTask,
       null,
@@ -132,12 +133,12 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'download',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', true);
     expect(await tasks.count()).toBe(1);
 
 
     // Send another download task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       validDownloadTask,
       null,
@@ -147,12 +148,12 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'download',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', true);
     expect(await tasks.count()).toBe(1);
 
 
     // Send an random task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       validGetParametersTask,
       null,
@@ -162,12 +163,12 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'getParameterValues',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', true);
     expect(await tasks.count()).toBe(1);
 
 
     // Send an invalid task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       invalidTask1,
       null,
@@ -177,10 +178,10 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'setParameterValues',
     });
-    expect(response).toHaveProperty('success', false);
+    expect(await response).toHaveProperty('success', false);
     expect(await tasks.count()).toBe(0);
 
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       invalidTask2,
       null,
@@ -190,10 +191,10 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'setParameterValues',
     });
-    expect(response).toHaveProperty('success', true);
-    expect(tasks.count()).toBe(0);
+    expect(await response).toHaveProperty('success', false);
+    expect(await tasks.count()).toBe(0);
 
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       invalidTask3,
       null,
@@ -203,12 +204,12 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'BBBBBBBBBB',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', false);
     expect(await tasks.count()).toBe(0);
 
 
     // Send another random task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       validTracerouteTask,
       null,
@@ -218,12 +219,12 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'setParameterValues',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', true);
     expect(await tasks.count()).toBe(1);
 
 
     // Send download task
-    response = await TasksAPI.addTask(
+    response = TasksAPI.addTask(
       VALID_DEVICE_ID,
       validDownloadTask,
       null,
@@ -233,7 +234,7 @@ describe('TR-069 Update Scheduler Tests', () => {
       device: VALID_DEVICE_ID,
       name: 'download',
     });
-    expect(response).toHaveProperty('success', true);
+    expect(await response).toHaveProperty('success', true);
     expect(await tasks.count()).toBe(1);
   });
 });
