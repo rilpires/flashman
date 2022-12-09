@@ -1,5 +1,5 @@
 const request = require('supertest');
-const t = require('../../controllers/language').i18next.t;
+const t = require('../controllers/language').i18next.t;
 
 // mock for request express tests
 const mockRequest = (bodyData, userData) => {
