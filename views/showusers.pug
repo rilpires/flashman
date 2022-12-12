@@ -50,7 +50,8 @@ block content
                                                  name="role",
                                                  required)
                   each role in roles
-                    option(value=role.name) #{role.name}
+                    if !role.is_hidden
+                      option(value=role.name) #{role.name}
             .col.text-center.mt-3
               .form-buttons
                 button.btn.btn-primary(type="submit")
