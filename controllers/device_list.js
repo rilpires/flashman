@@ -1320,7 +1320,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         device.releases = devReleases;
 
         device.status_color = deviceHandlers
-          .buildStatusColor(device, tr069Times, isDevOn);
+          .buildStatusColor(device, tr069Times, isDevOn)+'-text';
 
         // Device permissions
         device.permissions = DeviceVersion.devicePermissions(device);
