@@ -1,4 +1,5 @@
 const request = require('supertest');
+const t = require('../controllers/language').i18next.t;
 
 // mock for request express tests
 const mockRequest = (bodyData, userData) => {
@@ -6,6 +7,15 @@ const mockRequest = (bodyData, userData) => {
     body: bodyData,
     user: userData,
   };
+};
+
+/* function to get the translation text without the errorline embed,
+   useful in unit test context where you want just the message
+   without the errorline */
+const tt = function(translationKey, errorObj) {
+  let ret = t(translationKey, errorObj);
+  ret = ret.replace(/ \(.*\)/, '');
+  return ret;
 };
 
 // mock for response express teste
@@ -31,10 +41,11 @@ const flashmanLogin = async (user, password) => {
   return {
     cookie: login.header['set-cookie'],
   };
-}
+};
 
 module.exports = {
   mockResponse,
   mockRequest,
   flashmanLogin,
+  tt,
 };
