@@ -13,6 +13,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.dualBand = false;
