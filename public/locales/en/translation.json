@@ -853,6 +853,7 @@
 	"warningPrefixWiFi": "Caution! Enabling the prefix for newly registered devices will force a change in their SSID values, if they don't already have a prefix. Changes in the prefix settings will NOT affect devices already registered in Flashman. Remember the prefix is case sensitive!",
 	"ssidPrefix": "SSID prefix",
 	"thisFieldIsMandatory": "This field is required",
+	"mustBeAString": "Value passed must be a string",
 	"thisFieldCannotHaveMoreThanMaxChars": "This field cannot be longer than {{-max}} characters",
 	"acceptableCharsAre0-9a-zA-Z .-#": "Alphanumeric characters, spaces, period, -, and # are accepted",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "Alphanumeric characters, spaces, period, -, _ and # are accepted",
