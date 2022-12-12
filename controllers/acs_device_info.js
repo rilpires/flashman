@@ -34,42 +34,45 @@ const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
 // Max time to wait for sync response (default to 30s)
 const SYNCTIME = (process.env.FLM_SYNC_TIME || 30);
 
-let syncCpesStat = 0;
-let syncTimeStat = 0;
+let syncStats = {
+  cpes: 0,
+  time: 0,
+  timeout: 0,
+};
+
 // Show statistics every 10 minutes if have sync
 setInterval(() => {
-  if ((SYNCMAX > 0) && (syncCpesStat > 0)) {
-    console.log(`RC STAT: CPEs: ${syncCpesStat} `+
-      `Time: ${(syncTimeStat/syncCpesStat).toFixed(2)} ms`);
-    syncCpesStat = 0;
-    syncTimeStat = 0;
+  if ((SYNCMAX > 0) && (syncStats.cpes > 0)) {
+    console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
+      `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
+      `Timeouts: ${syncStats.timeout}`);
+    syncStats.cpes = 0;
+    syncStats.time = 0;
+    syncStats.timeout = 0;
   }
 }, 10 * 60 * 1000);
 
 let syncRateControl = new Map();
 
 const addRCSync = function(acsID) {
-  const _now = new Date();
-
   // RC Disabled
   if (SYNCMAX == 0) return true;
 
-  for (const _entry of syncRateControl.entries()) {
-    // search for repeted acsID (sanity check, must not occour)
-    if (_entry[0] == acsID) {
-      console.log(`RC SYNC: CPE (${_entry[0]}) already waiting for SYNC`);
-      return false;
-    }
+  const _now = new Date();
+
+  for (const [_id, _startTime] of syncRateControl.entries()) {
     // Search for an old position
-    if (_entry[1] + (SYNCTIME*1000) < _now) {
-      console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
-      syncRateControl.delete(_entry[0]);
+    if (_startTime + (SYNCTIME*1000) < _now) {
+      syncStats.timeout++;
+      syncRateControl.delete(_id);
     }
+    // search for repeted acsID (sanity check, must not occour)
+    if (_id == acsID) return false;
   }
 
   if (syncRateControl.size < SYNCMAX) {
     // we have slots.
-    syncCpesStat++;
+    syncStats.cpes++;
     syncRateControl.set(acsID, _now);
     return true;
   }
@@ -81,27 +84,11 @@ const addRCSync = function(acsID) {
 const removeRCSync = function(acsID) {
   if (SYNCMAX == 0) return;
 
-  const _now = new Date();
-  const _timeout = _now - (SYNCTIME*1000);
-  let _found = false;
-
-  for (const _entry of syncRateControl.entries()) {
-    if (_entry[0] == acsID) {
-      syncTimeStat += _now - _entry[1];
-      syncRateControl.delete(_entry[0]);
-      _found = true;
-    } else {
-      // Search for an old position
-      if (_entry[1] < _timeout) {
-        syncTimeStat += _now - _entry[1];
-        console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
-        syncRateControl.delete(_entry[0]);
-      }
-    }
-  }
-
-  if (!_found) {
-    console.log(`RC SYNC: Trying to remove inexistent CPE (${acsID})`);
+  if (syncRateControl.has(acsID)) {
+    const _now = new Date();
+    const _startTime = syncRateControl.get(acsID);
+    syncStats.time += _now - _startTime;
+    syncRateControl.delete(acsID);
   }
 };
 
