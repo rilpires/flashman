@@ -291,10 +291,6 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
       }
       if (successSys || successWan || successRxPower) {
         let deviceEdit = await DeviceModel.findById(mac);
-        deviceEdit.last_contact = Date.now();
-        deviceEdit.sys_up_time = sysUpTime;
-        deviceEdit.wan_up_time = wanUpTime;
-
         if (successRxPower) {
           // covert rx and tx signal
           ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
@@ -322,15 +318,28 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
           );
           deviceEdit.pon_signal_measure = ponSignal;
         }
+        if (successSys && deviceEdit.sys_up_time
+            && deviceEdit.sys_up_time != sysUpTime) {
+          /* only update last contact when sys up time from projection
+           is different from the database, to avoid the bug of trigger
+           this function, by mass trigger fetch up status, that entails
+           bogus last contact refer */
+          deviceEdit.last_contact = Date.now();
+          sio.anlixSendUpStatusNotification(mac, {
+            sysuptime: sysUpTime,
+            wanuptime: wanUpTime,
+            ponsignal: signalState,
+          });
+        }
+        /* if sys up status is the same, so probably this functions
+        was triggered by deleted task prompted by another fetch up
+        status, then does not send data to front end */
+        deviceEdit.sys_up_time = sysUpTime;
+        deviceEdit.wan_up_time = wanUpTime;
         await deviceEdit.save().catch((err) => {
           console.log('Error saving device up status: ' + err);
         });
       }
-      sio.anlixSendUpStatusNotification(mac, {
-        sysuptime: sysUpTime,
-        wanuptime: wanUpTime,
-        ponsignal: signalState,
-      });
     });
   });
   req.end();
