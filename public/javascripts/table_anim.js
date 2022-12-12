@@ -483,7 +483,7 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         slaveRow.find('.device-status')
           .removeClass('green-text red-text grey-text')
-          .addClass(res.status_color + '-text');
+          .addClass(res.status_color);
         slaveRow.find('.device-wan-ip').html(res.wan_ip);
         slaveRow.find('.device-ip').html(res.ip);
         slaveRow.find('.device-installed-release').html(res.installed_release);
@@ -539,7 +539,7 @@ anlixDocumentReady.add(function() {
       type: 'GET',
       success: function(res) {
         row.find('.device-status').removeClass('green-text red-text grey-text')
-                                  .addClass(res.status_color + '-text');
+                                  .addClass(res.status_color);
         let wanip = res.wan_ip;
         let wanipv6 = res.wan_ipv6;
 
