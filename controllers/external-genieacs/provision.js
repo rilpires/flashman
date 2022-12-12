@@ -47,34 +47,48 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
-
+// 1. Collect information
 // Collect basic CPE information from database
-let genieID = declare('DeviceID.ID', {value: 1}).value[0];
-log('Provision for device ' + genieID + ' started at ' + now.toString());
-let oui = declare('DeviceID.OUI', {value: 1}).value[0];
-let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
+let genieID = declare('DeviceID.ID', {value: 1});
+let oui = declare('DeviceID.OUI', {value: 1});
+let modelClass = declare('DeviceID.ProductClass', {value: 1});
 
 // Detect TR-098 or TR-181 data model based on database value
 let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
-log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
 let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
 
-// Apply connection request credentials preset configuration
+let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
+let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
+let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1});
+
+// Get current connection request credentials preset configuration
 let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
-let currentUsername = declare(usernameField, {value: 1}).value[0];
+let currentUsername = declare(usernameField, {value: 1});
+let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+let currentPassword = declare(passwordField, {value: 1});
+
+// 2. Run the script
+genieID = genieID.value[0];
+log('Provision for device ' + genieID + ' started at ' + now.toString());
+oui = oui.value[0];
+modelClass = modelClass.value[0];
+
+log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
+
+// Apply connection request credentials preset configuration
+currentUsername = currentUsername.value[0];
 if (currentUsername !== 'anlix') {
   declare(usernameField, null, {value: 'anlix'});
 }
-let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
-let currentPassword = declare(passwordField, {value: 1}).value[0];
+currentPassword = currentPassword.value[0];
 if (currentPassword !== 'landufrj123') {
   declare(passwordField, null, {value: 'landufrj123'});
 }
 
 // Collect extra information for Flashman model detection
-let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1}).value[0];
-let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1}).value[0];
-let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1}).value[0];
+modelName = modelName.value[0];
+firmwareVersion = firmwareVersion.value[0];
+hardwareVersion = hardwareVersion.value[0];
 
 let args = {
   oui: oui,
