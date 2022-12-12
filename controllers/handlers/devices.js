@@ -487,6 +487,35 @@ deviceHandlers.buildTr069Thresholds = async function(currentTimestamp) {
   };
 };
 
+deviceHandlers.buildStatusColor = function(device, tr069Times, isDeviceOnline) {
+  let deviceColor = 'grey-text';
+  device.online_status = false;
+  if (device.use_tr069) { // if this device uses tr069.
+    // classifying device status.
+    if (device.last_contact >= tr069Times.recovery) {
+    // if we are inside first threshold.
+      deviceColor = 'green-text';
+      device.online_status = true;
+    } else if (device.last_contact >= tr069Times.offline) {
+    // if we are inside second threshold.
+      deviceColor = 'red-text';
+    }
+    // if we are out of these thresholds, we keep the default gray value.
+  } else { // default device, flashbox controlled.
+    device.online_status = (isDeviceOnline);
+    // Status color
+    let lastHour = new Date();
+    lastHour.setHours(lastHour.getHours() - 1);
+    if (device.online_status) {
+      deviceColor = 'green-text';
+    } else if (!!device.last_contact &&
+      device.last_contact.getTime() >= lastHour.getTime()) {
+      deviceColor = 'red-text';
+    }
+  }
+  return deviceColor;
+};
+
 deviceHandlers.sendPingToTraps = function(id, results) {
   // No await needed
   sio.anlixSendPingTestNotifications(id, results);
