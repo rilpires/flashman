@@ -837,30 +837,33 @@ updateController.setAutoConfig = async function(req, res) {
       // reading fields and parsing them to their respective data types.
       let tr069ServerURL = req.body['tr069-server-url'];
       let onuWebLogin = req.body['onu-web-login'];
-      if (!onuWebLogin) {
+      if (!onuWebLogin && onuWebLogin != '') {
         // in case of falsey value, use current one
         onuWebLogin = config.tr069.web_login;
       }
       let onuWebPassword = req.body['onu-web-password'];
-      if (!onuWebPassword) {
+      if (!onuWebPassword && onuWebPassword != '') {
         // in case of falsey value, use current one
         onuWebPassword = config.tr069.web_password;
+      }
+      if (onuWebLogin !== config.tr069.web_login) {
+        let validUser = validator.validateUser(onuWebLogin);
+        if (!validUser.valid && onuWebLogin != '') {
+          return res.status(500).json({
+            type: 'danger',
+            message: validUser.err,
+          });
+        }
       }
       // validate that it is a strong password, but only if value changes
       // first character cannot be special character
       if (onuWebPassword !== config.tr069.web_password) {
-        let passRegex = new RegExp(''
-          + /(?=.{8,16}$)/.source
-          + /(?=.*[A-Z])/.source
-          + /(?=.*[a-z])/.source
-          + /(?=.*[0-9])/.source
-          + /(?=.*[-!@#$%^&*+_.]).*/.source);
-        if (
-          !passRegex.test(onuWebPassword) ||
-          '-!@#$%^&*+_.'.includes(onuWebPassword[0])
-        ) {
+        let validPass = validator
+          .validateWebInterfacePassword(onuWebPassword);
+        if (!validPass.valid && onuWebPassword != '') {
           return res.status(500).json({
             type: 'danger',
+            // should be message: validPass.err, instead?
             message: t('tr069WebPasswordValidationError'),
           });
         }
