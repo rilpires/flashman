@@ -34,77 +34,76 @@ const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
 // Max time to wait for sync response (default to 30s)
 const SYNCTIME = (process.env.FLM_SYNC_TIME || 30);
 
-let sync_cpes_stat = 0;
-let sync_time_stat = 0;
+let syncCpesStat = 0;
+let syncTimeStat = 0;
 // Show statistics every 10 minutes if have sync
 setInterval(() => {
-  if((SYNCMAX > 0) && (sync_cpes_stat > 0)) {
-    console.log(`RC STAT: CPEs: ${sync_cpes_stat} Time: ${(sync_time_stat/sync_cpes_stat).toFixed(2)} ms`);
-    sync_cpes_stat = 0;
-    sync_time_stat = 0;
+  if ((SYNCMAX > 0) && (syncCpesStat > 0)) {
+    console.log(`RC STAT: CPEs: ${syncCpesStat} `+
+      `Time: ${(syncTimeStat/syncCpesStat).toFixed(2)} ms`);
+    syncCpesStat = 0;
+    syncTimeStat = 0;
   }
 }, 10 * 60 * 1000);
 
-
-let sync_rate_control = new Map();
+let syncRateControl = new Map();
 
 const addRCSync = function(acsID) {
   const _now = new Date();
 
   // RC Disabled
-  if(SYNCMAX == 0)
-    return true;
+  if (SYNCMAX == 0) return true;
 
-  for (const _entry of sync_rate_control.entries()) {
+  for (const _entry of syncRateControl.entries()) {
     // search for repeted acsID (sanity check, must not occour)
-    if(_entry[0] == acsID) {
+    if (_entry[0] == acsID) {
       console.log(`RC SYNC: CPE (${_entry[0]}) already waiting for SYNC`);
       return false;
     }
     // Search for an old position
-    if(_entry[1] + (SYNCTIME*1000) < _now) {
+    if (_entry[1] + (SYNCTIME*1000) < _now) {
       console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
-      sync_rate_control.delete(_entry[0]);
+      syncRateControl.delete(_entry[0]);
     }
   }
 
-  if(sync_rate_control.size < SYNCMAX) {
+  if (syncRateControl.size < SYNCMAX) {
     // we have slots.
-    sync_cpes_stat++;
-    sync_rate_control.set(acsID, _now);
+    syncCpesStat++;
+    syncRateControl.set(acsID, _now);
     return true;
   }
 
   // we dont have more slots
   return false;
-}
+};
 
 const removeRCSync = function(acsID) {
-  if(SYNCMAX == 0)
-    return;
+  if (SYNCMAX == 0) return;
 
   const _now = new Date();
   const _timeout = _now - (SYNCTIME*1000);
   let _found = false;
 
-  for (const _entry of sync_rate_control.entries()) {
-    if(_entry[0] == acsID) {
-      sync_time_stat += _now - _entry[1];
-      sync_rate_control.delete(_entry[0]);
+  for (const _entry of syncRateControl.entries()) {
+    if (_entry[0] == acsID) {
+      syncTimeStat += _now - _entry[1];
+      syncRateControl.delete(_entry[0]);
       _found = true;
     } else {
       // Search for an old position
-      if(_entry[1] < _timeout) {
-        sync_time_stat += _now - _entry[1];
+      if (_entry[1] < _timeout) {
+        syncTimeStat += _now - _entry[1];
         console.log(`RC SYNC: CPE (${_entry[0]}) timed out! Removing ...`);
-        sync_rate_control.delete(_entry[0]);
+        syncRateControl.delete(_entry[0]);
       }
     }
   }
 
-  if(!_found)
+  if (!_found) {
     console.log(`RC SYNC: Trying to remove inexistent CPE (${acsID})`);
-}
+  }
+};
 
 const convertSubnetMaskToInt = function(mask) {
   if (mask === '255.255.255.0') {
@@ -618,7 +617,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     let syncDiff = dateNow - device.last_tr069_sync;
     syncDiff += 10000; // Give an extra 10 seconds to buffer out race conditions
     if (syncDiff >= config.tr069.sync_interval) {
-      if(addRCSync(id)) {
+      if (addRCSync(id)) {
         device.last_tr069_sync = dateNow;
         doSync = true;
       }
@@ -800,7 +799,6 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
 const fetchSyncResult = async function(
   acsID, dataToFetch, parameterNames, cpe,
 ) {
-
   removeRCSync(acsID);
 
   let query = {_id: acsID};
