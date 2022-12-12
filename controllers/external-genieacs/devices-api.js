@@ -52,10 +52,12 @@ const tr069Models = {
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
   nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
+  nokiaG1426MAModel: require('./cpe-models/nokia-g1426ma'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   raisecomRevNModel: require('./cpe-models/raisecom-ht803g-rev-n'),
@@ -223,6 +225,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
     result = {success: true, cpe: tr069Models.multilaserH199Model};
+  } else if (modelName === 'NXT-425AC') {
+    // Next Fiber NXT-425
+    result = {success: true, cpe: tr069Models.nextFiberNXT425Model};
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
     result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
@@ -237,6 +242,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'G-1425G-A') {
     // Nokia G-1425G-A
     result = {success: true, cpe: tr069Models.nokiaG1425GAModel};
+  } else if (modelName === 'G-1426-MA') {
+    // Nokia G-1426-MA
+    result = {success: true, cpe: tr069Models.nokiaG1426MAModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     result = {success: true, cpe: tr069Models.nokiaG2425Model};

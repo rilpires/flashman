@@ -252,21 +252,23 @@ block content
                     label= t('cpesWebinterfaceLogin')
                     input#onu-web-login.form-control(
                       type="text",
-                      name="onu-web-login"
+                      name="onu-web-login",
+                      oninput="checkLoginWebInterface()"
                     )
-                    .invalid-feedback= t('insertValidLogin')
+                    #error-onu-web-login.invalid-feedback= t('insertValidLogin')
                   .md-form.input-group
                     label= t('cpesWebinterfacePassword')
                     input#onu-web-password.form-control(
                       type="text",
-                      name="onu-web-password"
+                      name="onu-web-password",
+                      oninput="checkPasswordWebInterface()"
                     )
                     .input-group-append(
                       data-toggle="tooltip",
                       title=t('onuWebPasswordTooltip')
                     )
                       a.md-addon.fas.fa-question-circle
-                    .invalid-feedback= t('insertValidPassword')
+                    #error-onu-web-password.invalid-feedback= t('insertValidPassword')
                   span &nbsp;
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(

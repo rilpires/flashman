@@ -88,6 +88,7 @@ basicCPEModel.modelPermissions = function() {
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface
+      speedTestSetInterface: false, // speedtest will set device interface
       traceRouteSetInterface: false, // traceroute will set device interface
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
@@ -774,6 +775,7 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+        interface: 'InternetGatewayDevice.DownloadDiagnostics.Interface',
       },
       /**
        * <---- Traceroute ---->

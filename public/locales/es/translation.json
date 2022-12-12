@@ -861,6 +861,7 @@
 	"warningPrefixWiFi": "¡Precaución! Habilitar el prefijo para dispositivos recién registrados forzará un cambio en sus valores de SSID, si aún no tienen un prefijo. Los cambios en la configuración del prefijo NO afectarán a los dispositivos que ya están registrados en Flashman. Recuerde el prefijo distingue entre mayúsculas y minúsculas!",
 	"ssidPrefix": "Prefijo SSID",
 	"thisFieldIsMandatory": "Este campo es obligatorio",
+	"mustBeAString": "El valor pasado debe ser una string",
 	"thisFieldCannotHaveMoreThanMaxChars": "Este campo no puede tener más de {{-max}} caracteres",
 	"acceptableCharsAre0-9a-zA-Z .-#": "Se aceptan caracteres alfanuméricos, espacios, punto, -, y #",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "Se aceptan caracteres alfanuméricos, espacios, punto, -, _ y #",
