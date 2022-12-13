@@ -4403,7 +4403,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       'wan_negociated_speed': true, 'wan_negociated_duplex': true,
       'external_reference.kind': true, 'external_reference.data': true,
       'model': true, 'version': true, 'hw_version': true,
-      'installed_release': true, 'do_update': true,
+      'installed_release': true, 'do_update': true, 'last_contact': true,
     };
 
     let devices = {};
@@ -4467,6 +4467,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
+      {label: t('updatefirmware'), value: 'last_contact'},
     );
     const json2csvParser = new Parser({fields: csvFields});
     const devicesCsv = json2csvParser.parse(devices);
