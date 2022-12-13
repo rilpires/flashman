@@ -1,4 +1,4 @@
-const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
+const TasksAPI = require('../../../controllers/external-genieacs/tasks-api');
 const {MongoClient} = require('mongodb');
 
 
@@ -16,6 +16,7 @@ const INVALID_PARAMETERS = [
   '',
   null,
   undefined,
+  NaN,
   [],
   [0],
   [null],
@@ -24,6 +25,7 @@ const INVALID_PARAMETERS = [
   {test: undefined},
   5,
   0,
+  10.5,
   -5,
   +Infinity,
   -Infinity,
@@ -95,7 +97,7 @@ const testAddTask = async function(
 };
 
 
-describe('TR-069 Update Scheduler Tests', () => {
+describe('TR-069 Update Scheduler Tests - tasks-api.js', () => {
   let genieConnection;
   let genieDB;
 
