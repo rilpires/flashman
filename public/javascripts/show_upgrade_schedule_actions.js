@@ -393,6 +393,15 @@ anlixDocumentReady.add(function() {
           filter_list: filterList,
         },
         success: function(res) {
+          console.log(res);
+          if (res.success === false) {
+            $('#which-error-text')
+              .html('&nbsp; '+t('serverErrorPleaseTryAgain'));
+            $('#which-error-msg').show();
+
+            return;
+          }
+
           // Save the last firmware list
           firmwareList = res;
 

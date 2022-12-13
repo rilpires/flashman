@@ -493,11 +493,39 @@ scheduleController.abortSchedule = async function(req, res) {
 };
 
 scheduleController.getDevicesReleases = async function(req, res) {
+  // Validate the full request
+  if (
+    !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
+    !req.body.page_num || !req.body.page_count ||
+    req.body.use_csv.constructor !== String ||
+    req.body.use_all.constructor !== String ||
+    req.body.page_num.constructor !== String ||
+    req.body.page_count.constructor !== String ||
+    req.body.filter_list.constructor !== String
+  ) {
+    return res.status(200).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
+
+
+  if (
+    isNaN(pageNumber) || pageNumber < 1 ||
+    isNaN(pageCount) || pageCount < 1
+  ) {
+    return res.status(200).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
 
   const userRole = await Role.findOne(
     {name: util.returnObjOrEmptyStr(req.user.role)});
