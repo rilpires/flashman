@@ -4467,7 +4467,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
-      {label: t('updatefirmware'), value: 'last_contact'},
+      {label: t('lastContactData'), value: 'last_contact'},
     );
     const json2csvParser = new Parser({fields: csvFields});
     const devicesCsv = json2csvParser.parse(devices);
