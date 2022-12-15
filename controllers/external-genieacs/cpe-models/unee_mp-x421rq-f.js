@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let uneeModel = Object.assign({}, basicCPEModel);
 
-uneeModel.identifier = {vendor: 'UNEE', model: 'Stavix MPG421R'};
+uneeModel.identifier = { vendor: 'UNEE', model: 'MP-X421RQ-F' };
 
 uneeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -13,23 +13,17 @@ uneeModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
-  permissions.wan.speedTestLimit = 300;
+  permissions.wan.speedTestLimit = 200;
+  permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64,
-    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
-    149, 153, 157, 161, 165,
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 136, 140, 149, 153, 157, 161
   ];
-  permissions.wifi.bandAuto5 = false;
   permissions.firmwareUpgrades = {
-    'V1.2.9': [],
-    'V1.3.4': [],
+    'V4.0.6-220825': [],
   };
   permissions.onlineAfterReset = true;
   permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.stavixXMLConfig = {
-    portForward: false,
-    webCredentials: true,
-  };
   return permissions;
 };
 
@@ -88,8 +82,8 @@ uneeModel.isAllowedWebadminUsername = function(name) {
 
 uneeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
+    'X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = fields.wan.vlan;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
