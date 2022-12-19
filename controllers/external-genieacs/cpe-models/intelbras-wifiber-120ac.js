@@ -20,7 +20,8 @@ intelbrasModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 
+    112, 116, 136, 140, 149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
