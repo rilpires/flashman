@@ -8,6 +8,7 @@ zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;

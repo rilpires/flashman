@@ -1319,25 +1319,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 
-        // Status color
-        let deviceColor = 'grey-text';
-        if (device.use_tr069) { // if this device uses tr069 to be controlled.
-          if (device.last_contact >= tr069Times.recovery) {
-          // if we are inside first threshold.
-            deviceColor = 'green-text';
-          } else if (device.last_contact >= tr069Times.offline) {
-          // if we are inside second threshold.
-            deviceColor = 'red-text';
-          }
-          // if we are out of these thresholds, we keep the default gray value.
-        } else { // default device, flashbox controlled.
-          if (isDevOn) {
-            deviceColor = 'green-text';
-          } else if (device.last_contact.getTime() >= lastHour.getTime()) {
-            deviceColor = 'red-text';
-          }
-        }
-        device.status_color = deviceColor;
+        device.status_color = deviceHandlers
+          .buildStatusColor(device, tr069Times, isDevOn)+'-text';
 
         // Device permissions
         device.permissions = DeviceVersion.devicePermissions(device);
@@ -2090,37 +2073,14 @@ deviceListController.getDeviceReg = function(req, res) {
       matchedDevice.lastboot_log = null;
     }
 
-    let deviceColor = 'grey';
-    matchedDevice.online_status = false;
-    if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
-      // tr069 time thresholds for device status.
-      let tr069Times = await deviceHandlers.buildTr069Thresholds();
-      // classifying device status.
-      if (matchedDevice.last_contact >= tr069Times.recovery) {
-      // if we are inside first threshold.
-        deviceColor = 'green';
-        matchedDevice.online_status = true;
-      } else if (matchedDevice.last_contact >= tr069Times.offline) {
-      // if we are inside second threshold.
-        deviceColor = 'red';
-      }
-      // if we are out of these thresholds, we keep the default gray value.
-    } else { // default matchedDevice, flashbox controlled.
-      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[req.params.id.toUpperCase()];
-      });
-      matchedDevice.online_status = (isDevOn);
-      // Status color
-      let lastHour = new Date();
-      lastHour.setHours(lastHour.getHours() - 1);
-      if (matchedDevice.online_status) {
-        deviceColor = 'green';
-      } else if (!!matchedDevice.last_contact &&
-        matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
-        deviceColor = 'red';
-      }
-    }
-    matchedDevice.status_color = deviceColor;
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.params.id.toUpperCase()];
+    });
+    // tr069 time thresholds for device status.
+    let tr069Times = await deviceHandlers.buildTr069Thresholds();
+
+    matchedDevice.status_color = await deviceHandlers
+      .buildStatusColor(matchedDevice, tr069Times, isDevOn);
 
     return res.status(200).json(matchedDevice);
   });
@@ -4443,7 +4403,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       'wan_negociated_speed': true, 'wan_negociated_duplex': true,
       'external_reference.kind': true, 'external_reference.data': true,
       'model': true, 'version': true, 'hw_version': true,
-      'installed_release': true, 'do_update': true,
+      'installed_release': true, 'do_update': true, 'last_contact': true,
     };
 
     let devices = {};
@@ -4507,6 +4467,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
+      {label: t('lastContactData'), value: 'last_contact'},
     );
     const json2csvParser = new Parser({fields: csvFields});
     const devicesCsv = json2csvParser.parse(devices);

@@ -11,11 +11,6 @@ const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
 const utils = require('../utils');
-const t = require('../../controllers/language').i18next.t;
-
-const tt = function(msg) {
-  return msg.replace(/ \(.*\)/, '');
-};
 
 describe('Controllers - Device List', () => {
   let connection;
@@ -121,7 +116,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('cpeFindError', {errorline: __line})));
+      .toMatch(utils.tt('cpeFindError', {errorline: __line}));
     expect(res.json.mock.lastCall[0].errors.length).toBe(0);
   });
 
@@ -156,7 +151,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(404);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('cpeNotFound', {errorline: __line})));
+      .toMatch(utils.tt('cpeNotFound', {errorline: __line}));
     expect(res.json.mock.lastCall[0].errors.length).toBe(0);
   });
 
@@ -204,7 +199,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('configFindError', {errorline: __line})));
+      .toMatch(utils.tt('configFindError', {errorline: __line}));
     expect(res.json.mock.lastCall[0].errors.length).toBe(0);
   });
 
@@ -254,7 +249,8 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('connectionTypeShouldBePppoeDhcp', {errorline: __line})));
+      .toMatch(utils.tt('connectionTypeShouldBePppoeDhcp',
+        {errorline: __line}));
   });
 
   test('setDeviceReg: Error sending mesh paramaters to CPE', async () => {
@@ -323,7 +319,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('errorSendingMeshParamtersToCpe', {errorline: __line})));
+      .toMatch(utils.tt('errorSendingMeshParamtersToCpe', {errorline: __line}));
   });
 
   test('setDeviceReg: Ensure bssid collect error', async () => {
@@ -461,7 +457,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('cpeSaveError', {errorline: __line})));
+      .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
   });
 
   test('setDeviceReg: CPE matchedDevice save success', async () => {
@@ -682,7 +678,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('enabledToModifyFields', {errorline: __line})));
+      .toMatch(utils.tt('enabledToModifyFields', {errorline: __line}));
     expect(res.json.mock.lastCall[0].errors.length).toBe(0);
   });
 
@@ -748,7 +744,7 @@ describe('Controllers - Device List', () => {
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].type).toBe('danger');
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('notEnoughPermissionsForFields', {errorline: __line})));
+      .toMatch(utils.tt('notEnoughPermissionsForFields', {errorline: __line}));
   });
 
   test('setDeviceReg: Trying modify WAN'+
@@ -819,7 +815,7 @@ describe('Controllers - Device List', () => {
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].type).toBe('danger');
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('notEnoughPermissionsForFields', {errorline: __line})));
+      .toMatch(utils.tt('notEnoughPermissionsForFields', {errorline: __line}));
   });
 
   test('setDeviceReg: Fields invalid check errors', async () => {
@@ -884,7 +880,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('fieldsInvalidCheckErrors', {errorline: __line})));
+      .toMatch(utils.tt('fieldsInvalidCheckErrors', {errorline: __line}));
     expect(res.json.mock.lastCall[0].errors.length).toBe(2);
   });
 
@@ -919,6 +915,7 @@ describe('Controllers - Device List', () => {
     expect(res.status).toHaveBeenCalledWith(500);
     expect(res.json.mock.lastCall[0].success).toBe(false);
     expect(res.json.mock.lastCall[0].message)
-      .toMatch(tt(t('fieldNameInvalid', {name: 'content', errorline: __line})));
+      .toMatch(utils.tt('fieldNameInvalid',
+        {name: 'content', errorline: __line}));
   });
 });

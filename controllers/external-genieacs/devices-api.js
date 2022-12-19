@@ -52,6 +52,7 @@ const tr069Models = {
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
   nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
@@ -194,7 +195,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     result = {success: true, cpe: tr069Models.hurakallST1001FLModel};
-  } else if (modelName === 'ACtion RG1200') {
+  } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
   } else if (modelName === '121AC') {
@@ -224,6 +225,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
     result = {success: true, cpe: tr069Models.multilaserH199Model};
+  } else if (modelName === 'NXT-425AC') {
+    // Next Fiber NXT-425
+    result = {success: true, cpe: tr069Models.nextFiberNXT425Model};
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
     result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
