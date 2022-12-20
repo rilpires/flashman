@@ -1,5 +1,6 @@
 const http = require('http');
 
+const PROVIDER = (process.env.FLM_PROVIDER || '');
 const CERTMANHOST = (process.env.FLM_CERTMAN_ADDR || '');
 const CERTMANPORT = (process.env.FLM_CERTMAN_PORT || 9999);
 
@@ -15,7 +16,7 @@ const requestCertman = function(method, path) {
       timeout: 5000,
     };
     http.request(options, (resp)=>{
-      resp.setEnconding('utf8');
+      if (resp.setEnconding) resp.setEnconding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
       resp.on('error', reject);
@@ -27,7 +28,11 @@ const requestCertman = function(method, path) {
 
 certmanController.getCertmanCACert = async function() {
   try {
-    let response = await requestCertman('GET', '/api/v1/cert/ca-tr069');
+    // No provider configured, can't query for CA certificate
+    if (PROVIDER === '') return '';
+    let response = await requestCertman(
+      'GET', `/api/v1/cert/ca-tr069?provider=${PROVIDER}`,
+    );
     if (response.status !== 200 || response.data.length == 0) return '';
     let data = JSON.parse(response.data);
     if (!data.caCertificate) return '';
