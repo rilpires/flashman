@@ -15,14 +15,15 @@ const requestCertman = function(method, path) {
       path: encodeURI(path),
       timeout: 5000,
     };
-    http.request(options, (resp)=>{
+    let req = http.request(options, (resp)=>{
       if (resp.setEnconding) resp.setEnconding('utf8');
       let data = '';
       resp.on('data', (chunk)=>data+=chunk);
-      resp.on('error', reject);
-      resp.on('timeout', reject);
       resp.on('end', () => resolve({status: resp.statusCode, data: data}));
     });
+    req.on('error', reject);
+    req.on('timeout', reject);
+    req.end();
   });
 };
 
