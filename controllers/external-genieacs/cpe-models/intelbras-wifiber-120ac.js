@@ -9,7 +9,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
-  permissions.features.portForward = true;
+  permissions.features.portForward = false;
   permissions.features.ponSignal = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
@@ -17,8 +17,6 @@ intelbrasModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 
