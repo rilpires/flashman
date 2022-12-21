@@ -17,7 +17,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
-  permissions.wan.speedTestLimit = 350;
+  permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 
     112, 116, 136, 140, 149, 153, 157, 161, 165,
