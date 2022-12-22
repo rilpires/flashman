@@ -493,7 +493,7 @@ scheduleController.abortSchedule = async function(req, res) {
 };
 
 scheduleController.getDevicesReleases = async function(req, res) {
-  // Validate the full request
+  // Validate the full request - everything is treated as string
   if (
     !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
     !req.body.page_num || !req.body.page_count ||
@@ -517,6 +517,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
   let queryContents = req.body.filter_list.split(',');
 
 
+  // Validate numbers
   if (
     isNaN(pageNumber) || pageNumber < 1 ||
     isNaN(pageCount) || pageCount < 1
@@ -585,6 +586,14 @@ scheduleController.getDevicesReleases = async function(req, res) {
     });
   }
   queryPromise.then((matchedDevices)=>{
+    // If could not find devices
+    if (!matchedDevices || matchedDevices.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: t('parametersErrorNoCpe', {errorline: __line}),
+      });
+    }
+
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
       let devicesByModel = {};
@@ -593,6 +602,15 @@ scheduleController.getDevicesReleases = async function(req, res) {
       let onuCount = 0;
       let totalCount = 0;
       let releaseInfo = [];
+
+      // If could not find releases
+      if (!releasesAvailable) {
+        return res.status(500).json({
+          success: false,
+          message: t('serverError', {errorline: __line}),
+        });
+      }
+
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       meshHandler.enhanceSearchResult(matchedDevices)
         .then(async (extraDevices) => {
@@ -818,6 +836,32 @@ scheduleController.uploadDevicesFile = function(req, res) {
 };
 
 scheduleController.startSchedule = async function(req, res) {
+  // Validate the full request - everything is treated as string
+  if (
+    !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
+    !req.body.use_time_restriction || !req.body.page_num ||
+    !req.body.page_count || req.body.release === null ||
+    req.body.release === undefined || req.body.filter_list === null ||
+    req.body.filter_list === undefined || req.body.use_search === null ||
+    req.body.use_search === undefined || req.body.time_restriction === null ||
+    req.body.time_restriction === undefined ||
+    req.body.use_search.constructor !== String ||
+    req.body.use_csv.constructor !== String ||
+    req.body.use_all.constructor !== String ||
+    req.body.use_time_restriction.constructor !== String ||
+    req.body.release.constructor !== String ||
+    req.body.page_num.constructor !== String ||
+    req.body.page_count.constructor !== String ||
+    req.body.time_restriction.constructor !== String ||
+    req.body.filter_list.constructor !== String
+  ) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
@@ -825,8 +869,34 @@ scheduleController.startSchedule = async function(req, res) {
   let release = returnStringOrEmptyStr(req.body.release);
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
-  let timeRestrictions = JSON.parse(req.body.time_restriction);
+  let timeRestrictions = [];
   let queryContents = req.body.filter_list.split(',');
+
+
+  // Validate json, it must always work even though it must be a blank array
+  try {
+    timeRestrictions = JSON.parse(req.body.time_restriction);
+  } catch (error) {
+    console.log('Error parsing json in line ' + __line + ': ' + error);
+
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
+  // Validate numbers
+  if (
+    isNaN(pageNumber) || pageNumber < 1 ||
+    isNaN(pageCount) || pageCount < 1
+  ) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
 
   let finalQuery = null;
   let deviceList = [];
