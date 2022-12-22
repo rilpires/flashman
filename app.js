@@ -284,6 +284,9 @@ app.use(function(req, res, next) {
   next(err);
 });
 
+let metrics = require('./controllers/handlers/metrics');
+setInterval(()=>metrics.dummy_counter.inc({'location': 'app.js'}, 5), 1000);
+
 // error handler
 app.use(function(err, req, res, next) {
   // set locals, only providing error in development
