@@ -140,6 +140,7 @@ commonScheduleController.successUpdate = async function(mac) {
         '$set': {
           'device_update_schedule.rule.in_progress_devices.$.state':
             'downloading',
+          // eslint-disable-next-line max-len
           'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
           'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
         },
