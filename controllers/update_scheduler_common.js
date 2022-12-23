@@ -258,10 +258,19 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
         },
       });
 
+      dev = await dev;
+
+      if (!dev) {
+        return {
+          success: false,
+          error: t('macNotFound', {errorline: __line}),
+        };
+      }
+
       let fieldsToUpdate = {release: rule.release};
-      if (slave && device.use_tr069 === false) {
+      if (slave && dev.use_tr069 === false) {
         meshHandler.updateMeshDevice(slave, fieldsToUpdate);
-      } else if (device.use_tr069 === false) {
+      } else if (dev.use_tr069 === false) {
         meshHandler.updateMeshDevice(mac, fieldsToUpdate);
 
       // Handle TR-069 Devices
