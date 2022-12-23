@@ -9,6 +9,7 @@ const mongodb = require('mongodb');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const t = require('../language').i18next.t;
+const promClient = require('prom-client')
 
 
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
@@ -702,5 +703,16 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
    then return result. */
   return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
 };
+
+// point-in-time observation. We do not want to update this metric periodically,
+// so we use a collect function
+new promClient.Gauge({
+  name: 'flm_tasks_api_list_length',
+  help: 'Length of current task watch list',
+  labelNames: [],
+  collect: function() {
+    this.set( Object.keys(taskWatchlist).length );
+  },
+});
 
 module.exports = genie;
