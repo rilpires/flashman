@@ -1,4 +1,5 @@
 require('../../../bin/globals');
+const meshHandler = require('../../../controllers/handlers/mesh');
 const updateCommon = require('../../../controllers/update_scheduler_common');
 
 const utils = require('../../common/utils');
@@ -547,5 +548,251 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
         'mesh_upgrade': 0,
       },
     });
+  });
+
+
+  // failedDownload normal 1
+  test(
+    'Validate Scheduler Common - failedDownload normal 1',
+    async () => {
+    // TR-069 device
+    const mac = models.defaultMockDevices[0]._id;
+
+
+    // Set the mock
+    let config = models.copyConfigFrom(
+      models.defaultMockConfigs[0]._id,
+      {
+        _id: '62b0f57a6ceffe3c4f9d4656',
+        is_aborted: false,
+        device_update_schedule: {
+          rule: {
+            done_devices: [{}],
+            in_progress_devices: [
+              {
+                mac: mac,
+                retry_count: 0,
+                slave_count: 0,
+                slave_updates_remaining: 2,
+                mesh_current: 0,
+                mesh_upgrade: 0,
+              },
+            ],
+          },
+          is_aborted: false,
+          is_active: true,
+          device_count: 2,
+        },
+      },
+    );
+    utils.common.mockConfigs(config, 'findOne');
+    utils.common.mockDefaultDevices();
+
+
+    // Set spy
+    const configSpy = jest.spyOn(updateCommon, 'configQuery');
+    const updateSpy = jest.spyOn(ConfigModel, 'updateOne');
+
+
+    // Execute and compare
+    const result = await updateCommon.failedDownload(mac);
+    expect(result.success).toBe(true);
+
+    expect(updateSpy).toBeCalledWith({
+      'is_default': true,
+      'device_update_schedule.rule.in_progress_devices.mac': mac,
+    }, {
+      '$set': {
+        'device_update_schedule.rule.in_progress_devices.$.retry_count':
+          1,
+      },
+    });
+
+    expect(configSpy).toBeCalledWith(null, {
+      'device_update_schedule.rule.in_progress_devices': {'mac': mac},
+    }, {
+      'device_update_schedule.rule.to_do_devices': {
+        'mac': mac,
+        'state': 'retry',
+        'retry_count': 1,
+        'slave_count': 0,
+        'slave_updates_remaining': 2,
+        'mesh_current': 0,
+        'mesh_upgrade': 0,
+      },
+    });
+  });
+
+
+  // failedDownload normal 2
+  test(
+    'Validate Scheduler Common - failedDownload normal 2',
+    async () => {
+    // Flashbox device
+    const mac = models.defaultMockDevices[1]._id;
+
+
+    // Set the mock
+    let config = models.copyConfigFrom(
+      models.defaultMockConfigs[0]._id,
+      {
+        _id: '62b0f57a6ceffe3c4f9d4656',
+        is_aborted: false,
+        device_update_schedule: {
+          rule: {
+            release: '61.1-220826',
+            done_devices: [{}],
+            in_progress_devices: [
+              {
+                mac: mac,
+                retry_count: 0,
+                slave_count: 0,
+                slave_updates_remaining: 2,
+                mesh_current: 0,
+                mesh_upgrade: 0,
+              },
+            ],
+          },
+          is_aborted: false,
+          is_active: true,
+          device_count: 2,
+        },
+      },
+    );
+    utils.common.mockConfigs(config, 'findOne');
+    utils.common.mockDevices(models.defaultMockDevices[1], 'findOne');
+
+
+    // Set spy
+    const updateSpy = jest.spyOn(ConfigModel, 'updateOne');
+    const meshSpy = jest.spyOn(meshHandler, 'updateMeshDevice');
+
+
+    // Execute and compare
+    const result = await updateCommon.failedDownload(mac);
+    expect(result.success).toBe(true);
+
+    expect(updateSpy).toBeCalledWith({
+      'is_default': true,
+      'device_update_schedule.rule.in_progress_devices.mac': mac,
+    }, {
+      '$set': {
+        'device_update_schedule.rule.in_progress_devices.$.retry_count':
+          1,
+      },
+    });
+
+    expect(meshSpy).toBeCalledWith(mac, {
+      release: config.device_update_schedule.rule.release,
+    });
+  });
+
+
+  // isUpdating null config
+  test(
+    'Validate Scheduler Common - isUpdating null config',
+    async () => {
+    utils.common.mockConfigs(null, 'findOne');
+
+    // Execute and compare
+    const result = await updateCommon.isUpdating('aa:bb:cc:dd:ee:ff');
+    expect(result.success).toBe(false);
+    expect(result.error).toContain(
+      t('noSchedulingActive').replace('({{errorline}})', ''),
+    );
+  });
+
+
+  // isUpdating device not found
+  test(
+    'Validate Scheduler Common - isUpdating device not found',
+    async () => {
+    // TR-069 device
+    const mac = models.defaultMockDevices[0]._id;
+
+    // Set the mock
+    let config = models.copyConfigFrom(
+      models.defaultMockConfigs[0]._id,
+      {
+        _id: '62b0f57a6ceffe3c4f9d4656',
+        is_aborted: false,
+        device_update_schedule: {
+          rule: {
+            release: '61.1-220826',
+            done_devices: [{}],
+            in_progress_devices: [
+              {
+                mac: mac,
+                retry_count: 0,
+                slave_count: 0,
+                slave_updates_remaining: 2,
+                mesh_current: 0,
+                mesh_upgrade: 0,
+              },
+            ],
+          },
+          is_aborted: false,
+          is_active: true,
+          device_count: 2,
+        },
+      },
+    );
+    utils.common.mockConfigs(config, 'findOne');
+    utils.common.mockDefaultDevices();
+
+    // Execute and compare
+    const result = await updateCommon.isUpdating(
+      models.defaultMockDevices[1]._id,
+    );
+
+    expect(result.success).toBe(true);
+    expect(result.updating).toBe(false);
+    expect(result.version).toBe('61.1-220826');
+  });
+
+
+  // isUpdating device updating
+  test(
+    'Validate Scheduler Common - isUpdating device updating',
+    async () => {
+    // TR-069 device
+    const mac = models.defaultMockDevices[1]._id;
+
+    // Set the mock
+    let config = models.copyConfigFrom(
+      models.defaultMockConfigs[0]._id,
+      {
+        _id: '62b0f57a6ceffe3c4f9d4656',
+        is_aborted: false,
+        device_update_schedule: {
+          rule: {
+            release: '61.1-220826',
+            done_devices: [{}],
+            in_progress_devices: [
+              {
+                mac: mac,
+                retry_count: 0,
+                slave_count: 0,
+                slave_updates_remaining: 2,
+                mesh_current: 0,
+                mesh_upgrade: 0,
+              },
+            ],
+          },
+          is_aborted: false,
+          is_active: true,
+          device_count: 2,
+        },
+      },
+    );
+    utils.common.mockConfigs(config, 'findOne');
+    utils.common.mockDefaultDevices();
+
+    // Execute and compare
+    const result = await updateCommon.isUpdating(mac);
+
+    expect(result.success).toBe(true);
+    expect(result.updating).toBe(true);
+    expect(result.version).toBe('61.1-220826');
   });
 });
