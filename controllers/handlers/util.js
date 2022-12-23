@@ -37,10 +37,10 @@ utilHandlers.orderNumericGenieKeys = function(keys) {
   return onlyNumbers.sort((a, b)=>a-b);
 };
 
-utilHandlers.checkForNestedKey = function(
+utilHandlers.traverseNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return false;
+  if (!data) return {success: false};
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
@@ -57,43 +57,43 @@ utilHandlers.checkForNestedKey = function(
       splitKey[i] = targetIndex;
     }
     if (!current.hasOwnProperty(splitKey[i])) {
-      return false;
+      return {success: false};
     }
     current = current[splitKey[i]];
   }
-  return true;
+  return {
+    success: true,
+    key: splitKey.join('.'),
+    value: current,
+  };
+}
+
+utilHandlers.checkForNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  return ret.success;
 };
 
-// Iterates from data as a JSON like format and retrieves value or object if
+// Iterates from data as a JSON like format and retrieves value or retect if
 // it matches the key argument.
 // Example:
 // data: {a: 1, b: {c: {d: 2}}} ; key = 'b.c'; returns {d: 2}
 utilHandlers.getFromNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return undefined;
-  let current = data;
-  let splitKey = key.split('.');
-  for (let i = 0; i < splitKey.length; i++) {
-    if (splitKey[i] === '*') {
-      let orderedKeys = utilHandlers.orderNumericGenieKeys(
-        Object.keys(current),
-      );
-      let targetIndex;
-      if (useLastIndexOnWildcard) {
-        targetIndex = orderedKeys[orderedKeys.length - 1];
-      } else {
-        targetIndex = orderedKeys[0];
-      }
-      splitKey[i] = targetIndex;
-    }
-    if (!current.hasOwnProperty(splitKey[i])) {
-      return undefined;
-    }
-    current = current[splitKey[i]];
-  }
-  return current;
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  if (!ret.success) return undefined;
+  return ret.value;
 };
+
+utilHandlers.replaceNestedKeyWildcards = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  if (!ret.success) return undefined;
+  return ret.key;
+}
 
 // Returns {key: genieFieldValue}
 utilHandlers.getAllNestedKeysFromObject = function(
