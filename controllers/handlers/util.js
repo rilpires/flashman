@@ -75,7 +75,7 @@ utilHandlers.checkForNestedKey = function(
   return ret.success;
 };
 
-// Iterates from data as a JSON like format and retrieves value or retect if
+// Iterates from data as a JSON like format and retrieves value or object if
 // it matches the key argument.
 // Example:
 // data: {a: 1, b: {c: {d: 2}}} ; key = 'b.c'; returns {d: 2}
