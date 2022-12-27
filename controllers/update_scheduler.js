@@ -240,7 +240,7 @@ const markNextForUpdate = async function() {
     device.release = config.device_update_schedule.rule.release;
 
     // Get the case when the task is in ToDo but the device is already
-    // with the firmware installed. It may happen during analready done update
+    // with the firmware installed. It may happen during an already done update
     // but the task was not moved to done.
     if (device.release === device.installed_release) {
       let count = config.device_update_schedule.device_count;
@@ -278,7 +278,7 @@ const markNextForUpdate = async function() {
       return {success: true, marked: false};
     }
 
-    // Mesh upgrade, only upgrade slaves if not TR069
+    // Mesh upgrade, only upgrade slaves if master is not TR069
     if (nextDevice.slave_count && device.use_tr069 === false) {
       let nextState;
       const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
