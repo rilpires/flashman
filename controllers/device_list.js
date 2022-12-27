@@ -1319,25 +1319,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
         const isDevOn = mqttClientsMap[device._id.toUpperCase()];
         device.releases = devReleases;
 
-        // Status color
-        let deviceColor = 'grey-text';
-        if (device.use_tr069) { // if this device uses tr069 to be controlled.
-          if (device.last_contact >= tr069Times.recovery) {
-          // if we are inside first threshold.
-            deviceColor = 'green-text';
-          } else if (device.last_contact >= tr069Times.offline) {
-          // if we are inside second threshold.
-            deviceColor = 'red-text';
-          }
-          // if we are out of these thresholds, we keep the default gray value.
-        } else { // default device, flashbox controlled.
-          if (isDevOn) {
-            deviceColor = 'green-text';
-          } else if (device.last_contact.getTime() >= lastHour.getTime()) {
-            deviceColor = 'red-text';
-          }
-        }
-        device.status_color = deviceColor;
+        device.status_color = deviceHandlers
+          .buildStatusColor(device, tr069Times, isDevOn)+'-text';
 
         // Device permissions
         device.permissions = DeviceVersion.devicePermissions(device);
@@ -2090,37 +2073,14 @@ deviceListController.getDeviceReg = function(req, res) {
       matchedDevice.lastboot_log = null;
     }
 
-    let deviceColor = 'grey';
-    matchedDevice.online_status = false;
-    if (matchedDevice.use_tr069) { // if this matchedDevice uses tr069.
-      // tr069 time thresholds for device status.
-      let tr069Times = await deviceHandlers.buildTr069Thresholds();
-      // classifying device status.
-      if (matchedDevice.last_contact >= tr069Times.recovery) {
-      // if we are inside first threshold.
-        deviceColor = 'green';
-        matchedDevice.online_status = true;
-      } else if (matchedDevice.last_contact >= tr069Times.offline) {
-      // if we are inside second threshold.
-        deviceColor = 'red';
-      }
-      // if we are out of these thresholds, we keep the default gray value.
-    } else { // default matchedDevice, flashbox controlled.
-      const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[req.params.id.toUpperCase()];
-      });
-      matchedDevice.online_status = (isDevOn);
-      // Status color
-      let lastHour = new Date();
-      lastHour.setHours(lastHour.getHours() - 1);
-      if (matchedDevice.online_status) {
-        deviceColor = 'green';
-      } else if (!!matchedDevice.last_contact &&
-        matchedDevice.last_contact.getTime() >= lastHour.getTime()) {
-        deviceColor = 'red';
-      }
-    }
-    matchedDevice.status_color = deviceColor;
+    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[req.params.id.toUpperCase()];
+    });
+    // tr069 time thresholds for device status.
+    let tr069Times = await deviceHandlers.buildTr069Thresholds();
+
+    matchedDevice.status_color = await deviceHandlers
+      .buildStatusColor(matchedDevice, tr069Times, isDevOn);
 
     return res.status(200).json(matchedDevice);
   });
@@ -2157,6 +2117,8 @@ deviceListController.setDeviceReg = function(req, res) {
         util.returnObjOrEmptyStr(content.pppoe_user).toString().trim();
       let pppoePassword =
         util.returnObjOrEmptyStr(content.pppoe_password).toString().trim();
+      let wanMtu = util.returnObjOrNum(content.wan_mtu, 0);
+      let wanVlan = util.returnObjOrNum(content.wan_vlan, 0);
       let ipv6Enabled =
         parseInt(util.returnObjOrNum(content.ipv6_enabled, 2));
       let lanSubnet =
@@ -2258,6 +2220,12 @@ deviceListController.setDeviceReg = function(req, res) {
             genericValidate(pppoePassword, validator.validatePassword,
                             'pppoe_password', matchedConfig.pppoePassLength);
           }
+        }
+        if (wanMtu != 0) {
+          genericValidate(wanMtu, validator.validateMtu, 'wan_mtu');
+        }
+        if (wanVlan != 0) {
+          genericValidate(wanVlan, validator.validateVlan, 'wan_vlan');
         }
         // -> 'updating registry' scenario
         let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -2437,6 +2405,35 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantPPPoEInfo > 1) {
                 changes.wan.pppoe_pass = pppoePassword;
                 matchedDevice.pppoe_password = pppoePassword;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            // Change wan MTU and VLAN
+            if (content.hasOwnProperty('wan_mtu') &&
+                wanMtu != 0 && wanMtu !== matchedDevice.wan_mtu) {
+              if (superuserGrant || role.grantWanAdvancedInfo >= 2) {
+                if (connectionType == 'pppoe') {
+                  changes.wan.mtu_ppp = wanMtu;
+                } else {
+                  changes.wan.mtu = wanMtu;
+                }
+                matchedDevice.wan_mtu = wanMtu;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('wan_vlan') &&
+                wanVlan != 0 && wanVlan !== matchedDevice.wan_vlan_id) {
+              if (superuserGrant || role.grantWanAdvancedInfo >= 2) {
+                if (connectionType == 'pppoe') {
+                  changes.wan.vlan_ppp = wanVlan;
+                } else {
+                  changes.wan.vlan = wanVlan;
+                }
+                matchedDevice.wan_vlan_id = wanVlan;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -4406,7 +4403,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       'wan_negociated_speed': true, 'wan_negociated_duplex': true,
       'external_reference.kind': true, 'external_reference.data': true,
       'model': true, 'version': true, 'hw_version': true,
-      'installed_release': true, 'do_update': true,
+      'installed_release': true, 'do_update': true, 'last_contact': true,
     };
 
     let devices = {};
@@ -4470,6 +4467,7 @@ deviceListController.exportDevicesCsv = async function(req, res) {
       {label: t('hardwareVersion'), value: 'hw_version'},
       {label: 'Release', value: 'installed_release'},
       {label: t('updatefirmware'), value: 'do_update'},
+      {label: t('lastContactData'), value: 'last_contact'},
     );
     const json2csvParser = new Parser({fields: csvFields});
     const devicesCsv = json2csvParser.parse(devices);

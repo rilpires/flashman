@@ -597,8 +597,9 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
 
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let diagnStateField = fields.diagnostics.speedtest.diag_state;
+  let diagnInterfaceField = fields.diagnostics.speedtest.interface;
   let diagnNumConnField = fields.diagnostics.speedtest.num_of_conn;
+  let diagnStateField = fields.diagnostics.speedtest.diag_state;
   let diagnURLField = fields.diagnostics.speedtest.download_url;
 
   let numberOfCon = 3;
@@ -615,6 +616,17 @@ const startSpeedtestDiagnose = async function(acsID, bandEstimative) {
     [diagnNumConnField, numberOfCon, 'xsd:unsignedInt'],
     [diagnURLField, speedtestHostUrl, 'xsd:string']],
   };
+  if (cpe.modelPermissions().wan.speedTestSetInterface) {
+    let interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+      'WANConnectionDevice.1.WANPPPConnection.1.';
+    if (device.connection_type === 'dhcp') {
+      interfaceVal = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.1.WANIPConnection.1.';
+    }
+    task.parameterValues.push(
+      [diagnInterfaceField, interfaceVal, 'xsd:string'],
+    );
+  }
   // Special case for models that cannot change number of connections
   if (!diagnNumConnField) {
     task.parameterValues.splice(1, 1);
@@ -682,15 +694,6 @@ const startTracerouteDiagnose = async function(acsID) {
     [diagnMaxHops, maxHops, 'xsd:unsignedInt'],
   ];
 
-  if (!isNaN(permissions.traceroute.dataBlockSizeToSet)) {
-    parameterValues.push(
-      [
-        diagnDataBlockSize,
-        permissions.traceroute.dataBlockSizeToSet.toString(),
-        'xsd:string',
-      ],
-    );
-  }
   if (shouldSetIpVersion) {
     parameterValues.push(
       [diagnIpVersion, 'IPv4', 'xsd:string'],

@@ -28,8 +28,9 @@ greatekModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.mesh.setEncryptionForCable = true;
-  permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 250;
@@ -134,8 +135,10 @@ greatekModel.convertRssiValue = function(rssiValue) {
 
 greatekModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.WLAN_RSSI';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+

@@ -16,19 +16,23 @@
     let validateRegex = function(value, minlength, length, regex) {
       let valid = true;
       let err = [];
-
-      if (value.length < minlength) {
-        valid = false;
-        err.push(0);
+      if (typeof value === 'string') {
+        if (value.length < minlength) {
+          valid = false;
+          err.push(0);
+        } else {
+          if (value.length > length) {
+            valid = false;
+            err.push(1);
+          }
+          if (!value.match(regex)) {
+            valid = false;
+            err.push(2);
+          }
+        }
       } else {
-        if (value.length > length) {
-          valid = false;
-          err.push(1);
-        }
-        if (!value.match(regex)) {
-          valid = false;
-          err.push(2);
-        }
+        valid = false;
+        err.push(3);
       }
       return {valid: valid, err: err};
     };
@@ -141,6 +145,7 @@
         t('thisFieldIsMandatory'),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('acceptableCharOnly0-9a-zA-Z @ul-.'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(user, 1, 64, /^[a-zA-Z0-9@.\-_#\s]+$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -155,6 +160,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: minlength}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(pass, minlength, 64,
                               /^[a-zA-Z0-9.\-_#!@$%&*=+?]+$/);
@@ -171,6 +177,7 @@
         ((spaceChar) ?
           t('acceptableCharsAre0-9a-zA-Z .-ul') : // message with allowed space
           t('acceptableCharsAre0-9a-zA-Z.-ul')), // message with denied space
+        t('mustBeAString'),
       ];
       if (accentedChars) {
         // Remove diacritics before applying the regex test
@@ -190,10 +197,30 @@
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
         t('acceptableCharsAre0-9a-zA-Z .-ul#'),
         t('endingSeparatorMustHaveAtLeastOne.-ul#'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(ssid, ((isRequired === true)?1:0), 16,
         /^([a-zA-Z0-9.\-_#\s]+(\.|-|_|#))*$/);
 
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
+    Validator.prototype.validateWebInterfacePassword =
+     function(pass) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
+        t('onuWebPasswordTooltip'),
+        t('mustBeAString'),
+      ];
+      let passRegex = new RegExp(''
+          + /^[^-!@#$%^&*+_.]/.source
+          + /(?=.*[A-Z])/.source
+          + /(?=.*[a-z])/.source
+          + /(?=.*[0-9])/.source
+          + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      let ret = validateRegex(pass, 8, 16, passRegex);
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
@@ -203,6 +230,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 64}),
         t('someEspecialCharactersAccentCedileAreNotAccepted'),
+        t('mustBeAString'),
       ];
       if (accentedChars) {
         // Remove diacritics before applying the regex test
@@ -219,6 +247,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 7}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 15}),
         t('thisFieldMustHaveValidIpFormat'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(ip, 7, 15, /^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/);
       ret.err = ret.err.map((ind) => messages[ind]);
@@ -230,6 +259,7 @@
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 255}),
         t('insertValidFqdn'),
+        t('mustBeAString'),
       ];
       let ret = validateRegex(fqdn, 1, 255,
         /^[0-9a-z]+(?:-[0-9a-z]+)*(?:\.[0-9a-z]+(?:-[0-9a-z]+)*)+$/i);
@@ -323,6 +353,50 @@
         }
       }
       return isOnRange && isIpFormatCorrect;
+    };
+
+    /* RFC 791: in IPv4 the minimum datagram size is 576.
+      RFC 8200: in IPv6 the minimum datagram size is 1280.
+      RFC 894: In Ethernet the maximum datagram size is 1500.
+      RFC 2516: In PPPoE the maximum datagram size is 1492. */
+    Validator.prototype.validateMtu = function(mtuField, isPPPoE) {
+      if (mtuField) {
+        try {
+          let mtuValue = Number(mtuField);
+          if (Number.isInteger(mtuValue)) {
+            let max = (isPPPoE) ? 1492 : 1500;
+            if (mtuValue >= 576 && mtuValue <= max) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: max})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
+        } catch (e) {
+          return {valid: false, err: [t('errorOccurred')]};
+        }
+      } else return {valid: false, err: [t('emptyField')]};
+    };
+
+    /* RFC 2674: VLAN values is between 1 and 4094 */
+    Validator.prototype.validateVlan = function(vlanField) {
+      if (vlanField) {
+        try {
+          let vlanValue = Number(vlanField);
+          if (Number.isInteger(vlanValue)) {
+            if (vlanValue >= 1 && vlanValue <= 4094) return {valid: true};
+            else {
+              return {
+                valid: false,
+                err: [t('invalidFieldsMustBeInRange', {min: 1, max: 4094})],
+              };
+            }
+          } else return {valid: false, err: [t('valueInvalid')]};
+        } catch (e) {
+          return {valid: false, err: [t('errorOccurred')]};
+        }
+      } else return {valid: false, err: [t('emptyField')]};
     };
 
     return Validator;

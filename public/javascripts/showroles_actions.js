@@ -150,6 +150,23 @@ anlixDocumentReady.add(function() {
                       $('<div>')
                       .addClass('md-selectfield form-control my-0').append(
                         $('<label>')
+                        .text(t('wanAdvancedInformation')),
+                        $('<select>')
+                        .addClass('browser-default md-select')
+                        .attr('name', 'grant-wan-advanced-info').append(
+                          $('<option>').val(0)
+                          .text(t('cannotView')),
+                          $('<option>').val(1)
+                          .text(t('View')),
+                          $('<option>').val(2)
+                          .text(t('viewAndEdit')),
+                        ),
+                      ),
+                    ),
+                    $('<div>').addClass('md-form').append(
+                      $('<div>')
+                      .addClass('md-selectfield form-control my-0').append(
+                        $('<label>')
                         .text(t('viewPasswordWhenEditing')),
                         $('<select>')
                         .addClass('browser-default md-select')
@@ -782,6 +799,9 @@ anlixDocumentReady.add(function() {
         .attr('selected', 'selected');
         $(rowObj).find('[name=grant-firmware-restricted-upgrade] option[value='+
           roleObj.grantFirmwareRestrictedUpgrade + ']')
+        .attr('selected', 'selected');
+        $(rowObj).find('[name=grant-wan-advanced-info] option[value='+
+          roleObj.grantWanAdvancedInfo + ']')
         .attr('selected', 'selected');
       });
     } else {

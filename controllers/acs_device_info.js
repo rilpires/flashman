@@ -29,6 +29,70 @@ let acsDeviceInfoController = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
+// Max number of sync requests concorrent (0 = disable)
+const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
+
+// Max time to wait for sync response (default to 30s)
+const SYNCTIME = (process.env.FLM_SYNC_TIME || 30);
+
+let syncStats = {
+  cpes: 0,
+  time: 0,
+  timeout: 0,
+};
+
+// Show statistics every 10 minutes if have sync
+setInterval(() => {
+  if ((SYNCMAX > 0) && (syncStats.cpes > 0)) {
+    console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
+      `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
+      `Timeouts: ${syncStats.timeout}`);
+    syncStats.cpes = 0;
+    syncStats.time = 0;
+    syncStats.timeout = 0;
+  }
+}, 10 * 60 * 1000);
+
+let syncRateControl = new Map();
+
+const addRCSync = function(acsID) {
+  // RC Disabled
+  if (SYNCMAX == 0) return true;
+
+  const _now = new Date();
+
+  for (const [_id, _startTime] of syncRateControl.entries()) {
+    // Search for an old position
+    if (_startTime + (SYNCTIME*1000) < _now) {
+      syncStats.timeout++;
+      syncRateControl.delete(_id);
+    }
+    // search for repeted acsID (sanity check, must not occour)
+    if (_id == acsID) return false;
+  }
+
+  if (syncRateControl.size < SYNCMAX) {
+    // we have slots.
+    syncStats.cpes++;
+    syncRateControl.set(acsID, _now);
+    return true;
+  }
+
+  // we dont have more slots
+  return false;
+};
+
+const removeRCSync = function(acsID) {
+  if (SYNCMAX == 0) return;
+
+  if (syncRateControl.has(acsID)) {
+    const _now = new Date();
+    const _startTime = syncRateControl.get(acsID);
+    syncStats.time += _now - _startTime;
+    syncRateControl.delete(acsID);
+  }
+};
+
 const convertSubnetMaskToInt = function(mask) {
   if (mask === '255.255.255.0') {
     return 24;
@@ -309,6 +373,12 @@ const createRegistry = async function(req, cpe, permissions) {
   } else if (!hasPPPoE && data.wan.mtu && data.wan.mtu.value) {
     wanMtu = data.wan.mtu.value;
   }
+  let wanVlan;
+  if (hasPPPoE && data.wan.vlan_ppp && data.wan.vlan_ppp.value) {
+    wanVlan = data.wan.vlan_ppp.value;
+  } else if (!hasPPPoE && data.wan.vlan && data.wan.vlan.value) {
+    wanVlan = data.wan.vlan.value;
+  }
 
   // Collect WAN max transmit rate, if available
   let wanRate;
@@ -384,8 +454,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
-    wan_vlan_id: (data.wan.vlan && data.wan.vlan.value) ?
-      data.wan.vlan.value : undefined,
+    wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
     wifi_ssid: ssid,
     wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
@@ -536,8 +605,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     let syncDiff = dateNow - device.last_tr069_sync;
     syncDiff += 10000; // Give an extra 10 seconds to buffer out race conditions
     if (syncDiff >= config.tr069.sync_interval) {
-      device.last_tr069_sync = dateNow;
-      doSync = true;
+      if (addRCSync(id)) {
+        device.last_tr069_sync = dateNow;
+        doSync = true;
+      }
     }
   }
   await device.save().catch((err) => {
@@ -612,6 +683,10 @@ acsDeviceInfoController.requestSync = async function(device) {
   if (fields.wan.vlan) {
     dataToFetch.vlan = true;
     parameterNames.push(fields.wan.vlan);
+  }
+  if (fields.wan.vlan_ppp) {
+    dataToFetch.vlan_ppp = true;
+    parameterNames.push(fields.wan.vlan_ppp);
   }
   // WAN bytes and PON signal fields
   dataToFetch.bytes = true;
@@ -712,6 +787,8 @@ const getFieldFromGenieData = function(data, field, useLastIndexOnWildcard) {
 const fetchSyncResult = async function(
   acsID, dataToFetch, parameterNames, cpe,
 ) {
+  removeRCSync(acsID);
+
   let query = {_id: acsID};
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
@@ -819,6 +896,11 @@ const fetchSyncResult = async function(
       if (dataToFetch.vlan) {
         acsData.wan.vlan = getFieldFromGenieData(
           data, fields.wan.vlan, useLastIndexOnWildcard,
+        );
+      }
+      if (dataToFetch.vlan_ppp) {
+        acsData.wan.vlan_ppp = getFieldFromGenieData(
+          data, fields.wan.vlan_ppp, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.bytes) {
@@ -1181,6 +1263,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.mtu_ppp && data.wan.mtu_ppp.value) {
       device.wan_mtu = data.wan.mtu_ppp.value;
     }
+    if (data.wan.vlan_ppp && data.wan.vlan_ppp.value) {
+      device.wan_vlan_id = data.wan.vlan_ppp.value;
+    }
   } else if (hasPPPoE === false) {
     // Only have to process fields like IP, uptime and MTU
     if (data.wan.wan_ip && data.wan.wan_ip.value) {
@@ -1196,15 +1281,15 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.mtu && data.wan.mtu.value) {
       device.wan_mtu = data.wan.mtu.value;
     }
+    if (data.wan.vlan && data.wan.vlan.value) {
+      device.wan_vlan_id = data.wan.vlan.value;
+    }
     device.pppoe_user = '';
     device.pppoe_password = '';
   }
 
-  // VLAN, Rate and Duplex WAN fields are processed separately, since connection
+  // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
-  if (data.wan.vlan && data.wan.vlan.value) {
-    device.wan_vlan_id = data.wan.vlan.value;
-  }
   if (data.wan.rate && data.wan.rate.value) {
     device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }

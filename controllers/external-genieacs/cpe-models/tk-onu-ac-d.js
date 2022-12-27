@@ -61,10 +61,13 @@ tkOnuAcDModel.getBeaconType = function() {
 };
 
 tkOnuAcDModel.convertChannelToTask = function(channel, fields, masterKey) {
-  let auto = (channel === 'auto');
+  if (channel === 'auto') {
+    channel = '0';
+  }
   let values = [];
+  const parsedChannel = parseInt(channel);
   values.push([
-    fields[masterKey]['channel'], (auto) ? '0' : channel, 'xsd:unsignedInt',
+    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
   ]);
   return values;
 };
@@ -83,8 +86,10 @@ tkOnuAcDModel.getModelFields = function() {
   // Does not have the field for syncing web admin username
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+
     'X_CT-COM_TeleComAccount.Password';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice'+
-    '.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+

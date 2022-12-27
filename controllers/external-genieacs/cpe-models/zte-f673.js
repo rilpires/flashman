@@ -13,6 +13,8 @@ zteModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.mustRebootAfterChanges = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
@@ -113,8 +115,10 @@ zteModel.getModelFields = function() {
   fields.wifi5.band = fields.wifi5.band.replace(
     /BandWidth/g, 'X_CMCC_ChannelWidth',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1' +
-    '.WANPPPConnection.1.X_CMCC_VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
   fields.port_mapping_values.protocol = [
     'PortMappingProtocol', 'BOTH', 'xsd:string',
   ];

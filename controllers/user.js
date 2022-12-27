@@ -178,6 +178,7 @@ userController.postRole = function(req, res) {
     grantFirmwareBetaUpgrade: req.body['grant-firmware-beta-upgrade'],
     grantFirmwareRestrictedUpgrade:
       req.body['grant-firmware-restricted-upgrade'],
+    grantWanAdvancedInfo: req.body['grant-wan-advanced-info'],
   });
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
@@ -397,6 +398,7 @@ userController.editRole = function(req, res) {
     role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
     role.grantFirmwareRestrictedUpgrade =
       req.body['grant-firmware-restricted-upgrade'];
+    role.grantWanAdvancedInfo = req.body['grant-wan-advanced-info'];
 
     if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
       console.log('Role conflict error');

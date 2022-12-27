@@ -14,6 +14,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
@@ -103,8 +105,10 @@ huaweiModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.X_HW_VLAN';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
   fields.devices.host_cable_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'Hosts.Host.*.X_HW_NegotiatedRate';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +

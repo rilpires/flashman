@@ -15,6 +15,8 @@ fiberhomeModel.modelPermissions = function() {
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Error_CannotResolveHostName';
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSetInterface = true;
   permissions.wan.traceRouteSetInterface = true;
   permissions.wan.portForwardPermissions =
@@ -92,8 +94,10 @@ fiberhomeModel.getModelFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.VLANID';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+  'WANConnectionDevice.*.WANIPConnection.*.VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+  'WANConnectionDevice.*.WANPPPConnection.*.VLANID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRSSI';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +

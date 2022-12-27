@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.53.0",
+  "version": "2.56.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -18,7 +18,7 @@
   "genieacs": {
     "ref": "fa95d7a310b7faaccf574d6de53e134558cdab69",
     "presetHash": "cb7162a7df7fcadb60e32a70c484fca0",
-    "provisionHash": "73ae03f5d5494aaebe19eaad436f8163"
+    "provisionHash": "47b35d42fff1a490ab2dda8aa3ff85c4"
   },
   "dependencies": {
     "@fortawesome/fontawesome-free": "~5.10.2",
@@ -101,7 +101,7 @@
     "eslint-plugin-jest": "^24.3.6",
     "file-loader": "^6.2.0",
     "jest": "^27.5.1",
-    "mockingoose": "^2.15.2",
+    "mockingoose": "https://github.com/anlix-io/mockingoose.git",
     "mqtt": "1.14.0",
     "nodemon": "^2.0.3",
     "regenerator-runtime": "^0.13.7",

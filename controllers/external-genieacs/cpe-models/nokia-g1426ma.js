@@ -2,26 +2,49 @@ const basicCPEModel = require('./base-model');
 
 let nokiaModel = Object.assign({}, basicCPEModel);
 
-nokiaModel.identifier = {vendor: 'Nokia', model: 'G-140W-C'};
+nokiaModel.identifier = {vendor: 'Nokia', model: 'G-1426-MA'};
 
 nokiaModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.speedTest = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.speedTestLimit = 1000;
+  permissions.wan.speedTestSetInterface = true;
+  permissions.wan.portForwardQueueTasks = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noRanges;
   permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
   ];
-  permissions.wifi.modeWrite = false;
+  permissions.wifi.axWiFiMode = true;
   permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.firmwareUpgrades = {
-    '3FE46343AFIA57': [],
-    '3FE46343AFIA89': [],
-    '3FE46343AFIA94': [],
+    '3FE49218HJIJ62': [],
   };
   return permissions;
 };
+
+// 2.4Ghz modes:
+// ax: ax
+// b,g,n: b,g,n
+// b,g: b,g
+// g,n: g,n
+// b: b
+// g: g
+// n: n
+
+// 5Ghz modes:
+// ax: ax
+// ac: ac
+// a: a
+// n,a: n,a
 
 nokiaModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -30,14 +53,26 @@ nokiaModel.convertWifiMode = function(mode) {
     case '11n':
       return 'b,g,n';
     case '11na':
-      return 'a,n';
+      return 'n,a';
     case '11ac':
-      return 'a,n,ac';
+      return 'ac';
     case '11ax':
+      return 'ax';
     default:
       return '';
   }
 };
+
+// 2.4Ghz band:
+// 0: 20MHz
+// 1: 40MHz
+// 2: 20/40MHz
+
+// 5Ghz band:
+// 0: 20MHz
+// 1: 40MHz
+// 2: 20/40MHz auto
+// 3: 20/40/80MHz auto
 
 nokiaModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
@@ -86,6 +121,12 @@ nokiaModel.convertField = function(
   );
 };
 
+nokiaModel.convertGenieSerial = function(serial, mac) {
+  // Serial starts with 4E42454C which is "NBEL" in hex. This change matches
+  // vendor label's serial information
+  return 'NBEL' + serial.slice(8);
+};
+
 nokiaModel.getBeaconType = function() {
   return 'WPA/WPA2';
 };
@@ -100,6 +141,11 @@ nokiaModel.getModelFields = function() {
     'X_CMCC_TeleComAccount.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
     'X_CMCC_TeleComAccount.Password';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.'+
+    'WLANConfiguration.*.AssociatedDevice.*.RSSI';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.'+
+    'Hosts.Host.*.NegotiationRate';
+  fields.devices.host_cable_rate = fields.devices.host_rate;
   fields.diagnostics.traceroute.protocol = 'Mode';
   fields.wifi2.password = fields.wifi2.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
@@ -113,7 +159,13 @@ nokiaModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+  fields.wifi2.band = fields.wifi2.band.replace(
+    /BandWidth/g, 'X_CMCC_ChannelWidth',
+  );
+  fields.wifi5.band = fields.wifi5.band.replace(
+    /BandWidth/g, 'X_CMCC_ChannelWidth',
+  );
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CMCC_GponInterfaceConfig.TXPower';
@@ -121,10 +173,12 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_VLANIDMark';
-  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
-  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.port_mapping_values.protocol[1] = 'TCP';
+  fields.port_mapping_values.remote_host[1] = '';
   return fields;
 };
 

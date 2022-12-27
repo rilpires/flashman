@@ -10,6 +10,8 @@ nokiaModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 800;
@@ -21,7 +23,6 @@ nokiaModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
   permissions.firmwareUpgrades = {
     '3FE49127HJII42': [],
   };
@@ -79,7 +80,15 @@ nokiaModel.getModelFields = function() {
     'WebAccount.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.Password';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.1.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
   fields.port_mapping_values.protocol[1] = 'TCPorUDP';
+  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.MaxMTUSize';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1'+
+    '.WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
   fields.port_mapping_values.remote_host = ['RemoteHost', '', 'xsd:string'];
   fields.port_mapping_fields.external_port_end = [
     'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',

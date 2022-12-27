@@ -162,6 +162,8 @@ tendaModel.getModelFields = function() {
     '.1.X_CT-COM_ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration'+
     '.2.X_CT-COM_ChannelWidth';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.MaxMTUSize';
 
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1'+
     '.WLANConfiguration.1.AssociatedDevice';

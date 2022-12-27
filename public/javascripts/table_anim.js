@@ -203,6 +203,7 @@ anlixDocumentReady.add(function() {
   let grantWanType = false;
   let grantSlaveDisassociate = false;
   let mustBlockLicenseAtRemoval = false;
+  let grantWanAdvancedInfo = 0;
 
   // For actions applied to multiple routers
   let selectedDevices = [];
@@ -238,6 +239,7 @@ anlixDocumentReady.add(function() {
     grantShowSearchSummary = role.grantShowSearchSummary;
     grantWanType = role.grantWanType;
     grantSlaveDisassociate = role.grantSlaveDisassociate;
+    grantWanAdvancedInfo = role.grantWanAdvancedInfo;
   }
 
   // Default column to sort rows
@@ -1442,6 +1444,13 @@ anlixDocumentReady.add(function() {
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
           let grantDiacritics = device.permissions.grantDiacritics;
           let grantSsidSpaces = device.permissions.grantSsidSpaces;
+          // WAN MTU and VLAN Id Information
+          let grantDeviceWanMtuRead = device.permissions.grantWanMtuRead;
+          let grantDeviceWanVlanRead = device.permissions.grantWanVlanRead;
+          let grantDeviceWanMtuEdit =
+            grantDeviceWanMtuRead && device.permissions.grantWanMtuEdit;
+          let grantDeviceWanVlanEdit =
+            grantDeviceWanVlanRead && device.permissions.grantWanVlanEdit;
           // WAN and LAN Information
           let grantWanLanInformation =
             device.permissions.grantWanLanInformation;
@@ -1450,6 +1459,15 @@ anlixDocumentReady.add(function() {
           let statusClasses = buildStatusClasses(device);
           let statusAttributes = buildStatusAttributes(device);
           let notifications = buildNotification();
+
+          let grantWanMtuEdit = (grantDeviceWanMtuEdit &&
+            (isSuperuser || grantWanAdvancedInfo >= 2));
+          let grantWanVlanEdit = (grantDeviceWanVlanEdit &&
+            (isSuperuser || grantWanAdvancedInfo >= 2));
+          let grantWanMtuRead = (grantDeviceWanMtuRead &&
+            (isSuperuser || grantWanAdvancedInfo >= 1));
+          let grantWanVlanRead = (grantDeviceWanVlanRead &&
+            (isSuperuser || grantWanAdvancedInfo >= 1));
 
           let slaves = [];
           let isSelectableRow = true;
@@ -1527,6 +1545,8 @@ anlixDocumentReady.add(function() {
             (isSuperuser || grantWifiInfo >= 1)+'"';
           formAttr += ' data-validate-pppoe="'+
             (isSuperuser || grantPPPoEInfo >= 1)+'"';
+          formAttr += ' data-validate-wan-mtu="'+grantWanMtuEdit+'"';
+          formAttr += ' data-validate-wan-vlan="'+grantWanVlanEdit+'"';
           formAttr += ' data-validate-ipv6-enabled="'+
             grantWifiPowerHiddenIpv6Box+'"';
           formAttr += ' data-validate-wifi-mode="'+
@@ -1785,6 +1805,40 @@ anlixDocumentReady.add(function() {
               '</div>'+
             '</div>'+
           '</div>';
+
+          let mtuForm = '';
+          if (grantWanMtuRead) {
+            let isIPoE = (!device.connection_type ||
+              device.connection_type.toUpperCase() !== 'PPPOE');
+            let max = (isIPoE) ? 1500 : 1492;
+            mtuForm =
+            '<div class="md-form input-entry">'+
+              '<label class="active">'+'MTU'+'</label>'+
+              '<input id="edit_wan_mtu-'+index+'" '+
+                'class="form-control" type="number" '+
+                'max='+max+' min=576 '+
+                'value='+((device.wan_mtu) ? device.wan_mtu : '')+' '+
+                (grantWanMtuEdit ? 'active' : 'disabled')+'>'+
+              '</input>'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>';
+          }
+
+          let vlanForm = '';
+          if (grantWanVlanRead) {
+            vlanForm =
+            '<div class="md-form input-entry">'+
+              '<label class="active">'+'VLAN'+'</label>'+
+              '<input id="edit_wan_vlan-'+index+'" '+
+                'class="form-control" type="number" '+
+                'max=4094 min=1 '+
+                'value='+((device.wan_vlan_id) ? device.wan_vlan_id : '')+' '+
+                (grantWanVlanEdit ? 'active' : 'disabled')+'>'+
+              '</input>'+
+              '<div class="invalid-feedback"></div>'+
+            '</div>';
+          }
+
           if (!device.connection_type ||
               device.connection_type.toUpperCase() !== 'PPPOE') {
             pppoeForm = pppoeForm.replace('$REPLACE_IS_PPPOE', 'd-none');
@@ -1839,19 +1893,8 @@ anlixDocumentReady.add(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
-                (isTR069 ?
-                  '<div class="md-form input-entry">'+
-                    '<label class="active">'+
-                      t('opticalSignalIntensity')+
-                    '</label>'+
-                    '<input class="form-control" type="text" maxlength="3" '+
-                    'value="'+
-                    ((ponRXPower) ? ponRXPower + ' dBm' : t('notAvailable'))+
-                    '" disabled></input>'+
-                    '<div class="invalid-feedback"></div>'+
-                  '</div>':
-                  ''
-                )+
+                (grantDeviceWanMtuRead ? mtuForm : '')+
+                (grantDeviceWanVlanRead ? vlanForm : '')+
                 '<div class="custom-control custom-checkbox" '+
                   '$REPLACE_IPV6_ENABLED_EN>'+
                   '<input class="custom-control-input" type="checkbox" '+
@@ -1885,11 +1928,24 @@ anlixDocumentReady.add(function() {
                   '" disabled></input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (isTR069 ?
+                  '<div class="md-form input-entry">'+
+                    '<label class="active">'+
+                      t('opticalSignalIntensity')+
+                    '</label>'+
+                    '<input class="form-control" type="text" maxlength="3" '+
+                    'value="'+
+                    ((ponRXPower) ? ponRXPower + ' dBm' : t('notAvailable'))+
+                    '" disabled></input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>':
+                  ''
+                )+
               '</div>'+
               '$REPLACE_PPPOE_FORM'+
             '</div>'+
             '<div class="row">'+
-              '<div class="col-8">'+
+              '<div class="col-12">'+
                 (grantRebootAfterWANChange ?
                   '<div class="alert alert-info">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
@@ -2653,6 +2709,7 @@ anlixDocumentReady.add(function() {
                               '<select class="browser-default md-select" '+
                                 'id="edit_wifi_mode-'+index+'" '+
                                 '$REPLACE_WIFI_MODE_EN>'+
+                                  '$REPLACE_WIFI_AX_MODE' +
                                   '<option value="11n" '+
                                     '$REPLACE_SELECTED_MODE_11n$>BGN'+
                                   '</option>'+
@@ -2892,10 +2949,14 @@ anlixDocumentReady.add(function() {
           }
 
           if (grantWiFiAXSupport) {
-            let axOpt = '<option value="11ax" $REPLACE_SELECTED_MODE5_11ax$>' +
+            let axOpt2 = '<option value="11ax" $REPLACE_SELECTED_MODE_11ax$>' +
               'AX</option>';
-            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', axOpt);
+            let axOpt5 = '<option value="11ax" $REPLACE_SELECTED_MODE5_11ax$>' +
+              'AX</option>';
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_AX_MODE', axOpt2);
+            wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', axOpt5);
           } else {
+            wifiTab = wifiTab.replace('$REPLACE_WIFI_AX_MODE', '');
             wifiTab = wifiTab.replace('$REPLACE_WIFI5_AX_MODE', '');
           }
           selectTarget = '$REPLACE_SELECTED_MODE5_' + device.wifi_mode_5ghz;
@@ -3055,7 +3116,7 @@ anlixDocumentReady.add(function() {
                   if (isSuperuser || grantSlaveDisassociate) {
                     disassocSlaveButton =
                       '<td>' +
-                      buildDisassociateSlave(device.do_update_status == 1) +
+                      buildDisassociateSlave(slaveDev.do_update_status == 1) +
                       '</td>';
                   }
                   infoRow = infoRow.replace('$REPLACE_UPGRADE',

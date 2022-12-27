@@ -2,6 +2,12 @@ let basicCPEModel = {};
 
 // These should not be copied over to each model, only referenced
 basicCPEModel.portForwardPermissions = {
+  noAsymNoRanges: {
+    simpleSymmetric: true,
+    simpleAsymmetric: false,
+    rangeSymmetric: false,
+    rangeAsymmetric: false,
+  },
   noRanges: {
    simpleSymmetric: true,
    simpleAsymmetric: true,
@@ -75,9 +81,14 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
+      allowReadWanMtu: true, // can read wan mtu at flashman's wan tab
+      allowEditWanMtu: true, // can edit wan mtu at flashman's wan tab
+      allowReadWanVlan: false, // can read wan vlan at flashman's wan tab
+      allowEditWanVlan: false, // can edit wan vlan at flashman's wan tab
       dhcpUptime: true, // will display wan uptime if in DHCP mode (Archer C6)
       pingTestSingleAttempt: false, // pingtest will ignore test count and use 1
       pingTestSetInterface: false, // pingtest will set device interface
+      speedTestSetInterface: false, // speedtest will set device interface
       traceRouteSetInterface: false, // traceroute will set device interface
       portForwardQueueTasks: false, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
@@ -130,10 +141,6 @@ basicCPEModel.modelPermissions = function() {
       * - hopCountExceededState:
       *     The 'DiagnosticsState' value that appears when traceroute hops
       *     wasnt enough.
-      * - ipv6HasPriority:
-      *     This model will traceroute by IPv6 when available. Some models
-      *     will simply not complete when IPv6 link is not up against an IPv6
-      *     solved hostname.
       * - protocol:
       *     Although we prioritize ICMP when available, UDP is most likely
       *     the only protocol supported
@@ -142,9 +149,7 @@ basicCPEModel.modelPermissions = function() {
       minProbesPerHop: 1,
       completeAsRequested: false,
       hopCountExceededState: 'Error_MaxHopCountExceeded',
-      ipv6HasPriority: false,
       protocol: 'UDP',
-      dataBlockSizeToSet: NaN, // If NaN, use default value
     },
     onlineAfterReset: false, // flag for devices that stay online post reset
     useLastIndexOnWildcard: false, // flag for devices that uses last index,
@@ -159,6 +164,10 @@ basicCPEModel.modelPermissions = function() {
 // Should be tweaked if the tr-069 xml has special types for some fields
 basicCPEModel.getFieldType = function(masterKey, key) {
   switch (masterKey+'-'+key) {
+    case 'wan-mtu':
+    case 'wan-mtu_ppp':
+    case 'wan-vlan':
+    case 'wan-vlan_ppp':
     case 'wifi2-channel':
     case 'wifi5-channel':
     case 'mesh2-channel':
@@ -580,7 +589,9 @@ basicCPEModel.getModelFields = function() {
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
-        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        //   'GponLinkConfig.VLANIDMark',
+        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
         //   'GponLinkConfig.VLANIDMark',
         // pon_rxpower: 'InternetGatewayDevice.WANDevice.1.'+
         //   'GponInterfaceConfig.RXPower',
@@ -764,6 +775,7 @@ basicCPEModel.getModelFields = function() {
           'TestBytesReceivedUnderFullLoading',
         full_load_period: 'InternetGatewayDevice.DownloadDiagnostics.'+
           'PeriodOfFullLoading',
+        interface: 'InternetGatewayDevice.DownloadDiagnostics.Interface',
       },
       /**
        * <---- Traceroute ---->

@@ -20,6 +20,8 @@ multilaserModel.modelPermissions = function() {
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.list5ghzChannels = [
@@ -80,8 +82,10 @@ multilaserModel.getModelFields = function() {
   fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig',
   );
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_VLANID';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_VLANID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ZTE-COM_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +

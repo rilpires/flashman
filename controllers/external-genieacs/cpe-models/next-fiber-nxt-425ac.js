@@ -1,32 +1,33 @@
 const basicCPEModel = require('./base-model');
 
-let huaweiModel = Object.assign({}, basicCPEModel);
+let nextFiberModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8245Q2'};
+nextFiberModel.identifier = {vendor: 'Next Fiber', model: 'NXT-425AC'};
 
-huaweiModel.modelPermissions = function() {
+nextFiberModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.meshWifi = true;
+  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
-  permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.wan.speedTestLimit = 250;
-  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
+    36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];
   permissions.firmwareUpgrades = {
-    'V3R017C10S100': [],
+    'V5R019C00S100': [],
   };
   return permissions;
 };
 
-huaweiModel.convertWifiMode = function(mode) {
+nextFiberModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return '11bg';
@@ -42,7 +43,7 @@ huaweiModel.convertWifiMode = function(mode) {
   }
 };
 
-huaweiModel.convertWifiBand = function(band, is5ghz=false) {
+nextFiberModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -59,7 +60,7 @@ huaweiModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
+nextFiberModel.convertWifiBandToFlashman = function(band, isAC) {
   switch (band) {
     // String input
     case '0':
@@ -75,11 +76,11 @@ huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
-huaweiModel.getBeaconType = function() {
+nextFiberModel.getBeaconType = function() {
   return 'WPAand11i';
 };
 
-huaweiModel.getModelFields = function() {
+nextFiberModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
     'X_HW_WebUserInfo.2.UserName';
@@ -97,6 +98,10 @@ huaweiModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+  fields.devices.host_cable_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'Hosts.Host.*.X_HW_NegotiatedRate';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_TxRate';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
@@ -134,7 +139,13 @@ huaweiModel.getModelFields = function() {
     '3.BasicDataTransmitRates';
   fields.mesh5.radio_info = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.3.LowerLayers';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice.1'+
+    '.WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 
-module.exports = huaweiModel;
+module.exports = nextFiberModel;

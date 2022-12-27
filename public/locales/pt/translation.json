@@ -120,6 +120,7 @@
 	"ssidWifi5Ghz": "$t(ssidWifi) 5GHz",
 	"wanConnectionType": "Tipo de Conexão WAN",
 	"updatefirmware": "Atualizar firmware",
+	"lastContactData": "Data de último contato",
 	"firmwareNotFoundOrSelected": "Firmware não encontrada ou selecionada ({{errorline}})",
 	"genieacsCommunicationError": "Falha na comunicação com o GenieACS ({{errorline}})",
 	"binFileNotFound": "Arquivo bin não encontrado ({{errorline}})",
@@ -865,6 +866,7 @@
 	"warningPrefixWiFi": "Atenção! Habilitar o prefixo para novos cadastros vai forçar a alteração dos SSIDs desses novos registros caso não tenham o prefixo ainda. Os ajustes de prefixo NÃO afetam os cadastros já existentes no Flashman. Cuidado com letras maiúsculas e minúsculas!",
 	"ssidPrefix": "Prefixo SSID",
 	"thisFieldIsMandatory": "Este campo é obrigatório",
+	"mustBeAString": "O valor passado deve ser uma string",
 	"thisFieldCannotHaveMoreThanMaxChars": "Este campo não pode ter mais de {{-max}} caracteres",
 	"acceptableCharsAre0-9a-zA-Z .-#": "São aceitos caracteres alfanuméricos, espaços, ponto, -, e #",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "São aceitos caracteres alfanuméricos, espaços, ponto, -, _ e #",
@@ -1058,5 +1060,8 @@
 	"updateSlaveDeviceTimeWarning": "A atualização de firmware dura aproximadamente 3 minutos para cada CPE. Esta atualização afetará todos os {{slaveCount}} roteadores da rede mesh, e durará cerca de {{slaveCount3}} minutos no total. Nenhum CPE deverá ser desligado durante esse procedimento. Comunique seu cliente antes de prosseguir.",
 	"updateDeviceMeshError": "O processo de atualização da rede mesh foi interrompido. Não recomendamos deixar os CPEs mesh da mesma rede em versões diferentes, portanto certifique-se que esta atualização seja retomada em breve.",
 	"updateDeviceFirmwareErrorWithMAC": "Houve um erro ao realizar a transferência do firmware do CPE com o MAC {{errorMac}}. Por favor tente novamente ou cancele o procedimento.",
-	"portOpeningRebootAlert": "Atenção! Este modelo precisa reiniciar para aplicar as alterações de abertura de portas."
+	"portOpeningRebootAlert": "Atenção! Este modelo precisa reiniciar para aplicar as alterações de abertura de portas.",
+	"invalidFieldsMustBeInRange": "Campo inválido. Este campo deve estar entre {{min}} e {{max}}.",
+	"emptyField": "O campo não pode estar vazio",
+	"wanAdvancedInformation": "Informações Avançadas da WAN"
 }

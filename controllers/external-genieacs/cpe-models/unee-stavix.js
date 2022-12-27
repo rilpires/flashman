@@ -10,8 +10,9 @@ uneeModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.traceroute.ipv6HasPriority = true;
   permissions.traceroute.protocol = 'ICMP';
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
@@ -87,6 +88,9 @@ uneeModel.isAllowedWebadminUsername = function(name) {
 
 uneeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.X_RTK_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = fields.wan.vlan;
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
