@@ -654,13 +654,29 @@ scheduleController.getDevicesReleases = async function(req, res) {
               .firmwareUpgrades;
 
             // Add the model to the Device list
-            if (!devicesByModel[tr069Model]) {
+            if (
+              !devicesByModel[tr069Model] &&
+              firmwarePermissions[device.version] &&
+              firmwarePermissions[device.version].constructor === Array
+            ) {
               devicesByModel[tr069Model] = {
                 count: 1,
                 firmwares_allowed: firmwarePermissions[device.version],
               };
-            } else {
+            } else if (
+              firmwarePermissions[device.version] &&
+              firmwarePermissions[device.version].constructor === Array
+            ) {
               devicesByModel[tr069Model].count += 1;
+              firmwarePermissions[device.version].forEach((firmware) => {
+                if (
+                  !devicesByModel[tr069Model]
+                    .firmwares_allowed
+                    .includes(firmware)
+                ) {
+                  devicesByModel[tr069Model].firmwares_allowed.push(firmware);
+                }
+              });
             }
 
             // Add to the list of tr069 models
@@ -735,6 +751,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
               if (
                 validModels.includes(model) &&
                 isTR069 === true &&
+                devicesByModel[model].firmwares_allowed &&
                 devicesByModel[model].firmwares_allowed.includes(release.id)
               ) {
                 count += devicesByModel[model].count;
@@ -993,6 +1010,18 @@ scheduleController.startSchedule = async function(req, res) {
       matchedDevices = matchedDevices.filter((device)=>{
         // Discard Mesh slaves
         if (device.mesh_master) return false;
+
+        // Discard TR-069 with invalid firmware
+        if (device.use_tr069 === true) {
+          let tr069Device = DevicesAPI.instantiateCPEByModelFromDevice(
+            device,
+          );
+          let firmwares = tr069Device.cpe
+          .modelPermissions()
+          .firmwareUpgrades[device.version];
+
+          if (!firmwares) return false;
+        }
 
         // Discard mesh if at least one cannot update
         if (
