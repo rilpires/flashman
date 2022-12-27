@@ -17,6 +17,7 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     jest.clearAllMocks();
+    jest.useRealTimers();
   });
 
 
@@ -33,7 +34,6 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
 
     // Run clock and check
     jest.advanceTimersByTime(2*60*1000);
-    expect(callback).toBeCalled();
     expect(callback).toHaveBeenCalledTimes(2);
   });
 

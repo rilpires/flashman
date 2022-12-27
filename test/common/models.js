@@ -1,3 +1,6 @@
+const v8 = require('v8');
+
+
 let models = {};
 
 // Firmwares
@@ -422,9 +425,9 @@ models.defaultMockConfigs = [
 */
 const copyFrom = function(models, id, data) {
   // Get the model with the same id
-  let model = models.find((entry) => {
+  let model = v8.deserialize(v8.serialize(models.find((entry) => {
     if (entry._id === id) return true;
-  });
+  })));
 
   // Loop through every key in data and assign the value
   let keys = Object.keys(data);
