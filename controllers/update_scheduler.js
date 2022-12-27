@@ -119,6 +119,12 @@ const markSeveral = async function() {
     }
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+scheduleController.__testMarkSeveral = markSeveral;
+
 
 scheduleController.recoverFromOffline = async function(config) {
   // Move those in doing status downloading back to to_do
@@ -369,6 +375,12 @@ const markNextForUpdate = async function() {
   }
   return {success: true, marked: true};
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+scheduleController.__testMarkNextForUpdate = markNextForUpdate;
+
 
 scheduleController.initialize = async function(
   macList, slaveCountPerMac, currentMeshVerPerMac, upgradeMeshVerPerMac,
