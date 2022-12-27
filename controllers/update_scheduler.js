@@ -166,7 +166,7 @@ const markNextForUpdate = async function() {
     console.log('Scheduler: No active schedule found');
     return {success: false,
             error: t('noSchedulingActive', {errorline: __line})};
-  } else if (config.is_aborted) {
+  } else if (config.device_update_schedule.is_aborted) {
     mutexRelease();
     console.log('Scheduler: Schedule aborted');
     return {success: true, marked: false};
@@ -281,7 +281,9 @@ const markNextForUpdate = async function() {
     // Mesh upgrade, only upgrade slaves if master is not TR069
     if (nextDevice.slave_count && device.use_tr069 === false) {
       let nextState;
-      const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
+      const isV1ToV2 = (
+        nextDevice.mesh_current === 1 && nextDevice.mesh_upgrade === 2
+      );
       if (isV1ToV2) {
         // If this is mesh v1 -> v2 upgrade we need the topology
         nextState = 'v1tov2';
