@@ -483,17 +483,7 @@ anlixDocumentReady.add(function() {
           swal.showLoading();
         },
       });
-      console.log({
-        use_search: tags,
-        use_csv: useCsv,
-        use_all: useAll,
-        use_time_restriction: hasTimeRestriction,
-        time_restriction: JSON.stringify(timeRestrictions),
-        release: release,
-        page_num: pageNum,
-        page_count: pageCount,
-        filter_list: filterList,
-      });
+
       $.ajax({
         url: '/devicelist/scheduler/start',
         type: 'POST',

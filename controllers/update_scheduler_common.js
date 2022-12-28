@@ -168,10 +168,10 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
 
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  let dev = commonScheduleController.getDevice(mac);
+  let upgradeDevice = rule.in_progress_devices.find((d)=>d.mac === mac);
+  let device = await commonScheduleController.getDevice(mac);
 
-  if (!device) {
+  if (!upgradeDevice) {
     return {success: false, error: t('macNotFound',
                                      {errorline: __line})};
   }
@@ -181,10 +181,17 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
                                      {errorline: __line})};
   }
 
+  if (!device) {
+    return {
+      success: false,
+      error: t('macNotFound', {errorline: __line}),
+    };
+  }
+
   try {
     let setQuery = null;
     let pullQuery = null;
-    if (device.retry_count >= maxRetries || config.is_aborted) {
+    if (upgradeDevice.retry_count >= maxRetries || config.is_aborted) {
       // Will not try again or move to to_do, so check if last device to update
       setQuery = {
         'device_update_schedule.is_active':
@@ -203,51 +210,42 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
     let pushQuery = null;
 
     // Reached max retries
-    if (device.retry_count >= maxRetries) {
+    console.log(upgradeDevice);
+    if (upgradeDevice.retry_count >= maxRetries) {
       // Too many retries, add to done, status error
       pushQuery = {
         'device_update_schedule.rule.done_devices': {
           'mac': mac,
           'state': 'error',
-          'slave_count': device.slave_count,
-          'slave_updates_remaining': device.slave_updates_remaining,
-          'mesh_current': device.mesh_current,
-          'mesh_upgrade': device.mesh_upgrade,
+          'slave_count': upgradeDevice.slave_count,
+          'slave_updates_remaining': upgradeDevice.slave_updates_remaining,
+          'mesh_current': upgradeDevice.mesh_current,
+          'mesh_upgrade': upgradeDevice.mesh_upgrade,
         },
       };
 
       // Set the update status to image download failed
-      dev = await dev;
-
-      if (!dev) {
-        return {
-          success: false,
-          error: t('macNotFound', {errorline: __line}),
-        };
-      } else {
-        dev.do_update_status = 2;
-        await dev.save();
-      }
-
-    // Aborted
+      device.do_update_status = 2;
+      await device.save();
     } else if (config.is_aborted) {
+      // Aborted case
       // Avoid racing conditions by checking if device is already added
-      let device = rule.done_devices.find((d)=>d.mac === mac);
-      if (!device) {
+      let doneDevice = rule.done_devices.find((d)=>d.mac === mac);
+      if (!doneDevice) {
         // Schedule is aborted, add to done, status aborted
         pushQuery = {
           'device_update_schedule.rule.done_devices': {
             'mac': mac,
             'state': 'aborted',
-            'slave_count': device.slave_count,
-            'slave_updates_remaining': device.slave_updates_remaining,
-            'mesh_current': device.mesh_current,
-            'mesh_upgrade': device.mesh_upgrade,
+            'slave_count': upgradeDevice.slave_count,
+            'slave_updates_remaining': upgradeDevice.slave_updates_remaining,
+            'mesh_current': upgradeDevice.mesh_current,
+            'mesh_upgrade': upgradeDevice.mesh_upgrade,
           },
         };
       }
     } else {
-      let retry = device.retry_count + 1;
+      let retry = upgradeDevice.retry_count + 1;
       await Config.updateOne({
         'is_default': true,
         'device_update_schedule.rule.in_progress_devices.mac': mac,
@@ -258,24 +256,16 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
         },
       });
 
-      dev = await dev;
-
-      if (!dev) {
-        return {
-          success: false,
-          error: t('macNotFound', {errorline: __line}),
-        };
-      }
-
       let fieldsToUpdate = {release: rule.release};
-      if (slave && dev.use_tr069 === false) {
+      if (slave && device.use_tr069 === false) {
         meshHandler.updateMeshDevice(slave, fieldsToUpdate);
-      } else if (dev.use_tr069 === false) {
+      } else if (device.use_tr069 === false) {
         meshHandler.updateMeshDevice(mac, fieldsToUpdate);
 
       // Handle TR-069 Devices
       } else {
-        // Remove from in_progress, move back to to_do
+        // Remove from in_progress, move back to to_do in order to avoid trying
+        // to update the router immediately and wait a little to try it again
         await commonScheduleController.configQuery(
           null,
 
@@ -288,10 +278,10 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
               'mac': mac,
               'state': 'retry',
               'retry_count': retry,
-              'slave_count': device.slave_count,
-              'slave_updates_remaining': device.slave_updates_remaining,
-              'mesh_current': device.mesh_current,
-              'mesh_upgrade': device.mesh_upgrade,
+              'slave_count': upgradeDevice.slave_count,
+              'slave_updates_remaining': upgradeDevice.slave_updates_remaining,
+              'mesh_current': upgradeDevice.mesh_current,
+              'mesh_upgrade': upgradeDevice.mesh_upgrade,
             },
           },
         );
@@ -314,8 +304,10 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
 
 
 // Return if the device is updating or not
-commonScheduleController.isUpdating = async function(mac) {
-  let config = await commonScheduleController.getConfig();
+commonScheduleController.isUpdating = async function(mac, config = null) {
+  if (!config) {
+    config = await commonScheduleController.getConfig();
+  }
 
   // Check if the config is valid
   if (!config) {

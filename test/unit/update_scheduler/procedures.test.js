@@ -6,9 +6,9 @@ const utils = require('../../common/utils');
 const models = require('../../common/models');
 
 const meshHandler = require('../../../controllers/handlers/mesh');
+const deviceHandlers = require('../../../controllers/handlers/devices');
 const mqtts = require('../../../mqtts');
 const messaging = require('../../../controllers/messaging');
-const deviceHandlers = require('../../../controllers/handlers/devices');
 const acsFirmware = require('../../../controllers/handlers/acs/firmware');
 
 const DeviceModel = require('../../../models/device');
@@ -505,6 +505,8 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     );
 
     // Mock config and devices
+    jest.spyOn(deviceHandlers, 'beginMeshUpdate')
+      .mockImplementationOnce(() => Promise.resolve({recovery: Date.now()}));
     utils.common.mockConfigs(config, 'findOne');
     utils.common.mockDevices([
       models.defaultMockDevices[0],
@@ -581,6 +583,8 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     );
 
     // Mock config and devices
+    jest.spyOn(deviceHandlers, 'beginMeshUpdate')
+      .mockImplementationOnce(() => Promise.resolve({recovery: Date.now()}));
     utils.common.mockConfigs(config, 'findOne');
     utils.common.mockDevices([
         models.defaultMockDevices[0],

@@ -525,6 +525,7 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
       },
     );
     utils.common.mockConfigs(config, 'findOne');
+    utils.common.mockDevices(models.defaultMockDevices[0], 'findOne');
     utils.common.mockDefaultDevices();
 
 

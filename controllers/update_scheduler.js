@@ -116,6 +116,10 @@ const markSeveral = async function() {
       return;
     } else if (result.success && !result.marked) {
       break;
+    } else if (result.success && result.marked && result.updated) {
+      // If the router was already updated, increment the slots in
+      // order to avoid not filling it
+      slotsAvailable++;
     }
   }
 };
@@ -196,12 +200,12 @@ const markNextForUpdate = async function() {
   // Outside the for loop to avoid constantly read the database
 
   // Get the threshold to still consider it online
-  let onlineThreshold = config.tr069.recovery_threshold;
+  let onlineThreshold = await deviceHandlers.buildTr069Thresholds();
 
   // Get online TR069 models
   let onlineTR069Devices = await DeviceModel.find({
     use_tr069: true,
-    last_contact: {$gt: onlineThreshold},
+    last_contact: {$gt: onlineThreshold.recovery},
   }, {
     acs_id: true,
     model: true,
@@ -212,13 +216,12 @@ const markNextForUpdate = async function() {
     let isDevOn = false;
     let onlineTR069 = onlineTR069Devices
       .find((dev) => dev._id === devices[i].mac);
+    let onlineFlashbox = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+      return map[devices[i].mac];
+    });
 
-    if (onlineTR069) {
+    if (onlineTR069 || onlineFlashbox) {
       isDevOn = true;
-    } else {
-      isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
-        return map[devices[i].mac];
-      });
     }
     if (isDevOn) {
       nextDevice = devices[i];
@@ -226,7 +229,7 @@ const markNextForUpdate = async function() {
     }
   }
 
-  // Is it online?
+  // If there is no device online to update
   if (!nextDevice) {
     // No online devices, mark them all as offline
     try {
@@ -248,7 +251,10 @@ const markNextForUpdate = async function() {
     // Get the case when the task is in ToDo but the device is already
     // with the firmware installed. It may happen during an already done update
     // but the task was not moved to done.
-    if (device.release === device.installed_release) {
+    if (
+      device.release === device.installed_release &&
+      device.use_tr069 === true
+    ) {
       let count = config.device_update_schedule.device_count;
       let rule = config.device_update_schedule.rule;
 
@@ -281,7 +287,7 @@ const markNextForUpdate = async function() {
         SchedulerCommon.removeOfflineWatchdog();
       }
 
-      return {success: true, marked: false};
+      return {success: true, marked: true, updated: true};
     }
 
     // Mesh upgrade, only upgrade slaves if master is not TR069
@@ -635,8 +641,9 @@ scheduleController.getDevicesReleases = async function(req, res) {
 
           let model = device.model;
 
-          // Only replace for firmware
-          if (device.use_tr069 === false) {
+          // Only replace for firmware, firmwares before tr-069 update will
+          // come with use_tr069 as undefined
+          if (device.use_tr069 === false || device.use_tr069 === undefined) {
             model = model.replace('N/', '');
           }
 
@@ -1020,7 +1027,8 @@ scheduleController.startSchedule = async function(req, res) {
           .modelPermissions()
           .firmwareUpgrades[device.version];
 
-          if (!firmwares) return false;
+          // We might have a missing list or an empty list here
+          if (!firmwares || !firmwares.length) return false;
         }
 
         // Discard mesh if at least one cannot update
@@ -1056,8 +1064,9 @@ scheduleController.startSchedule = async function(req, res) {
 
         let model = device.model;
 
-        // Only validate mesh master if it is Flashbox
-        if (device.use_tr069 === false) {
+        // Only validate mesh master if it is Flashbox, firmwares before tr-069
+        // update will come with use_tr069 as undefined
+        if (device.use_tr069 === false || device.use_tr069 === undefined) {
           const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
             device, matchedRelease.flashbox_version);
           if (!allowMeshUpgrade) return false;
@@ -1099,15 +1108,16 @@ scheduleController.startSchedule = async function(req, res) {
         }
 
         // Get the firmware version V1 or V2
-        const typeUpgrade = (function getTypeUpgrade() {
-          if (device.use_tr069 === true) {
-            // TR069 will return versions as 0
-            return DeviceVersion.mapFirmwareUpgradeMesh('', '');
-          } else {
-            return DeviceVersion.mapFirmwareUpgradeMesh(
-              device.version, matchedRelease.flashbox_version);
-          }
-        })();
+        let typeUpgrade;
+        if (device.use_tr069 === true) {
+          // TR069 will return versions as 0
+          typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh('', '');
+        } else {
+          typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+            device.version,
+            matchedRelease.flashbox_version,
+          );
+        }
 
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;

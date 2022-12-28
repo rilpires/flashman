@@ -94,8 +94,8 @@ const watchGenieFaults = async function() {
       'collection.');
   }
 
-  // delete all genieacs tasks.
-  ret = await tasksCollection.deleteMany();
+  // delete all genieacs update firmware tasks.
+  ret = await tasksCollection.deleteMany({name: 'download'});
   if (ret.n > 0) {
     console.log('INFO: deleted '+ret.n+' documents in genieacs\'s tasks '+
       'collection.');
@@ -123,17 +123,14 @@ const watchGenieFaults = async function() {
       return;
     }
 
+    // The code cwmp.9010 is generated when there was a firmware download error
     if (doc.code === 'cwmp.9010') {
       faultsCollection.deleteOne({_id: doc._id});
       cacheCollection.deleteOne({_id: doc._id});
-      let tasks = await tasksCollection.find({
+      tasksCollection.deleteMany({
         device: doc.device,
         name: 'download',
       });
-
-      for (let index = 0; index < tasks.length; index++) {
-        deleteTask(tasks[index]._id).catch((error) => console.log(error));
-      }
     }
 
     let errorMsg = '';
@@ -403,63 +400,56 @@ let taskParameterIdFromType = {
  https://github.com/genieacs/genieacs/wiki/API-Reference#tasks to understand a
  task format.*/
 const checkTask = function(task) {
-  if (task === null || task === undefined) return false;
+  if (!task) return false;
 
   let name = task.name; // the task name/type.
-  if (name === null || name === undefined) return false;
+  if (!name) return false;
 
   // the attribute name where a task holds its parameters.
   let parameterId = taskParameterIdFromType[name];
   // task name/type has to be defined in 'taskParameterIdFromType'.
-  if (parameterId === null || parameterId === undefined) return false;
+  if (!parameterId) return false;
   // in case task name/type is "setParameterValues".
   if (name === 'setParameterValues') {
     // its parameter has to be an array.
     if (
-      task[parameterId] === null ||
-      task[parameterId] === undefined ||
+      !task[parameterId] ||
       task[parameterId].constructor !== Array
     ) return false;
     // and for each value in that array.
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has also to be an array.
       if (
-        task[parameterId][i] === null ||
-        task[parameterId][i] === undefined ||
+        !task[parameterId][i] ||
         task[parameterId][i].constructor !== Array
       ) return false;
       // that sub array has to have length 3.
       if (task[parameterId][i].length < 2
        || task[parameterId][i].length > 3 ) return false;
       // first position has to be a string (tr069 parameter name).
-      if (task[parameterId][i][0] === null
-       || task[parameterId][i][0] === undefined
+      if (!task[parameterId][i][0]
        || task[parameterId][i][0].constructor !== String
        // second position can be a string, a number or a boolean.
-       || task[parameterId][i][1] === null
-       || task[parameterId][i][1] === undefined
+       || !task[parameterId][i][1]
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
        // third position has to be a string (tr069 type).
-       || task[parameterId][i][2] === null
-       || task[parameterId][i][2] === undefined
+       || !task[parameterId][i][2]
        || task[parameterId][i][2].constructor !== String) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
   // "getParameterValues".
     // its parameter has to be an array.
     if (
-      task[parameterId] === null ||
-      task[parameterId] === undefined ||
+      !task[parameterId] ||
       task[parameterId].constructor !== Array
     ) return false;
     // and for each value in that array.
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has to be a string (tr069 parameter name).
       if (
-        task[parameterId][i] === null ||
-        task[parameterId][i] === undefined ||
+        !task[parameterId][i] ||
         task[parameterId][i].constructor !== String
       ) return false;
     }
@@ -756,12 +746,12 @@ genie.addTask = async function(
     // So, filter download to avoid passing to joinAllTasks
     if (task.name === 'download') {
       // Download tasks to be deleted
-      tasksToDelete = tasks.filter((task) => {
+      tasksToDelete = tasks.slice(0, -1).filter((taskToCheck) => {
         // If the task is the download type and already got an id from genie,
         // delete it from the tasks
-        if (task.name === 'download' &&
-            task._id !== undefined &&
-            task.device === deviceid
+        if (taskToCheck.name === 'download' &&
+            taskToCheck._id !== undefined &&
+            taskToCheck.device === deviceid
         ) {
           return true;
         }

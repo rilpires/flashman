@@ -1111,7 +1111,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 // Complete CPE information synchronization gets done here - compare cpe data
 // with registered device data and sync fields accordingly
 const syncDeviceData = async function(acsID, device, data, permissions) {
-  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  let config = await Config.findOne(
+    {is_default: true},
+    {tr069: true, device_update_schedule: true},
+  ).lean()
   .catch((err) => {
     debug(err);
     return null;
@@ -1123,7 +1126,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let hasChanges = false;
   let splitID = acsID.split('-');
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let isUpdating = SchedulerCommon.isUpdating(device._id);
+  let isUpdating = SchedulerCommon.isUpdating(device._id, config);
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
