@@ -28,9 +28,9 @@ echo "START|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
 echo "Generating logs at $LOG" | tee -a $LOG
 
 if [ $# -ge 1 ]; then
-    if [ "$1" = "premise" || "$1" = "PREMISE" ]; then
+    if [ "$1" = "premise" ] || [ "$1" = "PREMISE" ]; then
         RESTORE_FROM="premise"
-    elif [ "$1" = "cloud" || "$1" = "CLOUD" ]; then
+    elif [ "$1" = "cloud" ] || [ "$1" = "CLOUD" ]; then
         RESTORE_FROM="cloud"
     else
         RESTORE_FROM="premise"
