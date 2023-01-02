@@ -7,25 +7,43 @@ BACKBLAZE_ACCOUNT="$AIX_B2_ACCOUNT"
 BACKBLAZE_APPSECRET="$AIX_B2_SECRET"
 ZIP_FIRMWARES_FNAME="${COMPANY}_firmwaredata.zip"
 LOG="/tmp/restore-firmwares.log"
+RESTORE_FROM="premise"
 
 b2downloadfile(){
-  echo "Downloading $2" >> $LOG
-  DEST_FILE="$COMPANY/$2"
-  if ! b2 download-file-by-name "$1" "$DEST_FILE" "$3" >> $LOG 2>&1; then
-    echo "[$0 ERROR] trying to download $2, check logs at $LOG"
-    rm -f "$3"
-    echo "END|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
-    exit 1
-  fi
+    if [ "$RESTORE_FROM" = "premise" ]; then
+        SRC_FILE="$COMPANY/$2"
+    else
+        SRC_FILE="$2"
+    fi
+    echo "Downloading $SRC_FILE" >> $LOG
+    if ! b2 download-file-by-name "$1" "$SRC_FILE" "$3" >> $LOG 2>&1; then
+        echo "[$0 ERROR] trying to download $2, check logs at $LOG"
+        rm -f "$3"
+        echo "END|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
+        exit 1
+    fi
 }
 
 echo "START|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
 echo "Generating logs at $LOG" | tee -a $LOG
 
+if [ $# -eq 1 ]; then
+    if [ "$1" = "premise" || "$1" = "PREMISE" ]; then
+        RESTORE_FROM="premise"
+    elif [ "$1" = "cloud" || "$1" = "CLOUD" ]; then
+        RESTORE_FROM="cloud"
+    else
+        RESTORE_FROM="premise"
+    fi
+else
+    RESTORE_FROM="premise"
+fi
+echo "Restoring backup from $RESTORE_FROM" >> $LOG
+
 if ! which unzip > /dev/null; then
-      echo "[$0 ERROR] unzip command not found." | tee -a $LOG
-      echo "END|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
-      exit 1
+    echo "[$0 ERROR] unzip command not found." | tee -a $LOG
+    echo "END|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
+    exit 1
 fi
 
 if ! which b2 > /dev/null; then
