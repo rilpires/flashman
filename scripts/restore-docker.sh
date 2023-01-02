@@ -39,6 +39,14 @@ if [ $# -ge 1 ]; then
     if [ $# -ge 2 ]; then
         BACKBLAZE_BUCKET="$2"
     fi
+
+    if [ $# -ge 3 ]; then
+        BACKBLAZE_ACCOUNT="$3"
+    fi
+
+    if [ $# -ge 4 ]; then
+        BACKBLAZE_APPSECRET="$4"
+    fi
 else
     RESTORE_FROM="premise"
 fi
