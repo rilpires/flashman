@@ -666,24 +666,26 @@ scheduleController.getDevicesReleases = async function(req, res) {
               firmwarePermissions[device.version] &&
               firmwarePermissions[device.version].constructor === Array
             ) {
-              devicesByModel[tr069Model] = {
+              // Assign the count and the version list
+              devicesByModel[tr069Model] = {};
+              devicesByModel[tr069Model][device.version] = {
                 count: 1,
                 firmwares_allowed: firmwarePermissions[device.version],
               };
+            // If the model already exists
             } else if (
               firmwarePermissions[device.version] &&
               firmwarePermissions[device.version].constructor === Array
             ) {
-              devicesByModel[tr069Model].count += 1;
-              firmwarePermissions[device.version].forEach((firmware) => {
-                if (
-                  !devicesByModel[tr069Model]
-                    .firmwares_allowed
-                    .includes(firmware)
-                ) {
-                  devicesByModel[tr069Model].firmwares_allowed.push(firmware);
-                }
-              });
+              // If the new release does not exist
+              if (!devicesByModel[tr069Model][device.version]) {
+                devicesByModel[tr069Model][device.version] = {
+                  count: 1,
+                  firmwares_allowed: firmwarePermissions[device.version],
+                };
+              } else {
+                devicesByModel[tr069Model][device.version].count += 1;
+              }
             }
 
             // Add to the list of tr069 models
@@ -758,10 +760,23 @@ scheduleController.getDevicesReleases = async function(req, res) {
               if (
                 validModels.includes(model) &&
                 isTR069 === true &&
-                devicesByModel[model].firmwares_allowed &&
-                devicesByModel[model].firmwares_allowed.includes(release.id)
+                devicesByModel[model] &&
+                Object.keys(devicesByModel[model]).length
               ) {
-                count += devicesByModel[model].count;
+                // Increment cpe count if the model can be updated to the
+                // respective release
+                Object.keys(devicesByModel[model]).forEach(
+                  function eachKey(currentVersion) {
+                    if (
+                      devicesByModel[model][currentVersion]
+                        .firmwares_allowed &&
+                      devicesByModel[model][currentVersion]
+                        .firmwares_allowed.includes(release.id)
+                    ) {
+                      count += devicesByModel[model][currentVersion].count;
+                    }
+                  },
+                );
 
               // For Flashbox, just allow it if it is in update list
               } else if (validModels.includes(model) && isTR069 === false) {
@@ -1027,8 +1042,15 @@ scheduleController.startSchedule = async function(req, res) {
           .modelPermissions()
           .firmwareUpgrades[device.version];
 
-          // We might have a missing list or an empty list here
-          if (!firmwares || !firmwares.length) return false;
+          // We might have a missing list, an empty list or a
+          // different release here
+          if (
+            !firmwares ||
+            !firmwares.length ||
+            !firmwares.includes(release)
+          ) {
+            return false;
+          }
         }
 
         // Discard mesh if at least one cannot update
