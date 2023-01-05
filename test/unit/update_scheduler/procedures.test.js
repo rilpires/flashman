@@ -505,8 +505,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     );
 
     // Mock config and devices
-    jest.spyOn(deviceHandlers, 'beginMeshUpdate')
-      .mockImplementationOnce(() => Promise.resolve({recovery: Date.now()}));
+    jest.spyOn(meshHandler, 'beginMeshUpdate')
+      .mockImplementationOnce(() => Promise.resolve({success: true}));
+    jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementationOnce(() => Promise.resolve());
     utils.common.mockConfigs(config, 'findOne');
     utils.common.mockDevices([
       models.defaultMockDevices[0],
@@ -529,16 +531,17 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
 
     // Get the result
     expect(result.success).toBe(true);
-    expect(result.marked).toBe(false);
+    expect(result.marked).toBe(true);
     expect(configSpy).toHaveBeenLastCalledWith(
-      {'device_update_schedule.is_active': true},
+      null,
       {'device_update_schedule.rule.to_do_devices': {'mac': flashMac}},
       {
-        'device_update_schedule.rule.done_devices': {
+        'device_update_schedule.rule.in_progress_devices': {
           'mac': flashMac,
-          'state': 'ok',
+          'state': 'downloading',
+          'retry_count': 0,
           'slave_count': 0,
-          'slave_updates_remaining': 0,
+          'slave_updates_remaining': 1,
           'mesh_current': 1,
           'mesh_upgrade': 1,
         },
@@ -566,7 +569,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
         _id: '62b0f57a6ceffe3c4f9d4656',
         device_update_schedule: {
           rule: {
-            release: '0000-flm',
+            release: '1.1-220826',
             done_devices: [{}],
             to_do_devices: [
               {
@@ -583,15 +586,17 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     );
 
     // Mock config and devices
-    jest.spyOn(deviceHandlers, 'beginMeshUpdate')
-      .mockImplementationOnce(() => Promise.resolve({recovery: Date.now()}));
+    jest.spyOn(meshHandler, 'beginMeshUpdate')
+      .mockImplementationOnce(() => Promise.resolve({success: true}));
+    jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementationOnce(() => Promise.resolve());
     utils.common.mockConfigs(config, 'findOne');
     utils.common.mockDevices([
         models.defaultMockDevices[0],
       ],
       'find',
     );
-    utils.common.mockDevices(models.defaultMockDevices[1], 'findOne');
+    utils.common.mockDevices(models.defaultMockDevices[0], 'findOne');
     mqtts.unifiedClientsMap = {a: {}};
     mqtts.unifiedClientsMap.a[flashMac] = true;
 
@@ -607,7 +612,8 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
 
     // Get the result
     expect(result.success).toBe(true);
-    expect(result.marked).toBe(false);
+    expect(result.marked).toBe(true);
+    expect(result.updated).toBe(true);
     expect(configSpy).toHaveBeenLastCalledWith(
       {'device_update_schedule.is_active': true},
       {'device_update_schedule.rule.to_do_devices': {'mac': tr069Mac}},
