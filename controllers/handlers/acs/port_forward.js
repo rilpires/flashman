@@ -30,9 +30,10 @@ const fetchAndComparePortForward = async function(acsID) {
   }
 
   let query = {_id: acsID};
-  let projection = portMappingTemplate.replace('*', '1').replace('*', '1');
+  let projection = portMappingTemplate.replace(/\.\*.*/g, '');
   let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
-             projection;  let options = {
+             projection;
+  let options = {
     method: 'GET',
     hostname: GENIEHOST,
     port: GENIEPORT,
