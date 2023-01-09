@@ -12,7 +12,6 @@ const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const acsController = require('./acs_device_info');
 const crypt = require('crypto');
-const fs = require('fs');
 const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
@@ -1117,10 +1116,12 @@ appDeviceAPIController.appGetLoginInfo = function(req, res) {
     try {
       // Only send bakcup for tr069 devices and valid config
       if (matchedDevice.use_tr069 && config.tr069) {
-        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-        response.resetBackup = makeDeviceBackupData(
-          matchedDevice, config, certFile,
-        );
+        let certFile = await util.getTr069CACert();
+        if (certFile && certFile !== '') {
+          response.resetBackup = makeDeviceBackupData(
+            matchedDevice, config, certFile,
+          );
+        }
       }
     } catch (err) {
       // Do nothing if above fails - is not a required step
@@ -1569,8 +1570,10 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     };
     try {
       if (config.tr069) {
-        let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-        response.resetBackup = makeDeviceBackupData(device, config, certFile);
+        let certFile = await util.getTr069CACert();
+        if (certFile && certFile !== '') {
+          response.resetBackup = makeDeviceBackupData(device, config, certFile);
+        }
       }
     } catch (err) {
       // Do nothing if above fails - is not a required step
@@ -1716,7 +1719,10 @@ appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
     }
 
     // Build hard reset backup structure for client app
-    const certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
+    const certFile = await util.getTr069CACert();
+    if (!certFile) {
+      return res.status(500).json({success: false});
+    }
     const resetBackup = makeDeviceBackupData(device, config, certFile);
     return res.status(200).json({
       success: true,

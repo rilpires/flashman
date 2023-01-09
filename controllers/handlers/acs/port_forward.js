@@ -30,10 +30,9 @@ const fetchAndComparePortForward = async function(acsID) {
   }
 
   let query = {_id: acsID};
-  let projection1 = portMappingTemplate.replace('*', '1').replace('*', '1');
-  let projection2 = portMappingTemplate.replace('*', '1').replace('*', '2');
+  let projection = portMappingTemplate.replace(/\.\*.*/g, '');
   let path = '/devices/?query=' + JSON.stringify(query) + '&projection=' +
-             projection1 + ',' + projection2;
+             projection;
   let options = {
     method: 'GET',
     hostname: GENIEHOST,
@@ -51,10 +50,8 @@ const fetchAndComparePortForward = async function(acsID) {
       }
       let isDiff = false;
       let template = '';
-      if (utilHandlers.checkForNestedKey(data, projection1)) {
-        template = projection1;
-      } else if (utilHandlers.checkForNestedKey(data, projection2)) {
-        template = projection2;
+      if (utilHandlers.checkForNestedKey(data, projection)) {
+        template = utilHandlers.replaceNestedKeyWildcards(data, projection);
       }
       if (template != '') {
         // Check how many rules are in the current tree

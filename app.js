@@ -35,8 +35,11 @@ app.locals.appVersion = packageJson.version;
 const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
 const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
-const instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
+let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
+if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
+  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
+}
 
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
@@ -302,6 +305,8 @@ if (instanceNumber === 0 && (
       } else {
         updater.rebootGenie(process.env.instances);
       }
+    } else {
+      updater.updateProvisionsPresets();
     }
     // Force an update check to alert user on app startup
     updater.checkUpdate();

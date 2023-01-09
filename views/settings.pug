@@ -278,24 +278,26 @@ block content
                     label.custom-control-label.text-muted(for="onu_web_remote")
                       | #{t('configureOnusRemoteAccess')}
                     .invalid-feedback
-                  .custom-control.custom-checkbox.mt-2
-                    input#stun_enable.custom-control-input(
-                      name="stun_enable",
-                      type="checkbox"
-                    )
-                    label.custom-control-label.text-muted.mr-2(for="stun_enable")
-                      | #{t('enableStunServerUsage')}
-                    a.fas.fa-question-circle(data-toggle="tooltip" title=t('stunEnableTooltip'))
-                    .invalid-feedback
-                  .custom-control.custom-checkbox.mt-2
-                    input#insecure_enable.custom-control-input(
-                      name="insecure_enable",
-                      type="checkbox"
-                    )
-                    label.custom-control-label.text-muted.mr-2(for="insecure_enable")
-                      | #{t('enableTr069HttpCommunicationMode')}
-                    a.fas.fa-question-circle(data-toggle="tooltip" title=t('tr069HttpCommunicationTooltip'))
-                    .invalid-feedback
+                  if (showTR069Stun)
+                    .custom-control.custom-checkbox.mt-2
+                      input#stun_enable.custom-control-input(
+                        name="stun_enable",
+                        type="checkbox"
+                      )
+                      label.custom-control-label.text-muted.mr-2(for="stun_enable")
+                        | #{t('enableStunServerUsage')}
+                      a.fas.fa-question-circle(data-toggle="tooltip" title=t('stunEnableTooltip'))
+                      .invalid-feedback
+                  if (showTR069HTTP)
+                    .custom-control.custom-checkbox.mt-2
+                      input#insecure_enable.custom-control-input(
+                        name="insecure_enable",
+                        type="checkbox"
+                      )
+                      label.custom-control-label.text-muted.mr-2(for="insecure_enable")
+                        | #{t('enableTr069HttpCommunicationMode')}
+                      a.fas.fa-question-circle(data-toggle="tooltip" title=t('tr069HttpCommunicationTooltip'))
+                      .invalid-feedback
                 .col-md-6.col-12.pl-0.pr-0.text-center
                   .md-form.input-entry
                     label= t('tr069InformIntervalSeconds')

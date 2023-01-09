@@ -120,6 +120,7 @@
 	"ssidWifi5Ghz": "$t(ssidWifi) 5GHz",
 	"wanConnectionType": "Tipo de Conexão WAN",
 	"updatefirmware": "Atualizar firmware",
+	"lastContactData": "Data de último contato",
 	"firmwareNotFoundOrSelected": "Firmware não encontrada ou selecionada ({{errorline}})",
 	"genieacsCommunicationError": "Falha na comunicação com o GenieACS ({{errorline}})",
 	"binFileNotFound": "Arquivo bin não encontrado ({{errorline}})",
