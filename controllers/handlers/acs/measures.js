@@ -190,27 +190,20 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
-  let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
-  let upTimeField1;
-  let upTimeField2;
-  let upTimePPPField1;
-  let upTimePPPField2;
+  let PPPoEUser = fields.wan.pppoe_user.replace(/\.\*.*/g, '');
+  let upTimeField;
+  let upTimePPPField;
   let rxPowerField;
   let txPowerField;
   let rxPowerFieldEpon;
   let txPowerFieldEpon;
   let query = {_id: acsID};
-  let projection = fields.common.uptime +
-    ',' + PPPoEUser1 + ',' + PPPoEUser2;
+  let projection = fields.common.uptime + ',' + PPPoEUser;
 
   if (cpe.modelPermissions().wan.hasUptimeField) {
-    upTimeField1 = fields.wan.uptime.replace('*', 1);
-    upTimeField2 = fields.wan.uptime.replace('*', 2);
-    upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
-    upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
-    projection += ',' + upTimeField1 + ',' + upTimeField2 +
-      ',' + upTimePPPField1 + ',' + upTimePPPField2;
+    upTimeField = fields.wan.uptime.replace(/\.\*.*/g, '');
+    upTimePPPField = fields.wan.uptime_ppp.replace(/\.\*.*/g, '');
+    projection += ',' + upTimeField + ',' + upTimePPPField;
   }
 
   if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
@@ -251,42 +244,38 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
       let successSys = false;
       let successWan = false;
       let successRxPower = false;
-      if (utilHandlers.checkForNestedKey(data, fields.common.uptime+'._value')) {
+      let checkFunction = utilHandlers.checkForNestedKey;
+      let getFunction = utilHandlers.getFromNestedKey;
+
+      if (checkFunction(data, fields.common.uptime + '._value')) {
         successSys = true;
-        sysUpTime = utilHandlers.getFromNestedKey(data, fields.common.uptime+'._value');
+        sysUpTime = getFunction(data, fields.common.uptime + '._value');
       }
-      if (utilHandlers.checkForNestedKey(data, PPPoEUser1+'._value')) {
+      if (checkFunction(data, fields.wan.pppoe_user + '._value')) {
         successWan = true;
-        let hasPPPoE = utilHandlers.getFromNestedKey(data, PPPoEUser1+'._value');
-        if (hasPPPoE && utilHandlers.checkForNestedKey(data, upTimePPPField1+'._value')) {
-          wanUpTime = utilHandlers.getFromNestedKey(data, upTimePPPField1+'._value');
+        let hasPPPoE = getFunction(data, fields.wan.pppoe_user + '._value');
+        if (
+          hasPPPoE && checkFunction(data, fields.wan.uptime_ppp + '._value')
+        ) {
+          wanUpTime = getFunction(data, fields.wan.uptime_ppp + '._value');
         }
-      } else if (utilHandlers.checkForNestedKey(data, PPPoEUser2+'._value')) {
+      } else if (checkFunction(data, fields.wan.uptime + '._value')) {
         successWan = true;
-        let hasPPPoE = utilHandlers.getFromNestedKey(data, PPPoEUser2+'._value');
-        if (hasPPPoE && utilHandlers.checkForNestedKey(data, upTimePPPField2+'._value')) {
-          wanUpTime = utilHandlers.getFromNestedKey(data, upTimePPPField2+'._value');
-        }
-      } else if (utilHandlers.checkForNestedKey(data, upTimeField1+'._value')) {
-        successWan = true;
-        wanUpTime = utilHandlers.getFromNestedKey(data, upTimeField1+'._value');
-      } else if (utilHandlers.checkForNestedKey(data, upTimeField2+'._value')) {
-        successWan = true;
-        wanUpTime = utilHandlers.getFromNestedKey(data, upTimeField2+'._value');
+        wanUpTime = getFunction(data, fields.wan.uptime + '._value');
       }
-      if (utilHandlers.checkForNestedKey(data, rxPowerField + '._value') &&
-          utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
+      if (checkFunction(data, rxPowerField + '._value') &&
+          checkFunction(data, txPowerField + '._value')) {
         successRxPower = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerField + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerField + '._value'),
+          rxpower: getFunction(data, rxPowerField + '._value'),
+          txpower: getFunction(data, txPowerField + '._value'),
         };
-      } else if (utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
-                 utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+      } else if (checkFunction(data, rxPowerFieldEpon + '._value') &&
+                 checkFunction(data, txPowerFieldEpon + '._value')) {
         successRxPower = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerFieldEpon + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerFieldEpon + '._value'),
+          rxpower: getFunction(data, rxPowerFieldEpon + '._value'),
+          txpower: getFunction(data, txPowerFieldEpon + '._value'),
         };
       }
       if (successSys || successWan || successRxPower) {
