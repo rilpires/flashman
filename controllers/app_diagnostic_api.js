@@ -15,7 +15,6 @@ const deviceList = require('./device_list.js');
 const onuFactoryCredentials = require('./factory_credentials.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
-const fs = require('fs');
 const controlApi = require('./external-api/control');
 const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
@@ -787,13 +786,21 @@ diagAppAPIController.getTR069Config = async function(req, res) {
   if (!config.tr069) {
     return res.status(200).json({'success': false});
   }
-  let certFile = fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
-  return res.status(200).json({
-    'success': true,
-    'url': config.tr069.server_url,
-    'interval': parseInt(config.tr069.inform_interval/1000),
-    'certificate': certFile,
-  });
+  try {
+    let certFile = await utilHandlers.getTr069CACert();
+    if (!certFile) {
+      return res.status(200).json({'success': false});
+    }
+    return res.status(200).json({
+      'success': true,
+      'url': config.tr069.server_url,
+      'interval': parseInt(config.tr069.inform_interval/1000),
+      'certificate': certFile,
+    });
+  } catch (err) {
+    console.log(err);
+    return res.status(200).json({'success': false});
+  }
 };
 
 diagAppAPIController.configureWanOnu = async function(req, res) {
