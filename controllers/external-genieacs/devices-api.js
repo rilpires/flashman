@@ -43,7 +43,8 @@ const tr069Models = {
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
-  intelbrasWiFiberModel: require('./cpe-models/intelbras-wifiber'),
+  intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
+  intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
@@ -198,9 +199,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (modelName === '120AC') {
+    // Intelbras WiFiber 120AC
+    result = {success: true, cpe: tr069Models.intelbrasWiFiberModel120AC};
   } else if (modelName === '121AC') {
     // Intelbras WiFiber 121AC
-    result = {success: true, cpe: tr069Models.intelbrasWiFiberModel};
+    result = {success: true, cpe: tr069Models.intelbrasWiFiberModel121AC};
   } else if (modelName === '1200R') {
     // Intelbras WiFiber 1200R InMesh
     result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
