@@ -71,7 +71,8 @@ const tr069Models = {
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
-  uneeStavixModel: require('./cpe-models/unee-stavix'),
+  uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
+  uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
@@ -287,7 +288,10 @@ const instantiateCPEByModel = function(
     result = {success: true, cpe: tr069Models.tplinkXC220G3vModel};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
-    result = {success: true, cpe: tr069Models.uneeStavixModel};
+    result = {success: true, cpe: tr069Models.uneeMPG421R};
+  } else if (modelName === 'MP-X421RQ-F') {
+    // New UNEE Stavix
+    result = { success: true, cpe: tr069Models.uneeMPX421RQF };
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
