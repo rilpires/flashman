@@ -443,17 +443,17 @@ basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
   return values;
 };
 
-// List of allowed firmware upgrades for each known firmware version
-basicCPEModel.allowedFirmwareUpgrades = function(fwVersion, permissions) {
-  if (
-    permissions.features.firmwareUpgrade &&
-    Array.isArray(permissions.firmwareUpgrades[fwVersion])
-  ) {
-    return permissions.firmwareUpgrades[fwVersion];
-  }
-  // No upgrades allowed
-  return [];
-};
+// // List of allowed firmware upgrades for each known firmware version
+// basicCPEModel.allowedFirmwareUpgrades = function(fwVersion, permissions) {
+//   if (
+//     permissions.features.firmwareUpgrade &&
+//     Array.isArray(permissions.firmwareUpgrades[fwVersion])
+//   ) {
+//     return permissions.firmwareUpgrades[fwVersion];
+//   }
+//   // No upgrades allowed
+//   return [];
+// };
 
 // Used on devices whose ModelName does not match with actual model name
 basicCPEModel.useModelAlias = function(fwVersion) {

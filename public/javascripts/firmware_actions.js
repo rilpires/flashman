@@ -85,6 +85,15 @@ window.updateModels = function(input) {
   }
 };
 
+window.checkForOther = function(input) {
+  if (input.value == t('Other')) $('#custom-firmware-version').show();
+  else $('#custom-firmware-version').hide();
+  let chosenVendor = $('#select-productvendor option:selected').text();
+  let chosenModel = $('#select-productclass option:selected').text();
+  let fullID = chosenVendor + ' ' + chosenModel;
+  console.log(fullID);
+};
+
 window.updateVersions = function(input) {
   let tr069Infos = getFirmwareStorage('infos');
   $('#select-version option').remove();
@@ -96,8 +105,6 @@ window.updateVersions = function(input) {
   let chosenVendor = $('#select-productvendor option:selected').text();
   let chosenModel = input.value;
   let fullID = chosenVendor + ' ' + chosenModel;
-  console.log(fullID);
-  console.log(tr069Infos);
   if (tr069Infos.versions[fullID]) {
     tr069Infos.versions[fullID].forEach((v) => {
       $('#select-version').append(

@@ -18,6 +18,7 @@ const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
+const t = require('../language').i18next.t;
 
 // Import each and every model
 const tr069Models = {
@@ -97,16 +98,18 @@ const getTR069UpgradeableModels = function() {
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
-    if (!permissions.features.firmwareUpgrade) return;
+    // if (!permissions.features.firmwareUpgrade) return;
     let vendor = cpe.identifier.vendor;
     let model = cpe.identifier.model;
     let fullID = vendor + ' ' + model;
     if (ret.vendors[vendor]) {
       ret.vendors[vendor].push(model);
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+      ret.versions[fullID].push(t('Other'));
     } else {
       ret.vendors[vendor] = Array.from([model]);
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
+      ret.versions[fullID].push(t('Other'));
     }
   });
   return ret;
