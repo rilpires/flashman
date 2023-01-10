@@ -162,7 +162,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG6245D') {
     // Fiberhome HG6245D
     result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
-  } else if (modelName === 'GWR-300AC') {
+  } else if (modelSerial === 'IGD' && modelName === 'ModelName') {
     // Greatek GWR300
     result = {success: true, cpe: tr069Models.greatekGwr300Model};
   } else if (modelName === 'GWR-1200AC') {
