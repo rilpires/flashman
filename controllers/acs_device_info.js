@@ -1107,7 +1107,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 const syncDeviceData = async function(acsID, device, data, permissions) {
   let config = await Config.findOne(
     {is_default: true},
-    {tr069: true, device_update_schedule: true},
+    {tr069: true},
   ).lean()
   .catch((err) => {
     debug(err);
@@ -1120,7 +1120,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let hasChanges = false;
   let splitID = acsID.split('-');
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let isUpdating = SchedulerCommon.isUpdating(device._id, config);
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
@@ -1135,20 +1134,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
-
-  // Await until the last second to efficiently use resources
-  // Await during sync might have a big impact on large databases
-  // as it always runs in sync, the solution might be cache the scheduler
-  isUpdating = await isUpdating;
-
-  // Tell the scheduler that it was updated
-  if (
-    isUpdating.success === true &&
-    isUpdating.updating === true &&
-    isUpdating.version === data.common.version.value.trim()
-  ) {
-    SchedulerCommon.successUpdate(device._id);
-  }
+  // Tell the scheduler that it might have been updated
+  SchedulerCommon.successUpdate(
+    device._id,
+    data.common.version.value.trim(),
+  );
 
 
   // Update firmware version, if data available

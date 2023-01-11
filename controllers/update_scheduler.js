@@ -643,7 +643,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
 
           // Only replace for firmware, firmwares before tr-069 update will
           // come with use_tr069 as undefined
-          if (device.use_tr069 === false || device.use_tr069 === undefined) {
+          if (!device.use_tr069) {
             model = model.replace('N/', '');
           }
 

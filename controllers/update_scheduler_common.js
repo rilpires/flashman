@@ -90,12 +90,31 @@ commonScheduleController.configQuery = function(
 };
 
 
-commonScheduleController.successUpdate = async function(mac) {
+commonScheduleController.successUpdate = async function(
+  mac,
+  newFirmwareRelease,
+) {
   let config = await commonScheduleController.getConfig();
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
                                      {errorline: __line})};
   }
+
+  // Check if the device is updating
+  let isDeviceUpdating = await isUpdating(mac, config);
+
+  // Otherwise, return
+  if (
+    !isDeviceUpdating.success ||
+    !isDeviceUpdating.updating ||
+    isDeviceUpdating.version !== newFirmwareRelease
+  ) {
+    return {
+      success: false,
+      error: t('macNotFound', {errorline: __line}),
+    };
+  }
+
   let count = config.device_update_schedule.device_count;
   let rule = config.device_update_schedule.rule;
   let device = rule.in_progress_devices.find((d)=>d.mac === mac);
@@ -164,6 +183,17 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
                                      {errorline: __line})};
+  }
+
+  // Check if this function was called due to update procedure
+  let isDeviceUpdating = await isUpdating(mac, config);
+
+  // Otherwise, just return
+  if (!isDeviceUpdating.success || !isDeviceUpdating.updating) {
+    return {
+      success: false,
+      error: t('macNotFound', {errorline: __line}),
+    };
   }
 
   let count = config.device_update_schedule.device_count;
@@ -257,9 +287,9 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
       });
 
       let fieldsToUpdate = {release: rule.release};
-      if (slave && device.use_tr069 === false) {
+      if (slave && !device.use_tr069) {
         meshHandler.updateMeshDevice(slave, fieldsToUpdate);
-      } else if (device.use_tr069 === false) {
+      } else if (!device.use_tr069) {
         meshHandler.updateMeshDevice(mac, fieldsToUpdate);
 
       // Handle TR-069 Devices
@@ -304,7 +334,7 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
 
 
 // Return if the device is updating or not
-commonScheduleController.isUpdating = async function(mac, config = null) {
+const isUpdating = async function(mac, config = null) {
   if (!config) {
     config = await commonScheduleController.getConfig();
   }
@@ -319,14 +349,14 @@ commonScheduleController.isUpdating = async function(mac, config = null) {
 
   let rule = config.device_update_schedule.rule;
 
-  let isUpdating = rule.in_progress_devices.some(
+  let isDeviceUpdating = rule.in_progress_devices.some(
     (device)=>device.mac === mac,
   );
 
 
   return {
     success: true,
-    updating: isUpdating,
+    updating: isDeviceUpdating,
     version: rule.release,
   };
 };

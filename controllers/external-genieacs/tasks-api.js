@@ -162,22 +162,13 @@ const createNotificationForDevice = async function(
 
   if (!device) return;
 
-  // Check if is part of update procedure
-  let isUpdating = await SchedulerCommon.isUpdating(device._id);
-
   // If the error was related to update, change the state to failed
   // Do not show notification
-  if (
-    isUpdating.success === true &&
-    isUpdating.updating === true &&
-    doc.code === 'cwmp.9010'
-  ) {
+  if (doc.code === 'cwmp.9010') {
     // Might move to ToDo again or Failed
     SchedulerCommon.failedDownload(device._id);
 
     // Do not show the notification
-    return;
-  } else if (doc.code === 'cwmp.9010') {
     return;
   }
 
