@@ -192,6 +192,18 @@ const displayAndCheckUpdate = function() {
       (r)=>(r.id === release),
     ).meshIncompatibles;
 
+    // Get if the release is TR-069 or not
+    let isReleaseTr069 = firmwareList.releaseInfo.find(
+      (rel)=>rel.id === release,
+    ).isTR069;
+
+    // Get the quantity of different TR-069 models
+    // The quantity of cpes with different models is equal to the whole
+    // quantity of onus minus the quantity of models for that release
+    let differentModel = onuCount - firmwareList.releaseInfo.find(
+      (r)=>(r.id === release),
+    ).count;
+
     let meshRolesIncompatibles = firmwareList.releaseInfo.find(
       (r)=>(r.id === release),
     ).meshRolesIncompatibles;
@@ -216,11 +228,27 @@ const displayAndCheckUpdate = function() {
 
     // Display how many will be updated
     $('#warning-selected-to-update')
-    .html(t('XOfYSelectedCpesWillUpdate!', {
-      x: selectedCount > 0 ?
-        t('onlyX', {x: selectedCount}) : t('none'),
-      y: totalCount,
-    }));
+    .html(
+      t('XOfYSelectedCpesWillUpdate!', {
+        x: selectedCount > 0 ?
+          t('onlyX', {x: selectedCount}) : t('none'),
+        y: totalCount,
+      }) + ' ' + t('wontUpdate', {
+        // If the release selected is not TR-069, display that all TR-069
+        // models will not be updated
+        x: (!isReleaseTr069 && onuCount > 0) ?
+          t('modelsWithTr069', {x: onuCount}) : '',
+
+        // If the release selected is TR-069, display the quantity of firmware
+        // Anlix and with different models
+        y: (isReleaseTr069 && (totalCount - onuCount) > 0) ?
+          t('modelsWithAnlixFirmware', {x: totalCount - onuCount}) : '',
+
+        // The quantity of cpes with different models
+        z: (isReleaseTr069 && differentModel > 0) ?
+          t('modelsWithDifferentFirmware', {x: differentModel}) : '',
+      }),
+    );
 
     // If cannot upgrade at least one
     if (noUpgradeCount > 0) {
