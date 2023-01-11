@@ -360,6 +360,11 @@ const isUpdating = async function(mac, config = null) {
     version: rule.release,
   };
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+commonScheduleController.__testIsUpdating = isUpdating;
 
 
 module.exports = commonScheduleController;

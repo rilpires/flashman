@@ -696,7 +696,7 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
     utils.common.mockConfigs(null, 'findOne');
 
     // Execute and compare
-    const result = await updateCommon.isUpdating('aa:bb:cc:dd:ee:ff');
+    const result = await updateCommon.__testIsUpdating('aa:bb:cc:dd:ee:ff');
     expect(result.success).toBe(false);
     expect(result.error).toContain(
       t('noSchedulingActive').replace('({{errorline}})', ''),
@@ -742,7 +742,7 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
     utils.common.mockDefaultDevices();
 
     // Execute and compare
-    const result = await updateCommon.isUpdating(
+    const result = await updateCommon.__testIsUpdating(
       models.defaultMockDevices[1]._id,
     );
 
@@ -790,7 +790,7 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
     utils.common.mockDefaultDevices();
 
     // Execute and compare
-    const result = await updateCommon.isUpdating(mac);
+    const result = await updateCommon.__testIsUpdating(mac);
 
     expect(result.success).toBe(true);
     expect(result.updating).toBe(true);
