@@ -2,6 +2,8 @@
 /* global __line */
 
 const t = require('../language').i18next.t;
+const certman = require('../external-api/certman');
+const fs = require('fs');
 
 let utilHandlers = {};
 
@@ -280,6 +282,15 @@ utilHandlers.parseDate = function(dateString) {
     console.log(`minute: ${isNaN(minute)}`);
   }
   return new Date(year, month-1, day, hour, minute, 0, 0);
+};
+
+utilHandlers.getTr069CACert = async function() {
+  // For docker instances, we need to fetch the CA from Certman service
+  // For bare metal instances, we simply fetch it from local file system
+  if (process.env.FLM_DOCKER_INSTANCE) {
+    return await certman.getCertmanCACert();
+  }
+  return fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
 };
 
 /* ****Functions for test utilities**** */
