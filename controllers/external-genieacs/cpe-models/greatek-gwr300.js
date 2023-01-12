@@ -6,25 +6,32 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'GWR300'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
-  permissions.wan.pppUptime = false;
-  permissions.wifi.rebootAfterWiFi2SSIDChange = true;
+  permissions.lan.blockLANDevices.configWrite = false;
+  permissions.wan.mustRebootAfterChanges = true;
   permissions.wifi.dualBand = false;
+  permissions.wifi.rebootAfterWiFi2SSIDChange = true;
   permissions.wifi.modeWrite = false;
-  permissions.wifi.allowDiacritics = true;
   permissions.wifi.bandRead2 = false;
-  permissions.wifi.bandWrite2 = false;
-  permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandRead5 = false;
+  permissions.wifi.bandWrite2 = false;
   permissions.wifi.bandWrite5 = false;
+  permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.firmwareUpgrades = {'v3.4.6.7': []};
+  permissions.firmwareUpgrades = {
+    'v3.4.6.7': [],
+  };
   return permissions;
 };
 
 greatekModel.useModelAlias = function(fwVersion) {
   // Use this for the firmwares that have IGD as ModelName
   return 'GWR300';
+};
+
+greatekModel.convertGenieSerial = function(serial, mac) {
+  return mac;
 };
 
 greatekModel.convertWifiMode = function(mode) {
@@ -47,8 +54,6 @@ greatekModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
-  fields.lan.subnet_mask = 'InternetGatewayDevice.LANDevice.1.' +
-    'LANHostConfigManagement.SubnetMask';
   return fields;
 };
 
