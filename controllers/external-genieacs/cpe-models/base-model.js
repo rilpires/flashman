@@ -569,11 +569,11 @@ basicCPEModel.getModelFields = function() {
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
         'DuplexMode',
       wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.1.ExternalIPAddress',
+        'WANIPConnection.*.ExternalIPAddress',
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.1.Uptime',
+        'WANIPConnection.*.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Uptime',
       mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
