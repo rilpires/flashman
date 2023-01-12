@@ -81,9 +81,9 @@ nokiaModel.getModelFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice.X_Authentication.' +
     'WebAccount.Password';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
+    'WANConnectionDevice.*.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
+    'WANConnectionDevice.*.WANEthernetLinkConfig.X_ALU-COM_VLANIDMark';
   fields.port_mapping_values.protocol[1] = 'TCPorUDP';
   fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.WANIPConnection.*.MaxMTUSize';

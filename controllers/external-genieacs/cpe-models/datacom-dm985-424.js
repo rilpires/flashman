@@ -76,9 +76,9 @@ datacomModel.getModelFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.'+
     '*.InterfaceType';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+

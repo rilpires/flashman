@@ -1,38 +1,40 @@
 const basicCPEModel = require('./base-model');
 
-let tplinkModel = Object.assign({}, basicCPEModel);
+let tpLinkModel = Object.assign({}, basicCPEModel);
 
-tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
+tpLinkModel.identifier = {vendor: 'TP-Link', model: 'EX220'};
 
-tplinkModel.modelPermissions = function() {
+tpLinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
+    basicCPEModel.portForwardPermissions.noAsymNoRanges;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.features.stun = false;
+  permissions.features.stun = true;
   permissions.traceroute.hopCountExceededState = 'Completed';
-  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
-  permissions.firmwareUpgrades = {
-    '0.8.0 2.0.0 v605e.0 Build 210923 Rel.23076n': [],
-    '0.12.0 2.0.0 v605e.0 Build 220629 Rel.75194n': [],
-  };
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
+    36, 40, 44, 48, 52, 56, 60, 64,
+    100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
+    149, 153, 157, 161,
   ];
-  permissions.wifi.modeWrite = false;
+  permissions.wifi.allowDiacritics = true;
+  permissions.wifi.allowSpaces = true;
+  permissions.wifi.axWiFiMode = true;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.firmwareUpgrades = {
+    '0.13.0 2.0.0 v605f.0 Build 220618 Rel.77647n': [],
+  };
   return permissions;
 };
 
-tplinkModel.convertWifiMode = function(mode) {
+tpLinkModel.convertWifiMode = function(mode, is5ghz=false) {
   switch (mode) {
     case '11g':
     case '11n':
@@ -41,12 +43,13 @@ tplinkModel.convertWifiMode = function(mode) {
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+      return (is5ghz) ? 'a,n,ac,ax' : 'b,g,n,ax';
     default:
       return '';
   }
 };
 
-tplinkModel.convertWifiBand = function(band, is5ghz=false) {
+tpLinkModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -63,24 +66,24 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-tplinkModel.convertRssiValue = function(rssiValue) {
+tpLinkModel.convertRssiValue = function(rssiValue) {
   let result = basicCPEModel.convertRssiValue(rssiValue);
   // This model sends RSSI as some mystical formula, according to TP-Link
   return (result / 2) - 110;
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
+tpLinkModel.convertPPPoEEnable = function(pppoe) {
   return (pppoe.toLowerCase() === 'up') ? true : false;
 };
 
-tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+tpLinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /Radio\.[0-9*]+\./g,
     'Radio.' + ifaceIndex + '.',
   );
 };
 
-tplinkModel.getModelFields = function() {
+tpLinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields = basicCPEModel.convertIGDtoDevice(fields);
   // Common
@@ -100,7 +103,7 @@ tplinkModel.getModelFields = function() {
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
-  fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
+  fields.wan.mtu_ppp = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   // Port Mapping
@@ -185,8 +188,7 @@ tplinkModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.root = 'Device.WiFi.'+
     'NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
-  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   return fields;
 };
 
-module.exports = tplinkModel;
+module.exports = tpLinkModel;
