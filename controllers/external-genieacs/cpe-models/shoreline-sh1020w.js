@@ -49,10 +49,10 @@ shorelineModel.convertWifiMode = function(mode) {
 
 shorelineModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'X_CT-COM_VLAN';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.X_CT-COM_VLAN';
+    'WANConnectionDevice.*.X_CT-COM_VLAN';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+

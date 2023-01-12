@@ -589,9 +589,9 @@ basicCPEModel.getModelFields = function() {
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
-        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',
-        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',
         // pon_rxpower: 'InternetGatewayDevice.WANDevice.1.'+
         //   'GponInterfaceConfig.RXPower',
