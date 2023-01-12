@@ -297,10 +297,12 @@ basicCPEModel.convertField = function(
       result.value = parseInt(value); // convert to integer
       break;
     case 'wifi2-mode':
-    case 'wifi5-mode':
     case 'mesh2-mode':
-    case 'mesh5-mode':
       result.value = modeFunc(value); // convert to TR-069
+      break;
+    case 'wifi5-mode':
+    case 'mesh5-mode':
+      result.value = modeFunc(value, true); // convert to TR-069
       break;
     case 'wifi2-band':
     case 'mesh2-band':
