@@ -303,7 +303,7 @@ const instantiateCPEByModel = function(
     result = {success: true, cpe: tr069Models.uneeMPG421R};
   } else if (modelName === 'MP-X421RQ-F') {
     // New UNEE Stavix
-    result = { success: true, cpe: tr069Models.uneeMPX421RQF };
+    result = {success: true, cpe: tr069Models.uneeMPX421RQF};
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
