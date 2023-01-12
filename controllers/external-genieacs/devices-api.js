@@ -64,6 +64,7 @@ const tr069Models = {
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   raisecomRevNModel: require('./cpe-models/raisecom-ht803g-rev-n'),
   raisecomRevTModel: require('./cpe-models/raisecom-ht803g-rev-t'),
+  shorelineSH1020WModel: require('./cpe-models/shoreline-sh1020w'),
   tendaAC10Model: require('./cpe-models/tenda-ac10'),
   tendaHG9Model: require('./cpe-models/tenda-hg9'),
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
@@ -266,6 +267,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HT803G-WS2') {
     // Raisecom HT803G-WS2 REV T
     result = {success: true, cpe: tr069Models.raisecomRevTModel};
+  } else if (modelName === 'SH1020W') {
+    // Shoreline SH1020W
+    result = {success: true, cpe: tr069Models.shorelineSH1020WModel};
   } else if (modelSerial === 'AC10') {
     // Tenda AC10
     result = {success: true, cpe: tr069Models.tendaAC10Model};
