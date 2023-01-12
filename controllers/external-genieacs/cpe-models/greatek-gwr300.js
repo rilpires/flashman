@@ -27,7 +27,7 @@ greatekModel.useModelAlias = function(fwVersion) {
   return 'GWR300';
 };
 
-basicCPEModel.convertWifiMode = function(mode) {
+greatekModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
       return 'b,g';
