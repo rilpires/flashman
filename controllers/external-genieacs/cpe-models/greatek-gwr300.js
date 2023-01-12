@@ -24,9 +24,7 @@ greatekModel.modelPermissions = function() {
 
 greatekModel.useModelAlias = function(fwVersion) {
   // Use this for the firmwares that have IGD as ModelName
-  if (fwVersion === 'v3.4.6.7') {
-    return 'GWR300';
-  }
+  return 'GWR300';
 };
 
 basicCPEModel.convertWifiMode = function(mode) {
