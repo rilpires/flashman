@@ -19,7 +19,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
     112, 116, 136, 140, 149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto2 = false;
