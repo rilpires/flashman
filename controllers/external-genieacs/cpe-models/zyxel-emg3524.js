@@ -64,9 +64,9 @@ zyxelModel.getModelFields = function() {
   fields.wan.duplex = 'InternetGatewayDevice.LANDevice.1.' +
     'LANEthernetInterfaceConfig.4.Stats.X_5067F0_DuplexMode';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesReceived';
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANIPConnection.1.Stats.EthernetBytesSent';
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.SignalStrength';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
