@@ -2,18 +2,22 @@ const basicCPEModel = require('./base-model');
 
 let shorelineModel = Object.assign({}, basicCPEModel);
 
-shorelineModel.identifier = {vendor: 'SHLN', model: 'SH1020W'};
+shorelineModel.identifier = {vendor: 'Shoreline', model: 'SH1020W'};
 
 shorelineModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   // Sent bytes always 0
   // permissions.features.wanBytes = false;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.speedTestLimit = 250;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
-  permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.allowDiacritics = true;
+  permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.modeWrite = false;
   permissions.wifi.bandWrite2 = false;
   permissions.wifi.bandAuto2 = false;
@@ -21,9 +25,9 @@ shorelineModel.modelPermissions = function() {
   permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandRead5 = false;
   permissions.wifi.bandAuto5 = false;
-  permissions.lan.wlanAccessControl = false;
-  permissions.wan.speedTestLimit = 250;
-  permissions.firmwareUpgrades = {'V4.0-22072550': []};
+  permissions.firmwareUpgrades = {
+    'V4.0-22072550': [],
+  };
   return permissions;
 };
 
@@ -45,9 +49,10 @@ shorelineModel.convertWifiMode = function(mode) {
 
 shorelineModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.common.model = 'InternetGatewayDevice.DeviceInfo.ProductClass';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_VLAN';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.X_CT-COM_VLAN';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+    'X_CT-COM_VLAN';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.X_CT-COM_VLAN';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
