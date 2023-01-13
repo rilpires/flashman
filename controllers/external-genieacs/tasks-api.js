@@ -19,6 +19,9 @@ let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
+if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
+  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
+}
 
 let taskWatchlist = {};
 let lastTaskWatchlistClean = Date.now();

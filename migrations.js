@@ -12,6 +12,9 @@ const objectId = require('mongoose').Types.ObjectId;
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
+if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
+  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
+}
 
 module.exports = async (app) => {
   if (instanceNumber === 0) {
