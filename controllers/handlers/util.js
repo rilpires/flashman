@@ -186,6 +186,14 @@ utilHandlers.deepCopyObject = function(objArr) {
 
 utilHandlers.flashboxVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 utilHandlers.flashboxDevVerRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
+/*
+ *  Description:
+ *    TR-069 firmware version must pass this regex
+ *    Matches everything that is &, /, \, ", ', `, < or >
+ *    matches if it is bigger than 128 characters
+ */
+// eslint-disable-next-line max-len
+utilHandlers.tr069FirmwareVersionRegex = /[&/\\"'`<>]|[^&/\\"'`<>]{129,}/;
 utilHandlers.hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 utilHandlers.vlanNameRegex = /^[A-Za-z][A-Za-z\-0-9_]+$/;
 // eslint-disable-next-line max-len

@@ -40,6 +40,24 @@ let parseFilename = function(filename) {
   return firmwareFields;
 };
 
+
+/*
+ *  Description:
+ *    Validates the version and returns if it is valid or not.
+ *    Because it matches what is different from what is expected, the logic is
+ *    inverted.
+ *
+ *  Input:
+ *    version - version name
+ *
+ *  Output:
+ *    boolean - If it is valid or not
+ */
+let isValidVersion = function(version) {
+  return !util.tr069FirmwareVersionRegex.test(version);
+};
+
+
 let removeFirmware = async function(firmware) {
   if (firmware.cpe_type == 'tr069') {
     try {
@@ -243,6 +261,34 @@ firmwareController.uploadFirmware = async function(req, res) {
       message: t('firmwareFileNameInvalid', {errorline: __line}),
     });
   }
+
+  // Validate the version name
+  if (isTR069 && !isValidVersion(req.body.version)) {
+    return res.json({
+      type: 'danger',
+      message: t('firmwareVersionNameInvalid', {errorline: __line}),
+    });
+  }
+
+  // Check if the firmware already exists
+  let firmwareExists = await Firmware.findOne({
+    filename: firmwarefile.name,
+  });
+
+  if (
+    // File exists
+    fs.existsSync(path.join(imageReleasesDir, firmwarefile.name)) ||
+
+    // Filename is present in database
+    firmwareExists
+  ) {
+    return res.json({
+      type: 'danger',
+      message: t('firmwareAlreadyExists', {errorline: __line}),
+    });
+  }
+
+
   try {
     await firmwarefile.mv(path.join(imageReleasesDir, firmwarefile.name));
   } catch (err) {
