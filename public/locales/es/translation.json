@@ -700,7 +700,7 @@
 	"XOfYSelectedCpesWillUpdate!": "¡Advertencia! ¡Actualmente {{-x}} de los {{y}} CPE seleccionados se actualizarán!",
 	"modelsWithTr069": "{{-x}} son TR-069 CPEs y ",
 	"modelsWithAnlixFirmware": "{{-x}} son CPEs con firmware Anlix y ",
-	"modelsWithDifferentFirmware": "{{-x}} no son de el modelo correspondiente al firmware seleccionado y ",
+	"modelsWithDifferentFirmware": "{{-x}} no son del modelo correspondiente al firmware seleccionado y ",
 	"wontUpdate": "Entre los seleccionados, {{-x}}{{-y}}{{-z}}por lo tanto no se actualizarán.",
 	"onuSelectedToUpdate": "Entre los seleccionados, {{-x}} son CPE TR-069 o CPE en red mesh donde el principal es un CPE TR-069 y por lo tanto no se actualizarán.",
 	"meshSelectedToUpdate": "De los seleccionados, {{-x}} son CPE configurados en una red mesh en el nuevo estándar y la versión elegida solo es compatible con la red mesh en el estándar anterior. Por lo tanto, no se actualizarán",
