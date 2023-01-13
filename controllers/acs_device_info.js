@@ -792,7 +792,9 @@ const fetchSyncResult = async function(
   let query = {_id: acsID};
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
-  parameterNames = parameterNames.map((p) => {return p.replace(/\.\*.*/g, '')});
+  parameterNames = parameterNames.map((p) => {
+    return p.replace(/\.\*.*/g, '');
+  });
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
