@@ -1134,13 +1134,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
-  // Tell the scheduler that it might have been updated
-  SchedulerCommon.successUpdate(
-    device._id,
-    data.common.version.value.trim(),
-  );
-
-
   // Update firmware version, if data available
   if (data.common.version && data.common.version.value) {
     device.version = data.common.version.value.trim();
@@ -1153,6 +1146,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (device.installed_release === device.release) {
       device.do_update = false;
       device.do_update_status = 1;
+      // Tell the scheduler that it might have been updated
+      SchedulerCommon.successUpdate(
+        device._id,
+        data.common.version.value.trim(),
+      );
     }
   }
 
