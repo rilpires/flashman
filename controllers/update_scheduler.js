@@ -736,7 +736,6 @@ scheduleController.getDevicesReleases = async function(req, res) {
         }
 
         // Check which routers can be updated
-        let fwareModels = DeviceVersion.flashboxModelList;
         releasesAvailable.forEach((release)=>{
           const validModels = release.model;
 
