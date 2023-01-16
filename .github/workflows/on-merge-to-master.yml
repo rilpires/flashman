@@ -2,7 +2,7 @@ name: Deploy to master
 
 on:
   push:
-    branches: [ master, feature/ci-merge-to ]
+    branches: [ master ]
 
 jobs:
   On-merge-to-master:
@@ -69,7 +69,7 @@ jobs:
           push: true
           tags: |
             anlixhub/flashman:${{ env.VERSION }}${{ env.SUFFIX }},
-#            anlixhub/flashman:${{ env.DOCKER_TAG }}
+            anlixhub/flashman:${{ env.DOCKER_TAG }}
 
       - name: Creating release notes, bump package version, creating & pushing Git tag
         run: |
@@ -110,9 +110,11 @@ jobs:
 
           git config --global user.email ${{ github.actor }}@users.noreply.github.com
           git config --global user.name "GitHub Actions"
-          git add ./package.json
-          git commit -m "Version bumped on package.json file"
-          git push origin $GITHUB_REF_NAME
+# TODO
+# TODO include npm run build
+#          git add ./package.json
+#          git commit -m "Version bumped on package.json file"
+#          git push origin $GITHUB_REF_NAME
           git tag -a "$VERSION${{ env.SUFFIX }}" -m "$(cat notes.txt)"
           git push origin $VERSION${{ env.SUFFIX }}
 
