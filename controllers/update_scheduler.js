@@ -784,7 +784,8 @@ scheduleController.getDevicesReleases = async function(req, res) {
                 count += devicesByModel[model].count;
 
               // Otherwise add to the missing list, if it matches the type
-              } else if (fwareModels.includes(model) === !isTR069) {
+              // Only push TR069 models if the release is TR069
+              } else if (tr069Models.includes(model) === isTR069) {
                 missingModels.push(model);
               }
             });
