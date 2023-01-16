@@ -7,7 +7,7 @@ on:
     branches: [ development ]
 
 jobs:
-  build:
+  On-merge-to-development:
     runs-on: ubuntu-latest
 
     strategy:
