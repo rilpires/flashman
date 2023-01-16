@@ -1,0 +1,36 @@
+name: Master pull request checks
+
+on:
+  pull_request:
+    branches: [ master, feature/ci-merge-to ]
+
+jobs:
+  Main:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - name: Checkout code
+      - uses: actions/checkout@v2
+
+      - name: Getting latest version & check if version is available
+        run: |
+          VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)       
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          if [ $(git tag -l "$VERSION") ]; then
+            echo "Versão já existe. Bump de versão necessário."
+            exit -1
+          fi
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies & run tests
+        run: |
+          npm install
+          npm test

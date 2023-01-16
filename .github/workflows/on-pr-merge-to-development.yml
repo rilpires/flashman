@@ -1,14 +1,13 @@
-name: Node.js CI
+name: Deploy to development
 
 on:
   push:
-    branches: [ development, master ]
+    branches: [ development ]
   pull_request:
-    branches: [ development, master ]
+    branches: [ development ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -16,11 +15,15 @@ jobs:
         node-version: [12.x]
 
     steps:
+      - name: Checkout code
       - uses: actions/checkout@v2
+
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
           node-version: ${{ matrix.node-version }}
-      - name: Install dependencies
-        run: npm install
-      - run: npm test
+
+      - name: Install dependencies & run tests
+        run: |
+          npm install
+          npm test
