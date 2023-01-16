@@ -9,10 +9,10 @@
 		"features": ["Adicionamos E", "Agora é possível R"]
 	},
 	"2.59.0": {
-		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
-		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
-		"tr069_compatibilities": ["CPE TR-069 C", "CPE TR-069 D"],
-		"fixes": ["Consertamos A", "consertamos B"],
-		"features": ["Adicionamos E", "Agora é possível R"]
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [],
+		"improvements": [],
+		"features": []
 	}
 }
