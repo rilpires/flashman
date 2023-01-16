@@ -15,6 +15,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Get tags
         run: git fetch --tags origin
 
@@ -22,16 +23,11 @@ jobs:
         run: |
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
           echo "$VERSION" | grep -G -q "^[0-9]*\.[0-9]*\.[0-9]*$"
-          echo "Teste se versão está no formato"
           if [ $? -ne 0 ]; then
             echo "Versão fora do formato ou não encontrada"
             exit 1
           fi
-          echo "Teste se versão já existe"
           GIT_TAG=$(git tag -l "$VERSION")
-          echo "$VERSION"
-          echo "$GIT_TAG"
-          git tag -l
           if [ "$GIT_TAG" != "" ]; then
             echo "Versão já existe. Bump de versão necessário"
             exit 1
