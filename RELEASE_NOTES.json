@@ -13,6 +13,8 @@
 		"tr069_compatibilities": [],
 		"fixes": [],
 		"improvements": [],
-		"features": []
+		"features": [
+			"Adicionamos suporte ao upgrade em massa para CPEs TR-069"
+		]
 	}
 }
