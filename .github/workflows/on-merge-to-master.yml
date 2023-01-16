@@ -69,7 +69,7 @@ jobs:
           push: true
           tags: |
             anlixhub/flashman:${{ env.VERSION }}${{ env.SUFFIX }},
-            anlixhub/flashman:${{ env.DOCKER_TAG }}
+#            anlixhub/flashman:${{ env.DOCKER_TAG }}
 
       - name: Creating release notes, bump package version, creating & pushing Git tag
         run: |
