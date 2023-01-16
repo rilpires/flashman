@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Getting branch version
         run: |
@@ -71,7 +71,7 @@ jobs:
             anlixhub/flashman-nbi:${{ env.VERSION }}${{ env.SUFFIX }},
 #            anlixhub/flashman-nbi:${{ env.DOCKER_TAG }}
 
-      - name: Creating release notes, creating & pushing Git tag
+      - name: Creating release notes, bump package version, creating & pushing Git tag
         run: |
           VERSION="${{ env.VERSION }}"
 
@@ -104,8 +104,14 @@ jobs:
             cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".features[] | "- " + .' >> notes.txt
           fi
 
+          # Bump version on package json
+          cat ./package.json | jq -r '. | .version = "'$VERSION'"' > ./package.json.tmp
+          mv ./package.json.tmp ./package.json
+
           git config --global user.email ${{ github.actor }}@users.noreply.github.com
           git config --global user.name "GitHub Actions"
+          git add ./package.json
+          git commit -m "Version bumped on package.json file"
           git tag -a "$VERSION${{ env.SUFFIX }}" -m "$(cat notes.txt)"
           git push origin $VERSION${{ env.SUFFIX }}
 
