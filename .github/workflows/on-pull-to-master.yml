@@ -20,10 +20,12 @@ jobs:
         run: |
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
           echo "$VERSION" | grep -G -q "^[0-9]*\.[0-9]*\.[0-9]*$"
+          echo "Teste se versão está no formato"
           if [ $? -ne 0 ]; then
             echo "Versão fora do formato ou não encontrada"
             exit 1
           fi
+          echo "Teste se versão já existe"
           if [ $(git tag -l "$VERSION") ]; then
             echo "Versão já existe. Bump de versão necessário"
             exit 1
