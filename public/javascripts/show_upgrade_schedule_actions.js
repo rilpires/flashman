@@ -256,7 +256,7 @@ const displayAndCheckUpdate = function(tr069Active) {
       $('#warning-releases').show();
       if (
         noUpgradeCount-onuCount-meshIncompatibles-meshRolesIncompatibles > 0 &&
-        !tr069Active
+        tr069Active === false
       ) {
         $('#list-missing-models').show();
       }
@@ -438,7 +438,9 @@ anlixDocumentReady.add(function() {
           setFirmwareReleasesDropdown();
 
           // Build missing firmware data
-          displayAndCheckUpdate(true);
+          displayAndCheckUpdate(
+            $(TR069_FIRMWARE_SELECTION_BUTTON).hasClass('active'),
+          );
           stepper.next();
         },
         error: function(xhr, status, error) {
