@@ -32,6 +32,13 @@ jobs:
             echo "Versão já existe. Bump de versão necessário"
             exit 1
           fi
+          # Check if all keys exists
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".custom_firmware_compatibilities | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".tr069_compatibilities | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".fixes | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".improvements | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".features | any'
+
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Use Node.js ${{ matrix.node-version }}
