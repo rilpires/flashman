@@ -19,7 +19,7 @@ jobs:
       - name: Getting latest version & check if version is available
         run: |
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
-          echo "$VERSION" | grep -G -q "^[1-9]*\.[1-9]*\.[1-9]*$"
+          echo "$VERSION" | grep -G -q "^[0-9]*\.[0-9]*\.[0-9]*$"
           if [ $? -ne 0 ]; then
             echo "Versão fora do formato ou não encontrada"
             exit -1
