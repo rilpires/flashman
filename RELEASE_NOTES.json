@@ -1,6 +1,6 @@
 {
-	"latest_version": "x.y.z",
-	"x.y.z": {
+	"latest_version": "2.59.0",
+	"2.59.0": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
 		"tr069_compatibilities": ["CPE TR-069 C", "CPE TR-069 D"],
