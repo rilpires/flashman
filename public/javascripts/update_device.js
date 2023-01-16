@@ -205,7 +205,7 @@ $(function() {
       swal.fire({
         icon: 'error',
         title: t('Error'),
-        text: t('firmwareDownloadError') + t('errorOccurredTryAgain'),
+        text: t('firmwareDownloadError') + ' ' + t('errorOccurredTryAgain'),
         confirmButtonText: t('Ok'),
         confirmButtonColor: '#4db6ac',
       });
