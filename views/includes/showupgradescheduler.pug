@@ -100,10 +100,29 @@
                 hr
                 .text-center
                   h6= t('rememberToCreateAFirmwareWithThisReleaseToAllModels!')
-                  .btn-group.mt-4
-                    button.btn.btn-primary.dropdown-toggle(type="button", data-toggle="dropdown")
-                      span#selected-release.selected= t('Choose')
-                    #releases-dropdown.dropdown-menu
+
+                  //- Firmware selection
+                  .row.my-3.d-flex.justify-content-center
+
+                    //- Firmware Type
+                    .col-8.my-4
+                      .col-12
+                        h5.text-center= t('firmwareTypeSelect')
+                      
+                      .col-12.btn-group.btn-group-toggle(data-toggle='buttons')
+                        label#tr069-firmware-selection.active.mr-2.ml-0.col-12.btn-primary.btn.tab-switch-btn= t('tr069FirmwareTypeSelect')
+                            input(type='radio')
+
+                        label#flashbox-firmware-selection.ml-2.mr-0.col-12.btn-primary.btn.tab-switch-btn= t('anlixFirmwareTypeSelect')
+                          input(type='radio')
+
+                    //- Firmware Version
+                    .col-8.my-3
+                      h5.text-center= t('firmwareVersionSelect')
+                      button.btn.btn-primary.dropdown-toggle.col-11(type="button", data-toggle="dropdown")
+                        span#selected-release.selected= t('Choose')
+                      #releases-dropdown.dropdown-menu.col-10
+
                 #warning-releases.mt-4.alert.alert-danger
                   .text-center
                     strong#warning-selected-to-update= t('XOfYSelectedCpesWillUpdate!', {x: 0, y: 0})

@@ -2,6 +2,7 @@
 /* global __line */
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const SchedulerCommon = require('./update_scheduler_common');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
@@ -1104,7 +1105,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 // Complete CPE information synchronization gets done here - compare cpe data
 // with registered device data and sync fields accordingly
 const syncDeviceData = async function(acsID, device, data, permissions) {
-  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  let config = await Config.findOne(
+    {is_default: true},
+    {tr069: true},
+  ).lean()
   .catch((err) => {
     debug(err);
     return null;
@@ -1137,10 +1141,16 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (device.version !== device.installed_release) {
       device.installed_release = device.version;
     }
+
     // Remove firmware update flags
     if (device.installed_release === device.release) {
       device.do_update = false;
       device.do_update_status = 1;
+      // Tell the scheduler that it might have been updated
+      SchedulerCommon.successUpdate(
+        device._id,
+        data.common.version.value.trim(),
+      );
     }
   }
 
