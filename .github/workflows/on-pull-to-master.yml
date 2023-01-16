@@ -5,7 +5,7 @@ on:
     branches: [ master, feature/ci-merge-to ]
 
 jobs:
-  Main:
+  On-pull-to-master:
     runs-on: ubuntu-latest
 
     strategy:
