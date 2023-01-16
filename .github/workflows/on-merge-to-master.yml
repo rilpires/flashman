@@ -68,8 +68,8 @@ jobs:
           file: Dockerfile
           push: true
           tags: |
-            anlixhub/flashman-nbi:${{ env.VERSION }}${{ env.SUFFIX }},
-#            anlixhub/flashman-nbi:${{ env.DOCKER_TAG }}
+            anlixhub/flashman:${{ env.VERSION }}${{ env.SUFFIX }},
+            anlixhub/flashman:${{ env.DOCKER_TAG }}
 
       - name: Creating release notes, bump package version, creating & pushing Git tag
         run: |
@@ -112,6 +112,7 @@ jobs:
           git config --global user.name "GitHub Actions"
           git add ./package.json
           git commit -m "Version bumped on package.json file"
+          git push origin $GITHUB_REF_NAME
           git tag -a "$VERSION${{ env.SUFFIX }}" -m "$(cat notes.txt)"
           git push origin $VERSION${{ env.SUFFIX }}
 
