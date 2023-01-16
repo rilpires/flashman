@@ -1,0 +1,52 @@
+name: Master pull request checks
+
+on:
+  pull_request:
+    branches: [ master, feature/ci-merge-to ]
+
+jobs:
+  On-pull-to-master:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get tags
+        run: git fetch --tags origin
+
+      - name: Getting latest version & check if version is available
+        run: |
+          VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
+          echo "$VERSION" | grep -G -q "^[0-9]*\.[0-9]*\.[0-9]*$"
+          if [ $? -ne 0 ]; then
+            echo "Versão fora do formato ou não encontrada"
+            exit 1
+          fi
+          GIT_TAG=$(git tag -l "$VERSION")
+          if [ "$GIT_TAG" != "" ]; then
+            echo "Versão já existe. Bump de versão necessário"
+            exit 1
+          fi
+          # Check if all keys exists
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".custom_firmware_compatibilities | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".tr069_compatibilities | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".fixes | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".improvements | any'
+          cat ./RELEASE_NOTES.json | jq -r '."'$VERSION'".features | any'
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install dependencies & run tests
+        run: |
+          npm install
+          npm test
