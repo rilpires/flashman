@@ -18,12 +18,17 @@ jobs:
 
       - name: Getting latest version & check if version is available
         run: |
-          VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)       
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          if [ $(git tag -l "$VERSION") ]; then
-            echo "Versão já existe. Bump de versão necessário."
+          VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
+          echo "$VERSION" | grep -G -q "^[1-9]*\.[1-9]*\.[1-9]*$"
+          if [ $? -ne 0 ]; then
+            echo "Versão fora do formato ou não encontrada"
             exit -1
           fi
+          if [ $(git tag -l "$VERSION") ]; then
+            echo "Versão já existe. Bump de versão necessário"
+            exit -1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
