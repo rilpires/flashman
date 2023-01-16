@@ -736,6 +736,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
         }
 
         // Check which routers can be updated
+        let fwareModels = DeviceVersion.flashboxModelList;
         releasesAvailable.forEach((release)=>{
           const validModels = release.model;
 
@@ -782,8 +783,8 @@ scheduleController.getDevicesReleases = async function(req, res) {
               } else if (validModels.includes(model) && isTR069 === false) {
                 count += devicesByModel[model].count;
 
-              // Otherwise add to the missing list
-              } else {
+              // Otherwise add to the missing list, if it matches the type
+              } else if (fwareModels.includes(model) === !isTR069) {
                 missingModels.push(model);
               }
             });

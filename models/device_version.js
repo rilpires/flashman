@@ -1325,6 +1325,8 @@ const flashboxFirmwareDevices = {
   },
 };
 
+DeviceVersion.flashboxModelList = Object.keys(flashboxFirmwareDevices);
+
 DeviceVersion.versionCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   let fooVer = foo.split('.').map((val) => {
