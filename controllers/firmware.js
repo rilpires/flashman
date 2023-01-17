@@ -44,8 +44,6 @@ let parseFilename = function(filename) {
 /*
  *  Description:
  *    Validates the version and returns if it is valid or not.
- *    Because it matches what is different from what is expected, the logic is
- *    inverted.
  *
  *  Input:
  *    version - version name
@@ -55,7 +53,7 @@ let parseFilename = function(filename) {
  */
 let isValidVersion = function(version) {
   if (typeof version !== 'string' || version.length === 0) return false;
-  return !util.tr069FirmwareVersionRegex.test(version);
+  return util.tr069FirmwareVersionRegex.test(version);
 };
 /*
  * This function is being exported in order to test it.
