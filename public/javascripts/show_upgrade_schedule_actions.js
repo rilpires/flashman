@@ -151,13 +151,13 @@ const setFirmwareReleasesDropdown = function(
       );
 
       // Update bindings and informations
-      displayAndCheckUpdate();
+      displayAndCheckUpdate(tr069Active);
     }
   });
 };
 
 
-const displayAndCheckUpdate = function() {
+const displayAndCheckUpdate = function(tr069Active) {
   $('#releases-dropdown a').unbind('click');
   $('#releases-dropdown a').click((event)=>{
     // Hide information sections
@@ -254,8 +254,10 @@ const displayAndCheckUpdate = function() {
     if (noUpgradeCount > 0) {
       // Dispĺay all models that cannot be updated
       $('#warning-releases').show();
-      if (noUpgradeCount - onuCount - meshIncompatibles -
-        meshRolesIncompatibles > 0) {
+      if (
+        noUpgradeCount-onuCount-meshIncompatibles-meshRolesIncompatibles > 0 &&
+        tr069Active === false
+      ) {
         $('#list-missing-models').show();
       }
 
@@ -436,7 +438,9 @@ anlixDocumentReady.add(function() {
           setFirmwareReleasesDropdown();
 
           // Build missing firmware data
-          displayAndCheckUpdate();
+          displayAndCheckUpdate(
+            $(TR069_FIRMWARE_SELECTION_BUTTON).hasClass('active'),
+          );
           stepper.next();
         },
         error: function(xhr, status, error) {

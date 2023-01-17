@@ -79,9 +79,9 @@ datacomModel.convertWifiBandToFlashman = function(band, isAC) {
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_WebUserInfo.UserPassword';
   fields.port_mapping_fields.external_port_end = [
@@ -99,9 +99,9 @@ datacomModel.getModelFields = function() {
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
     'ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +

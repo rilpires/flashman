@@ -707,8 +707,9 @@ scheduleController.getDevicesReleases = async function(req, res) {
               ) {
                 count += devicesByModel[model].count;
 
-              // Otherwise add to the missing list
-              } else {
+              // Otherwise add to the missing list, if it matches the type
+              // Only push TR069 models if the release is TR069
+              } else if (tr069Models.includes(model) === isTR069) {
                 missingModels.push(model);
               }
             });
@@ -1031,7 +1032,11 @@ scheduleController.startSchedule = async function(req, res) {
       let upgradeMeshVersion = {};
 
       let macList = matchedDevices.map((device)=>{
-        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        if (
+          !device.use_tr069 &&
+          device.mesh_slaves &&
+          device.mesh_slaves.length > 0
+        ) {
           slaveCount[device._id] = device.mesh_slaves.length;
         } else {
           slaveCount[device._id] = 0;

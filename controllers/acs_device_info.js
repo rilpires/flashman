@@ -1141,6 +1141,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.common.version && data.common.version.value) {
     device.version = data.common.version.value.trim();
 
+
     // Check if the device is updating
     if (device.do_update) {
       let cpeDidUpdate = false;

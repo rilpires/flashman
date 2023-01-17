@@ -19,7 +19,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
     112, 116, 136, 140, 149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto2 = false;
@@ -76,9 +76,9 @@ intelbrasModel.getModelFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_ITBS_WebAdminPassword';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANIPConnection.1.X_ITBS_VlanMuxID';
+    'WANConnectionDevice.*.WANIPConnection.1.X_ITBS_VlanMuxID';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
+    'WANConnectionDevice.*.WANPPPConnection.1.X_ITBS_VlanMuxID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
