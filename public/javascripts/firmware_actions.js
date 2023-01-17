@@ -8,6 +8,11 @@ import 'datatables.net-bs4';
 const t = i18next.t;
 
 
+// This regex is copied from controllers/handlers/util/
+// tr069FirmwareVersionRegex.
+const VERSION_NAME_REGEX = /^[^&/\\"'`<>]{1,128}$/;
+
+
 /*
  *  Description:
  *    This functions shows and hides the version name input when adding
@@ -193,6 +198,31 @@ window.setVersionNameInput = function(inputElement) {
 window.updateVersionName = function() {
   let versionName = $('#input-version-name').val();
   $('#otherVersionFirmware').attr('value', versionName);
+
+  // If the length is 0
+  if (!versionName.length) {
+    // Change the error
+    $('#input-version-name-invalid-feedback').text(
+      t('typeVersionName'),
+    );
+
+    // Show the error
+    $('#input-version-name-invalid-feedback').show();
+
+  // If there is an invalid character
+  } else if (!VERSION_NAME_REGEX.test(versionName)) {
+    // Change the error
+    $('#input-version-name-invalid-feedback').text(
+      t('invalidVersionName'),
+    );
+
+    // Show the error
+    $('#input-version-name-invalid-feedback').show();
+
+  // Normal input, hide the error
+  } else {
+    $('#input-version-name-invalid-feedback').hide();
+  }
 };
 
 
