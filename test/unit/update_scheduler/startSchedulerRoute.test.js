@@ -277,7 +277,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       filter_list: 'online',
     };
   
-    let response = await utils.schedulerCommon.getReleasesFake(data);
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
 
@@ -296,7 +296,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       filter_list: 'online',
     };
   
-    let response = await utils.schedulerCommon.getReleasesFake(data);
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
 
