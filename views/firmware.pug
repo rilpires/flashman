@@ -52,7 +52,7 @@ block content
                                                   name="firmwaretr069form",
                                                   novalidate)
             .row.pl-0
-              .col-md-3.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Manufacturer')}
@@ -61,7 +61,7 @@ block content
                       data-json=tr069Infos, required)
                     option(value='')
                   .invalid-feedback= t('selectAnyVendor')
-              .col-md-3.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Model')}
@@ -70,7 +70,7 @@ block content
                       required)
                     option(value='')
                   .invalid-feedback= t('selectAnyModel')
-              .col-md-3.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Version')}
@@ -81,11 +81,11 @@ block content
                   )
                     option(value='')
                   .invalid-feedback= t('selectAnyVersion')
-              .col-md-3.col-12#input-version-name-col(
+              .col-md-3.md-form#input-version-name-col(
                 style= "display: none;"
               )
-                .md-form.input-entry
-                  label.active
+                .input-entry.mt-1
+                  label.active.ml-3.mt-1
                     | #{t('VersionName')}
                   input#input-version-name.form-control(
                     name="versionname",
