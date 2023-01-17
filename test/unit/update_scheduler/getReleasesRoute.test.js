@@ -39,6 +39,7 @@ const checkResponse = function(response, statusCode, success, data) {
 
 // controllers/update_scheduler.js/getDevicesReleases
 describe('TR-069 Update Scheduler Tests - Get Releases', () => {
+  let version = '1.1-220826';
 
   beforeAll(() => {
     // Mock the devices
@@ -46,8 +47,8 @@ describe('TR-069 Update Scheduler Tests - Get Releases', () => {
       '638f927dd05676c90dbdeeba',
       {
         _id: '639f957de0a676f90db6eeba',
-        version: '1.1-220826',
-        release: '1.1-220826',
+        version: version,
+        release: version,
         filename: 'ONT121AC_inMesh_1.1-220826.tar',
       },
     );
@@ -168,6 +169,23 @@ describe('TR-069 Update Scheduler Tests - Get Releases', () => {
 
     let response = await utils.schedulerCommon.getReleasesFake(data);
     checkResponse(response, 200, true, data);
+
+    // Check if response includes the same firmware as teh router, allowing to
+    // update to the same firmware
+    let hasSameFirmware = false;
+    for (
+      let release = 0;
+      release < response.body.releaseInfo.length;
+      release++
+    ) {
+      // Same version as defined in beforeAll
+      if (response.body.releaseInfo[release].id === version) {
+        hasSameFirmware = true;
+        break;
+      }
+    }
+
+    expect(hasSameFirmware).toBe(true);
   });
 
 
