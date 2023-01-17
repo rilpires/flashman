@@ -110,10 +110,14 @@ jobs:
           cat ./package.json | jq -r '. | .version = "'$VERSION'"' > ./package.json.tmp
           mv ./package.json.tmp ./package.json
 
+          # Generate dist files
+          npm run build
+
           git config --global user.email anlixbot@users.noreply.github.com
           git config --global user.name "anlixbot"
           git add ./package.json
-          git commit -m "[skip ci] Version bumped on package.json file"
+          git add ./public/dist
+          git commit -m "[skip ci] Version bumped on package.json and generated dist files"
           git push
           git tag -a "$VERSION${{ env.SUFFIX }}" -m "$(cat notes.txt)"
           git push origin $VERSION${{ env.SUFFIX }}
