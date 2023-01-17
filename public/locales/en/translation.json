@@ -133,6 +133,7 @@
 	"fileMoveError": "Error moving file ({{errorline}})",
 	"fileChecksumError": "Error generating file integrity hash ({{errorline}})",
 	"firmwareAlreadyExists": "It is not possible to register more than one firmware for a given model/version ({{errorline}})",
+	"fileAlreadyExists": "Already exists a file with the same name with the one is being uploaded. ({{errorline}})",
 	"requestError": "Request error ({{errorline}})",
 	"tokenError": "Error with supplied token ({{errorline}})",
 	"authenticationError": "Authentication error ({{errorline}})",

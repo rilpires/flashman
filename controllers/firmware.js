@@ -288,7 +288,11 @@ firmwareController.uploadFirmware = async function(req, res) {
   ) {
     return res.json({
       type: 'danger',
-      message: t('firmwareAlreadyExists', {errorline: __line}),
+      // If the file exists, show fileAlreadyExists error, otherwise show
+      // firmwareAlreadyExists
+      message: (firmwareExists) ?
+        t('fileAlreadyExists', {errorline: __line}) :
+        t('firmwareAlreadyExists', {errorline: __line}),
     });
   }
 

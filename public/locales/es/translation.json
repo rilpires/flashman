@@ -133,6 +133,7 @@
 	"fileMoveError": "Error al mover el archivo ({{errorline}})",
 	"fileChecksumError": "Error al generar el hash de integridad del archivo ({{errorline}})",
 	"firmwareAlreadyExists": "No es posible registrar más de un firmware para un modelo/versión determinado ({{errorline}})",
+	"fileAlreadyExists": "Ya existe un archivo con el mismo nombre que el que se está subiendo. ({{errorline}})",
 	"requestError": "Error de solicitud ({{errorline}})",
 	"tokenError": "Error en el token previsto ({{errorline}})",
 	"authenticationError": "Error de autenticación ({{errorline}})",
