@@ -292,7 +292,7 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
   Outputs:
     promise - A promise to wait for the response
 */
-utils.schedulerCommon.sendFakeRequest = async function(func, data) {
+utils.common.sendFakeRequest = async function(func, data, files) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -302,10 +302,14 @@ utils.schedulerCommon.sendFakeRequest = async function(func, data) {
 
   // Call the function
   func(
-    {body: data, user: {
-      role: undefined,
-      is_superuser: true,
-    }},
+    {
+      body: data,
+      user: {
+        role: undefined,
+        is_superuser: true,
+      },
+      files: files,
+    },
 
     // Pass the promise resolve
     {
@@ -313,9 +317,10 @@ utils.schedulerCommon.sendFakeRequest = async function(func, data) {
       status: (errorCode) => fakeStatus(
         errorCode, promiseResolve, this.header,
       ),
-      set: (headerName, value) => function() {
+      set: function(headerName, value) {
         this.header[headerName] = value;
       },
+      json: (data) => fakeJson(200, promiseResolve, {}, data),
     },
   );
 
@@ -334,7 +339,7 @@ utils.schedulerCommon.sendFakeRequest = async function(func, data) {
     releases - A promise to get the releases
 */
 utils.schedulerCommon.getReleasesFake = async function(data) {
-  let promise = utils.schedulerCommon.sendFakeRequest(
+  let promise = utils.common.sendFakeRequest(
     updateScheduler.getDevicesReleases,
     data,
   );
@@ -354,7 +359,7 @@ utils.schedulerCommon.getReleasesFake = async function(data) {
     promise - A promise to start the scheduler
 */
 utils.schedulerCommon.startSchedulerFake = async function(data) {
-  let promise = utils.schedulerCommon.sendFakeRequest(
+  let promise = utils.common.sendFakeRequest(
     updateScheduler.startSchedule,
     data,
   );
@@ -373,7 +378,7 @@ utils.schedulerCommon.startSchedulerFake = async function(data) {
     promise - A promise to abort the scheduler
 */
 utils.schedulerCommon.abortSchedulerFake = async function() {
-  let promise = utils.schedulerCommon.sendFakeRequest(
+  let promise = utils.common.sendFakeRequest(
     updateScheduler.abortSchedule,
     {},
   );
@@ -392,7 +397,7 @@ utils.schedulerCommon.abortSchedulerFake = async function() {
     promise - A promise to get the result of the scheduler
 */
 utils.schedulerCommon.schedulerResultFake = async function() {
-  let promise = utils.schedulerCommon.sendFakeRequest(
+  let promise = utils.common.sendFakeRequest(
     updateScheduler.scheduleResult,
     {},
   );
