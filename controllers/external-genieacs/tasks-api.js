@@ -399,10 +399,10 @@ const checkTask = function(task) {
   let name = task.name; // the task name/type.
   if (!name) return false;
 
+  // task name/type has to be defined in 'taskParameterIdFromType'.
+  if (!Object.keys(taskParameterIdFromType).includes(name)) return false;
   // the attribute name where a task holds its parameters.
   let parameterId = taskParameterIdFromType[name];
-  // task name/type has to be defined in 'taskParameterIdFromType'.
-  if (!parameterId) return false;
   // in case task name/type is "setParameterValues".
   if (name === 'setParameterValues') {
     // its parameter has to be an array.

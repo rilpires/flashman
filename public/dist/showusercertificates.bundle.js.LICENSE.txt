@@ -75,7 +75,7 @@
  * Date: 2020-05-04T22:49Z
  */
 
-/*! DataTables 1.12.1
+/*! DataTables 1.13.1
  * ©2008-2022 SpryMedia Ltd - datatables.net/license
  */
 
