@@ -1730,6 +1730,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testSyncDeviceData = syncDeviceData;
 
 const sendRebootCommand = async function(acsID) {
   let task = {name: 'reboot'};

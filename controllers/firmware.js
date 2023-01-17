@@ -54,8 +54,14 @@ let parseFilename = function(filename) {
  *    boolean - If it is valid or not
  */
 let isValidVersion = function(version) {
+  if (typeof version !== 'string' || version.length === 0) return false;
   return !util.tr069FirmwareVersionRegex.test(version);
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+firmwareController.__testIsValidVersion = isValidVersion;
 
 
 let removeFirmware = async function(firmware) {
