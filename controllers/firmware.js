@@ -289,35 +289,46 @@ firmwareController.uploadFirmware = async function(req, res) {
   }
 
 
-  let firmwareExists = null;
-  let fileExists = null;
   // Check if the firmware or the model with the release already
   // exists in database. For Flashbox, the user can override the firmware.
   if (isTR069) {
+    let firmwareExists = true;
+    let fileExists = true;
+
     // Check if firmware exists
-    firmwareExists = await Firmware.findOne({
-      '$or': [
-        {filename: firmwarefile.name},
-        {
-          model: fnameFields.model,
-          release: fnameFields.release,
-        },
-      ],
-    });
+    try {
+      firmwareExists = await Firmware.findOne({
+        '$or': [
+          {filename: firmwarefile.name},
+          {
+            model: fnameFields.model,
+            release: fnameFields.release,
+          },
+        ],
+      });
+
+    // If mongo crashes or is not online
+    } catch (error) {
+      return res.json({
+        type: 'danger',
+        message: t('firmwareFindError', {errorline: __line}),
+      });
+    }
 
     // Check if file exists
     fileExists = fs.existsSync(path.join(imageReleasesDir, firmwarefile.name));
-  }
 
-  if (fileExists || firmwareExists) {
-    return res.json({
-      type: 'danger',
-      // If the file exists, show fileAlreadyExists error, otherwise show
-      // firmwareAlreadyExists
-      message: (fileExists) ?
-        t('fileAlreadyExists', {errorline: __line}) :
-        t('firmwareAlreadyExists', {errorline: __line}),
-    });
+    // Return error if any is true
+    if (fileExists || firmwareExists) {
+      return res.json({
+        type: 'danger',
+        // If the file exists, show fileAlreadyExists error, otherwise show
+        // firmwareAlreadyExists
+        message: (fileExists) ?
+          t('fileAlreadyExists', {errorline: __line}) :
+          t('firmwareAlreadyExists', {errorline: __line}),
+      });
+    }
   }
 
 
