@@ -214,15 +214,19 @@
         t('onuWebPasswordTooltip'),
         t('mustBeAString'),
       ];
-      let passRegex = new RegExp(''
-          + /^[^-!@#$%^&*+_.]/.source
-          + /(?=.*[A-Z])/.source
-          + /(?=.*[a-z])/.source
-          + /(?=.*[0-9])/.source
-          + /(?=.*[-!@#$%^&*+_.]).*/.source);
-      let ret = validateRegex(pass, 8, 16, passRegex);
-      ret.err = ret.err.map((ind) => messages[ind]);
-      return ret;
+      let noSpecialAtStartRegex = new RegExp(/^[^-!@#$%^&*+_.]/);
+      let hasAllCharTypes = new RegExp(''
+        + /(?=.*[A-Z])/.source
+        + /(?=.*[a-z])/.source
+        + /(?=.*[0-9])/.source
+        + /(?=.*[-!@#$%^&*+_.]).*/.source);
+      let retA = validateRegex(pass, 8, 16, noSpecialAtStartRegex);
+      let retB = validateRegex(pass, 8, 16, hasAllCharTypes);
+      let valid = retA.valid && retB.valid;
+      let err = new Set();
+      retA.err.forEach((e)=>err.add(e));
+      retB.err.forEach((e)=>err.add(e));
+      return {valid: valid, err: Array.from(err).map((ind)=>messages[ind])};
     };
 
     Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
