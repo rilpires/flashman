@@ -251,6 +251,14 @@ genie.request = (options, body) => {
   });
 };
 
+// delete device by acs_id(flashman)/_id(genieacs)
+genie.deleteDevice = async function(deviceId) {
+  return genie.request({
+    method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+    path: `/devices/${encodeURIComponent(deviceId)}`,
+  });
+};
+
 /* get stuff out of genie through its API and returns the genie json response
  parsed to javascript object. may throw unhandled errors.
 'collection' is the name of the collection the stuff will come out of.
