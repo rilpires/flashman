@@ -274,23 +274,47 @@ firmwareController.uploadFirmware = async function(req, res) {
     });
   }
 
-  // Check if the firmware already exists
-  let firmwareExists = await Firmware.findOne({
-    filename: firmwarefile.name,
-  });
 
-  if (
-    // File exists
-    fs.existsSync(path.join(imageReleasesDir, firmwarefile.name)) ||
+  // Get parameters
+  let fnameFields;
+  if (isFlashbox) {
+    fnameFields = parseFilename(firmwarefile.name);
+  } else if (isTR069) {
+    fnameFields = {};
+    fnameFields.vendor = req.body.productvendor;
+    fnameFields.model = req.body.productclass;
+    fnameFields.version = req.body.version;
+    fnameFields.release = req.body.version;
+    fnameFields.cpe_type = 'tr069';
+  }
 
-    // Filename is present in database
-    firmwareExists
-  ) {
+
+  let firmwareExists = null;
+  let fileExists = null;
+  // Check if the firmware or the model with the release already
+  // exists in database. For Flashbox, the user can override the firmware.
+  if (isTR069) {
+    // Check if firmware exists
+    firmwareExists = await Firmware.findOne({
+      '$or': [
+        {filename: firmwarefile.name},
+        {
+          model: fnameFields.model,
+          release: fnameFields.release,
+        },
+      ],
+    });
+
+    // Check if file exists
+    fileExists = fs.existsSync(path.join(imageReleasesDir, firmwarefile.name));
+  }
+
+  if (fileExists || firmwareExists) {
     return res.json({
       type: 'danger',
       // If the file exists, show fileAlreadyExists error, otherwise show
       // firmwareAlreadyExists
-      message: (firmwareExists) ?
+      message: (fileExists) ?
         t('fileAlreadyExists', {errorline: __line}) :
         t('firmwareAlreadyExists', {errorline: __line}),
     });
@@ -316,19 +340,8 @@ firmwareController.uploadFirmware = async function(req, res) {
       message: t('fileChecksumError', {errorline: __line}),
     });
   }
-  let fnameFields;
-  let firmware;
-  if (isFlashbox) {
-    fnameFields = parseFilename(firmwarefile.name);
-  } else if (isTR069) {
-    fnameFields = {};
-    fnameFields.vendor = req.body.productvendor;
-    fnameFields.model = req.body.productclass;
-    fnameFields.version = req.body.version;
-    fnameFields.release = req.body.version;
-    fnameFields.cpe_type = 'tr069';
-  }
 
+  let firmware;
   try {
     if (isTR069) {
       firmware = await Firmware.findOne({
@@ -361,13 +374,10 @@ firmwareController.uploadFirmware = async function(req, res) {
       filename: firmwarefile.name,
       cpe_type: fnameFields.cpe_type,
     });
+
+  // This case will only happen with Flashbox, as this case is already treated
+  // for TR-069 at the beginning of this function, before the move
   } else {
-    if (isTR069) {
-      return res.json({
-        type: 'danger',
-        message: t('firmwareAlreadyExists', {errorline: __line}),
-      });
-    }
     firmware.vendor = fnameFields.vendor;
     firmware.model = fnameFields.model;
     firmware.version = fnameFields.version;
