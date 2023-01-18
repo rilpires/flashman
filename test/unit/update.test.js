@@ -137,6 +137,8 @@ describe('Update Tests - Functions', () => {
     // Data to be sent
     let data = {
       version: 'FGHJKRTYUIO&"\'<>/\\`',
+      productvendor: 'gwr1200',
+      productclass: 'gwr1200v2',
     };
 
     let files = {
@@ -164,11 +166,56 @@ describe('Update Tests - Functions', () => {
   });
 
 
+  // uploadFirmware - TR069 model and version exists
+  test(
+    'Validate uploadFirmware - TR069 model and version exists',
+    async () => {
+    // Data to be sent
+    let data = {
+      version: '123',
+      productvendor: 'gwr1200',
+      productclass: 'gwr1200v2',
+    };
+
+    let files = {
+      hasOwnProperty: function(property) {
+        if (property === 'firmwaretr069file') return true;
+        return false;
+      },
+      firmwaretr069file: {
+        name: 'ABCDEFGHIJKL.bin',
+      },
+    };
+
+    // Mocks
+    utils.common.mockFirmwares({id: '12345'}, 'findOne');
+    jest.spyOn(path, 'join')
+      .mockImplementation(() => '/tmp/ABCDEFGHIJKL.bin');
+    jest.spyOn(fs, 'existsSync')
+      .mockImplementation(() => false);
+
+    // Execute the request
+    let response = await utils.common.sendFakeRequest(
+      firmwareController.uploadFirmware,
+      data,
+      files,
+    );
+
+    // Validate
+    expect(response.body.type).toBe('danger');
+    expect(response.body.message).toContain(
+      t('firmwareAlreadyExists').replace('({{errorline}})', ''),
+    );
+  });
+
+
   // uploadFirmware - File exists
   test('Validate uploadFirmware - File exists', async () => {
     // Data to be sent
     let data = {
       version: '12345',
+      productvendor: 'gwr1200',
+      productclass: 'gwr1200v2',
     };
 
     let files = {
@@ -200,7 +247,7 @@ describe('Update Tests - Functions', () => {
     // Validate
     expect(response.body.type).toBe('danger');
     expect(response.body.message).toContain(
-      t('firmwareAlreadyExists').replace('({{errorline}})', ''),
+      t('fileAlreadyExists').replace('({{errorline}})', ''),
     );
   });
 
