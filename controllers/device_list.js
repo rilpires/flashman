@@ -20,6 +20,7 @@ const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const acsMeshDeviceHandler = require('./handlers/acs/mesh');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
+const tasks = require('./handlers/tasks');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info');
@@ -1433,8 +1434,8 @@ const delDeviceOnDatabase = async function(devIds) {
   let failedAtRemoval = {};
   // Get devices from ids
   let projection = {
-    _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
-    mesh_master: true, mesh_slaves: true,
+    _id: true, use_tr069: true, alt_uid_tr069: true, acs_id: true,
+    serial_tr069: true, mesh_master: true, mesh_slaves: true,
   };
   let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
                                                            projection);
@@ -1463,7 +1464,13 @@ const delDeviceOnDatabase = async function(devIds) {
         failedAtRemoval[deviceId] =
           t('operationUnsuccessful', {errorline: __line});
       } else {
-        removedDevIds.push(deviceId);
+        removalOK = tasks.deleteDeviceFromGenie(device);
+        if (!removalOK) {
+          failedAtRemoval[deviceId] =
+            t('operationUnsuccessful', {errorline: __line});
+        } else {
+          removedDevIds.push(deviceId);
+        }
       }
     }
   }
