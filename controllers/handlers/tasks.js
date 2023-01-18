@@ -3,7 +3,7 @@ const TasksAPI = require('../external-genieacs/tasks-api');
 let tasksHandlers = {};
 
 tasksHandlers.deleteDeviceFromGenie = async function(device) {
-  if (process.env.FLM_DO_REMOVE_FROM_GENIE
+  if (process.env.FLM_DO_REMOVE_DEVICE_FROM_GENIE
       && device.use_tr069 && device.acs_id) {
     try {
       // remove from genieacs database if env var is set
