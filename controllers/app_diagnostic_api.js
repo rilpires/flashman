@@ -16,7 +16,6 @@ const onuFactoryCredentials = require('./factory_credentials.js');
 const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const controlApi = require('./external-api/control');
-const tasks = require('./handlers/tasks');
 const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
 
@@ -484,11 +483,6 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
                                      {errorline: __line})});
       }
       let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
-      if (!removalOK) {
-        return res.status(500).json({'error':
-          t('operationUnsuccessful', {errorline: __line})});
-      }
-      removalOK = tasks.deleteDeviceFromGenie(device);
       if (!removalOK) {
         return res.status(500).json({'error':
           t('operationUnsuccessful', {errorline: __line})});
