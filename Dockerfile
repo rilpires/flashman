@@ -67,7 +67,7 @@ ENV production=true \
     FLM_WEB_PORT="8000" \
     FLM_NBI_ADDR="localhost" \
     FLM_GENIE_IGNORED=true \
-    FLM_PROM_METRICS=true \
+    FLM_PROM_METRICS=false \
     FLM_PROM_METRICS_BASIC_AUTH="YWRtaW46YWRtaW4=" \
     FLM_DOCKER_INSTANCE=1 \
     FLM_DOCKER_WAIT_GENIE=false \
