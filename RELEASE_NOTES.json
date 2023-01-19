@@ -8,6 +8,15 @@
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
 	},
+	"2.59.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug inserido na versão 2.57.0 que poderia causar um crash do serviço de comunicação com CPEs TR-069, quando tentava se comunicar com alguns modelos específicos da TP-Link"
+		],
+		"improvements": [],
+		"features": []
+	},
 	"2.59.1": {
 		"custom_firmware_compatibilities": [],
 		"tr069_compatibilities": [],
