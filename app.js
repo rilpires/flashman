@@ -203,6 +203,10 @@ if (metricsPath && process.env.FLM_PROM_METRICS=='true') {
     app.use(metricsPath, metricsAuth);
   }
   app.use(metricsMiddleware);
+} else {
+  app.get(metricsPath, function(req, res) {
+    res.send('# Metrics not enabled\nup 0');
+  });
 }
 
 
