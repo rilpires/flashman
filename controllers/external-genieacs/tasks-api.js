@@ -259,6 +259,20 @@ genie.deleteDevice = async function(deviceId) {
   });
 };
 
+genie.deleteDeviceFromGenie = async function(device) {
+  if (device.use_tr069 && device.acs_id) {
+    try {
+      // remove from genieacs database if env var is set
+      await genie.deleteDevice(device.acs_id);
+    } catch (e) {
+      console.log('Error removing device ' +
+        device.acs_id + ' from genieacs : ' + e);
+      return false;
+    }
+  }
+  return true;
+};
+
 /* get stuff out of genie through its API and returns the genie json response
  parsed to javascript object. may throw unhandled errors.
 'collection' is the name of the collection the stuff will come out of.

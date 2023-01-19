@@ -4,6 +4,7 @@
 
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -20,7 +21,6 @@ const acsPortForwardHandler = require('./handlers/acs/port_forward');
 const acsMeshDeviceHandler = require('./handlers/acs/mesh');
 const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
-const tasks = require('./handlers/tasks');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
 const acsDeviceInfo = require('./acs_device_info');
@@ -1464,7 +1464,7 @@ const delDeviceOnDatabase = async function(devIds) {
         failedAtRemoval[deviceId] =
           t('operationUnsuccessful', {errorline: __line});
       } else {
-        removalOK = tasks.deleteDeviceFromGenie(device);
+        removalOK = TasksAPI.deleteDeviceFromGenie(device);
         if (!removalOK) {
           failedAtRemoval[deviceId] =
             t('operationUnsuccessful', {errorline: __line});
