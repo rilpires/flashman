@@ -101,7 +101,6 @@ const calculatePingDiagnostic = async function(
     data, Object.keys(pingKeys), pingFields,
   );
   let diagState = pingKeys.diag_state;
-  metricsApi.newDiagnosticState('ping', diagState);
   if (['Requested', 'None'].includes(diagState)) return;
 
   let result = {};
@@ -195,8 +194,6 @@ const calculateTraceDiagnostic = async function(
   let rootData = utilHandlers.getAllNestedKeysFromObject(
     data, Object.keys(traceFields), traceFields, traceFields['root'],
   );
-
-  metricsApi.newDiagnosticState('trace', rootData.diag_state);
 
   let traceResult = device.traceroute_results
     .filter((e)=>!e.completed)
@@ -469,7 +466,6 @@ const calculateSpeedDiagnostic = async function(
     device.current_diagnostic.in_progress
   ) {
     const diagState = speedKeys.diag_state;
-    metricsApi.newDiagnosticState('speedtest', diagState);
     if (diagState == 'Completed' || diagState == 'Complete') {
       let beginTime = (new Date(speedKeys.bgn_time)).valueOf();
       let endTime = (new Date(speedKeys.end_time)).valueOf();
@@ -939,25 +935,28 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
         let permissions = DeviceVersion.devicePermissions(device);
         if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
-        } else if (permissions.grantPingTest && diagType == 'ping') {
-          await calculatePingDiagnostic(
-            device, cpe, data,
-            diagNecessaryKeys.ping,
-            fields.diagnostics.ping,
-          );
-        } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
-          await calculateSpeedDiagnostic(
-            device, data, diagNecessaryKeys.speedtest,
-            fields.diagnostics.speedtest,
-          );
-        } else if (permissions.grantTraceroute && diagType == 'traceroute') {
-          await calculateTraceDiagnostic(
-            device, cpe, data, fields.diagnostics.traceroute,
-          );
-        } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
-          await calculateSiteSurveyDiagnostic(
-            device, cpe, data, fields.diagnostics.sitesurvey,
-          );
+        } else {
+          metricsApi.newDiagnosticState(diagType, 'finished');
+          if (permissions.grantPingTest && diagType == 'ping') {
+            await calculatePingDiagnostic(
+              device, cpe, data,
+              diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
+            );
+          } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
+            await calculateSpeedDiagnostic(
+              device, data, diagNecessaryKeys.speedtest,
+              fields.diagnostics.speedtest,
+            );
+          } else if (permissions.grantTraceroute && diagType == 'traceroute') {
+            await calculateTraceDiagnostic(
+              device, cpe, data, fields.diagnostics.traceroute,
+            );
+          } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
+            await calculateSiteSurveyDiagnostic(
+              device, cpe, data, fields.diagnostics.sitesurvey,
+            );
+          }
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');
