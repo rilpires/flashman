@@ -792,4 +792,9 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
   return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
 };
 
+// For metrics collecting
+genie.getTaskWatchListLength = function() {
+  return Object.keys(taskWatchlist).length;
+};
+
 module.exports = genie;
