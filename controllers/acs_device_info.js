@@ -793,6 +793,8 @@ const fetchSyncResult = async function(
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
   parameterNames = parameterNames.map((p) => {return p.replace(/\.\*.*/g, '')});
+  // Temporary to fix collisions while we work on a permanent solution
+  parameterNames = parameterNames.filter((p) => !p.match('Device.IP.Interface.'));
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
