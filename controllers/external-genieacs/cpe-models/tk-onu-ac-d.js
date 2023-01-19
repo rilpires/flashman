@@ -87,9 +87,9 @@ tkOnuAcDModel.getModelFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+
     'X_CT-COM_TeleComAccount.Password';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CT-COM_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+

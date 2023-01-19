@@ -95,7 +95,7 @@ tplinkModel.getModelFields = function() {
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
-  fields.wan.wan_ip = 'Device.DHCPv4.Client.1.IPAddress';
+  fields.wan.wan_ip = 'Device.DHCPv4.Client.*.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
@@ -143,7 +143,7 @@ tplinkModel.getModelFields = function() {
   fields.wifi5.channel = 'Device.WiFi.Radio.2.Channel';
   fields.wifi5.auto = 'Device.WiFi.Radio.2.AutoChannelEnable';
   fields.wifi5.mode = 'Device.WiFi.Radio.2.OperatingStandards';
-  fields.wifi5.enable = 'Device.WiFi.SSID.2.Enable';
+  fields.wifi5.enable = 'Device.WiFi.SSID.3.Enable';
   delete fields.wifi5.beacon_type;
   fields.wifi5.band = 'Device.WiFi.Radio.2.OperatingChannelBandwidth';
   // Mesh

@@ -2,13 +2,14 @@ const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
 
-intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 121 AC'};
+intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 120 AC'};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.customAppPassword = false;
   permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
-  permissions.features.portForward = true;
+  permissions.features.portForward = false;
   permissions.features.ponSignal = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
@@ -16,11 +17,10 @@ intelbrasModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
-  permissions.wan.speedTestLimit = 350;
+  permissions.wan.speedTestLimit = 300;
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 136, 140, 149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
@@ -32,8 +32,7 @@ intelbrasModel.modelPermissions = function() {
     webCredentials: false,
   };
   permissions.firmwareUpgrades = {
-    'V210414': ['1.0-210917'],
-    '1.0-210917': [],
+    '2.0-210930': [],
   };
   return permissions;
 };
@@ -77,9 +76,9 @@ intelbrasModel.getModelFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_ITBS_WebAdminPassword';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANIPConnection.1.X_ITBS_VlanMuxID';
+    'WANConnectionDevice.*.WANIPConnection.1.X_ITBS_VlanMuxID';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.1.WANPPPConnection.1.X_ITBS_VlanMuxID';
+    'WANConnectionDevice.*.WANPPPConnection.1.X_ITBS_VlanMuxID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +

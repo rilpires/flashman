@@ -14,6 +14,9 @@ const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
  */
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
+if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
+  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
+}
 let instanceName = process.env.name || 'broker';
 
 let mqtts = null;

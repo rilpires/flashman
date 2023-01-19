@@ -7,7 +7,7 @@ const request = require('request-promise-native');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
-const updateScheduler = require('./update_scheduler');
+const SchedulerCommon = require('./update_scheduler_common');
 const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
@@ -899,9 +899,12 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             console.log('Device ' + devId + ' upgraded successfuly');
             if (matchedDevice.mesh_master) {
               // Mesh slaves call the success function with their master's mac
-              updateScheduler.successUpdate(matchedDevice.mesh_master);
+              SchedulerCommon.successUpdate(
+                matchedDevice.mesh_master,
+                sentRelease,
+              );
             } else {
-              updateScheduler.successUpdate(matchedDevice._id);
+              SchedulerCommon.successUpdate(matchedDevice._id, sentRelease);
             }
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
@@ -1236,10 +1239,10 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         } else if (upgStatus == '0' || upgStatus == '2') {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
-            updateScheduler.failedDownload(
+            SchedulerCommon.failedDownload(
               matchedDevice.mesh_master, req.body.id);
           } else {
-            updateScheduler.failedDownload(req.body.id);
+            SchedulerCommon.failedDownload(req.body.id);
           }
           console.log('WARNING: Device ' + req.body.id +' failed in firmware ' +
                       (upgStatus == '0' ? 'check' : 'download'));
