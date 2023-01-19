@@ -35,7 +35,7 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
-const metrics = require('./handlers/metrics/custom_metrics');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -509,8 +509,7 @@ const initiatePingCommand = async function(device, username, sessionID) {
     );
   }
 
-
-  metrics.flm_diagnostics_started.labels('ping').inc();
+  metricsApi.newDiagnosticState('ping', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.firePingDiagnose(device);
   } else {
@@ -555,7 +554,7 @@ const initiateSpeedTest = async function(device, username, sessionID) {
 
   if (device.use_tr069) {
     let fireResult = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
-    metrics.flm_diagnostics_started.labels('speedtest').inc();
+    metricsApi.newDiagnosticState('speedtest', 'requested');
     return fireResult;
   } else {
     if (device.current_diagnostic.customized) {
@@ -571,7 +570,7 @@ const initiateSpeedTest = async function(device, username, sessionID) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], username);
     }
-    metrics.flm_diagnostics_started.labels('speedtest').inc();
+    metricsApi.newDiagnosticState('speedtest', 'requested');
     return {success: true};
   }
 };
@@ -610,7 +609,7 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
     );
   }
 
-  metrics.flm_diagnostics_started.labels('sitesurvey').inc();
+  metricsApi.newDiagnosticState('sitesurvey', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
   } else {
@@ -646,7 +645,7 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
   }
 
   // Start Traceroute
-  metrics.flm_diagnostics_started.labels('traceroute').inc();
+  metricsApi.newDiagnosticState('traceroute', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.fireTraceDiagnose(device);
   } else {
