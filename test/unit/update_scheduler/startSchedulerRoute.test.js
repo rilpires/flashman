@@ -333,6 +333,27 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
+      cpes_wont_return: 'false',
+    };
+  
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
+    checkResponse(response, 200, true, data);
+  });
+
+
+  // Okay, no return to flashman
+  test('Validate start route - Okay, no return to flashman', async () => {
+    data = {
+      use_search: '"online"',
+      use_csv: 'false',
+      use_all: 'true',
+      use_time_restriction: 'false',
+      time_restriction: '[]',
+      release: goodReleaseId,
+      page_num: '1',
+      page_count: '50',
+      filter_list: 'online',
+      cpes_wont_return: 'true',
     };
   
     let response = await utils.schedulerCommon.startSchedulerFake(data);

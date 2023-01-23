@@ -794,4 +794,120 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
     expect(result.success).toBe(true);
     expect(result.updating).toBe(true);
   });
+
+
+  // successUpdateIfCpeWontReturn invalid config
+  test(
+    'Validate Scheduler Common - successUpdateIfCpeWontReturn invalid config',
+    async () => {
+    const mac = models.defaultMockDevices[0]._id;
+
+    // Mocks
+    utils.common.mockConfigs(null, 'findOne');
+
+    // Set spy
+    const spy = jest.spyOn(updateCommon, 'successUpdate')
+      .mockImplementationOnce(() => true);
+
+    // Execute and compare
+    const result = await updateCommon.successUpdateIfCpeWontReturn(mac);
+    expect(result).toBe(false);
+    expect(spy).not.toBeCalled();
+  });
+
+
+  // successUpdateIfCpeWontReturn not updating
+  test(
+    'Validate Scheduler Common - successUpdateIfCpeWontReturn not updating',
+    async () => {
+    const mac = models.defaultMockDevices[0]._id;
+
+    // Mocks
+    utils.common.mockConfigs({
+      device_update_schedule: {
+        is_active: true,
+        rule: {
+          cpes_wont_return: true,
+          in_progress_devices: [{
+            mac: '12345678',
+          }],
+        },
+      },
+    }, 'findOne');
+
+
+    // Set spy
+    const successSpy = jest.spyOn(updateCommon, 'successUpdate')
+      .mockImplementationOnce(() => true);
+
+
+    // Execute and compare
+    const result = await updateCommon.successUpdateIfCpeWontReturn(mac);
+    expect(result).toBe(false);
+    expect(successSpy).not.toBeCalled();
+  });
+
+
+  // successUpdateIfCpeWontReturn will return
+  test(
+    'Validate Scheduler Common - successUpdateIfCpeWontReturn will return',
+    async () => {
+    const mac = models.defaultMockDevices[0]._id;
+
+    // Mocks
+    utils.common.mockConfigs({
+      device_update_schedule: {
+        is_active: true,
+        rule: {
+          cpes_wont_return: false,
+          in_progress_devices: [{
+            mac: mac,
+          }],
+        },
+      },
+    }, 'findOne');
+
+
+    // Set spy
+    const spy = jest.spyOn(updateCommon, 'successUpdate')
+      .mockImplementationOnce(() => true);
+
+
+    // Execute and compare
+    const result = await updateCommon.successUpdateIfCpeWontReturn(mac);
+    expect(result).toBe(false);
+    expect(spy).not.toBeCalled();
+  });
+
+
+  // successUpdateIfCpeWontReturn won't return
+  test(
+    'Validate Scheduler Common - successUpdateIfCpeWontReturn won\'t return',
+    async () => {
+    const mac = models.defaultMockDevices[0]._id;
+
+    // Mocks
+    utils.common.mockConfigs({
+      device_update_schedule: {
+        is_active: true,
+        rule: {
+          cpes_wont_return: true,
+          in_progress_devices: [{
+            mac: mac,
+          }],
+        },
+      },
+    }, 'findOne');
+
+
+    // Set spy
+    const spy = jest.spyOn(updateCommon, 'successUpdate')
+      .mockImplementationOnce(() => true);
+
+
+    // Execute and compare
+    const result = await updateCommon.successUpdateIfCpeWontReturn(mac);
+    expect(result).toBe(true);
+    expect(spy).toBeCalled();
+  });
 });
