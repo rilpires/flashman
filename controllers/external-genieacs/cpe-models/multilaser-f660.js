@@ -6,7 +6,6 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F660'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
