@@ -1016,7 +1016,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (new RegExp(`^(?:${t('update')}|${t('upgrade')}) ` +
     `(?:${t('on')}|${t('off')})$`).test(tag)) {
       // update|upgrade on|off.
-      query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes(t('on'))) { // 'update on' or 'upgrade on'.
         query.do_update = {$eq: true};
       } else if (tag.includes(t('off'))) { // 'update off' or 'upgrade off'.
