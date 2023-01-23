@@ -248,47 +248,14 @@ const markNextForUpdate = async function() {
     let device = await SchedulerCommon.getDevice(nextDevice.mac);
     device.release = config.device_update_schedule.rule.release;
 
-    // Get the case when the task is in ToDo but the device is already
-    // with the firmware installed. It may happen during an already done update
-    // but the task was not moved to done.
-    if (
-      device.release === device.installed_release &&
-      device.use_tr069 === true
-    ) {
-      let count = config.device_update_schedule.device_count;
-      let rule = config.device_update_schedule.rule;
-
-      await SchedulerCommon.configQuery(
-        // Make schedule inactive if this is last device to enter done state
-        {'device_update_schedule.is_active':
-          (rule.done_devices.length+1 !== count)},
-        // Remove from to do state
-        {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
-        // Move to done
-        {
-          'device_update_schedule.rule.done_devices': {
-            'mac': nextDevice.mac,
-            'state': 'ok',
-            'slave_count': nextDevice.slave_count,
-            'slave_updates_remaining': 0,
-            'mesh_current': nextDevice.mesh_current,
-            'mesh_upgrade': nextDevice.mesh_upgrade,
-          },
-        },
-      );
-
-      mutexRelease();
-      console.log(
-        'Scheduler: Device ' + nextDevice.mac + ' is already updated.',
-      );
-
-      if (rule.done_devices.length+1 === count) {
-        // This was last device to enter done state, schedule is done
-        SchedulerCommon.removeOfflineWatchdog();
-      }
-
-      return {success: true, marked: true, updated: true};
-    }
+    /*
+     * There is a chance of a task is in ToDo but the device is already with the
+     * firmware installed. It may happen during an already done update but the
+     * task was not moved to done (when there is an error in flashman and it
+     * needs to recoverFromOffline). So the CPE will be updated again.
+     * Validating if the installed version is the same as the version to be
+     * installed might remove the abillity to update to the same firmware.
+     */
 
     // Mesh upgrade, only upgrade slaves if master is not TR069
     if (nextDevice.slave_count && device.use_tr069 === false) {
@@ -655,45 +622,23 @@ scheduleController.getDevicesReleases = async function(req, res) {
             );
             let tr069Model = tr069Device.cpe.identifier.model;
 
-            // Get firmware update permissions
-            let firmwarePermissions = tr069Device.cpe
-              .modelPermissions()
-              .firmwareUpgrades;
-
             // Add the model to the Device list
-            if (
-              !devicesByModel[tr069Model] &&
-              firmwarePermissions[device.version] &&
-              firmwarePermissions[device.version].constructor === Array
-            ) {
-              // Assign the count and the version list
-              devicesByModel[tr069Model] = {};
-              devicesByModel[tr069Model][device.version] = {
+            if (!devicesByModel[tr069Model]) {
+              // Assign the count to the list
+              devicesByModel[tr069Model] = {
                 count: 1,
-                firmwares_allowed: firmwarePermissions[device.version],
               };
+
             // If the model already exists
-            } else if (
-              firmwarePermissions[device.version] &&
-              firmwarePermissions[device.version].constructor === Array
-            ) {
-              // If the new release does not exist
-              if (!devicesByModel[tr069Model][device.version]) {
-                devicesByModel[tr069Model][device.version] = {
-                  count: 1,
-                  firmwares_allowed: firmwarePermissions[device.version],
-                };
-              } else {
-                devicesByModel[tr069Model][device.version].count += 1;
-              }
+            } else {
+              devicesByModel[tr069Model].count += 1;
             }
 
             // Add to the list of tr069 models
             tr069Models.push(tr069Model);
 
             // Increment the onu count
-            onuCount += 1 + (device.mesh_slaves ?
-              device.mesh_slaves.length : 0);
+            onuCount += 1;
 
           // Check other cases for firmware and mesh
           } else if (!device.mesh_master && !(device.mesh_slaves
@@ -756,30 +701,10 @@ scheduleController.getDevicesReleases = async function(req, res) {
           if (devicesByModel && Object.keys(devicesByModel).length) {
             Object.keys(devicesByModel).forEach(function eachKey(model) {
               // Verify if the model is in the update list
-              // For TR069, check if firmware is allowed
               if (
                 validModels.includes(model) &&
-                isTR069 === true &&
-                devicesByModel[model] &&
-                Object.keys(devicesByModel[model]).length
+                devicesByModel[model]
               ) {
-                // Increment cpe count if the model can be updated to the
-                // respective release
-                Object.keys(devicesByModel[model]).forEach(
-                  function eachKey(currentVersion) {
-                    if (
-                      devicesByModel[model][currentVersion]
-                        .firmwares_allowed &&
-                      devicesByModel[model][currentVersion]
-                        .firmwares_allowed.includes(release.id)
-                    ) {
-                      count += devicesByModel[model][currentVersion].count;
-                    }
-                  },
-                );
-
-              // For Flashbox, just allow it if it is in update list
-              } else if (validModels.includes(model) && isTR069 === false) {
                 count += devicesByModel[model].count;
 
               // Otherwise add to the missing list, if it matches the type
@@ -1034,25 +959,8 @@ scheduleController.startSchedule = async function(req, res) {
         // Discard Mesh slaves
         if (device.mesh_master) return false;
 
-        // Discard TR-069 with invalid firmware
-        if (device.use_tr069 === true) {
-          let tr069Device = DevicesAPI.instantiateCPEByModelFromDevice(
-            device,
-          );
-          let firmwares = tr069Device.cpe
-          .modelPermissions()
-          .firmwareUpgrades[device.version];
-
-          // We might have a missing list, an empty list or a
-          // different release here
-          if (
-            !firmwares ||
-            !firmwares.length ||
-            !firmwares.includes(release)
-          ) {
-            return false;
-          }
-        }
+        // TR-069 will not be checked against firmware permissions and if it is
+        // updating to the same version
 
         // Discard mesh if at least one cannot update
         if (
@@ -1089,7 +997,7 @@ scheduleController.startSchedule = async function(req, res) {
 
         // Only validate mesh master if it is Flashbox, firmwares before tr-069
         // update will come with use_tr069 as undefined
-        if (device.use_tr069 === false || device.use_tr069 === undefined) {
+        if (!device.use_tr069) {
           const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
             device, matchedRelease.flashbox_version);
           if (!allowMeshUpgrade) return false;

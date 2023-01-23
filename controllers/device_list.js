@@ -1283,16 +1283,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             (release) => ([fancyModel, dbModel].includes(release.model)),
           );
           let permissions = cpe.modelPermissions();
-          /* get allowed version of upgrade by
-            current device version  */
-          let allowedVersions = cpe.allowedFirmwareUpgrades(
-            device.installed_release,
-            permissions,
-          );
-          /* filter by allowed version that
-            current version can jump to */
-          devReleases = devReleases.filter(
-            (release) => allowedVersions.includes(release.id));
+
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = permissions.features.firmwareUpgrade;
