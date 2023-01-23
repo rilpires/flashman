@@ -40,6 +40,28 @@ let parseFilename = function(filename) {
   return firmwareFields;
 };
 
+
+/*
+ *  Description:
+ *    Validates the version and returns if it is valid or not.
+ *
+ *  Input:
+ *    version - version name
+ *
+ *  Output:
+ *    boolean - If it is valid or not
+ */
+let isValidVersion = function(version) {
+  if (typeof version !== 'string' || version.length === 0) return false;
+  return util.tr069FirmwareVersionRegex.test(version);
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+firmwareController.__testIsValidVersion = isValidVersion;
+
+
 let removeFirmware = async function(firmware) {
   if (firmware.cpe_type == 'tr069') {
     try {
@@ -243,6 +265,73 @@ firmwareController.uploadFirmware = async function(req, res) {
       message: t('firmwareFileNameInvalid', {errorline: __line}),
     });
   }
+
+  // Validate the version name
+  if (isTR069 && !isValidVersion(req.body.version)) {
+    return res.json({
+      type: 'danger',
+      message: t('firmwareVersionNameInvalid', {errorline: __line}),
+    });
+  }
+
+
+  // Get parameters
+  let fnameFields;
+  if (isFlashbox) {
+    fnameFields = parseFilename(firmwarefile.name);
+  } else if (isTR069) {
+    fnameFields = {};
+    fnameFields.vendor = req.body.productvendor;
+    fnameFields.model = req.body.productclass;
+    fnameFields.version = req.body.version;
+    fnameFields.release = req.body.version;
+    fnameFields.cpe_type = 'tr069';
+  }
+
+
+  // Check if the firmware or the model with the release already
+  // exists in database. For Flashbox, the user can override the firmware.
+  if (isTR069) {
+    let firmwareExists = true;
+    let fileExists = true;
+
+    // Check if firmware exists
+    try {
+      firmwareExists = await Firmware.findOne({
+        '$or': [
+          {filename: firmwarefile.name},
+          {
+            model: fnameFields.model,
+            release: fnameFields.release,
+          },
+        ],
+      });
+
+    // If mongo crashes or is not online
+    } catch (error) {
+      return res.json({
+        type: 'danger',
+        message: t('firmwareFindError', {errorline: __line}),
+      });
+    }
+
+    // Check if file exists
+    fileExists = fs.existsSync(path.join(imageReleasesDir, firmwarefile.name));
+
+    // Return error if any is true
+    if (fileExists || firmwareExists) {
+      return res.json({
+        type: 'danger',
+        // If the file exists, show fileAlreadyExists error, otherwise show
+        // firmwareAlreadyExists
+        message: (fileExists) ?
+          t('fileAlreadyExists', {errorline: __line}) :
+          t('firmwareAlreadyExists', {errorline: __line}),
+      });
+    }
+  }
+
+
   try {
     await firmwarefile.mv(path.join(imageReleasesDir, firmwarefile.name));
   } catch (err) {
@@ -262,19 +351,8 @@ firmwareController.uploadFirmware = async function(req, res) {
       message: t('fileChecksumError', {errorline: __line}),
     });
   }
-  let fnameFields;
-  let firmware;
-  if (isFlashbox) {
-    fnameFields = parseFilename(firmwarefile.name);
-  } else if (isTR069) {
-    fnameFields = {};
-    fnameFields.vendor = req.body.productvendor;
-    fnameFields.model = req.body.productclass;
-    fnameFields.version = req.body.version;
-    fnameFields.release = req.body.version;
-    fnameFields.cpe_type = 'tr069';
-  }
 
+  let firmware;
   try {
     if (isTR069) {
       firmware = await Firmware.findOne({
@@ -307,13 +385,10 @@ firmwareController.uploadFirmware = async function(req, res) {
       filename: firmwarefile.name,
       cpe_type: fnameFields.cpe_type,
     });
+
+  // This case will only happen with Flashbox, as this case is already treated
+  // for TR-069 at the beginning of this function, before the move
   } else {
-    if (isTR069) {
-      return res.json({
-        type: 'danger',
-        message: t('firmwareAlreadyExists', {errorline: __line}),
-      });
-    }
     firmware.vendor = fnameFields.vendor;
     firmware.model = fnameFields.model;
     firmware.version = fnameFields.version;

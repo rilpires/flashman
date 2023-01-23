@@ -21,7 +21,6 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'GWR1200'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
