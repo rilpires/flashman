@@ -900,12 +900,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             console.log('Device ' + devId + ' upgraded successfuly');
             if (matchedDevice.mesh_master) {
               // Mesh slaves call the success function with their master's mac
-              SchedulerCommon.successUpdate(
-                matchedDevice.mesh_master,
-                sentRelease,
-              );
+              SchedulerCommon.successUpdate(matchedDevice.mesh_master);
             } else {
-              SchedulerCommon.successUpdate(matchedDevice._id, sentRelease);
+              SchedulerCommon.successUpdate(matchedDevice._id);
             }
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(

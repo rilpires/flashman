@@ -748,7 +748,6 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
 
     expect(result.success).toBe(true);
     expect(result.updating).toBe(false);
-    expect(result.version).toBe('61.1-220826');
   });
 
 
@@ -794,6 +793,5 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
 
     expect(result.success).toBe(true);
     expect(result.updating).toBe(true);
-    expect(result.version).toBe('61.1-220826');
   });
 });

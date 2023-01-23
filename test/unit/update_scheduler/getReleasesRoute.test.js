@@ -39,6 +39,7 @@ const checkResponse = function(response, statusCode, success, data) {
 
 // controllers/update_scheduler.js/getDevicesReleases
 describe('TR-069 Update Scheduler Tests - Get Releases', () => {
+  let version = '1.1-220826';
 
   beforeAll(() => {
     // Mock the devices
@@ -46,8 +47,8 @@ describe('TR-069 Update Scheduler Tests - Get Releases', () => {
       '638f927dd05676c90dbdeeba',
       {
         _id: '639f957de0a676f90db6eeba',
-        version: '1.1-220826',
-        release: '1.1-220826',
+        version: version,
+        release: version,
         filename: 'ONT121AC_inMesh_1.1-220826.tar',
       },
     );
@@ -168,6 +169,23 @@ describe('TR-069 Update Scheduler Tests - Get Releases', () => {
 
     let response = await utils.schedulerCommon.getReleasesFake(data);
     checkResponse(response, 200, true, data);
+
+    // Check if response includes the same firmware as teh router, allowing to
+    // update to the same firmware
+    let hasSameFirmware = false;
+    for (
+      let release = 0;
+      release < response.body.releaseInfo.length;
+      release++
+    ) {
+      // Same version as defined in beforeAll
+      if (response.body.releaseInfo[release].id === version) {
+        hasSameFirmware = true;
+        break;
+      }
+    }
+
+    expect(hasSameFirmware).toBe(true);
   });
 
 
@@ -207,229 +225,4 @@ describe('TR-069 Update Scheduler Tests - Get Releases', () => {
     let response = await utils.schedulerCommon.getReleasesFake(data);
     checkResponse(response, 200, true, data);
   });
-
-
-  /*test('Validate start route', async () => {
-    let responses = [];
-    let data = {};
-
-    // Mock devices and firmwares
-    utils.common.mockDefaultFirmwares();
-    utils.common.mockDefaultDevices();
-    utils.common.mockDefaultConfigs();
-
-
-    // Get releases first, this call must succeed
-    let possibleReleases = await utils.schedulerCommon.getReleasesFake({
-      use_csv: 'false',
-      use_all: 'true',
-      page_num: '1',
-      page_count: '50',
-      filter_list: '',
-    });
-    let goodReleaseId = possibleReleases.body.releaseInfo[0].id;
-
-
-    // Empty data
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 500, success: false},
-      data: data,
-    });
-
-    // Push all tests
-    for (let test = 0; test < utils.common.TEST_PARAMETERS.length; test++) {
-      data = {
-        use_search: utils.common.TEST_PARAMETERS[test],
-        use_csv: utils.common.TEST_PARAMETERS[test],
-        use_all: utils.common.TEST_PARAMETERS[test],
-        use_time_restriction: utils.common.TEST_PARAMETERS[test],
-        time_restriction: utils.common.TEST_PARAMETERS[test],
-        release: utils.common.TEST_PARAMETERS[test],
-        page_num: utils.common.TEST_PARAMETERS[test],
-        page_count: utils.common.TEST_PARAMETERS[test],
-        filter_list: utils.common.TEST_PARAMETERS[test],
-      };
-
-      responses.push({
-        response: utils.schedulerCommon.starSchedulerFake(data),
-        expected: {status: 500, success: false},
-        data: data,
-      });
-    }
-
-
-    // Wrong values
-    data = {
-      use_search: '',
-      use_csv: 'false',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: goodReleaseId,
-      page_num: '5',
-      page_count: '0',
-      filter_list: '',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 500, success: false},
-      data: data,
-    });
-
-    data = {
-      use_search: '',
-      use_csv: 'false',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: goodReleaseId,
-      page_num: '0',
-      page_count: '5',
-      filter_list: '',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 500, success: false},
-      data: data,
-    });
-
-    data = {
-      use_search: '',
-      use_csv: 'false',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: 'AAA',
-      page_num: '1',
-      page_count: '50',
-      filter_list: '',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 500, success: false},
-      data: data,
-    });
-
-
-    // CSV test
-    // This test will depend that there is no csv file in the filesystem
-    // ToDo!: Check full csv logic
-    data = {
-      use_search: '',
-      use_csv: 'true',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: goodReleaseId,
-      page_num: '1',
-      page_count: '50',
-      filter_list: '',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 500, success: false},
-      data: data,
-    });
-
-
-    // Not found device - but the mockingoose always return the device
-    data = {
-      use_search: '',
-      use_csv: 'false',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: goodReleaseId,
-      page_num: '1',
-      page_count: '50',
-      filter_list: 'AA:AA:AA:AA:AA:AA',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 200, success: true},
-      data: data,
-    });
-
-
-    // Has time restriction, but it is malformed
-    for (let test = 0; test < utils.common.TEST_PARAMETERS.length; test++) {
-      data = {
-        use_search: '',
-        use_csv: 'false',
-        use_all: 'true',
-        use_time_restriction: 'true',
-        time_restriction: utils.common.TEST_PARAMETERS[test],
-        release: goodReleaseId,
-        page_num: '1',
-        page_count: '50',
-        filter_list: '',
-      };
-      responses.push({
-        response: utils.schedulerCommon.starSchedulerFake(data),
-        expected: {status: 500, success: false},
-        data: data,
-      });
-    }
-
-
-    // Start twice
-    data = {
-      use_search: '"online"',
-      use_csv: 'false',
-      use_all: 'true',
-      use_time_restriction: 'false',
-      time_restriction: '[]',
-      release: goodReleaseId,
-      page_num: '1',
-      page_count: '50',
-      filter_list: 'online',
-    };
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 200, success: true},
-      data: data,
-    });
-
-    responses.push({
-      response: utils.schedulerCommon.starSchedulerFake(data),
-      expected: {status: 200, success: true},
-      data: data,
-    });
-
-
-    // Await all tests and validate it
-    for (let test = 0; test < responses.length; test++) {
-      let res = responses[test];
-      res.response = await res.response;
-
-      try {
-        expect(res.response.statusCode).toBe(res.expected.status);
-        expect(res.response.body.success).toBe(res.expected.success);
-
-        if (res.expected.success === false) {
-          expect(res.response.body.message).toBeDefined();
-        }
-      
-      } catch (error) {
-        error.message =
-          `
-            ${error.message}
-
-            \nFailed data:\n${JSON.stringify(
-              res.data, undefined, 2,
-            )}
-
-            \nResponse:\n${JSON.stringify(
-              res.response.body, undefined, 2,
-            )}
-          `;
-        throw error;
-      }
-    }
-  });
-
-  test('Validate abort route', async () => {
-
-  });*/
 });
