@@ -105,6 +105,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
         page_num: utils.common.TEST_PARAMETERS[test],
         page_count: utils.common.TEST_PARAMETERS[test],
         filter_list: utils.common.TEST_PARAMETERS[test],
+        cpes_wont_return: utils.common.TEST_PARAMETERS[test],
       };
       
       let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -124,6 +125,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '5',
       page_count: '0',
       filter_list: '',
+      cpes_wont_return: 'false',
     };
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -143,6 +145,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '0',
       page_count: '5',
       filter_list: '',
+      cpes_wont_return: 'false',
     };
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -162,6 +165,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: '',
+      cpes_wont_return: 'false',
     };
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -183,6 +187,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: '',
+      cpes_wont_return: 'false',
     };
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -206,6 +211,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: 'AA:AA:AA:AA:AA:AA',
+      cpes_wont_return: 'false',
     };
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -229,6 +235,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: '',
+      cpes_wont_return: 'false',
     };
   
     let response = await utils.schedulerCommon.getReleasesFake(data);
@@ -255,6 +262,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
         page_num: '1',
         page_count: '50',
         filter_list: '',
+        cpes_wont_return: 'false',
       };
       
       let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -275,6 +283,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
+      cpes_wont_return: 'false',
     };
   
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -294,6 +303,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
+      cpes_wont_return: 'false',
     };
   
     let response = await utils.schedulerCommon.startSchedulerFake(data);
