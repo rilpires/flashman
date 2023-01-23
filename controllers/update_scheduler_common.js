@@ -90,11 +90,21 @@ commonScheduleController.configQuery = function(
 };
 
 
-commonScheduleController.successUpdate = async function(mac) {
-  let config = await commonScheduleController.getConfig();
+commonScheduleController.successUpdate = async function(
+  mac,
+  config = null,
+) {
+  // If the config is not passed, get the config
   if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
+    config = await commonScheduleController.getConfig();
+  }
+
+  // If a failed occured when getting the config
+  if (!config) {
+    return {
+      success: false,
+      error: t('noSchedulingActive', {errorline: __line}),
+    };
   }
 
   // Check if the device is updating
@@ -359,6 +369,56 @@ const isUpdating = async function(mac, config = null) {
  * The ideal way is to have a condition to only export it when testing
  */
 commonScheduleController.__testIsUpdating = isUpdating;
+
+
+/*
+ *  Description:
+ *    This function mark the cpe as success if the option that the cpe will not
+ *    return to flashman is marked.
+ *
+ *  Inputs:
+ *    mac - The mac address of the cpe
+ *
+ *  Outputs:
+ *    boolean - If the update for the cpe was marked as success or not
+ */
+commonScheduleController.successUpdateIfCpeWontReturn = async function(
+  mac,
+) {
+  let schedulerConfig = await commonScheduleController.getConfig();
+
+  // Validate the config
+  if (
+    !schedulerConfig || !schedulerConfig.device_update_schedule ||
+    !schedulerConfig.device_update_schedule.rule
+  ) {
+    return false;
+  }
+
+
+  // Check if the device is updating
+  let isCpeUpdating = await isUpdating(mac, schedulerConfig);
+
+  if (!isCpeUpdating.success || !isCpeUpdating.updating) {
+    return false;
+  }
+
+
+  // Check if cpe will not return to flashman
+  let rule = schedulerConfig.device_update_schedule.rule;
+  if (rule.cpes_wont_return) {
+    console.log(
+      'CPE ' + mac +
+      ' was considered updated because it will not return to Flashman',
+    );
+
+    // Mark as success
+    commonScheduleController.successUpdate(mac, schedulerConfig);
+    return true;
+  }
+
+  return false;
+};
 
 
 module.exports = commonScheduleController;

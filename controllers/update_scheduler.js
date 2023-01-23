@@ -333,6 +333,8 @@ const markNextForUpdate = async function() {
       messaging.sendUpdateMessage(device);
 
       if (device.use_tr069 === true) {
+        // Can not validate if could send the upgrade or not due to the time it
+        // takes to await
         ACSFirmware.upgradeFirmware(device);
       } else {
         mqtt.anlixMessageRouterUpdate(device._id);
@@ -820,6 +822,8 @@ scheduleController.startSchedule = async function(req, res) {
     !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
     !req.body.use_time_restriction || !req.body.page_num ||
     !req.body.page_count || req.body.release === null ||
+    req.body.cpes_wont_return === null ||
+    req.body.cpes_wont_return === undefined ||
     req.body.release === undefined || req.body.filter_list === null ||
     req.body.filter_list === undefined || req.body.use_search === null ||
     req.body.use_search === undefined || req.body.time_restriction === null ||
@@ -828,6 +832,7 @@ scheduleController.startSchedule = async function(req, res) {
     req.body.use_csv.constructor !== String ||
     req.body.use_all.constructor !== String ||
     req.body.use_time_restriction.constructor !== String ||
+    req.body.cpes_wont_return.constructor !== String ||
     req.body.release.constructor !== String ||
     req.body.page_num.constructor !== String ||
     req.body.page_count.constructor !== String ||
@@ -845,6 +850,7 @@ scheduleController.startSchedule = async function(req, res) {
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let hasTimeRestriction = (req.body.use_time_restriction === 'true');
+  let cpesWontReturn = (req.body.cpes_wont_return === 'true');
   let release = returnStringOrEmptyStr(req.body.release);
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
@@ -1101,6 +1107,7 @@ scheduleController.startSchedule = async function(req, res) {
           config.device_update_schedule.allowed_time_ranges = [];
         }
         config.device_update_schedule.rule.release = release;
+        config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
         await config.save();
       } catch (err) {
         console.log(err);
