@@ -16,6 +16,7 @@ const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
 const dataCollectingController = require('./data_collecting');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -1949,6 +1950,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       }
     }
 
+    metricsApi.newDiagnosticState('sitesurvey', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
     matchedDevice.current_diagnostic.in_progress = false;
@@ -2163,6 +2165,7 @@ deviceInfoController.receivePingResult = function(req, res) {
       deviceHandlers.sendPingToTraps(id, {results: result});
     }
 
+    metricsApi.newDiagnosticState('ping', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
     matchedDevice.current_diagnostic.in_progress = false;
@@ -2202,6 +2205,7 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    metricsApi.newDiagnosticState('speedtest', 'finished');
     deviceHandlers.storeSpeedtestResult(matchedDevice, req.body);
 
     // We don't need to wait
@@ -2512,6 +2516,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     let isLastResult = matchedDevice.traceroute_results
       .filter(((result) => !result.completed)).length == 0;
     if (isLastResult) {
+      metricsApi.newDiagnosticState('traceroute', 'finished');
       matchedDevice.current_diagnostic.stage = 'done';
       matchedDevice.current_diagnostic.in_progress = false;
     }

@@ -26,6 +26,9 @@ let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 const runMigrations = require('./migrations');
+const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
+const metricsMiddleware
+  = require('./controllers/handlers/metrics/express_metrics');
 
 let app = express();
 
@@ -44,6 +47,7 @@ if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
   process.env.FLM_DATABASE_NAME;
+const metricsPath = process.env.FLM_PROM_METRICS_PATH || '/metrics';
 
 mongoose.connect(
   'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName,
@@ -194,6 +198,17 @@ sio.anlixBindSession(sessParam);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(fileUpload());
+if (metricsPath && process.env.FLM_PROM_METRICS=='true') {
+  if (process.env.FLM_PROM_METRICS_BASIC_AUTH) {
+    app.use(metricsPath, metricsAuth);
+  }
+  app.use(metricsMiddleware);
+} else {
+  app.get(metricsPath, function(req, res) {
+    res.send('# Metrics not enabled\nup 0');
+  });
+}
+
 
 app.use('/', index);
 
