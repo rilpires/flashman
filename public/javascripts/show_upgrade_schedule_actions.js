@@ -17,6 +17,11 @@ const ERROR_EMPTY_FIRMWARE_LIST = '[ ERROR ] Empty firmware list.';
 const TR069_FIRMWARE_SELECTION_BUTTON = '#tr069-firmware-selection';
 const FLASHBOX_FIRMWARE_SELECTION_BUTTON = '#flashbox-firmware-selection';
 
+// Checkboxes
+const CPE_WONT_RETURN_DIV = '#cpeWontReturnDiv';
+const CPE_WONT_RETURN_CHECKBOX = '#cpeWontReturn';
+
+
 // Dropdowns
 const FIRMWARE_SELECTION_DROPDOWN = '#releases-dropdown';
 
@@ -292,6 +297,10 @@ anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
   $('#when-error-msg').hide();
 
+  // At the beginning hide the won't return to flashman checkbox as it starts
+  // with TR-069
+  $(CPE_WONT_RETURN_DIV).hide();
+
   $(document).on('change', ':file', function() {
     let input = $(this);
     let numFiles = input.get(0).files ? input.get(0).files.length : 1;
@@ -311,11 +320,18 @@ anlixDocumentReady.add(function() {
   $(document).on('change', TR069_FIRMWARE_SELECTION_BUTTON, function() {
     resetStepperData();
     setFirmwareReleasesDropdown(true, false);
+
+    // Remove the won't return to flashman checkbox, only allow for flashbox
+    $(CPE_WONT_RETURN_DIV).hide();
+    $(CPE_WONT_RETURN_CHECKBOX).prop('checked', false);
   });
 
   $(document).on('change', FLASHBOX_FIRMWARE_SELECTION_BUTTON, function() {
     resetStepperData();
     setFirmwareReleasesDropdown(false, true);
+
+    // Show the won't return to flashman checkbox, only for flashbox
+    $(CPE_WONT_RETURN_DIV).show();
   });
 
   $('#csv-result').hide();
@@ -384,7 +400,32 @@ anlixDocumentReady.add(function() {
 
     $('#how-btn-next').prop('disabled', true);
     $('#how-btn-next').click((event)=>{
-      stepper.next();
+      let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
+
+      // If the devices will return to flashman, just continue to the same
+      // procedure
+      if (!cpesWontReturn) {
+        stepper.next();
+
+      // Otherwise, show a popup asking for confirmation
+      } else {
+        swal.fire({
+          title: t('caution'),
+          html: t('noReturnToFlashmanUpgrade'),
+          showConfirmButton: true,
+          showCancelButton: true,
+          confirmButtonText: t('yesSure'),
+          cancelButtonText: t('noBack'),
+          confirmButtonColor: '#dc3545',
+          cancelButtonColor: '#4db6ac',
+        }).then((result) => {
+          // If the user accepted, continue to the next step
+          if (result.value) {
+            stepper.next();
+          }
+          console.log(result);
+        });
+      }
     });
 
     $('.custom-control.custom-radio').click((event)=>{
@@ -489,6 +530,7 @@ anlixDocumentReady.add(function() {
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
       let filterList = lastDevicesSearchInputQuery;
       let release = $('#selected-release').html();
+      let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : t('noFilterUsed');
@@ -526,6 +568,7 @@ anlixDocumentReady.add(function() {
           use_time_restriction: hasTimeRestriction,
           time_restriction: JSON.stringify(timeRestrictions),
           release: release,
+          cpes_wont_return: JSON.stringify(cpesWontReturn),
           page_num: pageNum,
           page_count: pageCount,
           filter_list: filterList,
