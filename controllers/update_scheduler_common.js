@@ -390,7 +390,8 @@ commonScheduleController.successUpdateIfCpeWontReturn = async function(
   // Validate the config
   if (
     !schedulerConfig || !schedulerConfig.device_update_schedule ||
-    !schedulerConfig.device_update_schedule.rule
+    !schedulerConfig.device_update_schedule.rule ||
+    !schedulerConfig.device_update_schedule.rule.cpes_wont_return
   ) {
     return false;
   }
@@ -404,20 +405,9 @@ commonScheduleController.successUpdateIfCpeWontReturn = async function(
   }
 
 
-  // Check if cpe will not return to flashman
-  let rule = schedulerConfig.device_update_schedule.rule;
-  if (rule.cpes_wont_return) {
-    console.log(
-      'CPE ' + mac +
-      ' was considered updated because it will not return to Flashman',
-    );
-
-    // Mark as success
-    commonScheduleController.successUpdate(mac, schedulerConfig);
-    return true;
-  }
-
-  return false;
+  // Mark as success
+  commonScheduleController.successUpdate(mac, schedulerConfig);
+  return true;
 };
 
 
