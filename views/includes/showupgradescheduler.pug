@@ -124,10 +124,19 @@
                       #releases-dropdown.dropdown-menu.col-10
                     
                     //- CPE will not return checkbox
-                    .col-8.my-3.text-center#cpeWontReturnDiv.hide
-                      .custom-control.custom-checkbox.custom-control-inline
-                        input#cpeWontReturn.custom-control-input(type="checkbox", name="cpeWontReturn")
-                        label.custom-control-label(for="cpeWontReturn")= t('cpeWontReturnToFlashmanCheckbox')
+                    .col-10.my-3.alert.alert-danger#cpeWontReturnDiv.hide
+
+                      //- Exclamation mark
+                      .fas.fa-exclamation-triangle.fa-lg
+
+                      //- Warning title
+                      span &nbsp; #{t('cpeWontReturnToFlashmanWarning')}
+
+                      //- Checkbox
+                      .row.mt-4.d-flex.justify-content-center
+                        .custom-control.custom-checkbox.custom-control-inline
+                          input#cpeWontReturn.custom-control-input(type="checkbox", name="cpeWontReturn")
+                          label.custom-control-label(for="cpeWontReturn")= t('cpeWontReturnToFlashmanCheckbox')
 
                 #warning-releases.mt-4.alert.alert-danger
                   .text-center
