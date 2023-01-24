@@ -75,7 +75,7 @@ describe('Controllers - Device List', () => {
                 errors : {pppoe_user: ''}}),
         [x] - ({success: false, message: t('fieldNameInvalid'), errors : []})
     total test = 14 */
-  describe('setDeviceReg', async () => {
+  describe('setDeviceReg', () => {
     test('Find error', async () => {
       mockingoose(DeviceModel).toReturn(new Error('test'), 'find');
       const req = {
