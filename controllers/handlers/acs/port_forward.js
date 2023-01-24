@@ -386,5 +386,50 @@ acsPortForwardHandler.changePortForwardRules = async function(
     await TasksAPI.addTask(acsID, updateTasks);
   }
 };
+acsPortForwardHandler
+  .convertPortForwardFromGenieToFlashman = function(rawPortForward, fields) {
+  let ret = [];
+  let pmDhcpRegex = new RegExp(fields
+    .port_mapping_dhcp.replace(/\*/g, '[0-9]'));
+  let pmPppRegex = RegExp(fields
+    .port_mapping_ppp.replace(/\*/g, '[0-9]'));
+  let baseRx = '';
+  // get if the sap of the subtree is dhcp or ppp
+  if (rawPortForward[0].path.match(pmDhcpRegex)) {
+    baseRx = pmDhcpRegex;
+  } else if (rawPortForward[0].path.match(pmPppRegex)) {
+    baseRx = pmPppRegex;
+  }
+  let rawPortMapping = {};
+  rawPortForward.forEach((leaf) => {
+    let rawGenieKey = leaf.path.split(baseRx);
+    if (rawGenieKey.length > 1) {
+      // genie object index
+      let genieIdx = rawGenieKey[1].split(/\./)[1];
+      // genie object property
+      let genieKey = rawGenieKey[1].split(/\./)[2];
+      // associate to a middle-way object a genie index object
+      if (!(genieIdx in rawPortMapping)) {
+        rawPortMapping[genieIdx] = {};
+      }
+      /* search for matching port_mapping_fields because
+      is the values that are stored in flashman */
+      Object.keys(fields.port_mapping_fields).forEach((k) => {
+        let pmField = fields.port_mapping_fields[k];
+        if (genieKey == pmField[0]) {
+          /* put the value in the middle-way object
+          compliant with the flashman format */
+          rawPortMapping[genieIdx][pmField[1]] = leaf.value[0];
+        }
+      });
+    }
+  });
+  /* iterate through middle-way object and store
+  in the format of flashman, an array of object */
+  Object.keys(rawPortMapping).forEach((k) => {
+    ret.push(rawPortMapping[k]);
+  });
+  return ret;
+};
 
 module.exports = acsPortForwardHandler;
