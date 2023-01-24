@@ -1460,10 +1460,10 @@ const delDeviceOnDatabase = async function(devIds) {
         failedAtRemoval[deviceId] =
           t('operationUnsuccessful', {errorline: __line});
       } else {
-        removalOK = TasksAPI.deleteDeviceFromGenie(device);
+        removalOK = await TasksAPI.deleteDeviceFromGenie(device);
         if (!removalOK) {
           failedAtRemoval[deviceId] =
-            t('operationUnsuccessful', {errorline: __line});
+            t('genieacsCommunicationError', {errorline: __line});
         } else {
           removedDevIds.push(deviceId);
         }

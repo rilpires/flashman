@@ -252,18 +252,13 @@ genie.request = (options, body) => {
 };
 
 // delete device by acs_id(flashman)/_id(genieacs)
-genie.deleteDevice = async function(deviceId) {
-  return genie.request({
-    method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
-    path: `/devices/${encodeURIComponent(deviceId)}`,
-  });
-};
-
 genie.deleteDeviceFromGenie = async function(device) {
   if (device.use_tr069 && device.acs_id) {
     try {
-      // remove from genieacs database if env var is set
-      await genie.deleteDevice(device.acs_id);
+      await genie.request({
+        method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+        path: `/devices/${encodeURIComponent(device.acs_id)}`,
+      });
     } catch (e) {
       console.log('Error removing device ' +
         device.acs_id + ' from genieacs : ' + e);
