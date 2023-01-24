@@ -48,7 +48,6 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
 };
 
 const fetchPortFoward = function(fields, data) {
-  // let size = 0;
   let base = '';
   let ret = [];
   if (data.port_mapping_entries_dhcp &&
@@ -154,7 +153,7 @@ let data = {
   device in flashman database */
 if ((result.measure == 2 &&
   ((data.wan.port_mapping_entries_dhcp && data.wan.port_mapping_entries_dhcp.value > 0) ||
-  (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0))) {
+  (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0)))) {
   data.port_mapping = fetchPortFoward(fields, data.wan);
 }
 args = {acs_id: genieID, data: data};
