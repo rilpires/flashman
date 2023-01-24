@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.59.1",
+	"latest_version": "2.59.2",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,15 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.59.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug inserido na versão 2.57.0 que poderia causar um crash do serviço de comunicação com CPEs TR-069, quando tentava se comunicar com alguns modelos específicos da TP-Link"
+		],
+		"improvements": [],
+		"features": []
 	},
 	"2.59.1": {
 		"custom_firmware_compatibilities": [],
