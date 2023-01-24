@@ -7,7 +7,6 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'EG8145V5'};
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.cableRxRate = true;
-  permissions.features.firmwareUpgrade = true;
   permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;

@@ -613,18 +613,19 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     // Get the result
     expect(result.success).toBe(true);
     expect(result.marked).toBe(true);
-    expect(result.updated).toBe(true);
     expect(configSpy).toHaveBeenLastCalledWith(
-      {'device_update_schedule.is_active': true},
+      null,
       {'device_update_schedule.rule.to_do_devices': {'mac': tr069Mac}},
       {
-        'device_update_schedule.rule.done_devices': {
+        'device_update_schedule.rule.in_progress_devices': {
           'mac': tr069Mac,
-          'state': 'ok',
           'slave_count': 0,
-          'slave_updates_remaining': 0,
+          'retry_count': 0,
+          'slave_updates_remaining': 1,
+          'state': 'downloading',
           'mesh_current': 1,
           'mesh_upgrade': 1,
+
         },
       },
     );

@@ -35,6 +35,7 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -508,6 +509,7 @@ const initiatePingCommand = async function(device, username, sessionID) {
     );
   }
 
+  metricsApi.newDiagnosticState('ping', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.firePingDiagnose(device);
   } else {
@@ -552,6 +554,7 @@ const initiateSpeedTest = async function(device, username, sessionID) {
 
   if (device.use_tr069) {
     let fireResult = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
+    metricsApi.newDiagnosticState('speedtest', 'requested');
     return fireResult;
   } else {
     if (device.current_diagnostic.customized) {
@@ -567,6 +570,7 @@ const initiateSpeedTest = async function(device, username, sessionID) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], username);
     }
+    metricsApi.newDiagnosticState('speedtest', 'requested');
     return {success: true};
   }
 };
@@ -605,6 +609,7 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
     );
   }
 
+  metricsApi.newDiagnosticState('sitesurvey', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
   } else {
@@ -640,6 +645,7 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
   }
 
   // Start Traceroute
+  metricsApi.newDiagnosticState('traceroute', 'requested');
   if (device.use_tr069) {
     return await acsDiagnosticsHandler.fireTraceDiagnose(device);
   } else {
@@ -1010,7 +1016,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (new RegExp(`^(?:${t('update')}|${t('upgrade')}) ` +
     `(?:${t('on')}|${t('off')})$`).test(tag)) {
       // update|upgrade on|off.
-      query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes(t('on'))) { // 'update on' or 'upgrade on'.
         query.do_update = {$eq: true};
       } else if (tag.includes(t('off'))) { // 'update off' or 'upgrade off'.
@@ -1283,16 +1288,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             (release) => ([fancyModel, dbModel].includes(release.model)),
           );
           let permissions = cpe.modelPermissions();
-          /* get allowed version of upgrade by
-            current device version  */
-          let allowedVersions = cpe.allowedFirmwareUpgrades(
-            device.installed_release,
-            permissions,
-          );
-          /* filter by allowed version that
-            current version can jump to */
-          devReleases = devReleases.filter(
-            (release) => allowedVersions.includes(release.id));
+
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = permissions.features.firmwareUpgrade;

@@ -90,10 +90,7 @@ commonScheduleController.configQuery = function(
 };
 
 
-commonScheduleController.successUpdate = async function(
-  mac,
-  newFirmwareRelease,
-) {
+commonScheduleController.successUpdate = async function(mac) {
   let config = await commonScheduleController.getConfig();
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
@@ -106,8 +103,7 @@ commonScheduleController.successUpdate = async function(
   // Otherwise, return
   if (
     !isDeviceUpdating.success ||
-    !isDeviceUpdating.updating ||
-    isDeviceUpdating.version !== newFirmwareRelease
+    !isDeviceUpdating.updating
   ) {
     return {
       success: false,
@@ -240,7 +236,6 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
     let pushQuery = null;
 
     // Reached max retries
-    console.log(upgradeDevice);
     if (upgradeDevice.retry_count >= maxRetries) {
       // Too many retries, add to done, status error
       pushQuery = {
@@ -357,7 +352,6 @@ const isUpdating = async function(mac, config = null) {
   return {
     success: true,
     updating: isDeviceUpdating,
-    version: rule.release,
   };
 };
 /*

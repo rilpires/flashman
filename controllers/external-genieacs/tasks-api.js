@@ -424,7 +424,8 @@ const checkTask = function(task) {
       if (!task[parameterId][i][0]
        || task[parameterId][i][0].constructor !== String
        // second position can be a string, a number or a boolean.
-       || !task[parameterId][i][1]
+       || task[parameterId][i][1] === null
+       || task[parameterId][i][1] === undefined
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
@@ -790,6 +791,11 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
    sending the new task and the old tasks being substituted,
    then return result. */
   return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
+};
+
+// For metrics collecting
+genie.getTaskWatchListLength = function() {
+  return Object.keys(taskWatchlist).length;
 };
 
 module.exports = genie;

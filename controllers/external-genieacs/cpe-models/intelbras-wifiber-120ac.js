@@ -7,7 +7,6 @@ intelbrasModel.identifier = {vendor: 'Intelbras', model: 'WiFiber 120 AC'};
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
-  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = false;
   permissions.features.ponSignal = true;

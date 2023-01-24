@@ -277,7 +277,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       filter_list: 'online',
     };
   
-    let response = await utils.schedulerCommon.getReleasesFake(data);
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
 
@@ -296,11 +296,36 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       filter_list: 'online',
     };
   
-    let response = await utils.schedulerCommon.getReleasesFake(data);
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
 
-  test('Validate abort route', async () => {
+  
+  // Okay strange firmware
+  test('Validate start route - Okay strange firmware', async () => {
+    models.copyFirmwareFrom(
+      '638f927dd05676c90dbdeeba',
+      {
+        _id: '639f957de1a676b90db6eebc',
+        version: '1.1-229999',
+        release: '1.1-229999',
+        filename: 'ONT121AC_inMesh_1.1-229999.tar',
+      },
+    );
 
+    data = {
+      use_search: '"online"',
+      use_csv: 'false',
+      use_all: 'true',
+      use_time_restriction: 'false',
+      time_restriction: '[]',
+      release: '1.1-229999',
+      page_num: '1',
+      page_count: '50',
+      filter_list: 'online',
+    };
+  
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
+    checkResponse(response, 200, true, data);
   });
 });

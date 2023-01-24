@@ -6,7 +6,6 @@ nextFiberModel.identifier = {vendor: 'Next Fiber', model: 'NXT-425AC'};
 
 nextFiberModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.siteSurvey = true;
