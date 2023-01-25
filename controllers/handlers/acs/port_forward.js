@@ -167,6 +167,88 @@ const fetchAndComparePortForward = async function(acsID) {
   req.end();
 };
 
+acsPortForwardHandler.checkOverlappingPorts = function(rules) {
+  let i;
+  let j;
+  let ipI;
+  let ipJ;
+  let exStart;
+  let exEnd;
+  let inStart;
+  let inEnd;
+  if (rules.length > 1) {
+    for (i = 0; i < rules.length; i++) {
+      ipI = rules[i].ip;
+      exStart = rules[i].external_port_start;
+      exEnd = rules[i].external_port_end;
+      inStart = rules[i].internal_port_start;
+      inEnd = rules[i].internal_port_end;
+      for (j = i+1; j < rules.length; j++) {
+        ipJ = rules[j].ip;
+        let port = rules[j].external_port_start;
+        if (port >= exStart && port <= exEnd) {
+          return true;
+        }
+        port = rules[j].external_port_end;
+        if (port >= exStart && port <= exEnd) {
+          return true;
+        }
+        port = rules[j].internal_port_start;
+        if (ipI == ipJ && port >= inStart && port <= inEnd) {
+          return true;
+        }
+        port = rules[j].internal_port_end;
+        if (ipI == ipJ && port >= inStart && port <= inEnd) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+};
+
+/*
+Function to check if exists rules that are not compatible to the device:
+  Returns true case exist a rule that is not possible to do in the device;
+  False if is all clean;
+*/
+acsPortForwardHandler.checkIncompatibility = function(rules, compatibility) {
+  let ret = false;
+  let i;
+  let exStart;
+  let exEnd;
+  let inStart;
+  let inEnd;
+  for (i = 0; i < rules.length; i++) {
+    exStart = rules[i].external_port_start;
+    exEnd = rules[i].external_port_end;
+    inStart = rules[i].internal_port_start;
+    inEnd = rules[i].internal_port_end;
+    if (!compatibility.simpleSymmetric) {
+      if (exStart == exEnd && inStart == inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.simpleAsymmetric) {
+      if (exStart != inStart && exEnd != inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.rangeSymmetric) {
+      if (exStart != exEnd && inStart != inEnd) {
+        ret = true;
+      }
+    }
+    if (!compatibility.rangeAsymmetric) {
+      if (exStart != inStart && exEnd != inEnd &&
+         exStart != exEnd && inStart != inEnd) {
+        ret = true;
+      }
+    }
+  }
+  return ret;
+};
+
 acsPortForwardHandler.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -386,6 +468,20 @@ acsPortForwardHandler.changePortForwardRules = async function(
     await TasksAPI.addTask(acsID, updateTasks);
   }
 };
+
+
+const checkPortMappingProperties = function(pm) {
+  if ('ip' in pm &&
+      'external_port_start' in pm &&
+      'external_port_end' in pm &&
+      'internal_port_start' in pm &&
+      'internal_port_end' in pm) {
+    return true;
+  } else {
+    return false;
+  }
+};
+
 acsPortForwardHandler
   .convertPortForwardFromGenieToFlashman = function(rawPortForward, fields) {
   let ret = [];
@@ -402,33 +498,44 @@ acsPortForwardHandler
   }
   let rawPortMapping = {};
   rawPortForward.forEach((leaf) => {
-    let rawGenieKey = leaf.path.split(baseRx);
-    if (rawGenieKey.length > 1) {
-      // genie object index
-      let genieIdx = rawGenieKey[1].split(/\./)[1];
-      // genie object property
-      let genieKey = rawGenieKey[1].split(/\./)[2];
-      // associate to a middle-way object a genie index object
-      if (!(genieIdx in rawPortMapping)) {
-        rawPortMapping[genieIdx] = {};
-      }
-      /* search for matching port_mapping_fields because
-      is the values that are stored in flashman */
-      Object.keys(fields.port_mapping_fields).forEach((k) => {
-        let pmField = fields.port_mapping_fields[k];
-        if (genieKey == pmField[0]) {
-          /* put the value in the middle-way object
-          compliant with the flashman format */
-          rawPortMapping[genieIdx][pmField[1]] = leaf.value[0];
+    /* if a value is 0 or '', in case of empty port mapping object in
+    genieacs or misleading registry, do not put in the middle-way object */
+    if (leaf.value[0]) {
+      let rawGenieKey = leaf.path.split(baseRx);
+      if (rawGenieKey.length > 1) {
+        // genie object index
+        let genieIdx = rawGenieKey[1].split(/\./)[1];
+        // genie object property
+        let genieKey = rawGenieKey[1].split(/\./)[2];
+        // associate to a middle-way object a genie index object
+        if (!(genieIdx in rawPortMapping)) {
+          rawPortMapping[genieIdx] = {};
         }
-      });
+        /* search for matching port_mapping_fields because
+        is the values that are stored in flashman */
+        Object.keys(fields.port_mapping_fields).forEach((k) => {
+          let pmField = fields.port_mapping_fields[k];
+          if (genieKey == pmField[0]) {
+            /* put the value in the middle-way object
+            compliant with the flashman format */
+            rawPortMapping[genieIdx][pmField[1]] = leaf.value[0];
+          }
+        });
+      }
     }
   });
   /* iterate through middle-way object and store
   in the format of flashman, an array of object */
   Object.keys(rawPortMapping).forEach((k) => {
-    ret.push(rawPortMapping[k]);
+    if (checkPortMappingProperties(rawPortMapping[k])) {
+      ret.push(rawPortMapping[k]);
+    }
   });
+  /* if there is overlapping, does not save the upcoming port
+    mappings already in device */
+  if (acsPortForwardHandler.checkOverlappingPorts(ret)) {
+    ret = [];
+  }
   return ret;
 };
 
