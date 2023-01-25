@@ -10,6 +10,12 @@ import {setConfigStorage, getConfigStorage} from './session_storage.js';
 
 const t = i18next.t;
 
+
+// This regex is copied from controllers/handlers/util/
+// xssValidationRegex.
+const XSS_VALIDATION_REGEX = /^[^&\\"'`<>]{1,128}$/;
+
+
 let downloadCSV = function(url, filename) {
   let downloadLink = document.createElement('a');
   downloadLink.download = filename;
@@ -177,6 +183,8 @@ anlixDocumentReady.add(function() {
   let role = $('#devices-table-content').data('role');
   let visibleColumnsOnPage = $('#devices-table-content')
     .data('visiblecolumnsonpage');
+  let urlQueryFilterList = $('#devices-table-content')
+    .data('urlqueryfilterlist');
   let isSuperuser = false;
   let enableDataCollecting = false;
   let grantFirmwareUpgrade = false;
@@ -3394,7 +3402,22 @@ anlixDocumentReady.add(function() {
     });
   };
   // Initial table
-  if (window.location.href.indexOf('devicelist') !== -1) {
+  // If the filters were passed to url and the path is /devicelist
+  if (urlQueryFilterList && window.location.href.indexOf('devicelist') !== -1) {
+    // Split the filters
+    let filters = urlQueryFilterList.split(',');
+
+    // Assign each filter to the search input field
+    filters.forEach((filter) => {
+      // Only insert the tag if is not empty
+      if (filter && XSS_VALIDATION_REGEX.test(filter)) {
+        $('.tags-input input').focus().val(filter).blur();
+      }
+    });
+
+    // Load the table
+    loadDevicesTable(1, urlQueryFilterList);
+  } else if (window.location.href.indexOf('devicelist') !== -1) {
     loadDevicesTable();
   }
 
