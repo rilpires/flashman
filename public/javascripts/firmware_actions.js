@@ -9,7 +9,7 @@ const t = i18next.t;
 
 
 // This regex is copied from controllers/handlers/util/
-// tr069FirmwareVersionRegex.
+// xssValidationRegex.
 const VERSION_NAME_REGEX = /^[^&/\\"'`<>]{1,128}$/;
 
 
