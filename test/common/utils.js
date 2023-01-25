@@ -288,11 +288,13 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
   Inputs:
     func - The function to be called
     data - The data to be sent
+    files - All files to be sent
+    query - URL parameters to be passed
 
   Outputs:
     promise - A promise to wait for the response
 */
-utils.common.sendFakeRequest = async function(func, data, files) {
+utils.common.sendFakeRequest = async function(func, data, files, query) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -309,6 +311,7 @@ utils.common.sendFakeRequest = async function(func, data, files) {
         is_superuser: true,
       },
       files: files,
+      query: query,
     },
 
     // Pass the promise resolve
@@ -321,6 +324,7 @@ utils.common.sendFakeRequest = async function(func, data, files) {
         this.header[headerName] = value;
       },
       json: (data) => fakeJson(200, promiseResolve, {}, data),
+      render: (view, data) => fakeJson(200, promiseResolve, {}, data),
     },
   );
 
