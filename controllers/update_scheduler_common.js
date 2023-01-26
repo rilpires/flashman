@@ -260,8 +260,6 @@ commonScheduleController.failedDownload = async function(mac, slave='') {
       };
 
       // Set the update status to image download failed
-      device.do_update_status = 2;
-      await device.save();
     } else if (config.is_aborted) {
       // Aborted case
       // Avoid racing conditions by checking if device is already added
