@@ -26,6 +26,7 @@ const tr069Models = {
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
+  e4lH5410WAModel: require('./cpe-models/e4l-h5410wa'),
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
@@ -150,6 +151,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'DIR-842') {
     // D-Link DIR-842
     result = {success: true, cpe: tr069Models.dlinkDir842Model};
+  } else if (modelName === 'E4L-H5410WA') {
+    // EASY4link H5410WA
+    result = {success: true, cpe: tr069Models.e4lH5410WAModel};
   } else if (
     (modelSerial === 'IGD' && modelName === 'IGD') || modelName === 'FW323DAC'
   ) {
