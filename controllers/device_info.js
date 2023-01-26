@@ -1208,9 +1208,26 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
           console.log('Device ' + req.body.id + ' is going on upgrade...');
-          if (matchedDevice.release === '9999-aix') {
+
+
+          // If the device is in update scheduler and the user chose the option
+          // that cpes will not return to flashman, mark it as success in update
+          // scheduler.
+          let cpeWontReturnFromMassUpgrade = await SchedulerCommon
+            .successUpdateIfCpeWontReturn(matchedDevice._id);
+
+          // If the firmware is stock
+          let isStockUpgrade = (matchedDevice.release === '9999-aix');
+
+
+          // If the cpe won't return to Flashman during an update scheduler or
+          // is stock release, change the do_update status
+          if (
+            cpeWontReturnFromMassUpgrade ||
+            isStockUpgrade
+          ) {
             // Disable schedule since factory firmware will not inform status
-            matchedDevice.installed_release = '9999-aix';
+            matchedDevice.installed_release = matchedDevice.release;
             matchedDevice.do_update = false;
             matchedDevice.do_update_status = 1; // success
           } else {

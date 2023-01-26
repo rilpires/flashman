@@ -160,7 +160,7 @@ const createNotificationForDevice = async function(
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne(
     {acs_id: genieDeviceId},
-    {_id: true},
+    {_id: true, do_update_status: true},
   ).exec();
 
   if (!device) return;
@@ -170,6 +170,8 @@ const createNotificationForDevice = async function(
   if (doc.code === 'cwmp.9010') {
     // Might move to ToDo again or Failed
     SchedulerCommon.failedDownload(device._id);
+    device.do_update_status = 2;
+    await device.save();
 
     // Do not show the notification
     return;
@@ -249,6 +251,23 @@ genie.request = (options, body) => {
     }
     req.end();
   });
+};
+
+// delete device by acs_id(flashman)/_id(genieacs)
+genie.deleteDeviceFromGenie = async function(device) {
+  if (device.use_tr069 && device.acs_id) {
+    try {
+      await genie.request({
+        method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+        path: `/devices/${encodeURIComponent(device.acs_id)}`,
+      });
+    } catch (e) {
+      console.log('Error removing device ' +
+        device.acs_id + ' from genieacs : ' + e);
+      return false;
+    }
+  }
+  return true;
 };
 
 /* get stuff out of genie through its API and returns the genie json response
