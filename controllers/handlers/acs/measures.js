@@ -101,6 +101,13 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
+
+    if (!device) {
+      return {
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      };
+    }
   } catch (e) {
     console.log('Error:', e);
     return {success: false,
