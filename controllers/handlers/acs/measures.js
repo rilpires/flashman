@@ -150,25 +150,53 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
       }
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        let deviceModified = false;
+
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
+
+        // Pon Rx Power
         if (ponSignal.rxpower) {
           ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+
+          // Do not modify if rxpower is invalid
+          if (ponSignal.rxpower) {
+            deviceEdit.pon_rxpower = ponSignal.rxpower;
+            deviceModified = true;
+          }
         }
+
+        // Pon Tx Power
         if (ponSignal.txpower) {
           ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
+
+          // Do not modify if txpower is invalid
+          if (ponSignal.txpower) {
+            deviceEdit.pon_txpower = ponSignal.txpower;
+            deviceModified = true;
+          }
         }
-        ponSignal = acsMeasuresHandler.appendPonSignal(
+
+
+        let ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
           ponSignal.txpower,
         );
-        deviceEdit.pon_signal_measure = ponSignal;
-        deviceEdit.pon_rxpower = ponSignal.rxpower;
-        deviceEdit.pon_txpower = ponSignal.txpower;
-        await deviceEdit.save().catch((err) => {
-          console.log('Error saving pon signal: ' + err);
-        });
+
+        if (ponSignal) {
+          deviceEdit.pon_signal_measure = ponArrayMeasures;
+          deviceModified = true;
+        }
+
+
+        // Only save the device if modified the device, reducing the quantity
+        // of unneeded await and save calls
+        if (deviceModified === true) {
+          await deviceEdit.save().catch((err) => {
+            console.log('Error saving pon signal: ' + err);
+          });
+        }
       }
       sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
       return ponSignal;
