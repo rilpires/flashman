@@ -1454,21 +1454,23 @@ const delDeviceOnDatabase = async function(devIds) {
     if (device.mesh_slaves && device.mesh_slaves.length > 0) {
       failedAtRemoval[deviceId] =
         t('cantDeleteMeshWithSecondaries', {errorline: __line});
-    } else {
-      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      continue;
+    }
+    let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+    if (!removalOK) {
+      failedAtRemoval[deviceId] =
+        t('operationUnsuccessful', {errorline: __line});
+      continue;
+    }
+    if (device.use_tr069) {
+      removalOK = await TasksAPI.deleteDeviceFromGenie(device);
       if (!removalOK) {
         failedAtRemoval[deviceId] =
-          t('operationUnsuccessful', {errorline: __line});
-      } else if (device.use_tr069) {
-        removalOK = await TasksAPI.deleteDeviceFromGenie(device);
-        if (!removalOK) {
-          failedAtRemoval[deviceId] =
-            t('genieacsCommunicationError', {errorline: __line});
-        } else {
-          removedDevIds.push(deviceId);
-        }
+          t('genieacsCommunicationError', {errorline: __line});
+        continue;
       }
     }
+    removedDevIds.push(deviceId);
   }
   // If there are any errors in the array, we log the details and inform which
   // cpes failed to be removed in the response
