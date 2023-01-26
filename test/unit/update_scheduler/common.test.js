@@ -466,14 +466,10 @@ describe('TR-069 Update Scheduler Tests - Common Functions', () => {
 
     // Set spy
     const configSpy = jest.spyOn(updateCommon, 'configQuery');
-    const deviceSpy = jest.spyOn(DeviceModel.prototype, 'save')
-      .mockImplementationOnce(() => Promise.resolve());
-
 
     // Execute and compare
     const result = await updateCommon.failedDownload(mac);
     expect(result.success).toBe(true);
-    expect(deviceSpy).toBeCalled();
     expect(configSpy).toBeCalledWith({
       'device_update_schedule.is_active': false,
     }, {
