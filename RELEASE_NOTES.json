@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.59.1",
+	"latest_version": "2.60.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,30 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.60.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug em que o Flashman poderia rejeitar uma senha para interface web dos CPEs TR-069, caso a primeira letra da senha fosse a única letra maiúscula da senha",
+			"Consertamos um bug em que o filtro de 'update on' não funcionava para CPEs TR-069",
+			"Consertamos um bug inserido na versão 2.59.0 que impedia a habilitação do modo mesh em CPEs TR-069"
+		],
+		"improvements": [],
+		"features": [
+			"Liberamos a opção de upgrade de firmware para todos os modelos TR-069 homologados",
+			"Flexibilizamos o update de CPEs TR-069 para que qualquer versão de firmware possa fazer upgrade para qualquer outra do mesmo modelo",
+			"Incluímos uma opção 'Outro' no upload de firmwares para CPEs TR-069, para que o provedor possa incluir qualquer versão de firmware não homologada pela Anlix"
+		]
+	},
+	"2.59.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug inserido na versão 2.57.0 que poderia causar um crash do serviço de comunicação com CPEs TR-069, quando tentava se comunicar com alguns modelos específicos da TP-Link"
+		],
+		"improvements": [],
+		"features": []
 	},
 	"2.59.1": {
 		"custom_firmware_compatibilities": [],

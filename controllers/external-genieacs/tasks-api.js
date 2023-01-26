@@ -424,7 +424,8 @@ const checkTask = function(task) {
       if (!task[parameterId][i][0]
        || task[parameterId][i][0].constructor !== String
        // second position can be a string, a number or a boolean.
-       || !task[parameterId][i][1]
+       || task[parameterId][i][1] === null
+       || task[parameterId][i][1] === undefined
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
