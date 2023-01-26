@@ -204,12 +204,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     result = {success: true, cpe: tr069Models.hurakallST1001FLModel};
-  } else if (modelSerial === 'W5-1200G') {
-    // Intelbras W5-1200G
-    result = {success: true, cpe: tr069Models.intelbrasW51200GModel};
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (['W5-1200G', 'W5%2D1200G'].includes(modelSerial)) {
+    // Intelbras W5-1200G
+    result = {success: true, cpe: tr069Models.intelbrasW51200GModel};
   } else if (modelName === '120AC') {
     // Intelbras WiFiber 120AC
     result = {success: true, cpe: tr069Models.intelbrasWiFiberModel120AC};
