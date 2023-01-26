@@ -54,8 +54,19 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         }
       }
       let success = false;
-      if (utilHandlers.checkForNestedKey(data, recvField+'._value', useLastIndexOnWildcard) &&
-          utilHandlers.checkForNestedKey(data, sentField+'._value', useLastIndexOnWildcard)) {
+      if (
+        utilHandlers.checkForNestedKey(
+          data,
+          recvField+'._value',
+          useLastIndexOnWildcard,
+        ) &&
+
+        utilHandlers.checkForNestedKey(
+          data,
+          sentField+'._value',
+          useLastIndexOnWildcard,
+        )
+      ) {
         success = true;
         wanBytes = {
           recv: utilHandlers.getFromNestedKey(
@@ -137,17 +148,34 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
         success = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerField + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerField + '._value'),
+          rxpower: utilHandlers.getFromNestedKey(
+            data,
+            rxPowerField + '._value',
+          ),
+
+          txpower: utilHandlers.getFromNestedKey(
+            data,
+            txPowerField + '._value',
+          ),
         };
-      } else if (utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
-                 utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+      } else if (
+        utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
+        utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')
+      ) {
         success = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerFieldEpon + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerFieldEpon + '._value'),
+          rxpower: utilHandlers.getFromNestedKey(
+            data,
+            rxPowerFieldEpon + '._value',
+          ),
+
+          txpower: utilHandlers.getFromNestedKey(
+            data,
+            txPowerFieldEpon + '._value',
+          ),
         };
       }
+
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
         let deviceModified = false;
