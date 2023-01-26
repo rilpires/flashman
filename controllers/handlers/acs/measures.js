@@ -212,7 +212,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           ponSignal.txpower,
         );
 
-        if (ponSignal) {
+        if (ponArrayMeasures) {
           deviceEdit.pon_signal_measure = ponArrayMeasures;
           deviceModified = true;
         }
