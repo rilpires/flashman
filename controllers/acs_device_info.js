@@ -585,7 +585,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   device.last_contact = dateNow;
   // Devices recovering from hard reset or upgrading their firmware need to go
   // through an immediate full sync
-  if (device.do_update || device.recovering_tr069_reset) {
+  if (
+    (device.do_update && device.do_update_status === 0) ||
+    device.recovering_tr069_reset
+  ) {
     device.last_tr069_sync = dateNow;
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
