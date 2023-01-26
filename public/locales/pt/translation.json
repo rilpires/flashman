@@ -710,7 +710,7 @@
 	"letsSelectWhenCpesWillUpdate?": "Vamos selecionar quando os CPEs serão atualizados?",
 	"updateImmediatelyWithoutTimeRestrictions": "Atualizar imediatamente sem restrições de horário",
 	"cpeWontReturnToFlashmanWarning": "A opção de não retornar para este Flashman foi selecionada. Esta opção só deve ser marcada se os CPEs estão retornando para a firmware de fábrica, ou se a release selecionada migrará os CPEs para outro Flashman. Tem certeza de que quer continuar?",
-	"cpeWontReturnToFlashmanCheckbox": "Os CPEs marcados não retornarão para este Flashman após a atualização de firmware.",
+	"cpeWontReturnToFlashmanCheckbox": "Marque esta opção se os CPEs não retornarão para este Flashman após a atualização de firmware",
 	"dayOfTheWeek": "Dia da semana",
 	"Sunday": "Domingo",
 	"Monday": "Segunda",
