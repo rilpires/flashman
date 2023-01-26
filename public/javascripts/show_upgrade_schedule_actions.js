@@ -326,6 +326,33 @@ anlixDocumentReady.add(function() {
     $(CPE_WONT_RETURN_CHECKBOX).prop('checked', false);
   });
 
+
+  // Show a popup when the user selects the cpe won't return checkbox
+  $(document).on('change', CPE_WONT_RETURN_CHECKBOX, function() {
+    let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
+
+    // If it is marked, show the popup
+    if (cpesWontReturn === true) {
+      swal.fire({
+        title: t('caution'),
+        html: t('cpeWontReturnToFlashmanWarning'),
+        showConfirmButton: true,
+        showCancelButton: true,
+        confirmButtonText: t('yesSure'),
+        cancelButtonText: t('noBack'),
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#4db6ac',
+        allowOutsideClick: false,
+      }).then((result) => {
+        // If the user accepted, continue to the next step
+        if (result.dismiss && result.dismiss === 'cancel') {
+          $(CPE_WONT_RETURN_CHECKBOX).prop('checked', false);
+        }
+      });
+    }
+  });
+
+
   $(document).on('change', FLASHBOX_FIRMWARE_SELECTION_BUTTON, function() {
     resetStepperData();
     setFirmwareReleasesDropdown(false, true);
@@ -423,7 +450,6 @@ anlixDocumentReady.add(function() {
           if (result.value) {
             stepper.next();
           }
-          console.log(result);
         });
       }
     });
