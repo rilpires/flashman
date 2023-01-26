@@ -54,19 +54,17 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         }
       }
       let success = false;
-      if (
-        utilHandlers.checkForNestedKey(
-          data,
-          recvField+'._value',
-          useLastIndexOnWildcard,
-        ) &&
-
-        utilHandlers.checkForNestedKey(
-          data,
-          sentField+'._value',
-          useLastIndexOnWildcard,
-        )
-      ) {
+      let checkRecv = utilHandlers.checkForNestedKey(
+        data,
+        recvField+'._value',
+        useLastIndexOnWildcard,
+      );
+      let checkSent = utilHandlers.checkForNestedKey(
+        data,
+        sentField+'._value',
+        useLastIndexOnWildcard,
+      );
+      if (checkRecv && checkSent) {
         success = true;
         wanBytes = {
           recv: utilHandlers.getFromNestedKey(
