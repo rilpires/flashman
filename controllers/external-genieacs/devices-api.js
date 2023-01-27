@@ -44,6 +44,7 @@ const tr069Models = {
   huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
+  intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
@@ -78,6 +79,7 @@ const tr069Models = {
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
+  zteH196Model: require('./cpe-models/zte-h196'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
@@ -210,6 +212,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (['W5-1200G', 'W5%2D1200G'].includes(modelSerial)) {
+    // Intelbras W5-1200G
+    result = {success: true, cpe: tr069Models.intelbrasW51200GModel};
   } else if (modelName === '120AC') {
     // Intelbras WiFiber 120AC
     result = {success: true, cpe: tr069Models.intelbrasWiFiberModel120AC};
@@ -308,6 +313,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'MP-X421RQ-F') {
     // New UNEE Stavix
     result = {success: true, cpe: tr069Models.uneeMPX421RQF};
+  } else if (modelName === 'H196A V9') {
+    // ZTE H196A
+    result = {success: true, cpe: tr069Models.zteH196Model};
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
