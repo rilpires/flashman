@@ -77,6 +77,7 @@ const tr069Models = {
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
+  zteH196Model: require('./cpe-models/zte-h196'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
@@ -304,6 +305,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'MP-X421RQ-F') {
     // New UNEE Stavix
     result = {success: true, cpe: tr069Models.uneeMPX421RQF};
+  } else if (modelName === 'H196A V9') {
+    // ZTE H196A
+    result = {success: true, cpe: tr069Models.zteH196Model};
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
