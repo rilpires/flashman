@@ -383,4 +383,47 @@ describe('Handlers/ACS/Measures Tests', () => {
     expected[Object.keys(result)[0]] = [-25.157, -36.198];
     expect(result).toStrictEqual({});
   });
+
+
+  // appendPonSignal - Wrong original
+  test('Validate appendPonSignal - Wrong original', async () => {
+    // Execute
+    let result = measureController.appendPonSignal(undefined, -25.157, -36.198);
+
+
+    // Validate
+    let expected = {};
+    expected[Object.keys(result)[0]] = [-25.157, -36.198];
+    expect(result).toEqual(expected);
+  });
+
+
+  // appendPonSignal - Wrong tx/rx power
+  test('Validate appendPonSignal - Wrong tx/rx power', async () => {
+    // Execute
+    let result = measureController.appendPonSignal(
+      {'12345': [678, 901]},
+      undefined,
+      undefined,
+    );
+
+
+    // Validate
+    expect(result).toEqual({'12345': [678, 901]});
+  });
+
+
+  // appendPonSignal - Both wrong
+  test('Validate appendPonSignal - Both wrong', async () => {
+    // Execute
+    let result = measureController.appendPonSignal(
+      undefined,
+      undefined,
+      undefined,
+    );
+
+
+    // Validate
+    expect(result).toEqual({});
+  });
 });
