@@ -44,34 +44,18 @@ intelbrasModel.getModelFields = function() {
     'X_ITBS_Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_ITBS_UserPassword';
+  fields.common.stun_enable =
+    'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.KeyPassphrase';
-  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.AutoChannelEnable';
-  fields.wifi2.enable = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.Enable';
-  fields.wifi2.ssid = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.SSID';
-  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.Standard';
-  fields.wifi2.channel = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.2.Channel';
-  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.PreSharedKey.1.KeyPassphrase';
-  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.AutoChannelEnable';
-  fields.wifi5.enable = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Enable';
-  fields.wifi5.ssid = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.SSID';
-  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Standard';
-  fields.wifi5.channel = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Channel';
+  Object.keys(fields.wifi2).forEach((k)=>{
+    fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '2');
+    fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
+  });
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.WiFi.' +
     'NeighboringWiFiDiagnostic';
   return fields;
