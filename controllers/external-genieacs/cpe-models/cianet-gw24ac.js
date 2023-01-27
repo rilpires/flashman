@@ -8,10 +8,11 @@ cianetModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
-  permissions.features.pingTest = true;
+  permissions.features.traceroute = true;
   permissions.features.ponSignal = true;
-  permissions.features.stun = true;
+  permissions.features.pingTest = true;
   permissions.features.upnp = false;
+  permissions.features.stun = true;
   permissions.features.wps = false;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.wan.allowReadWanMtu = false;
@@ -63,6 +64,10 @@ cianetModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+cianetModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 cianetModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
@@ -102,8 +107,9 @@ cianetModel.getModelFields = function() {
   fields.port_mapping_values.enable[0] = 'Enabled';
   fields.port_mapping_values.description[0] = 'Name';
   fields.port_mapping_values.remote_host[0] = 'RemoteHostStart';
-  fields.port_mapping_values.remote_host_end = ['RemoteHostEnd',
-    '0.0.0.0', 'xsd:string'];
+  fields.port_mapping_values.remote_host_end = [
+    'RemoteHostEnd', '0.0.0.0', 'xsd:string',
+  ];
   fields.port_mapping_values.lease[0] = 'LeaseDuration';
   fields.port_mapping_fields.external_port_start[0] = 'ExternalPortStart';
   fields.port_mapping_fields.external_port_end = [
@@ -113,11 +119,11 @@ cianetModel.getModelFields = function() {
   fields.port_mapping_fields.internal_port_end = [
     'InternalPortEnd', 'internal_port_end', 'xsd:unsignedInt',
   ];
-  fields.traceroute.root = 'InternetGatewayDevice.' +
+  fields.diagnostics.traceroute.root = 'InternetGatewayDevice.' +
     'X_CT-COM_IPTraceRouteDiagnostics';
-  fields.traceroute.number_of_hops = 'HopsNumberOfEntries';
-  fields.hop_host = 'Hops';
-  fields.hop_host = 'Host';
+  fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
+  fields.diagnostics.hop_host = 'Hops';
+  fields.diagnostics.hop_host = 'Host';
   return fields;
 }
 
