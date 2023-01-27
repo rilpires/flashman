@@ -8,6 +8,7 @@ intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
+  // permissions.features.speedtest = true; // Commented since it caps at 80Mbps
   permissions.features.stun = true;
   permissions.features.upnp = false;
   permissions.features.wps = false;
