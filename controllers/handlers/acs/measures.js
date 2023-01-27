@@ -214,8 +214,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
 
         ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
-          ponSignal.rxpower,
-          ponSignal.txpower,
+          (isNaN(ponSignal.rxpower)) ? undefined : ponSignal.rxpower,
+          (isNaN(ponSignal.txpower)) ? undefined : ponSignal.txpower,
         );
 
         if (Object.keys(ponArrayMeasures).length) {
@@ -233,8 +233,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         }
       }
 
-
-      // Send notification for app
+      // Send notification for app if had at least one entry in
+      // ponArrayMeasures
       if (Object.keys(ponArrayMeasures).length) {
         sio.anlixSendPonSignalNotification(
           mac,
@@ -434,6 +434,7 @@ acsMeasuresHandler.appendBytesMeasure = function(original, recv, sent) {
 
 acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   if (!original) original = {};
+
   try {
     let now = Math.floor(Date.now() / 1000);
     let dbms = JSON.parse(JSON.stringify(original));
@@ -450,7 +451,12 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
       let smallest = Math.min(...keysNum);
       delete dbms[smallest];
     }
-    dbms[now] = [rxPower, txPower];
+
+    // Only append the values if are numbers
+    if (!isNaN(rxPower) && !isNaN(txPower)) {
+      dbms[now] = [rxPower, txPower];
+    }
+
     return dbms;
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);
