@@ -22,9 +22,8 @@ zteModel.modelPermissions = function() {
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144,
     149, 153, 157, 161,
   ];
-  // permissions.wifi.bandWrite2 = false;
-  // permissions.wifi.bandWrite5 = false;
   permissions.wifi.allowDiacritics = true;
+  permissions.wifi.bandAuto5 = false;
   permissions.firmwareUpgrades = {
     'V9.0.0P2_MUL': [],
   };
