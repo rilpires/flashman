@@ -160,7 +160,7 @@ const createNotificationForDevice = async function(
   // getting flashman device id related to the genie device id.
   let device = await DeviceModel.findOne(
     {acs_id: genieDeviceId},
-    {_id: true},
+    {_id: true, do_update_status: true},
   ).exec();
 
   if (!device) return;
@@ -170,6 +170,8 @@ const createNotificationForDevice = async function(
   if (doc.code === 'cwmp.9010') {
     // Might move to ToDo again or Failed
     SchedulerCommon.failedDownload(device._id);
+    device.do_update_status = 2;
+    await device.save();
 
     // Do not show the notification
     return;

@@ -122,6 +122,14 @@
                       button.btn.btn-primary.dropdown-toggle.col-11(type="button", data-toggle="dropdown")
                         span#selected-release.selected= t('Choose')
                       #releases-dropdown.dropdown-menu.col-10
+                    
+                    //- CPE will not return checkbox
+                    .col-8.my-3.text-justify#cpeWontReturnDiv.hide
+
+                      //- Checkbox
+                      .custom-control.custom-checkbox.custom-control-inline
+                        input#cpeWontReturn.custom-control-input(type="checkbox", name="cpeWontReturn")
+                        label.custom-control-label(for="cpeWontReturn")= t('cpeWontReturnToFlashmanCheckbox')
 
                 #warning-releases.mt-4.alert.alert-danger
                   .text-center
