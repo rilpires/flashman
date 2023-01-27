@@ -235,10 +235,12 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
 
 
       // Send notification for app
-      sio.anlixSendPonSignalNotification(
-        mac,
-        {ponsignalmeasure: ponArrayMeasures},
-      );
+      if (ponArrayMeasures) {
+        sio.anlixSendPonSignalNotification(
+          mac,
+          {ponsignalmeasure: ponArrayMeasures},
+        );
+      }
 
 
       return ponArrayMeasures;
