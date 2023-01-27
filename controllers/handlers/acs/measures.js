@@ -218,7 +218,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           ponSignal.txpower,
         );
 
-        if (ponArrayMeasures) {
+        if (Object.keys(ponArrayMeasures).length) {
           deviceEdit.pon_signal_measure = ponArrayMeasures;
           deviceModified = true;
         }
@@ -235,7 +235,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
 
 
       // Send notification for app
-      if (ponArrayMeasures) {
+      if (Object.keys(ponArrayMeasures).length) {
         sio.anlixSendPonSignalNotification(
           mac,
           {ponsignalmeasure: ponArrayMeasures},
