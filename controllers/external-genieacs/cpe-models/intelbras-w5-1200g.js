@@ -25,6 +25,17 @@ intelbrasModel.modelPermissions = function() {
   return permissions;
 };
 
+intelbrasModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  // Replace 2 with 6 - likely reused some legacy code in tr069 implementation
+  return basicCPEModel.isDeviceConnectedViaWifi(
+    layer2iface,
+    wifi2iface.replace(/2/g, '6'),
+    wifi5iface,
+  );
+};
+
 intelbrasModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.alt_uid = fields.common.mac;
