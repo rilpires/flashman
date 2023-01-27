@@ -140,6 +140,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
     resp.setEncoding('utf8');
     let data = '';
     let ponSignal = {};
+    let ponArrayMeasures = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async () => {
       if (data.length > 0) {
@@ -213,7 +214,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
         }
 
 
-        let ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
+        ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
           ponSignal.txpower,
@@ -233,8 +234,16 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           });
         }
       }
-      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
-      return ponSignal;
+
+
+      // Send notification for app
+      sio.anlixSendPonSignalNotification(
+        mac,
+        {ponsignalmeasure: ponArrayMeasures},
+      );
+
+
+      return ponArrayMeasures;
     });
   });
   req.end();
