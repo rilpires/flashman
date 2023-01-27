@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let zteModel = Object.assign({}, basicCPEModel);
 
-zteModel.identifier = {vendor: 'ZTE', model: 'H196A'};
+zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'H196A'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
