@@ -12,9 +12,8 @@ zteModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.stun = true;
   permissions.features.traceroute = true;
-  permissions.features.upnp = false;
-  permissions.features.wps = false;
-  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.features.wlanAccessControl = true;
+  permissions.traceroute.protocol = 'ICMP';
   permissions.wan.speedTestLimit = 550;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymNoRanges;
@@ -106,6 +105,7 @@ zteModel.getModelFields = function() {
   fields.port_mapping_values.zte_remote_host_end = [
     'X_ZTE-COM_RemoteHostEndRange', '0.0.0.0', 'xsd:string',
   ];
+  fields.diagnostics.traceroute.protocol = 'X_ZTE-COM_Protocol';
   return fields;
 };
 
