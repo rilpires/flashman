@@ -433,14 +433,14 @@ acsMeasuresHandler.appendBytesMeasure = function(original, recv, sent) {
 };
 
 acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
+  if (!original) original = {};
+
   if (
     rxPower === null || rxPower === undefined || isNaN(rxPower) ||
     txPower === null || txPower === undefined || isNaN(txPower)
   ) {
     return original;
   }
-
-  if (!original) original = {};
 
   try {
     let now = Math.floor(Date.now() / 1000);
