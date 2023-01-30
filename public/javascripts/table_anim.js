@@ -3403,14 +3403,41 @@ anlixDocumentReady.add(function() {
   };
   // Initial table
   // If the filters were passed to url and the path is /devicelist
-  if (urlQueryFilterList && window.location.href.indexOf('devicelist') !== -1) {
+  if (
+    // If the filter is passed correctly
+    urlQueryFilterList !== null && urlQueryFilterList !== undefined &&
+
+    // And is part of /devicelist URL
+    window.location.href.indexOf('devicelist') !== -1
+  ) {
+    let filters = [];
+
     // Split the filters
-    let filters = urlQueryFilterList.split(',');
+    if (urlQueryFilterList.constructor === String) {
+      filters = urlQueryFilterList.split(',');
+
+    // Cases where the data is a single number
+    } else if (
+      urlQueryFilterList.constructor === Number &&
+      !isNaN(urlQueryFilterList)
+    ) {
+      filters = [urlQueryFilterList.toString()];
+
+    // Invalid constructor, build the table without filters and exit
+    } else {
+      loadDevicesTable();
+      return;
+    }
 
     // Assign each filter to the search input field
     filters.forEach((filter) => {
-      // Only insert the tag if is not empty
-      if (filter && XSS_VALIDATION_REGEX.test(filter)) {
+      // Only insert the tag if the filter is not empty, if it passes the regex
+      // and was not already added
+      if (
+        filter &&
+        XSS_VALIDATION_REGEX.test(filter) &&
+        !$('#devices-search-input').val().includes(filter)
+      ) {
         $('.tags-input input').focus().val(filter).blur();
       }
     });
