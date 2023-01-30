@@ -83,6 +83,7 @@ let configSchema = new mongoose.Schema({
     }],
     rule: {
       release: {type: String},
+      cpes_wont_return: {type: Boolean, default: false},
       to_do_devices: [{
         mac: {type: String, required: true},
         state: {type: String},
