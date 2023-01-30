@@ -77,6 +77,10 @@ e4lModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
+e4lModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 e4lModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
