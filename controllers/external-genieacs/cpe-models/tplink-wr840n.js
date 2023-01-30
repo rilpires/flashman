@@ -23,6 +23,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.bandRead5 = false;
   permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandAuto5 = false;
+  permissions.wifi.modeWrite = false;
   permissions.wifi.list5ghzChannels = [];
   permissions.firmwareUpgrades = {
     '3.16.0 0.9.1 v6018.0 Build 190312 Rel.60533n': [],
@@ -33,7 +34,6 @@ tplinkModel.modelPermissions = function() {
 tplinkModel.convertWifiMode = function(mode) {
   switch (mode) {
     case '11g':
-      return 'gn';
     case '11n':
       return 'n';
     case '11na':
