@@ -10,7 +10,10 @@ const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
+const UserModel = require('../../models/user');
+
 const utils = require('../utils');
+const testUtils = require('../common/utils');
 
 describe('Controllers - Device List', () => {
   let connection;
@@ -884,5 +887,112 @@ describe('Controllers - Device List', () => {
         .toMatch(utils.tt('fieldNameInvalid',
           {name: 'content', errorline: __line}));
     });
+  });
+
+
+  // Index route: Invalid filter
+  test('Index: Invalid filter', async () => {
+    // Mocks
+    jest.spyOn(UserModel, 'findOne')
+      .mockImplementationOnce(
+        (query, callback) => callback(false, {is_superuser: true}),
+      );
+    jest.spyOn(ConfigModel, 'findOne')
+      .mockImplementationOnce(
+        // findOne receives the query parameter
+        (query) => {
+          // findOne returns a lean function
+          return {lean: () => {
+            // lean returns a exec function
+            return {exec: (callback) => {
+              // exec calls callback
+              callback(true, false);
+            }};
+          }};
+        },
+      );
+
+
+    // Execute and validate
+    let response = await testUtils.common.sendFakeRequest(
+      deviceListController.index,
+      undefined, undefined,
+      {},
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.body.urlqueryfilterlist).toBe(undefined);
+  });
+
+
+  // Index route: Empty filter
+  test('Index: Empty filter', async () => {
+    // Mocks
+    jest.spyOn(UserModel, 'findOne')
+      .mockImplementationOnce(
+        (query, callback) => callback(false, {is_superuser: true}),
+      );
+    jest.spyOn(ConfigModel, 'findOne')
+      .mockImplementationOnce(
+        // findOne receives the query parameter
+        (query) => {
+          // findOne returns a lean function
+          return {lean: () => {
+            // lean returns a exec function
+            return {exec: (callback) => {
+              // exec calls callback
+              callback(true, false);
+            }};
+          }};
+        },
+      );
+
+
+    // Execute and validate
+    let response = await testUtils.common.sendFakeRequest(
+      deviceListController.index,
+      undefined, undefined,
+      {
+        filter: '',
+      },
+    );
+    expect(response.statusCode).toBe(200);
+    expect(response.body.urlqueryfilterlist).toBe(undefined);
+  });
+
+
+  // Index route: Invalid characters filter
+  test('Index: Invalid characters filter', async () => {
+    // Mocks
+    jest.spyOn(UserModel, 'findOne')
+      .mockImplementationOnce(
+        (query, callback) => callback(false, {is_superuser: true}),
+      );
+    jest.spyOn(ConfigModel, 'findOne')
+      .mockImplementationOnce(
+        // findOne receives the query parameter
+        (query) => {
+          // findOne returns a lean function
+          return {lean: () => {
+            // lean returns a exec function
+            return {exec: (callback) => {
+              // exec calls callback
+              callback(true, false);
+            }};
+          }};
+        },
+      );
+
+
+    // Execute and validate
+    let response = await testUtils.common.sendFakeRequest(
+      deviceListController.index,
+      undefined, undefined,
+      {
+        filter: ',,A,D,EEE,,,!,",,,<script>alert(1)</script>,/,/ou,',
+      },
+    );
+    expect(response.statusCode).toBe(200);
+    console.log(response);
+    expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
   });
 });
