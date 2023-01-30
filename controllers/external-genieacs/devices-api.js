@@ -75,6 +75,7 @@ const tr069Models = {
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
+  tplinkWR840NModel: require('./cpe-models/tplink-wr840n'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
@@ -304,6 +305,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HC220-G5') {
     // TP-Link HC220-G5
     result = {success: true, cpe: tr069Models.tplinkHC220G5Model};
+  } else if (modelSerial === 'IGD' && modelName === 'TL-WR840N') {
+    // TP-Link WR840N V6
+    result = {success: true, cpe: tr069Models.tplinkWR840NModel};
   } else if (modelName === 'XC220-G3v') {
     // TP-Link XC220-G3v
     result = {success: true, cpe: tr069Models.tplinkXC220G3vModel};
