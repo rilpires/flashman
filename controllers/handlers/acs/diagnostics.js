@@ -196,12 +196,10 @@ const calculateTraceDiagnostic = async function(
   );
 
   let traceResult = device.traceroute_results
-    .filter((e)=>!e.completed)
-    .find((e)=>e.address==rootData.target);
+    .filter((e)=>!e.completed)[0];
 
   if (!traceResult) return;
 
-  const traceTarget = rootData.target;
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
   const maxHopCount = parseInt(rootData.max_hop_count);
   const numberOfHops = parseInt(rootData.number_of_hops);
@@ -231,7 +229,6 @@ const calculateTraceDiagnostic = async function(
 
   if (hasData || hasExceeded) {
     // const inNumberOfHops = parseInt(rootData.number_of_hops);
-    traceResult.address = traceTarget;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
     // Clamping tries_per_hop
