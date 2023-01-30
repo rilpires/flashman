@@ -7,11 +7,10 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'TL-WR840N'};
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
+  // permissions.features.traceroute = true; // Needs polling
   permissions.features.portForward = true;
-  permissions.features.traceroute = true;
-  permissions.features.pingTest = true;
-  permissions.features.upnp = false;
-  permissions.features.wps = false;
+  // permissions.features.speedTest = true; // Doesnt update properly?
+  // permissions.features.pingTest = true; // Needs polling
   permissions.features.stun = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
