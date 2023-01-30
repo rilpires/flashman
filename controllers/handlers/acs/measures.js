@@ -214,8 +214,8 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
 
         ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
-          (isNaN(ponSignal.rxpower)) ? undefined : ponSignal.rxpower,
-          (isNaN(ponSignal.txpower)) ? undefined : ponSignal.txpower,
+          ponSignal.rxpower,
+          ponSignal.txpower,
         );
 
         if (Object.keys(ponArrayMeasures).length) {
@@ -433,6 +433,13 @@ acsMeasuresHandler.appendBytesMeasure = function(original, recv, sent) {
 };
 
 acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
+  if (
+    rxPower === null || rxPower === undefined || isNaN(rxPower) ||
+    txPower === null || txPower === undefined || isNaN(txPower)
+  ) {
+    return original;
+  }
+
   if (!original) original = {};
 
   try {
@@ -453,9 +460,7 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
     }
 
     // Only append the values if are numbers
-    if (!isNaN(rxPower) && !isNaN(txPower)) {
-      dbms[now] = [rxPower, txPower];
-    }
+    dbms[now] = [rxPower, txPower];
 
     return dbms;
   } catch (e) {
