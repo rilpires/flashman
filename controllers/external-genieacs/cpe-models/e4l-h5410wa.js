@@ -52,9 +52,10 @@ e4lModel.convertWifiBand = function(band, is5ghz=false) {
     case 'HT40':
     case 'VHT40':
       return '1';
-    case 'VHT80': // Does not have bandwidth 80MHz
+    case 'VHT80':
+      return '3';
     case 'auto':
-      return '2';
+      return (is5ghz) ? '3' : '2';
     default:
       return '';
   }
@@ -63,6 +64,8 @@ e4lModel.convertWifiBand = function(band, is5ghz=false) {
 e4lModel.convertWifiBandToFlashman = function(band, isAC) {
   switch (band) {
     // String input
+    case '3':
+      return 'auto';
     case '2':
       return 'auto';
     case '0':
