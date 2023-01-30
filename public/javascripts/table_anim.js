@@ -3798,21 +3798,33 @@ anlixDocumentReady.add(function() {
     event.stopPropagation();
   });
 
+  // Online devices
   $(document).on('click', '#online-status-sum', function(event) {
-    $('.tags-input input').focus().val(t('online')).blur();
-    $('#devices-search-form').submit();
-    loadDevicesTable(1, t('online'));
+    if (!$('#devices-search-input').val().includes(t('online'))) {
+      $('.tags-input input').focus().val(t('online')).blur();
+      $('#devices-search-form').submit();
+      loadDevicesTable(1, t('online'));
+    }
   });
+
+  // Unstable devices
   $(document).on('click', '#recovery-status-sum', function(event) {
-    $('.tags-input input').focus().val(t('unstable')).blur();
-    $('#devices-search-form').submit();
-    loadDevicesTable(1, t('unstable'));
+    if (!$('#devices-search-input').val().includes(t('unstable'))) {
+      $('.tags-input input').focus().val(t('unstable')).blur();
+      $('#devices-search-form').submit();
+      loadDevicesTable(1, t('unstable'));
+    }
   });
+
+  // Offline devices
   $(document).on('click', '#offline-status-sum', function(event) {
-    $('.tags-input input').focus().val(t('offline')).blur();
-    $('#devices-search-form').submit();
-    loadDevicesTable(1, t('offline'));
+    if (!$('#devices-search-input').val().includes(t('offline'))) {
+      $('.tags-input input').focus().val(t('offline')).blur();
+      $('#devices-search-form').submit();
+      loadDevicesTable(1, t('offline'));
+    }
   });
+
   // Table column sorts
   $(document).on('click', '[id^=sort-]', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
