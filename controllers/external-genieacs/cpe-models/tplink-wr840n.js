@@ -60,10 +60,16 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+tplinkModel.convertGenieSerial = function(serial, mac) {
+  return mac;
+};
+
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.stun_enable =
     'InternetGatewayDevice.ManagementServer.STUNEnable';
+  fields.common.stun_udp_conn_req_addr = 'InternetGatewayDevice.' +
+    'ManagementServer.UDPConnectionRequestAddress',
   fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.X_TP_PreSharedKey';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.' +
