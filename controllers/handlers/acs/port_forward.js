@@ -500,7 +500,7 @@ acsPortForwardHandler
   rawPortForward.forEach((leaf) => {
     /* if a value is 0 or '', in case of empty port mapping object in
     genieacs or misleading registry, do not put in the middle-way object */
-    if (leaf.value[0]) {
+    if (leaf.value && leaf.value.length > 0 && leaf.value[0]) {
       let rawGenieKey = leaf.path.split(baseRx);
       if (rawGenieKey.length > 1) {
         // genie object index
