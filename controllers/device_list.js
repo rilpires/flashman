@@ -687,6 +687,29 @@ deviceListController.index = function(req, res) {
   let indexContent = {};
   let elementsPerPage = 10;
 
+
+  // Check if tag filters are passed in the URL
+  if (
+    req.query && req.query.filter &&
+    req.query.filter.constructor === String
+  ) {
+    // Split filters by comma
+    let filterTags = req.query.filter.split(',');
+
+    // Filter filters with special characters or that are empty
+    filterTags = filterTags.filter((tag) => {
+      if (tag && util.xssValidationRegex.test(tag)) return true;
+      return false;
+    });
+
+    // Rebuild the filter with all tags
+    let allTags = filterTags.join(',');
+
+    // Assign the tags
+    indexContent.urlqueryfilterlist = allTags;
+  }
+
+
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
   }

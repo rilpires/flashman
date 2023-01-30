@@ -53,7 +53,7 @@ let parseFilename = function(filename) {
  */
 let isValidVersion = function(version) {
   if (typeof version !== 'string' || version.length === 0) return false;
-  return util.tr069FirmwareVersionRegex.test(version);
+  return util.xssValidationRegex.test(version);
 };
 /*
  * This function is being exported in order to test it.
