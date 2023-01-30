@@ -3436,7 +3436,7 @@ anlixDocumentReady.add(function() {
       if (
         filter &&
         XSS_VALIDATION_REGEX.test(filter) &&
-        !$('#devices-search-input').val().includes(filter)
+        !$('#devices-search-input').val().split(',').includes(filter)
       ) {
         $('.tags-input input').focus().val(filter).blur();
       }
@@ -3802,8 +3802,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#online-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('online'))) {
       $('.tags-input input').focus().val(t('online')).blur();
-      $('#devices-search-form').submit();
-      loadDevicesTable(1, t('online'));
+      loadDevicesTable(1, $('#devices-search-input').val());
     }
   });
 
@@ -3811,8 +3810,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#recovery-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('unstable'))) {
       $('.tags-input input').focus().val(t('unstable')).blur();
-      $('#devices-search-form').submit();
-      loadDevicesTable(1, t('unstable'));
+      loadDevicesTable(1, $('#devices-search-input').val());
     }
   });
 
@@ -3820,8 +3818,7 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#offline-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('offline'))) {
       $('.tags-input input').focus().val(t('offline')).blur();
-      $('#devices-search-form').submit();
-      loadDevicesTable(1, t('offline'));
+      loadDevicesTable(1, $('#devices-search-input').val());
     }
   });
 
