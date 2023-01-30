@@ -26,7 +26,7 @@ e4lModel.modelPermissions = function() {
   ];
   permissions.firmwareUpgrades = {'V6.2.9T1': []};
   return permissions;
-}
+};
 
 e4lModel.convertWifiMode = function(mode) {
   switch (mode) {
@@ -42,7 +42,7 @@ e4lModel.convertWifiMode = function(mode) {
     default:
       return '';
   }
-}
+};
 
 e4lModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
@@ -97,6 +97,6 @@ e4lModel.getModelFields = function() {
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.5.X_CT-COM_ChannelWidth';
   return fields;
-}
+};
 
 module.exports = e4lModel;
