@@ -8,6 +8,7 @@ tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
+  permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.upnp = false;
   permissions.features.wps = false;
