@@ -47,15 +47,14 @@ tplinkModel.convertWifiMode = function(mode) {
 tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   switch (band) {
     case 'HT20':
-    case 'VHT20':
       return '20M';
     case 'HT40':
-    case 'VHT40':
       return '40M';
-    case 'VHT80':
-      return undefined;
     case 'auto':
       return 'Auto';
+    case 'VHT20':
+    case 'VHT40':
+    case 'VHT80':
     default:
       return '';
   }
