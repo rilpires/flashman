@@ -114,9 +114,9 @@ userController.postUser = function(req, res) {
       });
     }
     Audit.user(req.user, savedUser, 'create', {
-      name: savedUser.name,
-      password: '******',
-      role: req.body.role,
+      'name': savedUser.name,
+      'password': '******',
+      'role': req.body.role,
     });
     return res.json({
       success: true,

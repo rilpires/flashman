@@ -890,15 +890,15 @@ deviceListController.changeUpdate = async function(req, res) {
   // Simple CPE upgrade logic
   } else {
     const release = req.params.release.trim();
-    const audit = {cmd: 'firmware_upgrade', release: release};
+    const audit = {cmd: 'firmware_upgrade', 'release': release};
     if (doUpdate) {
-      audit.currentRelease = matchedDevice.release;
+      audit['currentRelease'] = matchedDevice.release;
       matchedDevice.release = release;
       matchedDevice.do_update_status = 0; // waiting
       messaging.sendUpdateMessage(matchedDevice);
     } else {
       matchedDevice.do_update_status = 1; // success
-      audit.canceled = true;
+      audit['canceled'] = true;
     }
     matchedDevice.do_update = doUpdate;
     try {
@@ -1526,8 +1526,8 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
   }
   const audit = {
     cmd: 'remove_devices',
-    licenseBlocked,
-    totalRemoved: removedDevIds.length,
+    'licenseBlocked': licenseBlocked,
+    'totalRemoved': removedDevIds.length,
   };
   let ret;
   // If there are any errors in the array, we log the details and inform which
@@ -1541,8 +1541,8 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       message: t('couldntRemoveSomeDevices', {amount: errCount}),
       errors: failedAtRemoval,
     };
-    audit.failed = userKnownIds.failed;
-    audit.totalFailed = errCount;
+    audit['failed'] = userKnownIds.failed;
+    audit['totalFailed'] = errCount;
   } else {
     ret = {
       success: true,
@@ -1846,7 +1846,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
             if (lanDevice.mac.toUpperCase() === lanDeviceId.toUpperCase()) {
               audit['lan_devices'] = {
                 [lanDevice.mac.toUpperCase()]: {
-                  upnp_permission: {
+                  'upnp_permission': {
                     old: lanDevice.upnp_permission,
                     new: lanDevicePerm,
                   },
@@ -2003,7 +2003,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
                                          req.params.activate);
         Audit.cpe(req.user, device, 'trigger', {
           cmd: 'wps',
-          activate: req.params.activate,
+          'activated': req.params.activate,
         });
         break;
       case 'pondata':
@@ -2648,7 +2648,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 if (wifiState) {
                   changes.wifi2.beacon_type = cpe.getBeaconType();
                 }
-                audit['wifi2State'] = {
+                audit['wifi2Enabled'] = {
                   old: matchedDevice.wifi_state,
                   new: wifiState,
                 };
@@ -2770,7 +2770,7 @@ deviceListController.setDeviceReg = function(req, res) {
                 if (wifiState5ghz) {
                   changes.wifi5.beacon_type = cpe.getBeaconType();
                 }
-                audit['wifi5State'] = {
+                audit['wifi5Enabled'] = {
                   old: matchedDevice.wifi_state_5ghz,
                   new: wifiState5ghz,
                 };
@@ -3345,7 +3345,7 @@ deviceListController.mapTr069PortRulesToIps = function(rulesArray) {
     }
     let rules = rulesPerIp[r.ip]; // referencing previous rules for ip.
     // if it's the first time we see that ip, we create an entry for it.
-    if (rules === undefined) rules = rulesPerIp[r.ip] = {ports: []};
+    if (rules === undefined) rules = rulesPerIp[r.ip] = {'ports': []};
     rules.ports.push(str); // adding badge to 'ports' array.
   }
   return rulesPerIp;
@@ -3360,7 +3360,7 @@ deviceListController.mapFirmwarePortRulesForDevices = function(devicesArray) {
   const rulesPerMac = {}; // maps MAC to Object containing 'ports' and 'dmz'.
   for (let d of devicesArray) {
     if (d.port.length === 0) continue; // treat as nonexistent for port forward.
-    const macRules = {ports: [], dmz: d.dmz}; // values for MAC.
+    const macRules = {'ports': [], 'dmz': d.dmz}; // values for MAC.
     rulesPerMac[d.mac.toLowerCase()] = macRules; // assigning values to MAC.
     const isAsymmetric = Boolean(d.router_port); // is asymmetric enabled.
     for (let i = 0; i < d.port.length; i++) { // for each port for a MAC.
@@ -4338,7 +4338,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
         let oldValue = lanDevice.is_blocked;
         if (oldValue !== isblocked) {
           auditLanDevices[lanDevice.mac] = {
-            is_blocked: {old: oldValue, new: isblocked},
+            'is_blocked': {old: oldValue, new: isblocked},
           };
         }
         lanDevice.is_blocked = isblocked;
