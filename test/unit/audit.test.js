@@ -1207,7 +1207,6 @@ describe('Controllers - Audit', () => {
             expect(audit.role).toHaveBeenCalledTimes(1);
             expect(audit.role.mock.lastCall[2]).toBe('create');
             expect(audit.role.mock.lastCall[3]).toEqual({
-              name: 'tester',
               grantNotificationPopups: true,
             });
             done();
