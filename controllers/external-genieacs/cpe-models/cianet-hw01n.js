@@ -95,8 +95,10 @@ cianetModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CATV_GponInterfaceConfig.Stats.BytesSent';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
-    'X_CATV_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.X_CATV_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.X_CATV_WANGponLinkConfig.VLANIDMark';
   fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.PreSharedKey.1.PreSharedKey';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
