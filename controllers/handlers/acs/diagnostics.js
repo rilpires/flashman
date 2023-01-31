@@ -12,6 +12,7 @@ const http = require('http');
 const debug = require('debug')('ACS_DIAGNOSTICS');
 const t = require('../../language').i18next.t;
 const request = require('request-promise-native');
+const metricsApi = require('../metrics/custom_metrics');
 
 let acsDiagnosticsHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
@@ -195,12 +196,10 @@ const calculateTraceDiagnostic = async function(
   );
 
   let traceResult = device.traceroute_results
-    .filter((e)=>!e.completed)
-    .find((e)=>e.address==rootData.target);
+    .filter((e)=>!e.completed)[0];
 
   if (!traceResult) return;
 
-  const traceTarget = rootData.target;
   const inTriesPerHop = parseInt(rootData.tries_per_hop);
   const maxHopCount = parseInt(rootData.max_hop_count);
   const numberOfHops = parseInt(rootData.number_of_hops);
@@ -230,7 +229,6 @@ const calculateTraceDiagnostic = async function(
 
   if (hasData || hasExceeded) {
     // const inNumberOfHops = parseInt(rootData.number_of_hops);
-    traceResult.address = traceTarget;
     traceResult.tries_per_hop = inTriesPerHop;
     traceResult.hops = [];
     // Clamping tries_per_hop
@@ -315,6 +313,7 @@ const calculateFreq = function(rawChannel) {
   return finalFreq;
 };
 
+// TO-DO: Set 'flm_diagnostics_states' gauge here with a proper diag_state label
 const calculateSiteSurveyDiagnostic = async function(
   device, cpe, data, siteSurveyFields,
 ) {
@@ -933,25 +932,28 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
         let permissions = DeviceVersion.devicePermissions(device);
         if (!permissions) {
           console.log('Failed: genie can\'t check device permissions');
-        } else if (permissions.grantPingTest && diagType == 'ping') {
-          await calculatePingDiagnostic(
-            device, cpe, data,
-            diagNecessaryKeys.ping,
-            fields.diagnostics.ping,
-          );
-        } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
-          await calculateSpeedDiagnostic(
-            device, data, diagNecessaryKeys.speedtest,
-            fields.diagnostics.speedtest,
-          );
-        } else if (permissions.grantTraceroute && diagType == 'traceroute') {
-          await calculateTraceDiagnostic(
-            device, cpe, data, fields.diagnostics.traceroute,
-          );
-        } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
-          await calculateSiteSurveyDiagnostic(
-            device, cpe, data, fields.diagnostics.sitesurvey,
-          );
+        } else {
+          metricsApi.newDiagnosticState(diagType, 'finished');
+          if (permissions.grantPingTest && diagType == 'ping') {
+            await calculatePingDiagnostic(
+              device, cpe, data,
+              diagNecessaryKeys.ping,
+              fields.diagnostics.ping,
+            );
+          } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
+            await calculateSpeedDiagnostic(
+              device, data, diagNecessaryKeys.speedtest,
+              fields.diagnostics.speedtest,
+            );
+          } else if (permissions.grantTraceroute && diagType == 'traceroute') {
+            await calculateTraceDiagnostic(
+              device, cpe, data, fields.diagnostics.traceroute,
+            );
+          } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
+            await calculateSiteSurveyDiagnostic(
+              device, cpe, data, fields.diagnostics.sitesurvey,
+            );
+          }
         }
       } catch (e) {
         console.log('Failed: genie response was not valid');

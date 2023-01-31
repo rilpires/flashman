@@ -1207,6 +1207,17 @@ userController.settings = function(req, res) {
               queryUserId != req.user._id) {
             indexContent.roles = roles;
           }
+
+          // In case this is a docker instance, we must hide HTTP button
+          indexContent.showTR069HTTP = true;
+          if (process.env.FLM_DOCKER_INSTANCE) {
+            indexContent.showTR069HTTP = false;
+          }
+          // If this is a docker instance with no stun support, hide stun button
+          indexContent.showTR069Stun = true;
+          if (process.env.FLM_DOCKER_STUN_DISABLE) {
+            indexContent.showTR069Stun = false;
+          }
           return res.render('settings', indexContent);
         }
       });

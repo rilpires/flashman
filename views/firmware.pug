@@ -52,7 +52,7 @@ block content
                                                   name="firmwaretr069form",
                                                   novalidate)
             .row.pl-0
-              .col-md-2.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Manufacturer')}
@@ -61,7 +61,7 @@ block content
                       data-json=tr069Infos, required)
                     option(value='')
                   .invalid-feedback= t('selectAnyVendor')
-              .col-md-2.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Model')}
@@ -70,15 +70,30 @@ block content
                       required)
                     option(value='')
                   .invalid-feedback= t('selectAnyModel')
-              .col-md-2.col-12.md-form
+              .col-md-3.md-form
                 .md-selectfield.form-control
                   label
                     | #{t('Version')}
                   select#select-version.custom-select.md-select(
-                    name="version", required)
+                    name="version",
+                    onchange="setVersionNameInput(this)",
+                    required
+                  )
                     option(value='')
                   .invalid-feedback= t('selectAnyVersion')
-              .col-md-6.col-12.mt-4
+              .col-md-3.md-form#input-version-name-col(
+                style= "display: none;"
+              )
+                .input-entry.mt-1
+                  label.active.ml-3.mt-1
+                    | #{t('VersionName')}
+                  input#input-version-name.form-control(
+                    name="versionname",
+                    oninput="updateVersionName()"
+                  )
+                  #input-version-name-invalid-feedback.invalid-feedback= t('typeVersionName')
+            .row
+              .col-md-12.col-12.mt-4
                 .input-group
                   .input-group-prepend
                     label.btn.btn-md.btn-primary.btn-file.my-0.ml-0

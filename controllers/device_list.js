@@ -4,6 +4,7 @@
 
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -22,7 +23,7 @@ const deviceHandlers = require('./handlers/devices');
 const meshHandlers = require('./handlers/mesh');
 const util = require('./handlers/util');
 const controlApi = require('./external-api/control');
-const acsDeviceInfo = require('./acs_device_info.js');
+const acsDeviceInfo = require('./acs_device_info');
 const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
@@ -36,6 +37,7 @@ const unzipper = require('unzipper');
 const request = require('request');
 const md5File = require('md5-file');
 const requestPromise = require('request-promise-native');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const imageReleasesDir = process.env.FLM_IMG_RELEASE_DIR;
 
 const stockFirmwareLink = 'https://cloud.anlix.io/s/KMBwfD7rcMNAZ3n/download?path=/&files=';
@@ -509,6 +511,7 @@ const initiatePingCommand = async function(device, user, sessionID) {
     );
   }
 
+  metricsApi.newDiagnosticState('ping', 'requested');
   let result;
   if (device.use_tr069) {
     result = await acsDiagnosticsHandler.firePingDiagnose(device);
@@ -557,6 +560,7 @@ const initiateSpeedTest = async function(device, user, sessionID) {
   let result;
   if (device.use_tr069) {
     result = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
+    metricsApi.newDiagnosticState('speedtest', 'requested');
   } else {
     if (device.current_diagnostic.customized) {
       if (!permissions.grantCustomSpeedTest) {
@@ -571,6 +575,7 @@ const initiateSpeedTest = async function(device, user, sessionID) {
       mqtt.anlixMessageRouterSpeedTest(mac,
         device.current_diagnostic.targets[0], user.name);
     }
+    metricsApi.newDiagnosticState('speedtest', 'requested');
     result = {success: true};
   }
   if (result.success) Audit.cpe(user, device, 'trigger', {cmd: 'speedtest'});
@@ -611,6 +616,7 @@ const initiateSiteSurvey = async function(device, user, sessionID) {
     );
   }
 
+  metricsApi.newDiagnosticState('sitesurvey', 'requested');
   let result;
   if (device.use_tr069) {
     result = await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
@@ -649,6 +655,7 @@ const initiateTracerouteTest = async function(device, user, sessionID) {
   }
 
   // Start Traceroute
+  metricsApi.newDiagnosticState('traceroute', 'requested');
   let result;
   if (device.use_tr069) {
     result = await acsDiagnosticsHandler.fireTraceDiagnose(device);
@@ -691,6 +698,29 @@ const checkNewDiagnosticAvailability = function(device) {
 deviceListController.index = function(req, res) {
   let indexContent = {};
   let elementsPerPage = 10;
+
+
+  // Check if tag filters are passed in the URL
+  if (
+    req.query && req.query.filter &&
+    req.query.filter.constructor === String
+  ) {
+    // Split filters by comma
+    let filterTags = req.query.filter.split(',');
+
+    // Filter filters with special characters or that are empty
+    filterTags = filterTags.filter((tag) => {
+      if (tag && util.xssValidationRegex.test(tag)) return true;
+      return false;
+    });
+
+    // Rebuild the filter with all tags
+    let allTags = filterTags.join(',');
+
+    // Assign the tags
+    indexContent.urlqueryfilterlist = allTags;
+  }
+
 
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
@@ -1027,7 +1057,6 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (new RegExp(`^(?:${t('update')}|${t('upgrade')}) ` +
     `(?:${t('on')}|${t('off')})$`).test(tag)) {
       // update|upgrade on|off.
-      query.use_tr069 = {$ne: true}; // only for flashbox.
       if (tag.includes(t('on'))) { // 'update on' or 'upgrade on'.
         query.do_update = {$eq: true};
       } else if (tag.includes(t('off'))) { // 'update off' or 'upgrade off'.
@@ -1300,16 +1329,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
             (release) => ([fancyModel, dbModel].includes(release.model)),
           );
           let permissions = cpe.modelPermissions();
-          /* get allowed version of upgrade by
-            current device version  */
-          let allowedVersions = cpe.allowedFirmwareUpgrades(
-            device.installed_release,
-            permissions,
-          );
-          /* filter by allowed version that
-            current version can jump to */
-          devReleases = devReleases.filter(
-            (release) => allowedVersions.includes(release.id));
+
           /* for tr069 devices enable "btn-group device-update"
             if have feature support for the model is granted */
           device.isUpgradeEnabled = permissions.features.firmwareUpgrade;
@@ -1450,8 +1470,8 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
   let failedAtRemoval = {};
   // Get devices from ids
   let projection = {
-    _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
-    mesh_master: true, mesh_slaves: true,
+    _id: true, use_tr069: true, alt_uid_tr069: true, acs_id: true,
+    serial_tr069: true, mesh_master: true, mesh_slaves: true,
   };
   let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
                                                            projection);
@@ -1484,16 +1504,25 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       failedAtRemoval[deviceId] =
         t('cantDeleteMeshWithSecondaries', {errorline: __line});
       userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
-    } else {
-      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      continue;
+    }
+    let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+    if (!removalOK) {
+      failedAtRemoval[deviceId] =
+        t('operationUnsuccessful', {errorline: __line});
+      userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
+      continue;
+    }
+    if (device.use_tr069) {
+      removalOK = await TasksAPI.deleteDeviceFromGenie(device);
       if (!removalOK) {
         failedAtRemoval[deviceId] =
-          t('operationUnsuccessful', {errorline: __line});
+          t('genieacsCommunicationError', {errorline: __line});
         userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
-      } else {
-        removedDevIds.push(deviceId);
+        continue;
       }
     }
+    removedDevIds.push(deviceId);
   }
   const audit = {
     cmd: 'remove_devices',

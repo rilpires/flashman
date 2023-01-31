@@ -1,7 +1,9 @@
 /* global __line */
 
+const DevicesAPI = require('./external-genieacs/devices-api');
+const ACSFirmware = require('./handlers/acs/firmware');
+const SchedulerCommon = require('./update_scheduler_common');
 const DeviceModel = require('../models/device');
-const Config = require('../models/config');
 const Role = require('../models/role');
 const DeviceVersion = require('../models/device_version');
 const mqtt = require('../mqtts');
@@ -16,11 +18,9 @@ const Audit = require('./audit');
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 
-const maxRetries = 3;
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
 let mutex = new Mutex();
 let mutexRelease = null;
-let watchdogIntervalID = null;
 let scheduleController = {};
 
 const returnStringOrEmptyStr = function(query) {
@@ -99,80 +99,14 @@ const checkValidRange = function(config) {
   }, false);
 };
 
-const scheduleOfflineWatchdog = function() {
-  // Check for update slots every minute
-  const interval = 1*60*1000;
-  if (watchdogIntervalID) return;
-  /*
-  set interval call a anonymous function that call a single async function,
-  so isn't necessary await
-  */
-  watchdogIntervalID = setInterval(
-  () => markSeveral(),
-  interval);
-};
-
-const removeOfflineWatchdog = function() {
-  // Clear interval if set
-  if (watchdogIntervalID) {
-    clearInterval(watchdogIntervalID);
-    watchdogIntervalID = null;
-  }
-};
 
 const resetMutex = function() {
   if (mutex.isLocked()) mutexRelease();
 };
 
-const getConfig = async function(lean=true, needActive=true) {
-  let config = null;
-  try {
-    if (lean) {
-      config = await Config.findOne({is_default: true}).lean();
-    } else {
-      config = await Config.findOne({is_default: true});
-    }
-    if (!config || !config.device_update_schedule ||
-        (needActive && !config.device_update_schedule.is_active)) {
-      return null;
-    }
-  } catch (err) {
-    console.log(err);
-    return null;
-  }
-  return config;
-};
-
-const getDevice = async function(mac, lean=false) {
-  let device = null;
-  const projection = {
-    port_mapping: false, ap_survey: false,
-    pingtest_results: false, speedtest_results: false,
-    firstboot_log: false, lastboot_log: false,
-  };
-  try {
-    if (lean) {
-      device = await DeviceModel.findById(mac.toUpperCase(), projection).lean();
-    } else {
-      device = await DeviceModel.findById(mac.toUpperCase(), projection);
-    }
-  } catch (err) {
-    console.log(err);
-    return null;
-  }
-  return device;
-};
-
-const configQuery = function(setQuery, pullQuery, pushQuery) {
-  let query = {};
-  if (setQuery) query ['$set'] = setQuery;
-  if (pullQuery) query ['$pull'] = pullQuery;
-  if (pushQuery) query ['$push'] = pushQuery;
-  return Config.updateOne({'is_default': true}, query);
-};
 
 const markSeveral = async function() {
-  let config = await getConfig();
+  let config = await SchedulerCommon.getConfig();
   if (!config) return; // this should never happen
   let inProgress =
     config.device_update_schedule.rule.in_progress_devices.length;
@@ -183,29 +117,46 @@ const markSeveral = async function() {
       return;
     } else if (result.success && !result.marked) {
       break;
+    } else if (result.success && result.marked && result.updated) {
+      // If the router was already updated, increment the slots in
+      // order to avoid not filling it
+      slotsAvailable++;
     }
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+scheduleController.__testMarkSeveral = markSeveral;
+
 
 scheduleController.recoverFromOffline = async function(config) {
   // Move those in doing status downloading back to to_do
   let rule = config.device_update_schedule.rule;
-  let pullArray = rule.in_progress_devices.filter((d)=>d.state==='downloading');
+  let pullArray = rule.in_progress_devices.filter(
+    (device)=>device.state === 'downloading',
+  );
   pullArray = pullArray.map((d)=>d.mac.toUpperCase());
   let pushArray = pullArray.map((mac)=>{
     return {mac: mac, state: 'update', retry_count: 0};
   });
-  await configQuery(
-    null,
-    {'device_update_schedule.rule.in_progress_devices': {
-      'mac': {'$in': pullArray},
-    }},
-    {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
-  );
+
+  // Make sure it is not empty
+  if (pullArray.length > 0) {
+    await SchedulerCommon.configQuery(
+      null,
+      {'device_update_schedule.rule.in_progress_devices': {
+        'mac': {'$in': pullArray},
+      }},
+      {'device_update_schedule.rule.to_do_devices': {'$each': pushArray}},
+    );
+  }
+
   // Mark next for updates after 5 minutes - we leave time for mqtt to return
   setTimeout(async function() {
     await markSeveral();
-    scheduleOfflineWatchdog();
+    SchedulerCommon.scheduleOfflineWatchdog(markSeveral);
   }, 5*60*1000);
 };
 
@@ -220,13 +171,13 @@ const markNextForUpdate = async function() {
   let interval = Math.random() * 500; // scale to seconds, cap at 500ms
   await new Promise((resolve) => setTimeout(resolve, interval));
   mutexRelease = await mutex.acquire();
-  let config = await getConfig();
+  let config = await SchedulerCommon.getConfig();
   if (!config) {
     mutexRelease();
     console.log('Scheduler: No active schedule found');
     return {success: false,
             error: t('noSchedulingActive', {errorline: __line})};
-  } else if (config.is_aborted) {
+  } else if (config.device_update_schedule.is_aborted) {
     mutexRelease();
     console.log('Scheduler: Schedule aborted');
     return {success: true, marked: false};
@@ -245,19 +196,45 @@ const markNextForUpdate = async function() {
   }
   let nextDevice = null;
 
+
+  // Steps needed to check if TR069 models are online
+  // Outside the for loop to avoid constantly read the database
+
+  // Get the threshold to still consider it online
+  let onlineThreshold = await deviceHandlers.buildTr069Thresholds();
+
+  // Get online TR069 models
+  let onlineTR069Devices = await DeviceModel.find({
+    use_tr069: true,
+    last_contact: {$gt: onlineThreshold.recovery},
+  }, {
+    acs_id: true,
+    model: true,
+  }).lean();
+
+  // Check if there is at least 1 router online
   for (let i = 0; i < devices.length; i++) {
-    const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
+    let isDevOn = false;
+    let onlineTR069 = onlineTR069Devices
+      .find((dev) => dev._id === devices[i].mac);
+    let onlineFlashbox = Object.values(mqtt.unifiedClientsMap).some((map)=>{
       return map[devices[i].mac];
     });
+
+    if (onlineTR069 || onlineFlashbox) {
+      isDevOn = true;
+    }
     if (isDevOn) {
       nextDevice = devices[i];
       break;
     }
   }
+
+  // If there is no device online to update
   if (!nextDevice) {
     // No online devices, mark them all as offline
     try {
-      await configQuery({
+      await SchedulerCommon.configQuery({
         'device_update_schedule.rule.to_do_devices.$[].state': 'offline',
       }, null, null);
     } catch (err) {
@@ -267,12 +244,26 @@ const markNextForUpdate = async function() {
     console.log('Scheduler: No online devices to update');
     return {success: true, marked: false};
   }
+
   try {
-    let device = await getDevice(nextDevice.mac);
+    let device = await SchedulerCommon.getDevice(nextDevice.mac);
     device.release = config.device_update_schedule.rule.release;
-    if (nextDevice.slave_count) {
+
+    /*
+     * There is a chance of a task is in ToDo but the device is already with the
+     * firmware installed. It may happen during an already done update but the
+     * task was not moved to done (when there is an error in flashman and it
+     * needs to recoverFromOffline). So the CPE will be updated again.
+     * Validating if the installed version is the same as the version to be
+     * installed might remove the abillity to update to the same firmware.
+     */
+
+    // Mesh upgrade, only upgrade slaves if master is not TR069
+    if (nextDevice.slave_count && device.use_tr069 === false) {
       let nextState;
-      const isV1ToV2 = (device.mesh_current === 1 && device.mesh_upgrade === 2);
+      const isV1ToV2 = (
+        nextDevice.mesh_current === 1 && nextDevice.mesh_upgrade === 2
+      );
       if (isV1ToV2) {
         // If this is mesh v1 -> v2 upgrade we need the topology
         nextState = 'v1tov2';
@@ -280,7 +271,7 @@ const markNextForUpdate = async function() {
         // all other cases can change to download step
         nextState = 'downloading';
       }
-      await configQuery(
+      await SchedulerCommon.configQuery(
         null,
         // Remove from to do state
         {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
@@ -297,18 +288,23 @@ const markNextForUpdate = async function() {
           },
         },
       );
+
       mutexRelease();
       console.log(
         'Scheduler: Mesh update scheduled for MAC ' + nextDevice.mac,
       );
+
       const meshUpdateStatus = await meshHandler.beginMeshUpdate(
         device,
       );
+
       if (!meshUpdateStatus.success) {
         throw new Error(t('updateStartFailedMeshNetwork'));
       }
+
+    // Normal upgrade
     } else {
-      await configQuery(
+      await SchedulerCommon.configQuery(
         null,
         // Remove from to do state
         {'device_update_schedule.rule.to_do_devices': {'mac': nextDevice.mac}},
@@ -325,14 +321,26 @@ const markNextForUpdate = async function() {
           },
         },
       );
+
       mutexRelease();
       console.log('Scheduler: agendado update MAC ' + nextDevice.mac);
+
       // Mark device for update
       device.do_update = true;
       device.do_update_status = 0;
       await device.save();
+
+      // Send message to update
       messaging.sendUpdateMessage(device);
-      mqtt.anlixMessageRouterUpdate(device._id);
+
+      if (device.use_tr069 === true) {
+        // Can not validate if could send the upgrade or not due to the time it
+        // takes to await
+        ACSFirmware.upgradeFirmware(device);
+      } else {
+        mqtt.anlixMessageRouterUpdate(device._id);
+      }
+
       // Start ack timeout
       deviceHandlers.timeoutUpdateAck(device._id, 'update');
     }
@@ -343,11 +351,17 @@ const markNextForUpdate = async function() {
   }
   return {success: true, marked: true};
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+scheduleController.__testMarkNextForUpdate = markNextForUpdate;
+
 
 scheduleController.initialize = async function(
   macList, slaveCountPerMac, currentMeshVerPerMac, upgradeMeshVerPerMac,
 ) {
-  let config = await getConfig();
+  let config = await SchedulerCommon.getConfig();
   if (!config) {
     return {success: false, error: t('noSchedulingActive',
                                      {errorline: __line})};
@@ -363,7 +377,7 @@ scheduleController.initialize = async function(
     };
   });
   try {
-    await configQuery(
+    await SchedulerCommon.configQuery(
       {
         'device_update_schedule.rule.to_do_devices': devices,
         'device_update_schedule.rule.in_progress_devices': [],
@@ -384,169 +398,13 @@ scheduleController.initialize = async function(
     console.log(err);
     return {success: false, error: t('saveError', {errorline: __line})};
   }
-  scheduleOfflineWatchdog();
+  SchedulerCommon.scheduleOfflineWatchdog(markSeveral);
   return {success: true};
 };
 
-scheduleController.successUpdate = async function(mac) {
-  let config = await getConfig();
-  if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
-  }
-  let count = config.device_update_schedule.device_count;
-  let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) {
-    return {success: false, error: t('macNotFound',
-                                     {errorline: __line})};
-  }
-  if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-                                     {errorline: __line})};
-  }
-  // Change from status updating to ok
-  try {
-    let remain = device.slave_updates_remaining - 1;
-    if (remain === 0) {
-      // This is either a regular router or the last device in a mesh network
-      // Move from in progress to done, with status ok
-      await configQuery(
-        // Make schedule inactive if this is last device to enter done state
-        {'device_update_schedule.is_active':
-          (rule.done_devices.length+1 !== count)},
-        // Remove from in progress state
-        {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
-        // Add to done, status ok
-        {
-          'device_update_schedule.rule.done_devices': {
-            'mac': mac,
-            'state': 'ok',
-            'slave_count': device.slave_count,
-            'slave_updates_remaining': 0,
-            'mesh_current': device.mesh_current,
-            'mesh_upgrade': device.mesh_upgrade,
-          },
-        },
-      );
-    } else {
-      // Update remaining devices to update on a mesh network
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.state':
-            'downloading',
-          'device_update_schedule.rule.in_progress_devices.$.slave_updates_remaining': remain,
-          'device_update_schedule.rule.in_progress_devices.$.retry_count': 0,
-        },
-      });
-    }
-  } catch (err) {
-    console.log(err);
-    return {success: false, error: t('saveError', {errorline: __line})};
-  }
-  if (rule.done_devices.length+1 === count) {
-    // This was last device to enter done state, schedule is done
-    removeOfflineWatchdog();
-  }
-  return {success: true};
-};
-
-scheduleController.failedDownload = async function(mac, slave='') {
-  let config = await getConfig();
-  if (!config) {
-    return {success: false, error: t('noSchedulingActive',
-                                     {errorline: __line})};
-  }
-  let count = config.device_update_schedule.device_count;
-  let rule = config.device_update_schedule.rule;
-  let device = rule.in_progress_devices.find((d)=>d.mac === mac);
-  if (!device) {
-    return {success: false, error: t('macNotFound',
-                                     {errorline: __line})};
-  }
-  if (config.device_update_schedule.is_aborted) {
-    return {success: false, error: t('schedulingAlreadyAborted',
-                                     {errorline: __line})};
-  }
-  try {
-    let setQuery = null;
-    let pullQuery = null;
-    if (device.retry_count >= maxRetries || config.is_aborted) {
-      // Will not try again or move to to_do, so check if last device to update
-      setQuery = {
-        'device_update_schedule.is_active':
-          (rule.done_devices.length+1 !== count)};
-
-      if (rule.done_devices.length+1 === count) {
-        // This was last device to enter done state, schedule is done
-        removeOfflineWatchdog();
-      }
-      // Force remove from in progress regardless of slave or not
-      pullQuery = {
-        'device_update_schedule.rule.in_progress_devices': {'mac': mac},
-      };
-    }
-    let pushQuery = null;
-    if (device.retry_count >= maxRetries) {
-      // Too many retries, add to done, status error
-      pushQuery = {
-        'device_update_schedule.rule.done_devices': {
-          'mac': mac,
-          'state': 'error',
-          'slave_count': device.slave_count,
-          'slave_updates_remaining': device.slave_updates_remaining,
-          'mesh_current': device.mesh_current,
-          'mesh_upgrade': device.mesh_upgrade,
-        },
-      };
-    } else if (config.is_aborted) {
-      // Avoid racing conditions by checking if device is already added
-      let device = rule.done_devices.find((d)=>d.mac === mac);
-      if (!device) {
-        // Schedule is aborted, add to done, status aborted
-        pushQuery = {
-          'device_update_schedule.rule.done_devices': {
-            'mac': mac,
-            'state': 'aborted',
-            'slave_count': device.slave_count,
-            'slave_updates_remaining': device.slave_updates_remaining,
-            'mesh_current': device.mesh_current,
-            'mesh_upgrade': device.mesh_upgrade,
-          },
-        };
-      }
-    } else {
-      let retry = device.retry_count + 1;
-      await Config.updateOne({
-        'is_default': true,
-        'device_update_schedule.rule.in_progress_devices.mac': mac,
-      }, {
-        '$set': {
-          'device_update_schedule.rule.in_progress_devices.$.retry_count':
-            retry,
-        },
-      });
-      let fieldsToUpdate = {release: rule.release};
-      if (slave) {
-        meshHandler.updateMeshDevice(slave, fieldsToUpdate);
-      } else {
-        meshHandler.updateMeshDevice(mac, fieldsToUpdate);
-      }
-      return {success: true};
-    }
-    await configQuery(setQuery, pullQuery, pushQuery);
-  } catch (err) {
-    console.log(err);
-    return {success: false, error: t('saveError', {errorline: __line})};
-  }
-  return {success: true};
-};
 
 scheduleController.abortSchedule = async function(req, res) {
-  let config = await getConfig();
+  let config = await SchedulerCommon.getConfig();
   if (!config) {
     return res.status(500).json({
       success: false, error: t('noSchedulingActive', {errorline: __line})});
@@ -557,7 +415,11 @@ scheduleController.abortSchedule = async function(req, res) {
       error: t('schedulingAlreadyAborted', {errorline: __line})});
   }
   try {
-    await configQuery({'device_update_schedule.is_aborted': true}, null, null);
+    await SchedulerCommon.configQuery(
+      {'device_update_schedule.is_aborted': true},
+      null,
+      null,
+    );
     // Mark all todo devices as aborted
     let rule = config.device_update_schedule.rule;
     let pushArray = rule.to_do_devices.map((d)=>{
@@ -597,7 +459,7 @@ scheduleController.abortSchedule = async function(req, res) {
       'device_update_schedule.rule.to_do_devices': [],
       'device_update_schedule.rule.in_progress_devices': [],
     };
-    await configQuery(
+    await SchedulerCommon.configQuery(
       setQuery,
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
@@ -607,7 +469,7 @@ scheduleController.abortSchedule = async function(req, res) {
     Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
 
     rule.in_progress_devices.forEach(async (d) => {
-      let device = await getDevice(d.mac);
+      let device = await SchedulerCommon.getDevice(d.mac);
       await meshHandler.syncUpdateCancel(device, 4);
     });
   } catch (err) {
@@ -617,7 +479,7 @@ scheduleController.abortSchedule = async function(req, res) {
       message: t('saveError', {errorline: __line}),
     });
   }
-  removeOfflineWatchdog();
+  SchedulerCommon.removeOfflineWatchdog();
   resetMutex();
   return res.status(200).json({
     success: true,
@@ -625,11 +487,40 @@ scheduleController.abortSchedule = async function(req, res) {
 };
 
 scheduleController.getDevicesReleases = async function(req, res) {
+  // Validate the full request - everything is treated as string
+  if (
+    !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
+    !req.body.page_num || !req.body.page_count ||
+    req.body.use_csv.constructor !== String ||
+    req.body.use_all.constructor !== String ||
+    req.body.page_num.constructor !== String ||
+    req.body.page_count.constructor !== String ||
+    req.body.filter_list.constructor !== String
+  ) {
+    return res.status(200).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
   let queryContents = req.body.filter_list.split(',');
+
+
+  // Validate numbers
+  if (
+    isNaN(pageNumber) || pageNumber < 1 ||
+    isNaN(pageCount) || pageCount < 1
+  ) {
+    return res.status(200).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
 
   const userRole = await Role.findOne(
     {name: util.returnObjOrEmptyStr(req.user.role)});
@@ -659,7 +550,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
           if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
-            let device = await getDevice(line.field1, true);
+            let device = await SchedulerCommon.getDevice(line.field1, true);
             return device;
           }
         });
@@ -689,13 +580,31 @@ scheduleController.getDevicesReleases = async function(req, res) {
     });
   }
   queryPromise.then((matchedDevices)=>{
+    // If could not find devices
+    if (!matchedDevices || matchedDevices.length === 0) {
+      return res.status(500).json({
+        success: false,
+        message: t('parametersErrorNoCpe', {errorline: __line}),
+      });
+    }
+
     deviceListController.getReleases(userRole, req.user.is_superuser, true)
     .then(function(releasesAvailable) {
       let devicesByModel = {};
+      let tr069Models = [];
       let meshNetworks = [];
       let onuCount = 0;
       let totalCount = 0;
       let releaseInfo = [];
+
+      // If could not find releases
+      if (!releasesAvailable) {
+        return res.status(500).json({
+          success: false,
+          message: t('serverError', {errorline: __line}),
+        });
+      }
+
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
       meshHandler.enhanceSearchResult(matchedDevices)
         .then(async (extraDevices) => {
@@ -703,17 +612,52 @@ scheduleController.getDevicesReleases = async function(req, res) {
         for (let i=0; i<matchedDevices.length; i++) {
           let device = matchedDevices[i];
           totalCount += 1;
-          let model = device.model.replace('N/', '');
+
+          let model = device.model;
+
+          // Only replace for firmware, firmwares before tr-069 update will
+          // come with use_tr069 as undefined
+          if (!device.use_tr069) {
+            model = model.replace('N/', '');
+          }
+
+          // Check if there is any firmware for TR069
           if (device.use_tr069) {
-            onuCount += 1 + (device.mesh_slaves ?
-              device.mesh_slaves.length : 0);
+            // Get the TR069 device model name
+            let tr069Device = DevicesAPI.instantiateCPEByModelFromDevice(
+              device,
+            );
+            let tr069Model = tr069Device.cpe.identifier.model;
+
+            // Add the model to the Device list
+            if (!devicesByModel[tr069Model]) {
+              // Assign the count to the list
+              devicesByModel[tr069Model] = {
+                count: 1,
+              };
+
+            // If the model already exists
+            } else {
+              devicesByModel[tr069Model].count += 1;
+            }
+
+            // Add to the list of tr069 models
+            tr069Models.push(tr069Model);
+
+            // Increment the onu count
+            onuCount += 1;
+
+          // Check other cases for firmware and mesh
           } else if (!device.mesh_master && !(device.mesh_slaves
             && device.mesh_slaves.length > 0)) {
             // not a mesh device
             if (!devicesByModel[model]) {
-              devicesByModel[model] = 1;
+              devicesByModel[model] = {
+                count: 1,
+                firmwares_allowed: [],
+              };
             } else {
-              devicesByModel[model] += 1;
+              devicesByModel[model].count += 1;
             }
           } else if (device.mesh_slaves && device.mesh_slaves.length > 0) {
             const allowUpgrade = deviceHandlers.isUpgradePossible(device,
@@ -742,21 +686,42 @@ scheduleController.getDevicesReleases = async function(req, res) {
             });
           }
         }
+
+        // Check which routers can be updated
         releasesAvailable.forEach((release)=>{
+          const validModels = release.model;
+
           let count = 0;
+          let isTR069 = false;
           let meshIncompatibles = 0;
           let meshRolesIncompatibles = 0;
           let missingModels = [];
-          const validModels = release.model;
+
+          // Loop every release and check if it is for a TR069 router
+          validModels.forEach(function eachModel(model) {
+            if (tr069Models.includes(model)) {
+              isTR069 = true;
+            }
+          });
+
+          // Loop through devices
           if (devicesByModel && Object.keys(devicesByModel).length) {
             Object.keys(devicesByModel).forEach(function eachKey(model) {
-              if (validModels.includes(model)) {
-                count += devicesByModel[model];
-              } else {
+              // Verify if the model is in the update list
+              if (
+                validModels.includes(model) &&
+                devicesByModel[model]
+              ) {
+                count += devicesByModel[model].count;
+
+              // Otherwise add to the missing list, if it matches the type
+              // Only push TR069 models if the release is TR069
+              } else if (tr069Models.includes(model) === isTR069) {
                 missingModels.push(model);
               }
             });
           }
+
           const releaseMeshVersion =
             DeviceVersion.versionCompare(release.flashbox_version, '0.32.0')
             < 0 ? 1 : 2;
@@ -795,6 +760,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
           releaseInfo.push({
             id: release.id,
             count: count,
+            isTR069: isTR069,
             meshIncompatibles: meshIncompatibles,
             meshRolesIncompatibles: meshRolesIncompatibles,
             missingModels: missingModels,
@@ -837,7 +803,9 @@ scheduleController.uploadDevicesFile = function(req, res) {
       let promises = result.map(async (line) => {
         if (!line.field1.match(util.macRegex)) {
           return 0;
-        } else if (await getDevice(line.field1, true) !== null) {
+        } else if (
+          await SchedulerCommon.getDevice(line.field1, true) !== null
+        ) {
           return 1;
         } else {
           return 0;
@@ -854,15 +822,71 @@ scheduleController.uploadDevicesFile = function(req, res) {
 };
 
 scheduleController.startSchedule = async function(req, res) {
+  // Validate the full request - everything is treated as string
+  if (
+    !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
+    !req.body.use_time_restriction || !req.body.page_num ||
+    !req.body.page_count || req.body.release === null ||
+    req.body.cpes_wont_return === null ||
+    req.body.cpes_wont_return === undefined ||
+    req.body.release === undefined || req.body.filter_list === null ||
+    req.body.filter_list === undefined || req.body.use_search === null ||
+    req.body.use_search === undefined || req.body.time_restriction === null ||
+    req.body.time_restriction === undefined ||
+    req.body.use_search.constructor !== String ||
+    req.body.use_csv.constructor !== String ||
+    req.body.use_all.constructor !== String ||
+    req.body.use_time_restriction.constructor !== String ||
+    req.body.cpes_wont_return.constructor !== String ||
+    req.body.release.constructor !== String ||
+    req.body.page_num.constructor !== String ||
+    req.body.page_count.constructor !== String ||
+    req.body.time_restriction.constructor !== String ||
+    req.body.filter_list.constructor !== String
+  ) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
   let searchTags = returnStringOrEmptyStr(req.body.use_search);
   let useCsv = (req.body.use_csv === 'true');
   let useAllDevices = (req.body.use_all === 'true');
   let hasTimeRestriction = (req.body.use_time_restriction === 'true');
+  let cpesWontReturn = (req.body.cpes_wont_return === 'true');
   let release = returnStringOrEmptyStr(req.body.release);
   let pageNumber = parseInt(req.body.page_num);
   let pageCount = parseInt(req.body.page_count);
-  let timeRestrictions = JSON.parse(req.body.time_restriction);
+  let timeRestrictions = [];
   let queryContents = req.body.filter_list.split(',');
+
+
+  // Validate json, it must always work even though it must be a blank array
+  try {
+    timeRestrictions = JSON.parse(req.body.time_restriction);
+  } catch (error) {
+    console.log('Error parsing json in line ' + __line + ': ' + error);
+
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
+
+  // Validate numbers
+  if (
+    isNaN(pageNumber) || pageNumber < 1 ||
+    isNaN(pageCount) || pageCount < 1
+  ) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
+
 
   let finalQuery = null;
   let deviceList = [];
@@ -892,7 +916,7 @@ scheduleController.startSchedule = async function(req, res) {
           if (!line.field1.match(util.macRegex)) {
             return null;
           } else {
-            let device = await getDevice(line.field1, true);
+            let device = await SchedulerCommon.getDevice(line.field1, true);
             return device;
           }
         });
@@ -934,64 +958,123 @@ scheduleController.startSchedule = async function(req, res) {
         });
       }
       let modelsAvailable = matchedRelease.model;
+
       // Filter devices that have a valid model
       if (!useCsv && !useAllDevices) matchedDevices = matchedDevices.docs;
+
+      // Concatenate mesh siblings/master
       let extraDevices = await meshHandler.enhanceSearchResult(matchedDevices);
       matchedDevices = matchedDevices.concat(extraDevices);
+
       matchedDevices = matchedDevices.filter((device)=>{
-        if (device.use_tr069) return false; // Discard TR-069 devices
-        if (device.mesh_master) return false; // Discard mesh slaves
-        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
-          // Discard master if any slave has incompatible model
+        // Discard Mesh slaves
+        if (device.mesh_master) return false;
+
+        // TR-069 will not be checked against firmware permissions and if it is
+        // updating to the same version
+
+        // Discard mesh if at least one cannot update
+        if (
+          device.mesh_slaves &&
+          device.mesh_slaves.length > 0 &&
+          device.use_tr069 === false
+        ) {
           let valid = true;
+
+          // Loop all mesh slaves for this mesh master
           device.mesh_slaves.forEach((slave)=>{
             if (!valid) return;
+
             let slaveDevice = matchedDevices.find((d)=>d._id===slave);
+
+            // Check slave
             if (slaveDevice && ('model' in slaveDevice)) {
               let slaveModel = slaveDevice.model.replace('N/', '');
+
+              // Check if there is a firmware for this model
               valid = modelsAvailable.includes(slaveModel);
+
+              // Check if the upgrade can be done in this mesh
               const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
                 slaveDevice, matchedRelease.flashbox_version);
               if (!allowMeshUpgrade) valid = false;
             }
           });
+
           if (!valid) return false;
         }
-        const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
-          device, matchedRelease.flashbox_version);
-        if (!allowMeshUpgrade) return false;
-        let model = device.model.replace('N/', '');
+
+        let model = device.model;
+
+        // Only validate mesh master if it is Flashbox, firmwares before tr-069
+        // update will come with use_tr069 as undefined
+        if (!device.use_tr069) {
+          const allowMeshUpgrade = deviceHandlers.isUpgradePossible(
+            device, matchedRelease.flashbox_version);
+          if (!allowMeshUpgrade) return false;
+
+          model.replace('N/', '');
+
+        // If TR069, use the model from ACS
+        } else if (device.use_tr069 === true) {
+          // Get the TR069 device model name
+          model = DevicesAPI.instantiateCPEByModelFromDevice(
+            device,
+          ).cpe.identifier.model;
+        }
+
         /* below return is true if array of strings contains model name
            inside any of its strings, where each string is a concatenation of
            both model name and version. */
         return modelsAvailable.some(
           (modelAndVersion) => modelAndVersion.includes(model));
       });
+
+      // If there is no devices to update, return error
       if (matchedDevices.length === 0) {
         return res.status(500).json({
           success: false,
           message: t('parametersErrorNoCpe', {errorline: __line}),
         });
       }
+
       let slaveCount = {};
       let currentMeshVersion = {};
       let upgradeMeshVersion = {};
+
       let macList = matchedDevices.map((device)=>{
-        if (device.mesh_slaves && device.mesh_slaves.length > 0) {
+        if (
+          !device.use_tr069 &&
+          device.mesh_slaves &&
+          device.mesh_slaves.length > 0
+        ) {
           slaveCount[device._id] = device.mesh_slaves.length;
         } else {
           slaveCount[device._id] = 0;
         }
-        const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
-          device.version, matchedRelease.flashbox_version);
+
+        // Get the firmware version V1 or V2
+        let typeUpgrade;
+        if (device.use_tr069 === true) {
+          // TR069 will return versions as 0
+          typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh('', '');
+        } else {
+          typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
+            device.version,
+            matchedRelease.flashbox_version,
+          );
+        }
+
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
+
         return device._id;
       });
+
       // Save scheduler configs to database
       let config = null;
       try {
-        config = await getConfig(false, false);
+        config = await SchedulerCommon.getConfig(false, false);
         config.device_update_schedule.is_active = true;
         config.device_update_schedule.is_aborted = false;
         config.device_update_schedule.used_time_range = hasTimeRestriction;
@@ -1029,6 +1112,7 @@ scheduleController.startSchedule = async function(req, res) {
           config.device_update_schedule.allowed_time_ranges = [];
         }
         config.device_update_schedule.rule.release = release;
+        config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
         await config.save();
       } catch (err) {
         console.log(err);
@@ -1075,7 +1159,7 @@ scheduleController.startSchedule = async function(req, res) {
 };
 
 scheduleController.updateScheduleStatus = async function(req, res) {
-  let config = await getConfig(true, false);
+  let config = await SchedulerCommon.getConfig(true, false);
   if (!config) {
     return res.status(500).json({
       message: t('noSchedulingRegistered', {errorline: __line}),
@@ -1142,7 +1226,7 @@ const translateState = function(state) {
 };
 
 scheduleController.scheduleResult = async function(req, res) {
-  let config = await getConfig(true, false);
+  let config = await SchedulerCommon.getConfig(true, false);
   if (!config) {
     return res.status(500).json({
       message: t('noSchedulingRegistered', {errorline: __line}),

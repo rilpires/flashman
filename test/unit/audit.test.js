@@ -246,6 +246,11 @@ jest.mock('../../controllers/acs_device_info', () => ({
   changeAcRules: () => ({success: true}),
 }));
 
+jest.mock('../../controllers/external-genieacs/tasks-api', () => ({
+  deleteDeviceFromGenie: async () => true,
+}));
+
+
 
 describe('Controllers - Audit', () => {
   let connection;
@@ -1316,10 +1321,15 @@ describe('Controllers - Audit', () => {
         const req = {
           body: {
             use_search: 'lala',
-            release: 'release1',
-            time_restriction: '10',
-            filter_list: 'AB:AB:AB:AB:AB:AB',
+            use_csv: 'false',
             use_all: 'true',
+            use_time_restriction: 'false',
+            time_restriction: '10',
+            release: 'release1',
+            filter_list: 'AB:AB:AB:AB:AB:AB',
+            cpes_wont_return: 'false',
+            page_num: '1',
+            page_count: '1',
           },
           user: {
             role: 'tester',

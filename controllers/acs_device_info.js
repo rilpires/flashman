@@ -2,6 +2,7 @@
 /* global __line */
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
+const SchedulerCommon = require('./update_scheduler_common');
 const controlApi = require('./external-api/control');
 const DeviceModel = require('../models/device');
 const DeviceVersion = require('../models/device_version');
@@ -584,7 +585,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   device.last_contact = dateNow;
   // Devices recovering from hard reset or upgrading their firmware need to go
   // through an immediate full sync
-  if (device.do_update || device.recovering_tr069_reset) {
+  if (
+    (device.do_update && device.do_update_status === 0) ||
+    device.recovering_tr069_reset
+  ) {
     device.last_tr069_sync = dateNow;
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
@@ -792,12 +796,10 @@ const fetchSyncResult = async function(
   let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
   // Remove * from each field - projection does not work with wildcards
   parameterNames = parameterNames.map((p) => {
-    if (useLastIndexOnWildcard) {
-      return p.replace(/\.\*.*/g, '');
-    } else {
-      return p.replace(/\*/g, '1');
-    }
+    return p.replace(/\.\*.*/g, '');
   });
+  // Temporary to fix collisions while we work on a permanent solution
+  parameterNames = parameterNames.filter((p) => !p.match('Device.IP.Interface.'));
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
@@ -1110,7 +1112,10 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 // Complete CPE information synchronization gets done here - compare cpe data
 // with registered device data and sync fields accordingly
 const syncDeviceData = async function(acsID, device, data, permissions) {
-  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
+  let config = await Config.findOne(
+    {is_default: true},
+    {tr069: true},
+  ).lean()
   .catch((err) => {
     debug(err);
     return null;
@@ -1136,18 +1141,44 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
+
   // Update firmware version, if data available
   if (data.common.version && data.common.version.value) {
     device.version = data.common.version.value.trim();
-    // Both of these fields need to be in sync
-    if (device.version !== device.installed_release) {
-      device.installed_release = device.version;
+
+
+    // Check if the device is updating
+    if (device.do_update) {
+      let cpeDidUpdate = false;
+
+      // If the device is updating with a different release than it is
+      // installed
+      if (device.release !== device.installed_release) {
+        // The version that device informed is different than the installed one
+        cpeDidUpdate = (device.version !== device.installed_release);
+      } else {
+        /*
+         * This is the case where the device is updating to the same version
+         * For now, it is not possible to know if the device is already updated
+         * or waiting for update (and sent this sync) because the version is
+         * the same as the installed version. So assume it was updated.
+         */
+        cpeDidUpdate = true;
+      }
+
+      // Remove the flags if updated
+      if (cpeDidUpdate) {
+        device.do_update = false;
+        device.do_update_status = 1;
+
+        // Tell the scheduler that it might have been updated
+        SchedulerCommon.successUpdate(device._id);
+      }
     }
-    // Remove firmware update flags
-    if (device.installed_release === device.release) {
-      device.do_update = false;
-      device.do_update_status = 1;
-    }
+
+    // Always update this parameter, as the user could have made a manual
+    // upgrade
+    device.installed_release = device.version;
   }
 
   // Update hardware version, if data available
@@ -1705,6 +1736,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testSyncDeviceData = syncDeviceData;
 
 const sendRebootCommand = async function(acsID) {
   let task = {name: 'reboot'};

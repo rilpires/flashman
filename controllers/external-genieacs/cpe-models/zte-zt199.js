@@ -6,7 +6,6 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'ZT199'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.firmwareUpgrade = true;
   permissions.features.meshWifi = true;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;

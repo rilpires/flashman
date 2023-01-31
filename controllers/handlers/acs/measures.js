@@ -3,7 +3,7 @@
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
-const utilHandlers = require('../util.js');
+const utilHandlers = require('../util');
 const sio = require('../../../sio');
 const http = require('http');
 const debug = require('debug')('ACS_DEVICES_MEASURES');
@@ -54,8 +54,17 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
         }
       }
       let success = false;
-      if (utilHandlers.checkForNestedKey(data, recvField+'._value', useLastIndexOnWildcard) &&
-          utilHandlers.checkForNestedKey(data, sentField+'._value', useLastIndexOnWildcard)) {
+      let checkRecv = utilHandlers.checkForNestedKey(
+        data,
+        recvField+'._value',
+        useLastIndexOnWildcard,
+      );
+      let checkSent = utilHandlers.checkForNestedKey(
+        data,
+        sentField+'._value',
+        useLastIndexOnWildcard,
+      );
+      if (checkRecv && checkSent) {
         success = true;
         wanBytes = {
           recv: utilHandlers.getFromNestedKey(
@@ -90,6 +99,13 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
   let device;
   try {
     device = await DeviceModel.findOne({acs_id: acsID}).lean();
+
+    if (!device) {
+      return {
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      };
+    }
   } catch (e) {
     console.log('Error:', e);
     return {success: false,
@@ -122,6 +138,7 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
     resp.setEncoding('utf8');
     let data = '';
     let ponSignal = {};
+    let ponArrayMeasures = {};
     resp.on('data', (chunk)=>data+=chunk);
     resp.on('end', async () => {
       if (data.length > 0) {
@@ -137,41 +154,96 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
           utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
         success = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerField + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerField + '._value'),
+          rxpower: utilHandlers.getFromNestedKey(
+            data,
+            rxPowerField + '._value',
+          ),
+
+          txpower: utilHandlers.getFromNestedKey(
+            data,
+            txPowerField + '._value',
+          ),
         };
-      } else if (utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
-                 utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+      } else if (
+        utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
+        utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')
+      ) {
         success = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerFieldEpon + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerFieldEpon + '._value'),
+          rxpower: utilHandlers.getFromNestedKey(
+            data,
+            rxPowerFieldEpon + '._value',
+          ),
+
+          txpower: utilHandlers.getFromNestedKey(
+            data,
+            txPowerFieldEpon + '._value',
+          ),
         };
       }
+
       if (success) {
         let deviceEdit = await DeviceModel.findById(mac);
+        let deviceModified = false;
+
         if (!deviceEdit) return;
         deviceEdit.last_contact = Date.now();
+
+        // Pon Rx Power
         if (ponSignal.rxpower) {
           ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+
+          // Do not modify if rxpower is invalid
+          if (ponSignal.rxpower) {
+            deviceEdit.pon_rxpower = ponSignal.rxpower;
+            deviceModified = true;
+          }
         }
+
+        // Pon Tx Power
         if (ponSignal.txpower) {
           ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
+
+          // Do not modify if txpower is invalid
+          if (ponSignal.txpower) {
+            deviceEdit.pon_txpower = ponSignal.txpower;
+            deviceModified = true;
+          }
         }
-        ponSignal = acsMeasuresHandler.appendPonSignal(
+
+
+        ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
           deviceEdit.pon_signal_measure,
           ponSignal.rxpower,
           ponSignal.txpower,
         );
-        deviceEdit.pon_signal_measure = ponSignal;
-        deviceEdit.pon_rxpower = ponSignal.rxpower;
-        deviceEdit.pon_txpower = ponSignal.txpower;
-        await deviceEdit.save().catch((err) => {
-          console.log('Error saving pon signal: ' + err);
-        });
+
+        if (Object.keys(ponArrayMeasures).length) {
+          deviceEdit.pon_signal_measure = ponArrayMeasures;
+          deviceModified = true;
+        }
+
+
+        // Only save the device if modified the device, reducing the quantity
+        // of unneeded await and save calls
+        if (deviceModified === true) {
+          await deviceEdit.save().catch((err) => {
+            console.log('Error saving pon signal: ' + err);
+          });
+        }
       }
-      sio.anlixSendPonSignalNotification(mac, {ponsignalmeasure: ponSignal});
-      return ponSignal;
+
+      // Send notification for app if had at least one entry in
+      // ponArrayMeasures
+      if (Object.keys(ponArrayMeasures).length) {
+        sio.anlixSendPonSignalNotification(
+          mac,
+          {ponsignalmeasure: ponArrayMeasures},
+        );
+      }
+
+
+      return ponArrayMeasures;
     });
   });
   req.end();
@@ -190,27 +262,20 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   let mac = device._id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let PPPoEUser1 = fields.wan.pppoe_user.replace('*', 1).replace('*', 1);
-  let PPPoEUser2 = fields.wan.pppoe_user.replace('*', 1).replace('*', 2);
-  let upTimeField1;
-  let upTimeField2;
-  let upTimePPPField1;
-  let upTimePPPField2;
+  let PPPoEUser = fields.wan.pppoe_user.replace(/\.\*.*/g, '');
+  let upTimeField;
+  let upTimePPPField;
   let rxPowerField;
   let txPowerField;
   let rxPowerFieldEpon;
   let txPowerFieldEpon;
   let query = {_id: acsID};
-  let projection = fields.common.uptime +
-    ',' + PPPoEUser1 + ',' + PPPoEUser2;
+  let projection = fields.common.uptime + ',' + PPPoEUser;
 
   if (cpe.modelPermissions().wan.hasUptimeField) {
-    upTimeField1 = fields.wan.uptime.replace('*', 1);
-    upTimeField2 = fields.wan.uptime.replace('*', 2);
-    upTimePPPField1 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 1);
-    upTimePPPField2 = fields.wan.uptime_ppp.replace('*', 1).replace('*', 2);
-    projection += ',' + upTimeField1 + ',' + upTimeField2 +
-      ',' + upTimePPPField1 + ',' + upTimePPPField2;
+    upTimeField = fields.wan.uptime.replace(/\.\*.*/g, '');
+    upTimePPPField = fields.wan.uptime_ppp.replace(/\.\*.*/g, '');
+    projection += ',' + upTimeField + ',' + upTimePPPField;
   }
 
   if (fields.wan.pon_rxpower && fields.wan.pon_txpower) {
@@ -251,42 +316,38 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
       let successSys = false;
       let successWan = false;
       let successRxPower = false;
-      if (utilHandlers.checkForNestedKey(data, fields.common.uptime+'._value')) {
+      let checkFunction = utilHandlers.checkForNestedKey;
+      let getFunction = utilHandlers.getFromNestedKey;
+
+      if (checkFunction(data, fields.common.uptime + '._value')) {
         successSys = true;
-        sysUpTime = utilHandlers.getFromNestedKey(data, fields.common.uptime+'._value');
+        sysUpTime = getFunction(data, fields.common.uptime + '._value');
       }
-      if (utilHandlers.checkForNestedKey(data, PPPoEUser1+'._value')) {
+      if (checkFunction(data, fields.wan.pppoe_user + '._value')) {
         successWan = true;
-        let hasPPPoE = utilHandlers.getFromNestedKey(data, PPPoEUser1+'._value');
-        if (hasPPPoE && utilHandlers.checkForNestedKey(data, upTimePPPField1+'._value')) {
-          wanUpTime = utilHandlers.getFromNestedKey(data, upTimePPPField1+'._value');
+        let hasPPPoE = getFunction(data, fields.wan.pppoe_user + '._value');
+        if (
+          hasPPPoE && checkFunction(data, fields.wan.uptime_ppp + '._value')
+        ) {
+          wanUpTime = getFunction(data, fields.wan.uptime_ppp + '._value');
         }
-      } else if (utilHandlers.checkForNestedKey(data, PPPoEUser2+'._value')) {
+      } else if (checkFunction(data, fields.wan.uptime + '._value')) {
         successWan = true;
-        let hasPPPoE = utilHandlers.getFromNestedKey(data, PPPoEUser2+'._value');
-        if (hasPPPoE && utilHandlers.checkForNestedKey(data, upTimePPPField2+'._value')) {
-          wanUpTime = utilHandlers.getFromNestedKey(data, upTimePPPField2+'._value');
-        }
-      } else if (utilHandlers.checkForNestedKey(data, upTimeField1+'._value')) {
-        successWan = true;
-        wanUpTime = utilHandlers.getFromNestedKey(data, upTimeField1+'._value');
-      } else if (utilHandlers.checkForNestedKey(data, upTimeField2+'._value')) {
-        successWan = true;
-        wanUpTime = utilHandlers.getFromNestedKey(data, upTimeField2+'._value');
+        wanUpTime = getFunction(data, fields.wan.uptime + '._value');
       }
-      if (utilHandlers.checkForNestedKey(data, rxPowerField + '._value') &&
-          utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
+      if (checkFunction(data, rxPowerField + '._value') &&
+          checkFunction(data, txPowerField + '._value')) {
         successRxPower = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerField + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerField + '._value'),
+          rxpower: getFunction(data, rxPowerField + '._value'),
+          txpower: getFunction(data, txPowerField + '._value'),
         };
-      } else if (utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
-                 utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')) {
+      } else if (checkFunction(data, rxPowerFieldEpon + '._value') &&
+                 checkFunction(data, txPowerFieldEpon + '._value')) {
         successRxPower = true;
         ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(data, rxPowerFieldEpon + '._value'),
-          txpower: utilHandlers.getFromNestedKey(data, txPowerFieldEpon + '._value'),
+          rxpower: getFunction(data, rxPowerFieldEpon + '._value'),
+          txpower: getFunction(data, txPowerFieldEpon + '._value'),
         };
       }
       if (successSys || successWan || successRxPower) {
@@ -373,6 +434,14 @@ acsMeasuresHandler.appendBytesMeasure = function(original, recv, sent) {
 
 acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   if (!original) original = {};
+
+  if (
+    rxPower === null || rxPower === undefined || isNaN(rxPower) ||
+    txPower === null || txPower === undefined || isNaN(txPower)
+  ) {
+    return original;
+  }
+
   try {
     let now = Math.floor(Date.now() / 1000);
     let dbms = JSON.parse(JSON.stringify(original));
@@ -389,7 +458,10 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
       let smallest = Math.min(...keysNum);
       delete dbms[smallest];
     }
+
+    // Only append the values if are numbers
     dbms[now] = [rxPower, txPower];
+
     return dbms;
   } catch (e) {
     debug(`appendPonSignal Exception: ${e}`);

@@ -7,6 +7,42 @@ import 'datatables.net-bs4';
 
 const t = i18next.t;
 
+
+// This regex is copied from controllers/handlers/util/
+// xssValidationRegex.
+const VERSION_NAME_REGEX = /^[^&/\\"'`<>]{1,128}$/;
+
+
+/*
+ *  Description:
+ *    This functions shows and hides the version name input when adding
+ *    a TR-069 firmware.
+ *
+ *  Input:
+ *    display - A boolean to change the visibility of the input firmware name
+ *
+ *  Output:
+ */
+const changeVersionNameInputDisplay = function(display) {
+  if (display === true) {
+    // Set the version name input as required
+    $('#input-version-name').prop('required', true);
+
+    // Clear the input
+    $('#input-version-name').val('');
+
+    // Show the version name input
+    $('#input-version-name-col').show();
+  } else {
+    // Set the version name input as not required
+    $('#input-version-name').prop('required', false);
+
+    // Hide the version name input
+    $('#input-version-name-col').hide();
+  }
+};
+
+
 const fetchLocalFirmwares = function(firmwaresTable) {
   firmwaresTable.clear().draw();
   $.get('/firmware/fetch', function(res) {
@@ -61,6 +97,10 @@ const fetchModels = function(tr069Infos) {
 
 window.updateModels = function(input) {
   let tr069Infos = getFirmwareStorage('infos');
+
+  // Remove the version name input
+  changeVersionNameInputDisplay(false);
+
   $('#select-productclass option').remove();
   $('#select-productclass').append(
     $('<option>')
@@ -87,6 +127,10 @@ window.updateModels = function(input) {
 
 window.updateVersions = function(input) {
   let tr069Infos = getFirmwareStorage('infos');
+
+  // Remove the version name input
+  changeVersionNameInputDisplay(false);
+
   $('#select-version option').remove();
   $('#select-version').append(
     $('<option>')
@@ -106,8 +150,81 @@ window.updateVersions = function(input) {
           .text(v),
       );
     });
+
+    // Append the other option in order to allow a different upgrade
+    $('#select-version').append(
+      $('<option id="otherVersionFirmware">')
+        .attr('value', 'other')
+        .text(t('Other')),
+    );
   }
 };
+
+
+/*
+ *  Description:
+ *    This function changes the value of the other option whenever the version
+ *    name input is changed.
+ *
+ *  Input:
+ *    inputElement - The html element that called this function
+ *
+ *  Output:
+ *
+ */
+window.setVersionNameInput = function(inputElement) {
+  let chosenFirmware = inputElement.value;
+
+  // The case where the user selected the other option to update to a different
+  // firmware version
+  if (chosenFirmware === $('#otherVersionFirmware').attr('value')) {
+    changeVersionNameInputDisplay(true);
+  } else {
+    changeVersionNameInputDisplay(false);
+  }
+};
+
+
+/*
+ *  Description:
+ *    This function changes the value of the other option whenever the version
+ *    name input is changed.
+ *
+ *  Input:
+ *
+ *  Output:
+ *
+ */
+window.updateVersionName = function() {
+  let versionName = $('#input-version-name').val();
+  $('#otherVersionFirmware').attr('value', versionName);
+
+  // If the length is 0
+  if (!versionName.length) {
+    // Change the error
+    $('#input-version-name-invalid-feedback').text(
+      t('typeVersionName'),
+    );
+
+    // Show the error
+    $('#input-version-name-invalid-feedback').show();
+
+  // If there is an invalid character
+  } else if (!VERSION_NAME_REGEX.test(versionName)) {
+    // Change the error
+    $('#input-version-name-invalid-feedback').text(
+      t('invalidVersionName'),
+    );
+
+    // Show the error
+    $('#input-version-name-invalid-feedback').show();
+
+  // Normal input, hide the error
+  } else {
+    $('#input-version-name-invalid-feedback').hide();
+  }
+};
+
 
 window.changeCpeForm = function(input) {
   if (input.value === 'tr069') {

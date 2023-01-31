@@ -2,6 +2,8 @@
 /* global __line */
 
 const t = require('../language').i18next.t;
+const certman = require('../external-api/certman');
+const fs = require('fs');
 
 let utilHandlers = {};
 
@@ -37,10 +39,10 @@ utilHandlers.orderNumericGenieKeys = function(keys) {
   return onlyNumbers.sort((a, b)=>a-b);
 };
 
-utilHandlers.checkForNestedKey = function(
+utilHandlers.traverseNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return false;
+  if (!data) return {success: false};
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
@@ -57,11 +59,22 @@ utilHandlers.checkForNestedKey = function(
       splitKey[i] = targetIndex;
     }
     if (!current.hasOwnProperty(splitKey[i])) {
-      return false;
+      return {success: false};
     }
     current = current[splitKey[i]];
   }
-  return true;
+  return {
+    success: true,
+    key: splitKey.join('.'),
+    value: current,
+  };
+}
+
+utilHandlers.checkForNestedKey = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  return ret.success;
 };
 
 // Iterates from data as a JSON like format and retrieves value or object if
@@ -71,29 +84,18 @@ utilHandlers.checkForNestedKey = function(
 utilHandlers.getFromNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return undefined;
-  let current = data;
-  let splitKey = key.split('.');
-  for (let i = 0; i < splitKey.length; i++) {
-    if (splitKey[i] === '*') {
-      let orderedKeys = utilHandlers.orderNumericGenieKeys(
-        Object.keys(current),
-      );
-      let targetIndex;
-      if (useLastIndexOnWildcard) {
-        targetIndex = orderedKeys[orderedKeys.length - 1];
-      } else {
-        targetIndex = orderedKeys[0];
-      }
-      splitKey[i] = targetIndex;
-    }
-    if (!current.hasOwnProperty(splitKey[i])) {
-      return undefined;
-    }
-    current = current[splitKey[i]];
-  }
-  return current;
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  if (!ret.success) return undefined;
+  return ret.value;
 };
+
+utilHandlers.replaceNestedKeyWildcards = function(
+  data, key, useLastIndexOnWildcard = false,
+) {
+  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  if (!ret.success) return undefined;
+  return ret.key;
+}
 
 // Returns {key: genieFieldValue}
 utilHandlers.getAllNestedKeysFromObject = function(
@@ -186,6 +188,15 @@ utilHandlers.deepCopyObject = function(objArr) {
 
 utilHandlers.flashboxVersionRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+$/;
 utilHandlers.flashboxDevVerRegex = /^[0-9]+\.[0-9]+\.[0-9A-Za-b]+-[0-9]+-.*$/;
+/*
+ *  Description:
+ *    This regex is meant to avoid XSS attacks by removing special characters
+ *    used in this type of attack. Might not avoid all XSS cases.
+ *    Matches everything that is not &, \, ", ', `, < or >
+ *    matches if it is smaller than 128 characters
+ */
+// eslint-disable-next-line max-len
+utilHandlers.xssValidationRegex = /^[^&\\"'`<>]{1,128}$/;
 utilHandlers.hourRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 utilHandlers.vlanNameRegex = /^[A-Za-z][A-Za-z\-0-9_]+$/;
 // eslint-disable-next-line max-len
@@ -280,6 +291,15 @@ utilHandlers.parseDate = function(dateString) {
     console.log(`minute: ${isNaN(minute)}`);
   }
   return new Date(year, month-1, day, hour, minute, 0, 0);
+};
+
+utilHandlers.getTr069CACert = async function() {
+  // For docker instances, we need to fetch the CA from Certman service
+  // For bare metal instances, we simply fetch it from local file system
+  if (process.env.FLM_DOCKER_INSTANCE) {
+    return await certman.getCertmanCACert();
+  }
+  return fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
 };
 
 /* ****Functions for test utilities**** */

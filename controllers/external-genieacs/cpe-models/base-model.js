@@ -45,7 +45,7 @@ basicCPEModel.modelPermissions = function() {
     features: {
       cableRxRate: false, // can get RX rate from devices connected by cable
       customAppPassword: true, // can override default login/pass for app access
-      firmwareUpgrade: false, // support for tr-069 firmware upgrade
+      firmwareUpgrade: true, // support for tr-069 firmware upgrade
       meshCable: true, // can create a cable mesh network with Anlix firmwares
       meshWifi: false, // can create a wifi mesh network with Anlix firmwares
       pingTest: false, // will enable ping test dialog
@@ -297,10 +297,12 @@ basicCPEModel.convertField = function(
       result.value = parseInt(value); // convert to integer
       break;
     case 'wifi2-mode':
-    case 'wifi5-mode':
     case 'mesh2-mode':
-    case 'mesh5-mode':
       result.value = modeFunc(value); // convert to TR-069
+      break;
+    case 'wifi5-mode':
+    case 'mesh5-mode':
+      result.value = modeFunc(value, true); // convert to TR-069
       break;
     case 'wifi2-band':
     case 'mesh2-band':
@@ -569,11 +571,11 @@ basicCPEModel.getModelFields = function() {
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
         'DuplexMode',
       wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.1.ExternalIPAddress',
+        'WANIPConnection.*.ExternalIPAddress',
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.ExternalIPAddress',
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.1.Uptime',
+        'WANIPConnection.*.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Uptime',
       mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
@@ -589,9 +591,9 @@ basicCPEModel.getModelFields = function() {
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
-        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',
-        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.'+
+        // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',
         // pon_rxpower: 'InternetGatewayDevice.WANDevice.1.'+
         //   'GponInterfaceConfig.RXPower',

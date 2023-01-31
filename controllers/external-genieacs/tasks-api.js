@@ -8,6 +8,7 @@ const http = require('http');
 const mongodb = require('mongodb');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
+const SchedulerCommon = require('../update_scheduler_common');
 const t = require('../language').i18next.t;
 
 
@@ -18,6 +19,9 @@ let MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
+if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
+  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
+}
 
 let taskWatchlist = {};
 let lastTaskWatchlistClean = Date.now();
@@ -78,6 +82,7 @@ const watchGenieTasks = async function() {
 const watchGenieFaults = async function() {
   let faultsCollection = genieDB.collection('faults');
   let cacheCollection = genieDB.collection('cache');
+  let tasksCollection = genieDB.collection('tasks');
 
   // delete all existing faults.
   let ret = await faultsCollection.deleteMany();
@@ -89,6 +94,13 @@ const watchGenieFaults = async function() {
   ret = await cacheCollection.deleteMany();
   if (ret.n > 0) {
     console.log('INFO: deleted '+ret.n+' documents in genieacs\'s cache '+
+      'collection.');
+  }
+
+  // delete all genieacs update firmware tasks.
+  ret = await tasksCollection.deleteMany({name: 'download'});
+  if (ret.n > 0) {
+    console.log('INFO: deleted '+ret.n+' documents in genieacs\'s tasks '+
       'collection.');
   }
 
@@ -113,6 +125,17 @@ const watchGenieFaults = async function() {
       faultsCollection.deleteOne({_id: doc._id});
       return;
     }
+
+    // The code cwmp.9010 is generated when there was a firmware download error
+    if (doc.code === 'cwmp.9010') {
+      faultsCollection.deleteOne({_id: doc._id});
+      cacheCollection.deleteOne({_id: doc._id});
+      tasksCollection.deleteMany({
+        device: doc.device,
+        name: 'download',
+      });
+    }
+
     let errorMsg = '';
     if (doc.detail !== undefined) {
       errorMsg += doc.detail.stack;
@@ -121,7 +144,7 @@ const watchGenieFaults = async function() {
     } else {
       errorMsg += JSON.stringify(doc);
     }
-    await createNotificationForDevice(errorMsg, doc.device);
+    await createNotificationForDevice(errorMsg, doc.device, doc);
   });
 };
 
@@ -129,10 +152,32 @@ const watchGenieFaults = async function() {
  'stackError' and with the device id 'genieDeviceId' as the notification target
  for that notification. If no 'genieDeviceId' is given, the error is considered
  to be from Genie itself. */
-const createNotificationForDevice = async function(errorMsg, genieDeviceId) {
+const createNotificationForDevice = async function(
+  errorMsg,
+  genieDeviceId,
+  doc,
+) {
   // getting flashman device id related to the genie device id.
-  let device = await DeviceModel.findOne({acs_id: genieDeviceId}, '_id').exec();
+  let device = await DeviceModel.findOne(
+    {acs_id: genieDeviceId},
+    {_id: true, do_update_status: true},
+  ).exec();
+
   if (!device) return;
+
+  // If the error was related to update, change the state to failed
+  // Do not show notification
+  if (doc.code === 'cwmp.9010') {
+    // Might move to ToDo again or Failed
+    SchedulerCommon.failedDownload(device._id);
+    device.do_update_status = 2;
+    await device.save();
+
+    // Do not show the notification
+    return;
+  }
+
+
   // check if a notification already exists for this device, dont add a new one
   let hasNotification = await NotificationModel.findOne(
     {target: device._id, type: 'genieacs'},
@@ -206,6 +251,23 @@ genie.request = (options, body) => {
     }
     req.end();
   });
+};
+
+// delete device by acs_id(flashman)/_id(genieacs)
+genie.deleteDeviceFromGenie = async function(device) {
+  if (device.use_tr069 && device.acs_id) {
+    try {
+      await genie.request({
+        method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
+        path: `/devices/${encodeURIComponent(device.acs_id)}`,
+      });
+    } catch (e) {
+      console.log('Error removing device ' +
+        device.acs_id + ' from genieacs : ' + e);
+      return false;
+    }
+  }
+  return true;
 };
 
 /* get stuff out of genie through its API and returns the genie json response
@@ -351,42 +413,59 @@ let taskParameterIdFromType = {
  https://github.com/genieacs/genieacs/wiki/API-Reference#tasks to understand a
  task format.*/
 const checkTask = function(task) {
+  if (!task) return false;
+
   let name = task.name; // the task name/type.
+  if (!name) return false;
+
+  // task name/type has to be defined in 'taskParameterIdFromType'.
+  if (!Object.keys(taskParameterIdFromType).includes(name)) return false;
   // the attribute name where a task holds its parameters.
   let parameterId = taskParameterIdFromType[name];
-  // task name/type has to be defined in 'taskParameterIdFromType'.
-  if (parameterId === undefined) return false;
   // in case task name/type is "setParameterValues".
   if (name === 'setParameterValues') {
     // its parameter has to be an array.
-    if (task[parameterId].constructor !== Array) return false;
+    if (
+      !task[parameterId] ||
+      task[parameterId].constructor !== Array
+    ) return false;
     // and for each value in that array.
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has also to be an array.
-      if (task[parameterId][i].constructor !== Array) return false;
+      if (
+        !task[parameterId][i] ||
+        task[parameterId][i].constructor !== Array
+      ) return false;
       // that sub array has to have length 3.
       if (task[parameterId][i].length < 2
        || task[parameterId][i].length > 3 ) return false;
       // first position has to be a string (tr069 parameter name).
-      if (task[parameterId][i][0] === undefined
+      if (!task[parameterId][i][0]
        || task[parameterId][i][0].constructor !== String
        // second position can be a string, a number or a boolean.
+       || task[parameterId][i][1] === null
        || task[parameterId][i][1] === undefined
        || (task[parameterId][i][1].constructor !== String
         && task[parameterId][i][1].constructor !== Number
         && task[parameterId][i][1].constructor !== Boolean)
        // third position has to be a string (tr069 type).
-       || task[parameterId][i][2] === undefined
+       || !task[parameterId][i][2]
        || task[parameterId][i][2].constructor !== String) return false;
     }
   } else if (name === 'getParameterValues' ) { // in case task name/type is
   // "getParameterValues".
     // its parameter has to be an array.
-    if (task[parameterId].constructor !== Array) return false;
+    if (
+      !task[parameterId] ||
+      task[parameterId].constructor !== Array
+    ) return false;
     // and for each value in that array.
     for (let i = 0; i < task[parameterId].length; i++) {
       // that value has to be a string (tr069 parameter name).
-      if (task[parameterId][i].constructor !== String) return false;
+      if (
+        !task[parameterId][i] ||
+        task[parameterId][i].constructor !== String
+      ) return false;
     }
   } else if (parameterId && task[parameterId].constructor !== String) {
   // names/types have a string as parameter.
@@ -675,9 +754,39 @@ genie.addTask = async function(
     // declaring variable that will hold array of tasks to be
     // delete/substituted.
     let tasksToDelete;
-    // substitutes tasks array with arrays of tasks to be added to genie.
-    [tasks, tasksToDelete] = joinAllTasks(tasks);
-    // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
+
+    // Caution with joinAllTasks, if the parameterId is not an Array, it can
+    // spam tasks to genie and pass task's parameters wrongly
+    // So, filter download to avoid passing to joinAllTasks
+    if (task.name === 'download') {
+      // Download tasks to be deleted
+      tasksToDelete = tasks.slice(0, -1).filter((taskToCheck) => {
+        // If the task is the download type and already got an id from genie,
+        // delete it from the tasks
+        if (taskToCheck.name === 'download' &&
+            taskToCheck._id !== undefined &&
+            taskToCheck.device === deviceid
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+
+      // Now, only add the new download task
+      tasks = [task];
+
+      // Kill every other task
+      for (let index = 0; index < tasksToDelete.length; index++) {
+        deleteTask(tasksToDelete[index]._id);
+      }
+
+      return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
+    } else {
+      // substitutes tasks array with arrays of tasks to be added to genie.
+      [tasks, tasksToDelete] = joinAllTasks(tasks);
+      // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
+    }
 
 
     /* we have to delete old tasks before adding the joined tasks because it
@@ -701,6 +810,11 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
    sending the new task and the old tasks being substituted,
    then return result. */
   return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
+};
+
+// For metrics collecting
+genie.getTaskWatchListLength = function() {
+  return Object.keys(taskWatchlist).length;
 };
 
 module.exports = genie;

@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.56.0",
+  "version": "2.60.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -43,6 +43,7 @@
     "event-stream": "3.3.4",
     "express": "~4.17.1",
     "express-fileupload": "~1.1.9",
+    "express-prom-bundle": "~6.6.0",
     "express-session": "~1.16.2",
     "express-socket.io-session": "~1.3.5",
     "fast-xml-parser": "~3.20.3",
@@ -72,6 +73,7 @@
     "pem": "~1.14.2",
     "pm2": "~5.0.4",
     "popper.js": "~1.15.0",
+    "prom-client": "~14.1.0",
     "prompt": "~1.0.0",
     "pug": "~3.0.2",
     "redis": "~4.0.4",
@@ -104,6 +106,7 @@
     "jest": "^27.5.1",
     "mockingoose": "https://github.com/anlix-io/mockingoose.git",
     "mqtt": "1.14.0",
+    "nock": "^13.3.0",
     "nodemon": "^2.0.3",
     "regenerator-runtime": "^0.13.7",
     "sass": "^1.34.1",

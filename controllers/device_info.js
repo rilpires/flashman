@@ -7,7 +7,7 @@ const request = require('request-promise-native');
 const sio = require('../sio');
 const Validator = require('../public/javascripts/device_validator');
 const messaging = require('./messaging');
-const updateScheduler = require('./update_scheduler');
+const SchedulerCommon = require('./update_scheduler_common');
 const DeviceVersion = require('../models/device_version');
 const vlanController = require('./vlan');
 const meshHandlers = require('./handlers/mesh');
@@ -16,6 +16,7 @@ const Firmware = require('../models/firmware');
 const util = require('./handlers/util');
 const crypto = require('crypto');
 const dataCollectingController = require('./data_collecting');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const t = require('./language').i18next.t;
 
 const Mutex = require('async-mutex').Mutex;
@@ -899,9 +900,9 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
             console.log('Device ' + devId + ' upgraded successfuly');
             if (matchedDevice.mesh_master) {
               // Mesh slaves call the success function with their master's mac
-              updateScheduler.successUpdate(matchedDevice.mesh_master);
+              SchedulerCommon.successUpdate(matchedDevice.mesh_master);
             } else {
-              updateScheduler.successUpdate(matchedDevice._id);
+              SchedulerCommon.successUpdate(matchedDevice._id);
             }
             messaging.sendUpdateDoneMessage(matchedDevice);
             const typeUpgrade = DeviceVersion.mapFirmwareUpgradeMesh(
@@ -1207,9 +1208,26 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         let upgStatus = util.returnObjOrEmptyStr(req.body.status).trim();
         if (upgStatus == '1') {
           console.log('Device ' + req.body.id + ' is going on upgrade...');
-          if (matchedDevice.release === '9999-aix') {
+
+
+          // If the device is in update scheduler and the user chose the option
+          // that cpes will not return to flashman, mark it as success in update
+          // scheduler.
+          let cpeWontReturnFromMassUpgrade = await SchedulerCommon
+            .successUpdateIfCpeWontReturn(matchedDevice._id);
+
+          // If the firmware is stock
+          let isStockUpgrade = (matchedDevice.release === '9999-aix');
+
+
+          // If the cpe won't return to Flashman during an update scheduler or
+          // is stock release, change the do_update status
+          if (
+            cpeWontReturnFromMassUpgrade ||
+            isStockUpgrade
+          ) {
             // Disable schedule since factory firmware will not inform status
-            matchedDevice.installed_release = '9999-aix';
+            matchedDevice.installed_release = matchedDevice.release;
             matchedDevice.do_update = false;
             matchedDevice.do_update_status = 1; // success
           } else {
@@ -1236,10 +1254,10 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
         } else if (upgStatus == '0' || upgStatus == '2') {
           if (matchedDevice.mesh_master) {
             // Mesh slaves call update schedules function with their master mac
-            updateScheduler.failedDownload(
+            SchedulerCommon.failedDownload(
               matchedDevice.mesh_master, req.body.id);
           } else {
-            updateScheduler.failedDownload(req.body.id);
+            SchedulerCommon.failedDownload(req.body.id);
           }
           console.log('WARNING: Device ' + req.body.id +' failed in firmware ' +
                       (upgStatus == '0' ? 'check' : 'download'));
@@ -1949,6 +1967,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       }
     }
 
+    metricsApi.newDiagnosticState('sitesurvey', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
     matchedDevice.current_diagnostic.in_progress = false;
@@ -2163,6 +2182,7 @@ deviceInfoController.receivePingResult = function(req, res) {
       deviceHandlers.sendPingToTraps(id, {results: result});
     }
 
+    metricsApi.newDiagnosticState('ping', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
     matchedDevice.current_diagnostic.in_progress = false;
@@ -2202,6 +2222,7 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
       return res.status(404).json({processed: 0});
     }
 
+    metricsApi.newDiagnosticState('speedtest', 'finished');
     deviceHandlers.storeSpeedtestResult(matchedDevice, req.body);
 
     // We don't need to wait
@@ -2512,6 +2533,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
     let isLastResult = matchedDevice.traceroute_results
       .filter(((result) => !result.completed)).length == 0;
     if (isLastResult) {
+      metricsApi.newDiagnosticState('traceroute', 'finished');
       matchedDevice.current_diagnostic.stage = 'done';
       matchedDevice.current_diagnostic.in_progress = false;
     }
