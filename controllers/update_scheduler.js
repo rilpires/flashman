@@ -1134,7 +1134,7 @@ scheduleController.startSchedule = async function(req, res) {
       const audit = {
         cmd: 'update_scheduler',
         'started': true,
-        'release',
+        'release': release,
         'total': macList.length,
         'query': queryContents,
         'cpesWontReturn': cpesWontReturn,

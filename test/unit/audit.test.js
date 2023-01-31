@@ -710,7 +710,7 @@ describe('Controllers - Audit', () => {
         expect(audit.cpe.mock.lastCall[2]).toBe('trigger');
         expect(audit.cpe.mock.lastCall[3]).toEqual({
           cmd: 'wps',
-          activate: true,
+          activated: true,
         });
       });
 
@@ -928,7 +928,6 @@ describe('Controllers - Audit', () => {
           deviceListController.setPortForward(req, res);
         });
       });
-      
 
     });
 
@@ -1342,12 +1341,16 @@ describe('Controllers - Audit', () => {
             expect(audit.cpes.mock.lastCall[1].length).toBe(1);
             expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
             expect(audit.cpes.mock.lastCall[3]).toEqual({
-              cmd: 'update_scheduler', 
-              start: true,
+              cmd: 'update_scheduler',
+              cpesWontReturn: false,
+              pageCount: 1,
+              pageNumber: 1,
+              query: ["AB:AB:AB:AB:AB:AB"],
+              started: true,
               release: 'release1',
               total: 1,
               searchTags: 'lala',
-              useAllDevices: true,
+              allCpes: true,
             });
             done();
           } catch (e) {
@@ -1366,7 +1369,7 @@ describe('Controllers - Audit', () => {
             expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
             expect(audit.cpes.mock.lastCall[3]).toEqual({
               cmd: 'update_scheduler', 
-              abort: true,
+              aborted: true,
             });
             done();
           } catch (e) {
