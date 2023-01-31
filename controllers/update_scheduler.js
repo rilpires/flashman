@@ -11,6 +11,7 @@ const meshHandler = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const t = require('./language').i18next.t;
+const Audit = require('./audit');
 
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
@@ -601,6 +602,10 @@ scheduleController.abortSchedule = async function(req, res) {
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
+
+    const audit = {cmd: 'update_scheduler', abort: true};
+    Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
+
     rule.in_progress_devices.forEach(async (d) => {
       let device = await getDevice(d.mac);
       await meshHandler.syncUpdateCancel(device, 4);
@@ -1042,6 +1047,20 @@ scheduleController.startSchedule = async function(req, res) {
           message: result.error,
         });
       }
+      const audit = {
+        cmd: 'update_scheduler',
+        start: true,
+        release,
+        total: macList.length,
+      };
+      if (hasTimeRestriction) {
+        audit.allowed_time_ranges =
+          config.device_update_schedule.allowed_time_ranges;
+      }
+      if (useCsv) audit.useCsv = true;
+      if (useAllDevices) audit.useAllDevices = true;
+      if (searchTags) audit.searchTags = searchTags;
+      Audit.cpes(req.user, macList, 'trigger', audit);
       return res.status(200).json({
         success: true,
       });

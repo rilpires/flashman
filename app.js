@@ -26,6 +26,7 @@ let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 const runMigrations = require('./migrations');
+const audit = require('./controllers/audit')
 
 let app = express();
 
@@ -86,6 +87,8 @@ if (process.env.FLM_COMPANY_SECRET) {
   }
   app.locals.secret = companySecret.secret;
 }
+// setting FlashAudit node client connection password.
+audit.init(app.locals.secret);
 
 // run db migrations
 runMigrations(app);

@@ -8,6 +8,7 @@ const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
 const {Parser} = require('json2csv');
 const t = require('./language').i18next.t;
+const Audit = require('./audit');
 
 let userController = {};
 
@@ -103,7 +104,7 @@ userController.postUser = function(req, res) {
     role: req.body.role,
     is_superuser: false,
   });
-  user.save(function(err) {
+  user.save(function(err, savedUser) {
     if (err) {
       console.log('Error creating user: ' + err);
       return res.json({
@@ -112,6 +113,11 @@ userController.postUser = function(req, res) {
         message: t('userMightAlreadyExist', {errorline: __line}),
       });
     }
+    Audit.user(req.user, savedUser, 'create', {
+      name: savedUser.name,
+      password: '******',
+      role: req.body.role,
+    });
     return res.json({
       success: true,
       type: 'success',
@@ -120,7 +126,11 @@ userController.postUser = function(req, res) {
   });
 };
 
-userController.postRole = function(req, res) {
+// Reads role parameters from request and returns an object which will have
+// a 'success' attribute that, when true, will have another attribute called
+// 'role' with the Role attributes set by the parameters in the request,
+// but when 'success' is false, that object is already the error response.
+const readRolePermissions = function(req) {
   let basicFirmwareUpgrade = false;
   let massFirmwareUpgrade = false;
   if (req.body['grant-firmware-upgrade'] == 2) {
@@ -137,8 +147,7 @@ userController.postRole = function(req, res) {
   } else if (req.body['grant-device-removal'] == 1) {
     basicDeviceRemoval = true;
   }
-  let role = new Role({
-    name: req.body.name,
+  const role = {
     grantWifiInfo: parseInt(req.body['grant-wifi-info']),
     grantPPPoEInfo: parseInt(req.body['grant-pppoe-info']),
     grantPassShow: req.body['grant-pass-show'],
@@ -179,22 +188,44 @@ userController.postRole = function(req, res) {
     grantFirmwareRestrictedUpgrade:
       req.body['grant-firmware-restricted-upgrade'],
     grantWanAdvancedInfo: req.body['grant-wan-advanced-info'],
-  });
+  };
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
-    return res.json({
+    return {
       success: false,
       type: 'danger',
       message: t('firmwareUpdateControllConflict', {errorline: __line}),
-    });
+    };
   } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
-    return res.json({
+    return {
       success: false,
       type: 'danger',
       message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
-    });
+    };
+  }
+
+  return {success: true, role};
+};
+
+userController.postRole = function(req, res) {
+  const ret = readRolePermissions(req);
+  if (!ret.success) return res.json(ret);
+
+  const roleParams = ret.role;
+  roleParams.name = req.body.name; // adding 'name' parameter before creation.
+  let role = new Role(roleParams);
+
+  let audit = {};
+  /* eslint-disable guard-for-in */
+  for (let k in roleParams) {
+    const v = roleParams[k];
+    if (v) audit[k] = v; // role creation will audit only active permissions.
+    // fortunately, numeric permissions are always inactive when they are 0.
+    // inactive permission will show up when they are edited to active or
+    // back to inactive. Which means they will only not show in audit when
+    // role is being created.
   }
 
   role.save(function(err) {
@@ -206,6 +237,7 @@ userController.postRole = function(req, res) {
         message: t('roleMightAlreadyExist', {errorline: __line}),
       });
     }
+    Audit.role(req.user, role, 'create', audit);
     return res.json({
       success: true,
       type: 'success',
@@ -263,13 +295,19 @@ userController.editUser = function(req, res) {
       });
     }
 
+    const audit = {};
+
     if ('name' in req.body) {
+      if (user.name !== req.body.name) {
+        audit['name'] = {old: user.name, new: req.body.name};
+      }
       user.name = req.body.name;
     }
     if ('password' in req.body && 'passwordack' in req.body) {
       if (req.body.password == req.body.passwordack) {
         // Test if password is not empty nor contains only whitespaces
         if (/\S/.test(req.body.password)) {
+          audit['password'] = {old: '******', new: '******'};
           user.password = req.body.password;
         }
       } else {
@@ -292,12 +330,21 @@ userController.editUser = function(req, res) {
 
       if (req.user.is_superuser) {
         if ('is_superuser' in req.body) {
+          if (user.is_superuser !== req.body.is_superuser) {
+            audit['is_superuser'] = {
+              old: user.is_superuser,
+              new: req.body.is_superuser,
+            };
+          }
           user.is_superuser = req.body.is_superuser;
         }
       }
 
       if (req.user.is_superuser || role.grantUserManage) {
         if ('role' in req.body) {
+          if (user.role !== req.body.role) {
+            audit['role'] = {old: user.role, new: req.body.role};
+          }
           user.role = req.body.role;
         }
       }
@@ -315,6 +362,7 @@ userController.editUser = function(req, res) {
               message: t('saveError', {errorline: __line}),
             });
           } else {
+            Audit.user(req.user, user, 'edit', audit);
             return res.json({
               success: true,
               type: 'success',
@@ -343,77 +391,17 @@ userController.editRole = function(req, res) {
         message: t('roleFindError', {errorline: __line}),
       });
     }
-    let basicFirmwareUpgrade = false;
-    let massFirmwareUpgrade = false;
-    if (req.body['grant-firmware-upgrade'] == 2) {
-      basicFirmwareUpgrade = true;
-      massFirmwareUpgrade = true;
-    } else if (req.body['grant-firmware-upgrade'] == 1) {
-      basicFirmwareUpgrade = true;
-    }
-    let basicDeviceRemoval = false;
-    let massDeviceRemoval = false;
-    if (req.body['grant-device-removal'] == 2) {
-      basicDeviceRemoval = true;
-      massDeviceRemoval = true;
-    } else if (req.body['grant-device-removal'] == 1) {
-      basicDeviceRemoval = true;
-    }
-    role.grantWifiInfo = parseInt(req.body['grant-wifi-info']);
-    role.grantPPPoEInfo = parseInt(req.body['grant-pppoe-info']);
-    role.grantPassShow = req.body['grant-pass-show'];
-    role.grantFirmwareUpgrade = basicFirmwareUpgrade;
-    role.grantMassFirmwareUpgrade = massFirmwareUpgrade;
-    role.grantWanType = req.body['grant-wan-type'];
-    role.grantDeviceId = req.body['grant-device-id'];
-    role.grantDeviceActions = req.body['grant-device-actions'];
-    role.grantFactoryReset = req.body['grant-factory-reset'];
-    role.grantDeviceRemoval = basicDeviceRemoval;
-    role.grantDeviceMassRemoval = massDeviceRemoval;
-    role.grantDeviceLicenseBlock = req.body['grant-block-license-at-removal'];
-    role.grantDeviceAdd = req.body['grant-device-add'];
-    role.grantMonitorManage = req.body['grant-monitor-manage'];
-    role.grantFirmwareManage = req.body['grant-firmware-manage'];
-    role.grantUserManage = req.body['grant-user-manage'];
-    role.grantFlashmanManage = req.body['grant-flashman-manage'];
-    role.grantAPIAccess = req.body['grant-api-access'];
-    role.grantDiagAppAccess = req.body['grant-diag-app-access'];
-    role.grantCertificationAccess = req.body['grant-certification-access'];
-    role.grantLOGAccess = req.body['grant-log-access'];
-    role.grantNotificationPopups = req.body['grant-notification-popups'];
-    role.grantLanEdit = req.body['grant-lan-edit'];
-    role.grantOpmodeEdit = req.body['grant-opmode-edit'];
-    role.grantSlaveDisassociate = req.body['grant-slave-disassociate'];
-    role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
-    role.grantLanDevicesBlock = req.body['grant-lan-devices-block'];
-    role.grantSiteSurvey = req.body['grant-site-survey'];
-    role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
-    role.grantCsvExport = req.body['grant-csv-export'];
-    role.grantVlan = req.body['grant-vlan'];
-    role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
-    role.grantStatisticsView = req.body['grant-statistics'];
-    role.grantSearchLevel = parseInt(req.body['grant-search-level']);
-    role.grantShowSearchSummary = req.body['grant-search-summary'];
-    role.grantShowRowsPerPage = req.body['grant-rows-per-page'];
-    role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
-    role.grantFirmwareRestrictedUpgrade =
-      req.body['grant-firmware-restricted-upgrade'];
-    role.grantWanAdvancedInfo = req.body['grant-wan-advanced-info'];
 
-    if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
-      console.log('Role conflict error');
-      return res.json({
-        success: false,
-        type: 'danger',
-        message: t('firmwareUpdateControllConflict', {errorline: __line}),
-      });
-    } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
-      console.log('Role conflict error');
-      return res.json({
-        success: false,
-        type: 'danger',
-        message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
-      });
+    const params = readRolePermissions(req);
+    if (!params.success) return res.json(params);
+
+    let audit = {};
+    /* eslint-disable guard-for-in */
+    for (let k in params.role) {
+      const old = role[k];
+      const newValue = params.role[k];
+      if (old !== newValue) audit[k] = {old, new: newValue};
+      role[k] = newValue;
     }
 
     role.save(function(err) {
@@ -425,6 +413,7 @@ userController.editRole = function(req, res) {
           message: t('roleSaveError', {errorline: __line}),
         });
       }
+      Audit.role(req.user, role, 'edit', audit);
       return res.json({
         success: true,
         type: 'success',
@@ -498,6 +487,7 @@ userController.deleteUser = function(req, res) {
     users.forEach((user) => {
       user.remove();
     });
+    Audit.users(req.user, users.map((u) => u._id), 'delete');
     return res.json({
       success: true,
       type: 'success',
@@ -521,6 +511,7 @@ userController.deleteRole = function(req, res) {
         roles.forEach((role) => {
           role.remove();
         });
+        Audit.roles(req.user, roles.map((r) => r.name), 'delete');
         return res.json({
           success: true,
           type: 'success',

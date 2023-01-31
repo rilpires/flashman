@@ -1,0 +1,274 @@
+const FlashAudit = require('@anlix-io/flashaudit-node-client');
+const Mongoose = require('mongoose');
+
+// returns true if environment variable value can be recognized as true.
+const isEnvTrue = (envVar) => /^(true|t|1)$/i.test(envVar);
+
+const client = process.env.AIX_PROVIDER || 'test_client';
+const product = 'flashman';
+const turnedOff = isEnvTrue(process.env.FLASHAUDIT_TURNOFF);
+
+const controller = {}; // to be exported.
+
+// reexporting function from module.
+controller.buildAttributeChange = FlashAudit.audit.buildAttributeChange;
+
+// Creating an audit message operation for a CPE.
+controller.cpe = function(user, cpe, operation, values) {
+  // building the values this device could be searched by so users
+  // can find it in FlashAudit.
+  const searchable = cpe.use_tr069
+    ? [cpe.serial_tr069, cpe.alt_uid_tr069]
+    : [cpe._id];
+  return buildAndSendMessage(user, 'cpe', searchable, operation, values);
+};
+
+// Creating an audit message operation for several CPEs. Argument 'searchable'
+// should be an array with all identifications of all CPEs involved.
+controller.cpes = function(user, searchable, operation, values) {
+  return buildAndSendMessage(user, 'cpe', searchable, operation, values);
+};
+
+// Creating an audit message operation for a User. Argument 'searchable'
+// should be an array with the '_id's of all Users involved.
+controller.user = function(user, targetUser, operation, values) {
+  const searchable = [targetUser._id];
+  return buildAndSendMessage(user._id, 'user', searchable, operation, values);
+};
+
+// Creating an audit message operation for several Users.
+controller.users = function(user, searchable, operation, values) {
+  return buildAndSendMessage(user._id, 'user', searchable, operation, values);
+};
+
+// Creating an audit message operation for a Role.
+controller.role = function(user, role, operation, values) {
+  return buildAndSendMessage(user, 'role', [role.name], operation, values);
+};
+
+// Creating an audit message operation for several Roles. Argument 'searchable'
+// should be an array with the names of all Roles involved.
+controller.roles = function(user, searchable, operation, values) {
+  return buildAndSendMessage(user, 'role', searchable, operation, values);
+};
+
+module.exports = controller;
+
+// Creating a audit message that will end up in the audit server. Returns
+// an Error object in case of invalid arguments.
+const buildAndSendMessage = async function(
+  user, object, searchable, operation, values,
+) {
+  if (turnedOff) return; // ignoring FlashAudit.
+
+  if (!user || !user._id) return; // empty users should not create audits.
+  if (!client) return // if no 'client', we can't send anything.
+
+  // building audit message.
+  let [message, err] = new FlashAudit.audit.buildMessageForJS(
+    client, product, user._id, object, searchable, operation, values,
+  );
+  if (err) return console.log('Error creating Audit message:', err);
+  if (message === undefined) return; // skipping send if message discarded.
+  // console.log('FlashAudit message', message);
+
+  // sending message.
+  let sendFunc = audit.sendWithPersistence;
+  if (process.env.AUDITS_MEMORY_ONLY) sendFunc = audit.sendWithoutPersistence;
+  return sendFunc(message, waitPromisesForNetworking);
+};
+
+
+// returns a Promise that will resolve after an elapsed given milliseconds.
+const someTime = (milliseconds) => new Promise(
+  (resolve) => setTimeout(resolve, milliseconds),
+);
+
+// grows until 2030 seconds max (33 minutes and 50 seconds) but will have
+// a random 10% added or removed.
+controller.exponentialTime = (x, uniformRandom) => {
+  const b = x > 0 ? 5 : 0; // when x == 0, we want to return 0 milliseconds.
+  let t = (Math.min(x, 45)**2 + b); // stops growing at 45.
+  t += uniformRandom()*t/5-(t/10); // adding a 10% random variation up or down.
+  return t*1000 // returns time in milliseconds.
+};
+
+// random milliseconds from 150 until 250.
+controller.shortTime = (uniformRandom) => 150+uniformRandom()*100;
+
+// the timers to be injected in the code when waiting on consecutive attempts
+// on trying to send data.
+const waitPromisesForNetworking = {
+  exponential: (x) => someTime(controller.exponentialTime(x, Math.random)),
+  short: () => someTime(controller.shortTime(Math.random)),
+};
+
+// process instance.
+const p = parseInt(process.env.NODE_APP_INSTANCE ||
+                   process.env.FLM_DOCKER_INSTANCE) || 0;
+
+// Reference to FlashAudit client instance that will send messages to server.
+let flashAuditServer;
+// temporary local store of unsent audit messages so we never lose any.
+let localStore = []; // memory only.
+let audits; // persisted.
+
+// if audits are cached in database, send all audits, if any.
+controller.init = async function(
+  secret, waitPromises=waitPromisesForNetworking, db,
+) {
+  // starting FlashAudit client.
+  flashAuditServer = new FlashAudit.FlashAudit({
+    client,
+    product,
+    serverBrokers: [
+      'redaudit01.anlix.io:8092',
+      'redaudit02.anlix.io:8092',
+      'redaudit03.anlix.io:8092',
+    ],
+    sslEnabled: !isEnvTrue(process.env.KAFKA_SSL_DISABLED),
+    auth: {username: client, password: secret},
+    runtimeValidation: false,
+  });
+
+  // ignore setup if audit messages should remain only in node instance memory.
+  if (process.env.AUDITS_MEMORY_ONLY) return;
+
+  const setup = async () => {
+    if (!db) db = Mongoose.connection.db;
+    audits = db.collection('audits');
+
+    const d = Date.now()-5*60*1000; // milliseconds at 5 minutes ago.
+    await audits.updateMany(
+      // audits stuck at sending state or audits that belong to this process
+      // will be removed from sending state.
+      {s: true, $or: [{'m.date': {$lte: d}}, {p}]}, {$set: {s: false}},
+    ).catch((e) => console.log('Error resetting audits state at setup.', e));
+
+    controller.tryLaterWithPersistence(waitPromises);
+  };
+
+  if (!db) {
+    if (Mongoose.connection.readyState === 1) {
+      return setup();
+    } else {
+      return new Promise((resolve) => 
+        Mongoose.connection.on('connected', () => setup().then(resolve)));
+    }
+  } else {
+    return setup();
+  }
+}
+
+// flag marking if the last attempt to contact flashAudit was successful.
+controller.isFlashAuditAvailable = true;
+
+// sends message and returns true if successful. Else, return false.
+const sendToFlashAudit = async function(message) {
+  let err = await flashAuditServer.send(message);
+  if (err instanceof Error) {
+    // console.log('Error sending audit message:', err);
+    controller.isFlashAuditAvailable = false;
+  } else {
+    controller.isFlashAuditAvailable = true;
+  }
+  return controller.isFlashAuditAvailable;
+};
+
+// keeps unsent audit messages in memory.
+controller.sendWithoutPersistence = async function(message, waitPromises) {
+  if (!controller.isFlashAuditAvailable) return localStore.push(message);
+  if (!(await sendToFlashAudit(message))) {
+    localStore.push(message);
+    controller.tryLaterWithoutPersistence(waitPromises);
+  }
+};
+
+// keeps trying to send unsent audit messages that are in memory.
+controller.tryLaterWithoutPersistence = async function(waitPromises, attempt) {
+  await waitPromises.exponential(attempt);
+  while (localStore.length > 0) {
+    let message = localStore[0]; // getting message at head.
+    if (!(await sendToFlashAudit(message))) { // sending.
+      // if send is unsuccessful, will try again later.
+      controller.tryLaterWithoutPersistence(waitPromises, attempt+1);
+      return
+    }
+    attempt = 0; // after a successful attempt, we reset attempts counter.
+    localStore.shift(); // removing message from head;
+    await waitPromises.short(); // will send next message in a short while.
+  }
+};
+
+// persists unsent audit messages.
+controller.sendWithPersistence = async function(message, waitPromises) {
+  // skip sending if no connectivity.
+  if (!controller.isFlashAuditAvailable) {
+    const cached = {s: false, d: new Date(), p, m: message};
+    const insert = await audits.insertOne(cached).catch((e) => e);
+    if (insert instanceof Error) { // if insert had any error.
+      console.log('FlashAudit unavailable and Error caching ' +
+                  'audit message with persistence.', insert);
+    };
+    return;
+  }
+
+  const cached = {s: true, d: new Date(), p, m: message};
+  const insert = await audits.insertOne(cached).catch((e) => e);
+  if (insert instanceof Error) { // if insert had any error.
+    // if persistence has failed we hope FlashAudit is available to receive it.
+    if (!(await sendToFlashAudit(message))) {
+      console.log('FlashAudit unavailable and Error caching ' +
+                  'audit message with persistence.', insert);
+    }
+    return;
+  };
+
+  // query for selecting the inserted message.
+  let inserted = {_id: insert.insertedId};
+
+  if (!(await sendToFlashAudit(message))) {
+    // if sent is unsuccessful, change message state to pending.
+    let set = {$set: {s: false}};
+    const update = await audits.updateOne(inserted, set).catch((e) => e);
+    if (update instanceof Error) {
+      return console.log('Error updating audit message cache state.', update);
+    }
+
+    controller.tryLaterWithPersistence(waitPromises); // try sending later.
+    return;
+  }
+
+  // message has been received by FlashAudit. now we can forget it.
+  const del = await audits.deleteOne(inserted).catch((e) => e);
+  if (del instanceof Error) {
+    return console.log('Error removing audit message from cache.', del);
+  }
+};
+
+// keeps trying to send unsent audit messages that are persisted.
+controller.tryLaterWithPersistence = async function(waitPromises, attempt=1) {
+  await waitPromises.exponential(attempt);
+  try {
+    let cached;
+    while (
+      cached = await audits.findOneAndUpdate({s: false}, {$set: {s: true}})
+        .then((ret) => ret.value)
+    ) {
+      if (!(await sendToFlashAudit(cached.m))) { // sending.
+        // if send is unsuccessful, change message state to pending.
+        await audits.updateOne({_id: cached._id}, {$set: {s: false}});
+        // will try again later.
+        controller.tryLaterWithPersistence(waitPromises, attempt+1);
+        return;
+      }
+      attempt = 0; // after a successful attempt, we reset 'attempt' counter.
+      await audits.deleteOne({_id: cached._id}); // removing cached message.
+      await waitPromises.short(); // will send next message in a short while.
+    }
+  } catch (e) {
+    console.log('Database error dealing with audits cache.', e);
+    controller.tryLaterWithPersistence(waitPromises, attempt+1);
+    return;
+  }
+};
