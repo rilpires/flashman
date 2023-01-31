@@ -3320,7 +3320,9 @@ deviceListController.setPortForward = function(req, res) {
 
       let usedAsymPorts = [];
 
-      content.forEach((r) => {
+      for (let i = 0; i < content.length; i++) {
+        const r = content[i];
+
         if (!r.hasOwnProperty('mac') ||
             !r.hasOwnProperty('dmz') ||
             !r.mac.match(util.macRegex)) {
