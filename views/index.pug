@@ -191,6 +191,7 @@ block content
                       th.text-center= t('updateFirmware')
                 tbody#devices-table-content(
                   data-role=role,
+                  data-urlqueryfilterlist=urlqueryfilterlist,
                   data-superuser=superuser ? "true" : "false",
                   data-enabledatacollecting=enable_data_collecting ? "true" : "false",
                   data-visiblecolumnsonpage=visiblecolumnsonpage)

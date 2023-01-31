@@ -709,6 +709,8 @@
 	"Previous": "Anterior",
 	"letsSelectWhenCpesWillUpdate?": "Vamos selecionar quando os CPEs serão atualizados?",
 	"updateImmediatelyWithoutTimeRestrictions": "Atualizar imediatamente sem restrições de horário",
+	"cpeWontReturnToFlashmanWarning": "A opção de não retornar para este Flashman foi selecionada. Esta opção só deve ser marcada se os CPEs estão retornando para a firmware de fábrica, ou se a release selecionada migrará os CPEs para outro Flashman. Tem certeza de que quer continuar?",
+	"cpeWontReturnToFlashmanCheckbox": "Marque esta opção se os CPEs não retornarão para este Flashman após a atualização de firmware",
 	"dayOfTheWeek": "Dia da semana",
 	"Sunday": "Domingo",
 	"Monday": "Segunda",
@@ -1072,5 +1074,9 @@
 	"portOpeningRebootAlert": "Atenção! Este modelo precisa reiniciar para aplicar as alterações de abertura de portas.",
 	"invalidFieldsMustBeInRange": "Campo inválido. Este campo deve estar entre {{min}} e {{max}}.",
 	"emptyField": "O campo não pode estar vazio",
-	"wanAdvancedInformation": "Informações Avançadas da WAN"
+	"wanAdvancedInformation": "Informações Avançadas da WAN",
+	"caution": "Cuidado!",
+	"noReturnToFlashmanUpgrade": "Opção de não retornar ao Flashman foi marcada. Essa opção vai fazer com que o Flashman não espere o CPE voltar a ficar online para disparar o próximo update, o que pode gerar carga de CPU se o equipamento vai de fato voltar a ficar online no Flashman.</br></br>Tem certeza que os equipamentos não voltarão a ficar online ao fazer este upgrade de firmware?",
+	"yesSure": "Sim, tenho certeza",
+	"noBack": "Não, voltar"
 }

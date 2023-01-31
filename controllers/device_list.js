@@ -4,6 +4,7 @@
 
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
+const TasksAPI = require('./external-genieacs/tasks-api');
 const messaging = require('./messaging');
 const DeviceModel = require('../models/device');
 const User = require('../models/user');
@@ -685,6 +686,29 @@ const checkNewDiagnosticAvailability = function(device) {
 deviceListController.index = function(req, res) {
   let indexContent = {};
   let elementsPerPage = 10;
+
+
+  // Check if tag filters are passed in the URL
+  if (
+    req.query && req.query.filter &&
+    req.query.filter.constructor === String
+  ) {
+    // Split filters by comma
+    let filterTags = req.query.filter.split(',');
+
+    // Filter filters with special characters or that are empty
+    filterTags = filterTags.filter((tag) => {
+      if (tag && util.xssValidationRegex.test(tag)) return true;
+      return false;
+    });
+
+    // Rebuild the filter with all tags
+    let allTags = filterTags.join(',');
+
+    // Assign the tags
+    indexContent.urlqueryfilterlist = allTags;
+  }
+
 
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
@@ -1429,8 +1453,8 @@ const delDeviceOnDatabase = async function(devIds) {
   let failedAtRemoval = {};
   // Get devices from ids
   let projection = {
-    _id: true, use_tr069: true, alt_uid_tr069: true, serial_tr069: true,
-    mesh_master: true, mesh_slaves: true,
+    _id: true, use_tr069: true, alt_uid_tr069: true, acs_id: true,
+    serial_tr069: true, mesh_master: true, mesh_slaves: true,
   };
   let matchedDevices = await DeviceModel.findByMacOrSerial(devIds, false,
                                                            projection);
@@ -1453,15 +1477,23 @@ const delDeviceOnDatabase = async function(devIds) {
     if (device.mesh_slaves && device.mesh_slaves.length > 0) {
       failedAtRemoval[deviceId] =
         t('cantDeleteMeshWithSecondaries', {errorline: __line});
-    } else {
-      let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+      continue;
+    }
+    let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
+    if (!removalOK) {
+      failedAtRemoval[deviceId] =
+        t('operationUnsuccessful', {errorline: __line});
+      continue;
+    }
+    if (device.use_tr069) {
+      removalOK = await TasksAPI.deleteDeviceFromGenie(device);
       if (!removalOK) {
         failedAtRemoval[deviceId] =
-          t('operationUnsuccessful', {errorline: __line});
-      } else {
-        removedDevIds.push(deviceId);
+          t('genieacsCommunicationError', {errorline: __line});
+        continue;
       }
     }
+    removedDevIds.push(deviceId);
   }
   // If there are any errors in the array, we log the details and inform which
   // cpes failed to be removed in the response
@@ -3288,7 +3320,9 @@ deviceListController.setPortForward = function(req, res) {
 
       let usedAsymPorts = [];
 
-      content.forEach((r) => {
+      for (let i = 0; i < content.length; i++) {
+        const r = content[i];
+
         if (!r.hasOwnProperty('mac') ||
             !r.hasOwnProperty('dmz') ||
             !r.mac.match(util.macRegex)) {
@@ -3368,7 +3402,7 @@ deviceListController.setPortForward = function(req, res) {
           }
           usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
         }
-      });
+      }
 
       // If we get here, all is validated!
 

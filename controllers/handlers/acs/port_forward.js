@@ -50,8 +50,10 @@ const fetchAndComparePortForward = async function(acsID) {
       }
       let isDiff = false;
       let template = '';
-      if (utilHandlers.checkForNestedKey(data, projection)) {
-        template = utilHandlers.replaceNestedKeyWildcards(data, projection);
+      if (utilHandlers.checkForNestedKey(data, portMappingTemplate)) {
+        template = utilHandlers.replaceNestedKeyWildcards(
+          data, portMappingTemplate,
+        );
       }
       if (template != '') {
         // Check how many rules are in the current tree
