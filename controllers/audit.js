@@ -62,9 +62,10 @@ const buildAndSendMessage = async function(
   if (turnedOff) return; // ignoring FlashAudit.
 
   if (!user || !user._id) return; // empty users should not create audits.
-  if (!client) return // if no 'client', we can't send anything.
+  if (!client) return; // if no 'client', we can't send anything.
 
   // building audit message.
+  // eslint-disable-next-line new-cap
   let [message, err] = new FlashAudit.audit.buildMessageForJS(
     client, product, user._id, object, searchable, operation, values,
   );
@@ -73,8 +74,6 @@ const buildAndSendMessage = async function(
   // console.log('FlashAudit message', message);
 
   // sending message.
-  let sendFunc = audit.sendWithPersistence;
-  if (process.env.AUDITS_MEMORY_ONLY) sendFunc = audit.sendWithoutPersistence;
   return sendFunc(message, waitPromisesForNetworking);
 };
 
@@ -90,7 +89,7 @@ controller.exponentialTime = (x, uniformRandom) => {
   const b = x > 0 ? 5 : 0; // when x == 0, we want to return 0 milliseconds.
   let t = (Math.min(x, 45)**2 + b); // stops growing at 45.
   t += uniformRandom()*t/5-(t/10); // adding a 10% random variation up or down.
-  return t*1000 // returns time in milliseconds.
+  return t*1000; // returns time in milliseconds.
 };
 
 // random milliseconds from 150 until 250.
@@ -112,6 +111,7 @@ let flashAuditServer;
 // temporary local store of unsent audit messages so we never lose any.
 let localStore = []; // memory only.
 let audits; // persisted.
+let sendFunc; // reference for send function assigned at 'init()'.
 
 // if audits are cached in database, send all audits, if any.
 controller.init = async function(
@@ -131,8 +131,13 @@ controller.init = async function(
     runtimeValidation: false,
   });
 
+  sendFunc = controller.sendWithPersistence;
+
   // ignore setup if audit messages should remain only in node instance memory.
-  if (process.env.AUDITS_MEMORY_ONLY) return;
+  if (process.env.AUDITS_MEMORY_ONLY) {
+    sendFunc = controller.sendWithoutPersistence;
+    return;
+  }
 
   const setup = async () => {
     if (!db) db = Mongoose.connection.db;
@@ -152,13 +157,13 @@ controller.init = async function(
     if (Mongoose.connection.readyState === 1) {
       return setup();
     } else {
-      return new Promise((resolve) => 
+      return new Promise((resolve) =>
         Mongoose.connection.on('connected', () => setup().then(resolve)));
     }
   } else {
     return setup();
   }
-}
+};
 
 // flag marking if the last attempt to contact flashAudit was successful.
 controller.isFlashAuditAvailable = true;
@@ -192,7 +197,7 @@ controller.tryLaterWithoutPersistence = async function(waitPromises, attempt) {
     if (!(await sendToFlashAudit(message))) { // sending.
       // if send is unsuccessful, will try again later.
       controller.tryLaterWithoutPersistence(waitPromises, attempt+1);
-      return
+      return;
     }
     attempt = 0; // after a successful attempt, we reset attempts counter.
     localStore.shift(); // removing message from head;
@@ -209,7 +214,7 @@ controller.sendWithPersistence = async function(message, waitPromises) {
     if (insert instanceof Error) { // if insert had any error.
       console.log('FlashAudit unavailable and Error caching ' +
                   'audit message with persistence.', insert);
-    };
+    }
     return;
   }
 
@@ -222,7 +227,7 @@ controller.sendWithPersistence = async function(message, waitPromises) {
                   'audit message with persistence.', insert);
     }
     return;
-  };
+  }
 
   // query for selecting the inserted message.
   let inserted = {_id: insert.insertedId};

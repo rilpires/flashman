@@ -465,7 +465,7 @@ scheduleController.abortSchedule = async function(req, res) {
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
 
-    const audit = {cmd: 'update_scheduler', 'aborted': true};
+    const audit = {'cmd': 'update_scheduler', 'aborted': true};
     Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
 
     rule.in_progress_devices.forEach(async (d) => {
@@ -1132,7 +1132,7 @@ scheduleController.startSchedule = async function(req, res) {
         });
       }
       const audit = {
-        cmd: 'update_scheduler',
+        'cmd': 'update_scheduler',
         'started': true,
         'release': release,
         'total': macList.length,

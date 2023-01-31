@@ -890,7 +890,7 @@ deviceListController.changeUpdate = async function(req, res) {
   // Simple CPE upgrade logic
   } else {
     const release = req.params.release.trim();
-    const audit = {cmd: 'firmware_upgrade', 'release': release};
+    const audit = {'cmd': 'firmware_upgrade', 'release': release};
     if (doUpdate) {
       audit['currentRelease'] = matchedDevice.release;
       matchedDevice.release = release;
@@ -1525,7 +1525,7 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
     removedDevIds.push(deviceId);
   }
   const audit = {
-    cmd: 'remove_devices',
+    'cmd': 'remove_devices',
     'licenseBlocked': licenseBlocked,
     'totalRemoved': removedDevIds.length,
   };
@@ -2002,7 +2002,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                          req.params.activate);
         Audit.cpe(req.user, device, 'trigger', {
-          cmd: 'wps',
+          'cmd': 'wps',
           'activated': req.params.activate,
         });
         break;
@@ -3510,7 +3510,7 @@ deviceListController.setPortForwardTr069 = async function(
     ret.message = t('incompatibleRulesError');
     return ret;
   }
-  
+
   // mapping of rules just like in front end.
   let before = deviceListController.mapTr069PortRulesToIps(device.port_mapping);
   let after = deviceListController.mapTr069PortRulesToIps(rules);
@@ -3543,221 +3543,219 @@ deviceListController.setPortForwardTr069 = async function(
 deviceListController.setPortForward = function(req, res) {
   DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
   async function(err, matchedDevice) {
-    try{
-      if (err) {
-        return res.status(200).json({
-          success: false,
-          message: t('cpeFindError', {errorline: __line}),
-        });
-      }
-      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
-        matchedDevice = matchedDevice[0];
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+    }
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
+    if (!permissions.grantPortForward) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeWithoutFunction'),
+      });
+    }
+    if (matchedDevice.bridge_mode_enabled) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeNotInBridgeCantOpenPorts'),
+      });
+    }
+    // TR-069 routers
+    if (matchedDevice.use_tr069) {
+      let result =
+        await deviceListController.setPortForwardTr069(matchedDevice,
+                                                       req.body.content,
+                                                       req.user);
+      return res.status(200).json({
+        success: result.success,
+        message: result.message,
+      });
+    // Flashbox firmware routers
+    } else {
+      let content;
+      if (typeof req.body.content == 'string' &&
+          util.isJsonString(req.body.content)
+      ) {
+        content = JSON.parse(req.body.content);
+      } else if (typeof req.body.content == 'object') {
+        content = req.body.content;
       } else {
-        return res.status(200).json({success: false,
-                                     message: t('cpeNotFound',
-                                      {errorline: __line})});
-      }
-      let permissions = DeviceVersion.devicePermissions(matchedDevice);
-      if (!permissions.grantPortForward) {
         return res.status(200).json({
           success: false,
-          message: t('cpeWithoutFunction'),
+          message: t('fieldNameInvalid',
+            {name: 'content', errorline: __line}),
         });
       }
-      if (matchedDevice.bridge_mode_enabled) {
-        return res.status(200).json({
-          success: false,
-          message: t('cpeNotInBridgeCantOpenPorts'),
-        });
-      }
-      // TR-069 routers
-      if (matchedDevice.use_tr069) {
-        let result =
-          await deviceListController.setPortForwardTr069(matchedDevice,
-                                                         req.body.content,
-                                                         req.user);
-        return res.status(200).json({
-          success: result.success,
-          message: result.message,
-        });
-      // Flashbox firmware routers
-      } else {
-        let content;
-        if (typeof req.body.content == 'string' &&
-            util.isJsonString(req.body.content)
-        ) {
-          content = JSON.parse(req.body.content);
-        } else if (typeof req.body.content == 'object') {
-          content = req.body.content;
-        } else {
+
+      let usedAsymPorts = [];
+
+      for (let i = 0; i < content.length; i++) {
+        const r = content[i];
+
+        if (!r.hasOwnProperty('mac') ||
+            !r.hasOwnProperty('dmz') ||
+            !r.mac.match(util.macRegex)) {
           return res.status(200).json({
             success: false,
-            message: t('fieldNameInvalid',
-              {name: 'content', errorline: __line}),
+            message: t('macInvalidInJson'),
           });
         }
 
-        let usedAsymPorts = [];
+        if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
+          !(r.port.map((p) => parseInt(p))
+                  .every((p) => (p >= 1 && p <= 65535)))
+        ) {
+          return res.status(200).json({
+            success: false,
+            message: t('internalPortsInvalidInJson'),
+          });
+        }
 
-        for (let i = 0; i < content.length; i++) {
-          const r = content[i];
+        let localPorts = r.port.map((p) => parseInt(p));
+          // Get unique port set
+        let localUniquePorts = [...new Set(localPorts)];
 
-          if (!r.hasOwnProperty('mac') ||
-              !r.hasOwnProperty('dmz') ||
-              !r.mac.match(util.macRegex)) {
+        if (r.hasOwnProperty('router_port')) {
+          if (!permissions.grantPortForwardAsym) {
             return res.status(200).json({
               success: false,
-              message: t('macInvalidInJson'),
+              message: t('cpeNotAcceptingSymmetricalPorts'),
             });
           }
 
-          if (!r.hasOwnProperty('port') || !Array.isArray(r.port) ||
-            !(r.port.map((p) => parseInt(p))
-                    .every((p) => (p >= 1 && p <= 65535)))
+          if (!Array.isArray(r.router_port) ||
+            !(r.router_port.map((p) => parseInt(p)).every(
+                (p) => (p >= 1 && p <= 65535)))
           ) {
             return res.status(200).json({
               success: false,
-              message: t('internalPortsInvalidInJson'),
+              message: t('externalPortsInvalidInJson'),
             });
           }
 
-          let localPorts = r.port.map((p) => parseInt(p));
-            // Get unique port set
-          let localUniquePorts = [...new Set(localPorts)];
-
-          if (r.hasOwnProperty('router_port')) {
-            if (!permissions.grantPortForwardAsym) {
-              return res.status(200).json({
-                success: false,
-                message: t('cpeNotAcceptingSymmetricalPorts'),
-              });
-            }
-
-            if (!Array.isArray(r.router_port) ||
-              !(r.router_port.map((p) => parseInt(p)).every(
-                  (p) => (p >= 1 && p <= 65535)))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsInvalidInJson'),
-              });
-            }
-
-            let localAsymPorts = r.router_port.map((p) => parseInt(p));
-            // Get unique port set
-            let localUniqueAsymPorts = [...new Set(localAsymPorts)];
-            if (localUniqueAsymPorts.length != localAsymPorts.length) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-
-            if (localUniqueAsymPorts.length != localUniquePorts.length) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalAndInternalPortsIncorrectInJson'),
-              });
-            }
-
-            if (
-              !(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-
-            usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
-          } else {
-            if (
-              !(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))
-            ) {
-              return res.status(200).json({
-                success: false,
-                message: t('externalPortsRepeatedInJson'),
-              });
-            }
-            usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
-          }
-        }
-
-        // If we get here, all is validated!
-
-        // mapping of rules per device, using badges. just like in front end.
-        const before = deviceListController
-          .mapFirmwarePortRulesForDevices(matchedDevice.lan_devices);
-        const after = deviceListController
-          .mapFirmwarePortRulesForDevices(content);
-        // taking changes.
-        const audit = {'port_forward': Audit.buildAttributeChange(before, after)};
-
-        // Remove all old firewall rules
-        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-          if (matchedDevice.lan_devices[idx].port.length > 0) {
-            matchedDevice.lan_devices[idx].port = [];
-            matchedDevice.lan_devices[idx].router_port = [];
-            matchedDevice.lan_devices[idx].dmz = false;
-          }
-        }
-
-        // Update with new ones
-        content.forEach((r) => {
-          let newRuleMac = r.mac.toLowerCase();
-          let portsArray = r.port.map((p) => parseInt(p));
-          portsArray = [...new Set(portsArray)];
-          let portAsymArray = [];
-
-          if (r.hasOwnProperty('router_port')) {
-            portAsymArray = r.router_port.map((p) => parseInt(p));
-            portAsymArray = [...new Set(portAsymArray)];
-          }
-
-          let newLanDevice = true;
-          for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-            if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
-              matchedDevice.lan_devices[idx].port = portsArray;
-              matchedDevice.lan_devices[idx].router_port = portAsymArray;
-              matchedDevice.lan_devices[idx].dmz = r.dmz;
-              matchedDevice.lan_devices[idx].last_seen = Date.now();
-              newLanDevice = false;
-              break;
-            }
-          }
-          if (newLanDevice) {
-            matchedDevice.lan_devices.push({
-              mac: newRuleMac,
-              port: portsArray,
-              router_port: portAsymArray,
-              dmz: r.dmz,
-              first_seen: Date.now(),
-              last_seen: Date.now(),
-            });
-          }
-        });
-
-        matchedDevice.forward_index = Date.now();
-
-        matchedDevice.save(function(err) {
-          if (err) {
-            console.log('Error Saving Port Forward: '+err);
+          let localAsymPorts = r.router_port.map((p) => parseInt(p));
+          // Get unique port set
+          let localUniqueAsymPorts = [...new Set(localAsymPorts)];
+          if (localUniqueAsymPorts.length != localAsymPorts.length) {
             return res.status(200).json({
               success: false,
-              message: t('cpeSaveError', {errorline: __line}),
+              message: t('externalPortsRepeatedInJson'),
             });
           }
-          Audit.cpe(req.user, matchedDevice, 'edit', audit);
-          mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
-          return res.status(200).json({
-            success: true,
-            message: '',
-          });
-        });
+          if (localUniqueAsymPorts.length != localUniquePorts.length) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalAndInternalPortsIncorrectInJson'),
+            });
+          }
+
+          if (
+            !(localUniqueAsymPorts.every((p) => (!usedAsymPorts.includes(p))))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsRepeatedInJson'),
+            });
+          }
+
+          usedAsymPorts = usedAsymPorts.concat(localUniqueAsymPorts);
+        } else {
+          if (
+            !(localUniquePorts.every((p) => (!usedAsymPorts.includes(p))))
+          ) {
+            return res.status(200).json({
+              success: false,
+              message: t('externalPortsRepeatedInJson'),
+            });
+          }
+          usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
+        }
       }
-    } catch (e) {
-      console.log('port forward error:', e)
+
+      // If we get here, all is validated!
+
+      // mapping of rules per device, using badges. just like in front end.
+      const before = deviceListController
+        .mapFirmwarePortRulesForDevices(matchedDevice.lan_devices);
+      const after = deviceListController
+        .mapFirmwarePortRulesForDevices(content);
+      // taking changes.
+      const audit = {
+        'port_forward': Audit.buildAttributeChange(before, after),
+      };
+
+      // Remove all old firewall rules
+      for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+        if (matchedDevice.lan_devices[idx].port.length > 0) {
+          matchedDevice.lan_devices[idx].port = [];
+          matchedDevice.lan_devices[idx].router_port = [];
+          matchedDevice.lan_devices[idx].dmz = false;
+        }
+      }
+
+      // Update with new ones
+      content.forEach((r) => {
+        let newRuleMac = r.mac.toLowerCase();
+        let portsArray = r.port.map((p) => parseInt(p));
+        portsArray = [...new Set(portsArray)];
+        let portAsymArray = [];
+
+        if (r.hasOwnProperty('router_port')) {
+          portAsymArray = r.router_port.map((p) => parseInt(p));
+          portAsymArray = [...new Set(portAsymArray)];
+        }
+
+        let newLanDevice = true;
+        for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
+          if (matchedDevice.lan_devices[idx].mac == newRuleMac) {
+            matchedDevice.lan_devices[idx].port = portsArray;
+            matchedDevice.lan_devices[idx].router_port = portAsymArray;
+            matchedDevice.lan_devices[idx].dmz = r.dmz;
+            matchedDevice.lan_devices[idx].last_seen = Date.now();
+            newLanDevice = false;
+            break;
+          }
+        }
+        if (newLanDevice) {
+          matchedDevice.lan_devices.push({
+            mac: newRuleMac,
+            port: portsArray,
+            router_port: portAsymArray,
+            dmz: r.dmz,
+            first_seen: Date.now(),
+            last_seen: Date.now(),
+          });
+        }
+      });
+
+      matchedDevice.forward_index = Date.now();
+
+      matchedDevice.save(function(err) {
+        if (err) {
+          console.log('Error Saving Port Forward: '+err);
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        Audit.cpe(req.user, matchedDevice, 'edit', audit);
+        mqtt.anlixMessageRouterUpdate(matchedDevice._id);
+
+        return res.status(200).json({
+          success: true,
+          message: '',
+        });
+      });
     }
   });
 };

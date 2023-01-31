@@ -1,17 +1,14 @@
-/* global __line */
 require('../../bin/globals.js');
-const { MongoClient, ObjectID } = require('mongodb');
+const {MongoClient, ObjectID} = require('mongodb');
 const mockingoose = require('mockingoose');
 const ConfigModel = require('../../models/config');
 const DeviceModel = require('../../models/device');
-const NotificationModel = require('../../models/notification');
 const UserModel = require('../../models/user');
 const RoleModel = require('../../models/role');
 const deviceListController = require('../../controllers/device_list');
 const userController = require('../../controllers/user');
 const updateScheduler = require('../../controllers/update_scheduler');
 const utils = require('../utils');
-// const FlashAudit = require('../fake_FlashAudit');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const audit = require('../../controllers/audit');
 
@@ -28,22 +25,22 @@ const cpesMock = [{
   wifi_ssid_5ghz: 'old-wifi-test-5g',
   wifi_state: 0,
   wifi_state_5ghz: 1,
-  ping_hosts: ["www.tiktok.com.br"],
+  ping_hosts: ['www.tiktok.com.br'],
   lan_devices: [
     {mac: 'ab:ab:ab:ab:ab:ac', port: [44], router_port: [44]},
     {mac: 'ab:ab:ab:ab:ab:ad'},
     {mac: 'ab:ab:ab:ab:ab:ae'},
   ],
-},{
+}, {
   _id: 'AB:AB:AB:AB:AB:BA',
   version: '0.42.0',
   model: 'W5-1200FV1',
-},{
+}, {
   _id: 'AB:AB:AB:AB:AB:BB',
   version: '0.42.0',
   model: 'W5-1200FV1',
   mesh_slaves: ['AB:AB:AB:AB:AB:BC'],
-},{
+}, {
   _id: 'AB:AB:AB:AB:AB:AF',
   serial_tr069: 'serial_tr069_AB:AB:AB:AB:AB:AF',
   alt_uid_tr069: 'alt_uid_tr069_AB:AB:AB:AB:AB:AF',
@@ -69,19 +66,22 @@ const cpesMock = [{
 
 // mocked User to be used in all tests.
 const usersMock = [{
+  // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'test_user',
   password: '123456',
   role: 'tester',
-},{
+}, {
+  // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'test_user_2',
   password: '123456',
   role: 'tester',
-}]
+}];
 
 // mocked Roles to be used in all tests.
 const rolesMock = [{
+  // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'tester',
   grantNotificationPopups: true,
@@ -96,13 +96,15 @@ const rolesMock = [{
   grantShowSearchSummary: false,
   grantSiteSurvey: false,
   grantWanAdvancedInfo: 0,
-},{
+}, {
+  // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'better tester',
-},{
+}, {
+  // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'much better tester',
-}]
+}];
 
 // mocked Config to be used in all tests.
 const configMock = {
@@ -118,7 +120,7 @@ const configMock = {
       to_do_devices: [],
       in_progress_devices: [],
       done_devices: [],
-      release: 'release1'
+      release: 'release1',
     },
     is_active: true,
     is_aborted: false,
@@ -127,9 +129,9 @@ const configMock = {
     used_time_range: false,
     used_csv: false,
     used_search: 'AB:AB:AB:AB:AB:AB',
-    date: new Date('2023-01-31T04:25:23.393Z')
+    date: new Date('2023-01-31T04:25:23.393Z'),
   },
-}
+};
 
 // // preventing app.js from executing.
 // jest.mock('../../app', () => ({}));
@@ -140,7 +142,6 @@ jest.mock('../../mqtts', () => {
   for (let d of cpesMock) map[d._id] = {[d._id]: true};
   return {
     __esModule: false,
-    // ...originalModule,
     unifiedClientsMap: map,
     anlixMessageRouterUpdate: () => undefined,
     anlixMessageRouterWpsButton: () => undefined,
@@ -206,13 +207,12 @@ jest.mock('../../controllers/handlers/acs/mesh', () => ({
 }));
 
 jest.mock('../../controllers/handlers/devices', () => {
-  const originalModule = 
+  const originalModule =
     jest.requireActual('../../controllers/handlers/devices');
   return {
     __esModule: true,
     ...originalModule,
     timeoutUpdateAck: () => undefined,
-    // isUpgradePossible: () => true,
   };
 });
 
@@ -250,7 +250,7 @@ jest.mock('../../controllers/external-genieacs/tasks-api', () => ({
   deleteDeviceFromGenie: async () => true,
 }));
 
-
+// eslint-disable-next-line no-multiple-empty-lines
 
 describe('Controllers - Audit', () => {
   let connection;
@@ -284,7 +284,7 @@ describe('Controllers - Audit', () => {
         else if (q['$in']) return q['$in'].some((rg) => rg.test(device._id));
         else {
           console.log(`mockingoose 'mockFindBySerialOrId' received an `+
-            `unknown query format:`, 
+            `unknown query format:`,
             JSON.stringify(query.getQuery(), null, '  '));
           return [];
         }
@@ -374,7 +374,7 @@ describe('Controllers - Audit', () => {
               wifi2Mode: '11n',
               userIdKind: 'Other',
               userId: 'HAHAHA',
-            })
+            });
             done();
           } catch (e) {
             done(e);
@@ -395,7 +395,7 @@ describe('Controllers - Audit', () => {
           }
         });
         deviceListController.createDeviceReg(req, res);
-      })
+      });
     });
 
     describe('Delete Devices', () => {
@@ -530,7 +530,6 @@ describe('Controllers - Audit', () => {
           });
         });
       });
-
     });
 
     describe('Sending commands to device', () => {
@@ -713,7 +712,6 @@ describe('Controllers - Audit', () => {
           activated: true,
         });
       });
-
     });
 
     describe('Port forward', () => {
@@ -751,7 +749,7 @@ describe('Controllers - Audit', () => {
             mac: 'abcdef',
             dmz: false,
             port: [],
-          }]
+          }];
           let ret = deviceListController.mapFirmwarePortRulesForDevices(array);
           expect(ret).toEqual({
             'abc': {
@@ -765,7 +763,7 @@ describe('Controllers - Audit', () => {
             'abcde': {
               dmz: false,
               ports: ['40', '50'],
-            }
+            },
           });
         });
 
@@ -792,7 +790,7 @@ describe('Controllers - Audit', () => {
                     ports: {
                       old: ['44'],
                       new: ['44', '60:56'],
-                    }
+                    },
                   },
                   'ab:ab:ab:ab:ab:ae': {dmz: true, ports: ['45', '61:57']},
                 },
@@ -837,13 +835,13 @@ describe('Controllers - Audit', () => {
             external_port_end: 44,
             internal_port_start: 44,
             internal_port_end: 44,
-          },{
+          }, {
             ip: '192.168.0.33',
             external_port_start: 45,
             external_port_end: 45,
             internal_port_start: 65,
             internal_port_end: 65,
-          },{
+          }, {
             ip: '192.168.0.34',
             external_port_start: 46,
             external_port_end: 49,
@@ -855,7 +853,7 @@ describe('Controllers - Audit', () => {
             external_port_end: 55,
             internal_port_start: 70,
             internal_port_end: 75,
-          }]
+          }];
           let ret = deviceListController.mapTr069PortRulesToIps(array);
           expect(ret).toEqual({
             '192.168.0.33': {ports: ['44', '45:65']},
@@ -893,7 +891,7 @@ describe('Controllers - Audit', () => {
                   '192.168.0.34': {ports: ['46']},
                   '192.168.0.32': null,
                 },
-              })
+              });
               done();
             } catch (e) {
               done(e);
@@ -928,7 +926,6 @@ describe('Controllers - Audit', () => {
           deviceListController.setPortForward(req, res);
         });
       });
-
     });
 
     describe('Firmware Upgrade', () => {
@@ -1033,7 +1030,7 @@ describe('Controllers - Audit', () => {
 
       beforeAll(() => {
         req = {
-          params: {id: 'AB:AB:AB:AB:AB:AB',},
+          params: {id: 'AB:AB:AB:AB:AB:AB'},
           user: {_id: '123456', role: 'tester'},
         };
       });
@@ -1055,7 +1052,6 @@ describe('Controllers - Audit', () => {
         deviceListController.factoryResetDevice(req, res);
       });
     });
-
   });
 
   describe('Checking Audit values in User and Roles', () => {
@@ -1065,7 +1061,7 @@ describe('Controllers - Audit', () => {
           body: {
             name: 'unitTest_user',
             password: '1233456',
-            role: 'tester'
+            role: 'tester',
           },
         };
         const res = mockExpressResponse(() => {
@@ -1247,7 +1243,7 @@ describe('Controllers - Audit', () => {
             names: [rolesMock[0].name],
             ids: [rolesMock[0]._id],
           },
-        }
+        };
         const res = mockExpressResponse(() => {
           try {
             expect(res.json.mock.lastCall[0].success).toBe(false);
@@ -1266,7 +1262,7 @@ describe('Controllers - Audit', () => {
             names: [rolesMock[1].name],
             ids: [rolesMock[1]._id],
           },
-        }
+        };
         const res = mockExpressResponse(() => {
           try {
             expect(res.json.mock.lastCall[0].success).toBe(true);
@@ -1288,7 +1284,7 @@ describe('Controllers - Audit', () => {
             names: [rolesMock[1].name, rolesMock[2].name],
             ids: [rolesMock[1]._id, rolesMock[2]._id],
           },
-        }
+        };
         const res = mockExpressResponse(() => {
           try {
             expect(res.json.mock.lastCall[0].success).toBe(true);
@@ -1303,7 +1299,7 @@ describe('Controllers - Audit', () => {
         });
         userController.deleteRole(req, res);
       });
-    })
+    });
   });
 
   describe('Checking Audit values in update scheduler', () => {
@@ -1314,7 +1310,7 @@ describe('Controllers - Audit', () => {
           model: ['W5-1200FV1'],
         }]);
       mockingoose(DeviceModel).toReturn([cpesMock[0]], 'find');
-    })
+    });
 
       test('Start schedule', (done) => {
         const req = {
@@ -1332,7 +1328,7 @@ describe('Controllers - Audit', () => {
           },
           user: {
             role: 'tester',
-          }
+          },
         };
         const res = mockExpressResponse(() => {
           try {
@@ -1345,7 +1341,7 @@ describe('Controllers - Audit', () => {
               cpesWontReturn: false,
               pageCount: 1,
               pageNumber: 1,
-              query: ["AB:AB:AB:AB:AB:AB"],
+              query: ['AB:AB:AB:AB:AB:AB'],
               started: true,
               release: 'release1',
               total: 1,
@@ -1368,7 +1364,7 @@ describe('Controllers - Audit', () => {
             expect(audit.cpes).toHaveBeenCalledTimes(1);
             expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
             expect(audit.cpes.mock.lastCall[3]).toEqual({
-              cmd: 'update_scheduler', 
+              cmd: 'update_scheduler',
               aborted: true,
             });
             done();
@@ -1406,7 +1402,7 @@ describe('Controllers - Audit', () => {
     const waitPromises = {
       exponential: () => Promise.resolve(undefined),
       short: () => Promise.resolve(undefined),
-    }
+    };
 
     beforeEach(async () => {
       audit.isFlashAuditAvailable = true;
@@ -1414,7 +1410,7 @@ describe('Controllers - Audit', () => {
 
     test('ExponentialTime', async () => {
       const midPointUniform = () => 0.5;
-      const expected = (x) => (x**2+5)*1000
+      const expected = (x) => (x**2+5)*1000;
       expect(audit.exponentialTime(0, midPointUniform)).toBe(0);
       expect(audit.exponentialTime(1, midPointUniform)).toBe(expected(1));
       expect(audit.exponentialTime(2, midPointUniform)).toBe(expected(2));
@@ -1486,7 +1482,7 @@ describe('Controllers - Audit', () => {
 
       beforeEach(async () => {
         await db.collection('audits').deleteMany({});
-      })
+      });
 
       test('Good connectivity', async () => {
         sendMock.mockResolvedValue(undefined);
@@ -1534,6 +1530,5 @@ describe('Controllers - Audit', () => {
         expect(tryLaterFunc).toHaveBeenCalledTimes(1); // no more recalls.
       });
     });
-
   });
-})
+});
