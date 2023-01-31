@@ -3402,7 +3402,7 @@ deviceListController.setPortForward = function(req, res) {
           }
           usedAsymPorts = usedAsymPorts.concat(localUniquePorts);
         }
-      });
+      };
 
       // If we get here, all is validated!
 
