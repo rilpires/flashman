@@ -67,7 +67,7 @@ const buildAndSendMessage = async function(
   // building audit message.
   // eslint-disable-next-line new-cap
   let [message, err] = new FlashAudit.audit.buildMessageForJS(
-    client, product, user._id, object, searchable, operation, values,
+    client, product, user._id.toString(), object, searchable, operation, values,
   );
   if (err) return console.log('Error creating Audit message:', err);
   if (message === undefined) return; // skipping send if message discarded.
@@ -170,7 +170,7 @@ controller.isFlashAuditAvailable = true;
 
 // sends message and returns true if successful. Else, return false.
 const sendToFlashAudit = async function(message) {
-  let err = await flashAuditServer.send(message);
+  let err = await flashAuditServer.send(message).catch((e) => e);
   if (err instanceof Error) {
     // console.log('Error sending audit message:', err);
     controller.isFlashAuditAvailable = false;
