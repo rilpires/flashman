@@ -126,11 +126,11 @@ userController.postUser = function(req, res) {
   });
 };
 
-// Reads role parameters from request and returns an object which will have
-// a 'success' attribute that, when true, will have another attribute called
-// 'role' with the Role attributes set by the parameters in the request,
-// but when 'success' is false, that object is already the error response.
-const readRolePermissions = function(req) {
+// Reads role parameters from request and returns an object which will contain
+// a 'success' attribute that, when true, will also contain the Role set by the
+// parameters in the request, but when 'success' is false, that object is
+// already the error response.
+const setRolePermissions = function(req, role) {
   let basicFirmwareUpgrade = false;
   let massFirmwareUpgrade = false;
   if (req.body['grant-firmware-upgrade'] == 2) {
@@ -147,7 +147,8 @@ const readRolePermissions = function(req) {
   } else if (req.body['grant-device-removal'] == 1) {
     basicDeviceRemoval = true;
   }
-  const role = {
+  const roleParams = {
+    name: req.body.name,
     grantWifiInfo: parseInt(req.body['grant-wifi-info']),
     grantPPPoEInfo: parseInt(req.body['grant-pppoe-info']),
     grantPassShow: req.body['grant-pass-show'],
@@ -190,6 +191,31 @@ const readRolePermissions = function(req) {
     grantWanAdvancedInfo: req.body['grant-wan-advanced-info'],
   };
 
+  let audit = {};
+  if (!role) {
+    role = new Role(roleParams);
+    /* eslint-disable guard-for-in */
+    for (let k in roleParams) {
+      // name will be used as identification instead of an attribute.
+      if (k === 'name') continue;
+      const v = role[k];
+      if (v) audit[k] = v; // role creation will audit only active permissions.
+      // fortunately, numeric permissions are always inactive when they are 0.
+      // inactive permission will show up when they are edited to active or
+      // back to inactive. Which means they will only not show in audit when
+      // role is being created.
+    }
+  } else {
+    /* eslint-disable guard-for-in */
+    for (let k in roleParams) {
+      if (k === 'name') continue; // name cannot change.
+      const oldValue = role[k];
+      role[k] = roleParams[k]; // updating role attributes.
+      const newValue = role[k];
+      if (oldValue !== newValue) audit[k] = {old: oldValue, new: newValue};
+    }
+  }
+
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
     return {
@@ -206,28 +232,14 @@ const readRolePermissions = function(req) {
     };
   }
 
-  return {success: true, role};
+  return {success: true, role, audit};
 };
 
 userController.postRole = function(req, res) {
-  const ret = readRolePermissions(req);
+  const ret = setRolePermissions(req);
   if (!ret.success) return res.json(ret);
 
-  const roleParams = ret.role;
-  roleParams.name = req.body.name; // adding 'name' parameter before creation.
-  let role = new Role(roleParams);
-
-  let audit = {};
-  /* eslint-disable guard-for-in */
-  for (let k in roleParams) {
-    const v = roleParams[k];
-    if (v) audit[k] = v; // role creation will audit only active permissions.
-    // fortunately, numeric permissions are always inactive when they are 0.
-    // inactive permission will show up when they are edited to active or
-    // back to inactive. Which means they will only not show in audit when
-    // role is being created.
-  }
-
+  const role = ret.role;
   role.save(function(err) {
     if (err) {
       console.log('Error creating role: ' + err);
@@ -237,7 +249,7 @@ userController.postRole = function(req, res) {
         message: t('roleMightAlreadyExist', {errorline: __line}),
       });
     }
-    Audit.role(req.user, role, 'create', audit);
+    Audit.role(req.user, role, 'create', ret.audit);
     return res.json({
       success: true,
       type: 'success',
@@ -392,17 +404,8 @@ userController.editRole = function(req, res) {
       });
     }
 
-    const params = readRolePermissions(req);
-    if (!params.success) return res.json(params);
-
-    let audit = {};
-    /* eslint-disable guard-for-in */
-    for (let k in params.role) {
-      const old = role[k];
-      const newValue = params.role[k];
-      if (old !== newValue) audit[k] = {old, new: newValue};
-      role[k] = newValue;
-    }
+    const ret = setRolePermissions(req, role);
+    if (!ret.success) return res.json(ret);
 
     role.save(function(err) {
       if (err) {
@@ -413,7 +416,7 @@ userController.editRole = function(req, res) {
           message: t('roleSaveError', {errorline: __line}),
         });
       }
-      Audit.role(req.user, role, 'edit', audit);
+      Audit.role(req.user, role, 'edit', ret.audit);
       return res.json({
         success: true,
         type: 'success',
