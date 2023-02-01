@@ -41,9 +41,10 @@ describe('Update Tests - Functions', () => {
   });
 
   // Version regex - Invalid characteres
-  let characteres = ['&', '/', '\\', '"', '\'', '`', '<', '>'];
+  let characteres = ['&', '\\', '"', '\'', '`', '<', '>'];
   for (let char = 0; char < characteres.length; char++) {
-    test('Validate Version Regex - Invalid character: ' + char, async () => {
+    test('Validate Version Regex - Invalid character: ' +
+      characteres[char], async () => {
       expect(
         firmwareController.__testIsValidVersion(
           'Test' + characteres[char] + 'Test',

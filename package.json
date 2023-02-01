@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.60.0",
+  "version": "2.61.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -105,6 +105,7 @@
     "jest": "^27.5.1",
     "mockingoose": "https://github.com/anlix-io/mockingoose.git",
     "mqtt": "1.14.0",
+    "nock": "^13.3.0",
     "nodemon": "^2.0.3",
     "regenerator-runtime": "^0.13.7",
     "sass": "^1.34.1",
