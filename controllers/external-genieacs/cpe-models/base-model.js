@@ -574,6 +574,13 @@ basicCPEModel.getModelFields = function() {
         'WANIPConnection.*.ExternalIPAddress',
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.ExternalIPAddress',
+
+      // WAN MAC address
+      wan_mac: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.MACAddress',
+      wan_mac_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANPPPConnection.*.MACAddress',
+
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANIPConnection.*.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+

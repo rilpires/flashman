@@ -313,6 +313,16 @@ const createRegistry = async function(req, cpe, permissions) {
     wanIP = data.wan.wan_ip.value;
   }
 
+
+  // WAN MAC Address - Device Model: wan_bssid
+  let wanMacAddr;
+  if (hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+    wanMacAddr = data.wan.wan_mac_ppp.value.toUpperCase();
+  } else if (data.wan.wan_mac && data.wan.wan_mac.value) {
+    wanMacAddr = data.wan.wan_mac.value.toUpperCase();
+  }
+
+
   let serialTR069 = cpe.convertGenieSerial(
     splitID[splitID.length - 1], macAddr,
   );
@@ -456,6 +466,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pon_txpower: txPowerPon,
     wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
+    wan_bssid: wanMacAddr,
     wifi_ssid: ssid,
     wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
       data.wifi2.bssid.value.toUpperCase() : undefined,
@@ -677,6 +688,8 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.duplex);
   parameterNames.push(fields.wan.wan_ip);
   parameterNames.push(fields.wan.wan_ip_ppp);
+  parameterNames.push(fields.wan.wan_mac);
+  parameterNames.push(fields.wan.wan_mac_ppp);
   if (cpe.modelPermissions().wan.hasUptimeField) {
     parameterNames.push(fields.wan.uptime);
     parameterNames.push(fields.wan.uptime_ppp);
@@ -880,6 +893,12 @@ const fetchSyncResult = async function(
         );
         acsData.wan.wan_ip_ppp = getFieldFromGenieData(
           data, wan.wan_ip_ppp, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_mac = getFieldFromGenieData(
+          data, wan.wan_mac, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_mac_ppp = getFieldFromGenieData(
+          data, wan.wan_mac_ppp, useLastIndexOnWildcard,
         );
         acsData.wan.uptime = getFieldFromGenieData(
           data, wan.uptime, useLastIndexOnWildcard,
@@ -1269,6 +1288,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
       device.wan_ip = data.wan.wan_ip_ppp.value;
     }
+
+    // Get WAN MAC address
+    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+      device.wan_bssid = data.wan.wan_mac_ppp.value.toUpperCase();
+    }
+
     if (data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
       device.wan_up_time = data.wan.uptime_ppp.value;
     }
@@ -1283,6 +1308,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.wan_ip && data.wan.wan_ip.value) {
       device.wan_ip = data.wan.wan_ip.value;
     }
+
+    // Get WAN MAC address
+    if (data.wan.wan_mac && data.wan.wan_mac.value) {
+      device.wan_bssid = data.wan.wan_mac.value.toUpperCase();
+    }
+
     // Do not store DHCP uptime for Archer C6
     if (
       data.wan.uptime && data.wan.uptime.value &&
