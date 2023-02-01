@@ -7,7 +7,6 @@ datacomModel.identifier = {vendor: 'Datacom', model: 'DM986-204'};
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
-  permissions.features.portForward = true;
   permissions.features.traceroute = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
@@ -29,32 +28,46 @@ datacomModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.protocol = 'ICMP';
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.fullSupport;
   permissions.firmwareUpgrades = {
     'V2.0.0': [],
   };
   return permissions;
 };
 
+datacomModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANIPConnectionNumberOfEntries';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.WANPPPConnectionNumberOfEntries';
-  fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.KeyPassphrase';
-  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.AutoChannelEnable';
-  fields.wifi2.enable = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Enable';
-  fields.wifi2.ssid = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.SSID';
-  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Standard';
-  fields.wifi2.channel = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.6.Channel';
-  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.KeyPassphrase';
-  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable';
-  fields.wifi5.enable = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable';
-  fields.wifi5.ssid = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID';
-  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard';
-  fields.wifi5.channel = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnectionNumberOfEntries';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnectionNumberOfEntries';
+  fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.KeyPassphrase';
+  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.AutoChannelEnable';
+  fields.wifi2.enable = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.Enable';
+  fields.wifi2.ssid = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.SSID';
+  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.Standard';
+  fields.wifi2.channel = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.6.Channel';
+  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1' +
+    'WLANConfiguration.1.KeyPassphrase';
+  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.1.AutoChannelEnable';
+  fields.wifi5.enable = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.1.Enable';
+  fields.wifi5.ssid = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.1.SSID';
+  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.1.Standard';
+  fields.wifi5.channel = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.1.Channel';
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
     '*.InterfaceType';
   return fields;
