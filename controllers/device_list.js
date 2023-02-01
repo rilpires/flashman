@@ -160,7 +160,7 @@ const getOnlineCountMesh = function(query, lastHour) {
 };
 
 deviceListController.sendCustomPing = async function(
-  device, reqBody, username, sessionID,
+  device, reqBody, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -199,7 +199,7 @@ deviceListController.sendCustomPing = async function(
     started_at: now,
     last_modified_at: now,
     targets: approvedTempHosts,
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
@@ -218,11 +218,11 @@ deviceListController.sendCustomPing = async function(
     }
   }
 
-  return await initiatePingCommand(device, username, sessionID);
+  return await initiatePingCommand(device, user, sessionID);
 };
 
 deviceListController.sendGenericPing = async function(
-  device, username, sessionID,
+  device, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -244,13 +244,13 @@ deviceListController.sendGenericPing = async function(
     started_at: now,
     last_modified_at: now,
     targets: device.ping_hosts.map((item) => item),
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
 
-  return await initiatePingCommand(device, username, sessionID);
+  return await initiatePingCommand(device, user, sessionID);
 };
 
 deviceListController.sendCustomSpeedTest = async function(
@@ -373,7 +373,7 @@ deviceListController.sendGenericSpeedTest = async function(
 };
 
 deviceListController.sendCustomTraceRoute = async function(
-  device, reqBody, username, sessionID,
+  device, reqBody, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -414,7 +414,7 @@ deviceListController.sendCustomTraceRoute = async function(
     started_at: now,
     last_modified_at: now,
     targets: approvedTempHosts,
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
@@ -434,7 +434,7 @@ deviceListController.sendCustomTraceRoute = async function(
     }
   }
 
-  return await initiateTracerouteTest(device, username, sessionID);
+  return await initiateTracerouteTest(device, user, sessionID);
 };
 
 deviceListController.sendGenericTraceRoute = async function(
