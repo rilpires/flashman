@@ -583,7 +583,8 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   });
   // New devices need to sync immediately
   if (!device) {
-    return res.status(200).json({success: true, measure: 2});
+    return res.status(200).json({success: true,
+      measure: true, create: 'newDevice'});
   }
   // Why is a non tr069 device calling this function? Just a sanity check
   if (!device.use_tr069) {
@@ -603,11 +604,11 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-    return res.status(200).json({success: true, measure: 1});
+    return res.status(200).json({success: true, measure: true, create: ''});
   }
   // Other registered devices should always collect information through
   // flashman, never using genieacs provision
-  res.status(200).json({success: true, measure: 0});
+  res.status(200).json({success: true, measure: false, create: ''});
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
   .catch((err)=>{
     console.log('Error reading config during requestSync');

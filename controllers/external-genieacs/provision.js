@@ -151,7 +151,7 @@ let data = {
   had previous port mapping entries, then we send back these entries
   on creation to avoid sync race condition after the creation of
   device in flashman database */
-if ((result.measure == 2 &&
+if ((result.create && result.create === 'newDevice' &&
   ((data.wan.port_mapping_entries_dhcp && data.wan.port_mapping_entries_dhcp.value > 0) ||
   (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0)))) {
   data.port_mapping = fetchPortFoward(fields, data.wan);
