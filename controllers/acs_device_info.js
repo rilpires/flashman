@@ -1245,7 +1245,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process wan connection type, but only if data sent
-  let hasPPPoE = null;
+  let hasPPPoE = false;
   if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
     data.wan.pppoe_enable.value =
       cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
