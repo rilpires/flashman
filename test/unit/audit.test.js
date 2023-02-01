@@ -1403,9 +1403,9 @@ describe('Controllers - Audit', () => {
       short: () => Promise.resolve(undefined),
     };
 
-    beforeEach(async () => {
-      audit.isFlashAuditAvailable = true;
-    });
+    // beforeEach(async () => {
+    //   audit.isFlashAuditAvailable = true;
+    // });
 
     test('ExponentialTime', async () => {
       const midPointUniform = () => 0.5;
@@ -1419,12 +1419,13 @@ describe('Controllers - Audit', () => {
 
     describe('Without persistence', () => {
       beforeAll(async () => {
-        process.env.AUDITS_MEMORY_ONLY = 'true';
+        process.env.FLASHAUDIT_MEMORY_ONLY = 'true';
         await audit.init('flashman_secret', waitPromises);
+        console.log("init finished")
       });
 
       afterAll(() => {
-        process.env.AUDITS_MEMORY_ONLY = '';
+        process.env.FLASHAUDIT_MEMORY_ONLY = '';
       });
 
       test('Good connectivity', async () => {
@@ -1432,7 +1433,7 @@ describe('Controllers - Audit', () => {
 
         await audit.sendWithoutPersistence(m, waitPromises);
         expect(sendMock).toHaveBeenCalledTimes(1);
-        expect(audit.isFlashAuditAvailable).toBe(true);
+        expect(audit.getServerAvailability()).toBe(true);
       });
 
       test('No connectivity', async () => {
@@ -1443,10 +1444,10 @@ describe('Controllers - Audit', () => {
           .mockImplementationOnce(() => undefined);
         sendMock.mockResolvedValue(new Error('forced a mocked error.'));
 
-        // first attempt to send after losing connectivity will try to send.
+        // first attempt to 'send' after losing connectivity will try to send.
         await audit.sendWithoutPersistence(m, waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(false);
-        // another send will not actually send.
+        expect(audit.getServerAvailability()).toBe(false);
+        // another 'send' will not actually send.
         await audit.sendWithoutPersistence(m, waitPromises);
         expect(tryLaterFunc).toHaveBeenCalledTimes(1);
         expect(sendMock).toHaveBeenCalledTimes(1);
@@ -1454,7 +1455,7 @@ describe('Controllers - Audit', () => {
         // only try later can attempt to 'send' after connectivity was lost.
         // it will send once per stored message.
         await audit.tryLaterWithoutPersistence(waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(false);
+        expect(audit.getServerAvailability()).toBe(false);
         expect(sendMock).toHaveBeenCalledTimes(2);
         // 'tryLaterWithoutPersistence' will be recalled from inside it self but
         // the 3rd call is a mock.
@@ -1464,10 +1465,11 @@ describe('Controllers - Audit', () => {
         sendMock.mockResolvedValue(undefined);
 
         // replicating the recall of 'tryLaterWithoutPersistence'
-        tryLaterFunc.mockRestore(); // setting it to original implementation.
-        tryLaterFunc = jest.spyOn(audit, 'tryLaterWithoutPersistence');
+        // tryLaterFunc.mockRestore(); // setting it to original implementation.
+        // tryLaterFunc = jest.spyOn(audit, 'tryLaterWithoutPersistence');
+        tryLaterFunc.mockClear();
         await audit.tryLaterWithoutPersistence(waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(true);
+        expect(audit.getServerAvailability()).toBe(true);
         // expecting to all accumulated messages to be sent.
         expect(sendMock).toHaveBeenCalledTimes(4);
         expect(tryLaterFunc).toHaveBeenCalledTimes(1); // no more recalls.
@@ -1488,7 +1490,7 @@ describe('Controllers - Audit', () => {
 
         await audit.sendWithPersistence(m, waitPromises);
         expect(sendMock).toHaveBeenCalledTimes(1);
-        expect(audit.isFlashAuditAvailable).toBe(true);
+        expect(audit.getServerAvailability()).toBe(true);
       });
 
       test('No connectivity', async () => {
@@ -1501,7 +1503,7 @@ describe('Controllers - Audit', () => {
 
         // first attempt to send after losing connectivity will try to send.
         await audit.sendWithPersistence(m, waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(false);
+        expect(audit.getServerAvailability()).toBe(false);
         // another send will not actually send.
         await audit.sendWithPersistence(m, waitPromises);
         expect(tryLaterFunc).toHaveBeenCalledTimes(1);
@@ -1510,7 +1512,7 @@ describe('Controllers - Audit', () => {
         // only try later can attempt to 'send' after connectivity was lost.
         // it will send once per stored message.
         await audit.tryLaterWithPersistence(waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(false);
+        expect(audit.getServerAvailability()).toBe(false);
         expect(sendMock).toHaveBeenCalledTimes(2);
         // 'tryLaterWithPersistence' will be recalled from inside it self but
         // the 3rd call is a mock.
@@ -1523,7 +1525,7 @@ describe('Controllers - Audit', () => {
         tryLaterFunc.mockRestore(); // setting it to original implementation.
         tryLaterFunc = jest.spyOn(audit, 'tryLaterWithPersistence');
         await audit.tryLaterWithPersistence(waitPromises);
-        expect(audit.isFlashAuditAvailable).toBe(true);
+        expect(audit.getServerAvailability()).toBe(true);
         // expecting to all accumulated messages to be sent.
         expect(sendMock).toHaveBeenCalledTimes(4);
         expect(tryLaterFunc).toHaveBeenCalledTimes(1); // no more recalls.

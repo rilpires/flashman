@@ -145,6 +145,7 @@ let sendFunc; // reference for send function assigned at 'init()'.
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
+  console.log('instancing client')
   // starting FlashAudit client.
   flashAuditServer = new FlashAudit.FlashAudit({
     client,
@@ -154,10 +155,11 @@ controller.init = async function(
     auth: {username: client, password: secret},
     runtimeValidation: false,
   });
+  console.log('instanced client')
 
   sendFunc = controller.sendWithPersistence;
 
-  // ignore setup if audit messages should remain only in node instance memory.
+  // ignore setup if audit messages should remain only in process memory.
   if (process.env.FLASHAUDIT_MEMORY_ONLY) {
     sendFunc = controller.sendWithoutPersistence;
     return;
@@ -190,24 +192,29 @@ controller.init = async function(
 };
 
 // flag marking if the last attempt to contact flashAudit was successful.
-controller.isFlashAuditAvailable = true;
+let isFlashAuditAvailable = true;
+
+// reader function for 'isFlashAuditAvailable';
+controller.getServerAvailability = () => isFlashAuditAvailable;
 
 // sends message and returns true if successful. Else, return false.
 const sendToFlashAudit = async function(message) {
   let err = await flashAuditServer.send(message).catch((e) => e);
   if (err instanceof Error && err.errorCode !== 'unauthorized') {
     console.log('Error sending audit message:', err.message);
-    controller.isFlashAuditAvailable = false;
+    isFlashAuditAvailable = false;
   } else {
-    controller.isFlashAuditAvailable = true;
+    isFlashAuditAvailable = true;
   }
-  return controller.isFlashAuditAvailable;
+  return isFlashAuditAvailable;
 };
 
 // keeps unsent audit messages in memory.
 controller.sendWithoutPersistence = async function(message, waitPromises) {
-  if (!controller.isFlashAuditAvailable) return localStore.push(message);
+  console.log('isFlashAuditAvailable', isFlashAuditAvailable)
+  if (!isFlashAuditAvailable) return localStore.push(message);
   if (!(await sendToFlashAudit(message))) {
+    console.log('isFlashAuditAvailable', isFlashAuditAvailable)
     localStore.push(message);
     controller.tryLaterWithoutPersistence(waitPromises);
   }
@@ -232,7 +239,7 @@ controller.tryLaterWithoutPersistence = async function(waitPromises, attempt) {
 // persists unsent audit messages.
 controller.sendWithPersistence = async function(message, waitPromises) {
   // skip sending if no connectivity.
-  if (!controller.isFlashAuditAvailable) {
+  if (!isFlashAuditAvailable) {
     const cached = {s: false, d: new Date(), p, m: message};
     const insert = await audits.insertOne(cached).catch((e) => e);
     if (insert instanceof Error) { // if insert had any error.
