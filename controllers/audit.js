@@ -195,8 +195,8 @@ controller.isFlashAuditAvailable = true;
 // sends message and returns true if successful. Else, return false.
 const sendToFlashAudit = async function(message) {
   let err = await flashAuditServer.send(message).catch((e) => e);
-  if (err instanceof Error) {
-    // console.log('Error sending audit message:', err);
+  if (err instanceof Error && err.errorCode !== 'unauthorized') {
+    console.log('Error sending audit message:', err.message);
     controller.isFlashAuditAvailable = false;
   } else {
     controller.isFlashAuditAvailable = true;
