@@ -81,6 +81,8 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
+      allowReadMacAddress: true, // can read WAN MAC address at flashman's wan
+        // tab, as the mac might come wrong in some devices
       allowReadWanMtu: true, // can read wan mtu at flashman's wan tab
       allowEditWanMtu: true, // can edit wan mtu at flashman's wan tab
       allowReadWanVlan: false, // can read wan vlan at flashman's wan tab
