@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let e4lModel = Object.assign({}, basicCPEModel);
 
-e4lModel.identifier = {vendor: 'E4L', model: 'E4L-H5410WA'};
+e4lModel.identifier = {vendor: 'Easy4Link', model: 'E4L-H5410WA'};
 
 e4lModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();

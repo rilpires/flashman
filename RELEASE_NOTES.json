@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.60.0",
+	"latest_version": "2.61.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,26 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.61.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Easy4Link E4L-H5410WA por TR-069",
+			"Adicionamos suporte ao modelo Intelbras W5-1200G por TR-069",
+			"Adicionamos suporte ao modelo Multilaser/ZTE H196 por TR-069",
+			"Adicionamos suporte ao modelo TP-Link 840N V6 por TR-069"
+		],
+		"fixes": [
+			"Consertamos um bug em que alguns modelos de CPEs TR-069 não estavam conseguindo cadastrar novas regras de abertura de portas",
+			"Consertamos um bug em que CPEs TR-069 poderiam ficar sem a informação de sinal da PON, mesmo quando estivessem online",
+			"Consertamos um bug em que CPEs TR-069 que não conseguiram realizar o download da firmware durante um upgrade de firmware poderiam ficar sem essa informação de erro no seu cadastro"
+		],
+		"improvements": [],
+		"features": [
+			"A busca de CPEs agora pode ser feita diretamente pela URL na página principal do Flashman",
+			"Ao deletar um CPE TR-069 do Flashman, o seu cadastro agora também será deletado da base de dados do ACS",
+			"Adicionamos uma opção na atualização de firmware em massa para CPEs com firmware Anlix, que permite a atualização correta de todos os CPEs quando a nova firmware impediria o CPE de regressar ao mesmo Flashman (por exemplo, em casos de migração de Flashmans)"
+		]
 	},
 	"2.60.0": {
 		"custom_firmware_compatibilities": [],
