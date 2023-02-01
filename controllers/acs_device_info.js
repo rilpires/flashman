@@ -812,7 +812,8 @@ const fetchSyncResult = async function(
     return p.replace(/\.\*.*/g, '');
   });
   // Temporary to fix collisions while we work on a permanent solution
-  parameterNames = parameterNames.filter((p) => !p.match('Device.IP.Interface.'));
+  parameterNames = parameterNames
+    .filter((p) => !p.match('Device.IP.Interface.'));
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
