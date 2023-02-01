@@ -71,6 +71,11 @@ cianetModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+cianetModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
+
+
 cianetModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
@@ -81,22 +86,22 @@ cianetModel.getModelFields = function() {
     'STUNEnable';
   fields.common.stun_udp_conn_req_addr =
   'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
-    'X_CT-COM_GponInterfaceConfig.RXPower';
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
-    'X_CT-COM_GponInterfaceConfig.TXPower';
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANCommonInterfaceConfig.TotalBytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANPPPConnection.1.DNSServers';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_CT-COM_GponInterfaceConfig.TXPower';
+  fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.WANPPPConnection.1.DNSServers';
   fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.TotalBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.TotalBytesSent';
   fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1' +
     '.Channel';
   fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.' +
@@ -126,9 +131,11 @@ cianetModel.getModelFields = function() {
   ];
   fields.diagnostics.traceroute.root = 'InternetGatewayDevice.' +
     'X_CT-COM_IPTraceRouteDiagnostics';
+  fields.diagnostics.traceroute.hops_root = 'Hops';
+  fields.diagnostics.traceroute.hop_host = 'ResponseIPAddress';
+  fields.diagnostics.traceroute.hop_ip_address = 'ResponseIPAddress';
   fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
-  fields.diagnostics.hop_host = 'Hops';
-  fields.diagnostics.hop_host = 'Host';
+  fields.diagnostics.traceroute.protocol = 'Mode';
   return fields;
 }
 
