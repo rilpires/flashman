@@ -158,7 +158,7 @@ controller.init = async function(
   sendFunc = controller.sendWithPersistence;
 
   // ignore setup if audit messages should remain only in node instance memory.
-  if (process.env.AUDITS_MEMORY_ONLY) {
+  if (process.env.FLASHAUDIT_MEMORY_ONLY) {
     sendFunc = controller.sendWithoutPersistence;
     return;
   }
