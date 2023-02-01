@@ -8,6 +8,7 @@ datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.traceroute = true;
+  permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
   permissions.features.upnp = false;
