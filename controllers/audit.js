@@ -145,7 +145,6 @@ let sendFunc; // reference for send function assigned at 'init()'.
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
-  console.log('instancing client')
   // starting FlashAudit client.
   flashAuditServer = new FlashAudit.FlashAudit({
     client,
@@ -155,7 +154,6 @@ controller.init = async function(
     auth: {username: client, password: secret},
     runtimeValidation: false,
   });
-  console.log('instanced client')
 
   sendFunc = controller.sendWithPersistence;
 
@@ -211,10 +209,8 @@ const sendToFlashAudit = async function(message) {
 
 // keeps unsent audit messages in memory.
 controller.sendWithoutPersistence = async function(message, waitPromises) {
-  console.log('isFlashAuditAvailable', isFlashAuditAvailable)
   if (!isFlashAuditAvailable) return localStore.push(message);
   if (!(await sendToFlashAudit(message))) {
-    console.log('isFlashAuditAvailable', isFlashAuditAvailable)
     localStore.push(message);
     controller.tryLaterWithoutPersistence(waitPromises);
   }

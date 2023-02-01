@@ -1421,7 +1421,6 @@ describe('Controllers - Audit', () => {
       beforeAll(async () => {
         process.env.FLASHAUDIT_MEMORY_ONLY = 'true';
         await audit.init('flashman_secret', waitPromises);
-        console.log("init finished")
       });
 
       afterAll(() => {
@@ -1465,8 +1464,6 @@ describe('Controllers - Audit', () => {
         sendMock.mockResolvedValue(undefined);
 
         // replicating the recall of 'tryLaterWithoutPersistence'
-        // tryLaterFunc.mockRestore(); // setting it to original implementation.
-        // tryLaterFunc = jest.spyOn(audit, 'tryLaterWithoutPersistence');
         tryLaterFunc.mockClear();
         await audit.tryLaterWithoutPersistence(waitPromises);
         expect(audit.getServerAvailability()).toBe(true);
@@ -1522,8 +1519,7 @@ describe('Controllers - Audit', () => {
         sendMock.mockResolvedValue(undefined);
 
         // replicating the recall of 'tryLaterWithPersistence'
-        tryLaterFunc.mockRestore(); // setting it to original implementation.
-        tryLaterFunc = jest.spyOn(audit, 'tryLaterWithPersistence');
+        tryLaterFunc.mockClear();
         await audit.tryLaterWithPersistence(waitPromises);
         expect(audit.getServerAvailability()).toBe(true);
         // expecting to all accumulated messages to be sent.
