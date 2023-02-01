@@ -3816,24 +3816,30 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#online-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('online'))) {
       $('.tags-input input').focus().val(t('online')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Unstable devices
   $(document).on('click', '#recovery-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('unstable'))) {
       $('.tags-input input').focus().val(t('unstable')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Offline devices
   $(document).on('click', '#offline-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('offline'))) {
       $('.tags-input input').focus().val(t('offline')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Table column sorts
