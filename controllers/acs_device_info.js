@@ -1273,6 +1273,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         hasChanges = true;
       }
     }
+
     // Process PPPoE password field
     if (data.wan.pppoe_pass && data.wan.pppoe_pass.value) {
       let localPass = device.pppoe_password.trim();
@@ -1285,6 +1286,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         hasChanges = true;
       }
     }
+
     // Process other fields like IP, uptime and MTU
     if (data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
       device.wan_ip = data.wan.wan_ip_ppp.value;
