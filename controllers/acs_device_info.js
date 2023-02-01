@@ -435,6 +435,15 @@ const createRegistry = async function(req, cpe, permissions) {
       }
     }
   }
+  /* only process port mapping coming from sync if
+  is the feature is enabled to that device */
+  let portMapping = [];
+  if (cpe.modelPermissions().features.portForward &&
+    data.port_mapping && data.port_mapping.length > 0) {
+    portMapping = acsPortForwardHandler
+      .convertPortForwardFromGenieToFlashman(data.port_mapping,
+        cpe.getModelFields());
+  }
 
   let newDevice = new DeviceModel({
     _id: macAddr,
@@ -475,6 +484,7 @@ const createRegistry = async function(req, cpe, permissions) {
     ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
+    port_mapping: portMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_negociated_speed: wanRate,
@@ -573,7 +583,8 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   });
   // New devices need to sync immediately
   if (!device) {
-    return res.status(200).json({success: true, measure: true});
+    return res.status(200).json({success: true,
+      measure: true, create: 'newDevice'});
   }
   // Why is a non tr069 device calling this function? Just a sanity check
   if (!device.use_tr069) {
@@ -593,11 +604,11 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-    return res.status(200).json({success: true, measure: true});
+    return res.status(200).json({success: true, measure: true, create: ''});
   }
   // Other registered devices should always collect information through
   // flashman, never using genieacs provision
-  res.status(200).json({success: true, measure: false});
+  res.status(200).json({success: true, measure: false, create: ''});
   let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
   .catch((err)=>{
     console.log('Error reading config during requestSync');
