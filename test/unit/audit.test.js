@@ -198,9 +198,14 @@ jest.mock('../../controllers/handlers/acs/diagnostics', () => ({
   fireTraceDiagnose: () => ({success: true}),
 }));
 
-jest.mock('../../controllers/handlers/acs/port_forward', () => ({
-  changePortForwardRules: () => undefined,
-}));
+jest.mock('../../controllers/handlers/acs/port_forward', () => {
+  const originalModule = jest.requireActual('../../controllers/handlers/acs/port_forward');
+  return {
+    __esModule: true,
+    ...originalModule,
+    changePortForwardRules: () => undefined,
+  };
+});
 
 jest.mock('../../controllers/handlers/acs/mesh', () => ({
   getMeshBSSIDFromGenie: () => ({success: true}),
