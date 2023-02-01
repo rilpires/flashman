@@ -10,7 +10,6 @@ cianetModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.traceroute = true;
   permissions.features.ponSignal = true;
-  permissions.features.pingTest = true;
   permissions.features.upnp = false;
   permissions.features.stun = true;
   permissions.features.wps = false;
@@ -64,6 +63,10 @@ cianetModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+cianetModel.getBeaconType = function() {
+  return 'WPA/WPA2';
+};
+
 cianetModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
@@ -76,6 +79,8 @@ cianetModel.getModelFields = function() {
     'LANEthernetInterfaceConfig.1.MACAddress';
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
     'STUNEnable';
+  fields.common.stun_udp_conn_req_addr =
+  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CT-COM_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
@@ -86,9 +91,9 @@ cianetModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.1.WANPPPConnection.1.DNSServers';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.' +
-    '1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
