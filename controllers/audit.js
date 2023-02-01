@@ -1,11 +1,39 @@
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
+const Validator = require('../public/javascripts/device_validator');
 
 // returns true if environment variable value can be recognized as true.
 const isEnvTrue = (envVar) => /^(true|t|1)$/i.test(envVar);
 
+// reads a string of addresses (with ports) separated by comma, validates them
+// and returns an array with the valid addresses. Returns undefined if no valid
+// addresses.
+const validatesListOfAddresses = (env) => {
+  if (!env) return;
+  const addresses = env.split(',');
+  const validated = [];
+  for (let url of addresses) {
+    const columnIndex = url.indexOf(':'); // port separator.
+    if (columnIndex < 0) continue;
+    const fqdn = url.slice(0, columnIndex);
+    if (!Validator.validateFqdn(fqdn)) continue;
+    let port = parseInt(url.slice(columnIndex+1));
+    if (isNaN(port)) continue;
+    if (port > 65536) continue;
+    validated.push(url);
+  }
+  if (validated.length === 0) return;
+  return validated;
+};
+
 const client = process.env.AIX_PROVIDER || 'test_client';
 const product = 'flashman';
+const serverBrokers =
+  validatesListOfAddresses(process.env.FLASHAUDIT_SERVER_BROKERS) || [
+  'redaudit01.anlix.io:8092',
+  'redaudit02.anlix.io:8092',
+  'redaudit03.anlix.io:8092',
+];
 const turnedOff = isEnvTrue(process.env.FLASHAUDIT_TURNOFF);
 
 const controller = {}; // to be exported.
@@ -121,11 +149,7 @@ controller.init = async function(
   flashAuditServer = new FlashAudit.FlashAudit({
     client,
     product,
-    serverBrokers: [
-      'redaudit01.anlix.io:8092',
-      'redaudit02.anlix.io:8092',
-      'redaudit03.anlix.io:8092',
-    ],
+    serverBrokers,
     sslEnabled: !isEnvTrue(process.env.KAFKA_SSL_DISABLED),
     auth: {username: client, password: secret},
     runtimeValidation: false,
@@ -229,7 +253,7 @@ controller.sendWithPersistence = async function(message, waitPromises) {
     return;
   }
 
-  // query for selecting the inserted message.
+  // a query for selecting the inserted message.
   let inserted = {_id: insert.insertedId};
 
   if (!(await sendToFlashAudit(message))) {
