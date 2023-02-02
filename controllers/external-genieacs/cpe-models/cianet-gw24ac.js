@@ -120,7 +120,7 @@ cianetModel.getModelFields = function() {
   fields.common.stun_enable = 'InternetGatewayDevice.ManagementServer.' +
     'STUNEnable';
   fields.common.stun_udp_conn_req_addr =
-  'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
+    'InternetGatewayDevice.ManagementServer.UDPConnectionRequestAddress';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
