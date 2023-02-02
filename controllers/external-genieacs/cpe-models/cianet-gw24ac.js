@@ -60,8 +60,43 @@ cianetModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-cianetModel.getBeaconType = function() {
-  return 'WPA/WPA2';
+cianetModel.isDeviceConnectedViaWifi = function(
+  layer2iface, wifi2iface, wifi5iface,
+) {
+  if (layer2iface === '802.11') {
+    return 'wifi';
+  }
+  return 'cable';
+};
+
+cianetModel.readTracerouteRTTs = function(hopRoot) {
+  let ret = [];
+  for (let i = 1; i <= 3; i++) {
+    let responseObject = hopRoot[`ResponseTime${i}`];
+    // Sometimes a probe comes with 0 latency (while others come >100)
+    // This clearly means that probe was a loss.
+    // I've never seen 0 latency on initial hops, only >=1, probably a ceil()
+    if (responseObject &&
+      typeof(responseObject['_value']) == 'number' &&
+      !isNaN(responseObject['_value']) &&
+      responseObject['_value'] > 0
+    ) {
+      ret.push(responseObject['_value'].toString());
+    }
+  }
+  return ret;
+};
+
+cianetModel.convertChannelToTask = function(channel, fields, masterKey) {
+  if (channel === 'auto') {
+    channel = '0';
+  }
+  let values = [];
+  const parsedChannel = parseInt(channel);
+  values.push([
+    fields[masterKey]['channel'], parsedChannel, 'xsd:unsignedInt',
+  ]);
+  return values;
 };
 
 cianetModel.convertToDbm = function(power) {
@@ -72,6 +107,9 @@ cianetModel.convertWifiRate = function(rate) {
   return parseInt(rate) / 1000;
 };
 
+cianetModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
 
 cianetModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
