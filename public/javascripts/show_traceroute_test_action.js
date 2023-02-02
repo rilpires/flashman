@@ -376,7 +376,7 @@ const updateValues = function(message) {
 
     // If hop exists and could test against it
     if (hop) {
-      // If could test against the address and get at least one value
+      // If could test against the address and got at least one value
       if (hop.ms_values.length > 0) {
         // Calculate the mean value of miliseconds
         let mean = hop.ms_values.reduce(
@@ -390,7 +390,13 @@ const updateValues = function(message) {
       } else {
         latencyText = t('Latency=X', {x: '?'});
       }
-      hopText = `${hopIndex}. ${hop.ip}`;
+
+      // Format IP text
+      if (hop.ip && hop.ip.constructor === String && hop.ip !== '*') {
+        hopText = `${hopIndex}. ${hop.ip}`;
+      } else {
+        hopText = `${hopIndex}. ***`;
+      }
     } else {
       hopText = `${hopIndex}. ***`;
       latencyText = t('Latency=X', {x: '?'});
