@@ -30,9 +30,9 @@ const client = process.env.AIX_PROVIDER || 'test_client';
 const product = 'flashman';
 const serverBrokers =
   validatesListOfAddresses(process.env.FLASHAUDIT_SERVER_BROKERS) || [
-  'redaudit01.anlix.io:8092',
-  'redaudit02.anlix.io:8092',
-  'redaudit03.anlix.io:8092',
+  'redaudit01.anlix.io:8082',
+  'redaudit02.anlix.io:8082',
+  'redaudit03.anlix.io:8082',
 ];
 const turnedOff = isEnvTrue(process.env.FLASHAUDIT_TURNOFF);
 
