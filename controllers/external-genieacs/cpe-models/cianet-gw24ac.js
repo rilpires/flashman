@@ -129,24 +129,18 @@ cianetModel.getModelFields = function() {
     'X_CT-COM_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CT-COM_GponInterfaceConfig.TXPower';
-  fields.wan.wan_ip = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANPPPConnection.1.DNSServers';
   fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
-  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1' +
-    '.Channel';
-  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.KeyPassphrase';
-  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.' +
-    '6.Channel';
-  fields.wifi5.enable = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.' +
-    '3.Enable';
+  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
+    'Channel';
+  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
+    'Channel';
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
-    '3.InterfaceType';
+    '*.InterfaceType';
   fields.port_mapping_values.protocol[0] = 'Protocol';
   fields.port_mapping_values.protocol[1] = 'BOTH';
   fields.port_mapping_values.enable[0] = 'Enabled';
@@ -172,6 +166,6 @@ cianetModel.getModelFields = function() {
   fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
   fields.diagnostics.traceroute.protocol = 'Mode';
   return fields;
-}
+};
 
 module.exports = cianetModel;
