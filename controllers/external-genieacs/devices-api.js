@@ -22,6 +22,7 @@ const basicCPEModel = require('./cpe-models/base-model');
 // Import each and every model
 const tr069Models = {
   cianetGW24ACModel: require('./cpe-models/cianet-gw24ac'),
+  cianetHW01NModel: require('./cpe-models/cianet-hw01n'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
   datacomDM986Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
@@ -143,6 +144,9 @@ const instantiateCPEByModel = function(
   if (modelName === 'ONU GW24AC') {
     // Cianet GW24AC
     result = {success: true, cpe: tr069Models.cianetGW24ACModel};
+  } else if (modelName === 'ONU HW01N') {
+    // Cianet HW01N
+    result = {success: true, cpe: tr069Models.cianetHW01NModel};
   } else if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     result = {success: true, cpe: tr069Models.datacomDM985Model};

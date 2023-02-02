@@ -1,7 +1,7 @@
 {
     "extends": ["eslint:recommended", "google", "plugin:i18n-json/recommended"],
     "parserOptions": {
-        "ecmaVersion": 8,
+        "ecmaVersion": 2019,
         "sourceType": "module"
     },
     "env": {

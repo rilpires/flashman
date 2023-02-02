@@ -3026,88 +3026,6 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
-deviceListController.checkOverlappingPorts = function(rules) {
-  let i;
-  let j;
-  let ipI;
-  let ipJ;
-  let exStart;
-  let exEnd;
-  let inStart;
-  let inEnd;
-  if (rules.length > 1) {
-    for (i = 0; i < rules.length; i++) {
-      ipI = rules[i].ip;
-      exStart = rules[i].external_port_start;
-      exEnd = rules[i].external_port_end;
-      inStart = rules[i].internal_port_start;
-      inEnd = rules[i].internal_port_end;
-      for (j = i+1; j < rules.length; j++) {
-        ipJ = rules[j].ip;
-        let port = rules[j].external_port_start;
-        if (port >= exStart && port <= exEnd) {
-          return true;
-        }
-        port = rules[j].external_port_end;
-        if (port >= exStart && port <= exEnd) {
-          return true;
-        }
-        port = rules[j].internal_port_start;
-        if (ipI == ipJ && port >= inStart && port <= inEnd) {
-          return true;
-        }
-        port = rules[j].internal_port_end;
-        if (ipI == ipJ && port >= inStart && port <= inEnd) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-};
-
-/*
-Function to check if exists rules that are not compatible to the device:
-  Returns true case exist a rule that is not possible to do in the device;
-  False if is all clean;
-*/
-deviceListController.checkIncompatibility = function(rules, compatibility) {
-  let ret = false;
-  let i;
-  let exStart;
-  let exEnd;
-  let inStart;
-  let inEnd;
-  for (i = 0; i < rules.length; i++) {
-    exStart = rules[i].external_port_start;
-    exEnd = rules[i].external_port_end;
-    inStart = rules[i].internal_port_start;
-    inEnd = rules[i].internal_port_end;
-    if (!compatibility.simpleSymmetric) {
-      if (exStart == exEnd && inStart == inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.simpleAsymmetric) {
-      if (exStart != inStart && exEnd != inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.rangeSymmetric) {
-      if (exStart != exEnd && inStart != inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.rangeAsymmetric) {
-      if (exStart != inStart && exEnd != inEnd &&
-         exStart != exEnd && inStart != inEnd) {
-        ret = true;
-      }
-    }
-  }
-  return ret;
-};
-
 deviceListController.setPortForwardTr069 = async function(device, content) {
   let i;
   let j;
@@ -3228,7 +3146,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     }
   }
   // check overlapping port mapping
-  if (deviceListController.checkOverlappingPorts(rules)) {
+  if (acsPortForwardHandler.checkOverlappingPorts(rules)) {
     ret.success = false;
     ret.message = t('overlappingMappingError');
     return ret;
@@ -3236,7 +3154,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   // check compatibility in mode of port mapping
   let permissions = DeviceVersion.devicePermissions(device);
   let portForwardOpts = permissions.grantPortForwardOpts;
-  if (deviceListController.checkIncompatibility(rules, portForwardOpts)) {
+  if (acsPortForwardHandler.checkIncompatibility(rules, portForwardOpts)) {
     ret.success = false;
     ret.message = t('incompatibleRulesError');
     return ret;

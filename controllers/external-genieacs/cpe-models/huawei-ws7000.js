@@ -25,6 +25,10 @@ huaweiModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     '2.1.0.209(SP2C947)': [],
   };
+
+  // MAC address comes wrong in this model
+  permissions.wan.allowReadMacAddress = true;
+
   return permissions;
 };
 
