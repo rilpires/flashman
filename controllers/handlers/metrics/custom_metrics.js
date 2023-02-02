@@ -48,6 +48,23 @@ let metricsApi = {
     metrics.flm_diagnostics_states
       .inc({'diagnostic_type': type, 'diagnostic_state': state});
   },
+
+  // Below functions register a metric with a provided collector function
+
+  // This callback has no parameters
+  registerAuditMemoryQueueSize: function(callback) {
+    if (typeof(callback)=='function') {
+      new promClient.Gauge({
+        name: 'flm_audit_memory_queue_size',
+        collect: function() {
+          let value = callback();
+          if (typeof(value)=='number' && !isNaN(value)) {
+            this.set(value);
+          }
+        },
+      });
+    }
+  },
 };
 
 module.exports = metricsApi;

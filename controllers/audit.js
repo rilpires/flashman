@@ -1,6 +1,8 @@
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
 const Validator = require('../public/javascripts/device_validator');
+const {registerAuditMemoryQueueSize}
+  = require('./handlers/metrics/custom_metrics');
 
 // returns true if environment variable value can be recognized as true.
 const isEnvTrue = (envVar) => /^(true|t|1)$/i.test(envVar);
@@ -159,6 +161,7 @@ controller.init = async function(
 
   // ignore setup if audit messages should remain only in process memory.
   if (process.env.FLASHAUDIT_MEMORY_ONLY) {
+    registerAuditMemoryQueueSize(()=>localStore.length);
     sendFunc = controller.sendWithoutPersistence;
     return;
   }
