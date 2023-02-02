@@ -92,7 +92,7 @@ basicCPEModel.modelPermissions = function() {
       pingTestSetInterface: false, // pingtest will set device interface
       speedTestSetInterface: false, // speedtest will set device interface
       traceRouteSetInterface: false, // traceroute will set device interface
-      portForwardQueueTasks: false, // queue tasks and only send request on last
+      portForwardQueueTasks: true, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
       hasUptimeField: true, // flag to handle devices that don't have uptime
