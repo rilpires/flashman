@@ -201,7 +201,8 @@ jest.mock('../../controllers/handlers/acs/diagnostics', () => ({
 }));
 
 jest.mock('../../controllers/handlers/acs/port_forward', () => {
-  const originalModule = jest.requireActual('../../controllers/handlers/acs/port_forward');
+  const originalModule =
+    jest.requireActual('../../controllers/handlers/acs/port_forward');
   return {
     __esModule: true,
     ...originalModule,

@@ -47,13 +47,10 @@ controller.buildAttributeChange = FlashAudit.audit.buildAttributeChange;
 controller.cpe = function(user, cpe, operation, values) {
   // building the values this device could be searched by so users
   // can find it in FlashAudit.
-  let searchable = [];
-  if (!cpe.use_tr069) {
-    searchable = [cpe._id];
-  } else if (cpe.serial_tr069) {
-    searchable = [cpe.serial_tr069];
-  } else {
-    searchable = [cpe.alt_uid_tr069];
+  const searchable = [cpe._id];
+  if (cpe.use_tr069) {
+    if (cpe.alt_uid_tr069) searchable.push(cpe.alt_uid_tr069);
+    else searchable.push(cpe.serial_tr069);
   }
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
@@ -152,9 +149,7 @@ let sendFunc; // reference for send function assigned at 'init()'.
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
-  if (turnedOff) {
-    return;
-  }
+  if (turnedOff) return;
 
   // starting FlashAudit client.
   flashAuditServer = new FlashAudit.FlashAudit({
