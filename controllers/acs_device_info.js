@@ -173,22 +173,27 @@ const processHostFromURL = function(url) {
   return hostAndPort.split(':')[0];
 };
 
+const getPPPoEenabled = function(cpe, wan) {
+  let hasPPPoE = false;
+  if (wan.pppoe_enable && wan.pppoe_enable.value) {
+    wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(wan.pppoe_enable.value);
+    if (typeof wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (utilHandlers.isTrueValueString(wan.pppoe_enable.value));
+    } else if (typeof wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = wan.pppoe_enable.value;
+    }
+  }
+  return hasPPPoE;
+};
+
 const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
-  let hasPPPoE = false;
-  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
-    data.wan.pppoe_enable.value =
-      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
-    if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = (utilHandlers.isTrueValueString(data.wan.pppoe_enable.value));
-    } else if (typeof data.wan.pppoe_enable.value === 'number') {
-      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
-    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
-      hasPPPoE = data.wan.pppoe_enable.value;
-    }
-  }
+  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -312,6 +317,16 @@ const createRegistry = async function(req, cpe, permissions) {
   } else if (data.wan.wan_ip && data.wan.wan_ip.value) {
     wanIP = data.wan.wan_ip.value;
   }
+
+
+  // WAN MAC Address - Device Model: wan_bssid
+  let wanMacAddr;
+  if (hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+    wanMacAddr = data.wan.wan_mac_ppp.value.toUpperCase();
+  } else if (data.wan.wan_mac && data.wan.wan_mac.value) {
+    wanMacAddr = data.wan.wan_mac.value.toUpperCase();
+  }
+
 
   let serialTR069 = cpe.convertGenieSerial(
     splitID[splitID.length - 1], macAddr,
@@ -465,6 +480,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pon_txpower: txPowerPon,
     wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
+    wan_bssid: wanMacAddr,
     wifi_ssid: ssid,
     wifi_bssid: (data.wifi2.bssid && data.wifi2.bssid.value) ?
       data.wifi2.bssid.value.toUpperCase() : undefined,
@@ -604,7 +620,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-    return res.status(200).json({success: true, 
+    return res.status(200).json({success: true,
       measure: true, measure_type: 'updateDevice'});
   }
   // Other registered devices should always collect information through
@@ -689,6 +705,8 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.duplex);
   parameterNames.push(fields.wan.wan_ip);
   parameterNames.push(fields.wan.wan_ip_ppp);
+  parameterNames.push(fields.wan.wan_mac);
+  parameterNames.push(fields.wan.wan_mac_ppp);
   if (cpe.modelPermissions().wan.hasUptimeField) {
     parameterNames.push(fields.wan.uptime);
     parameterNames.push(fields.wan.uptime_ppp);
@@ -811,7 +829,8 @@ const fetchSyncResult = async function(
     return p.replace(/\.\*.*/g, '');
   });
   // Temporary to fix collisions while we work on a permanent solution
-  parameterNames = parameterNames.filter((p) => !p.match('Device.IP.Interface.'));
+  parameterNames = parameterNames
+    .filter((p) => !p.match('Device.IP.Interface.'));
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
@@ -892,6 +911,12 @@ const fetchSyncResult = async function(
         );
         acsData.wan.wan_ip_ppp = getFieldFromGenieData(
           data, wan.wan_ip_ppp, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_mac = getFieldFromGenieData(
+          data, wan.wan_mac, useLastIndexOnWildcard,
+        );
+        acsData.wan.wan_mac_ppp = getFieldFromGenieData(
+          data, wan.wan_mac_ppp, useLastIndexOnWildcard,
         );
         acsData.wan.uptime = getFieldFromGenieData(
           data, wan.uptime, useLastIndexOnWildcard,
@@ -1237,19 +1262,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process wan connection type, but only if data sent
-  let hasPPPoE = null;
-  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
-    data.wan.pppoe_enable.value =
-      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
-    if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = utilHandlers.isTrueValueString(data.wan.pppoe_enable.value);
-    } else if (typeof data.wan.pppoe_enable.value === 'number') {
-      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
-    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
-      hasPPPoE = data.wan.pppoe_enable.value;
-    }
-    device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
-  }
+  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
   // Process WAN fields, separated by connection type - force cast to bool in
   // case connection type is null
@@ -1265,6 +1279,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         hasChanges = true;
       }
     }
+
     // Process PPPoE password field
     if (data.wan.pppoe_pass && data.wan.pppoe_pass.value) {
       let localPass = device.pppoe_password.trim();
@@ -1277,10 +1292,17 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         hasChanges = true;
       }
     }
+
     // Process other fields like IP, uptime and MTU
     if (data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
       device.wan_ip = data.wan.wan_ip_ppp.value;
     }
+
+    // Get WAN MAC address
+    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+      device.wan_bssid = data.wan.wan_mac_ppp.value.toUpperCase();
+    }
+
     if (data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
       device.wan_up_time = data.wan.uptime_ppp.value;
     }
@@ -1295,6 +1317,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     if (data.wan.wan_ip && data.wan.wan_ip.value) {
       device.wan_ip = data.wan.wan_ip.value;
     }
+
+    // Get WAN MAC address
+    if (data.wan.wan_mac && data.wan.wan_mac.value) {
+      device.wan_bssid = data.wan.wan_mac.value.toUpperCase();
+    }
+
     // Do not store DHCP uptime for Archer C6
     if (
       data.wan.uptime && data.wan.uptime.value &&
@@ -1630,6 +1658,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
     if (typeof config.tr069.web_login !== 'undefined' &&
         data.common.web_admin_username.writable &&
+        config.tr069.web_login !== '' &&
         config.tr069.web_login !== data.common.web_admin_username.value) {
       changes.common.web_admin_username = config.tr069.web_login;
       hasChanges = true;
@@ -1639,6 +1668,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
     if (typeof config.tr069.web_password !== 'undefined' &&
         data.common.web_admin_password.writable &&
+        config.tr069.web_password !== '' &&
         config.tr069.web_password !== data.common.web_admin_password.value) {
       changes.common.web_admin_password = config.tr069.web_password;
       hasChanges = true;
