@@ -487,10 +487,10 @@ userController.deleteUser = function(req, res) {
         message: t('userDeleteErrorContactDev', {errorline: __line}),
       });
     }
+    Audit.users(req.user, users.map((u) => u._id), 'delete');
     users.forEach((user) => {
       user.remove();
     });
-    Audit.users(req.user, users.map((u) => u._id), 'delete');
     return res.json({
       success: true,
       type: 'success',

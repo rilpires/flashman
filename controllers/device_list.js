@@ -1488,29 +1488,29 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
   const userKnownIds = {
     all: [], // these will be indexed in FlashAudit.
     failed: [], // these will not be indexed in FlashAudit.
-    addTo: (arr, id, altId) => altId ? arr.push(id, altId) : arr.push(id),
   };
   // Try to remove each device
   for (let device of matchedDevices) {
     let deviceId = device._id;
-    let deviceAltId; // will be used when returning ids that users may know.
+    let deviceTr069Id; // will be used when returning ids that users may know.
     if (device.use_tr069) {
       deviceId = device.serial_tr069;
-      deviceAltId = device.alt_uid_tr069;
+      if (device.alt_uid_tr069) deviceTr069Id = device.alt_uid_tr069;
+      else deviceTr069Id = device.serial_tr069;
     }
-    userKnownIds.addTo(userKnownIds.all, deviceId, deviceAltId);
+    userKnownIds.all.push(device._id, deviceTr069Id);
     // If the device is a mesh master, then we must not delete it
     if (device.mesh_slaves && device.mesh_slaves.length > 0) {
       failedAtRemoval[deviceId] =
         t('cantDeleteMeshWithSecondaries', {errorline: __line});
-      userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
+      userKnownIds.failed.push(device._id, deviceTr069Id);
       continue;
     }
     let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
     if (!removalOK) {
       failedAtRemoval[deviceId] =
         t('operationUnsuccessful', {errorline: __line});
-      userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
+      userKnownIds.failed.push(device._id, deviceTr069Id);
       continue;
     }
     if (device.use_tr069) {
@@ -1518,7 +1518,7 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       if (!removalOK) {
         failedAtRemoval[deviceId] =
           t('genieacsCommunicationError', {errorline: __line});
-        userKnownIds.addTo(userKnownIds.failed, deviceId, deviceAltId);
+        userKnownIds.failed.push(device._id, deviceTr069Id);
         continue;
       }
     }
