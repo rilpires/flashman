@@ -48,7 +48,8 @@ controller.cpe = function(user, cpe, operation, values) {
   // building the values this device could be searched by so users
   // can find it in FlashAudit.
   const searchable = cpe.use_tr069
-    ? [cpe.serial_tr069, cpe.alt_uid_tr069]
+    ? (cpe.alt_uid_tr069 ? 
+        [cpe.serial_tr069, cpe.alt_uid_tr069] : [cpe.serial_tr069])
     : [cpe._id];
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };

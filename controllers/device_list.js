@@ -1549,7 +1549,7 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       removedIds: removedDevIds,
     };
   }
-  Audit.cpes(user, userKnownIds.all, 'trigger', audit);
+  if (totalRemoved > 0) Audit.cpes(user, userKnownIds.all, 'trigger', audit);
   return ret;
 };
 

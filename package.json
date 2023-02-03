@@ -21,7 +21,7 @@
     "provisionHash": "47b35d42fff1a490ab2dda8aa3ff85c4"
   },
   "dependencies": {
-    "@anlix-io/flashaudit-node-client": "^0.0.36",
+    "@anlix-io/flashaudit-node-client": "^0.0.37",
     "@fortawesome/fontawesome-free": "~5.10.2",
     "@socket.io/redis-adapter": "~7.1.0",
     "aedes": "~0.46.1",
