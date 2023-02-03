@@ -63,10 +63,28 @@ tplinkModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-tplinkModel.convertRssiValue = function(rssiValue) {
-  let result = basicCPEModel.convertRssiValue(rssiValue);
-  // This model sends RSSI as some mystical formula, according to TP-Link
-  return (result / 2) - 110;
+tplinkModel.getAssociatedInterfaces = function(fields) {
+  return {
+    iface2: fields.wifi2.password.replace(
+      /AccessPoint\.([^.]*)\..*/, 'AccessPoint.$1',
+    ),
+    iface5: fields.wifi5.password.replace(
+      /AccessPoint\.([^.]*)\..*/, 'AccessPoint.$1',
+    ),
+  };
+};
+
+tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
+  return assocFieldKey.replace(
+    /AccessPoint\.[0-9*]+\./g,
+    'AccessPoint.' + ifaceIndex + '.',
+  );
+};
+
+tplinkModel.convertSpeedValueFullLoad = function(period, bytesRec) {
+  // 8 => byte to bit
+  // 1024**2 => bit to megabit
+  return (8/(1024**2)) * (bytesRec/period);
 };
 
 tplinkModel.getModelFields = function() {
@@ -124,8 +142,10 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
   fields.devices.associated = 'Device.WiFi.AccessPoint.*.AssociatedDevice';
   fields.devices.assoc_mac = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.MACAddress';
-  fields.devices.host_rssi = 'Device.WiFi.AccessPoint.*.AssociatedDevice.1.SignalStrength';
-  fields.devices.rate = 'Device.WiFi.AccessPoint.1.AssociatedDevice.1.LastDataDownlinkRate';
+  fields.devices.host_rssi = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_mode = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Standard';
+  fields.devices.host_band = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Bandwidth';
+  fields.devices.rate = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.LastDataDownlinkRate';
   // Mesh
   fields.mesh2 = {};
   fields.mesh5 = {};
