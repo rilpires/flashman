@@ -1,3 +1,5 @@
+process.env.FLASHAUDIT_ENABLED = 'true';
+
 require('../../bin/globals.js');
 const {MongoClient, ObjectID} = require('mongodb');
 const mockingoose = require('mockingoose');
@@ -425,7 +427,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(1);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
           });
@@ -439,7 +441,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
           });
@@ -453,7 +455,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(2);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 2,
           });
@@ -467,7 +469,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(2);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
             failed: ['AB:AB:AB:AB:AB:BB'],
@@ -485,7 +487,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(1);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
           });
@@ -499,7 +501,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
           });
@@ -513,7 +515,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(2);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 2,
           });
@@ -527,7 +529,7 @@ describe('Controllers - Audit', () => {
           expect(audit.cpes.mock.lastCall[1].length).toBe(2);
           expect(audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'remove_devices',
+            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
             failed: ['AB:AB:AB:AB:AB:BB'],
@@ -1398,19 +1400,13 @@ describe('Controllers - Audit', () => {
   describe('Try later logic', () => {
     // mocking FlashAudit node client.
     const sendMock = jest.spyOn(FlashAudit.FlashAudit.prototype, 'send');
-    // let sendMock;
-
     const m = {a: 10, b: 'abc'}; // mocked message.
 
-    // mocked promisified timeout functions.
+    // mocking promisified timeout functions.
     const waitPromises = {
       exponential: () => Promise.resolve(undefined),
       short: () => Promise.resolve(undefined),
     };
-
-    // beforeEach(async () => {
-    //   audit.isFlashAuditAvailable = true;
-    // });
 
     test('ExponentialTime', async () => {
       const midPointUniform = () => 0.5;
