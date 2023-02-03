@@ -152,6 +152,10 @@ let sendFunc; // reference for send function assigned at 'init()'.
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
+  if (turnedOff) {
+    return;
+  }
+
   // starting FlashAudit client.
   flashAuditServer = new FlashAudit.FlashAudit({
     client,
