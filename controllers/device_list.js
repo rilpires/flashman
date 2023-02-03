@@ -519,7 +519,7 @@ const initiatePingCommand = async function(device, user, sessionID) {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
     result = {success: true};
   }
-  if (result.success) Audit.cpe(user, device, 'trigger', {cmd: 'ping'});
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'ping'});
   return result;
 };
 
@@ -578,7 +578,7 @@ const initiateSpeedTest = async function(device, user, sessionID) {
     metricsApi.newDiagnosticState('speedtest', 'requested');
     result = {success: true};
   }
-  if (result.success) Audit.cpe(user, device, 'trigger', {cmd: 'speedtest'});
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'speedtest'});
   return result;
 };
 
@@ -624,7 +624,7 @@ const initiateSiteSurvey = async function(device, user, sessionID) {
     mqtt.anlixMessageRouterSiteSurvey(device._id.toUpperCase());
     result = {success: true};
   }
-  if (result.success) Audit.cpe(user, device, 'trigger', {cmd: 'sitesurvey'});
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'sitesurvey'});
   return result;
 };
 
@@ -668,7 +668,7 @@ const initiateTracerouteTest = async function(device, user, sessionID) {
     );
     result = {success: true};
   }
-  if (result.success) Audit.cpe(user, device, 'trigger', {cmd: 'traceroute'});
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'traceroute'});
   return result;
 };
 
@@ -1525,7 +1525,7 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
     removedDevIds.push(deviceId);
   }
   const audit = {
-    'cmd': 'remove_devices',
+    'cmd': 'cpe_removal',
     'licenseBlocked': licenseBlocked,
     'totalRemoved': removedDevIds.length,
   };
@@ -1754,7 +1754,7 @@ deviceListController.factoryResetDevice = function(req, res) {
         message: t('cpeSaveError'),
       });
     });
-    Audit.cpe(req.user, device, 'trigger', {cmd: 'factoryReset'});
+    Audit.cpe(req.user, device, 'trigger', {'cmd': 'factoryReset'});
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
@@ -1799,7 +1799,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         if (emitMsg) {
           mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
-          Audit.cpe(req.user, device, 'trigger', {cmd: 'resetApp'});
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'resetApp'});
         }
         break;
       case 'rstdevices':
@@ -1821,7 +1821,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         if (emitMsg) {
           mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
-          Audit.cpe(req.user, device, 'trigger', {cmd: 'resetDevices'});
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'resetDevices'});
         }
         break;
       case 'rstmqtt':
@@ -1879,7 +1879,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
           } else {
             mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
           }
-          Audit.cpe(req.user, device, 'trigger', {cmd: 'readLog'});
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'readLog'});
         } else {
           return res.status(200).json({
             success: false,
@@ -1888,7 +1888,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         break;
       case 'boot':
-        Audit.cpe(req.user, device, 'trigger', {cmd: 'reboot'});
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'reboot'});
         if (device && device.use_tr069) {
           // acs integration will respond to request
           return await acsDeviceInfo.rebootDevice(device, res);
@@ -1917,7 +1917,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         slaves.forEach((slave)=>{
           mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
         });
-        Audit.cpe(req.user, device, 'trigger', {cmd: 'readOnlineDevices'});
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'readOnlineDevices'});
         break;
       case 'upstatus':
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1940,7 +1940,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         slaves.forEach((slave)=>{
           mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
         });
-        Audit.cpe(req.user, device, 'trigger', {cmd: 'upstatus'});
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'upstatus'});
         break;
       case 'wanbytes':
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -2857,15 +2857,19 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantDeviceId) {
                 let extRef =
                   util.getExtRefPattern(extReference.kind, extReference.data);
-                audit['userIdKind'] = {
-                  old: matchedDevice.external_reference.kind,
-                  new: extRef.kind,
-                };
+                if (matchedDevice.external_reference.kind !== extRef.kind) {
+                  audit['userIdKind'] = {
+                    old: matchedDevice.external_reference.kind,
+                    new: extRef.kind,
+                  };
+                }
+                if (matchedDevice.external_reference.data !== extRef.data) {
+                  audit['userId'] = {
+                    old: matchedDevice.external_reference.data,
+                    new: extRef.data,
+                  };
+                }
                 matchedDevice.external_reference.kind = extRef.kind;
-                audit['userId'] = {
-                  old: matchedDevice.external_reference.data,
-                  new: extRef.data,
-                };
                 matchedDevice.external_reference.data = extRef.data;
               } else {
                 // Its possible that default value might be undefined
