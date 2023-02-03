@@ -498,6 +498,13 @@ basicCPEModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   );
 };
 
+basicCPEModel.getAssociatedInterfaces = function(fields) {
+  return {
+    iface2: fields.wifi2.channel.replace('.Channel', ''),
+    iface5: fields.wifi5.channel.replace('.Channel', ''),
+  };
+};
+
 basicCPEModel.assocDevicesWildcardReplacer = function(assocDevicesKey,
                                                       ifaceIndex, deviceIndex) {
   return assocDevicesKey.replace('*', ifaceIndex).replace('*', deviceIndex);
