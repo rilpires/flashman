@@ -81,6 +81,8 @@ basicCPEModel.modelPermissions = function() {
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
     },
     wan: {
+      allowReadMacAddress: true, // can read WAN MAC address at flashman's wan
+        // tab, as the mac might come wrong in some devices
       allowReadWanMtu: true, // can read wan mtu at flashman's wan tab
       allowEditWanMtu: true, // can edit wan mtu at flashman's wan tab
       allowReadWanVlan: false, // can read wan vlan at flashman's wan tab
@@ -90,7 +92,7 @@ basicCPEModel.modelPermissions = function() {
       pingTestSetInterface: false, // pingtest will set device interface
       speedTestSetInterface: false, // speedtest will set device interface
       traceRouteSetInterface: false, // traceroute will set device interface
-      portForwardQueueTasks: false, // queue tasks and only send request on last
+      portForwardQueueTasks: true, // queue tasks and only send request on last
       portForwardPermissions: null, // specifies range/asym support
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
       hasUptimeField: true, // flag to handle devices that don't have uptime
@@ -560,32 +562,51 @@ basicCPEModel.getModelFields = function() {
         //   'LANEthernetInterfaceConfig.1.MACAddress',
     },
     wan: {
+      // PPPoE
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Enable',
       pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Username',
       pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Password',
+
+      // Mode
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
         'MaxBitRate',
       duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
         'DuplexMode',
+
+      // WAN IP
       wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANIPConnection.*.ExternalIPAddress',
       wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.ExternalIPAddress',
+
+      // WAN MAC address
+      wan_mac: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.MACAddress',
+      wan_mac_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANPPPConnection.*.MACAddress',
+
+      // Uptime
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANIPConnection.*.Uptime',
       uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Uptime',
+
+      // MTU
       mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANIPConnection.*.MaxMTUSize',
       mtu_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.MaxMRUSize',
+
+      // Bytes
       recv_bytes: 'InternetGatewayDevice.WANDevice.1.'+
         'WANEthernetInterfaceConfig.Stats.BytesReceived',
       sent_bytes: 'InternetGatewayDevice.WANDevice.1.'+
         'WANEthernetInterfaceConfig.Stats.BytesSent',
+
+      // Port Mapping
       port_mapping_entries_dhcp: 'InternetGatewayDevice.WANDevice.1.'+
         'WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
       port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
