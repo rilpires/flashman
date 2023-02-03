@@ -173,7 +173,7 @@ const processHostFromURL = function(url) {
   return hostAndPort.split(':')[0];
 };
 
-const getPPPoEenabled = function(wan) {
+const getPPPoEenabled = function(cpe, wan) {
   let hasPPPoE = false;
   if (wan.pppoe_enable && wan.pppoe_enable.value) {
     wan.pppoe_enable.value =
@@ -193,7 +193,7 @@ const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
-  const hasPPPoE = getPPPoEenabled(data.wan);
+  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -620,7 +620,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-    return res.status(200).json({success: true, 
+    return res.status(200).json({success: true,
       measure: true, measure_type: 'updateDevice'});
   }
   // Other registered devices should always collect information through
@@ -1262,7 +1262,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process wan connection type, but only if data sent
-  const hasPPPoE = getPPPoEenabled(data.wan);
+  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
   // Process WAN fields, separated by connection type - force cast to bool in
