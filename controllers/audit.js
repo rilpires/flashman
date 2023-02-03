@@ -36,7 +36,7 @@ const serverBrokers =
   'redaudit02.anlix.io:8082',
   'redaudit03.anlix.io:8082',
 ];
-const turnedOff = isEnvTrue(process.env.FLASHAUDIT_TURNOFF);
+const turnedOff = !isEnvTrue(process.env.FLASHAUDIT_ENABLED);
 
 const controller = {}; // to be exported.
 
