@@ -56,6 +56,7 @@ let metricsApi = {
     if (typeof(callback)=='function') {
       new promClient.Gauge({
         name: 'flm_audit_memory_queue_size',
+        help: 'Length of the list where not sent audit messages are queued',
         collect: function() {
           let value = callback();
           if (typeof(value)=='number' && !isNaN(value)) {
