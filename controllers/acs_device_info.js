@@ -173,22 +173,27 @@ const processHostFromURL = function(url) {
   return hostAndPort.split(':')[0];
 };
 
+const getPPPoEenabled = function(wan) {
+  let hasPPPoE = false;
+  if (wan.pppoe_enable && wan.pppoe_enable.value) {
+    wan.pppoe_enable.value =
+      cpe.convertPPPoEEnable(wan.pppoe_enable.value);
+    if (typeof wan.pppoe_enable.value === 'string') {
+      hasPPPoE = (utilHandlers.isTrueValueString(wan.pppoe_enable.value));
+    } else if (typeof wan.pppoe_enable.value === 'number') {
+      hasPPPoE = (wan.pppoe_enable.value == 0) ? false : true;
+    } else if (typeof wan.pppoe_enable.value === 'boolean') {
+      hasPPPoE = wan.pppoe_enable.value;
+    }
+  }
+  return hasPPPoE;
+};
+
 const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
-  let hasPPPoE = false;
-  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
-    data.wan.pppoe_enable.value =
-      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
-    if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = (utilHandlers.isTrueValueString(data.wan.pppoe_enable.value));
-    } else if (typeof data.wan.pppoe_enable.value === 'number') {
-      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
-    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
-      hasPPPoE = data.wan.pppoe_enable.value;
-    }
-  }
+  const hasPPPoE = getPPPoEenabled(data.wan);
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
@@ -1257,19 +1262,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
   // Process wan connection type, but only if data sent
-  let hasPPPoE = false;
-  if (data.wan.pppoe_enable && data.wan.pppoe_enable.value) {
-    data.wan.pppoe_enable.value =
-      cpe.convertPPPoEEnable(data.wan.pppoe_enable.value);
-    if (typeof data.wan.pppoe_enable.value === 'string') {
-      hasPPPoE = utilHandlers.isTrueValueString(data.wan.pppoe_enable.value);
-    } else if (typeof data.wan.pppoe_enable.value === 'number') {
-      hasPPPoE = (data.wan.pppoe_enable.value == 0) ? false : true;
-    } else if (typeof data.wan.pppoe_enable.value === 'boolean') {
-      hasPPPoE = data.wan.pppoe_enable.value;
-    }
-    device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
-  }
+  const hasPPPoE = getPPPoEenabled(data.wan);
+  device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
   // Process WAN fields, separated by connection type - force cast to bool in
   // case connection type is null
