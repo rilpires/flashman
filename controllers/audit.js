@@ -47,9 +47,14 @@ controller.buildAttributeChange = FlashAudit.audit.buildAttributeChange;
 controller.cpe = function(user, cpe, operation, values) {
   // building the values this device could be searched by so users
   // can find it in FlashAudit.
-  const searchable = cpe.use_tr069
-    ? [cpe.serial_tr069, cpe.alt_uid_tr069]
-    : [cpe._id];
+  let searchable = [];
+  if (!cpe.use_tr069) {
+    searchable = [cpe._id];
+  } else if (cpe.serial_tr069) {
+    searchable = [cpe.serial_tr069];
+  } else {
+    searchable = [cpe.alt_uid_tr069];
+  }
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
 
