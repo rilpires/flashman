@@ -93,7 +93,7 @@ intelbrasModel.getModelFields = function() {
   fields.common.web_admin_password = 'InternetGatewayDevice'+
     '.UserInterface.AdminPassword';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.'+
-    'WLANConfiguration.1.AssociatedDevice.1.X_ITBS_WLAN_SNR';
+    'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_SNR';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
