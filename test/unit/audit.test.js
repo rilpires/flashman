@@ -10,7 +10,8 @@ const RoleModel = require('../../models/role');
 const deviceListController = require('../../controllers/device_list');
 const userController = require('../../controllers/user');
 const updateScheduler = require('../../controllers/update_scheduler');
-const updateSchedulerCommon = require('../../controllers/update_scheduler_common');
+const updateSchedulerCommon =
+  require('../../controllers/update_scheduler_common');
 const utils = require('../utils');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Audit = require('../../controllers/audit');
@@ -479,7 +480,6 @@ describe('Controllers - Audit', () => {
           await deviceListController.delDeviceReg(req, res);
           expect(res.json.mock.lastCall[0].success).toBe(false);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          // console.log('deleted single cpe firmware:', Audit.cpes.mock.lastCall[1]);
           expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
           expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
@@ -1562,7 +1562,7 @@ describe('Controllers - Audit', () => {
       for (const name of mockedAuditMessageFunctions) {
         jest.spyOn(Audit, name).mockImplementation(() => undefined);
       }
-    })
+    });
 
     test('CPE', async () => {
       const operation = 'create';
@@ -1585,11 +1585,11 @@ describe('Controllers - Audit', () => {
       }, {
         _id: 'AA:AA:AA:AA:AA:AB',
         use_tr069: true,
-        alt_uid_tr069: 'alt_uid'
+        alt_uid_tr069: 'alt_uid',
       }, {
         _id: 'AA:AA:AA:AA:AA:AC',
         use_tr069: true,
-        serial_tr069: 'serial'
+        serial_tr069: 'serial',
       }];
       const operation = 'trigger';
       const values = {cmd: 'abc'};
@@ -1634,7 +1634,8 @@ describe('Controllers - Audit', () => {
       expect(sendMock).toHaveBeenCalledTimes(1);
       expect(sendMock.mock.lastCall[0].object).toBe('user');
       expect(sendMock.mock.lastCall[0].user).toBe(usersMock[0]._id.toString());
-      expect(sendMock.mock.lastCall[0].searchable.length).toBe(usersMock.length);
+      expect(sendMock.mock.lastCall[0].searchable.length)
+        .toBe(usersMock.length);
       expect(sendMock.mock.lastCall[0].searchable)
         .toEqual(usersMock.map((u) => u._id.toString()));
       expect(sendMock.mock.lastCall[0].operation).toBe(operation);
@@ -1663,7 +1664,8 @@ describe('Controllers - Audit', () => {
       expect(sendMock).toHaveBeenCalledTimes(1);
       expect(sendMock.mock.lastCall[0].object).toBe('role');
       expect(sendMock.mock.lastCall[0].user).toBe(usersMock[0]._id.toString());
-      expect(sendMock.mock.lastCall[0].searchable.length).toBe(rolesMock.length);
+      expect(sendMock.mock.lastCall[0].searchable.length)
+        .toBe(rolesMock.length);
       expect(sendMock.mock.lastCall[0].searchable)
         .toEqual(rolesMock.map((r) => r.name));
       expect(sendMock.mock.lastCall[0].operation).toBe(operation);

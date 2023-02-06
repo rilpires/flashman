@@ -48,7 +48,7 @@ controller.cpe = function(user, cpe, operation, values) {
   // building the values this device could be searched by so users
   // can find it in FlashAudit.
   const searchable = [];
-  appendCpeIds(searchable, cpe)
+  appendCpeIds(searchable, cpe);
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
 
@@ -127,7 +127,7 @@ const appendCpeIds = (array, cpe) => {
   if (cpe.use_tr069) {
     array.push(cpe.alt_uid_tr069 ? cpe.alt_uid_tr069 : cpe.serial_tr069);
   }
-}
+};
 
 // returns a Promise that will resolve after an elapsed given milliseconds.
 const someTime = (milliseconds) => new Promise(
