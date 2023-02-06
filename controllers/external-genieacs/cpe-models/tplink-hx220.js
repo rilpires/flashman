@@ -13,8 +13,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
   permissions.features.stun = true;
-  permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.sendDnsOnLANChange = false;
+  permissions.lan.configWrite = false;
   permissions.wan.hasUptimeField = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
