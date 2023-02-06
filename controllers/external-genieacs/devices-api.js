@@ -25,7 +25,7 @@ const tr069Models = {
   cianetHW01NModel: require('./cpe-models/cianet-hw01n'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
   datacomDM986204Model: require('./cpe-models/datacom-dm986-204'),
-  datacomDM986424Model: require('./cpe-models/datacom-dm986-414'),
+  datacomDM986414Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
@@ -157,7 +157,7 @@ const instantiateCPEByModel = function(
     result = {success: true, cpe: tr069Models.datacomDM986204Model};
   } else if (modelName === 'DM986-414') {
     // Datacom DM986-414
-    result = {success: true, cpe: tr069Models.datacomDM986424Model};
+    result = {success: true, cpe: tr069Models.datacomDM986414Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
     result = {success: true, cpe: tr069Models.dlinkDir615Model};
