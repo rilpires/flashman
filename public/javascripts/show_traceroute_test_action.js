@@ -60,43 +60,47 @@ const SELECTIZE_ADDRESS_HTML = function(data, escape) {
 
 // Return the HTML of the collapsible item
 const resultTableRouteCollapsibleHtml = function(route, number) {
-  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+  return (
+    '<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
 
-            // Arrow portion of the header of the collapsible item
-            '<div class="col-1">' +
-              // Arrow
-              '<div id="' + TRACEROUTE_HTML_ARROW_NAME + number +
-              '" class="fas fa-chevron-down fa-lg mt-1"></div>' +
-            '</div>' +
+      // Arrow portion of the header of the collapsible item
+      '<div class="col-1">' +
+        // Arrow
+        '<div id="' + TRACEROUTE_HTML_ARROW_NAME + number +
+        '" class="fas fa-chevron-down fa-lg mt-1"></div>' +
+      '</div>' +
 
-            // Text portion of the header
-            '<div class="col-11">' +
-              '<h5>' + encodeURIComponent(route) + '</h5>' +
-            '</div>' +
-          '</div>' +
+      // Text portion of the header
+      '<div class="col-11">' +
+        '<h5>' + encodeURIComponent(route) + '</h5>' +
+      '</div>' +
+    '</div>' +
 
-          // Result of the item
-          '<div id="' + TRACEROUTE_HTML_RESULT_NAME + number +
-          '" class="pl-2 pr-2 grey lighten-5 border" style="display: none;">' +
-          '</div>');
+    // Result of the item
+    '<div id="' + TRACEROUTE_HTML_RESULT_NAME + number +
+    '" class="pl-2 pr-2 grey lighten-5 border" style="display: none;">' +
+    '</div>'
+  );
 };
 
 
 // Return the HTML of an invalid item
 const resultTableRouteInvalidHtml = function(route) {
-  return ('<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
+  return (
+    '<div class="border row pl-2 pr-2 pt-3 pb-3 ml-0 mr-0">' +
 
-            // Arrow portion of the header of the collapsible item
-            '<div class="col-1">' +
-              // X
-              '<div class="fas fa-times fa-lg mt-1 red-text"></div>' +
-            '</div>' +
+      // Arrow portion of the header of the collapsible item
+      '<div class="col-1">' +
+        // X
+        '<div class="fas fa-times fa-lg mt-1 red-text"></div>' +
+      '</div>' +
 
-            // Text portion of the header
-            '<div class="col-11">' +
-              '<h5>' + encodeURIComponent(route) + '</h5>' +
-            '</div>' +
-          '</div>');
+      // Text portion of the header
+      '<div class="col-11">' +
+        '<h5>' + encodeURIComponent(route) + '</h5>' +
+      '</div>' +
+    '</div>'
+  );
 };
 
 
@@ -353,27 +357,46 @@ const updateValues = function(message) {
       }
   });
 
-  // Loop through all hops
+
+  // If there is at least one hop tested
   let maxHopIndex = 0;
-  if (message.hops.length>0) {
+  if (message.hops.length > 0) {
     maxHopIndex = message.hops
-    .reduce((prev, curr)=>prev.hop_index>curr.hop_index?prev:curr).hop_index;
+    .reduce(
+      (prev, curr) => prev.hop_index > curr.hop_index ?
+        prev : curr,
+    ).hop_index;
   }
+
+  // Loop through all hops
   for (let hopIndex = 1; hopIndex <= maxHopIndex; hopIndex++) {
-    let hop = message.hops.find((obj)=>obj.hop_index==hopIndex);
+    let hop = message.hops.find((obj) => obj.hop_index == hopIndex);
     let hopText;
     let latencyText = '?';
 
+    // If hop exists and could test against it
     if (hop) {
-      if (hop.ms_values.length>0) {
+      // If could test against the address and got at least one value
+      if (hop.ms_values.length > 0) {
+        // Calculate the mean value of miliseconds
         let mean = hop.ms_values.reduce(
-          (prev, curr)=>parseFloat(prev)+parseFloat(curr),
+          (prev, curr) => parseFloat(prev) + parseFloat(curr),
         ) / hop.ms_values.length;
+
+        // Format the value to show in frontend
         latencyText = t('Latency=X', {x: mean.toFixed(MEAN_TRUNCATE_NUMBER)});
+
+      // Otherwise, show a ? mark in latency
       } else {
         latencyText = t('Latency=X', {x: '?'});
       }
-      hopText = `${hopIndex}. ${hop.ip}`;
+
+      // Format IP text
+      if (hop.ip && hop.ip.constructor === String && hop.ip !== '*') {
+        hopText = `${hopIndex}. ${hop.ip}`;
+      } else {
+        hopText = `${hopIndex}. ***`;
+      }
     } else {
       hopText = `${hopIndex}. ***`;
       latencyText = t('Latency=X', {x: '?'});

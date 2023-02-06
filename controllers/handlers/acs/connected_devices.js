@@ -111,8 +111,9 @@ acsConnDevicesHandler.fetchDevicesFromGenie = async function(acsID) {
         success = false;
       }
       if (success) {
-        let iface2 = fields.wifi2.channel.replace('.Channel', '');
-        let iface5 = fields.wifi5.channel.replace('.Channel', '');
+        let ifaces = cpe.getAssociatedInterfaces(fields);
+        let iface2 = ifaces.iface2;
+        let iface5 = ifaces.iface5;
         let devices = [];
         hostKeys.forEach((i)=>{
           let device = {};

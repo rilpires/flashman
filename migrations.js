@@ -147,6 +147,7 @@ module.exports = async (app) => {
           grantLanEdit: true,
           grantDeviceId: true,
           grantOpmodeEdit: true,
+          grantSearchLevel: 2,
         });
         apiRole.save();
       }

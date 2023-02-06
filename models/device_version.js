@@ -1818,6 +1818,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantMeshV2HardcodedBssid: cpePermissions.mesh.hardcodedBSSIDOffset,
     grantMeshVAPObject: cpePermissions.mesh.objectExists,
     grantUpdateAck: false,
+    grantWanMacRead: cpePermissions.wan.allowReadMacAddress,
     grantWanMtuEdit: cpePermissions.wan.allowEditWanMtu,
     grantWanVlanEdit: cpePermissions.wan.allowEditWanVlan,
     grantWanMtuRead: cpePermissions.wan.allowReadWanMtu,
@@ -1923,6 +1924,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantUpdateAck = grantUpdateAck(version, model);
   result.grantWpsFunction = grantWpsFunction(version, model);
   result.grantSTUN = hasSTUNSupport(model);
+  result.grantWanMacRead = false;
   result.grantWanMtuEdit = false;
   result.grantWanVlanEdit = false;
   result.grantWanMtuRead = false;
