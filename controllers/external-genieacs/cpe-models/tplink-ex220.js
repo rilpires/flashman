@@ -177,10 +177,10 @@ tpLinkModel.getModelFields = function() {
   });
   // Traceroute
   fields.diagnostics.traceroute.root = 'Device.IP.Diagnostics.TraceRoute';
-  fields.diagnostics.traceroute.hop_host = 'Host',
-  fields.diagnostics.traceroute.hop_ip_address = 'HostAddress',
-  fields.diagnostics.traceroute.hop_error_code = 'ErrorCode',
-  fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes',
+  fields.diagnostics.traceroute.hop_host = 'Host';
+  fields.diagnostics.traceroute.hop_ip_address = 'HostAddress';
+  fields.diagnostics.traceroute.hop_error_code = 'ErrorCode';
+  fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes';
 
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
