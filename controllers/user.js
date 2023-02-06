@@ -487,7 +487,7 @@ userController.deleteUser = function(req, res) {
         message: t('userDeleteErrorContactDev', {errorline: __line}),
       });
     }
-    Audit.users(req.user, users.map((u) => u._id.toString()), 'delete');
+    Audit.users(req.user, users, 'delete');
     users.forEach((user) => {
       user.remove();
     });
@@ -514,7 +514,7 @@ userController.deleteRole = function(req, res) {
         roles.forEach((role) => {
           role.remove();
         });
-        Audit.roles(req.user, roles.map((r) => r.name), 'delete');
+        Audit.roles(req.user, roles, 'delete');
         return res.json({
           success: true,
           type: 'success',
