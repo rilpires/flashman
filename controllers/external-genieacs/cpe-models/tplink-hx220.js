@@ -73,6 +73,10 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
+tplinkModel.convertPPPoEEnable = function(pppoe) {
+  return (pppoe.toLowerCase() === 'up') ? true : false;
+};
+
 tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /Radio\.[0-9*]+\./g,
@@ -90,7 +94,7 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
