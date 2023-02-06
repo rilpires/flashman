@@ -487,7 +487,7 @@ userController.deleteUser = function(req, res) {
         message: t('userDeleteErrorContactDev', {errorline: __line}),
       });
     }
-    Audit.users(req.user, users.map((u) => u._id), 'delete');
+    Audit.users(req.user, users.map((u) => u._id.toString()), 'delete');
     users.forEach((user) => {
       user.remove();
     });

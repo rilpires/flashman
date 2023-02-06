@@ -64,13 +64,13 @@ controller.cpes = function(user, searchable, operation, values) {
 // Creating an audit message operation for a User. Argument 'searchable'
 // should be an array with the '_id's of all Users involved.
 controller.user = function(user, targetUser, operation, values) {
-  const searchable = [targetUser._id];
-  return buildAndSendMessage(user._id, 'user', searchable, operation, values);
+  const searchable = [targetUser._id.toString()];
+  return buildAndSendMessage(user, 'user', searchable, operation, values);
 };
 
 // Creating an audit message operation for several Users.
 controller.users = function(user, searchable, operation, values) {
-  return buildAndSendMessage(user._id, 'user', searchable, operation, values);
+  return buildAndSendMessage(user, 'user', searchable, operation, values);
 };
 
 // Creating an audit message operation for a Role.
