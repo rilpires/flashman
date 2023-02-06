@@ -94,9 +94,9 @@ e4lModel.getModelFields = function() {
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.PreSharedKey.1.KeyPassphrase';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.' +
