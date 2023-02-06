@@ -77,6 +77,7 @@ const tr069Models = {
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
   tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
+  tplinkEX510Model: require('./cpe-models/tplink-ex510'),
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
   tplinkWR840NModel: require('./cpe-models/tplink-wr840n'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
@@ -314,6 +315,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EX220') {
     // TP-Link EX220
     result = {success: true, cpe: tr069Models.tplinkEX220Model};
+  } else if (modelName === 'EX510') {
+    // TP-Link EX510
+    result = {success: true, cpe: tr069Models.tplinkEX510Model};
   } else if (modelName === 'HC220-G5') {
     // TP-Link HC220-G5
     result = {success: true, cpe: tr069Models.tplinkHC220G5Model};
