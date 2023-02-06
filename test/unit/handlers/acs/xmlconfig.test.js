@@ -1,5 +1,5 @@
-require('../../bin/globals.js');
-const acsHandlers = require('../../controllers/handlers/acs/xmlconfig');
+require('../../../../bin/globals.js');
+const acsHandlers = require('../../../../controllers/handlers/acs/xmlconfig');
 const fs = require('fs');
 
 const xmlFailTest = function(idx) {

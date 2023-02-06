@@ -175,7 +175,7 @@ anlixDocumentReady.add(function() {
       if (apChannel <= channels2Ghz[channels2Ghz.length - 1]) { // 2.4 GHz
         apSelectedDevsRow = apDevs2GhzRow;
         // Count APs
-        if (apChannel in ap2GhzCountDict) {
+        if (apChannel in ap2GhzCountDict || [12, 13].includes(apChannel)) {
           ap2GhzCountDict[apChannel] += 1;
         }
         if (parseInt(device.signal) >= maxSignal2Ghz) {

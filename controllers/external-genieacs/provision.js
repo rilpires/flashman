@@ -47,6 +47,26 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
+const fetchPortFoward = function(fields, data) {
+  let base = '';
+  let ret = [];
+  if (data.port_mapping_entries_dhcp &&
+      data.port_mapping_entries_dhcp.value) {
+    base = fields.port_mapping_dhcp;
+  } else if(data.port_mapping_entries_ppp &&
+    data.port_mapping_entries_ppp.value) {
+    base = fields.port_mapping_ppp;
+  }
+  let subtree = declare(base+'.*.*', {value: now});
+  for (let st of subtree) {
+    let obj = {};
+    obj.path = st.path;
+    obj.value = st.value;
+    ret.push(obj);
+  }
+  return ret;
+};
+
 // 1. Collect information
 // Collect basic CPE information from database
 let genieID = declare('DeviceID.ID', {value: 1});
@@ -127,6 +147,15 @@ let data = {
   mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
+/*if the nature of sync is for create a device and the device already
+  had previous port mapping entries, then we send back these entries
+  on creation to avoid sync race condition after the creation of
+  device in flashman database */
+if ((result.measure_type && result.measure_type === 'newDevice' &&
+  ((data.wan.port_mapping_entries_dhcp && data.wan.port_mapping_entries_dhcp.value > 0) ||
+  (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0)))) {
+  data.port_mapping = fetchPortFoward(fields, data.wan);
+}
 args = {acs_id: genieID, data: data};
 
 // Send data to Flashman via HTTP request

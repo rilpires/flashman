@@ -882,6 +882,16 @@ anlixDocumentReady.add(function() {
         ((!device.pppoe_user) ? '' : device.pppoe_user) +
       '</td><td class="text-center">'+
         uid+
+
+        // MAC address when TR-069
+        // Add this information only if is TR-069 and uid is different than _id
+        (device.use_tr069 && uid !== device._id ?
+          '<br><h6 style="font-size:70%">' +
+            t('MAC') + ': ' +
+            device._id +
+          '</h6>' : ''
+        ) +
+
       '</td><td class="text-center device-wan-ip">'+
         device.wan_ip+
         (device.wan_ipv6 ?
@@ -1452,7 +1462,8 @@ anlixDocumentReady.add(function() {
           let grantWiFiAXSupport = device.permissions.grantWiFiAXSupport;
           let grantDiacritics = device.permissions.grantDiacritics;
           let grantSsidSpaces = device.permissions.grantSsidSpaces;
-          // WAN MTU and VLAN Id Information
+          // WAN MTU and VLAN Id an MAC Information
+          let grantDeviceWanMacRead = device.permissions.grantWanMacRead;
           let grantDeviceWanMtuRead = device.permissions.grantWanMtuRead;
           let grantDeviceWanVlanRead = device.permissions.grantWanVlanRead;
           let grantDeviceWanMtuEdit =
@@ -1901,6 +1912,18 @@ anlixDocumentReady.add(function() {
                     '</h7>'+
                   '</div>'+
                 '</div>'+
+
+                // WAN MAC address section
+                // Only show this info if it is available
+                (device.wan_bssid && grantDeviceWanMacRead ?
+                  '<div class="md-form input-entry pt-1">' +
+                    '<label class="active">' + t('wanMacAddress') + '</label>' +
+                    '<input class="form-control" type="text" disabled=""' +
+                      'value="' + device.wan_bssid + '">' +
+                  // The whole info or empty
+                  '</div>' : ''
+                ) +
+
                 (grantDeviceWanMtuRead ? mtuForm : '')+
                 (grantDeviceWanVlanRead ? vlanForm : '')+
                 '<div class="custom-control custom-checkbox" '+
@@ -2060,6 +2083,15 @@ anlixDocumentReady.add(function() {
                     '</select>'+
                   '</div>'+
                 '</div>'+
+
+                // LAN MAC address section
+                // Always show this section as it will always have an valid _id
+                '<div class="md-form input-entry pt-1">' +
+                  '<label class="active">' + t('lanMacAddress') + '</label>' +
+                  '<input class="form-control" type="text" disabled=""' +
+                    'value="' + device._id + '">' +
+                '</div>' +
+
               '</div>'+
             '</div>'+
             '$REPLACE_LAN_INFO'+
@@ -3784,24 +3816,30 @@ anlixDocumentReady.add(function() {
   $(document).on('click', '#online-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('online'))) {
       $('.tags-input input').focus().val(t('online')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Unstable devices
   $(document).on('click', '#recovery-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('unstable'))) {
       $('.tags-input input').focus().val(t('unstable')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Offline devices
   $(document).on('click', '#offline-status-sum', function(event) {
     if (!$('#devices-search-input').val().includes(t('offline'))) {
       $('.tags-input input').focus().val(t('offline')).blur();
-      loadDevicesTable(1, $('#devices-search-input').val());
     }
+
+    // Always reload the table if clicked
+    loadDevicesTable(1, $('#devices-search-input').val());
   });
 
   // Table column sorts

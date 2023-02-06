@@ -255,7 +255,16 @@ const calculateTraceDiagnostic = async function(
               : inHopKeys.hop_host,
         ms_values: msValues,
       };
-      if (currentHop.ip && currentHop.ip!='*' && msValues.length > 0) {
+
+      if (
+        currentHop.ip !== undefined &&
+        currentHop.ip !== null &&
+        currentHop.ip.constructor === String &&
+
+        currentHop.ms_values !== undefined &&
+        currentHop.ms_values !== null &&
+        currentHop.ms_values.constructor === Array
+      ) {
         traceResult.hops.push(currentHop);
       }
     }
