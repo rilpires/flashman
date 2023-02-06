@@ -49,6 +49,7 @@ let deviceSchema = new Schema({
   pon_signal_measure: Object,
   wan_vlan_id: Number,
   wan_mtu: Number,
+  wan_bssid: String,
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,

@@ -21,8 +21,11 @@ const basicCPEModel = require('./cpe-models/base-model');
 
 // Import each and every model
 const tr069Models = {
+  cianetGW24ACModel: require('./cpe-models/cianet-gw24ac'),
+  cianetHW01NModel: require('./cpe-models/cianet-hw01n'),
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
-  datacomDM986Model: require('./cpe-models/datacom-dm986-414'),
+  datacomDM986204Model: require('./cpe-models/datacom-dm986-204'),
+  datacomDM986414Model: require('./cpe-models/datacom-dm986-414'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
@@ -73,8 +76,10 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
   tplinkHC220G5Model: require('./cpe-models/tplink-hc220g5'),
+  tplinkHX220Model: require('./cpe-models/tplink-hx220'),
   tplinkWR840NModel: require('./cpe-models/tplink-wr840n'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
@@ -139,12 +144,21 @@ const instantiateCPEByModel = function(
   if (!hwVersion) hwVersion = '';
   let result = {success: false, cpe: basicCPEModel};
   // Giant if-chain looking for model - sorted alphabetically by comments
-  if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
+  if (modelName === 'ONU GW24AC') {
+    // Cianet GW24AC
+    result = {success: true, cpe: tr069Models.cianetGW24ACModel};
+  } else if (modelName === 'ONU HW01N') {
+    // Cianet HW01N
+    result = {success: true, cpe: tr069Models.cianetHW01NModel};
+  } else if (['DM985-424', 'DM985%2D424'].includes(modelSerial)) {
     // Datacom DM985-424
     result = {success: true, cpe: tr069Models.datacomDM985Model};
+  } else if (modelName === 'DM986-204') {
+    // Datacom DM986-204
+    result = {success: true, cpe: tr069Models.datacomDM986204Model};
   } else if (modelName === 'DM986-414') {
     // Datacom DM986-414
-    result = {success: true, cpe: tr069Models.datacomDM986Model};
+    result = {success: true, cpe: tr069Models.datacomDM986414Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
     result = {success: true, cpe: tr069Models.dlinkDir615Model};
@@ -299,12 +313,18 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EC220-G5') {
     // TP-Link EC220-G5
     result = {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'EC225-G5') {
+    // TP-Link EC225-G5
+    result = {success: true, cpe: tr069Models.tplinkEC225G5Model};
   } else if (modelName === 'EX220') {
     // TP-Link EX220
     result = {success: true, cpe: tr069Models.tplinkEX220Model};
   } else if (modelName === 'HC220-G5') {
     // TP-Link HC220-G5
     result = {success: true, cpe: tr069Models.tplinkHC220G5Model};
+  } else if (modelName === 'HX220') {
+    // TP-Link HX220
+    result = {success: true, cpe: tr069Models.tplinkHX220Model};
   } else if (modelSerial === 'IGD' && modelName === 'TL-WR840N') {
     // TP-Link WR840N V6
     result = {success: true, cpe: tr069Models.tplinkWR840NModel};

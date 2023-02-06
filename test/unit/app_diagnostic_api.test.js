@@ -1,7 +1,6 @@
 /* eslint require-jsdoc: 0 */
 
 require('../../bin/globals.js');
-const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 const diagAppAPIController = require('../../controllers/app_diagnostic_api');
 const DeviceModel = require('../../models/device');
@@ -9,19 +8,6 @@ const ConfigModel = require('../../models/config');
 const utils = require('../utils');
 
 describe('Technician App API', () => {
-  let connection;
-
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
 
   test('Must fail if request has invalid body', async () => {
     // Request

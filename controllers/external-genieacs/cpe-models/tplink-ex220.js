@@ -100,6 +100,8 @@ tpLinkModel.getModelFields = function() {
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.DHCPv4.Client.*.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
+  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
+  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
@@ -177,10 +179,10 @@ tpLinkModel.getModelFields = function() {
   });
   // Traceroute
   fields.diagnostics.traceroute.root = 'Device.IP.Diagnostics.TraceRoute';
-  fields.diagnostics.traceroute.hop_host = 'Host',
-  fields.diagnostics.traceroute.hop_ip_address = 'HostAddress',
-  fields.diagnostics.traceroute.hop_error_code = 'ErrorCode',
-  fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes',
+  fields.diagnostics.traceroute.hop_host = 'Host';
+  fields.diagnostics.traceroute.hop_ip_address = 'HostAddress';
+  fields.diagnostics.traceroute.hop_error_code = 'ErrorCode';
+  fields.diagnostics.traceroute.hop_rtt_times = 'RTTimes';
 
   delete fields.diagnostics.speedtest.full_load_bytes_rec;
   delete fields.diagnostics.speedtest.full_load_period;
