@@ -101,6 +101,8 @@ tplinkModel.getModelFields = function() {
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
   fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
   fields.wan.wan_ip_ppp = fields.wan.wan_ip;
+  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
+  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';

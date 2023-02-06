@@ -75,10 +75,6 @@ intelbrasModel.getModelFields = function() {
   fields.common.alt_uid = fields.common.mac;
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_ITBS_WebAdminPassword';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANIPConnection.1.X_ITBS_VlanMuxID';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.1.X_ITBS_VlanMuxID';
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_ITBS_WLAN_ClientSignalStrength';
   fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
