@@ -8,15 +8,9 @@ datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
   permissions.features.traceroute = true;
-  permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
-  permissions.features.upnp = false;
-  permissions.features.wps = false;
-  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.wan.speedTestLimit = 230;
-  permissions.wan.allowReadWanVlan = true;
-  permissions.wan.allowEditWanVlan = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.extended2GhzChannels = false;
   permissions.wifi.allowDiacritics = true;
@@ -35,42 +29,12 @@ datacomModel.modelPermissions = function() {
   return permissions;
 };
 
-datacomModel.convertToDbm = function(power) {
-  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
-};
-
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANIPConnectionNumberOfEntries';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANPPPConnectionNumberOfEntries';
-  fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.KeyPassphrase';
-  fields.wifi2.auto = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.AutoChannelEnable';
-  fields.wifi2.enable = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.Enable';
-  fields.wifi2.ssid = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.SSID';
-  fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.Standard';
-  fields.wifi2.channel = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.6.Channel';
-  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1' +
-    'WLANConfiguration.1.KeyPassphrase';
-  fields.wifi5.auto = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.AutoChannelEnable';
-  fields.wifi5.enable = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Enable';
-  fields.wifi5.ssid = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.SSID';
-  fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Standard';
-  fields.wifi5.channel = 'InternetGatewayDevice.LANDevice.1.' +
-    'WLANConfiguration.1.Channel';
-  fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.' +
-    '*.InterfaceType';
+  Object.keys(fields.wifi2).forEach((k)=>{
+    fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
+    fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
+  });
   return fields;
 };
 
