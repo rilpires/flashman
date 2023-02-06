@@ -12,16 +12,12 @@ tplinkModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
-  permissions.features.upnp = false;
   permissions.features.stun = true;
-  permissions.features.wps = false;
-  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.sendDnsOnLANChange = false;
-  permissions.lan.listLANDevices = false;
   permissions.wan.hasUptimeField = false;
   permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymRanges;
+    basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 900;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100,
