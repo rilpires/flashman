@@ -35,7 +35,7 @@ tplinkModel.modelPermissions = function() {
   return permissions;
 };
 
-tplinkModel.convertWifiMode = function(mode) {
+tplinkModel.convertWifiMode = function(mode, is5ghz=false) {
   switch (mode) {
     case '11g':
     case '11n':
@@ -44,6 +44,7 @@ tplinkModel.convertWifiMode = function(mode) {
     case '11ac':
       return 'a,n,ac';
     case '11ax':
+      return (is5ghz) ? 'a,n,ac,ax' : 'b,g,n,ax';
     default:
       return '';
   }
