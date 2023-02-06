@@ -100,6 +100,8 @@ tpLinkModel.getModelFields = function() {
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.DHCPv4.Client.*.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.PPP.Interface.*.IPCP.LocalIPAddress';
+  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
+  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
