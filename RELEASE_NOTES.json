@@ -18,7 +18,7 @@
 			"Adicionamos suporte ao modelo TP-Link HX220 por TR-069"
 		],
 		"fixes": [
-			"Consertamos um bug em que o Flashman poderia remover regras de abertura de portas de um CPE TR-069 quando este se cadastrava no Flashman"
+			"Consertamos um bug em que o Flashman poderia remover regras de abertura de portas de um CPE TR-069 quando este se cadastrava no Flashman",
 			"Consertamos um bug em que as redes nos canais 12 e 13 apareciam na aba de 5GHz das redes ao redor"
 		],
 		"improvements": [],
