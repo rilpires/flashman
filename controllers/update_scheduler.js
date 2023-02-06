@@ -466,7 +466,9 @@ scheduleController.abortSchedule = async function(req, res) {
     );
 
     const audit = {'cmd': 'update_scheduler', 'aborted': true};
-    Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
+    if (pushArray.length > 0) {
+      Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
+    }
 
     rule.in_progress_devices.forEach(async (d) => {
       let device = await SchedulerCommon.getDevice(d.mac);

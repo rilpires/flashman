@@ -10,6 +10,7 @@ const RoleModel = require('../../models/role');
 const deviceListController = require('../../controllers/device_list');
 const userController = require('../../controllers/user');
 const updateScheduler = require('../../controllers/update_scheduler');
+const updateSchedulerCommon = require('../../controllers/update_scheduler_common');
 const utils = require('../utils');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Audit = require('../../controllers/audit');
@@ -1376,6 +1377,26 @@ describe('Controllers - Audit', () => {
       });
 
       test('Abort schedule', (done) => {
+        jest.spyOn(updateSchedulerCommon, 'getConfig')
+        .mockImplementationOnce(() => ({
+          device_update_schedule: {
+            rule: {
+              to_do_devices: [{
+                mac: 'AB:AB:AB:AB:AB:AB',
+                state: 'offline',
+                slave_count: 0,
+                slave_updates_remaining: 0,
+                mesh_current: 0,
+                mesh_upgrade: 0,
+              }],
+              in_progress_devices: [],
+              done_devices: [],
+              release: 'release1',
+            },
+            is_aborted: false,
+          },
+        }));
+
         const req = {};
         const res = mockExpressResponse(() => {
           try {
