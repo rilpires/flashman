@@ -20,13 +20,13 @@ tplinkModel.modelPermissions = function() {
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendDnsOnLANChange = false;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.wan.speedTestLimit = 999;
+  permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '3';
   permissions.wifi.list5ghzChannels = [
-    36, 40, 44, 48, 52, 56, 60, 64, 100, 104,
-    108, 112, 116, 120, 124, 128, 132, 136, 140,
+    36, 40, 44, 48, 52, 56, 60, 64, 100,
+    104, 108, 112, 116, 120, 124, 128,
   ];
   permissions.wifi.allowDiacritics = true;
   permissions.wifi.axWiFiMode = true;
@@ -106,12 +106,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress'
   fields.wan.wan_ip_ppp = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
-  delete fields.wan.uptime;
-  delete fields.wan.uptime_ppp;
   fields.wan.mtu_ppp = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize'
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
+  delete fields.wan.uptime;
+  delete fields.wan.uptime_ppp;
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
