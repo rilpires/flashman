@@ -1491,12 +1491,8 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
   // Try to remove each device
   for (let device of matchedDevices) {
     let deviceId = device._id;
-    let tr069Id; // will be used when returning ids that users may know.
     if (device.use_tr069) {
       deviceId = device.serial_tr069;
-      // preference for 'alt_uid_tr069' before 'serial_tr069'.
-      tr069Id = device.alt_uid_tr069 ?
-        device.alt_uid_tr069 : device.serial_tr069;
     }
     // If the device is a mesh master, then we must not delete it
     if (device.mesh_slaves && device.mesh_slaves.length > 0) {
@@ -1511,10 +1507,10 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       continue;
     }
     totalRemoved++;
-    tr069Id ? cpesIds.push(device._id, tr069Id) : cpesIds.push(device._id);
-    // failing in removing cpe from GenieACS does not mean the CPE removal has
-    // failed. At this point in the code, the CPE has already been removed from
-    // database, and that is what matters for the users in the front end.
+    Audit.appendCpeIds(cpesIds, device);
+    // Further failing in removing CPE from GenieACS does not mean the CPE
+    // removal has failed. At this point in the code, the CPE has already been
+    // removed from database, and that is what users see in the front end.
 
     if (device.use_tr069) {
       removalOK = await TasksAPI.deleteDeviceFromGenie(device);

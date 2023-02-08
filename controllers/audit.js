@@ -119,13 +119,10 @@ const buildAndSendMessage = async function(
   return sendFunc(message, waitPromisesForNetworking);
 };
 
-// append to given 'array' the given 'cpe' identifications that users may know.
-controller.appendCpeIds = (array, cpe) => {
-  array.push(cpe._id.toString());
-  if (cpe.use_tr069) {
-    array.push(cpe.alt_uid_tr069 ? cpe.alt_uid_tr069 : cpe.serial_tr069);
-  }
-};
+// append to given 'array' the 'cpe' identifications that users may search for.
+controller.appendCpeIds = (array, cpe) => cpe.use_tr069 
+  ? array.push(cpe._id, cpe.alt_uid_tr069 || cpe.serial_tr069)
+  : array.push(cpe._id);
 
 // putting a string into FlashAudit i18n syntax for tag recursion.
 controller.toTranslate = (s) => `$t("${s}")`;

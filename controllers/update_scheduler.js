@@ -42,6 +42,9 @@ const weekDayStrToInt = function(day) {
   return -1;
 };
 
+const weekDayIntToTag = ['Sunday', 'Monday', 'Tuesday',
+  'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
 const weekDayCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
   if (foo.day > bar.day) return 1;
@@ -1043,7 +1046,7 @@ scheduleController.startSchedule = async function(req, res) {
       let slaveCount = {};
       let currentMeshVersion = {};
       let upgradeMeshVersion = {};
-
+      let cpesIds = [];
       let macList = matchedDevices.map((device)=>{
         if (
           !device.use_tr069 &&
@@ -1069,6 +1072,8 @@ scheduleController.startSchedule = async function(req, res) {
 
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
+
+        Audit.appendCpeIds(cpesIds, device)
 
         return device._id;
       });
@@ -1116,6 +1121,26 @@ scheduleController.startSchedule = async function(req, res) {
         config.device_update_schedule.rule.release = release;
         config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
         await config.save();
+
+        const audit = {
+          'cmd': 'update_scheduler',
+          'started': true,
+          'release': release,
+          'total': cpesIds.length,
+          'searchTerms': queryContents,
+        };
+        if (config.device_update_schedule.allowed_time_ranges.length > 0) {
+          audit['allowedTimeRanges'] = config.device_update_schedule
+          .allowed_time_ranges.map((r) => ({
+            ...r,
+            'start_day': Audit.toTranslate(weekDayIntToTag(r.start_day)),
+            'end_day': Audit.toTranslate(weekDayIntToTag(r.end_day)),
+          }));
+        }
+        if (cpesWontReturn) audit['cpesWontReturn'] = true;
+        if (useCsv) audit['useCsv'] = true;
+        if (useAllDevices) audit['allCpes'] = true;
+        Audit.cpes(req.user, cpesIds, 'trigger', audit);
       } catch (err) {
         console.log(err);
         return res.status(500).json({
@@ -1133,24 +1158,6 @@ scheduleController.startSchedule = async function(req, res) {
           message: result.error,
         });
       }
-      const audit = {
-        'cmd': 'update_scheduler',
-        'started': true,
-        'release': release,
-        'total': macList.length,
-        'query': queryContents,
-        'cpesWontReturn': cpesWontReturn,
-        'pageNumber': pageNumber,
-        'pageCount': pageCount,
-      };
-      if (hasTimeRestriction) {
-        audit.allowed_time_ranges =
-          config.device_update_schedule.allowed_time_ranges;
-      }
-      if (useCsv) audit['useCsv'] = true;
-      if (useAllDevices) audit['allCpes'] = true;
-      if (searchTags) audit['searchTags'] = searchTags;
-      Audit.cpes(req.user, macList, 'trigger', audit);
       return res.status(200).json({
         success: true,
       });

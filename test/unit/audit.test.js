@@ -1163,7 +1163,7 @@ describe('Controllers - Audit', () => {
       });
     });
 
-    describe.only('Manipulating Role', () => {
+    describe('Manipulating Role', () => {
       let req;
 
       beforeAll(() => {
@@ -1326,103 +1326,99 @@ describe('Controllers - Audit', () => {
       mockingoose(DeviceModel).toReturn([cpesMock[0]], 'find');
     });
 
-      test('Start schedule', (done) => {
-        const req = {
-          body: {
-            use_search: 'lala',
-            use_csv: 'false',
-            use_all: 'true',
-            use_time_restriction: 'false',
-            time_restriction: '10',
+    test('Start schedule', (done) => {
+      const req = {
+        body: {
+          use_search: 'lala',
+          use_csv: 'false',
+          use_all: 'true',
+          use_time_restriction: 'false',
+          time_restriction: '10',
+          release: 'release1',
+          filter_list: 'AB:AB:AB:AB:AB:AB',
+          cpes_wont_return: 'false',
+          page_num: '1',
+          page_count: '1',
+        },
+        user: {
+          role: 'tester',
+        },
+      };
+      const res = mockExpressResponse(() => {
+        try {
+          expect(res.json.mock.lastCall[0].success).toBe(true);
+          expect(Audit.cpes).toHaveBeenCalledTimes(1);
+          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
+          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[3]).toEqual({
+            cmd: 'update_scheduler',
+            searchTerms: ['AB:AB:AB:AB:AB:AB'],
+            started: true,
             release: 'release1',
-            filter_list: 'AB:AB:AB:AB:AB:AB',
-            cpes_wont_return: 'false',
-            page_num: '1',
-            page_count: '1',
-          },
-          user: {
-            role: 'tester',
-          },
-        };
-        const res = mockExpressResponse(() => {
-          try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.cpes).toHaveBeenCalledTimes(1);
-            expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-            expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
-            expect(Audit.cpes.mock.lastCall[3]).toEqual({
-              cmd: 'update_scheduler',
-              cpesWontReturn: false,
-              pageCount: 1,
-              pageNumber: 1,
-              query: ['AB:AB:AB:AB:AB:AB'],
-              started: true,
-              release: 'release1',
-              total: 1,
-              searchTags: 'lala',
-              allCpes: true,
-            });
-            done();
-          } catch (e) {
-            done(e);
-          }
-        });
-        updateScheduler.startSchedule(req, res);
+            total: 1,
+            allCpes: true,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
+      updateScheduler.startSchedule(req, res);
+    });
 
-      test('Abort schedule', (done) => {
-        jest.spyOn(updateSchedulerCommon, 'getConfig')
-        .mockImplementationOnce(() => ({
-          device_update_schedule: {
-            rule: {
-              to_do_devices: [{
-                mac: 'AB:AB:AB:AB:AB:AB',
-                state: 'offline',
-                slave_count: 0,
-                slave_updates_remaining: 0,
-                mesh_current: 0,
-                mesh_upgrade: 0,
-              }],
-              in_progress_devices: [],
-              done_devices: [],
-              release: 'release1',
-            },
-            is_aborted: false,
+    test('Abort schedule', (done) => {
+      jest.spyOn(updateSchedulerCommon, 'getConfig')
+      .mockImplementationOnce(() => ({
+        device_update_schedule: {
+          rule: {
+            to_do_devices: [{
+              mac: 'AB:AB:AB:AB:AB:AB',
+              state: 'offline',
+              slave_count: 0,
+              slave_updates_remaining: 0,
+              mesh_current: 0,
+              mesh_upgrade: 0,
+            }],
+            in_progress_devices: [],
+            done_devices: [],
+            release: 'release1',
           },
-        }));
+          is_aborted: false,
+        },
+      }));
 
-        const req = {};
-        const res = mockExpressResponse(() => {
-          try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.cpes).toHaveBeenCalledTimes(1);
-            expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
-            expect(Audit.cpes.mock.lastCall[3]).toEqual({
-              cmd: 'update_scheduler',
-              aborted: true,
-            });
-            done();
-          } catch (e) {
-            done(e);
-          }
-        });
-        updateScheduler.abortSchedule(req, res);
+      const req = {};
+      const res = mockExpressResponse(() => {
+        try {
+          expect(res.json.mock.lastCall[0].success).toBe(true);
+          expect(Audit.cpes).toHaveBeenCalledTimes(1);
+          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[3]).toEqual({
+            cmd: 'update_scheduler',
+            aborted: true,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
+      updateScheduler.abortSchedule(req, res);
+    });
 
-      test('Abort schedule when it is already inactive', (done) => {
-        configMock.device_update_schedule = undefined;
-        const req = {};
-        const res = mockExpressResponse(() => {
-          try {
-            expect(res.json.mock.lastCall[0].success).toBe(false);
-            expect(Audit.cpes).toHaveBeenCalledTimes(0);
-            done();
-          } catch (e) {
-            done(e);
-          }
-        });
-        updateScheduler.abortSchedule(req, res);
+    test('Abort schedule when it is already inactive', (done) => {
+      configMock.device_update_schedule = undefined;
+      const req = {};
+      const res = mockExpressResponse(() => {
+        try {
+          expect(res.json.mock.lastCall[0].success).toBe(false);
+          expect(Audit.cpes).toHaveBeenCalledTimes(0);
+          done();
+        } catch (e) {
+          done(e);
+        }
       });
+      updateScheduler.abortSchedule(req, res);
+    });
   });
 
   describe('Try later logic', () => {
