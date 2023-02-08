@@ -1583,7 +1583,7 @@ describe('Controllers - Audit', () => {
           expect(message.user).toBe('1234');
           const searchable = [];
           const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
-          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
           expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
@@ -1630,7 +1630,7 @@ describe('Controllers - Audit', () => {
           expect(message.user).toBe('1234');
           const searchable = [];
           const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
-          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
           expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
@@ -1687,7 +1687,7 @@ describe('Controllers - Audit', () => {
         try {
           expect(message.user).toBe('1234');
           const searchable = [];
-          cpesMock.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          cpesMock.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
           expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
@@ -1861,6 +1861,7 @@ describe('Controllers - Audit', () => {
       }, {
         _id: 'AA:AA:AA:AA:AA:AB',
         use_tr069: true,
+        serial_tr069: 'serial',
         alt_uid_tr069: 'alt_uid',
       }, {
         _id: 'AA:AA:AA:AA:AA:AC',
