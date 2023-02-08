@@ -111,7 +111,13 @@ const buildAndSendMessage = async function(
   let [message, err] = new FlashAudit.audit.buildMessageForJS(
     client, product, user._id.toString(), object, searchable, operation, values,
   );
-  if (err) return console.log('Error creating Audit message:', err);
+  if (err) {
+    return console.error(
+      `Error creating Audit message`+
+      `(operation:${operation},object:${object},searchables:[${searchable}]):`,
+      err,
+    );
+  }
   if (message === undefined) return; // skipping send if message discarded.
   // console.log('FlashAudit message', JSON.stringify(message, null, '  '));
 
@@ -123,7 +129,9 @@ const buildAndSendMessage = async function(
 controller.appendCpeIds = (array, cpe) => {
   if (cpe.use_tr069) {
     const tr069Id = cpe.alt_uid_tr069 || cpe.serial_tr069;
-    if (tr069Id !== cpe._id) return array.push(cpe._id, tr069Id);
+    if (tr069Id && (tr069Id !== cpe._id)) {
+      array.push(tr069Id);
+    }
   }
   array.push(cpe._id);
 
