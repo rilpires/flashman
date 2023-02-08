@@ -113,16 +113,30 @@ const buildAndSendMessage = async function(
   );
   if (err) return console.log('Error creating Audit message:', err);
   if (message === undefined) return; // skipping send if message discarded.
-  // console.log('FlashAudit message', message);
+  // console.log('FlashAudit message', JSON.stringify(message, null, '  '));
 
   // sending message.
   return sendFunc(message, waitPromisesForNetworking);
 };
 
 // append to given 'array' the 'cpe' identifications that users may search for.
-controller.appendCpeIds = (array, cpe) => cpe.use_tr069 
-  ? array.push(cpe._id, cpe.alt_uid_tr069 || cpe.serial_tr069)
-  : array.push(cpe._id);
+controller.appendCpeIds = (array, cpe) => {
+  if (cpe.use_tr069) {
+    const tr069Id = cpe.alt_uid_tr069 || cpe.serial_tr069;
+    if (tr069Id !== cpe._id) return array.push(cpe._id, tr069Id);
+  }
+  array.push(cpe._id);
+
+  // !cpe.alt_uid_tr069
+  //   ? array.push(cpe._id, cpe.serial_tr069)
+  //   : array.push(cpe._id);
+
+  // cpe.use_tr069
+  //   ? (cpe.alt_uid_tr069
+  //       ? array.push(cpe.alt_uid_tr069)
+  //       : array.push(cpe._id, cpe.serial_tr069))
+  //   : array.push(cpe._id);
+};
 
 // putting a string into FlashAudit i18n syntax for tag recursion.
 controller.toTranslate = (s) => `$t("${s}")`;

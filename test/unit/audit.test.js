@@ -277,7 +277,7 @@ describe('Controllers - Audit', () => {
   let db;
   let mockExpressResponse;
 
-  let mockedAuditMessageFunctions =
+  let auditMessageFunctions =
     ['cpe', 'cpes', 'user', 'users', 'role', 'roles'];
 
   beforeAll(async () => {
@@ -342,9 +342,7 @@ describe('Controllers - Audit', () => {
     const mockCount = (array) => (query) => filter(array, query).length;
     mockingoose(UserModel).toReturn(mockCount(usersMock), 'countDocuments');
 
-    for (const name of mockedAuditMessageFunctions) {
-      jest.spyOn(Audit, name).mockImplementation(() => undefined);
-    }
+    for (const name of auditMessageFunctions) jest.spyOn(Audit, name);
 
     sendMock.mockResolvedValue(undefined);
     process.env.FLASHAUDIT_MEMORY_ONLY = 'true';
@@ -375,17 +373,17 @@ describe('Controllers - Audit', () => {
               external_reference: {kind: utils.tt('Other'), data: 'HAHAHA'},
             },
           },
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
       });
 
       test('Successfully', (done) => {
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.cpe).toHaveBeenCalledTimes(1);
-            expect(Audit.cpe.mock.lastCall[2]).toBe('create');
-            expect(Audit.cpe.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.body.content.mac_address]);
+            expect(message.operation).toBe('create');
+            expect(message.values).toEqual({
               release: 'some release name',
               pppoe_user: 'user name',
               pppoe_password: 'pppoe_password',
@@ -402,8 +400,9 @@ describe('Controllers - Audit', () => {
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        deviceListController.createDeviceReg(req, res);
+        deviceListController.createDeviceReg(req, utils.mockResponse());
       });
 
       test('Unsuccessfully', (done) => {
@@ -429,116 +428,185 @@ describe('Controllers - Audit', () => {
         req = {
           params: {},
           body: {},
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
         res = utils.mockResponse();
       });
 
       describe('No Licenses Blocked', () => {
-        test('Single CPE Firmware', async () => {
-          req.params.id = 'AB:AB:AB:AB:AB:AB';
-          await deviceListController.delDeviceReg(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: false,
-            totalRemoved: 1,
+        test('Single CPE Firmware', (done) => {
+          req.params.id = cpesMock[0]._id;
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[0]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: false,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceReg(req, res);
         });
 
-        test('Single CPE TR069', async () => {
-          req.params.id = 'AB:AB:AB:AB:AB:AF';
-          await deviceListController.delDeviceReg(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: false,
-            totalRemoved: 1,
+        test('Single CPE TR069', (done) => {
+          req.params.id = cpesMock[3]._id;
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[3]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: false,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceReg(req, res);
         });
 
-        test('Many CPEs', async () => {
-          req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BA'];
-          await deviceListController.delDeviceReg(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: false,
-            totalRemoved: 2,
+        test('Many CPEs', (done) => {
+          req.body.ids = [cpesMock[0]._id, cpesMock[1]._id];
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[0]);
+              Audit.appendCpeIds(searchable, cpesMock[1]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: false,
+                totalRemoved: 2,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceReg(req, res);
         });
 
-        test('Many CPEs one failing', async () => {
-          req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BB'];
-          await deviceListController.delDeviceReg(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(false);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: false,
-            totalRemoved: 1,
+        test('Many CPEs one failing', (done) => {
+          req.body.ids = [cpesMock[0]._id, cpesMock[2]._id];
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[0]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: false,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceReg(req, res);
         });
       });
 
       describe('Licenses Blocked', () => {
-        test('Single CPE Firmware', async () => {
-          req.body.ids = 'AB:AB:AB:AB:AB:AB';
-          await deviceListController.delDeviceAndBlockLicense(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: true,
-            totalRemoved: 1,
+        test('Single CPE Firmware', (done) => {
+          req.body.ids = cpesMock[1]._id;
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[1]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: true,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceAndBlockLicense(req, res);
         });
 
-        test('Single CPE TR069', async () => {
-          req.body.ids = 'AB:AB:AB:AB:AB:AF';
-          await deviceListController.delDeviceAndBlockLicense(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: true,
-            totalRemoved: 1,
+        test('Single CPE TR069', (done) => {
+          req.body.ids = cpesMock[3]._id;
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[3]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: true,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceAndBlockLicense(req, res);
         });
 
-        test('Many CPEs', async () => {
+        test('Many CPEs', (done) => {
           req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BA'];
-          await deviceListController.delDeviceAndBlockLicense(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: true,
-            totalRemoved: 2,
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual(req.body.ids);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: true,
+                totalRemoved: 2,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceAndBlockLicense(req, res);
         });
 
-        test('Many CPEs one failing', async () => {
+        test('Many CPEs one failing', (done) => {
           req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BB'];
-          await deviceListController.delDeviceAndBlockLicense(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(false);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            licenseBlocked: true,
-            totalRemoved: 1,
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+              expect(message.operation).toBe('delete');
+              expect(message.values).toEqual({
+                licenseBlocked: true,
+                totalRemoved: 1,
+              });
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
           });
+          deviceListController.delDeviceAndBlockLicense(req, res);
         });
       });
     });
@@ -567,7 +635,7 @@ describe('Controllers - Audit', () => {
             lanid: 'AB:AB:AB:AB:AB:AC',
             permission: 'accept',
           },
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
           sessionID: 'sessionID',
         };
         res = utils.mockResponse();
@@ -578,20 +646,36 @@ describe('Controllers - Audit', () => {
           req.params.msg = 'traceroute';
         });
 
-        test('Generic', async () => {
-          await deviceListController.sendGenericTraceRouteAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'traceroute'});
+        test('Generic', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'traceroute'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendGenericTraceRouteAPI(req, res);
         });
 
-        test('Custom', async () => {
-          await deviceListController.sendCustomTraceRouteAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'traceroute'});
+        test('Custom', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'traceroute'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendCustomTraceRouteAPI(req, res);
         });
       });
 
@@ -600,20 +684,36 @@ describe('Controllers - Audit', () => {
           req.params.msg = 'ping';
         });
 
-        test('Generic', async () => {
-          await deviceListController.sendGenericPingAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'ping'});
+        test('Generic', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'ping'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendGenericPingAPI(req, res);
         });
 
-        test('Custom', async () => {
-          await deviceListController.sendCustomPingAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'ping'});
+        test('Custom', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'ping'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendCustomPingAPI(req, res);
         });
       });
 
@@ -622,106 +722,199 @@ describe('Controllers - Audit', () => {
           req.params.msg = 'speedtest';
         });
 
-        test('Generic', async () => {
-          await deviceListController.sendGenericSpeedTestAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'speedtest'});
+        test('Generic', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'speedtest'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendGenericSpeedTestAPI(req, res);
         });
 
-        test('Custom', async () => {
-          await deviceListController.sendCustomSpeedTestAPI(req, res);
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpe).toHaveBeenCalledTimes(1);
-          expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'speedtest'});
+        test('Custom', (done) => {
+          sendMock.mockImplementationOnce((message) => {
+            try {
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([req.params.id]);
+              expect(message.operation).toBe('trigger');
+              expect(message.values).toEqual({cmd: 'speedtest'});
+              done();
+            } catch (e) {
+              done(e);
+            }
+            return Promise.resolve(undefined);
+          });
+          deviceListController.sendCustomSpeedTestAPI(req, res);
         });
       });
 
-      test('Site Survey', async () => {
+      test('Site Survey', (done) => {
         req.params.msg = 'sitesurvey';
-        await deviceListController.sendGenericSiteSurveyAPI(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'sitesurvey'});
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'sitesurvey'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendGenericSiteSurveyAPI(req, res);
       });
 
-      test('Reset App', async () => {
+      test('Reset App', (done) => {
         req.params.msg = 'rstapp';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'resetApp'});
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'resetApp'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
       });
 
-      test('Reset Devices', async () => {
+      test('Reset Devices', (done) => {
         req.params.msg = 'rstdevices';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'resetDevices'});
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'resetDevices'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
       });
 
-      test('Update upnp', async () => {
+      test('Update upnp', (done) => {
         req.params.msg = 'updateupnp';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('edit');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({
-          'lan_devices': {
-            'AB:AB:AB:AB:AB:AC': {
-              upnp_permission: {old: 'none', new: 'accept'},
-            },
-          },
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('edit');
+            expect(message.values).toEqual({
+              'lan_devices': {
+                'AB:AB:AB:AB:AB:AC': {
+                  upnp_permission: {old: 'none', new: 'accept'},
+                },
+              },
+            });
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
         });
+        deviceListController.sendCommandMsg(req, res);
       });
 
-      test('Log', async () => {
+      test('Log', (done) => {
         req.params.msg = 'log';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'readLog'});
-      });
-
-      test('Reboot', async () => {
-        req.params.msg = 'boot';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'reboot'});
-      });
-
-      test('Online devices', async () => {
-        req.params.msg = 'onlinedevs';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'readOnlineDevices'});
-      });
-
-      test('Up status', async () => {
-        req.params.msg = 'upstatus';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'upstatus'});
-      });
-
-      test('WPS', async () => {
-        req.params.msg = 'wps';
-        await deviceListController.sendCommandMsg(req, res);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({
-          cmd: 'wps',
-          activated: true,
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'readLog'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
         });
+        deviceListController.sendCommandMsg(req, res);
+      });
+
+      test('Reboot', (done) => {
+        req.params.msg = 'boot';
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'reboot'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
+      });
+
+      test('Online devices', (done) => {
+        req.params.msg = 'onlinedevs';
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'readOnlineDevices'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
+      });
+
+      test('Up status', (done) => {
+        req.params.msg = 'upstatus';
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'upstatus'});
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
+      });
+
+      test('WPS', (done) => {
+        req.params.msg = 'wps';
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({
+              cmd: 'wps',
+              activated: true,
+            });
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
+        });
+        deviceListController.sendCommandMsg(req, res);
       });
     });
 
@@ -732,13 +925,13 @@ describe('Controllers - Audit', () => {
         req = {
           params: {},
           body: {},
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
       });
 
       describe('Firmware', () => {
         beforeAll(() => {
-          req.params.id = 'AB:AB:AB:AB:AB:AB';
+          req.params.id = cpesMock[0]._id;
         });
 
         test('Badges', () => {
@@ -790,12 +983,12 @@ describe('Controllers - Audit', () => {
             port: [45, 57],
             router_port: [45, 61],
           }];
-          const res = mockExpressResponse(() => {
+          sendMock.mockImplementationOnce((message) => {
             try {
-              expect(res.json.mock.lastCall[0].success).toBe(true);
-              expect(Audit.cpe).toHaveBeenCalledTimes(1);
-              expect(Audit.cpe.mock.lastCall[2]).toBe('edit');
-              expect(Audit.cpe.mock.lastCall[3]).toEqual({
+              expect(message.user).toBe('1234');
+              expect(message.searchable).toEqual([cpesMock[0]._id]);
+              expect(message.operation).toBe('edit');
+              expect(message.values).toEqual({
                 port_forward: {
                   'ab:ab:ab:ab:ab:ac': {
                     ports: {
@@ -810,8 +1003,9 @@ describe('Controllers - Audit', () => {
             } catch (e) {
               done(e);
             }
+            return Promise.resolve(undefined);
           });
-          deviceListController.setPortForward(req, res);
+          deviceListController.setPortForward(req, utils.mockResponse());
         });
 
         test('Unsuccessful', (done) => {
@@ -836,7 +1030,7 @@ describe('Controllers - Audit', () => {
 
       describe('TR069', () => {
         beforeAll(() => {
-          req.params.id = 'AB:AB:AB:AB:AB:AF';
+          req.params.id = cpesMock[3]._id;
         });
 
         test('Badges', () => {
@@ -886,29 +1080,32 @@ describe('Controllers - Audit', () => {
             internal_port_start: 46,
             internal_port_end: 46,
           }]);
-          const res = mockExpressResponse(() => {
+          sendMock.mockImplementationOnce((message) => {
             try {
-              expect(res.json.mock.lastCall[0].success).toBe(true);
-              expect(Audit.cpe).toHaveBeenCalledTimes(1);
-              expect(Audit.cpe.mock.lastCall[2]).toBe('edit');
-              expect(Audit.cpe.mock.lastCall[3]).toEqual({
-                port_forward: {
-                  '192.168.0.33': {
-                    ports: {
-                      old: ['44'],
-                      new: ['45'],
+              expect(message.user).toBe('1234');
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[3]);
+              expect(message.searchable).toEqual(searchable);
+              expect(message.operation).toBe('edit');
+              expect(message.values).toEqual({
+                  port_forward: {
+                    '192.168.0.33': {
+                      ports: {
+                        old: ['44'],
+                        new: ['45'],
+                      },
                     },
+                    '192.168.0.34': {ports: ['46']},
+                    '192.168.0.32': null,
                   },
-                  '192.168.0.34': {ports: ['46']},
-                  '192.168.0.32': null,
-                },
-              });
+                });
               done();
             } catch (e) {
               done(e);
             }
+            return Promise.resolve(undefined);
           });
-          deviceListController.setPortForward(req, res);
+          deviceListController.setPortForward(req, utils.mockResponse());
         });
 
         test('Unsuccessful', (done) => {
@@ -950,35 +1147,51 @@ describe('Controllers - Audit', () => {
             release: 'abcd',
           },
           body: {},
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
         res = utils.mockResponse();
       });
 
-      test('Do Upgrade', async () => {
+      test('Do Upgrade', (done) => {
         req.body.do_update = true;
-        await deviceListController.changeUpdate(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({
-          cmd: 'firmware_upgrade',
-          release: 'abcd',
-          currentRelease: undefined,
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({
+              cmd: 'firmware_upgrade',
+              release: 'abcd',
+              currentRelease: undefined,
+            });
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
         });
+        deviceListController.changeUpdate(req, res);
       });
 
-      test('Cancel Upgrade', async () => {
+      test('Cancel Upgrade', (done) => {
         req.body.do_update = false;
-        await deviceListController.changeUpdate(req, res);
-        expect(res.json.mock.lastCall[0].success).toBe(true);
-        expect(Audit.cpe).toHaveBeenCalledTimes(1);
-        expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-        expect(Audit.cpe.mock.lastCall[3]).toEqual({
-          cmd: 'firmware_upgrade',
-          release: 'abcd',
-          canceled: true,
+        sendMock.mockImplementationOnce((message) => {
+          try {
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({
+              cmd: 'firmware_upgrade',
+              release: 'abcd',
+              canceled: true,
+            });
+            done();
+          } catch (e) {
+            done(e);
+          }
+          return Promise.resolve(undefined);
         });
+        deviceListController.changeUpdate(req, res);
       });
     });
 
@@ -992,18 +1205,18 @@ describe('Controllers - Audit', () => {
             id: 'AB:AB:AB:AB:AB:AB',
             isblocked: true,
           },
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
       });
 
       test('Block', (done) => {
         req.body.lanid = 'ab:ab:ab:ab:ab:ac';
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.cpe).toHaveBeenCalledTimes(1);
-            expect(Audit.cpe.mock.lastCall[2]).toBe('edit');
-            expect(Audit.cpe.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.body.id]);
+            expect(message.operation).toBe('edit');
+            expect(message.values).toEqual({
               'lan_devices': {
                 'ab:ab:ab:ab:ab:ac': {
                   is_blocked: {
@@ -1017,8 +1230,9 @@ describe('Controllers - Audit', () => {
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        deviceListController.setLanDeviceBlockState(req, res);
+        deviceListController.setLanDeviceBlockState(req, utils.mockResponse());
       });
 
       test('Block Non existing device', (done) => {
@@ -1042,25 +1256,27 @@ describe('Controllers - Audit', () => {
       beforeAll(() => {
         req = {
           params: {id: 'AB:AB:AB:AB:AB:AB'},
-          user: {_id: '123456', role: 'tester'},
+          user: {_id: '1234', role: 'tester'},
         };
       });
 
       test('CPE', (done) => {
         jest.spyOn(deviceListController, 'downloadStockFirmware')
           .mockImplementation(() => true);
-        const res = mockExpressResponse(() => {
+
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.cpe).toHaveBeenCalledTimes(1);
-            expect(Audit.cpe.mock.lastCall[2]).toBe('trigger');
-            expect(Audit.cpe.mock.lastCall[3]).toEqual({cmd: 'factoryReset'});
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([req.params.id]);
+            expect(message.operation).toBe('trigger');
+            expect(message.values).toEqual({cmd: 'factoryReset'});
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        deviceListController.factoryResetDevice(req, res);
+        deviceListController.factoryResetDevice(req, utils.mockResponse());
       });
     });
   });
@@ -1074,13 +1290,15 @@ describe('Controllers - Audit', () => {
             password: '1233456',
             role: 'tester',
           },
+          user: {_id: '1234'},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.user).toHaveBeenCalledTimes(1);
-            expect(Audit.user.mock.lastCall[2]).toBe('create');
-            expect(Audit.user.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable.length).toBe(1);
+            expect(message.searchable[0].constructor).toBe(String);
+            expect(message.operation).toBe('create');
+            expect(message.values).toEqual({
               name: 'unitTest_user',
               password: '******',
               role: 'tester',
@@ -1089,8 +1307,9 @@ describe('Controllers - Audit', () => {
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.postUser(req, res);
+        userController.postUser(req, utils.mockResponse());
       });
 
       test('Edit User', (done) => {
@@ -1103,14 +1322,14 @@ describe('Controllers - Audit', () => {
             is_superuser: true,
             role: 'better tester',
           },
-          user: {_id: 'user1', role: 'tester', is_superuser: true},
+          user: {_id: '1234', role: 'tester', is_superuser: true},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.user).toHaveBeenCalledTimes(1);
-            expect(Audit.user.mock.lastCall[2]).toBe('edit');
-            expect(Audit.user.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([usersMock[0]._id.toString()]);
+            expect(message.operation).toBe('edit');
+            expect(message.values).toEqual({
               name: {old: 'test_user', new: 'new name'},
               password: {new: '******', old: '******'},
               is_superuser: {old: false, new: true},
@@ -1120,46 +1339,50 @@ describe('Controllers - Audit', () => {
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.editUser(req, res);
+        userController.editUser(req, utils.mockResponse());
       });
 
       test('Delete Single User', (done) => {
         const req = {
           body: {ids: [usersMock[0]._id]},
+          user: {_id: '1234'},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.users).toHaveBeenCalledTimes(1);
-            expect(Audit.users.mock.lastCall[1].length).toBe(1);
-            expect(Audit.users.mock.lastCall[2]).toBe('delete');
-            expect(Audit.users.mock.lastCall[3]).toBe(undefined);
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([usersMock[0]._id.toString()]);
+            expect(message.operation).toBe('delete');
+            expect(message.values).toBe(undefined);
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.deleteUser(req, res);
+        userController.deleteUser(req, utils.mockResponse());
       });
 
       test('Delete Many Users', (done) => {
         const req = {
           body: {ids: usersMock.map((u) => u._id)},
+          user: {_id: '1234'},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.users).toHaveBeenCalledTimes(1);
-            expect(Audit.users.mock.lastCall[1].length).toBe(2);
-            expect(Audit.users.mock.lastCall[2]).toBe('delete');
-            expect(Audit.users.mock.lastCall[3]).toBe(undefined);
+            expect(message.user).toBe('1234');
+            expect(message.searchable)
+              .toEqual(usersMock.map((u) => u._id.toString()));
+            expect(message.operation).toBe('delete');
+            expect(message.values).toBe(undefined);
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.deleteUser(req, res);
+        userController.deleteUser(req, utils.mockResponse());
       });
     });
 
@@ -1208,16 +1431,17 @@ describe('Controllers - Audit', () => {
             'grant-factory-reset': false,
             'grant-slave-disassociate': false,
           },
+          user: {_id: '1234'},
         };
       });
 
       test('Create Role', (done) => {
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.role).toHaveBeenCalledTimes(1);
-            expect(Audit.role.mock.lastCall[2]).toBe('create');
-            expect(Audit.role.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual(['tester']);
+            expect(message.operation).toBe('create');
+            expect(message.values).toEqual({
               grantWifiInfo: `$t("view")`,
               grantPPPoEInfo: `$t("view&edit")`,
               grantLanDevices: `$t("view&actions")`,
@@ -1228,27 +1452,29 @@ describe('Controllers - Audit', () => {
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.postRole(req, res);
+        userController.postRole(req, utils.mockResponse());
       });
 
       test('Edit Role', (done) => {
         req.params = {id: rolesMock[0]._id};
         req.body['grant-vlan'] = 1;
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.role).toHaveBeenCalledTimes(1);
-            expect(Audit.role.mock.lastCall[2]).toBe('edit');
-            expect(Audit.role.mock.lastCall[3]).toEqual({
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual(['tester']);
+            expect(message.operation).toBe('edit');
+            expect(message.values).toEqual({
               grantVlan: {old: `$t("!view")`, new: `$t("view")`},
             });
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.editRole(req, res);
+        userController.editRole(req, utils.mockResponse());
       });
 
       test('Delete Role still assigned to Users', (done) => {
@@ -1276,20 +1502,21 @@ describe('Controllers - Audit', () => {
             names: [rolesMock[1].name],
             ids: [rolesMock[1]._id],
           },
+          user: {_id: '1234'},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.roles).toHaveBeenCalledTimes(1);
-            expect(Audit.roles.mock.lastCall[1].length).toBe(1);
-            expect(Audit.roles.mock.lastCall[2]).toBe('delete');
-            expect(Audit.roles.mock.lastCall[3]).toBe(undefined);
+            expect(message.user).toBe('1234');
+            expect(message.searchable).toEqual([rolesMock[1].name]);
+            expect(message.operation).toBe('delete');
+            expect(message.values).toBe(undefined);
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.deleteRole(req, res);
+        userController.deleteRole(req, utils.mockResponse());
       });
 
       test('Delete Many Roles unassigned to Users', (done) => {
@@ -1298,20 +1525,22 @@ describe('Controllers - Audit', () => {
             names: [rolesMock[1].name, rolesMock[2].name],
             ids: [rolesMock[1]._id, rolesMock[2]._id],
           },
+          user: {_id: '1234'},
         };
-        const res = mockExpressResponse(() => {
+        sendMock.mockImplementationOnce((message) => {
           try {
-            expect(res.json.mock.lastCall[0].success).toBe(true);
-            expect(Audit.roles).toHaveBeenCalledTimes(1);
-            expect(Audit.roles.mock.lastCall[1].length).toBe(2);
-            expect(Audit.roles.mock.lastCall[2]).toBe('delete');
-            expect(Audit.roles.mock.lastCall[3]).toBe(undefined);
+            expect(message.user).toBe('1234');
+            expect(message.searchable)
+              .toEqual([rolesMock[1].name, rolesMock[2].name]);
+            expect(message.operation).toBe('delete');
+            expect(message.values).toBe(undefined);
             done();
           } catch (e) {
             done(e);
           }
+          return Promise.resolve(undefined);
         });
-        userController.deleteRole(req, res);
+        userController.deleteRole(req, utils.mockResponse());
       });
     });
   });
@@ -1319,10 +1548,10 @@ describe('Controllers - Audit', () => {
   describe('Checking Audit values in update scheduler', () => {
     beforeAll(() => {
       jest.spyOn(deviceListController, 'getReleases')
-        .mockImplementationOnce(async () => [{
-          id: 'release1',
-          model: ['W5-1200FV1'],
-        }]);
+      .mockImplementation(async () => [{
+        id: 'release1',
+        model: ['W5-1200FV1'],
+      }]);
       mockingoose(DeviceModel).toReturn([cpesMock[0]], 'find');
     });
 
@@ -1340,17 +1569,14 @@ describe('Controllers - Audit', () => {
           page_num: '1',
           page_count: '1',
         },
-        user: {
-          role: 'tester',
-        },
+        user: {_id: '1234', role: 'tester'},
       };
-      const res = mockExpressResponse(() => {
+      sendMock.mockImplementationOnce((message) => {
         try {
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
             cmd: 'update_scheduler',
             searchTerms: ['AB:AB:AB:AB:AB:AB'],
             started: true,
@@ -1362,8 +1588,60 @@ describe('Controllers - Audit', () => {
         } catch (e) {
           done(e);
         }
+        return Promise.resolve(undefined);
       });
-      updateScheduler.startSchedule(req, res);
+      updateScheduler.startSchedule(req, utils.mockResponse());
+    });
+
+    test('Start schedule with time restrictions', (done) => {
+      const req = {
+        body: {
+          use_search: 'lala',
+          use_csv: 'false',
+          use_all: 'true',
+          use_time_restriction: 'true',
+          time_restriction: JSON.stringify([{
+            startWeekday: 'Sunday', endWeekday: 'Monday',
+            startTime: '10:00', endTime: '22:00',
+          }, {
+            startWeekday: 'Wednesday', endWeekday: 'Friday',
+            startTime: '22:00', endTime: '06:00',
+          }]),
+          release: 'release1',
+          filter_list: 'AB:AB:AB:AB:AB:AB',
+          cpes_wont_return: 'false',
+          page_num: '1',
+          page_count: '1',
+        },
+        user: {_id: '1234', role: 'tester'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
+            cmd: 'update_scheduler',
+            searchTerms: ['AB:AB:AB:AB:AB:AB'],
+            started: true,
+            release: 'release1',
+            total: 1,
+            allowedTimeRanges: [{
+              start_day: '$t("Sunday")', end_day: '$t("Monday")',
+              start_time: '10:00', end_time: '22:00',
+            }, {
+              start_day: '$t("Wednesday")', end_day: '$t("Friday")',
+              start_time: '22:00', end_time: '06:00',
+            }],
+            allCpes: true,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      updateScheduler.startSchedule(req, utils.mockResponse());
     });
 
     test('Abort schedule', (done) => {
@@ -1387,13 +1665,15 @@ describe('Controllers - Audit', () => {
         },
       }));
 
-      const req = {};
-      const res = mockExpressResponse(() => {
+      const req = {
+        user: {_id: '1234', role: 'tester'},
+      };
+      sendMock.mockImplementationOnce((message) => {
         try {
-          expect(res.json.mock.lastCall[0].success).toBe(true);
-          expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
-          expect(Audit.cpes.mock.lastCall[3]).toEqual({
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
             cmd: 'update_scheduler',
             aborted: true,
           });
@@ -1401,13 +1681,13 @@ describe('Controllers - Audit', () => {
         } catch (e) {
           done(e);
         }
+        return Promise.resolve(undefined);
       });
-      updateScheduler.abortSchedule(req, res);
+      updateScheduler.abortSchedule(req, utils.mockResponse());
     });
 
     test('Abort schedule when it is already inactive', (done) => {
       configMock.device_update_schedule = undefined;
-      const req = {};
       const res = mockExpressResponse(() => {
         try {
           expect(res.json.mock.lastCall[0].success).toBe(false);
@@ -1417,7 +1697,7 @@ describe('Controllers - Audit', () => {
           done(e);
         }
       });
-      updateScheduler.abortSchedule(req, res);
+      updateScheduler.abortSchedule({}, res);
     });
   });
 
@@ -1542,18 +1822,6 @@ describe('Controllers - Audit', () => {
   });
 
   describe('Creating Audit Message', () => {
-    beforeAll(() => {
-      for (const name of mockedAuditMessageFunctions) {
-        Audit[name].mockRestore();
-      }
-    });
-
-    afterAll(() => {
-      for (const name of mockedAuditMessageFunctions) {
-        jest.spyOn(Audit, name).mockImplementation(() => undefined);
-      }
-    });
-
     test('CPE', async () => {
       const operation = 'create';
       const values = {cmd: 'abc'};

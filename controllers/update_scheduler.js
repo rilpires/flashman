@@ -1073,13 +1073,14 @@ scheduleController.startSchedule = async function(req, res) {
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
 
-        Audit.appendCpeIds(cpesIds, device)
+        Audit.appendCpeIds(cpesIds, device);
 
         return device._id;
       });
 
       // Save scheduler configs to database
       let config = null;
+      let allowedTimeRanges;
       try {
         config = await SchedulerCommon.getConfig(false, false);
         config.device_update_schedule.is_active = true;
@@ -1107,7 +1108,7 @@ scheduleController.startSchedule = async function(req, res) {
                 {errorline: __line}),
             });
           }
-          config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
+          allowedTimeRanges = valid.map((r)=>{
             return {
               start_day: weekDayStrToInt(r.startWeekday),
               end_day: weekDayStrToInt(r.endWeekday),
@@ -1116,8 +1117,9 @@ scheduleController.startSchedule = async function(req, res) {
             };
           });
         } else {
-          config.device_update_schedule.allowed_time_ranges = [];
+          allowedTimeRanges = [];
         }
+        config.device_update_schedule.allowed_time_ranges = allowedTimeRanges;
         config.device_update_schedule.rule.release = release;
         config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
         await config.save();
@@ -1129,12 +1131,12 @@ scheduleController.startSchedule = async function(req, res) {
           'total': cpesIds.length,
           'searchTerms': queryContents,
         };
-        if (config.device_update_schedule.allowed_time_ranges.length > 0) {
-          audit['allowedTimeRanges'] = config.device_update_schedule
-          .allowed_time_ranges.map((r) => ({
-            ...r,
-            'start_day': Audit.toTranslate(weekDayIntToTag(r.start_day)),
-            'end_day': Audit.toTranslate(weekDayIntToTag(r.end_day)),
+        if (allowedTimeRanges.length > 0) {
+          audit['allowedTimeRanges'] = allowedTimeRanges.map((r) => ({
+            'start_day': Audit.toTranslate(weekDayIntToTag[r.start_day]),
+            'end_day': Audit.toTranslate(weekDayIntToTag[r.end_day]),
+            'start_time': r.start_time,
+            'end_time': r.end_time,
           }));
         }
         if (cpesWontReturn) audit['cpesWontReturn'] = true;
