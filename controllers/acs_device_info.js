@@ -828,9 +828,12 @@ const fetchSyncResult = async function(
   parameterNames = parameterNames.map((p) => {
     return p.replace(/\.\*.*/g, '');
   });
-  // Temporary to fix collisions while we work on a permanent solution
-  parameterNames = parameterNames
-    .filter((p) => !p.match('Device.IP.Interface.'));
+  // Remove duplicated elements
+  parameterNames = [...new Set(parameterNames)];
+  // Remove repeted leafs (remove A.B.C if A.B exist)
+  parameterNames = parameterNames.filter(
+    (r) => !parameterNames.some((a) => r.startsWith(a+'.')));
+
   let projection = parameterNames.join(',');
   let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
   let options = {
