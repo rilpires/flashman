@@ -129,21 +129,9 @@ const buildAndSendMessage = async function(
 controller.appendCpeIds = (array, cpe) => {
   if (cpe.use_tr069) {
     const tr069Id = cpe.alt_uid_tr069 || cpe.serial_tr069;
-    if (tr069Id && (tr069Id !== cpe._id)) {
-      array.push(tr069Id);
-    }
+    if (tr069Id !== cpe._id) return array.push(cpe._id, tr069Id);
   }
   array.push(cpe._id);
-
-  // !cpe.alt_uid_tr069
-  //   ? array.push(cpe._id, cpe.serial_tr069)
-  //   : array.push(cpe._id);
-
-  // cpe.use_tr069
-  //   ? (cpe.alt_uid_tr069
-  //       ? array.push(cpe.alt_uid_tr069)
-  //       : array.push(cpe._id, cpe.serial_tr069))
-  //   : array.push(cpe._id);
 };
 
 // putting a string into FlashAudit i18n syntax for tag recursion.

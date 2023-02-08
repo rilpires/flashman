@@ -19,7 +19,7 @@ const Audit = require('../../controllers/audit');
 
 // mocked CPEs to be used in all tests.
 const cpesMock = [{
-  _id: 'AB:AB:AB:AB:AB:AB',
+  _id: 'AB:AB:AB:AB:AB:AA',
   version: '0.42.0',
   model: 'W5-1200FV1',
   wifi_is_5ghz_capable: true,
@@ -36,14 +36,15 @@ const cpesMock = [{
     {mac: 'ab:ab:ab:ab:ab:ae'},
   ],
 }, {
-  _id: 'AB:AB:AB:AB:AB:BA',
+  _id: 'AB:AB:AB:AB:AB:AB',
   version: '0.42.0',
   model: 'W5-1200FV1',
+  mesh_slaves: ['AB:AB:AB:AB:AB:AC'],
 }, {
-  _id: 'AB:AB:AB:AB:AB:BB',
+  _id: 'AB:AB:AB:AB:AB:AC',
   version: '0.42.0',
   model: 'W5-1200FV1',
-  mesh_slaves: ['AB:AB:AB:AB:AB:BC'],
+  mesh_master: 'AB:AB:AB:AB:AB:AB',
 }, {
   _id: 'AB:AB:AB:AB:AB:AF',
   serial_tr069: 'serial_tr069_AB:AB:AB:AB:AB:AF',
@@ -134,7 +135,7 @@ const configMock = {
     allowed_time_ranges: [],
     used_time_range: false,
     used_csv: false,
-    used_search: 'AB:AB:AB:AB:AB:AB',
+    used_search: 'AB:AB:AB:AB:AB:AA',
     date: new Date('2023-01-31T04:25:23.393Z'),
   },
 };
@@ -361,7 +362,7 @@ describe('Controllers - Audit', () => {
         req = {
           body: {
             content: {
-              mac_address: 'AB:AB:AB:AB:AB:AA',
+              mac_address: 'AB:AB:AB:AB:AB:BB',
               release: 'some release name',
               pppoe_user: 'user name',
               pppoe_password: 'pppoe_password',
@@ -479,13 +480,13 @@ describe('Controllers - Audit', () => {
         });
 
         test('Many CPEs', (done) => {
-          req.body.ids = [cpesMock[0]._id, cpesMock[1]._id];
+          req.body.ids = [cpesMock[0]._id, cpesMock[2]._id];
           sendMock.mockImplementationOnce((message) => {
             try {
               expect(message.user).toBe('1234');
               const searchable = [];
               Audit.appendCpeIds(searchable, cpesMock[0]);
-              Audit.appendCpeIds(searchable, cpesMock[1]);
+              Audit.appendCpeIds(searchable, cpesMock[2]);
               expect(message.searchable).toEqual(searchable);
               expect(message.operation).toBe('delete');
               expect(message.values).toEqual({
@@ -502,7 +503,7 @@ describe('Controllers - Audit', () => {
         });
 
         test('Many CPEs one failing', (done) => {
-          req.body.ids = [cpesMock[0]._id, cpesMock[2]._id];
+          req.body.ids = [cpesMock[0]._id, cpesMock[1]._id];
           sendMock.mockImplementationOnce((message) => {
             try {
               expect(message.user).toBe('1234');
@@ -526,12 +527,12 @@ describe('Controllers - Audit', () => {
 
       describe('Licenses Blocked', () => {
         test('Single CPE Firmware', (done) => {
-          req.body.ids = cpesMock[1]._id;
+          req.body.ids = cpesMock[0]._id;
           sendMock.mockImplementationOnce((message) => {
             try {
               expect(message.user).toBe('1234');
               const searchable = [];
-              Audit.appendCpeIds(searchable, cpesMock[1]);
+              Audit.appendCpeIds(searchable, cpesMock[0]);
               expect(message.searchable).toEqual(searchable);
               expect(message.operation).toBe('delete');
               expect(message.values).toEqual({
@@ -570,11 +571,14 @@ describe('Controllers - Audit', () => {
         });
 
         test('Many CPEs', (done) => {
-          req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BA'];
+          req.body.ids = [cpesMock[0]._id, cpesMock[2]._id];
           sendMock.mockImplementationOnce((message) => {
             try {
               expect(message.user).toBe('1234');
-              expect(message.searchable).toEqual(req.body.ids);
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[0]);
+              Audit.appendCpeIds(searchable, cpesMock[2]);
+              expect(message.searchable).toEqual(searchable);
               expect(message.operation).toBe('delete');
               expect(message.values).toEqual({
                 licenseBlocked: true,
@@ -590,11 +594,13 @@ describe('Controllers - Audit', () => {
         });
 
         test('Many CPEs one failing', (done) => {
-          req.body.ids = ['AB:AB:AB:AB:AB:AB', 'AB:AB:AB:AB:AB:BB'];
+          req.body.ids = [cpesMock[0]._id, cpesMock[1]._id];
           sendMock.mockImplementationOnce((message) => {
             try {
               expect(message.user).toBe('1234');
-              expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+              const searchable = [];
+              Audit.appendCpeIds(searchable, cpesMock[0]);
+              expect(message.searchable).toEqual(searchable);
               expect(message.operation).toBe('delete');
               expect(message.values).toEqual({
                 licenseBlocked: true,
@@ -619,7 +625,7 @@ describe('Controllers - Audit', () => {
         req = {
           params: {
             msg: '',
-            id: 'AB:AB:AB:AB:AB:AB',
+            id: cpesMock[0]._id,
             activate: true,
           },
           body: {
@@ -1143,7 +1149,7 @@ describe('Controllers - Audit', () => {
       beforeEach(async () => {
         req = {
           params: {
-            id: 'AB:AB:AB:AB:AB:AB',
+            id: cpesMock[0]._id,
             release: 'abcd',
           },
           body: {},
@@ -1202,7 +1208,7 @@ describe('Controllers - Audit', () => {
         req = {
           params: { },
           body: {
-            id: 'AB:AB:AB:AB:AB:AB',
+            id: cpesMock[0]._id,
             isblocked: true,
           },
           user: {_id: '1234', role: 'tester'},
@@ -1255,7 +1261,7 @@ describe('Controllers - Audit', () => {
 
       beforeAll(() => {
         req = {
-          params: {id: 'AB:AB:AB:AB:AB:AB'},
+          params: {id: cpesMock[0]._id},
           user: {_id: '1234', role: 'tester'},
         };
       });
@@ -1550,9 +1556,10 @@ describe('Controllers - Audit', () => {
       jest.spyOn(deviceListController, 'getReleases')
       .mockImplementation(async () => [{
         id: 'release1',
-        model: ['W5-1200FV1'],
+        model: ['W5-1200FV1', 'F670L'],
+        flashbox_version: '0.42.0',
       }]);
-      mockingoose(DeviceModel).toReturn([cpesMock[0]], 'find');
+      mockingoose(DeviceModel).toReturn(cpesMock, 'find');
     });
 
     test('Start schedule', (done) => {
@@ -1564,7 +1571,7 @@ describe('Controllers - Audit', () => {
           use_time_restriction: 'false',
           time_restriction: '10',
           release: 'release1',
-          filter_list: 'AB:AB:AB:AB:AB:AB',
+          filter_list: cpesMock[0]._id,
           cpes_wont_return: 'false',
           page_num: '1',
           page_count: '1',
@@ -1574,14 +1581,17 @@ describe('Controllers - Audit', () => {
       sendMock.mockImplementationOnce((message) => {
         try {
           expect(message.user).toBe('1234');
-          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          const searchable = [];
+          const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
+          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
             cmd: 'update_scheduler',
-            searchTerms: ['AB:AB:AB:AB:AB:AB'],
+            searchTerms: [cpesMock[0]._id],
             started: true,
             release: 'release1',
-            total: 1,
+            total: cpes.length,
             allCpes: true,
           });
           done();
@@ -1608,7 +1618,7 @@ describe('Controllers - Audit', () => {
             startTime: '22:00', endTime: '06:00',
           }]),
           release: 'release1',
-          filter_list: 'AB:AB:AB:AB:AB:AB',
+          filter_list: cpesMock[0]._id,
           cpes_wont_return: 'false',
           page_num: '1',
           page_count: '1',
@@ -1618,14 +1628,17 @@ describe('Controllers - Audit', () => {
       sendMock.mockImplementationOnce((message) => {
         try {
           expect(message.user).toBe('1234');
-          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          const searchable = [];
+          const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
+          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
             cmd: 'update_scheduler',
-            searchTerms: ['AB:AB:AB:AB:AB:AB'],
+            searchTerms: [cpesMock[0]._id],
             started: true,
             release: 'release1',
-            total: 1,
+            total: cpes.length,
             allowedTimeRanges: [{
               start_day: '$t("Sunday")', end_day: '$t("Monday")',
               start_time: '10:00', end_time: '22:00',
@@ -1649,8 +1662,10 @@ describe('Controllers - Audit', () => {
       .mockImplementationOnce(() => ({
         device_update_schedule: {
           rule: {
+            // all mocked cpes will be returned but at least one should be
+            // provided to allow the abort to execute.
             to_do_devices: [{
-              mac: 'AB:AB:AB:AB:AB:AB',
+              mac: cpesMock[0]._id,
               state: 'offline',
               slave_count: 0,
               slave_updates_remaining: 0,
@@ -1671,11 +1686,14 @@ describe('Controllers - Audit', () => {
       sendMock.mockImplementationOnce((message) => {
         try {
           expect(message.user).toBe('1234');
-          expect(message.searchable).toEqual(['AB:AB:AB:AB:AB:AB']);
+          const searchable = [];
+          cpesMock.forEach((cpe) => Audit.appendCpeIds(searchable, cpe))
+          expect(message.searchable).toEqual(searchable);
           expect(message.operation).toBe('trigger');
           expect(message.values).toEqual({
             cmd: 'update_scheduler',
             aborted: true,
+            total: cpesMock.length,
           });
           done();
         } catch (e) {

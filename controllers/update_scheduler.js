@@ -468,9 +468,15 @@ scheduleController.abortSchedule = async function(req, res) {
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
 
-    const audit = {'cmd': 'update_scheduler', 'aborted': true};
     if (pushArray.length > 0) {
-      Audit.cpes(req.user, pushArray.map((d) => d.mac), 'trigger', audit);
+      const macs = pushArray.map((d) => d.mac);
+      const projection = {user_tr069: 1, alt_uid_tr069: 1, serial_tr069: 1};
+      const cpes = await DeviceModel.find({_id: {$in: macs}}, projection);
+      Audit.cpes(req.user, cpes, 'trigger', {
+        'cmd': 'update_scheduler',
+        'aborted': true,
+        'total': cpes.length,
+      });
     }
 
     rule.in_progress_devices.forEach(async (d) => {
@@ -901,6 +907,8 @@ scheduleController.startSchedule = async function(req, res) {
     mesh_slaves: true,
     model: true,
     use_tr069: true,
+    serial_tr069: true, // necessary for FlashAudit.
+    alt_uid_tr069: true, // necessary for FlashAudit.
     version: true,
     wifi_is_5ghz_capable: true,
     acs_id: true,
@@ -1046,7 +1054,9 @@ scheduleController.startSchedule = async function(req, res) {
       let slaveCount = {};
       let currentMeshVersion = {};
       let upgradeMeshVersion = {};
-      let cpesIds = [];
+
+      let totalCpes = 0;
+      const cpesIds = [];
       let macList = matchedDevices.map((device)=>{
         if (
           !device.use_tr069 &&
@@ -1073,6 +1083,7 @@ scheduleController.startSchedule = async function(req, res) {
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
 
+        totalCpes++;
         Audit.appendCpeIds(cpesIds, device);
 
         return device._id;
@@ -1128,7 +1139,7 @@ scheduleController.startSchedule = async function(req, res) {
           'cmd': 'update_scheduler',
           'started': true,
           'release': release,
-          'total': cpesIds.length,
+          'total': totalCpes,
           'searchTerms': queryContents,
         };
         if (allowedTimeRanges.length > 0) {
