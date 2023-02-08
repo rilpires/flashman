@@ -120,8 +120,6 @@ const configMock = {
   certification: undefined,
   measureServerIP: true,
   measureServerPort: true,
-  // personalizationHash: '',
-  // isSsidPrefixEnabled: false,
   device_update_schedule: {
     rule: {
       to_do_devices: [],

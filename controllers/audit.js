@@ -1,6 +1,7 @@
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
 const Validator = require('../public/javascripts/device_validator');
+const ConfigModel = require('../models/config');
 const {registerAuditMemoryQueueSize}
   = require('./handlers/metrics/custom_metrics');
 
@@ -28,7 +29,7 @@ const validatesListOfAddresses = (env) => {
   return validated;
 };
 
-const client = process.env.AIX_PROVIDER || 'test_client';
+let client = process.env.AIX_PROVIDER;
 const product = 'flashman';
 const serverBrokers =
   validatesListOfAddresses(process.env.FLASHAUDIT_SERVER_BROKERS) || [
@@ -103,8 +104,10 @@ const buildAndSendMessage = async function(
 ) {
   if (turnedOff) return; // ignoring FlashAudit.
 
-  if (!user || !user._id) return; // empty users should not create audits.
-  if (!client) return; // if no 'client', we can't send anything.
+  // empty users and hidden users should not create audits.
+  if (!user || !user._id || user.is_hidden) return;
+  // if no 'client', we can't send anything.
+  if (!client) return;
 
   // building audit message.
   // eslint-disable-next-line new-cap
@@ -113,8 +116,8 @@ const buildAndSendMessage = async function(
   );
   if (err) {
     return console.error(
-      `Error creating Audit message`+
-      `(operation:${operation},object:${object},searchables:[${searchable}]):`,
+      `Error creating Audit message. `+
+      `operation: ${operation}, object: ${object}, searchables: ${searchable}.`,
       err,
     );
   }
@@ -185,6 +188,13 @@ controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
   if (turnedOff) return;
+
+  if (!client) {
+    await ConfigModel.findOne({is_default: true}, {company: true}).lean().then(
+      (conf) => client = conf && conf.company || 'test_client',
+      (e) => console.log('Error getting config from database.', e),
+    );
+  }
 
   // starting FlashAudit client.
   flashAuditServer = new FlashAudit.FlashAudit({
