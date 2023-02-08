@@ -48,7 +48,7 @@ controller.cpe = function(user, cpe, operation, values) {
   // building the values this device could be searched by so users
   // can find it in FlashAudit.
   const searchable = [];
-  appendCpeIds(searchable, cpe);
+  controller.appendCpeIds(searchable, cpe);
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
 
@@ -59,7 +59,7 @@ controller.cpes = function(user, cpes, operation, values) {
   let searchable = cpes;
   if (cpes[0].constructor !== String) {
     searchable = [];
-    for (const cpe of cpes) appendCpeIds(searchable, cpe);
+    for (const cpe of cpes) controller.appendCpeIds(searchable, cpe);
   }
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
@@ -96,8 +96,6 @@ controller.roles = function(user, roles, operation, values) {
   return buildAndSendMessage(user, 'role', searchable, operation, values);
 };
 
-module.exports = controller;
-
 // Creating a audit message that will end up in the audit server. Returns
 // an Error object in case of invalid arguments.
 const buildAndSendMessage = async function(
@@ -122,12 +120,17 @@ const buildAndSendMessage = async function(
 };
 
 // append to given 'array' the given 'cpe' identifications that users may know.
-const appendCpeIds = (array, cpe) => {
+controller.appendCpeIds = (array, cpe) => {
   array.push(cpe._id.toString());
   if (cpe.use_tr069) {
     array.push(cpe.alt_uid_tr069 ? cpe.alt_uid_tr069 : cpe.serial_tr069);
   }
 };
+
+// putting a string into FlashAudit i18n syntax for tag recursion.
+controller.toTranslate = (s) => `$t("${s}")`;
+
+module.exports = controller;
 
 // returns a Promise that will resolve after an elapsed given milliseconds.
 const someTime = (milliseconds) => new Promise(

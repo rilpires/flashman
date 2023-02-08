@@ -88,14 +88,16 @@ const rolesMock = [{
   // eslint-disable-next-line new-cap
   _id: ObjectID(),
   name: 'tester',
+  grantWifiInfo: 1,
+  grantPPPoEInfo: 2,
+  grantLanDevices: 2,
+  grantSearchLevel: 2,
   grantNotificationPopups: true,
   // default values for bellow attributes are different.
   grantCsvExport: false,
-  grantLanDevices: 0,
   grantLanEdit: false,
   grantMassFirmwareUpgrade: false,
   grantMeasureDevices: 0,
-  grantSearchLevel: 0,
   grantShowRowsPerPage: false,
   grantShowSearchSummary: false,
   grantSiteSurvey: false,
@@ -1161,16 +1163,16 @@ describe('Controllers - Audit', () => {
       });
     });
 
-    describe('Manipulating Role', () => {
+    describe.only('Manipulating Role', () => {
       let req;
 
       beforeAll(() => {
         req = {
           body: { // an almost empty role.
             'name': 'tester',
-            'grant-wifi-info': 0,
-            'grant-pppoe-info': 0,
-            'grant-wan-advanced-info': 0,
+            'grant-wifi-info': '1',
+            'grant-pppoe-info': '2',
+            'grant-wan-advanced-info': '0',
             'grant-pass-show': false,
             'grant-wan-type': false,
             'grant-device-id': false,
@@ -1179,17 +1181,17 @@ describe('Controllers - Audit', () => {
             'grant-lan-devices-block': false,
             'grant-opmode-edit': false,
             'grant-log-access': false,
-            'grant-device-removal': 0,
+            'grant-device-removal': '0',
             'grant-block-license-at-removal': false,
             'grant-device-add': false,
             'grant-notification-popups': true, // only permission.
-            'grant-lan-devices': 0,
+            'grant-lan-devices': '2',
             'grant-site-survey': false,
-            'grant-measure-devices': 0,
+            'grant-measure-devices': '0',
             'grant-statistics': false,
-            'grant-vlan': 0,
+            'grant-vlan': '0',
             'grant-firmware-manage': false,
-            'grant-firmware-upgrade': 0,
+            'grant-firmware-upgrade': '0',
             'grant-firmware-beta-upgrade': false,
             'grant-firmware-restricted-upgrade': false,
             'grant-monitor-manage': false,
@@ -1198,10 +1200,10 @@ describe('Controllers - Audit', () => {
             'grant-diag-app-access': false,
             'grant-search-summary': false,
             'grant-rows-per-page': false,
-            'grant-search-level': 0,
+            'grant-search-level': '2',
             'grant-csv-export': false,
             'grant-flashman-manage': false,
-            'grant-certification-access': 0,
+            'grant-certification-access': '0',
             'grant-vlan-profile-edit': false,
             'grant-factory-reset': false,
             'grant-slave-disassociate': false,
@@ -1216,6 +1218,10 @@ describe('Controllers - Audit', () => {
             expect(Audit.role).toHaveBeenCalledTimes(1);
             expect(Audit.role.mock.lastCall[2]).toBe('create');
             expect(Audit.role.mock.lastCall[3]).toEqual({
+              grantWifiInfo: `$t("view")`,
+              grantPPPoEInfo: `$t("view&edit")`,
+              grantLanDevices: `$t("view&actions")`,
+              grantSearchLevel: `$t("complexSearch")`,
               grantNotificationPopups: true,
             });
             done();
@@ -1235,7 +1241,7 @@ describe('Controllers - Audit', () => {
             expect(Audit.role).toHaveBeenCalledTimes(1);
             expect(Audit.role.mock.lastCall[2]).toBe('edit');
             expect(Audit.role.mock.lastCall[3]).toEqual({
-              grantVlan: {old: 0, new: 1},
+              grantVlan: {old: `$t("!view")`, new: `$t("view")`},
             });
             done();
           } catch (e) {

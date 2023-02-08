@@ -126,6 +126,30 @@ userController.postUser = function(req, res) {
   });
 };
 
+// a map of tags for each numeric level of each permission field in Role model.
+const tagsForNumericPermissions = {
+  grantWifiInfo: ['!view', 'view', 'view&edit'],
+  grantPPPoEInfo: ['!view', 'view', 'view&edit'],
+  grantCertificationAccess: ['!view', 'view', 'view&edit'],
+  grantLanDevices: ['!view', 'view', 'view&actions'],
+  grantMeasureDevices: ['!view', 'view', 'view&actions'],
+  grantVlan: ['!view', 'view', 'view&edit'],
+  grantSearchLevel: ['!search&view', 'simpleSearch', 'complexSearch'],
+  grantWanAdvancedInfo: ['!view', 'view', 'view&edit'],
+};
+
+// For a given pair of permission field and value, returns a string tag
+// representing that permission, so it can be translated somewhere in Anlix
+// products. If permission field or value is unrecognized, it returns the value.
+const tagFromPermission = function(fieldname, value) {
+  const permission = tagsForNumericPermissions[fieldname];
+  if (permission) {
+    const tag = permission[value];
+    if (tag) return tag;
+  }
+  return value;
+};
+
 // Reads role parameters from request and returns an object which will contain
 // a 'success' attribute that, when true, will also contain the Role set by the
 // parameters in the request, but when 'success' is false, that object is
@@ -199,20 +223,34 @@ const setRolePermissions = function(req, role) {
       // name will be used as identification instead of an attribute.
       if (k === 'name') continue;
       const v = role[k];
-      if (v) audit[k] = v; // role creation will audit only active permissions.
+      // role creation will only have audit fields for active permissions.
       // fortunately, numeric permissions are always inactive when they are 0.
       // inactive permission will show up when they are edited to active or
       // back to inactive. Which means they will only not show in audit when
       // role is being created.
+      if (v) {
+        audit[k] = v.constructor === Number ?
+          Audit.toTranslate(tagFromPermission(k, v)) : v;
+      }
     }
   } else {
     /* eslint-disable guard-for-in */
     for (let k in roleParams) {
+      // name will be used as identification instead of an attribute.
       if (k === 'name') continue; // name cannot change.
       const oldValue = role[k];
       role[k] = roleParams[k]; // updating role attributes.
       const newValue = role[k];
-      if (oldValue !== newValue) audit[k] = {old: oldValue, new: newValue};
+
+      if (oldValue !== newValue) { // if it has changed.
+        audit[k] = newValue.constructor === Number ? {
+          old: Audit.toTranslate(tagFromPermission(k, oldValue)),
+          new: Audit.toTranslate(tagFromPermission(k, newValue)),
+        } : {
+          old: oldValue,
+          new: newValue,
+        };
+      }
     }
   }
 
