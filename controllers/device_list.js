@@ -1484,36 +1484,38 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
       errors: failedAtRemoval,
     };
   }
-  // Array for all CPE identifications that a user could search for.
-  const userKnownIds = {
-    all: [], // these will be indexed in FlashAudit.
-    failed: [], // these will not be indexed in FlashAudit.
-    addTo: (arr, mac, altid) => altid ? arr.push(mac, altid) : arr.push(mac),
-  };
+
+  const cpesIds = []; // all CPEs ids that a user could search for.
+  let totalRemoved = 0; // counting CPEs removed in database.
+
   // Try to remove each device
   for (let device of matchedDevices) {
     let deviceId = device._id;
-    let deviceTr069Id; // will be used when returning ids that users may know.
+    let tr069Id; // will be used when returning ids that users may know.
     if (device.use_tr069) {
       deviceId = device.serial_tr069;
-      if (device.alt_uid_tr069) deviceTr069Id = device.alt_uid_tr069;
-      else deviceTr069Id = device.serial_tr069;
+      // preference for 'alt_uid_tr069' before 'serial_tr069'.
+      tr069Id = device.alt_uid_tr069 ?
+        device.alt_uid_tr069 : device.serial_tr069;
     }
-    userKnownIds.addTo(userKnownIds.all, device._id, deviceTr069Id);
     // If the device is a mesh master, then we must not delete it
     if (device.mesh_slaves && device.mesh_slaves.length > 0) {
       failedAtRemoval[deviceId] =
         t('cantDeleteMeshWithSecondaries', {errorline: __line});
-      userKnownIds.addTo(userKnownIds.failed, device._id, deviceTr069Id);
       continue;
     }
     let removalOK = await deviceHandlers.removeDeviceFromDatabase(device);
     if (!removalOK) {
       failedAtRemoval[deviceId] =
         t('operationUnsuccessful', {errorline: __line});
-      userKnownIds.addTo(userKnownIds.failed, device._id, deviceTr069Id);
       continue;
     }
+    totalRemoved++;
+    tr069Id ? cpesIds.push(device._id, tr069Id) : cpesIds.push(device._id);
+    // failing in removing cpe from GenieACS does not mean the CPE removal has
+    // failed. At this point in the code, the CPE has already been removed from
+    // database, and that is what matters for the users in the front end.
+
     if (device.use_tr069) {
       removalOK = await TasksAPI.deleteDeviceFromGenie(device);
       if (!removalOK) {
@@ -1524,33 +1526,29 @@ const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
     }
     removedDevIds.push(deviceId);
   }
+
   const audit = {
-    'cmd': 'cpe_removal',
     'licenseBlocked': licenseBlocked,
-    'totalRemoved': removedDevIds.length,
+    'totalRemoved': totalRemoved,
   };
-  let ret;
+  if (totalRemoved) Audit.cpes(user, cpesIds, 'delete', audit);
+
   // If there are any errors in the array, we log the details and inform which
   // cpes failed to be removed in the response
   let errCount = Object.keys(failedAtRemoval).length;
   if (errCount > 0) {
     console.log(failedAtRemoval);
-    ret = {
+    return {
       success: false,
       removedIds: removedDevIds,
       message: t('couldntRemoveSomeDevices', {amount: errCount}),
       errors: failedAtRemoval,
     };
-    audit['failed'] = userKnownIds.failed;
-    audit['totalFailed'] = errCount;
-  } else {
-    ret = {
-      success: true,
-      removedIds: removedDevIds,
-    };
   }
-  if (removedDevIds.length > 0) Audit.cpes(user, userKnownIds.all, 'trigger', audit);
-  return ret;
+  return {
+    success: true,
+    removedIds: removedDevIds,
+  };
 };
 
 deviceListController.delDeviceReg = async function(req, res) {

@@ -439,9 +439,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
           });
@@ -453,9 +452,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
           });
@@ -467,9 +465,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 2,
           });
@@ -480,14 +477,11 @@ describe('Controllers - Audit', () => {
           await deviceListController.delDeviceReg(req, res);
           expect(res.json.mock.lastCall[0].success).toBe(false);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: false,
             totalRemoved: 1,
-            failed: ['AB:AB:AB:AB:AB:BB'],
-            totalFailed: 1,
           });
         });
       });
@@ -499,9 +493,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
           });
@@ -513,9 +506,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBeGreaterThan(1);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
           });
@@ -527,9 +519,8 @@ describe('Controllers - Audit', () => {
           expect(res.json.mock.lastCall[0].success).toBe(true);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
           expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 2,
           });
@@ -540,14 +531,11 @@ describe('Controllers - Audit', () => {
           await deviceListController.delDeviceAndBlockLicense(req, res);
           expect(res.json.mock.lastCall[0].success).toBe(false);
           expect(Audit.cpes).toHaveBeenCalledTimes(1);
-          expect(Audit.cpes.mock.lastCall[1].length).toBe(2);
-          expect(Audit.cpes.mock.lastCall[2]).toBe('trigger');
+          expect(Audit.cpes.mock.lastCall[1].length).toBe(1);
+          expect(Audit.cpes.mock.lastCall[2]).toBe('delete');
           expect(Audit.cpes.mock.lastCall[3]).toEqual({
-            cmd: 'cpe_removal',
             licenseBlocked: true,
             totalRemoved: 1,
-            failed: ['AB:AB:AB:AB:AB:BB'],
-            totalFailed: 1,
           });
         });
       });
