@@ -821,8 +821,8 @@ scheduleController.startSchedule = async function(req, res) {
   if (
     !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
     !req.body.use_time_restriction || !req.body.page_num ||
-    !req.body.page_count || req.body.release === null ||
-    req.body.cpes_wont_return === null ||
+    !req.body.page_count || !req.body.timeout_enable ||
+    req.body.release === null || req.body.cpes_wont_return === null ||
     req.body.cpes_wont_return === undefined ||
     req.body.release === undefined || req.body.filter_list === null ||
     req.body.filter_list === undefined || req.body.use_search === null ||
@@ -834,6 +834,7 @@ scheduleController.startSchedule = async function(req, res) {
     req.body.use_time_restriction.constructor !== String ||
     req.body.cpes_wont_return.constructor !== String ||
     req.body.release.constructor !== String ||
+    req.body.timeout_enable.constructor !== String ||
     req.body.page_num.constructor !== String ||
     req.body.page_count.constructor !== String ||
     req.body.time_restriction.constructor !== String ||
@@ -857,6 +858,22 @@ scheduleController.startSchedule = async function(req, res) {
   let timeRestrictions = [];
   let queryContents = req.body.filter_list.split(',');
 
+  // Validate timeout
+  let timeoutEnable = (req.body.timeout_enable === 'true');
+  let timeoutPeriod;
+
+  if (
+    timeoutEnable &&
+    req.body.timeout_period &&
+    req.body.timeout_period.constructor === String
+  ) {
+    timeoutPeriod = parseInt(req.body.timeout_period);
+  } else if (timeoutEnable) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
 
   // Validate json, it must always work even though it must be a blank array
   try {
@@ -871,10 +888,28 @@ scheduleController.startSchedule = async function(req, res) {
   }
 
 
+  // Get the inform in minutes
+  let informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+  let config = await SchedulerCommon.getConfig(false, false);
+
+  if (
+    config && config.tr069 && config.tr069.inform_interval &&
+    config.tr069.inform_interval.constructor === Number
+  ) {
+    informIntervalInMinutes = Math.ceil(config.tr069.inform_interval / 60000);
+  }
+
   // Validate numbers
   if (
     isNaN(pageNumber) || pageNumber < 1 ||
-    isNaN(pageCount) || pageCount < 1
+    isNaN(pageCount) || pageCount < 1 ||
+
+    // Timeout
+    (timeoutEnable && (
+      isNaN(timeoutPeriod) ||
+      timeoutPeriod < (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
+      timeoutPeriod > MAX_TIMEOUT_PERIOD
+    ))
   ) {
     return res.status(500).json({
       success: false,
@@ -1108,6 +1143,13 @@ scheduleController.startSchedule = async function(req, res) {
         }
         config.device_update_schedule.rule.release = release;
         config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
+
+        // Timeout
+        config.device_update_schedule.rule.timeout_enable = timeoutEnable;
+        if (timeoutEnable) {
+          config.device_update_schedule.rule.timeout_period = timeoutPeriod;
+        }
+
         await config.save();
       } catch (err) {
         console.log(err);
