@@ -21,6 +21,10 @@ const FLASHBOX_FIRMWARE_SELECTION_BUTTON = '#flashbox-firmware-selection';
 const CPE_WONT_RETURN_DIV = '#cpeWontReturnDiv';
 const CPE_WONT_RETURN_CHECKBOX = '#cpeWontReturn';
 
+// Messages
+const WHEN_ERROR_MESSAGE_DIV = '#when-error-msg';
+const WHEN_ERROR_MESSAGE = '#when-error-text';
+
 
 // Dropdowns
 const FIRMWARE_SELECTION_DROPDOWN = '#releases-dropdown';
@@ -295,7 +299,7 @@ const displayAndCheckUpdate = function(tr069Active) {
 
 anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
-  $('#when-error-msg').hide();
+  $(WHEN_ERROR_MESSAGE_DIV).hide();
 
   // At the beginning hide the won't return to flashman checkbox as it starts
   // with TR-069
@@ -573,7 +577,7 @@ anlixDocumentReady.add(function() {
           });
         }
       }
-      $('#when-error-msg').hide();
+      $(WHEN_ERROR_MESSAGE_DIV).hide();
       $('#when-btn-icon')
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
@@ -619,8 +623,8 @@ anlixDocumentReady.add(function() {
           $('#when-btn-icon')
             .removeClass('fa-spinner fa-pulse')
             .addClass('fa-check');
-          $('#when-error-text').html('&nbsp; '+t('serverErrorPleaseTryAgain'));
-          $('#when-error-msg').show();
+          $(WHEN_ERROR_MESSAGE).html('&nbsp; '+t('serverErrorPleaseTryAgain'));
+          $(WHEN_ERROR_MESSAGE_DIV).show();
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
           swal.close();
