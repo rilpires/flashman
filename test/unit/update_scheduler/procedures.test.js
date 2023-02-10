@@ -1,15 +1,18 @@
 require('../../../bin/globals');
-const updateCommon = require('../../../controllers/update_scheduler_common');
-const updateScheduler = require('../../../controllers/update_scheduler');
 
+// Always load these first as they load environment variables
 const utils = require('../../common/utils');
 const models = require('../../common/models');
+
+const updateCommon = require('../../../controllers/update_scheduler_common');
+const updateScheduler = require('../../../controllers/update_scheduler');
 
 const meshHandler = require('../../../controllers/handlers/mesh');
 const deviceHandlers = require('../../../controllers/handlers/devices');
 const mqtts = require('../../../mqtts');
 const messaging = require('../../../controllers/messaging');
 const acsFirmware = require('../../../controllers/handlers/acs/firmware');
+const tasksAPI = require('../../../controllers/external-genieacs/tasks-api');
 
 const DeviceModel = require('../../../models/device');
 
@@ -477,6 +480,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -510,11 +517,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     jest.spyOn(DeviceModel.prototype, 'save')
       .mockImplementationOnce(() => Promise.resolve());
     utils.common.mockConfigs(config, 'findOne');
-    utils.common.mockDevices([
-      models.defaultMockDevices[0],
-    ],
-    'find',
-  );
+    utils.common.mockDevices(
+      [models.defaultMockDevices[0]],
+      'find',
+    );
     utils.common.mockDevices(models.defaultMockDevices[1], 'findOne');
     mqtts.unifiedClientsMap = {a: {}};
     mqtts.unifiedClientsMap.a[flashMac] = true;
@@ -541,6 +547,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'downloading',
           'retry_count': 0,
           'slave_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'mesh_current': 1,
           'mesh_upgrade': 1,
@@ -556,6 +563,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -621,6 +632,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'mac': tr069Mac,
           'slave_count': 0,
           'retry_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'state': 'downloading',
           'mesh_current': 1,
@@ -638,6 +650,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -704,6 +720,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'v1tov2',
           'retry_count': 0,
           'slave_count': 10,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 11,
           'mesh_current': 1,
           'mesh_upgrade': 2,
@@ -734,6 +751,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -808,6 +829,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'downloading',
           'retry_count': 0,
           'slave_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'mesh_current': 2,
           'mesh_upgrade': 2,
@@ -828,6 +850,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -904,6 +930,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'downloading',
           'retry_count': 0,
           'slave_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'mesh_current': 2,
           'mesh_upgrade': 2,
@@ -924,6 +951,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -1056,6 +1087,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'downloading',
           'retry_count': 0,
           'slave_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'mesh_current': 2,
           'mesh_upgrade': 2,
@@ -1076,6 +1108,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -1201,6 +1237,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'downloading',
           'retry_count': 0,
           'slave_count': 0,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 1,
           'mesh_current': 2,
           'mesh_upgrade': 2,
@@ -1221,6 +1258,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     async () => {
     // Set fake timers
     jest.useFakeTimers();
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
 
     // Flashbox device
     const flashMac = models.defaultMockDevices[1]._id;
@@ -1337,6 +1378,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
           'state': 'v1tov2',
           'retry_count': 0,
           'slave_count': 10,
+          'marked_update_date': new Date(),
           'slave_updates_remaining': 11,
           'mesh_current': 1,
           'mesh_upgrade': 2,
@@ -1435,5 +1477,1401 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
       null,
       null,
     );
+  });
+
+
+  // timeout null config
+  test(
+    'Validate Update Scheduler - timeout null config',
+    async () => {
+    // Mocks
+    utils.common.mockConfigs(null, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(false);
+    expect(result.message).toContain(
+      t('configNotFound').replace('({{errorline}})', ''),
+    );
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout scheduler not active
+  test(
+    'Validate Update Scheduler - timeout scheduler not active',
+    async () => {
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        device_update_schedule: {
+          is_active: false,
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(false);
+    expect(result.message).toContain(
+      t('configNotFound').replace('({{errorline}})', ''),
+    );
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout scheduler aborted
+  test(
+    'Validate Update Scheduler - timeout scheduler aborted',
+    async () => {
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: true,
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(false);
+    expect(result.message).toContain(
+      t('configNotFound').replace('({{errorline}})', ''),
+    );
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout not active
+  test(
+    'Validate Update Scheduler - timeout not active',
+    async () => {
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          rule: {
+            timeout_enable: false,
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout invalid period
+  let informInterval = 60000;
+  let invalidTimeoutPeriods = [
+    -1, 0,
+    Math.ceil(informInterval / 60000) +
+      parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD) - 1,
+    parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD) + 1,
+  ];
+
+  invalidTimeoutPeriods.forEach((timeoutPeriod) => {
+    test(
+      'Validate Update Scheduler - timeout invalid period: ' + timeoutPeriod,
+      async () => {
+      // Copy config
+      let model = models.copyConfigFrom(
+        '62b9f57c6beaae3b4f9d4656',
+        {
+          tr069: {
+            inform_interval: informInterval,
+          },
+          device_update_schedule: {
+            is_active: true,
+            is_aborted: false,
+            rule: {
+              timeout_enable: true,
+              timeout_period: timeoutPeriod,
+            },
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(model, 'findOne');
+
+      // Execute
+      let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+      // Verify
+      expect(result.success).toBe(false);
+      expect(result.message).toContain(
+        t('parametersErrorTimeRangesInvalid').replace('({{errorline}})', ''),
+      );
+      expect(result.timed_out_devices.length).toBe(0);
+    });
+  });
+
+
+  // timeout no device updating
+  test(
+    'Validate Update Scheduler - timeout no device updating',
+    async () => {
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout no date
+  test(
+    'Validate Update Scheduler - timeout no date',
+    async () => {
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout no timed out device
+  test(
+    'Validate Update Scheduler - timeout no timed out device',
+    async () => {
+    jest.useFakeTimers('modern').setSystemTime(
+      // Year, Month, Day, Hour, Minute, Seconds
+      new Date(2023, 2, 8, 15, 43, 32),
+    );
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: new Date(),
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: new Date(),
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: new Date(),
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout single timed out device not updating
+  test(
+    'Validate Update Scheduler - timeout single timed out device not updating',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: false,
+        do_update_status: 0, // Still updating
+
+        model: 'ABC',
+        version: '0.33.1',
+
+        use_tr069: true,
+        acs_id: '123',
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(0);
+  });
+
+
+  // timeout single timed out device errored
+  test(
+    'Validate Update Scheduler - timeout single timed out device errored',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 2,
+
+        model: 'ABC',
+        version: '0.33.1',
+
+        use_tr069: true,
+        acs_id: '123',
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(0);
+  });
+
+
+  // timeout single timed out RG 1200 new firwmare
+  test(
+    'Validate Update Scheduler - timeout single timed out RG 1200 new firwmare',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: 'ACTIONRG1200V1',
+        version: '0.33.1',
+
+        use_tr069: false,
+        acs_id: undefined,
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(0);
+  });
+
+
+  // timeout single timed out RG 1200 old firwmare
+  test(
+    'Validate Update Scheduler - timeout single timed out RG 1200 old firwmare',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: 'ACTIONRG1200V1',
+        version: '0.30.1',
+
+        use_tr069: false,
+        acs_id: undefined,
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(1);
+    expect(configQuerySpy).toHaveBeenCalledWith(
+      // Set
+      {'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+          'state': 'error_timeout',
+          'slave_count': 5,
+          'slave_updates_remaining': 3,
+          'mesh_current': 1,
+          'mesh_upgrade': 4,
+        },
+      },
+    );
+  });
+
+
+  // timeout multiple timed out RG 1200 old firwmare
+  test(
+    'Validate Update Scheduler - timeout multiple timed out RG 1200 old fw',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              slave_count: 1,
+              slave_updates_remaining: 2,
+              mesh_current: 2,
+              mesh_upgrade: 3,
+              marked_update_date: oldDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: 'ACTIONRG1200V1',
+        version: '0.30.1',
+
+        use_tr069: false,
+        acs_id: undefined,
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(2);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB', 'CC:CC:CC:CC:CC:CC',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(2);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(2);
+    expect(configQuerySpy).toHaveBeenCalledWith(
+      // Set
+      {'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+          'state': 'error_timeout',
+          'slave_count': 5,
+          'slave_updates_remaining': 3,
+          'mesh_current': 1,
+          'mesh_upgrade': 4,
+        },
+      },
+    );
+    expect(configQuerySpy).toHaveBeenCalledWith(
+      // Set
+      {'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'CC:CC:CC:CC:CC:CC',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'CC:CC:CC:CC:CC:CC',
+          'state': 'error_timeout',
+          'slave_count': 1,
+          'slave_updates_remaining': 2,
+          'mesh_current': 2,
+          'mesh_upgrade': 3,
+        },
+      },
+    );
+  });
+
+
+  // timeout all timed out RG 1200 old firwmare
+  test(
+    'Validate Update Scheduler - timeout all timed out RG 1200 old fw',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              slave_count: 4,
+              slave_updates_remaining: 2,
+              mesh_current: 5,
+              mesh_upgrade: 3,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              slave_count: 1,
+              slave_updates_remaining: 2,
+              mesh_current: 2,
+              mesh_upgrade: 3,
+              marked_update_date: oldDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: 'ACTIONRG1200V1',
+        version: '0.30.1',
+
+        use_tr069: false,
+        acs_id: undefined,
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(3);
+    expect(result.timed_out_devices).toStrictEqual([
+      'AA:AA:AA:AA:AA:AA', 'BB:BB:BB:BB:BB:BB', 'CC:CC:CC:CC:CC:CC',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(3);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(1);
+    expect(configQuerySpy).toHaveBeenCalledTimes(3);
+    expect(updateCommon.configQuery.mock.calls).toEqual([
+      // Set
+      [{'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'AA:AA:AA:AA:AA:AA',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'AA:AA:AA:AA:AA:AA',
+          'state': 'error_timeout',
+          'slave_count': 4,
+          'slave_updates_remaining': 2,
+          'mesh_current': 5,
+          'mesh_upgrade': 3,
+        },
+      }],
+
+      // Set
+      [{'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+          'state': 'error_timeout',
+          'slave_count': 5,
+          'slave_updates_remaining': 3,
+          'mesh_current': 1,
+          'mesh_upgrade': 4,
+        },
+      }],
+
+      // Set
+      [{'device_update_schedule.is_active': false},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'CC:CC:CC:CC:CC:CC',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'CC:CC:CC:CC:CC:CC',
+          'state': 'error_timeout',
+          'slave_count': 1,
+          'slave_updates_remaining': 2,
+          'mesh_current': 2,
+          'mesh_upgrade': 3,
+        },
+      }],
+    ]);
+  });
+
+
+  // timeout single timed out tr069 no acs_id
+  test(
+    'Validate Update Scheduler - timeout single timed out tr069 no acs_id',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: '1234',
+        version: 'abc',
+
+        use_tr069: true,
+        acs_id: undefined,
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => {
+        return;
+      });
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(1);
+    expect(configQuerySpy).toHaveBeenCalledWith(
+      // Set
+      {'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+          'state': 'error_timeout',
+          'slave_count': 5,
+          'slave_updates_remaining': 3,
+          'mesh_current': 1,
+          'mesh_upgrade': 4,
+        },
+      },
+    );
+  });
+
+
+  // timeout single timed out tr069
+  test(
+    'Validate Update Scheduler - timeout single timed out tr069',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(
+      {
+        do_update: true,
+        do_update_status: 0, // Still updating
+
+        model: '1234',
+        version: 'abc',
+
+        use_tr069: true,
+        acs_id: '1234',
+      },
+      'findOne',
+    );
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => Promise.resolve());
+    jest.spyOn(tasksAPI, 'getFromCollection')
+      .mockImplementation(() => Promise.resolve([
+        {
+          _id: '123',
+          name: 'download',
+        },
+        {
+          _id: '124',
+          name: 'getParameters',
+        },
+        {
+          _id: '125',
+          name: 'download',
+        },
+      ]));
+    let deleteTaskSpy = jest.spyOn(tasksAPI, 'deleteTask')
+      .mockImplementation(() => Promise.resolve());
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(1);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(1);
+    expect(configQuerySpy).toHaveBeenCalledWith(
+      // Set
+      {'device_update_schedule.is_active': true},
+
+      // Pull
+      {
+        'device_update_schedule.rule.in_progress_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+        },
+      },
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': 'BB:BB:BB:BB:BB:BB',
+          'state': 'error_timeout',
+          'slave_count': 5,
+          'slave_updates_remaining': 3,
+          'mesh_current': 1,
+          'mesh_upgrade': 4,
+        },
+      },
+    );
+    expect(deleteTaskSpy).toHaveBeenCalledTimes(2);
+    expect(deleteTaskSpy.mock.calls).toEqual([
+      ['123'], ['125'],
+    ]);
+  });
+
+
+  // timeout single timed out tr069 no device
+  test(
+    'Validate Update Scheduler - timeout single timed out tr069 no device',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            in_progress_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(null, 'findOne');
+    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
+    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+      .mockImplementation(() => {
+        return;
+      });
+    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+      .mockImplementation(() => Promise.resolve());
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(1);
+    expect(result.timed_out_devices).toStrictEqual([
+      'BB:BB:BB:BB:BB:BB',
+    ]);
+    expect(saveSpy).toHaveBeenCalledTimes(0);
+    expect(removeWatchdogSpy).toHaveBeenCalledTimes(0);
+    expect(configQuerySpy).toHaveBeenCalledTimes(0);
+  });
+
+
+  // timeout scheduler finished
+  test(
+    'Validate Update Scheduler - timeout scheduler finished',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: false,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            done_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(null, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(false);
+    expect(result.message).toContain(
+      t('configNotFound').replace('({{errorline}})', ''),
+    );
+    expect(result.timed_out_devices.length).toBe(0);
+  });
+
+
+  // timeout scheduler finished but still active
+  test(
+    'Validate Update Scheduler - timeout scheduler finished but still active',
+    async () => {
+    // Assing an old date, to be the timed out device
+    let oldDate = new Date(2023, 1, 8, 15, 43, 32);
+
+    // Assing a new date, to not be time out
+    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+
+
+    // Copy config
+    let model = models.copyConfigFrom(
+      '62b9f57c6beaae3b4f9d4656',
+      {
+        tr069: {
+          inform_interval: 60000,
+        },
+        device_update_schedule: {
+          is_active: true,
+          is_aborted: false,
+          device_count: 3,
+          rule: {
+            timeout_enable: true,
+            timeout_period: 15,
+            done_devices: [{
+              mac: 'AA:AA:AA:AA:AA:AA',
+              marked_update_date: newDate,
+            }, {
+              mac: 'BB:BB:BB:BB:BB:BB',
+              slave_count: 5,
+              slave_updates_remaining: 3,
+              mesh_current: 1,
+              mesh_upgrade: 4,
+              marked_update_date: oldDate,
+            }, {
+              mac: 'CC:CC:CC:CC:CC:CC',
+              marked_update_date: newDate,
+            }],
+          },
+        },
+      },
+    );
+
+    // Mocks
+    utils.common.mockConfigs(model, 'findOne');
+    utils.common.mockDevices(null, 'findOne');
+
+    // Execute
+    let result = await updateScheduler.checkAndRemoveTimeoutDevices();
+
+    // Verify
+    expect(result.success).toBe(true);
+    expect(result.message).toContain(t('Ok'));
+    expect(result.timed_out_devices.length).toBe(0);
   });
 });
