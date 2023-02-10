@@ -1954,6 +1954,7 @@ acsDeviceInfoController.updateInfo = async function(
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
+  let wildcardFlag = cpe.modelPermissions().useLastIndexOnWildcard;
 
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
@@ -2041,6 +2042,22 @@ acsDeviceInfoController.updateInfo = async function(
       hasChanges = true;
     });
   });
+  // If there are changes in the WAN fields, we have to replace the fields that
+  // have wildcards with the correct indexes. Only the fields referring to the
+  // WAN are changed
+  if (changes.wan.length > 0) {
+    try {
+      let ret = await replaceWanFieldsWildcards(
+        acsID, wildcardFlag, fields, changes, task,
+      );
+      if (ret.success) {
+        task = ret.task;
+      }
+    } catch (e) {
+      console.log(ret.error);
+      return;
+    }
+  }
   // CPEs needs to reboot after change PPPoE parameters
   if (
     cpe.modelPermissions().wan.mustRebootAfterChanges &&
@@ -2072,6 +2089,86 @@ acsDeviceInfoController.updateInfo = async function(
   } catch (e) {
     return;
   }
+};
+
+const replaceWanFieldsWildcards = async function (
+  acsID, wildcardFlag, fields, changes, task,
+) {
+  // WAN fields cannot have wildcards. So we query the genie database to get
+  // access to the index from which the wildcard should be replaced. The
+  // projection will be a concatenation of the fields requested for editing,
+  // separated by a comma
+  let projection = Object.keys(changes.wan).map((k)=>{
+    if (!fields.wan[k]) return;
+    return fields.wan[k].split('.*')[0];
+  }).join(',');
+  let query = {_id: acsID};
+  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
+  let options = {
+    method: 'GET',
+    hostname: 'localhost',
+    port: 7557,
+    path: encodeURI(path),
+  };
+  // Projection Promise
+  return new Promise(function(resolve, reject) {
+    let req = http.request(options, (resp)=>{
+      resp.setEncoding('utf8');
+      let data = '';
+      resp.on('error', (error) => {
+        reject({
+          'success': false,
+          'error': 'Error fetching Genie database: ' + error,
+        });
+      });
+      resp.on('data', (chunk) => data+=chunk);
+      resp.on('end', async () => {
+        if (data.length > 0) {
+          try {
+            // Get data
+            data = JSON.parse(data)[0];
+            let fieldName = '';
+            Object.keys(changes.wan).forEach((key)=>{
+              if (!fields.wan[key]) return;
+              // For each key at changes.wan
+              if (
+                utilHandlers.checkForNestedKey(
+                  data, fields.wan[key], wildcardFlag,
+                )
+              ) {
+                // Wildcards are replaced
+                fieldName = utilHandlers.replaceNestedKeyWildcards(
+                  data, fields.wan[key], wildcardFlag,
+                );
+              }
+              if (fieldName !== undefined && fieldName !== '') {
+                for (let i = 0; i < task.parameterValues.length; i++) {
+                  // Finds field that should be changed in task.parameterValues
+                  if (task.parameterValues[i][0] === fields.wan[key]) {
+                    // Only the field name is changed
+                    task.parameterValues[i][0] = fieldName;
+                    break;
+                  }
+                }
+              }
+            });
+            // If success, Resolve
+            return resolve({
+              'success': true,
+              'task': task,
+            });
+          } catch (e) {
+            // If error, Reject
+            return reject({
+              'success': false,
+              'error': 'Exception at replaceWanFieldsWildcards: ' + e,
+            });
+          }
+        }
+      });
+    });
+    req.end();
+  });
 };
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
