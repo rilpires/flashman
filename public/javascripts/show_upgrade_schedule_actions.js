@@ -476,11 +476,15 @@ anlixDocumentReady.add(function() {
 
     $('#which-btn-next').prop('disabled', true);
     $('#which-btn-next').click((event)=>{
+      // Hide error message
       $('#which-error-msg').hide();
+
       let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;
+      // Always use the last list of filters
+      let filterList = document
+        .getElementById('devices-search-input').value;
       let useAll = (useCsv) ? false :
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       $.ajax({
@@ -558,7 +562,9 @@ anlixDocumentReady.add(function() {
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;
+      // Always use the last list of filters
+      let filterList = document
+        .getElementById('devices-search-input').value;
       let release = $('#selected-release').html();
       let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
       let value = $('#devices-search-input').val();
