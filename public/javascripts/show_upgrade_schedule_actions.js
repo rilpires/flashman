@@ -463,6 +463,20 @@ anlixDocumentReady.add(function() {
     $('#how-btn-next').click((event)=>{
       let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
 
+
+      // If the user selected a TR-069 firmware, show the input to set the
+      // time limit for update.
+      if ($(TR069_FIRMWARE_SELECTION_BUTTON).hasClass('active')) {
+        // Reset firmware upgrade time limit
+        $(TIME_LIMIT_FOR_UPDATE_INPUT).val(
+          (informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD).toString(),
+        );
+        $(TIME_LIMIT_FOR_UPDATE_DIV).show();
+      } else {
+        $(TIME_LIMIT_FOR_UPDATE_DIV).hide();
+      }
+
+
       // If the devices will return to flashman, just continue to the same
       // procedure
       if (!cpesWontReturn) {
@@ -601,6 +615,64 @@ anlixDocumentReady.add(function() {
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : t('noFilterUsed');
       let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
+
+
+      let firmware = firmwareList.releaseInfo.find(
+        (firmware) => firmware.id === release,
+      );
+      let isRG1200 = firmware.validModels.includes('ACTIONRG1200V1');
+
+
+      // Set the timeout period for upgrading TR-069 firmware
+      let upgradeTimeoutEnable = false;
+      let upgradeTimeoutPeriod = parseInt(
+        $(TIME_LIMIT_FOR_UPDATE_INPUT).val(),
+      );
+
+
+      // If the inform came invalid, use the minimum timeout
+      if (!informIntervalInMinutes) {
+        informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+      }
+
+
+      // Validate the timeout period, only for TR-069 and RG1200
+      if (
+        (firmware.isTR069 || isRG1200) &&
+        (
+          !upgradeTimeoutPeriod || upgradeTimeoutPeriod <
+          (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
+          upgradeTimeoutPeriod > MAX_TIMEOUT_PERIOD
+        )
+      ) {
+        // Show the error message
+        $(WHEN_ERROR_MESSAGE).html(
+          '&nbsp; '+ t(
+            'updateTimeLimitInputErrorText', {
+            min: (informIntervalInMinutes + MIN_TIMEOUT_PERIOD),
+            max: MAX_TIMEOUT_PERIOD,
+          }),
+        );
+        $(WHEN_ERROR_MESSAGE_DIV).show();
+
+        // Enable buttons
+        $('#when-btn-prev').prop('disabled', false);
+        $('#when-btn-next').prop('disabled', false);
+
+        // Do not continue
+        return;
+      } else if (firmware.isTR069 || isRG1200) {
+        $(WHEN_ERROR_MESSAGE_DIV).hide();
+        upgradeTimeoutEnable = true;
+
+        // If RG 1200 use the default timeout
+        if (isRG1200) {
+          upgradeTimeoutPeriod = 5 * informIntervalInMinutes +
+            MIN_TIMEOUT_PERIOD;
+        }
+      }
+
+
       let timeRestrictions = [];
       if (hasTimeRestriction) {
         let rangeCount = $('#time-ranges .time-range').length;
@@ -638,6 +710,8 @@ anlixDocumentReady.add(function() {
           page_num: pageNum,
           page_count: pageCount,
           filter_list: filterList,
+          timeout_enable: JSON.stringify(upgradeTimeoutEnable),
+          timeout_period: upgradeTimeoutPeriod,
         },
         success: function(res) {
           $('#when-btn-icon')
