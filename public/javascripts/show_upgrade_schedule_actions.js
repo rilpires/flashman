@@ -437,14 +437,12 @@ anlixDocumentReady.add(function() {
     return false;
   });
 
-  let lastDevicesSearchInputQuery = '';
+
   let stepper = $('.bs-stepper');
   if (stepper.length > 0) {
     stepper = new Stepper(stepper[0], {animation: true});
     resetStepperData(stepper);
     $(document).on('submit', '#devices-search-form', function(event) {
-      lastDevicesSearchInputQuery = document.getElementById(
-        'devices-search-input').value;
       resetStepperData(stepper);
       stepper.to(1);
       return false;
