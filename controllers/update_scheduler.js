@@ -1257,9 +1257,13 @@ scheduleController.scheduleResult = async function(req, res) {
   }
   let csvData = '';
   let rule = config.device_update_schedule.rule;
+
+  // Build message for to do devices
   rule.to_do_devices.forEach((d)=>{
     csvData += d.mac + ',' + translateState(d.state) + '\n';
   });
+
+  // Build message for in progress devices
   rule.in_progress_devices.forEach((d)=>{
     let state = translateState(d.state);
     if ((d.state === 'updating' || d.state === 'downloading') &&
@@ -1269,6 +1273,8 @@ scheduleController.scheduleResult = async function(req, res) {
     }
     csvData += `${d.mac},${state}\n`;
   });
+
+  // Build message for done devices
   rule.done_devices.forEach((d)=>{
     let state = translateState(d.state);
     if (d.slave_count > 0) {
