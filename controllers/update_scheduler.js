@@ -1232,6 +1232,7 @@ const translateState = function(state) {
   if (state === 'updating') return t('updatingCpe');
   if (state === 'ok') return t('updatedSuccessfully');
   if (state === 'error') return t('errorDuringUpdate');
+  if (state === 'error_timeout') return t('timeoutUpdate');
   if (state === 'aborted') return t('updateAborted');
   if (state === 'aborted_off') {
     return t('updateAbortedCpeOffline');
