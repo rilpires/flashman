@@ -4,9 +4,14 @@ import 'tempusdominus-bootstrap-4';
 
 const t = i18next.t;
 
+// Copied from environment
+const MIN_TIMEOUT_PERIOD = 10;
+const MAX_TIMEOUT_PERIOD = 1440;
+
 
 // Firmware List
 let firmwareList = [];
+let informIntervalInMinutes = NaN;
 
 
 // Errors
@@ -20,6 +25,11 @@ const FLASHBOX_FIRMWARE_SELECTION_BUTTON = '#flashbox-firmware-selection';
 // Checkboxes
 const CPE_WONT_RETURN_DIV = '#cpeWontReturnDiv';
 const CPE_WONT_RETURN_CHECKBOX = '#cpeWontReturn';
+
+// Inputs
+const TIME_LIMIT_FOR_UPDATE_DIV = '#timeLimitUpdateDiv';
+const TIME_LIMIT_FOR_UPDATE_INPUT = '#timeLimitUpdateInput';
+const TIME_LIMIT_FOR_UPDATE_LABEL = '#timeLimitUpdateLabel';
 
 // Messages
 const WHEN_ERROR_MESSAGE_DIV = '#when-error-msg';
@@ -300,6 +310,28 @@ const displayAndCheckUpdate = function(tr069Active) {
 anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
   $(WHEN_ERROR_MESSAGE_DIV).hide();
+
+
+  // Set the mask for time limit for upgrade input
+  $(TIME_LIMIT_FOR_UPDATE_INPUT).mask('###0');
+
+
+  // Get the inform interval
+  $.ajax({
+    type: 'GET',
+    url: '/upgrade/config',
+    success: function(response) {
+      informIntervalInMinutes = Math.ceil(response.tr069InformInterval / 60);
+
+      // Set the time limit for update text
+      $(TIME_LIMIT_FOR_UPDATE_LABEL).text(
+        t('updateTimeLimitInputText', {default:
+          informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD,
+        }),
+      );
+    },
+  });
+
 
   // At the beginning hide the won't return to flashman checkbox as it starts
   // with TR-069
