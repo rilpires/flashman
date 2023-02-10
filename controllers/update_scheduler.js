@@ -759,6 +759,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
             meshIncompatibles: meshIncompatibles,
             meshRolesIncompatibles: meshRolesIncompatibles,
             missingModels: missingModels,
+            validModels: validModels,
           });
         });
         return res.status(200).json({
