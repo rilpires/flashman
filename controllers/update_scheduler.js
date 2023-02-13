@@ -19,8 +19,8 @@ const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT || 50;
-const MIN_TIMEOUT_PERIOD = parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD || 10);
-const MAX_TIMEOUT_PERIOD = parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD || 1440);
+const MIN_TIMEOUT_PERIOD = parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD) || 10;
+const MAX_TIMEOUT_PERIOD = parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD) || 1440;
 
 let mutex = new Mutex();
 let mutexRelease = null;
