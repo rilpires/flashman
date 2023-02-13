@@ -12,9 +12,7 @@
       "FLM_CONCURRENT_UPDATES_LIMIT": 50,
       "FLM_MONGODB_HOST": "localhost",
       "FLM_ADM_USER": "admin",
-      "FLM_ADM_PASS": "flashman",
-      "FLM_MIN_TIMEOUT_PERIOD": 10,
-      "FLM_MAX_TIMEOUT_PERIOD": 1440
+      "FLM_ADM_PASS": "flashman"
     },
     "exec_mode": "cluster"
   }]
