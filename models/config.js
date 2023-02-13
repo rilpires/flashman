@@ -82,6 +82,11 @@ let configSchema = new mongoose.Schema({
       end_time: {type: String},
     }],
     rule: {
+      // Time in minutes to consider a router update timed out,
+      // default is 1440 minutes, or a whole day
+      timeout_enable: {type: Boolean, default: false},
+      timeout_period: {type: Number, default: 1440},
+
       release: {type: String},
       cpes_wont_return: {type: Boolean, default: false},
       to_do_devices: [{
@@ -106,6 +111,9 @@ let configSchema = new mongoose.Schema({
         retry_count: {type: Number, default: 0},
         mesh_current: {type: Number, default: 1},
         mesh_upgrade: {type: Number, default: 1},
+
+        // Date that the update for this router started
+        marked_update_date: {type: Date},
       }],
       done_devices: [{
         mac: {type: String, required: true},

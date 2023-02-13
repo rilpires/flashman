@@ -1,6 +1,7 @@
 require('../../../bin/globals');
 const utils = require('../../common/utils');
 const models = require('../../common/models');
+const ConfigModel = require('../../../models/config');
 
 // Mock the filesystem
 jest.mock('fs', () => ({
@@ -18,7 +19,6 @@ const checkResponse = function(response, statusCode, success, data) {
     if (success === false) {
       expect(response.body.message).toBeDefined();
     }
-  
   } catch (error) {
     error.message =
       `
@@ -68,24 +68,30 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   beforeEach(() => {
+    jest.resetModules();
     jest.restoreAllMocks();
     jest.clearAllMocks();
 
     utils.common.mockDefaultFirmwares();
     utils.common.mockDefaultDevices();
     utils.common.mockDefaultConfigs();
+
+    // Mock the save() call
+    jest.spyOn(ConfigModel.prototype, 'save')
+      .mockImplementation(() => Promise.resolve(),
+    );
   });
 
 
-  // Empty data  
+  // Empty data
   test('Validate start route - {}', async () => {
     let data = {};
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 500, false, data);
   });
-  
-  
+
+
   // TEST_PARAMETERS tests
   for (
     let testIndex = 0;
@@ -93,21 +99,23 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     testIndex++
   ) {
     test(
-      'Validate start route - TEST_PARAMETERS: ' + 
+      'Validate start route - TEST_PARAMETERS: ' +
       utils.common.TEST_PARAMETERS[testIndex], async () => {
-      data = {
+      let data = {
         use_search: utils.common.TEST_PARAMETERS[test],
         use_csv: utils.common.TEST_PARAMETERS[test],
         use_all: utils.common.TEST_PARAMETERS[test],
         use_time_restriction: utils.common.TEST_PARAMETERS[test],
         time_restriction: utils.common.TEST_PARAMETERS[test],
+        timeout_enable: utils.common.TEST_PARAMETERS[test],
+        timeout_period: utils.common.TEST_PARAMETERS[test],
         release: utils.common.TEST_PARAMETERS[test],
         page_num: utils.common.TEST_PARAMETERS[test],
         page_count: utils.common.TEST_PARAMETERS[test],
         filter_list: utils.common.TEST_PARAMETERS[test],
         cpes_wont_return: utils.common.TEST_PARAMETERS[test],
       };
-      
+
       let response = await utils.schedulerCommon.startSchedulerFake(data);
       checkResponse(response, 500, false, data);
     });
@@ -115,12 +123,13 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
   // Page count
   test('Validate start route - Invalid page count', async () => {
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '5',
       page_count: '0',
@@ -135,12 +144,13 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
   // Page num
   test('Validate start route - Invalid page num', async () => {
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '0',
       page_count: '5',
@@ -155,12 +165,13 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
   // Release
   test('Validate start route - Invalid Release', async () => {
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: 'AAA',
       page_num: '1',
       page_count: '50',
@@ -177,12 +188,13 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
   // This test will depend that there is no csv file in the filesystem
   // ToDo!: Check full csv logic
   test('Validate start route - No csv file', async () => {
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'true',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
@@ -201,12 +213,13 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     utils.common.mockDevices(null, 'findOne');
     utils.common.mockDevices(null, 'findById');
 
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
@@ -225,19 +238,20 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     utils.common.mockFirmwares(null, 'findOne');
     utils.common.mockFirmwares(null, 'findById');
 
-    data = {
+    let data = {
       use_search: '',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
       filter_list: '',
       cpes_wont_return: 'false',
     };
-  
+
     let response = await utils.schedulerCommon.getReleasesFake(data);
     checkResponse(response, 200, true, data);
   });
@@ -250,42 +264,124 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     testIndex++
   ) {
     test(
-      'Validate start route - Time Restriction: ' + 
+      'Validate start route - Time Restriction: ' +
       utils.common.TEST_PARAMETERS[testIndex], async () => {
-      data = {
+      let data = {
         use_search: '',
         use_csv: 'false',
         use_all: 'true',
         use_time_restriction: 'true',
         time_restriction: utils.common.TEST_PARAMETERS[test],
+        timeout_enable: 'false',
         release: goodReleaseId,
         page_num: '1',
         page_count: '50',
         filter_list: '',
         cpes_wont_return: 'false',
       };
-      
+
       let response = await utils.schedulerCommon.startSchedulerFake(data);
       checkResponse(response, 500, false, data);
     });
   }
 
 
-  // Okay
-  test('Validate start route - Okay', async () => {
-    data = {
+  // Timeout, but it is malformed
+  for (
+    let testIndex = 0;
+    testIndex < utils.common.TEST_PARAMETERS.length;
+    testIndex++
+  ) {
+    test(
+      'Validate start route - Timeout cases: ' +
+      utils.common.TEST_PARAMETERS[testIndex], async () => {
+      let data = {
+        use_search: '',
+        use_csv: 'false',
+        use_all: 'true',
+        use_time_restriction: 'false',
+        time_restriction: '[]',
+        timeout_enable: 'true',
+        timeout_period: utils.common.TEST_PARAMETERS[test],
+        release: goodReleaseId,
+        page_num: '1',
+        page_count: '50',
+        filter_list: '',
+        cpes_wont_return: 'false',
+      };
+
+      let response = await utils.schedulerCommon.startSchedulerFake(data);
+      checkResponse(response, 500, false, data);
+    });
+  }
+
+
+  // Invalid timeout 1
+  test('Validate start route - Invalid timeout 1', async () => {
+    let timeoutPeriod = Math.ceil(
+      models.defaultMockConfigs[0].tr069.inform_interval / 60000,
+    ) + parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD) - 1;
+
+    let data = {
       use_search: '"online"',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'true',
+      timeout_period: timeoutPeriod.toString(),
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
       cpes_wont_return: 'false',
     };
-  
+
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
+    checkResponse(response, 500, false, data);
+  });
+
+
+  // Invalid timeout 2
+  test('Validate start route - Invalid timeout 2', async () => {
+    let timeoutPeriod = parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD) + 1;
+
+    let data = {
+      use_search: '"online"',
+      use_csv: 'false',
+      use_all: 'true',
+      use_time_restriction: 'false',
+      time_restriction: '[]',
+      timeout_enable: 'true',
+      timeout_period: timeoutPeriod.toString(),
+      release: goodReleaseId,
+      page_num: '1',
+      page_count: '50',
+      filter_list: 'online',
+      cpes_wont_return: 'false',
+    };
+
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
+    checkResponse(response, 500, false, data);
+  });
+
+
+  // Okay
+  test('Validate start route - Okay', async () => {
+    let data = {
+      use_search: '"online"',
+      use_csv: 'false',
+      use_all: 'true',
+      use_time_restriction: 'false',
+      time_restriction: '[]',
+      release: goodReleaseId,
+      timeout_enable: 'false',
+      page_num: '1',
+      page_count: '50',
+      filter_list: 'online',
+      cpes_wont_return: 'false',
+    };
+
     let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
@@ -293,24 +389,51 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
   // Okay 2
   test('Validate start route - Okay 2', async () => {
-    data = {
+    let data = {
       use_search: '"online"',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
       cpes_wont_return: 'false',
     };
-  
+
     let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
 
-  
+
+  // Okay valid timeout
+  test('Validate start route - Okay valid timeout', async () => {
+    let timeoutPeriod = Math.ceil(
+      models.defaultMockConfigs[0].tr069.inform_interval / 60000,
+    ) + process.env.FLM_MIN_TIMEOUT_PERIOD;
+
+    let data = {
+      use_search: '"online"',
+      use_csv: 'false',
+      use_all: 'true',
+      use_time_restriction: 'false',
+      time_restriction: '[]',
+      timeout_enable: 'true',
+      timeout_period: timeoutPeriod.toString(),
+      release: goodReleaseId,
+      page_num: '1',
+      page_count: '50',
+      filter_list: 'online',
+      cpes_wont_return: 'false',
+    };
+
+    let response = await utils.schedulerCommon.startSchedulerFake(data);
+    checkResponse(response, 200, true, data);
+  });
+
+
   // Okay strange firmware
   test('Validate start route - Okay strange firmware', async () => {
     models.copyFirmwareFrom(
@@ -323,19 +446,20 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
       },
     );
 
-    data = {
+    let data = {
       use_search: '"online"',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: '1.1-229999',
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
       cpes_wont_return: 'false',
     };
-  
+
     let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });
@@ -343,19 +467,20 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
   // Okay, no return to flashman
   test('Validate start route - Okay, no return to flashman', async () => {
-    data = {
+    let data = {
       use_search: '"online"',
       use_csv: 'false',
       use_all: 'true',
       use_time_restriction: 'false',
       time_restriction: '[]',
+      timeout_enable: 'false',
       release: goodReleaseId,
       page_num: '1',
       page_count: '50',
       filter_list: 'online',
       cpes_wont_return: 'true',
     };
-  
+
     let response = await utils.schedulerCommon.startSchedulerFake(data);
     checkResponse(response, 200, true, data);
   });

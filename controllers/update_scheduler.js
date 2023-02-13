@@ -13,11 +13,15 @@ const meshHandler = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const t = require('./language').i18next.t;
+const TasksAPI = require('./external-genieacs/tasks-api');
 
 const csvParse = require('csvtojson');
 const Mutex = require('async-mutex').Mutex;
 
 const maxDownloads = process.env.FLM_CONCURRENT_UPDATES_LIMIT;
+const MIN_TIMEOUT_PERIOD = parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD);
+const MAX_TIMEOUT_PERIOD = parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD);
+
 let mutex = new Mutex();
 let mutexRelease = null;
 let scheduleController = {};
@@ -104,12 +108,269 @@ const resetMutex = function() {
 };
 
 
+/*
+ *  Description:
+ *    This function checks if any router is still upgrading after the timeout
+ *    time, removes from in progress and moves to done with an specific error
+ *    This function only gives timeout error for TR-069
+ *
+ *  Inputs:
+ *
+ *  Outputs:
+ *    object - An object containing those fields:
+ *      success - If could process or not the update data
+ *      message - The error message if success is false
+ *      devices - The devices' mac address that were moved to done
+ */
+scheduleController.checkAndRemoveTimeoutDevices = async function() {
+  let timedOutDevices = [];
+  let promises = [];
+  let schedulerConfig = await SchedulerCommon.getConfig();
+
+  // Validate the config
+  if (
+    !schedulerConfig || !schedulerConfig.device_update_schedule ||
+    !schedulerConfig.device_update_schedule.is_active ||
+    schedulerConfig.device_update_schedule.is_aborted ||
+    !schedulerConfig.device_update_schedule.rule
+  ) {
+    return {
+      success: false,
+      message: t('configNotFound', {errorline: __line}),
+      timed_out_devices: [],
+    };
+  }
+
+  let rule = schedulerConfig.device_update_schedule.rule;
+  let doneDevices = rule.done_devices.length;
+  let count = schedulerConfig.device_update_schedule.device_count;
+  let informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+
+
+  // Only remove devices if the timeout is active
+  if (!rule.timeout_enable) {
+    return {
+      success: true,
+      message: t('Ok'),
+      timed_out_devices: [],
+    };
+  }
+
+
+  if (
+    schedulerConfig.tr069 &&
+    schedulerConfig.tr069.inform_interval &&
+    schedulerConfig.tr069.inform_interval.constructor === Number
+  ) {
+    informIntervalInMinutes =
+      Math.ceil(schedulerConfig.tr069.inform_interval / 60000);
+  }
+
+  // Validate timeout
+  if (
+    !rule.timeout_period ||
+    rule.timeout_period.constructor !== Number ||
+    rule.timeout_period < (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
+    rule.timeout_period > MAX_TIMEOUT_PERIOD
+  ) {
+    return {
+      success: false,
+      message: t('parametersErrorTimeRangesInvalid', {errorline: __line}),
+      timed_out_devices: [],
+    };
+  }
+
+
+  // Loop every device updating
+  rule.in_progress_devices.forEach((device) => {
+    // Check if device has the date it started updating, otherwise continue to
+    // the next device
+    if (
+      !device.marked_update_date ||
+      device.marked_update_date.constructor !== Date
+    ) {
+      // Exit this iteration of forEach
+      return;
+    }
+
+
+    // The specific date that must consider the router timed out after this
+    let timeoutDate = new Date(
+      // Sum the current Date with the timeout time (converting it to minutes)
+      device.marked_update_date.getTime() + rule.timeout_period * 60 * 1000,
+    );
+
+    let currentDate = new Date();
+
+    // Compare dates, if the router took more than timeout_period minutes to
+    // update, save the mac. The code is splitted to avoid reading and
+    // modifying at the same time.
+    if (currentDate > timeoutDate) {
+      timedOutDevices.push(device.mac);
+    }
+  });
+
+
+  // Loop every timed out device
+  for (let index = 0; index < timedOutDevices.length; index++) {
+    let mac = timedOutDevices[index];
+    let promiseSave;
+    let promiseConfig;
+
+    // Get the device from device Model
+    let device = await DeviceModel.findById(
+      mac,
+      {
+        do_update: true,
+        do_update_status: true,
+
+        // For RG1200 with old firmwares
+        model: true,
+        version: true,
+
+        // For TR-069
+        use_tr069: true,
+        acs_id: true,
+      },
+    );
+
+    // Check if could find the device and the device is TR-069 or RG1200 with
+    // firmware before 0.33.1, and did not gave error during update,
+    // otherwise move on to the next device
+    if (!device) {
+      continue;
+    }
+
+    let isRG1200 = device.model === 'ACTIONRG1200V1';
+    let isOldFirmware = (
+      DeviceVersion.versionCompare(device.version, '0.33.1') < 0
+    );
+
+    if (
+      device.do_update !== true ||
+      device.do_update_status !== 0 ||
+      // In version 0.33.1 the flash problem in RG1200 was fixed
+      (!device.use_tr069 && !(isRG1200 && isOldFirmware))
+    ) {
+      continue;
+    }
+
+
+    // Get the device from scheduler
+    let schedulerDevice = rule.in_progress_devices.find(
+      (device) => device.mac === mac,
+    );
+
+    // Sanity check
+    if (!schedulerDevice) {
+      continue;
+    }
+
+    // Modify the status and save
+    device.do_update = false;
+    device.do_update_status = 8; // Timed out code
+    promiseSave = device.save().catch(
+      (error) => console.error(
+        'Error saving device' +
+        device._id +
+        'during checkAndRemoveTimeoutDevices: ' +
+        error,
+      ),
+    );
+
+
+    // Update the quantity of done devices
+    doneDevices = doneDevices + 1;
+
+    // If the last device will be moved to done, deactivate the scheduler
+    if (doneDevices >= count) {
+      SchedulerCommon.removeOfflineWatchdog();
+    }
+
+
+    // Move to done
+    promiseConfig = SchedulerCommon.configQuery(
+      // Set
+      {'device_update_schedule.is_active': (doneDevices < count)},
+
+      // Pull
+      {'device_update_schedule.rule.in_progress_devices': {'mac': mac}},
+
+      // Push
+      {
+        'device_update_schedule.rule.done_devices': {
+          'mac': mac,
+          'state': 'error_timeout',
+          'slave_count': schedulerDevice.slave_count,
+          'slave_updates_remaining': schedulerDevice.slave_updates_remaining,
+          'mesh_current': schedulerDevice.mesh_current,
+          'mesh_upgrade': schedulerDevice.mesh_upgrade,
+        },
+      },
+    );
+
+
+    // Push to promises list
+    promises.push(promiseSave);
+    promises.push(promiseConfig);
+
+
+    // Remove tasks from GenieACS, only for TR-069
+    if (device.use_tr069 === true && device.acs_id) {
+      // Get tasks from Genie
+      let tasks = await TasksAPI.getFromCollection(
+        'tasks',
+        {device: device.acs_id},
+      ).catch(
+        (error) => console.error(
+          'Error getting Genie tasks for device ' +
+          device._id +
+          ' during checkAndRemoveTimeoutDevices: ' +
+          error,
+        ),
+      );
+
+      // Only delete download tasks with an id
+      let tasksToDelete = tasks.filter(
+        (task) => task.name === 'download' && task._id !== undefined,
+      );
+
+      // Delete tasks
+      tasksToDelete.forEach((task) => {
+        let promiseTask = TasksAPI.deleteTask(task._id);
+        promises.push(promiseTask);
+      });
+    }
+  }
+
+
+  // Await all before exiting
+  await Promise.allSettled(promises);
+
+
+  return {
+    success: true,
+    message: t('Ok'),
+    timed_out_devices: timedOutDevices,
+  };
+};
+
+
 const markSeveral = async function() {
+  // Check if any device timed out and remove it from update before executing
+  // wait it to finish as this functions modifies device and config models
+  await scheduleController.checkAndRemoveTimeoutDevices();
+
+
+  // Get the config
   let config = await SchedulerCommon.getConfig();
   if (!config) return; // this should never happen
+
   let inProgress =
     config.device_update_schedule.rule.in_progress_devices.length;
   let slotsAvailable = maxDownloads - inProgress;
+
+  // Loop slots to mark to update routers
   for (let i = 0; i < slotsAvailable; i++) {
     let result = await markNextForUpdate();
     if (!result.success) {
@@ -284,6 +545,7 @@ const markNextForUpdate = async function() {
             'slave_updates_remaining': nextDevice.slave_count + 1,
             'mesh_current': nextDevice.mesh_current,
             'mesh_upgrade': nextDevice.mesh_upgrade,
+            'marked_update_date': new Date(),
           },
         },
       );
@@ -317,6 +579,7 @@ const markNextForUpdate = async function() {
             'slave_updates_remaining': nextDevice.slave_count + 1,
             'mesh_current': nextDevice.mesh_current,
             'mesh_upgrade': nextDevice.mesh_upgrade,
+            'marked_update_date': new Date(),
           },
         },
       );
@@ -759,6 +1022,7 @@ scheduleController.getDevicesReleases = async function(req, res) {
             meshIncompatibles: meshIncompatibles,
             meshRolesIncompatibles: meshRolesIncompatibles,
             missingModels: missingModels,
+            validModels: validModels,
           });
         });
         return res.status(200).json({
@@ -821,8 +1085,8 @@ scheduleController.startSchedule = async function(req, res) {
   if (
     !req || !res || !req.body || !req.body.use_csv || !req.body.use_all ||
     !req.body.use_time_restriction || !req.body.page_num ||
-    !req.body.page_count || req.body.release === null ||
-    req.body.cpes_wont_return === null ||
+    !req.body.page_count || !req.body.timeout_enable ||
+    req.body.release === null || req.body.cpes_wont_return === null ||
     req.body.cpes_wont_return === undefined ||
     req.body.release === undefined || req.body.filter_list === null ||
     req.body.filter_list === undefined || req.body.use_search === null ||
@@ -834,6 +1098,7 @@ scheduleController.startSchedule = async function(req, res) {
     req.body.use_time_restriction.constructor !== String ||
     req.body.cpes_wont_return.constructor !== String ||
     req.body.release.constructor !== String ||
+    req.body.timeout_enable.constructor !== String ||
     req.body.page_num.constructor !== String ||
     req.body.page_count.constructor !== String ||
     req.body.time_restriction.constructor !== String ||
@@ -857,6 +1122,22 @@ scheduleController.startSchedule = async function(req, res) {
   let timeRestrictions = [];
   let queryContents = req.body.filter_list.split(',');
 
+  // Validate timeout
+  let timeoutEnable = (req.body.timeout_enable === 'true');
+  let timeoutPeriod;
+
+  if (
+    timeoutEnable &&
+    req.body.timeout_period &&
+    req.body.timeout_period.constructor === String
+  ) {
+    timeoutPeriod = parseInt(req.body.timeout_period);
+  } else if (timeoutEnable) {
+    return res.status(500).json({
+      success: false,
+      message: t('fieldInvalid', {errorline: __line}),
+    });
+  }
 
   // Validate json, it must always work even though it must be a blank array
   try {
@@ -871,10 +1152,28 @@ scheduleController.startSchedule = async function(req, res) {
   }
 
 
+  // Get the inform in minutes
+  let informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+  let config = await SchedulerCommon.getConfig(false, false);
+
+  if (
+    config && config.tr069 && config.tr069.inform_interval &&
+    config.tr069.inform_interval.constructor === Number
+  ) {
+    informIntervalInMinutes = Math.ceil(config.tr069.inform_interval / 60000);
+  }
+
   // Validate numbers
   if (
     isNaN(pageNumber) || pageNumber < 1 ||
-    isNaN(pageCount) || pageCount < 1
+    isNaN(pageCount) || pageCount < 1 ||
+
+    // Timeout
+    (timeoutEnable && (
+      isNaN(timeoutPeriod) ||
+      timeoutPeriod < (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
+      timeoutPeriod > MAX_TIMEOUT_PERIOD
+    ))
   ) {
     return res.status(500).json({
       success: false,
@@ -1108,6 +1407,13 @@ scheduleController.startSchedule = async function(req, res) {
         }
         config.device_update_schedule.rule.release = release;
         config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
+
+        // Timeout
+        config.device_update_schedule.rule.timeout_enable = timeoutEnable;
+        if (timeoutEnable) {
+          config.device_update_schedule.rule.timeout_period = timeoutPeriod;
+        }
+
         await config.save();
       } catch (err) {
         console.log(err);
@@ -1190,6 +1496,7 @@ const translateState = function(state) {
   if (state === 'updating') return t('updatingCpe');
   if (state === 'ok') return t('updatedSuccessfully');
   if (state === 'error') return t('errorDuringUpdate');
+  if (state === 'error_timeout') return t('timeoutUpdate');
   if (state === 'aborted') return t('updateAborted');
   if (state === 'aborted_off') {
     return t('updateAbortedCpeOffline');
@@ -1215,9 +1522,13 @@ scheduleController.scheduleResult = async function(req, res) {
   }
   let csvData = '';
   let rule = config.device_update_schedule.rule;
+
+  // Build message for to do devices
   rule.to_do_devices.forEach((d)=>{
     csvData += d.mac + ',' + translateState(d.state) + '\n';
   });
+
+  // Build message for in progress devices
   rule.in_progress_devices.forEach((d)=>{
     let state = translateState(d.state);
     if ((d.state === 'updating' || d.state === 'downloading') &&
@@ -1227,6 +1538,8 @@ scheduleController.scheduleResult = async function(req, res) {
     }
     csvData += `${d.mac},${state}\n`;
   });
+
+  // Build message for done devices
   rule.done_devices.forEach((d)=>{
     let state = translateState(d.state);
     if (d.slave_count > 0) {

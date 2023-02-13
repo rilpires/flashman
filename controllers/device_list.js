@@ -775,6 +775,8 @@ deviceListController.index = function(req, res) {
               };
             });
           indexContent.update_schedule['release'] = params.rule.release;
+          indexContent.update_schedule['timeout_enable'] = rule.timeout_enable;
+          indexContent.update_schedule['timeout_period'] = rule.timeout_period;
           let todo = rule.to_do_devices.length;
           rule.to_do_devices.forEach((d)=>{
             if (d.slave_count > 0) {
