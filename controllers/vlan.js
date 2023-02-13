@@ -187,10 +187,11 @@ vlanController.addVlanProfile = async function(req, res) {
       message: t('vlanProfileNameInvalidLength', {errorline: __line})});
   }
 
-  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).exec().catch((e) => e);
+  if (config instanceof Error) {
     return res.json({success: false, type: 'danger',
-      message: t('configFindError', {errorline: __line})});
-  });
+                     message: t('configFindError', {errorline: __line})});
+  }
   if (config && config.vlans_profiles) {
     let is_vlan_id_unique = true;
     let is_profile_name_unique = true;
@@ -205,13 +206,12 @@ vlanController.addVlanProfile = async function(req, res) {
     }
     if (is_vlan_id_unique && is_profile_name_unique) {
       config.vlans_profiles.push(newVlanProfile);
-      config.save().then(function() {
-        return res.json({success: true, type: 'success',
-                         message: t('operationSuccessful')});
-      }).catch(function(rej) {
+      if ((await config.save().catch((e) => e)) instanceof Error) {
         return res.json({success: false, type: 'danger',
           message: t('configSaveError', {errorline: __line})});
-      });
+      }
+      return res.json({success: true, type: 'success',
+                       message: t('operationSuccessful')});
     } else if (!is_vlan_id_unique) {
       return res.json({
         success: false,
@@ -232,10 +232,11 @@ vlanController.addVlanProfile = async function(req, res) {
 };
 
 vlanController.editVlanProfile = async function(req, res) {
-  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).exec().catch((e) => e);
+  if (config instanceof Error) {
     return res.json({success: false, type: 'danger',
-      message: t('configFindError', {errorline: __line})});
-  });
+                     message: t('configFindError', {errorline: __line})});
+  }
   if (config && config.vlans_profiles) {
     let exist_vlan_profile = false;
     if (util.vlanNameRegex.test(req.body.profilename) == false) {
@@ -266,15 +267,12 @@ vlanController.editVlanProfile = async function(req, res) {
     }
 
     if (exist_vlan_profile) {
-      config.save().then(function() {
-        return res.json({
-          success: true,
-          type: 'success',
-          message: t('operationSuccessful')});
-      }).catch(function(rej) {
+      if ((await config.save().catch((e) => e)) instanceof Error) {
         return res.json({success: false, type: 'danger',
           message: t('configSaveError', {errorline: __line})});
-      });
+      }
+      return res.json({success: true, type: 'success',
+                       message: t('operationSuccessful')});
     } else {
       return res.json({success: false, type: 'danger',
                        message: t('vlanIdNotFound', {errorline: __line})});
@@ -285,10 +283,11 @@ vlanController.editVlanProfile = async function(req, res) {
 };
 
 vlanController.checkDevicesAffected = async function(req, res) {
-  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).exec().catch((e) => e);
+  if (config instanceof Error) {
     return res.json({success: false, type: 'danger',
-      message: t('configFindError', {errorline: __line})});
-  });
+                     message: t('configFindError', {errorline: __line})});
+  }
   if (config) {
     let vlanProfile = config.vlans_profiles.find(
       (vlanProfile) => vlanProfile._id == req.params.profileid);
@@ -298,14 +297,14 @@ vlanController.checkDevicesAffected = async function(req, res) {
     }
     let vlanId = vlanProfile.vlan_id;
 
-    let matchedDevices = await DeviceModel
-    .find(
+    let matchedDevices = await DeviceModel.find(
       {vlan: {$exists: true, $not: {$size: 0}}},
-      {_id: true, vlan: true})
-    .catch((err) => {
+      {_id: true, vlan: true},
+    ).exec().catch((e) => e);
+    if (matchedDevices instanceof Error) {
       return res.json({success: false, type: 'danger',
                        message: t('cpesNotFound', {errorline: __line})});
-    });
+    }
     for (let device of matchedDevices) {
       let doUpdate = false;
       for (let vlan of device.vlan) {
@@ -315,10 +314,10 @@ vlanController.checkDevicesAffected = async function(req, res) {
         }
       }
       if (doUpdate) {
-        await device.save().catch((err) => {
+        if ((await device.save().catch((e) => e)) instanceof Error) {
           return res.json({success: false, type: 'danger',
-            message: t('cpeSaveError', {errorline: __line})});
-        });
+                           message: t('cpeSaveError', {errorline: __line})});
+        }
         mqtt.anlixMessageRouterUpdate(device._id);
       }
     }
@@ -331,10 +330,11 @@ vlanController.checkDevicesAffected = async function(req, res) {
 };
 
 vlanController.removeVlanProfile = async function(req, res) {
-  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).exec().catch((e) => e);
+  if (config instanceof Error) {
     return res.json({success: false, type: 'danger',
-      message: t('configFindError', {errorline: __line})});
-  });
+                     message: t('configFindError', {errorline: __line})});
+  }
   if (config) {
     if (typeof req.body.ids === 'string' ||
      typeof req.body.ids === 'number') {
@@ -350,15 +350,12 @@ vlanController.removeVlanProfile = async function(req, res) {
       (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
                !req.body.ids.includes(obj._id.toString()));
 
-    config.save().then(function() {
-      return res.json({
-        success: true,
-        type: 'success',
-        message: t('operationSuccessful')});
-    }).catch(function(rej) {
+    if ((config.save().catch((e) => e)) instanceof Error) {
       return res.json({success: false, type: 'danger',
         message: t('configSaveError', {errorline: __line})});
-    });
+    }
+    return res.json({success: true, type: 'success',
+                     message: t('operationSuccessful')});
   } else {
     res.json({success: false, type: 'danger',
       message: t('configNotFound', {errorline: __line})});
@@ -379,11 +376,12 @@ vlanController.getVlans = function(req, res) {
 };
 
 vlanController.updateVlans = async function(req, res) {
-  let device = await DeviceModel.findById(req.params.deviceid)
-  .catch(function(rej) {
+  let device = await DeviceModel.findById(req.params.deviceid).exec()
+    .catch((e) => e);
+  if (device instanceof Error) {
     return res.json({success: false, type: 'danger',
-      message: t('cpeFindError', {errorline: __line})});
-  });
+                     message: t('cpeFindError', {errorline: __line})});
+  }
   if (device) {
     let is_vlans_valid = true;
     if (util.isJsonString(req.body.vlans)) {
@@ -416,19 +414,15 @@ vlanController.updateVlans = async function(req, res) {
 
       mqtt.anlixMessageRouterUpdate(device._id);
 
-      device.save().then(function() {
-        return res.json({
-          success: true,
-          type: 'success',
-          message: t('operationSuccessful')});
-      }).catch(function(rej) {
+      if ((await device.save().catch((e) => e)) instanceof Error) {
         return res.json({success: false, type: 'danger',
           message: t('cpeSaveError', {errorline: __line})});
-      });
+      }
+      return res.json({success: true, type: 'success',
+                       message: t('operationSuccessful')});
     } else {
       return res.json({success: false, type: 'danger',
-        message: t('fieldNameInvalid',
-                       {errorline: __line, name: 'vlans'})});
+        message: t('fieldNameInvalid', {errorline: __line, name: 'vlans'})});
     }
   } else {
     res.json({success: false, type: 'danger',
@@ -537,10 +531,11 @@ vlanController.getValidVlan = async function(model, convertedVlan) {
   let lanVlan = 1;
   let filteredVlan = [];
   let didChange = false;
-  let config = await Config.findOne({is_default: true}).catch(function(rej) {
+  let config = await Config.findOne({is_default: true}).exec().catch((e) => e);
+  if (config instanceof Error) {
     return {success: false, type: 'danger',
-      message: t('configFindError', {errorline: __line})};
-  });
+            message: t('configFindError', {errorline: __line})};
+  }
   if (config && config.vlans_profiles) {
     let vlans = [];
     for (let i = 0; i < config.vlans_profiles.length; i++) {
