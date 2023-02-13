@@ -29,7 +29,6 @@ describe('Update Tests - Functions', () => {
     jest.useRealTimers();
   });
 
-
   // Version regex - Empty string
   test('Validate Version Regex - Empty string', async () => {
     expect(
@@ -447,17 +446,12 @@ describe('Update Tests - Functions', () => {
   });
 
 
-  // replaceWanFieldsWildcards
+  // replaceWanFieldsWildcards - Happy case
   test(
-    'Validate replaceWanFieldsWildcards',
+    'Validate replaceWanFieldsWildcards with wildcard flag false - successfull',
     async () => {
-      let httpRequestOptions = {};
-      const dataToPass = '1234';
+      // Mocks
       const id = models.defaultMockDevices[0]._id;
-      let originalFieldName = 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
-      let expectedFieldName = 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.1.WANPPPConnection.1.MaxMRUSize';
       let device = models.copyDeviceFrom(
         id,
         {
@@ -468,10 +462,18 @@ describe('Update Tests - Functions', () => {
         },
       );
 
+      let httpRequestOptions = {};
+      const dataToPass = '1234';
+
+      let originalFieldName = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
+      let expectedFieldName = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.1.WANPPPConnection.1.MaxMRUSize';
+
       let changes = {
         wan: { mtu_ppp: 1487 },
         lan: {},
-        wifi2: {},
+        wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
         mesh2: {},
         mesh5: {},
@@ -491,9 +493,16 @@ describe('Update Tests - Functions', () => {
             1488,
             'xsd:unsignedInt'
           ],
+          [
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+            'Anlix-Teste',
+            'xsd:string'
+          ],
         ]
       };
 
+      // It is expected that the function will change only the fields of the
+      // task referring to the WAN
       let expectedTask = {
         name: 'setParameterValues',
         parameterValues: [
@@ -501,6 +510,11 @@ describe('Update Tests - Functions', () => {
             expectedFieldName,
             1488,
             'xsd:unsignedInt'
+          ],
+          [
+            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
+            'Anlix-Teste',
+            'xsd:string'
           ],
         ]
       };
@@ -521,8 +535,8 @@ describe('Update Tests - Functions', () => {
                   cb(dataToPass);
                 } else if (event === 'end') {
                   await cb();
-                } else {
-                  expect(this.on).not.toHaveBeenCalled();
+                }  else if (event === 'error') {
+                  expect(this.on).rejects;
                 }
               },
               setEncoding: () => true,
@@ -555,4 +569,72 @@ describe('Update Tests - Functions', () => {
       expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
     },
   );
+
+  test(
+    'replaceWanFieldsWildcards - Unable to replace wildcards',
+    async () => {
+      // Mocks
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+
+      let httpRequestOptions = {};
+      const dataToPass = '1234';
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let fields = { wan: {} }; // Empty fields - It doesn't matter
+
+      let task = {}; // Empty task - It doesn't matter
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => false);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => undefined);
+
+      let httpRequestSpy = jest.spyOn(http, 'request')
+        .mockImplementation(
+          (options, callback) => {
+            httpRequestOptions = options;
+            callback({
+              on: async (event, cb) => {
+                if (event === 'data') {
+                  cb(dataToPass);
+                } else if (event === 'end') {
+                  await cb();
+                }  else if (event === 'error') {
+                  expect(this.on).rejects;
+                }
+              },
+              setEncoding: () => true,
+            });
+
+            return {end: () => true};
+          },
+        );
+
+      // Execute
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, fields, changes, task,
+      );
+
+      // Validate
+      expect(ret).toStrictEqual({'success': false, 'task': undefined});
+    },
+  )
 });
