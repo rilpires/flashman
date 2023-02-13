@@ -1969,6 +1969,7 @@ const replaceWanFieldsWildcards = async function (
     let req = http.request(options, (resp)=>{
       resp.setEncoding('utf8');
       let data = '';
+      let success = false;
       resp.on('error', (error) => {
         reject({
           'success': false,
@@ -1994,25 +1995,25 @@ const replaceWanFieldsWildcards = async function (
                 fieldName = utilHandlers.replaceNestedKeyWildcards(
                   data, fields.wan[key], wildcardFlag,
                 );
-              }
-              if (fieldName !== undefined && fieldName !== '') {
-                for (let i = 0; i < task.parameterValues.length; i++) {
-                  // Finds field that should be changed in task.parameterValues
-                  if (task.parameterValues[i][0] === fields.wan[key]) {
-                    // Only the field name is changed
-                    task.parameterValues[i][0] = fieldName;
-                    break;
+
+                if (fieldName !== undefined && fieldName !== '') {
+                  for (let i = 0; i < task.parameterValues.length; i++) {
+                    // Finds field that should be changed in task.parameterValues
+                    if (task.parameterValues[i][0] === fields.wan[key]) {
+                      // Only the field name is changed
+                      task.parameterValues[i][0] = fieldName;
+                      success = true;
+                      break;
+                    }
                   }
                 }
               }
             });
-            // If success, Resolve
             return resolve({
-              'success': true,
-              'task': task,
+              'success': success,
+              'task': (success)? task : undefined,
             });
           } catch (e) {
-            // If error, Reject
             return reject({
               'success': false,
               'error': 'Exception at replaceWanFieldsWildcards: ' + e,
