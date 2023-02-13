@@ -6,6 +6,7 @@ const updateSchedulerCommon = require(
 const acsDeviceInfo = require(
   '../../controllers/acs_device_info',
 );
+const utilHandlers = require('../../controllers/handlers/util');
 
 const utils = require('../common/utils');
 const models = require('../common/models');
@@ -13,8 +14,11 @@ const models = require('../common/models');
 const fs = require('fs');
 const path = require('path');
 
+const http = require('http');
 const t = require('../../controllers/language').i18next.t;
 
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Test updates
 describe('Update Tests - Functions', () => {
@@ -441,4 +445,114 @@ describe('Update Tests - Functions', () => {
     // Validate
     expect(successUpdateSpy).toBeCalled();
   });
+
+
+  // replaceWanFieldsWildcards
+  test(
+    'Validate replaceWanFieldsWildcards',
+    async () => {
+      let httpRequestOptions = {};
+      const dataToPass = '1234';
+      const id = models.defaultMockDevices[0]._id;
+      let originalFieldName = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
+      let expectedFieldName = 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.1.WANPPPConnection.1.MaxMRUSize';
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let fields = {
+        wan: {
+          mtu_ppp: originalFieldName,
+        },
+      };
+
+      let task = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            originalFieldName,
+            1488,
+            'xsd:unsignedInt'
+          ],
+        ]
+      };
+
+      let expectedTask = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            expectedFieldName,
+            1488,
+            'xsd:unsignedInt'
+          ],
+        ]
+      };
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => true);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => expectedFieldName);
+
+      let httpRequestSpy = jest.spyOn(http, 'request')
+        .mockImplementation(
+          (options, callback) => {
+            httpRequestOptions = options;
+            callback({
+              on: async (event, cb) => {
+                if (event === 'data') {
+                  cb(dataToPass);
+                } else if (event === 'end') {
+                  await cb();
+                } else {
+                  expect(this.on).not.toHaveBeenCalled();
+                }
+              },
+              setEncoding: () => true,
+            });
+
+            return {end: () => true};
+          },
+        );
+
+      // Execute function
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, fields, changes, task,
+      );
+
+      // Validate
+      expect(httpRequestSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          method: 'GET',
+          hostname: GENIEHOST,
+          port: GENIEPORT,
+        }),
+        expect.anything(),
+      );
+
+      expect(httpRequestSpy).toHaveBeenCalledWith(
+        httpRequestOptions,
+        expect.anything(),
+      );
+
+      expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
+    },
+  );
 });
