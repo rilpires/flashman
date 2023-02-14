@@ -204,6 +204,14 @@
                     button#removeSchedule.btn.btn-sm.btn-primary.btn-block(type="button")
                       .fas.fa-times.fa-lg
                       strong &nbsp;&nbsp; #{t('removeLastInterval')}
+
+                //- Update time limit field 
+                #timeLimitUpdateDiv.row.mt-2
+                  .col-12.md-form.input-entry
+                    label#timeLimitUpdateLabel(style="pointer-events: none;").pl-3= t('updateTimeLimitInputText', {default: 15})
+                    //- Default time limit is 15 minutes, and minimum is 5 minutes
+                    input#timeLimitUpdateInput.form-control(type='text', value='15')
+
                 #when-error-msg.mt-4.text-center.red-text
                   .fas.fa-exclamation-triangle.fa-lg
                   strong#when-error-text
@@ -240,6 +248,9 @@
                   else
                     each range in update_schedule.time_ranges
                       li= t('dayAFromXUntilDayBAtY', {a: range.start_day, x: range.start_time, b: range.end_day, y: range.end_time})
+              if (update_schedule.timeout_enable && update_schedule.timeout_period)
+                li
+                  strong= t('updateTimeLimit', {period: update_schedule.timeout_period})
           .config-header.border.row.pl-2.pr-2.pt-3.pb-3.ml-0.mr-0
             .col-1
               if (update_schedule.is_active)

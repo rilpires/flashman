@@ -345,6 +345,8 @@ models.defaultMockConfigs = [
     },
     device_update_schedule: {
       rule: {
+        timeout_enable: false,
+        timeout_period: 1440,
         to_do_devices: [],
         in_progress_devices: [],
         done_devices: [{
