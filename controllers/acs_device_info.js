@@ -553,11 +553,29 @@ const createRegistry = async function(req, cpe, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
-      acsDeviceInfoController.updateInfo(newDevice, changes);
+      // Delay the execution of this function as it needs the device to exists
+      // in genie database, but the device will only be created at the end of
+      // this function, thus causing a racing condition.
+      delayExecutionGenie(
+        newDevice,
+        async () => {
+          return await acsDeviceInfoController
+            .updateInfo(newDevice, changes, true);
+        },
+      );
     }
   }
   if (syncXmlConfigs) {
-    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
+    // Delay the execution of this function as it needs the device to exists in
+    // genie database, but the device will only be created at the end of this
+    // function, thus causing a racing condition.
+    delayExecutionGenie(
+      newDevice,
+      async () => {
+        return await acsXMLConfigHandler
+          .configFileEditing(newDevice, ['web-admin']);
+      },
+    );
   }
 
   if (createPrefixErrNotification) {
@@ -585,6 +603,77 @@ const createRegistry = async function(req, cpe, permissions) {
   }
   return true;
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testCreateRegistry = createRegistry;
+
+
+/*
+ *  Description:
+ *    This function calls an async function (func) after delayTime. If it fails,
+ *    the func will be called again with twice the time it was executed.
+ *    It will repeat this process until the device exists in genie or the
+ *    repeatQuantity reaches zero. Every iteration, the repeatQuantity will be
+ *    reduced by one and delayTime will doubled from what it was before.
+ *
+ *  Inputs:
+ *    func - The function that will be called
+ *    repeatQuantity - Amount of repetitions until giving up calling the
+ *      function
+ *    delayTime - Amount of time to call the function again
+ *
+ *  Outputs:
+ *
+ */
+const delayExecutionGenie = function(
+  device,
+  func,
+  repeatQuantity = 3,
+  delayTime = 1000,
+) {
+  // Exit if repeatQuantity reached 0
+  if (repeatQuantity <= 0) {
+    console.log('Not adding task as device does not exists in genie!');
+    return;
+  }
+
+  // Set the delay to call the function
+  return setTimeout(async () => {
+      let query = {_id: device.acs_id};
+
+      // Try getting the device from genie database
+      let genieDevice = await TasksAPI
+        .getFromCollection('devices', query, '_id');
+      // Check if device does not exist
+      if (
+        !genieDevice || genieDevice.length === 0 ||
+        genieDevice[0]._id !== device.acs_id
+      ) {
+        // Try executing again after delayTime * 2
+        delayExecutionGenie(
+          device,
+          func,
+          repeatQuantity - 1,
+          delayTime * 2,
+        );
+
+        return;
+      }
+
+      // Call it
+      await func();
+    },
+    delayTime,
+  );
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
+
 
 // Receives GenieACS inform event, to register the CPE as online - updating last
 // contact information. For new CPEs, it replies with "measure" as true, to
