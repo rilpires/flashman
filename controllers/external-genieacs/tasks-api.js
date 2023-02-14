@@ -395,6 +395,8 @@ const deleteTask = function(taskid) {
   return genie.request({method: 'DELETE', hostname: GENIEHOST, port: GENIEPORT,
     path: '/tasks/'+taskid});
 };
+genie.deleteTask = deleteTask;
+
 
 /* a map structure that holds task attribute names where the keys are the task
  names and the values are the task parameters respective to the task name. */

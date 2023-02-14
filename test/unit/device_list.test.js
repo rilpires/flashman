@@ -1021,7 +1021,6 @@ describe('Controllers - Device List', () => {
 
     );
     expect(response.statusCode).toBe(200);
-    console.log(response);
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
     expect(audit.cpe).toHaveBeenCalledTimes(0);
   });

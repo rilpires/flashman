@@ -169,6 +169,7 @@
 	"updatingCpes": "Actualizando CPEs",
 	"updatedSuccessfully": "Actualizado exitosamente",
 	"errorDuringUpdate": "Hubo un error al actualizar",
+	"timeoutUpdate": "Se agotó el tiempo de actualización",
 	"errorDuringTopologyValidation": "Ocurrió un error al validar la topología",
 	"errorDuringTopologyCollect": "Ocurrió un error al recolectar la topología",
 	"updateStartFailedMeshNetwork": "Error al iniciar la actualización de la red mesh",
@@ -1081,5 +1082,8 @@
 	"caution": "¡Cuidado!",
 	"noReturnToFlashmanUpgrade": "Se ha marcado la opción de no volver a Flashman. Esta opción hará que Flashman no espere a que el CPE vuelva a estar en línea para activar la próxima actualización, lo que puede generar una carga de CPU si el equipo realmente va a volver a estar en línea en Flashman.</br></br> ¿Está seguro de que los dispositivos no volverán a estar en línea al realizar esta actualización de firmware?",
 	"yesSure": "Si, estoy seguro",
-	"noBack": "No, regresa"
+	"noBack": "No, regresa",
+	"updateTimeLimit": "Tiempo de espera de actualización de 1 CPE: {{period}} minutos",
+	"updateTimeLimitInputText": "Tiempo de espera de actualización para 1 CPE, en minutos (Predeterminado: {{default}} minutos)",
+	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos."
 }

@@ -7,6 +7,7 @@ import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
 import {setConfigStorage, getConfigStorage} from './session_storage.js';
+import Stepper from 'bs-stepper';
 
 const t = i18next.t;
 
@@ -3459,7 +3460,11 @@ anlixDocumentReady.add(function() {
     // Load the table
     loadDevicesTable(1, urlQueryFilterList);
   } else if (window.location.href.indexOf('devicelist') !== -1) {
-    loadDevicesTable();
+    // Load the table with filters that are already setted in device search
+    // input
+    loadDevicesTable(
+      1, document.getElementById('devices-search-input').value,
+    );
   }
 
   $(document).on('submit', '#devices-search-form', function(event) {

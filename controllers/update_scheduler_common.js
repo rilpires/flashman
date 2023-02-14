@@ -1,15 +1,21 @@
 /* global __line */
-
+/* Imports */
 const Config = require('../models/config');
 const meshHandler = require('./handlers/mesh');
 const t = require('./language').i18next.t;
 const DeviceModel = require('../models/device');
 
+
+/* Constants */
 const maxRetries = 3;
 
+
+/* Variables */
 let watchdogIntervalID = null;
 let commonScheduleController = {};
 
+
+/* Functions */
 commonScheduleController.scheduleOfflineWatchdog = function(func) {
     // Check for update slots every minute
     const interval = 1*60*1000;
