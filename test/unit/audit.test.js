@@ -1573,6 +1573,7 @@ describe('Controllers - Audit', () => {
           cpes_wont_return: 'false',
           page_num: '1',
           page_count: '1',
+          timeout_enable: 'false',
         },
         user: {_id: '1234', role: 'tester'},
       };
@@ -1620,6 +1621,7 @@ describe('Controllers - Audit', () => {
           cpes_wont_return: 'false',
           page_num: '1',
           page_count: '1',
+          timeout_enable: 'false',
         },
         user: {_id: '1234', role: 'tester'},
       };
@@ -1675,6 +1677,7 @@ describe('Controllers - Audit', () => {
             release: 'release1',
           },
           is_aborted: false,
+          timeout_enable: 'false',
         },
       }));
 
