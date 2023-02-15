@@ -2029,7 +2029,8 @@ const replaceWanFieldsWildcards = async function (
  * This function is being exported in order to test it.
  * The ideal way is to have a condition to only export it when testing
  */
-acsDeviceInfoController.__testReplaceWanFieldsWildcards = replaceWanFieldsWildcards;
+acsDeviceInfoController.__testReplaceWanFieldsWildcards =
+  replaceWanFieldsWildcards;
 
 acsDeviceInfoController.updateInfo = async function(
   device, changes, awaitUpdate = false,
@@ -2176,6 +2177,11 @@ acsDeviceInfoController.updateInfo = async function(
     return;
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testUpdateInfo = acsDeviceInfoController.updateInfo;
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
