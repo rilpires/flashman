@@ -612,6 +612,33 @@ acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
 /*
  *  Description:
+ *    This function returns a promise and only resolves when the time in
+ *    miliseconds timeout after calling this function.
+ *
+ *  Inputs:
+ *    miliseconds - Amount of time in miliseconds to sleep
+ *
+ *  Outputs:
+ *    promise - The promise that is only resolved when the timer ends.
+ *
+ */
+const sleep = function(miliseconds) {
+  let promise = new Promise(
+    (resolve) => setTimeout(resolve, miliseconds),
+  );
+
+  return promise;
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testSleep = sleep;
+
+
+
+/*
+ *  Description:
  *    This function calls an async function (func) after delayTime. If it fails,
  *    the func will be called again with twice the time it was executed.
  *    It will repeat this process until the device exists in genie or the
@@ -625,49 +652,68 @@ acsDeviceInfoController.__testCreateRegistry = createRegistry;
  *    delayTime - Amount of time to call the function again
  *
  *  Outputs:
- *    undefined
+ *    object:
+ *      - success: If could start the delay loop
+ *      - executed: If could execute the func
+ *      - message: An error or okay message about what happened
+ *      - result: the return of func, only included if could ran the func
  */
-const delayExecutionGenie = function(
+const delayExecutionGenie = async function(
   device,
   func,
   repeatQuantity = 3,
   delayTime = 1000,
 ) {
-  // Exit if repeatQuantity reached 0
-  if (repeatQuantity <= 0) {
-    console.log('Not adding task as device does not exists in genie!');
-    return;
+  // Exit if repeatQuantity or delayTime is less than 0
+  if (repeatQuantity <= 0 || delayTime <= 0) {
+    console.log('Invalid parameters passed');
+    return {
+      success: false,
+      executed: false,
+      message: t('parametersError', {errorline: __line}),
+    };
   }
 
-  // Set the delay to call the function
-  setTimeout(async () => {
-      let query = {_id: device.acs_id};
+  let sleepTime = delayTime;
 
-      // Try getting the device from genie database
-      let genieDevice = await TasksAPI
+  // Loop the amount of repeatQuantity
+  for (let repeat = repeatQuantity; repeat > 0; repeat--) {
+    // Wait until timeout sleepTime timer
+    await sleep(sleepTime);
+
+    // Double the timer
+    sleepTime = 2 * sleepTime;
+
+
+    // Try getting the device from genie database
+    let query = {_id: device.acs_id};
+    let genieDevice = await TasksAPI
         .getFromCollection('devices', query, '_id');
 
-      // Check if device does not exist
-      if (
-        !genieDevice || genieDevice.length === 0 ||
-        genieDevice[0]._id !== device.acs_id
-      ) {
-        // Try executing again after delayTime * 2
-        delayExecutionGenie(
-          device,
-          func,
-          repeatQuantity - 1,
-          delayTime * 2,
-        );
 
-        return;
-      }
+    // Check if device does exist
+    if (
+      genieDevice && genieDevice.length > 0 &&
+      genieDevice[0]._id === device.acs_id
+    ) {
+      // Call the function
+      let result = await func();
 
-      // Call it
-      await func();
-    },
-    delayTime,
-  );
+      return {
+        success: true,
+        executed: true,
+        result: result,
+        message: t('Ok'),
+      };
+    }
+  }
+
+
+  return {
+    success: true,
+    executed: false,
+    message: t('noDevicesFound'),
+  };
 };
 /*
  * This function is being exported in order to test it.
