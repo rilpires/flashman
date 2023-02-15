@@ -1946,7 +1946,7 @@ const getSsidPrefixCheck = async function(device) {
 };
 
 acsDeviceInfoController.updateInfo = async function(
-  device, changes, awaitUpdate = false,
+  device, changes, awaitUpdate = false, mustExecute = true,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -2061,7 +2061,8 @@ acsDeviceInfoController.updateInfo = async function(
       // We need to wait for task to be completed before we can return - caller
       // expects a return "true" after task is done
       let result = await TasksAPI.addTask(acsID, task);
-      if (!result || !result.success || !result.executed) {
+
+      if (!result || !result.success || (mustExecute && !result.executed)) {
         return;
       }
       return taskCallback(acsID);
@@ -2223,8 +2224,17 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     meshChannel5GHz,
     createOk.populate,
   );
-  const updated =
-    await acsDeviceInfoController.updateInfo(device, changes, true);
+
+  // If the task must be executed, only if it is not going to disable or cable
+  const mustExecute = (targetMode !== 0 && targetMode !== 1);
+
+  const updated = await acsDeviceInfoController.updateInfo(
+    device,
+    changes,
+    true,
+    mustExecute,
+  );
+
   if (!updated) {
     return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }
