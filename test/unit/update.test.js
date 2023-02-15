@@ -1,4 +1,8 @@
 require('../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const firmwareController = require('../../controllers/firmware');
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
@@ -6,6 +10,8 @@ const updateSchedulerCommon = require(
 const acsDeviceInfo = require(
   '../../controllers/acs_device_info',
 );
+const devicesAPI = require('../../controllers/external-genieacs/devices-api');
+const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const utilHandlers = require('../../controllers/handlers/util');
 
 const utils = require('../common/utils');
@@ -450,7 +456,6 @@ describe('Update Tests - Functions', () => {
   test(
     'Validate replaceWanFieldsWildcards with wildcard flag false - successfull',
     async () => {
-      // Mocks
       const id = models.defaultMockDevices[0]._id;
       let device = models.copyDeviceFrom(
         id,
@@ -461,14 +466,14 @@ describe('Update Tests - Functions', () => {
           version: 'V5R020C00S280',
         },
       );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
 
       let httpRequestOptions = {};
       const dataToPass = '1234'; // Any value - It doesn't matter
 
-      let originalFieldName = 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
-      let expectedFieldName = 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.1.WANPPPConnection.1.MaxMRUSize';
+      let expectedFieldName =
+        deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1');
 
       let changes = {
         wan: { mtu_ppp: 1487 },
@@ -479,23 +484,17 @@ describe('Update Tests - Functions', () => {
         mesh5: {},
       };
 
-      let fields = {
-        wan: {
-          mtu_ppp: originalFieldName,
-        },
-      };
-
       let task = {
         name: 'setParameterValues',
         parameterValues: [
           [
-            originalFieldName,
-            1488,
+            deviceFields['wan']['mtu_ppp'],
+            changes.wan.mtu_ppp,
             'xsd:unsignedInt'
           ],
           [
-            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
-            'Anlix-Teste',
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
             'xsd:string'
           ],
         ]
@@ -508,12 +507,12 @@ describe('Update Tests - Functions', () => {
         parameterValues: [
           [
             expectedFieldName,
-            1488,
+            changes.wan.mtu_ppp,
             'xsd:unsignedInt'
           ],
           [
-            'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
-            'Anlix-Teste',
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
             'xsd:string'
           ],
         ]
@@ -548,7 +547,7 @@ describe('Update Tests - Functions', () => {
 
       // Execute function
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
-        id, false, fields, changes, task,
+        id, false, deviceFields, changes, task,
       );
 
       // Validate
@@ -572,9 +571,8 @@ describe('Update Tests - Functions', () => {
 
   // replaceWanFieldsWildcards - Unable to replace wildcards
   test(
-    'replaceWanFieldsWildcards - Unable to replace wildcards',
+    'Validate replaceWanFieldsWildcards - Unable to replace wildcards',
     async () => {
-      // Mocks
       const id = models.defaultMockDevices[0]._id;
       let device = models.copyDeviceFrom(
         id,
@@ -585,6 +583,8 @@ describe('Update Tests - Functions', () => {
           version: 'V5R020C00S280',
         },
       );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
 
       let httpRequestOptions = {};
       const dataToPass = '1234'; // Any value - It doesn't matter
@@ -597,8 +597,6 @@ describe('Update Tests - Functions', () => {
         mesh2: {},
         mesh5: {},
       };
-
-      let fields = { wan: {} }; // Empty fields - It doesn't matter
 
       let task = {}; // Empty task - It doesn't matter
 
@@ -631,11 +629,77 @@ describe('Update Tests - Functions', () => {
 
       // Execute
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
-        id, false, fields, changes, task,
+        id, false, deviceFields, changes, task,
       );
 
       // Validate
       expect(ret).toStrictEqual({'success': false, 'task': undefined});
+    },
+  );
+
+  // updateInfo - Successfully replacing wildcards in WAN fields
+  test(
+    'Validate updateInfo - Update WAN field with success',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let expectedTask = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1'),
+            changes.wan.mtu_ppp,
+            'xsd:unsignedInt'
+          ],
+          [
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
+            'xsd:string'
+          ],
+          [
+            deviceFields['wifi2']['password'],
+            device.wifi_password,
+            'xsd:string',
+          ],
+        ],
+      };
+
+      // Mocks
+      utils.common.mockConfigs({}, 'findOne');
+
+      // Spies
+      jest.spyOn(acsDeviceInfo, '__testReplaceWanFieldsWildcards')
+        .mockImplementation(() => true);
+      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+
+      // Execute
+      await acsDeviceInfo.__testUpdateInfo(device, changes);
+
+      // Verify
+      expect(addTaskSpy).toHaveBeenCalledTimes(1);
+      expect(addTaskSpy).toHaveBeenCalledWith(
+        device.acs_id, expectedTask, expect.anything(),
+      );
     },
   );
 });
