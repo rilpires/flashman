@@ -559,8 +559,8 @@ const createRegistry = async function(req, cpe, permissions) {
       delayExecutionGenie(
         newDevice,
         async () => {
-          return await acsDeviceInfoController
-            .updateInfo(newDevice, changes, true);
+          await acsDeviceInfoController
+            .updateInfo(newDevice, changes, false);
         },
       );
     }
@@ -572,7 +572,7 @@ const createRegistry = async function(req, cpe, permissions) {
     delayExecutionGenie(
       newDevice,
       async () => {
-        return await acsXMLConfigHandler
+        await acsXMLConfigHandler
           .configFileEditing(newDevice, ['web-admin']);
       },
     );
@@ -625,7 +625,7 @@ acsDeviceInfoController.__testCreateRegistry = createRegistry;
  *    delayTime - Amount of time to call the function again
  *
  *  Outputs:
- *
+ *    undefined
  */
 const delayExecutionGenie = function(
   device,
@@ -640,12 +640,13 @@ const delayExecutionGenie = function(
   }
 
   // Set the delay to call the function
-  return setTimeout(async () => {
+  setTimeout(async () => {
       let query = {_id: device.acs_id};
 
       // Try getting the device from genie database
       let genieDevice = await TasksAPI
         .getFromCollection('devices', query, '_id');
+
       // Check if device does not exist
       if (
         !genieDevice || genieDevice.length === 0 ||
