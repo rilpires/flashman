@@ -463,7 +463,7 @@ describe('Update Tests - Functions', () => {
       );
 
       let httpRequestOptions = {};
-      const dataToPass = '1234';
+      const dataToPass = '1234'; // Any value - It doesn't matter
 
       let originalFieldName = 'InternetGatewayDevice.WANDevice.1.' +
         'WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize';
@@ -570,6 +570,7 @@ describe('Update Tests - Functions', () => {
     },
   );
 
+  // replaceWanFieldsWildcards - Unable to replace wildcards
   test(
     'replaceWanFieldsWildcards - Unable to replace wildcards',
     async () => {
@@ -586,7 +587,7 @@ describe('Update Tests - Functions', () => {
       );
 
       let httpRequestOptions = {};
-      const dataToPass = '1234';
+      const dataToPass = '1234'; // Any value - It doesn't matter
 
       let changes = {
         wan: { mtu_ppp: 1487 },
@@ -636,5 +637,5 @@ describe('Update Tests - Functions', () => {
       // Validate
       expect(ret).toStrictEqual({'success': false, 'task': undefined});
     },
-  )
+  );
 });
