@@ -466,11 +466,12 @@ anlixDocumentReady.add(function() {
 
       // If the user selected a TR-069 firmware, show the input to set the
       // time limit for update.
+      // Reset firmware upgrade time limit
+      $(TIME_LIMIT_FOR_UPDATE_INPUT).val(
+        (informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD).toString(),
+      );
+
       if ($(TR069_FIRMWARE_SELECTION_BUTTON).hasClass('active')) {
-        // Reset firmware upgrade time limit
-        $(TIME_LIMIT_FOR_UPDATE_INPUT).val(
-          (informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD).toString(),
-        );
         $(TIME_LIMIT_FOR_UPDATE_DIV).show();
       } else {
         $(TIME_LIMIT_FOR_UPDATE_DIV).hide();
@@ -636,9 +637,9 @@ anlixDocumentReady.add(function() {
       }
 
 
-      // Validate the timeout period, only for TR-069 and RG1200
+      // Validate the timeout period, only for TR-069
       if (
-        (firmware.isTR069 || isRG1200) &&
+        firmware.isTR069 &&
         (
           !upgradeTimeoutPeriod || upgradeTimeoutPeriod <
           (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
@@ -661,6 +662,8 @@ anlixDocumentReady.add(function() {
 
         // Do not continue
         return;
+
+      // If period is valid and is TR-069 or RG 1200
       } else if (firmware.isTR069 || isRG1200) {
         $(WHEN_ERROR_MESSAGE_DIV).hide();
         upgradeTimeoutEnable = true;
