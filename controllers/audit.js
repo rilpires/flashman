@@ -106,8 +106,6 @@ const buildAndSendMessage = async function(
 
   // empty users and hidden users should not create audits.
   if (!user || !user._id || user.is_hidden) return;
-  // if no 'client', we can't send anything.
-  if (!client) return;
 
   // building audit message.
   // eslint-disable-next-line new-cap
@@ -223,7 +221,7 @@ controller.init = async function(
     const d = Date.now()-5*60*1000; // milliseconds at 5 minutes ago.
     await audits.updateMany(
       // audits stuck at sending state or audits that belong to this process
-      // will be removed from sending state.
+      // will have their send state set to false.
       {s: true, $or: [{'m.date': {$lte: d}}, {p}]}, {$set: {s: false}},
     ).catch((e) => console.log('Error resetting audits state at setup.', e));
 
