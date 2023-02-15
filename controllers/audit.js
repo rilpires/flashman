@@ -103,6 +103,7 @@ const buildAndSendMessage = async function(
   user, object, searchable, operation, values,
 ) {
   if (turnedOff) return; // ignoring FlashAudit.
+  if (!hasInitialized) return; // if 'init()' hasn't run, ignore FlashAudit.
 
   // empty users and hidden users should not create audits.
   if (!user || !user._id || user.is_hidden) return;
@@ -181,7 +182,11 @@ let localStore = []; // memory only.
 let audits; // persisted.
 let sendFunc; // reference for send function assigned at 'init()'.
 
-// if audits are cached in database, send all audits, if any.
+// Temporary flag to indicate that init() has finished. Until we make Flashman
+// start it's modules according the order of modules dependencies.
+let hasInitialized = false;
+
+// check initializes configs based on environment variables received an entry 
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
@@ -211,6 +216,7 @@ controller.init = async function(
   if (process.env.FLASHAUDIT_MEMORY_ONLY) {
     registerAuditMemoryQueueSize(()=>localStore.length);
     sendFunc = controller.sendWithoutPersistence;
+    hasInitialized = true;
     return;
   }
 
@@ -225,7 +231,10 @@ controller.init = async function(
       {s: true, $or: [{'m.date': {$lte: d}}, {p}]}, {$set: {s: false}},
     ).catch((e) => console.log('Error resetting audits state at setup.', e));
 
+    // if audits are cached in database, send all audits, if any.
     controller.tryLaterWithPersistence(waitPromises);
+
+    hasInitialized = true;
   };
 
   if (!db) {
