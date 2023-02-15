@@ -190,10 +190,11 @@ controller.init = async function(
   if (turnedOff) return;
 
   if (!client) {
-    await ConfigModel.findOne({is_default: true}, {company: true}).lean().then(
-      (conf) => client = conf && conf.company || 'test_client',
-      (e) => console.log('Error getting config from database.', e),
-    );
+    const config = await ConfigModel.findOne({is_default: true}, {company: true})
+      .lean().catch((e) => e);
+    // if config is instance of Error or there is no company set in config
+    // default value will be used.
+    client = config && config.company || 'test_client';    
   }
 
   // starting FlashAudit client.
