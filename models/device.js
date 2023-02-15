@@ -123,6 +123,9 @@ let deviceSchema = new Schema({
     },
     ping: Number,
   }],
+  /* flag to block port forward handling when new device has port
+    forward entries that is invalid or flashman can not handle */
+  wrong_port_mapping: {type: Boolean, default: false},
   port_mapping: [{
     ip: String,
     external_port_start: {
