@@ -186,18 +186,20 @@ let sendFunc; // reference for send function assigned at 'init()'.
 // start it's modules according the order of modules dependencies.
 let hasInitialized = false;
 
-// check initializes configs based on environment variables received an entry 
+// check initializes configs based on environment variables received an entry
 controller.init = async function(
   secret, waitPromises=waitPromisesForNetworking, db,
 ) {
   if (turnedOff) return;
 
   if (!client) {
-    const config = await ConfigModel.findOne({is_default: true}, {company: true})
-      .lean().catch((e) => e);
+    const config = await ConfigModel.findOne(
+      {is_default: true},
+      {company: true},
+    ).lean().catch((e) => e);
     // if config is instance of Error or there is no company set in config
     // default value will be used.
-    client = config && config.company || 'test_client';    
+    client = config && config.company || 'test_client';
   }
 
   // starting FlashAudit client.

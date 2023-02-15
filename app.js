@@ -26,7 +26,7 @@ let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 const runMigrations = require('./migrations');
-const audit = require('./controllers/audit')
+const audit = require('./controllers/audit');
 const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
 const metricsMiddleware
   = require('./controllers/handlers/metrics/express_metrics');
