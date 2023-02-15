@@ -1,8 +1,24 @@
 /* eslint require-jsdoc: 0 */
 require('../../bin/globals.js');
+
+const utils = require('../common/utils');
+utils.common.mockDefaultConfigs();
+
+// jest.mock('../../controllers/language');
 const deviceHandlers = require('../../controllers/handlers/devices');
 
+// const utils = require('../common/utils');
+
 describe('Controllers - Handlers - Devices', () => {
+/*
+  beforeEach(() => {
+    /* deviceHandlers import language.js that uses
+    configs.findOne in the import. We mock the configs.findOne
+    to avoid jest to hang at end of test.
+    Remember to reset mocks if a new config is nedeed
+    utils.common.mockDefaultConfigs();
+  });
+*/
   describe('diffDateUntilNowInSeconds function', () => {
     test('Date difference from 2 seconds until now must be 2 seconds', () => {
       // Return now - 2 seconds

@@ -346,10 +346,14 @@ deviceHandlers.checkSsidPrefix = function(config, ssid2ghz, ssid5ghz,
   localPrefixFlag, isNewRegistry=false) {
   // Global config is only valid if the client is paying for personalized app
   // and if user manually enabled the flag in the configs page
-  let globalPrefixFlag = (
-    config.personalizationHash !== '' && config.isSsidPrefixEnabled
-  );
-  let prefixValue = config.ssidPrefix;
+  let globalPrefixFlag = false;
+  let prefixValue = '';
+  if (config) {
+    globalPrefixFlag = (
+      config.personalizationHash !== '' && config.isSsidPrefixEnabled
+    );
+    prefixValue = config.ssidPrefix;
+  }
   let cleanSsid2;
   let cleanSsid5;
   if (typeof prefixValue === 'string' && prefixValue !== '') {
