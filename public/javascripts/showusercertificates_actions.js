@@ -251,7 +251,7 @@ const fetchCertification = function(id, name, timestamp) {
         let wanList = $('<ul>').addClass('list-inline').append(
           $('<li>').append(
             $('<strong>').html(`${t('connectionType')}:`),
-            $('<span>').html('&nbsp;'+cert.routerConnType),
+            $('<span>').html('&nbsp;'+t(cert.routerConnType)),
           ),
         );
         if (cert.routerConnType === 'PPPoE') {
