@@ -451,13 +451,15 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
   /* only process port mapping coming from sync if
-  is the feature is enabled to that device */
-  let portMapping = [];
+    the feature is enabled to that device */
+  let conversionResult = {port_mapping: [], wrong_port_mapping: false};
+  let subnet = data.lan.router_ip.value;
+  let netmask = (subnetNumber > 0) ? subnetNumber : undefined;
   if (cpe.modelPermissions().features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
-    portMapping = acsPortForwardHandler
+    conversionResult = acsPortForwardHandler
       .convertPortForwardFromGenieToFlashman(data.port_mapping,
-        cpe.getModelFields());
+        cpe, subnet, netmask);
   }
 
   let newDevice = new DeviceModel({
@@ -498,9 +500,10 @@ const createRegistry = async function(req, cpe, permissions) {
     wifi_state_5ghz: (
       wifi5Capable && data.wifi5.enable && data.wifi5.enable.value
     ) ? 1 : 0,
-    lan_subnet: data.lan.router_ip.value,
-    lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
-    port_mapping: portMapping,
+    lan_subnet: subnet,
+    lan_netmask: netmask,
+    port_mapping: conversionResult.port_mapping,
+    wrong_port_mapping: conversionResult.wrong_port_mapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_negociated_speed: wanRate,
