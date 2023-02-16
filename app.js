@@ -49,8 +49,8 @@ const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   process.env.FLM_DATABASE_NAME;
 
 let mongoURI = 'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName;
-if (process.env.FLM_MONGODB_USE_HA === true ||
-    process.env.FLM_MONGODB_USE_HA === 'true'
+if (process.env.MONGODB_USE_HA === true ||
+    process.env.MONGODB_USE_HA === 'true'
 ) {
   // FLM_MONGODB_HA_LIST format 'mongodb,mongoha_mongodb2,mongoha_mongodb3'
   mongoURI = 'mongodb://' + process.env.FLM_MONGODB_HA_LIST +
