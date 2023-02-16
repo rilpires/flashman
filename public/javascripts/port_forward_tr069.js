@@ -703,6 +703,15 @@ anlixDocumentReady.add(function() {
       url: '/devicelist/uiportforward/' + getPortForwardStorage('deviceId'),
       dataType: 'json',
       success: function(res) {
+        if (res.wrongPortMapping) {
+          swal.fire({
+            title: t('deviceHaveWrongPortMappingError'),
+            text: res.message,
+            icon: 'error',
+            confirmButtonColor: '#4db6ac',
+          });
+          return;
+        }
         if (res.success) {
           fillSessionStorage(res.content);
           setPortForwardStorage('compatibility', res.compatibility);
@@ -717,15 +726,6 @@ anlixDocumentReady.add(function() {
               .addClass('d-block');
           } else {
             $('#port-forward-tr069-modal-reboot-info')
-              .removeClass('d-block')
-              .addClass('d-none');
-          }
-          if (res.wrongPortMapping) {
-            $('#port-forward-tr069-modal-wrong-port-mapping-warning')
-              .removeClass('d-none')
-              .addClass('d-block');
-          } else {
-            $('#port-forward-tr069-modal-wrong-port-mapping-warning')
               .removeClass('d-block')
               .addClass('d-none');
           }
