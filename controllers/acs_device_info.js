@@ -2104,34 +2104,28 @@ const replaceWanFieldsWildcards = async function (
   // Iterates through changes to WAN fields and replaces the corresponding value
   // in task
   let fieldName = '';
+  let success = false;
   Object.keys(changes.wan).forEach((key)=>{
-    if (!fields.wan[key]) {
-      return {
-        'success': false,
-        'error': 'There is no corresponding field for key ' + key,
-      };
-    }
+    if (!fields.wan[key]) return;
     if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
       fieldName = utilHandlers.replaceNestedKeyWildcards(
         data, fields.wan[key], wildcardFlag,
       );
     } else {
-      return {
-        'success': false,
-        'error': 'Unable to replace wildcards for ' + key,
-      };
+      return;
     }
     // Find matching field in task and replace it
     for (let i = 0; i < task.parameterValues.length; i++) {
       if (task.parameterValues[i][0] === fields.wan[key]) {
         task.parameterValues[i][0] = fieldName;
+        success = true;
         break;
       }
     }
   });
   return {
-    'success': true,
-    'task': task,
+    'success': success,
+    'task': (success)? task : undefined,
   };
 };
 /*
