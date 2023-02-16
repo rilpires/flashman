@@ -20,7 +20,6 @@ const models = require('../common/models');
 const fs = require('fs');
 const path = require('path');
 
-const http = require('http');
 const t = require('../../controllers/language').i18next.t;
 
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
