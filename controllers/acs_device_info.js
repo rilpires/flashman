@@ -1952,78 +1952,51 @@ const replaceWanFieldsWildcards = async function (
   // access to the index from which the wildcard should be replaced. The
   // projection will be a concatenation of the fields requested for editing,
   // separated by a comma
+  let data;
+  let query = {_id: acsID};
   let projection = Object.keys(changes.wan).map((k)=>{
     if (!fields.wan[k]) return;
     return fields.wan[k].split('.*')[0];
   }).join(',');
-  let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: 'localhost',
-    port: 7557,
-    path: encodeURI(path),
-  };
-  // Projection Promise
-  return new Promise(function(resolve, reject) {
-    let req = http.request(options, (resp)=>{
-      resp.setEncoding('utf8');
-      let data = '';
-      let success = false;
-      resp.on('error', (error) => {
-        reject({
-          'success': false,
-          'error': 'Error fetching Genie database: ' + error,
-        });
-      });
-      resp.on('data', (chunk) => data+=chunk);
-      resp.on('end', async () => {
-        if (data.length > 0) {
-          try {
-            // Get data
-            data = JSON.parse(data)[0];
-            let fieldName = '';
-            Object.keys(changes.wan).forEach((key)=>{
-              if (!fields.wan[key]) return;
-              // For each key at changes.wan
-              if (
-                utilHandlers.checkForNestedKey(
-                  data, fields.wan[key], wildcardFlag,
-                )
-              ) {
-                // Wildcards are replaced
-                fieldName = utilHandlers.replaceNestedKeyWildcards(
-                  data, fields.wan[key], wildcardFlag,
-                );
-
-                if (fieldName !== undefined && fieldName !== '') {
-                  for (let i = 0; i < task.parameterValues.length; i++) {
-                    // Finds field that should be changed in task.parameterValues
-                    if (task.parameterValues[i][0] === fields.wan[key]) {
-                      // Only the field name is changed
-                      task.parameterValues[i][0] = fieldName;
-                      success = true;
-                      break;
-                    }
-                  }
-                }
-              }
-            });
-            return resolve({
-              'success': success,
-              'task': (success)? task : undefined,
-            });
-          } catch (e) {
-            return reject({
-              'success': false,
-              'error': 'Exception at replaceWanFieldsWildcards: ' + e,
-            });
-          }
-        }
-      });
-    });
-    req.end();
+  // Fetch Genie database and retrieve data
+  try {
+    data = await TasksAPI.getFromCollection('devices', query, projection);
+    data = data[0];
+  } catch (e) {
+    console.log('Exception fetching Genie database: ' + e);
+  }
+  // Iterates through changes to WAN fields and replaces the corresponding value
+  // in task
+  let fieldName = '';
+  Object.keys(changes.wan).forEach((key)=>{
+    if (!fields.wan[key]) {
+      return {
+        'success': false,
+        'error': 'There is no corresponding field for key ' + key,
+      };
+    }
+    if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
+      fieldName = utilHandlers.replaceNestedKeyWildcards(
+        data, fields.wan[key], wildcardFlag,
+      );
+    } else {
+      return {
+        'success': false,
+        'error': 'Unable to replace wildcards for ' + key,
+      };
+    }
+    // Find matching field in task and replace it
+    for (let i = 0; i < task.parameterValues.length; i++) {
+      if (task.parameterValues[i][0] === fields.wan[key]) {
+        task.parameterValues[i][0] = fieldName;
+        break;
+      }
+    }
   });
+  return {
+    'success': true,
+    'task': task,
+  };
 };
 /*
  * This function is being exported in order to test it.
@@ -2132,13 +2105,17 @@ acsDeviceInfoController.updateInfo = async function(
   // If there are changes in the WAN fields, we have to replace the fields that
   // have wildcards with the correct indexes. Only the fields referring to the
   // WAN are changed
-  if (changes.wan !== {}) {
+  if (changes.wan && changes.wan !== {}) {
     try {
       let ret = await replaceWanFieldsWildcards(
         acsID, wildcardFlag, fields, changes, task,
       );
       if (ret.success) {
         task = ret.task;
+      } else {
+        // If the wildcards are not replaced correctly, it prevents the update
+        // from taking place
+        return;
       }
     } catch (e) {
       console.log(ret.error);
