@@ -2248,7 +2248,6 @@ acsDeviceInfoController.updateInfo = async function(
         return;
       }
     } catch (e) {
-      console.log(ret.error);
       return;
     }
   }
