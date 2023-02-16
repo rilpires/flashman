@@ -401,6 +401,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    measure_type: flashRes.data.measure_type,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
