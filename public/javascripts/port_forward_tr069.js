@@ -720,6 +720,15 @@ anlixDocumentReady.add(function() {
               .removeClass('d-block')
               .addClass('d-none');
           }
+          if (res.wrongPortMapping) {
+            $('#port-forward-tr069-modal-wrong-port-mapping-warning')
+              .removeClass('d-none')
+              .addClass('d-block');
+          } else {
+            $('#port-forward-tr069-modal-wrong-port-mapping-warning')
+              .removeClass('d-block')
+              .addClass('d-none');
+          }
         } else {
           let badge = $(event.target).closest('.actions-opts')
                                      .find('.badge-warning');

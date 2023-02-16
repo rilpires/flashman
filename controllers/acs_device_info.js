@@ -451,13 +451,12 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
   /* only process port mapping coming from sync if
-  is the feature is enabled to that device */
+    the feature is enabled to that device */
+  let wrongPortMapping = false;
   let portMapping = [];
   if (cpe.modelPermissions().features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
-    portMapping = acsPortForwardHandler
-      .convertPortForwardFromGenieToFlashman(data.port_mapping,
-        cpe.getModelFields());
+    wrongPortMapping = true;
   }
 
   let newDevice = new DeviceModel({
@@ -501,6 +500,7 @@ const createRegistry = async function(req, cpe, permissions) {
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     port_mapping: portMapping,
+    wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_negociated_speed: wanRate,
@@ -1874,8 +1874,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    // Every day fetch device port forward entries
-    if (permissions.grantPortForward) {
+    /* Every day fetch device port forward entries, except in the case
+      which device is registred with upcoming port mapping values */
+    if (permissions.grantPortForward && !device.wrong_port_mapping) {
       // Stavix XML devices should not sync port forward daily
       if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
