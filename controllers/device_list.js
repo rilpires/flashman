@@ -3045,6 +3045,11 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   let secondSlice;
   let diffPortForwardLength;
   let ret = {};
+  if (device.wrong_port_mapping) {
+    ret.success = false;
+    ret.message = t('deviceHaveWrongPortMappingError');
+    return ret;
+  }
   try {
     rules = JSON.parse(content);
   } catch (e) {
