@@ -294,6 +294,7 @@
 	"valueInvalid": "Valor no válido",
 	"commandNotFound": "Este comando no existe ({{errorline}})",
 	"incompatibleRulesError": "Tiene una regla que no cumple",
+	"deviceHaveWrongPortMappingError": "Este CPE tiene reglas de apertura de puertos incompatibles con Flashman, las cuales fueron registradas directamente en la interfaz web del CPE. Para administrar las reglas a través de Flashman, elimine las reglas en la interfaz de CPE y vuelva a crearlas utilizando el propio Flashman.",
 	"jsonError": "Error al manejar JSON ({{errorline}})",
 	"jsonInvalidFormat": "JSON fuera de formato ({{errorline}})",
 	"cpeNotFound": "CPE no encontrado ({{errorline}})",
