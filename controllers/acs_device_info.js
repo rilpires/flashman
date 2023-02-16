@@ -1872,8 +1872,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    // Every day fetch device port forward entries
-    if (permissions.grantPortForward) {
+    /* Every day fetch device port forward entries, except in the case
+      which device is registred with upcoming port mapping values */
+    if (permissions.grantPortForward && !device.wrong_port_mapping) {
       // Stavix XML devices should not sync port forward daily
       if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
