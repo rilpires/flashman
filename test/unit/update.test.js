@@ -452,9 +452,9 @@ describe('Update Tests - Functions', () => {
   });
 
 
-  // replaceWanFieldsWildcards - Happy case
+  // Validate replaceWanFieldsWildcards - Happy Case
   test(
-    'Validate replaceWanFieldsWildcards with wildcard flag false - successfull',
+    'Validate replaceWanFieldsWildcards - Happy Case',
     async () => {
       const id = models.defaultMockDevices[0]._id;
       let device = models.copyDeviceFrom(
@@ -468,9 +468,6 @@ describe('Update Tests - Functions', () => {
       );
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
-
-      let httpRequestOptions = {};
-      const dataToPass = '1234'; // Any value - It doesn't matter
 
       let expectedFieldName =
         deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1');
@@ -524,52 +521,54 @@ describe('Update Tests - Functions', () => {
       jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
         .mockImplementation(() => expectedFieldName);
 
-      let httpRequestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(
-          (options, callback) => {
-            httpRequestOptions = options;
-            callback({
-              on: async (event, cb) => {
-                if (event === 'data') {
-                  cb(dataToPass);
-                } else if (event === 'end') {
-                  await cb();
-                }  else if (event === 'error') {
-                  expect(this.on).rejects;
-                }
-              },
-              setEncoding: () => true,
-            });
-
-            return {end: () => true};
-          },
-        );
-
       // Execute function
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
         id, false, deviceFields, changes, task,
       );
 
       // Validate
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          hostname: GENIEHOST,
-          port: GENIEPORT,
-        }),
-        expect.anything(),
-      );
-
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        httpRequestOptions,
-        expect.anything(),
-      );
-
       expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
     },
   );
 
-  // replaceWanFieldsWildcards - Unable to replace wildcards
+
+  // Validate replaceWanFieldsWildcards - No corresponding field for key
+  test(
+    'Validate replaceWanFieldsWildcards - No corresponding field for key',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = { wan: {} }; // Empty fields
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let task = {}; // Empty task - It doesn't matter
+
+      // Execute
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, deviceFields, changes, task,
+      );
+
+      // Validate
+      expect(ret).toStrictEqual({'success': false, 'task': undefined});
+    },
+  );
+
   test(
     'Validate replaceWanFieldsWildcards - Unable to replace wildcards',
     async () => {
@@ -585,9 +584,6 @@ describe('Update Tests - Functions', () => {
       );
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
-
-      let httpRequestOptions = {};
-      const dataToPass = '1234'; // Any value - It doesn't matter
 
       let changes = {
         wan: { mtu_ppp: 1487 },
@@ -606,27 +602,6 @@ describe('Update Tests - Functions', () => {
       jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
         .mockImplementation(() => undefined);
 
-      let httpRequestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(
-          (options, callback) => {
-            httpRequestOptions = options;
-            callback({
-              on: async (event, cb) => {
-                if (event === 'data') {
-                  cb(dataToPass);
-                } else if (event === 'end') {
-                  await cb();
-                }  else if (event === 'error') {
-                  expect(this.on).rejects;
-                }
-              },
-              setEncoding: () => true,
-            });
-
-            return {end: () => true};
-          },
-        );
-
       // Execute
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
         id, false, deviceFields, changes, task,
@@ -637,9 +612,9 @@ describe('Update Tests - Functions', () => {
     },
   );
 
-  // updateInfo - Successfully replacing wildcards in WAN fields
+  // Validate updateInfo - Happy Case
   test(
-    'Validate updateInfo - Update WAN field with success',
+    'Validate updateInfo - Happy Case',
     async () => {
       const id = models.defaultMockDevices[0]._id;
       let device = models.copyDeviceFrom(
@@ -688,8 +663,6 @@ describe('Update Tests - Functions', () => {
       utils.common.mockConfigs({}, 'findOne');
 
       // Spies
-      jest.spyOn(acsDeviceInfo, '__testReplaceWanFieldsWildcards')
-        .mockImplementation(() => true);
       let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
 
       // Execute
@@ -700,6 +673,51 @@ describe('Update Tests - Functions', () => {
       expect(addTaskSpy).toHaveBeenCalledWith(
         device.acs_id, expectedTask, expect.anything(),
       );
+    },
+  );
+
+
+  // Validate updateInfo - Unable to replace wildcards
+  test(
+    'Validate updateInfo - Unable to replace wildcards',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      // Mocks
+      utils.common.mockConfigs({}, 'findOne');
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => false);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => undefined);
+      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+
+      // Execute
+      await acsDeviceInfo.__testUpdateInfo(device, changes);
+
+      // Verify
+      expect(addTaskSpy).not.toHaveBeenCalled();
     },
   );
 });
