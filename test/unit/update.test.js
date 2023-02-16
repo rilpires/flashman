@@ -25,6 +25,7 @@ const t = require('../../controllers/language').i18next.t;
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
+
 // Test updates
 describe('Update Tests - Functions', () => {
   // Reset all mocks
@@ -568,6 +569,8 @@ describe('Update Tests - Functions', () => {
     },
   );
 
+
+  // Validate replaceWanFieldsWildcards - Unable to replace wildcards
   test(
     'Validate replaceWanFieldsWildcards - Unable to replace wildcards',
     async () => {
