@@ -3335,6 +3335,7 @@ deviceListController.getPortForward = function(req, res) {
       return res.status(200).json({
         success: true,
         content: matchedDevice.port_mapping,
+        wrongPortMapping: matchedDevice.wrong_port_mapping,
         compatibility: permissions.grantPortForwardOpts,
         xmlWarning: cpe.modelPermissions().stavixXMLConfig.portForward,
       });
