@@ -114,7 +114,7 @@ const buildAndSendMessage = async function(
     client, product, user._id.toString(), object, searchable, operation, values,
   );
   if (err) {
-    return console.error(
+    return console.log(
       `Error creating Audit message. `+
       `operation: ${operation}, object: ${object}, searchables: ${searchable}.`,
       err,
@@ -132,7 +132,7 @@ controller.appendCpeIds = (array, cpe) => {
   if (cpe.use_tr069) {
     const tr069Id = cpe.alt_uid_tr069 || cpe.serial_tr069;
     if (!tr069Id) {
-      console.error('Audit received a CPE that uses TR069 but does not have'+
+      console.log('Audit received a CPE that uses TR069 but does not have'+
                     ' tr069 identifications.');
     } else if (tr069Id !== cpe._id) {
       array.push(cpe._id, tr069Id);
