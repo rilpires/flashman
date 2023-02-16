@@ -476,16 +476,30 @@ acsPortForwardHandler.convertPortForwardFromGenieToFlashman
   /* iterate through middle-way object and store
   in the format of flashman, an array of object */
   Object.keys(rawPortMapping).forEach((k) => {
-    if (checkPortMappingProperties(rawPortMapping[k])) {
-      ret.push(rawPortMapping[k]);
+    let pm = checkForMissingValues(rawPortMapping[k]);
+    if (checkPortMappingProperties(pm)) {
+      rules.push(pm);
+    } else {
+      /* flag that was identified a wrong port
+        mapping coming from device creation */
+      wrongPortMapping = true;
     }
   });
-  /* if there is overlapping, does not save the upcoming port
-    mappings already in device */
-  if (acsPortForwardHandler.checkOverlappingPorts(ret)) {
-    ret = [];
+  /* if some port mapping entry is not valid does not save them, and flag
+    that was identified a wrong port mapping coming from device creation */
+  let validator = new Validator();
+  let portForwardOpts = cpe.modelPermissions().wan.portForwardPermissions;
+  let validity = validator.checkPortMappingValidity(rules, subnet, mask);
+  let overlapping = validator.checkOverlappingPorts(rules);
+  let compatibility = validator.checkIncompatibility(rules, portForwardOpts);
+  if (!(validity.success && overlapping.success && compatibility.success)) {
+    rules = [];
+    wrongPortMapping = true;
   }
-  return ret;
+  return {
+    port_mapping: rules,
+    wrong_port_mapping: wrongPortMapping,
+  };
 };
 
 module.exports = acsPortForwardHandler;
