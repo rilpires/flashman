@@ -403,12 +403,27 @@ const checkPortMappingProperties = function(pm) {
   }
 };
 
-acsPortForwardHandler
-  .convertPortForwardFromGenieToFlashman = function(rawPortForward, fields) {
-  let ret = [];
+const checkForMissingValues = function(pm) {
+  if (!('external_port_end' in pm && 'internal_port_end' in pm)) {
+    /* Deduce missing values from another 'end' field,
+      if both 'end' fields is missing then do nothing */
+    if ('internal_port_end' in pm) {
+      pm['external_port_end'] = pm['internal_port_end'];
+    } else if ('external_port_end' in pm) {
+      pm['internal_port_end'] = pm['external_port_end'];
+    }
+  }
+  return pm;
+};
+
+acsPortForwardHandler.convertPortForwardFromGenieToFlashman
+  = function(rawPortForward, cpe, subnet, mask) {
+  let fields = cpe.getModelFields();
+  let rules = [];
   let baseRx = '';
   let pmDhcpRegex;
   let pmPppRegex;
+  let wrongPortMapping = false;
   if (fields instanceof Object) {
     if (fields.port_mapping_dhcp) {
       pmDhcpRegex = new RegExp(fields
