@@ -4,9 +4,14 @@ import 'tempusdominus-bootstrap-4';
 
 const t = i18next.t;
 
+// Copied from environment
+const MIN_TIMEOUT_PERIOD = 10;
+const MAX_TIMEOUT_PERIOD = 1440;
+
 
 // Firmware List
 let firmwareList = [];
+let informIntervalInMinutes = NaN;
 
 
 // Errors
@@ -20,6 +25,15 @@ const FLASHBOX_FIRMWARE_SELECTION_BUTTON = '#flashbox-firmware-selection';
 // Checkboxes
 const CPE_WONT_RETURN_DIV = '#cpeWontReturnDiv';
 const CPE_WONT_RETURN_CHECKBOX = '#cpeWontReturn';
+
+// Inputs
+const TIME_LIMIT_FOR_UPDATE_DIV = '#timeLimitUpdateDiv';
+const TIME_LIMIT_FOR_UPDATE_INPUT = '#timeLimitUpdateInput';
+const TIME_LIMIT_FOR_UPDATE_LABEL = '#timeLimitUpdateLabel';
+
+// Messages
+const WHEN_ERROR_MESSAGE_DIV = '#when-error-msg';
+const WHEN_ERROR_MESSAGE = '#when-error-text';
 
 
 // Dropdowns
@@ -295,7 +309,34 @@ const displayAndCheckUpdate = function(tr069Active) {
 
 anlixDocumentReady.add(function() {
   $('#removeSchedule').prop('disabled', true);
-  $('#when-error-msg').hide();
+  $(WHEN_ERROR_MESSAGE_DIV).hide();
+
+
+  // Set the mask for time limit for upgrade input
+  $(TIME_LIMIT_FOR_UPDATE_INPUT).mask('###0');
+
+
+  // Get the inform interval
+  $.ajax({
+    type: 'GET',
+    url: '/upgrade/config',
+    success: function(response) {
+      // Validate inform interval
+      if (!response.tr069InformInterval) {
+        informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+      } else {
+        informIntervalInMinutes = Math.ceil(response.tr069InformInterval / 60);
+      }
+
+      // Set the time limit for update text
+      $(TIME_LIMIT_FOR_UPDATE_LABEL).text(
+        t('updateTimeLimitInputText', {default:
+          informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD,
+        }),
+      );
+    },
+  });
+
 
   // At the beginning hide the won't return to flashman checkbox as it starts
   // with TR-069
@@ -401,14 +442,12 @@ anlixDocumentReady.add(function() {
     return false;
   });
 
-  let lastDevicesSearchInputQuery = '';
+
   let stepper = $('.bs-stepper');
   if (stepper.length > 0) {
     stepper = new Stepper(stepper[0], {animation: true});
     resetStepperData(stepper);
     $(document).on('submit', '#devices-search-form', function(event) {
-      lastDevicesSearchInputQuery = document.getElementById(
-        'devices-search-input').value;
       resetStepperData(stepper);
       stepper.to(1);
       return false;
@@ -428,6 +467,26 @@ anlixDocumentReady.add(function() {
     $('#how-btn-next').prop('disabled', true);
     $('#how-btn-next').click((event)=>{
       let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
+
+
+      // Validate inform interval
+      if (!informIntervalInMinutes) {
+        informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+      }
+
+      // Reset firmware upgrade time limit
+      $(TIME_LIMIT_FOR_UPDATE_INPUT).val(
+        (informIntervalInMinutes * 5 + MIN_TIMEOUT_PERIOD).toString(),
+      );
+
+      // If the user selected a TR-069 firmware, show the input to set the
+      // time limit for update.
+      if ($(TR069_FIRMWARE_SELECTION_BUTTON).hasClass('active')) {
+        $(TIME_LIMIT_FOR_UPDATE_DIV).show();
+      } else {
+        $(TIME_LIMIT_FOR_UPDATE_DIV).hide();
+      }
+
 
       // If the devices will return to flashman, just continue to the same
       // procedure
@@ -472,11 +531,15 @@ anlixDocumentReady.add(function() {
 
     $('#which-btn-next').prop('disabled', true);
     $('#which-btn-next').click((event)=>{
+      // Hide error message
       $('#which-error-msg').hide();
+
       let useCsv = $('.nav-link.active').attr('id') === 'whichFile';
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;
+      // Always use the last list of filters
+      let filterList = document
+        .getElementById('devices-search-input').value;
       let useAll = (useCsv) ? false :
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       $.ajax({
@@ -554,13 +617,75 @@ anlixDocumentReady.add(function() {
           ($('input[name=deviceCount]:checked')[0].id === 'allDevices');
       let pageNum = parseInt($('#curr-page-link').html());
       let pageCount = parseInt($('#input-elements-pp option:selected').text());
-      let filterList = lastDevicesSearchInputQuery;
+      // Always use the last list of filters
+      let filterList = document
+        .getElementById('devices-search-input').value;
       let release = $('#selected-release').html();
       let cpesWontReturn = $(CPE_WONT_RETURN_CHECKBOX).is(':checked');
       let value = $('#devices-search-input').val();
       let tags = (value) ? value.split(',').map((v)=>'"' + v + '"').join(', ')
                          : t('noFilterUsed');
       let hasTimeRestriction = $('input[name=updateNow]:checked').length === 0;
+
+
+      let firmware = firmwareList.releaseInfo.find(
+        (firmware) => firmware.id === release,
+      );
+      let isRG1200 = firmware.validModels.includes('ACTIONRG1200V1');
+
+
+      // Set the timeout period for upgrading TR-069 firmware
+      let upgradeTimeoutEnable = false;
+      let upgradeTimeoutPeriod = parseInt(
+        $(TIME_LIMIT_FOR_UPDATE_INPUT).val(),
+      );
+
+
+      // If the inform came invalid, use the minimum timeout
+      if (!informIntervalInMinutes) {
+        informIntervalInMinutes = MIN_TIMEOUT_PERIOD;
+      }
+
+
+      // Validate the timeout period, only for TR-069
+      if (
+        firmware.isTR069 &&
+        (
+          !upgradeTimeoutPeriod || upgradeTimeoutPeriod <
+          (informIntervalInMinutes + MIN_TIMEOUT_PERIOD) ||
+          upgradeTimeoutPeriod > MAX_TIMEOUT_PERIOD
+        )
+      ) {
+        // Show the error message
+        $(WHEN_ERROR_MESSAGE).html(
+          '&nbsp; '+ t(
+            'updateTimeLimitInputErrorText', {
+            min: (informIntervalInMinutes + MIN_TIMEOUT_PERIOD),
+            max: MAX_TIMEOUT_PERIOD,
+          }),
+        );
+        $(WHEN_ERROR_MESSAGE_DIV).show();
+
+        // Enable buttons
+        $('#when-btn-prev').prop('disabled', false);
+        $('#when-btn-next').prop('disabled', false);
+
+        // Do not continue
+        return;
+
+      // If period is valid and is TR-069 or RG 1200
+      } else if (firmware.isTR069 || isRG1200) {
+        $(WHEN_ERROR_MESSAGE_DIV).hide();
+        upgradeTimeoutEnable = true;
+
+        // If RG 1200 use the default timeout
+        if (isRG1200) {
+          upgradeTimeoutPeriod = 5 * informIntervalInMinutes +
+            MIN_TIMEOUT_PERIOD;
+        }
+      }
+
+
       let timeRestrictions = [];
       if (hasTimeRestriction) {
         let rangeCount = $('#time-ranges .time-range').length;
@@ -573,7 +698,7 @@ anlixDocumentReady.add(function() {
           });
         }
       }
-      $('#when-error-msg').hide();
+      $(WHEN_ERROR_MESSAGE_DIV).hide();
       $('#when-btn-icon')
         .removeClass('fa-check')
         .addClass('fa-spinner fa-pulse');
@@ -598,6 +723,8 @@ anlixDocumentReady.add(function() {
           page_num: pageNum,
           page_count: pageCount,
           filter_list: filterList,
+          timeout_enable: JSON.stringify(upgradeTimeoutEnable),
+          timeout_period: upgradeTimeoutPeriod,
         },
         success: function(res) {
           $('#when-btn-icon')
@@ -619,8 +746,8 @@ anlixDocumentReady.add(function() {
           $('#when-btn-icon')
             .removeClass('fa-spinner fa-pulse')
             .addClass('fa-check');
-          $('#when-error-text').html('&nbsp; '+t('serverErrorPleaseTryAgain'));
-          $('#when-error-msg').show();
+          $(WHEN_ERROR_MESSAGE).html('&nbsp; '+t('serverErrorPleaseTryAgain'));
+          $(WHEN_ERROR_MESSAGE_DIV).show();
           $('#when-btn-prev').prop('disabled', false);
           $('#when-btn-next').prop('disabled', false);
           swal.close();

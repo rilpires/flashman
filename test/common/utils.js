@@ -7,6 +7,9 @@ const DeviceModel = require('../../models/device');
 const FirmwareModel = require('../../models/firmware');
 const ConfigModel = require('../../models/config');
 
+// Environments
+process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
+process.env.FLM_MAX_TIMEOUT_PERIOD = '1440';
 
 // Scheduler
 const updateScheduler = require('../../controllers/update_scheduler');

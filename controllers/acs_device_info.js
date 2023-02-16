@@ -553,11 +553,29 @@ const createRegistry = async function(req, cpe, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
-      acsDeviceInfoController.updateInfo(newDevice, changes);
+      // Delay the execution of this function as it needs the device to exists
+      // in genie database, but the device will only be created at the end of
+      // this function, thus causing a racing condition.
+      delayExecutionGenie(
+        newDevice,
+        async () => {
+          await acsDeviceInfoController
+            .updateInfo(newDevice, changes, false);
+        },
+      );
     }
   }
   if (syncXmlConfigs) {
-    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
+    // Delay the execution of this function as it needs the device to exists in
+    // genie database, but the device will only be created at the end of this
+    // function, thus causing a racing condition.
+    delayExecutionGenie(
+      newDevice,
+      async () => {
+        await acsXMLConfigHandler
+          .configFileEditing(newDevice, ['web-admin']);
+      },
+    );
   }
 
   if (createPrefixErrNotification) {
@@ -585,6 +603,124 @@ const createRegistry = async function(req, cpe, permissions) {
   }
   return true;
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testCreateRegistry = createRegistry;
+
+
+/*
+ *  Description:
+ *    This function returns a promise and only resolves when the time in
+ *    miliseconds timeout after calling this function.
+ *
+ *  Inputs:
+ *    miliseconds - Amount of time in miliseconds to sleep
+ *
+ *  Outputs:
+ *    promise - The promise that is only resolved when the timer ends.
+ *
+ */
+const sleep = function(miliseconds) {
+  let promise = new Promise(
+    (resolve) => setTimeout(resolve, miliseconds),
+  );
+
+  return promise;
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testSleep = sleep;
+
+
+
+/*
+ *  Description:
+ *    This function calls an async function (func) after delayTime. If it fails,
+ *    the func will be called again with twice the time it was executed.
+ *    It will repeat this process until the device exists in genie or the
+ *    repeatQuantity reaches zero. Every iteration, the repeatQuantity will be
+ *    reduced by one and delayTime will doubled from what it was before.
+ *
+ *  Inputs:
+ *    func - The function that will be called
+ *    repeatQuantity - Amount of repetitions until giving up calling the
+ *      function
+ *    delayTime - Amount of time to call the function again
+ *
+ *  Outputs:
+ *    object:
+ *      - success: If could start the delay loop
+ *      - executed: If could execute the func
+ *      - message: An error or okay message about what happened
+ *      - result: the return of func, only included if could ran the func
+ */
+const delayExecutionGenie = async function(
+  device,
+  func,
+  repeatQuantity = 3,
+  delayTime = 1000,
+) {
+  // Exit if repeatQuantity or delayTime is less than 0
+  if (repeatQuantity <= 0 || delayTime <= 0) {
+    console.log('Invalid parameters passed');
+    return {
+      success: false,
+      executed: false,
+      message: t('parametersError', {errorline: __line}),
+    };
+  }
+
+  let sleepTime = delayTime;
+
+  // Loop the amount of repeatQuantity
+  for (let repeat = repeatQuantity; repeat > 0; repeat--) {
+    // Wait until timeout sleepTime timer
+    await sleep(sleepTime);
+
+    // Double the timer
+    sleepTime = 2 * sleepTime;
+
+
+    // Try getting the device from genie database
+    let query = {_id: device.acs_id};
+    let genieDevice = await TasksAPI
+        .getFromCollection('devices', query, '_id');
+
+
+    // Check if device does exist
+    if (
+      genieDevice && genieDevice.length > 0 &&
+      genieDevice[0]._id === device.acs_id
+    ) {
+      // Call the function
+      let result = await func();
+
+      return {
+        success: true,
+        executed: true,
+        result: result,
+        message: t('Ok'),
+      };
+    }
+  }
+
+
+  return {
+    success: true,
+    executed: false,
+    message: t('noDevicesFound'),
+  };
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
+
 
 // Receives GenieACS inform event, to register the CPE as online - updating last
 // contact information. For new CPEs, it replies with "measure" as true, to
