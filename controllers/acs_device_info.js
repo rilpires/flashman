@@ -453,6 +453,7 @@ const createRegistry = async function(req, cpe, permissions) {
   /* only process port mapping coming from sync if
     the feature is enabled to that device */
   let wrongPortMapping = false;
+  let portMapping = [];
   if (cpe.modelPermissions().features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
     wrongPortMapping = true;
@@ -498,6 +499,7 @@ const createRegistry = async function(req, cpe, permissions) {
     ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
+    port_mapping: portMapping,
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
