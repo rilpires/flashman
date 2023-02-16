@@ -4,7 +4,8 @@ const TasksAPI = require('../../external-genieacs/tasks-api');
 const acsXMLConfigHandler = require('./xmlconfig.js');
 const utilHandlers = require('../util.js');
 const http = require('http');
-const debug = require('debug')('ACS_DEVICES_MEASURES');
+const debug = require('debug')('ACS_PORT_FORWARD');
+const Validator = require('../../../public/javascripts/device_validator');
 
 let acsPortForwardHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
