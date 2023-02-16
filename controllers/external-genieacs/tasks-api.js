@@ -24,7 +24,9 @@ if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
 }
 
 let mongoURI = 'mongodb://' + MONGOHOST + ':' + MONGOPORT;
-if (process.env.FLM_MONGODB_USE_HA) {
+if (process.env.FLM_MONGODB_USE_HA === true ||
+    process.env.FLM_MONGODB_USE_HA === 'true'
+) {
   // FLM_MONGODB_HA_LIST format 'mongodb,mongoha_mongodb2,mongoha_mongodb2'
   mongoURI =
     'mongodb://' + process.env.FLM_MONGODB_HA_LIST + '/?replicaSet=rs0';
