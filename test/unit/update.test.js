@@ -473,7 +473,7 @@ describe('Update Tests - Functions', () => {
         deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1');
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -487,14 +487,14 @@ describe('Update Tests - Functions', () => {
           [
             deviceFields['wan']['mtu_ppp'],
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
-        ]
+        ],
       };
 
       // It is expected that the function will change only the fields of the
@@ -505,14 +505,14 @@ describe('Update Tests - Functions', () => {
           [
             expectedFieldName,
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
-        ]
+        ],
       };
 
       // Spies
@@ -537,19 +537,10 @@ describe('Update Tests - Functions', () => {
     'Validate replaceWanFieldsWildcards - No corresponding field for key',
     async () => {
       const id = models.defaultMockDevices[0]._id;
-      let device = models.copyDeviceFrom(
-        id,
-        {
-          _id: '94:25:33:3B:D1:C2',
-          acs_id: '00259E-EG8145V5-48575443A94196A5',
-          model: 'EG8145V5',
-          version: 'V5R020C00S280',
-        },
-      );
-      let deviceFields = { wan: {} }; // Empty fields
+      let deviceFields = {wan: {}}; // Empty fields
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -588,7 +579,7 @@ describe('Update Tests - Functions', () => {
         .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -632,7 +623,7 @@ describe('Update Tests - Functions', () => {
         .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -646,12 +637,12 @@ describe('Update Tests - Functions', () => {
           [
             deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1'),
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
           [
             deviceFields['wifi2']['password'],
@@ -693,11 +684,9 @@ describe('Update Tests - Functions', () => {
           version: 'V5R020C00S280',
         },
       );
-      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
-        .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
