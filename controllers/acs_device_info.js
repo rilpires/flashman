@@ -2100,7 +2100,7 @@ const replaceWanFieldsWildcards = async function (
     data = data[0];
   } catch (e) {
     console.log('Exception fetching Genie database: ' + e);
-    return;
+    return {'success': false};
   }
   // Iterates through changes to WAN fields and replaces the corresponding value
   // in task
