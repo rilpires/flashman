@@ -73,6 +73,10 @@ mercusysModel.getModelFields = function() {
     'WLANConfiguration.3.X_TP_Bandwidth';
   fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.3.X_TP_PreSharedKey';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
   return fields;
 };
 
