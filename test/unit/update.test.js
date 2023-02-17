@@ -1,4 +1,8 @@
 require('../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const firmwareController = require('../../controllers/firmware');
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
@@ -6,6 +10,9 @@ const updateSchedulerCommon = require(
 const acsDeviceInfo = require(
   '../../controllers/acs_device_info',
 );
+const devicesAPI = require('../../controllers/external-genieacs/devices-api');
+const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
+const utilHandlers = require('../../controllers/handlers/util');
 
 const utils = require('../common/utils');
 const models = require('../common/models');
@@ -14,6 +21,9 @@ const fs = require('fs');
 const path = require('path');
 
 const t = require('../../controllers/language').i18next.t;
+
+let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
+let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 
 // Test updates
@@ -24,7 +34,6 @@ describe('Update Tests - Functions', () => {
     jest.clearAllMocks();
     jest.useRealTimers();
   });
-
 
   // Version regex - Empty string
   test('Validate Version Regex - Empty string', async () => {
@@ -441,4 +450,276 @@ describe('Update Tests - Functions', () => {
     // Validate
     expect(successUpdateSpy).toBeCalled();
   });
+
+
+  // Validate replaceWanFieldsWildcards - Happy Case
+  test(
+    'Validate replaceWanFieldsWildcards - Happy Case',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let expectedFieldName =
+        deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1');
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let task = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            deviceFields['wan']['mtu_ppp'],
+            changes.wan.mtu_ppp,
+            'xsd:unsignedInt'
+          ],
+          [
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
+            'xsd:string'
+          ],
+        ]
+      };
+
+      // It is expected that the function will change only the fields of the
+      // task referring to the WAN
+      let expectedTask = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            expectedFieldName,
+            changes.wan.mtu_ppp,
+            'xsd:unsignedInt'
+          ],
+          [
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
+            'xsd:string'
+          ],
+        ]
+      };
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => true);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => expectedFieldName);
+
+      // Execute function
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, deviceFields, changes, task,
+      );
+
+      // Validate
+      expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
+    },
+  );
+
+
+  // Validate replaceWanFieldsWildcards - No corresponding field for key
+  test(
+    'Validate replaceWanFieldsWildcards - No corresponding field for key',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = { wan: {} }; // Empty fields
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let task = {}; // Empty task - It doesn't matter
+
+      // Execute
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, deviceFields, changes, task,
+      );
+
+      // Validate
+      expect(ret).toStrictEqual({'success': false, 'task': undefined});
+    },
+  );
+
+
+  // Validate replaceWanFieldsWildcards - Unable to replace wildcards
+  test(
+    'Validate replaceWanFieldsWildcards - Unable to replace wildcards',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let task = {}; // Empty task - It doesn't matter
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => false);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => undefined);
+
+      // Execute
+      let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
+        id, false, deviceFields, changes, task,
+      );
+
+      // Validate
+      expect(ret).toStrictEqual({'success': false, 'task': undefined});
+    },
+  );
+
+  // Validate updateInfo - Happy Case
+  test(
+    'Validate updateInfo - Happy Case',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      let expectedTask = {
+        name: 'setParameterValues',
+        parameterValues: [
+          [
+            deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1'),
+            changes.wan.mtu_ppp,
+            'xsd:unsignedInt'
+          ],
+          [
+            deviceFields['wifi2']['ssid'],
+            changes.wifi2.ssid,
+            'xsd:string'
+          ],
+          [
+            deviceFields['wifi2']['password'],
+            device.wifi_password,
+            'xsd:string',
+          ],
+        ],
+      };
+
+      // Mocks
+      utils.common.mockConfigs({}, 'findOne');
+
+      // Spies
+      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+
+      // Execute
+      await acsDeviceInfo.__testUpdateInfo(device, changes);
+
+      // Verify
+      expect(addTaskSpy).toHaveBeenCalledTimes(1);
+      expect(addTaskSpy).toHaveBeenCalledWith(
+        device.acs_id, expectedTask, expect.anything(),
+      );
+    },
+  );
+
+
+  // Validate updateInfo - Unable to replace wildcards
+  test(
+    'Validate updateInfo - Unable to replace wildcards',
+    async () => {
+      const id = models.defaultMockDevices[0]._id;
+      let device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:25:33:3B:D1:C2',
+          acs_id: '00259E-EG8145V5-48575443A94196A5',
+          model: 'EG8145V5',
+          version: 'V5R020C00S280',
+        },
+      );
+      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
+
+      let changes = {
+        wan: { mtu_ppp: 1487 },
+        lan: {},
+        wifi2: {ssid: 'Anlix-Teste'},
+        wifi5: {},
+        mesh2: {},
+        mesh5: {},
+      };
+
+      // Mocks
+      utils.common.mockConfigs({}, 'findOne');
+
+      // Spies
+      jest.spyOn(utilHandlers, 'checkForNestedKey')
+        .mockImplementation(() => false);
+      jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
+        .mockImplementation(() => undefined);
+      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+
+      // Execute
+      await acsDeviceInfo.__testUpdateInfo(device, changes);
+
+      // Verify
+      expect(addTaskSpy).not.toHaveBeenCalled();
+    },
+  );
 });

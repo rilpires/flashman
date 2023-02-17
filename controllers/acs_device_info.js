@@ -2082,6 +2082,61 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
+const replaceWanFieldsWildcards = async function (
+  acsID, wildcardFlag, fields, changes, task,
+) {
+  // WAN fields cannot have wildcards. So we query the genie database to get
+  // access to the index from which the wildcard should be replaced. The
+  // projection will be a concatenation of the fields requested for editing,
+  // separated by a comma
+  let data;
+  let query = {_id: acsID};
+  let projection = Object.keys(changes.wan).map((k)=>{
+    if (!fields.wan[k]) return;
+    return fields.wan[k].split('.*')[0];
+  }).join(',');
+  // Fetch Genie database and retrieve data
+  try {
+    data = await TasksAPI.getFromCollection('devices', query, projection);
+    data = data[0];
+  } catch (e) {
+    console.log('Exception fetching Genie database: ' + e);
+    return {'success': false};
+  }
+  // Iterates through changes to WAN fields and replaces the corresponding value
+  // in task
+  let fieldName = '';
+  let success = false;
+  Object.keys(changes.wan).forEach((key)=>{
+    if (!fields.wan[key]) return;
+    if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
+      fieldName = utilHandlers.replaceNestedKeyWildcards(
+        data, fields.wan[key], wildcardFlag,
+      );
+    } else {
+      return;
+    }
+    // Find matching field in task and replace it
+    for (let i = 0; i < task.parameterValues.length; i++) {
+      if (task.parameterValues[i][0] === fields.wan[key]) {
+        task.parameterValues[i][0] = fieldName;
+        success = true;
+        break;
+      }
+    }
+  });
+  return {
+    'success': success,
+    'task': (success)? task : undefined,
+  };
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testReplaceWanFieldsWildcards =
+  replaceWanFieldsWildcards;
+
 acsDeviceInfoController.updateInfo = async function(
   device, changes, awaitUpdate = false,
 ) {
@@ -2091,6 +2146,7 @@ acsDeviceInfoController.updateInfo = async function(
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
+  let wildcardFlag = cpe.modelPermissions().useLastIndexOnWildcard;
 
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
@@ -2178,6 +2234,25 @@ acsDeviceInfoController.updateInfo = async function(
       hasChanges = true;
     });
   });
+  // If there are changes in the WAN fields, we have to replace the fields that
+  // have wildcards with the correct indexes. Only the fields referring to the
+  // WAN are changed
+  if (changes.wan && changes.wan !== {}) {
+    try {
+      let ret = await replaceWanFieldsWildcards(
+        acsID, wildcardFlag, fields, changes, task,
+      );
+      if (ret.success) {
+        task = ret.task;
+      } else {
+        // If the wildcards are not replaced correctly, it prevents the update
+        // from taking place
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+  }
   // CPEs needs to reboot after change PPPoE parameters
   if (
     cpe.modelPermissions().wan.mustRebootAfterChanges &&
@@ -2210,6 +2285,11 @@ acsDeviceInfoController.updateInfo = async function(
     return;
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testUpdateInfo = acsDeviceInfoController.updateInfo;
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
