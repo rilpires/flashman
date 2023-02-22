@@ -101,6 +101,10 @@ window.updateVersions = function(input) {
   let fullID = chosenVendor + ' ' + chosenModel;
 
   if (tr069Infos.versions[fullID]) {
+    // Sort firmware list
+    tr069Infos.versions[fullID].sort();
+
+    // Append all firmwares to select
     tr069Infos.versions[fullID].forEach((v) => {
       $('#select-version').append(
         $('<option>')
