@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
-    "test": "jest --forceExit test/unit/*",
+    "test": "jest --forceExit --verbose test/unit/*",
     "e2e": "jest --runInBand --detectOpenHandles test/black-box/*",
     "build": "webpack --config webpack.prod.js"
   },
