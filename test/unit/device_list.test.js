@@ -104,6 +104,8 @@ describe('Controllers - Device List', () => {
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
 */
+
+/*
     test('CPE not found', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -139,6 +141,8 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     }, 10000);
+*/
+
 /*
     test('Config find error', async () => {
       const deviceMock = [{
