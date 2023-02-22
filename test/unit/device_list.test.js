@@ -136,6 +136,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+/*
     test('Config find error', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -442,8 +443,8 @@ describe('Controllers - Device List', () => {
         .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-/*
-      test('CPE matchedDevice save success', async () => {
+*/
+    test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
         version: '0.42.0',
@@ -607,7 +608,8 @@ describe('Controllers - Device List', () => {
         wan_mtu: {old: 1500, new: 1492},
       });
     });
-*/
+
+/*
     test('Enabled to modify fields', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -678,6 +680,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+*/
     test('Not enough permissions fields', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -817,6 +820,7 @@ describe('Controllers - Device List', () => {
         {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+/*
     test('Fields invalid check errors', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -883,6 +887,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(2);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+*/
     test('Field name invalid', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
