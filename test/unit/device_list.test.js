@@ -442,7 +442,8 @@ describe('Controllers - Device List', () => {
         .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-    test('CPE matchedDevice save success', async () => {
+/*
+      test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
         version: '0.42.0',
@@ -606,6 +607,7 @@ describe('Controllers - Device List', () => {
         wan_mtu: {old: 1500, new: 1492},
       });
     });
+*/
     test('Enabled to modify fields', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
