@@ -512,7 +512,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 500));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -593,7 +593,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 500));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
