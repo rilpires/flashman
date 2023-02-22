@@ -831,7 +831,6 @@ describe('Controllers - Device List', () => {
         {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-/*
     test('Fields invalid check errors', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -898,7 +897,6 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(2);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-*/
 
     test('Field name invalid', async () => {
       const deviceMock = [{
@@ -936,7 +934,6 @@ describe('Controllers - Device List', () => {
     });
   });
 
-/*
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
     // Mocks
@@ -969,9 +966,6 @@ describe('Controllers - Device List', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe(undefined);
   });
-*/
-
-/*
   // Index route: Empty filter
   test('Index: Empty filter', async () => {
     // Mocks
@@ -1044,5 +1038,4 @@ describe('Controllers - Device List', () => {
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
     expect(audit.cpe).toHaveBeenCalledTimes(0);
   });
-*/
 });
