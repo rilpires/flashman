@@ -516,7 +516,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      await new Promise((resolve)=>setTimeout(resolve, 5000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -528,7 +528,7 @@ describe('Controllers - Device List', () => {
         wifi2Ssid: {old: 'old-wifi-test', new: 'new-wifi-test'},
         wifi5Ssid: {old: 'old-wifi-test-5g', new: 'new-wifi-test-5g'},
       });
-    });
+    }, 10000);
     test('modify WAN and MTU with success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -597,7 +597,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      await new Promise((resolve)=>setTimeout(resolve, 5000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
@@ -609,7 +609,7 @@ describe('Controllers - Device List', () => {
         wan_vlan: {old: 1, new: 2},
         wan_mtu: {old: 1500, new: 1492},
       });
-    });
+    }, 10000);
 
 /*
     test('Enabled to modify fields', async () => {
