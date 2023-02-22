@@ -20,6 +20,7 @@ mercusysModel.modelPermissions = function() {
   permissions.wan.hasUptimeField = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.allowDiacritics = true;
+  permissions.useLastIndexOnWildcard = true;
   permissions.firmwareUpgrades = {
     '1.5.13 Build 220428 Rel.41353n(4252)': [],
   };
