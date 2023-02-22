@@ -1,12 +1,11 @@
 /* global __line */
 require('../../bin/globals.js');
-// const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
-// const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
+const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
@@ -19,20 +18,6 @@ const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
 
 describe('Controllers - Device List', () => {
-//  let connection;
-/*
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-*/
   /* list of functions that may be mocked:
     DeviceModel.findByMacOrSerial
     Config.findOne
@@ -82,7 +67,6 @@ describe('Controllers - Device List', () => {
         [x] - ({success: false, message: t('fieldNameInvalid'), errors : []})
     total test = 14 */
   describe('setDeviceReg', () => {
-/*
     test('Find error', async () => {
       mockingoose(DeviceModel).toReturn(new Error('test'), 'find');
       const req = {
@@ -103,9 +87,6 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-*/
-
-/*
     test('CPE not found', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -133,17 +114,14 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 5000));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeNotFound', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
-    }, 10000);
-*/
-
-/*
+    });
     test('Config find error', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -450,9 +428,6 @@ describe('Controllers - Device List', () => {
         .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-*/
-
-/*
     test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -523,7 +498,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 5000));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -535,9 +510,7 @@ describe('Controllers - Device List', () => {
         wifi2Ssid: {old: 'old-wifi-test', new: 'new-wifi-test'},
         wifi5Ssid: {old: 'old-wifi-test-5g', new: 'new-wifi-test-5g'},
       });
-    }, 10000);
-*/
-
+    });
     test('modify WAN and MTU with success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -606,7 +579,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 5000));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
@@ -618,9 +591,7 @@ describe('Controllers - Device List', () => {
         wan_vlan: {old: 1, new: 2},
         wan_mtu: {old: 1500, new: 1492},
       });
-    }, 10000);
-
-/*
+    });
     test('Enabled to modify fields', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -691,7 +662,6 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
-*/
     test('Not enough permissions fields', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
