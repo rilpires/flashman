@@ -22,9 +22,6 @@ const path = require('path');
 
 const t = require('../../controllers/language').i18next.t;
 
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
-
 
 // Test updates
 describe('Update Tests - Functions', () => {
@@ -473,7 +470,7 @@ describe('Update Tests - Functions', () => {
         deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1');
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -487,14 +484,14 @@ describe('Update Tests - Functions', () => {
           [
             deviceFields['wan']['mtu_ppp'],
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
-        ]
+        ],
       };
 
       // It is expected that the function will change only the fields of the
@@ -505,14 +502,14 @@ describe('Update Tests - Functions', () => {
           [
             expectedFieldName,
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
-        ]
+        ],
       };
 
       // Spies
@@ -520,6 +517,8 @@ describe('Update Tests - Functions', () => {
         .mockImplementation(() => true);
       jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
         .mockImplementation(() => expectedFieldName);
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{_id: id}]);
 
       // Execute function
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
@@ -537,19 +536,10 @@ describe('Update Tests - Functions', () => {
     'Validate replaceWanFieldsWildcards - No corresponding field for key',
     async () => {
       const id = models.defaultMockDevices[0]._id;
-      let device = models.copyDeviceFrom(
-        id,
-        {
-          _id: '94:25:33:3B:D1:C2',
-          acs_id: '00259E-EG8145V5-48575443A94196A5',
-          model: 'EG8145V5',
-          version: 'V5R020C00S280',
-        },
-      );
-      let deviceFields = { wan: {} }; // Empty fields
+      let deviceFields = {wan: {}}; // Empty fields
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -558,6 +548,9 @@ describe('Update Tests - Functions', () => {
       };
 
       let task = {}; // Empty task - It doesn't matter
+
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{_id: id}]);
 
       // Execute
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
@@ -588,7 +581,7 @@ describe('Update Tests - Functions', () => {
         .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -597,6 +590,9 @@ describe('Update Tests - Functions', () => {
       };
 
       let task = {}; // Empty task - It doesn't matter
+
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{_id: id}]);
 
       // Spies
       jest.spyOn(utilHandlers, 'checkForNestedKey')
@@ -632,7 +628,7 @@ describe('Update Tests - Functions', () => {
         .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -646,12 +642,12 @@ describe('Update Tests - Functions', () => {
           [
             deviceFields['wan']['mtu_ppp'].replace(/\*/g, '1'),
             changes.wan.mtu_ppp,
-            'xsd:unsignedInt'
+            'xsd:unsignedInt',
           ],
           [
             deviceFields['wifi2']['ssid'],
             changes.wifi2.ssid,
-            'xsd:string'
+            'xsd:string',
           ],
           [
             deviceFields['wifi2']['password'],
@@ -665,8 +661,11 @@ describe('Update Tests - Functions', () => {
       utils.common.mockConfigs({}, 'findOne');
 
       // Spies
-      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+      let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockReturnValue(undefined);
 
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => JSON.parse('[{"_id":"00259E-EG8145V5-48575443A94196A5","InternetGatewayDevice":{"WANDevice":{"1":{"WANConnectionDevice":{"1":{"WANIPConnection":{"1":{"ExternalIPAddress":{"_object":false,"_timestamp":"2023-02-17T21:20:59.085Z","_type":"xsd:string","_value":"0.0.0.0","_writable":true},"_object":true,"AddressingType":{"_object":false,"_writable":true},"AutoDisconnectTime":{"_object":false,"_writable":true},"ConnectionStatus":{"_object":false,"_writable":false},"ConnectionTrigger":{"_object":false,"_writable":true},"ConnectionType":{"_object":false,"_writable":true},"DHCPClient":{"_object":true,"_writable":false},"DNSEnabled":{"_object":false,"_writable":true},"DNSOverrideAllowed":{"_object":false,"_writable":true},"DNSServers":{"_object":false,"_writable":true},"DefaultGateway":{"_object":false,"_writable":true},"Enable":{"_object":false,"_writable":true},"IdleDisconnectTime":{"_object":false,"_writable":true},"LastConnectionError":{"_object":false,"_writable":false},"MACAddress":{"_object":false,"_timestamp":"2023-02-17T21:20:59.086Z","_type":"xsd:string","_value":"00:e0:4c:ea:e6:0f","_writable":true},"MACAddressOverride":{"_object":false,"_writable":true},"MaxMTUSize":{"_object":false,"_timestamp":"2023-02-17T21:20:59.086Z","_type":"xsd:unsignedInt","_value":0,"_writable":true},"NATEnabled":{"_object":false,"_writable":true},"Name":{"_object":false,"_writable":true},"PortMapping":{"_object":true,"_writable":true,"_timestamp":"2023-02-16T22:03:52.323Z"},"PortMappingNumberOfEntries":{"_object":false,"_timestamp":"2023-02-17T21:20:59.086Z","_type":"xsd:unsignedInt","_value":0,"_writable":false},"PossibleConnectionTypes":{"_object":false,"_writable":false},"RSIPAvailable":{"_object":false,"_writable":false},"Reset":{"_object":false,"_writable":true},"RouteProtocolRx":{"_object":false,"_writable":true},"ShapingBurstSize":{"_object":false,"_writable":true},"ShapingRate":{"_object":false,"_writable":true},"Stats":{"_object":true,"_writable":false},"SubnetMask":{"_object":false,"_writable":true},"Uptime":{"_object":false,"_timestamp":"2023-02-17T21:20:59.086Z","_type":"xsd:unsignedInt","_value":21103,"_writable":false},"WarnDisconnectDelay":{"_object":false,"_writable":true},"_timestamp":"2023-02-16T22:01:27.615Z","_writable":true},"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":true},"_object":true,"WANEthernetLinkConfig":{"_object":true,"_writable":false},"WANIPConnectionNumberOfEntries":{"_object":false,"_writable":false},"WANPPPConnection":{"1":{"AutoDisconnectTime":{"_object":false,"_writable":true},"ConnectionStatus":{"_object":false,"_writable":false},"ConnectionTrigger":{"_object":false,"_writable":true},"ConnectionType":{"_object":false,"_writable":true},"CurrentMRUSize":{"_object":false,"_writable":false},"DNSEnabled":{"_object":false,"_writable":true},"DNSOverrideAllowed":{"_object":false,"_writable":true},"DNSServers":{"_object":false,"_writable":true},"DefaultGateway":{"_object":false,"_writable":false},"Enable":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:boolean","_value":true,"_writable":true},"ExternalIPAddress":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:string","_value":"192.168.89.88","_writable":true},"IdleDisconnectTime":{"_object":false,"_writable":true},"LastConnectionError":{"_object":false,"_writable":false},"MACAddress":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:string","_value":"00:e0:4c:ea:e6:0f","_writable":false},"MACAddressOverride":{"_object":false,"_writable":true},"MaxMRUSize":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:unsignedInt","_value":1492,"_writable":true},"NATEnabled":{"_object":false,"_writable":true},"Name":{"_object":false,"_writable":true},"PPPAuthenticationProtocol":{"_object":false,"_writable":false},"PPPCompressionProtocol":{"_object":false,"_writable":false},"PPPEncryptionProtocol":{"_object":false,"_writable":false},"PPPLCPEcho":{"_object":false,"_writable":false},"PPPLCPEchoRetry":{"_object":false,"_writable":false},"PPPoEACName":{"_object":false,"_writable":true},"PPPoEServiceName":{"_object":false,"_writable":true},"PPPoESessionID":{"_object":false,"_writable":false},"Password":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:string","_value":"","_writable":true},"PortMapping":{"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":true},"PortMappingNumberOfEntries":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:unsignedInt","_value":0,"_writable":false},"PossibleConnectionTypes":{"_object":false,"_writable":false},"RSIPAvailable":{"_object":false,"_writable":false},"RemoteIPAddress":{"_object":false,"_writable":false},"Reset":{"_object":false,"_writable":true},"RouteProtocolRx":{"_object":false,"_writable":true},"ShapingBurstSize":{"_object":false,"_writable":false},"Stats":{"EthernetBroadcastPacketsReceived":{"_object":false,"_writable":false},"EthernetBroadcastPacketsSent":{"_object":false,"_writable":false},"EthernetBytesReceived":{"_object":false,"_writable":false},"EthernetBytesSent":{"_object":false,"_writable":false},"EthernetDiscardPacketsReceived":{"_object":false,"_writable":false},"EthernetDiscardPacketsSent":{"_object":false,"_writable":false},"EthernetErrorsReceived":{"_object":false,"_writable":false},"EthernetErrorsSent":{"_object":false,"_writable":false},"EthernetMulticastPacketsReceived":{"_object":false,"_writable":false},"EthernetMulticastPacketsSent":{"_object":false,"_writable":false},"EthernetPacketsReceived":{"_object":false,"_writable":false},"EthernetPacketsSent":{"_object":false,"_writable":false},"EthernetUnicastPacketsReceived":{"_object":false,"_writable":false},"EthernetUnicastPacketsSent":{"_object":false,"_writable":false},"EthernetUnknownProtoPacketsReceived":{"_object":false,"_writable":false},"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":false},"TransportType":{"_object":false,"_writable":false},"Uptime":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:unsignedInt","_value":28,"_writable":false},"Username":{"_object":false,"_timestamp":"2023-02-17T21:20:59.090Z","_type":"xsd:string","_value":"admin123","_writable":true},"WarnDisconnectDelay":{"_object":false,"_writable":true},"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":true},"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":true},"WANPPPConnectionNumberOfEntries":{"_object":false,"_writable":false},"_timestamp":"2023-02-16T22:01:27.615Z","_writable":true},"_object":true,"_timestamp":"2023-02-17T21:20:59.084Z","_writable":true}}}}}]'));
       // Execute
       await acsDeviceInfo.__testUpdateInfo(device, changes);
 
@@ -693,11 +692,9 @@ describe('Update Tests - Functions', () => {
           version: 'V5R020C00S280',
         },
       );
-      let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
-        .cpe.getModelFields();
 
       let changes = {
-        wan: { mtu_ppp: 1487 },
+        wan: {mtu_ppp: 1487},
         lan: {},
         wifi2: {ssid: 'Anlix-Teste'},
         wifi5: {},
@@ -714,6 +711,9 @@ describe('Update Tests - Functions', () => {
       jest.spyOn(utilHandlers, 'replaceNestedKeyWildcards')
         .mockImplementation(() => undefined);
       let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{_id: id}]);
 
       // Execute
       await acsDeviceInfo.__testUpdateInfo(device, changes);

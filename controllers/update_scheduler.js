@@ -13,6 +13,7 @@ const meshHandler = require('./handlers/mesh');
 const deviceHandlers = require('./handlers/devices');
 const util = require('./handlers/util');
 const t = require('./language').i18next.t;
+const Audit = require('./audit');
 const TasksAPI = require('./external-genieacs/tasks-api');
 
 const csvParse = require('csvtojson');
@@ -44,6 +45,9 @@ const weekDayStrToInt = function(day) {
   if (day === t('Saturday')) return 6;
   return -1;
 };
+
+const weekDayIntToTag = ['Sunday', 'Monday', 'Tuesday',
+  'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
 const weekDayCompare = function(foo, bar) {
   // Returns like C strcmp: 0 if equal, -1 if foo < bar, 1 if foo > bar
@@ -726,6 +730,18 @@ scheduleController.abortSchedule = async function(req, res) {
       null,
       {'device_update_schedule.rule.done_devices': {'$each': pushArray}},
     );
+
+    if (pushArray.length > 0) {
+      const macs = pushArray.map((d) => d.mac);
+      const projection = {user_tr069: 1, alt_uid_tr069: 1, serial_tr069: 1};
+      const cpes = await DeviceModel.find({_id: {$in: macs}}, projection);
+      Audit.cpes(req.user, cpes, 'trigger', {
+        'cmd': 'update_scheduler',
+        'aborted': true,
+        'total': cpes.length,
+      });
+    }
+
     rule.in_progress_devices.forEach(async (d) => {
       let device = await SchedulerCommon.getDevice(d.mac);
       await meshHandler.syncUpdateCancel(device, 4);
@@ -1190,6 +1206,8 @@ scheduleController.startSchedule = async function(req, res) {
     mesh_slaves: true,
     model: true,
     use_tr069: true,
+    serial_tr069: true, // necessary for FlashAudit.
+    alt_uid_tr069: true, // necessary for FlashAudit.
     version: true,
     wifi_is_5ghz_capable: true,
     acs_id: true,
@@ -1336,6 +1354,8 @@ scheduleController.startSchedule = async function(req, res) {
       let currentMeshVersion = {};
       let upgradeMeshVersion = {};
 
+      let totalCpes = 0;
+      const cpesIds = [];
       let macList = matchedDevices.map((device)=>{
         if (
           !device.use_tr069 &&
@@ -1362,11 +1382,15 @@ scheduleController.startSchedule = async function(req, res) {
         currentMeshVersion[device._id] = typeUpgrade.current;
         upgradeMeshVersion[device._id] = typeUpgrade.upgrade;
 
+        totalCpes++;
+        Audit.appendCpeIds(cpesIds, device);
+
         return device._id;
       });
 
       // Save scheduler configs to database
       let config = null;
+      let allowedTimeRanges;
       try {
         config = await SchedulerCommon.getConfig(false, false);
         config.device_update_schedule.is_active = true;
@@ -1394,7 +1418,7 @@ scheduleController.startSchedule = async function(req, res) {
                 {errorline: __line}),
             });
           }
-          config.device_update_schedule.allowed_time_ranges = valid.map((r)=>{
+          allowedTimeRanges = valid.map((r)=>{
             return {
               start_day: weekDayStrToInt(r.startWeekday),
               end_day: weekDayStrToInt(r.endWeekday),
@@ -1403,8 +1427,9 @@ scheduleController.startSchedule = async function(req, res) {
             };
           });
         } else {
-          config.device_update_schedule.allowed_time_ranges = [];
+          allowedTimeRanges = [];
         }
+        config.device_update_schedule.allowed_time_ranges = allowedTimeRanges;
         config.device_update_schedule.rule.release = release;
         config.device_update_schedule.rule.cpes_wont_return = cpesWontReturn;
 
@@ -1415,6 +1440,26 @@ scheduleController.startSchedule = async function(req, res) {
         }
 
         await config.save();
+
+        const audit = {
+          'cmd': 'update_scheduler',
+          'started': true,
+          'release': release,
+          'total': totalCpes,
+          'searchTerms': queryContents,
+        };
+        if (allowedTimeRanges.length > 0) {
+          audit['allowedTimeRanges'] = allowedTimeRanges.map((r) => ({
+            'start_day': Audit.toTranslate(weekDayIntToTag[r.start_day]),
+            'end_day': Audit.toTranslate(weekDayIntToTag[r.end_day]),
+            'start_time': r.start_time,
+            'end_time': r.end_time,
+          }));
+        }
+        if (cpesWontReturn) audit['cpesWontReturn'] = true;
+        if (useCsv) audit['useCsv'] = true;
+        if (useAllDevices) audit['allCpes'] = true;
+        Audit.cpes(req.user, cpesIds, 'trigger', audit);
       } catch (err) {
         console.log(err);
         return res.status(500).json({
