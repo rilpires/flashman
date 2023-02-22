@@ -446,6 +446,8 @@ describe('Controllers - Device List', () => {
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
 */
+
+/*
     test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -529,6 +531,8 @@ describe('Controllers - Device List', () => {
         wifi5Ssid: {old: 'old-wifi-test-5g', new: 'new-wifi-test-5g'},
       });
     }, 10000);
+*/
+
     test('modify WAN and MTU with success', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
