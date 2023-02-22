@@ -15,6 +15,9 @@ const UserModel = require('../../models/user');
 const utils = require('../utils');
 const testUtils = require('../common/utils');
 
+const audit = require('../../controllers/audit');
+jest.mock('../../controllers/audit', () => require('../fake_Audit'));
+
 describe('Controllers - Device List', () => {
   let connection;
 
@@ -97,6 +100,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeFindError', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('CPE not found', async () => {
       const deviceMock = [{
@@ -130,6 +134,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeNotFound', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Config find error', async () => {
       const deviceMock = [{
@@ -177,6 +182,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('configFindError', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Connection type should be pppoe or dhcp', async () => {
       const deviceMock = [{
@@ -226,6 +232,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('connectionTypeShouldBePppoeDhcp',
           {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Error sending mesh paramaters to CPE', async () => {
       const deviceMock = [{
@@ -295,6 +302,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('errorSendingMeshParamtersToCpe',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Ensure bssid collect error', async () => {
       const deviceMock = [{
@@ -370,6 +378,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].type).toBe('danger');
       expect(res.json.mock.lastCall[0].message)
         .toMatch('task error');
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     }, 10000);
     test('CPE save error', async () => {
       const deviceMock = [{
@@ -431,6 +440,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
@@ -507,6 +517,13 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
       expect(res.json.mock.lastCall[0].wifi_ssid_5ghz).toBe('new-wifi-test-5g');
+
+      expect(audit.cpe).toHaveBeenCalledTimes(1);
+      expect(audit.cpe.mock.lastCall[2]).toBe('edit');
+      expect(audit.cpe.mock.lastCall[3]).toEqual({
+        wifi2Ssid: {old: 'old-wifi-test', new: 'new-wifi-test'},
+        wifi5Ssid: {old: 'old-wifi-test-5g', new: 'new-wifi-test-5g'},
+      });
     });
     test('modify WAN and MTU with success', async () => {
       const deviceMock = [{
@@ -581,6 +598,13 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
       expect(res.json.mock.lastCall[0].wan_vlan_id).toBe(2);
+
+      expect(audit.cpe).toHaveBeenCalledTimes(1);
+      expect(audit.cpe.mock.lastCall[2]).toBe('edit');
+      expect(audit.cpe.mock.lastCall[3]).toEqual({
+        wan_vlan: {old: 1, new: 2},
+        wan_mtu: {old: 1500, new: 1492},
+      });
     });
     test('Enabled to modify fields', async () => {
       const deviceMock = [{
@@ -650,6 +674,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('enabledToModifyFields', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Not enough permissions fields', async () => {
       const deviceMock = [{
@@ -715,6 +740,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('notEnoughPermissionsForFields',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
 
     test('Trying modify WAN'+
@@ -787,6 +813,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('notEnoughPermissionsForFields',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Fields invalid check errors', async () => {
       const deviceMock = [{
@@ -852,6 +879,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('fieldsInvalidCheckErrors', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(2);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Field name invalid', async () => {
       const deviceMock = [{
@@ -990,8 +1018,10 @@ describe('Controllers - Device List', () => {
       {
         filter: ',,A,D,EEE,,,!,",,,<script>alert(1)</script>,/,/ou,',
       },
+
     );
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
+    expect(audit.cpe).toHaveBeenCalledTimes(0);
   });
 });
