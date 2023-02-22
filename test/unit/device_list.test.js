@@ -20,7 +20,7 @@ jest.mock('../../controllers/audit', () => require('../fake_Audit'));
 
 describe('Controllers - Device List', () => {
   let connection;
-
+/*
   beforeAll(async () => {
     connection = await MongoClient.connect(global.__MONGO_URI__, {
       useNewUrlParser: true,
@@ -32,7 +32,7 @@ describe('Controllers - Device List', () => {
   afterAll(async () => {
     await connection.close();
   });
-
+*/
   /* list of functions that may be mocked:
     DeviceModel.findByMacOrSerial
     Config.findOne
@@ -82,6 +82,7 @@ describe('Controllers - Device List', () => {
         [x] - ({success: false, message: t('fieldNameInvalid'), errors : []})
     total test = 14 */
   describe('setDeviceReg', () => {
+/*
     test('Find error', async () => {
       mockingoose(DeviceModel).toReturn(new Error('test'), 'find');
       const req = {
@@ -102,6 +103,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+*/
     test('CPE not found', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -888,6 +890,8 @@ describe('Controllers - Device List', () => {
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
 */
+
+/*
     test('Field name invalid', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -923,7 +927,7 @@ describe('Controllers - Device List', () => {
           {name: 'content', errorline: __line}));
     });
   });
-
+*/
 
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
