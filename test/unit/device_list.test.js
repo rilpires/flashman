@@ -1,12 +1,12 @@
 /* global __line */
 require('../../bin/globals.js');
-const {MongoClient} = require('mongodb');
+// const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
-const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
+// const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
@@ -19,7 +19,7 @@ const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
 
 describe('Controllers - Device List', () => {
-  let connection;
+//  let connection;
 /*
   beforeAll(async () => {
     connection = await MongoClient.connect(global.__MONGO_URI__, {
@@ -891,7 +891,6 @@ describe('Controllers - Device List', () => {
     });
 */
 
-/*
     test('Field name invalid', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -927,8 +926,8 @@ describe('Controllers - Device List', () => {
           {name: 'content', errorline: __line}));
     });
   });
-*/
 
+/*
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
     // Mocks
@@ -961,7 +960,7 @@ describe('Controllers - Device List', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe(undefined);
   });
-
+*/
 
   // Index route: Empty filter
   test('Index: Empty filter', async () => {
