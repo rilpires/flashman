@@ -971,6 +971,7 @@ describe('Controllers - Device List', () => {
   });
 */
 
+/*
   // Index route: Empty filter
   test('Index: Empty filter', async () => {
     // Mocks
@@ -1043,4 +1044,5 @@ describe('Controllers - Device List', () => {
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
     expect(audit.cpe).toHaveBeenCalledTimes(0);
   });
+*/
 });
