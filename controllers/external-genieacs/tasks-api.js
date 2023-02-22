@@ -23,6 +23,15 @@ if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
   instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
 }
 
+let mongoURI = 'mongodb://' + MONGOHOST + ':' + MONGOPORT;
+if (process.env.MONGODB_USE_HA === true ||
+    process.env.MONGODB_USE_HA === 'true'
+) {
+  // FLM_MONGODB_HA_LIST format 'mongodb,mongoha_mongodb2,mongoha_mongodb2'
+  mongoURI =
+    'mongodb://' + process.env.FLM_MONGODB_HA_LIST + '/?replicaSet=rs0';
+}
+
 let taskWatchlist = {};
 let lastTaskWatchlistClean = Date.now();
 
@@ -32,7 +41,7 @@ let genie = {}; // to be exported.
 // tasks collection when necessary.
 let genieDB;
 if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-  mongodb.MongoClient.connect('mongodb://' + MONGOHOST + ':' + MONGOPORT,
+  mongodb.MongoClient.connect(mongoURI,
     {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
     genieDB = client.db('genieacs');
     // Only watch faults if flashman instance is the first one dispatched

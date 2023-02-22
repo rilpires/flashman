@@ -26,6 +26,7 @@ let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
 const runMigrations = require('./migrations');
+const audit = require('./controllers/audit');
 const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
 const metricsMiddleware
   = require('./controllers/handlers/metrics/express_metrics');
@@ -47,10 +48,20 @@ if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
 const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
   'flashman' :
   process.env.FLM_DATABASE_NAME;
+
+let mongoURI = 'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName;
+if (process.env.MONGODB_USE_HA === true ||
+    process.env.MONGODB_USE_HA === 'true'
+) {
+  // FLM_MONGODB_HA_LIST format 'mongodb,mongoha_mongodb2,mongoha_mongodb3'
+  mongoURI = 'mongodb://' + process.env.FLM_MONGODB_HA_LIST +
+             '/' + databaseName + '?replicaSet=rs0';
+}
+
 const metricsPath = process.env.FLM_PROM_METRICS_PATH || '/metrics';
 
 mongoose.connect(
-  'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName,
+  mongoURI,
   {useNewUrlParser: true,
    serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
    useUnifiedTopology: true,
@@ -93,6 +104,8 @@ if (process.env.FLM_COMPANY_SECRET) {
   }
   app.locals.secret = companySecret.secret;
 }
+// setting FlashAudit node client connection password.
+audit.init(app.locals.secret);
 
 // run db migrations
 runMigrations(app);

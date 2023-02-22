@@ -5,6 +5,7 @@
 
 if [ "$FLM_DOCKER_WAIT_GENIE" == "true" ]; then
   ./wait-for-it.sh ${FLM_NBI_ADDR}:7557 -t 0
+  ./wait-for-it.sh ${FLM_REDIS_HOST}:6379 -t 0
 fi
 
 if [ "$FLM_DOCKER_USE_CRON_BACKUP" == "true" ]; then

@@ -8,6 +8,7 @@ const Notification = require('../models/notification');
 const controlApi = require('./external-api/control');
 const {Parser} = require('json2csv');
 const t = require('./language').i18next.t;
+const Audit = require('./audit');
 
 let userController = {};
 
@@ -103,7 +104,7 @@ userController.postUser = function(req, res) {
     role: req.body.role,
     is_superuser: false,
   });
-  user.save(function(err) {
+  user.save(function(err, savedUser) {
     if (err) {
       console.log('Error creating user: ' + err);
       return res.json({
@@ -112,6 +113,11 @@ userController.postUser = function(req, res) {
         message: t('userMightAlreadyExist', {errorline: __line}),
       });
     }
+    Audit.user(req.user, savedUser, 'create', {
+      'name': savedUser.name,
+      'password': '******',
+      'role': req.body.role,
+    });
     return res.json({
       success: true,
       type: 'success',
@@ -120,7 +126,35 @@ userController.postUser = function(req, res) {
   });
 };
 
-userController.postRole = function(req, res) {
+// a map of tags for each numeric level of each permission field in Role model.
+const tagsForNumericPermissions = {
+  grantWifiInfo: ['!view', 'view', 'view&edit'],
+  grantPPPoEInfo: ['!view', 'view', 'view&edit'],
+  grantCertificationAccess: ['!view', 'view', 'view&edit'],
+  grantLanDevices: ['!view', 'view', 'view&actions'],
+  grantMeasureDevices: ['!view', 'view', 'view&actions'],
+  grantVlan: ['!view', 'view', 'view&edit'],
+  grantSearchLevel: ['!search&view', 'simpleSearch', 'complexSearch'],
+  grantWanAdvancedInfo: ['!view', 'view', 'view&edit'],
+};
+
+// For a given pair of permission field and value, returns a string tag
+// representing that permission, so it can be translated somewhere in Anlix
+// products. If permission field or value is unrecognized, it returns the value.
+const tagFromPermission = function(fieldname, value) {
+  const permission = tagsForNumericPermissions[fieldname];
+  if (permission) {
+    const tag = permission[value];
+    if (tag) return tag;
+  }
+  return value;
+};
+
+// Reads role parameters from request and returns an object which will contain
+// a 'success' attribute that, when true, will also contain the Role set by the
+// parameters in the request, but when 'success' is false, that object is
+// already the error response.
+const setRolePermissions = function(req, role) {
   let basicFirmwareUpgrade = false;
   let massFirmwareUpgrade = false;
   if (req.body['grant-firmware-upgrade'] == 2) {
@@ -137,7 +171,7 @@ userController.postRole = function(req, res) {
   } else if (req.body['grant-device-removal'] == 1) {
     basicDeviceRemoval = true;
   }
-  let role = new Role({
+  const roleParams = {
     name: req.body.name,
     grantWifiInfo: parseInt(req.body['grant-wifi-info']),
     grantPPPoEInfo: parseInt(req.body['grant-pppoe-info']),
@@ -179,24 +213,71 @@ userController.postRole = function(req, res) {
     grantFirmwareRestrictedUpgrade:
       req.body['grant-firmware-restricted-upgrade'],
     grantWanAdvancedInfo: req.body['grant-wan-advanced-info'],
-  });
+  };
+
+  let audit = {};
+  if (!role) {
+    role = new Role(roleParams);
+    /* eslint-disable guard-for-in */
+    for (let k in roleParams) {
+      // name will be used as identification instead of an attribute.
+      if (k === 'name') continue;
+      const v = role[k];
+      // role creation will only have audit fields for active permissions.
+      // fortunately, numeric permissions are always inactive when they are 0.
+      // inactive permission will show up when they are edited to active or
+      // back to inactive. Which means they will only not show in audit when
+      // role is being created.
+      if (v) {
+        audit[k] = v.constructor === Number ?
+          Audit.toTranslate(tagFromPermission(k, v)) : v;
+      }
+    }
+  } else {
+    /* eslint-disable guard-for-in */
+    for (let k in roleParams) {
+      // name will be used as identification instead of an attribute.
+      if (k === 'name') continue; // name cannot change.
+      const oldValue = role[k];
+      role[k] = roleParams[k]; // updating role attributes.
+      const newValue = role[k];
+
+      if (oldValue !== newValue) { // if it has changed.
+        audit[k] = newValue.constructor === Number ? {
+          old: Audit.toTranslate(tagFromPermission(k, oldValue)),
+          new: Audit.toTranslate(tagFromPermission(k, newValue)),
+        } : {
+          old: oldValue,
+          new: newValue,
+        };
+      }
+    }
+  }
 
   if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
-    return res.json({
+    return {
       success: false,
       type: 'danger',
       message: t('firmwareUpdateControllConflict', {errorline: __line}),
-    });
+    };
   } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
     console.log('Role conflict error');
-    return res.json({
+    return {
       success: false,
       type: 'danger',
       message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
-    });
+    };
   }
 
+  return {success: true, role, audit};
+};
+
+userController.postRole = function(req, res) {
+  const ret = setRolePermissions(req);
+  if (!ret.success) return res.json(ret);
+
+  const role = ret.role;
   role.save(function(err) {
     if (err) {
       console.log('Error creating role: ' + err);
@@ -206,6 +287,7 @@ userController.postRole = function(req, res) {
         message: t('roleMightAlreadyExist', {errorline: __line}),
       });
     }
+    Audit.role(req.user, role, 'create', ret.audit);
     return res.json({
       success: true,
       type: 'success',
@@ -263,13 +345,19 @@ userController.editUser = function(req, res) {
       });
     }
 
+    const audit = {};
+
     if ('name' in req.body) {
+      if (user.name !== req.body.name) {
+        audit['name'] = {old: user.name, new: req.body.name};
+      }
       user.name = req.body.name;
     }
     if ('password' in req.body && 'passwordack' in req.body) {
       if (req.body.password == req.body.passwordack) {
         // Test if password is not empty nor contains only whitespaces
         if (/\S/.test(req.body.password)) {
+          audit['password'] = {old: '******', new: '******'};
           user.password = req.body.password;
         }
       } else {
@@ -292,12 +380,21 @@ userController.editUser = function(req, res) {
 
       if (req.user.is_superuser) {
         if ('is_superuser' in req.body) {
+          if (user.is_superuser !== req.body.is_superuser) {
+            audit['is_superuser'] = {
+              old: user.is_superuser,
+              new: req.body.is_superuser,
+            };
+          }
           user.is_superuser = req.body.is_superuser;
         }
       }
 
       if (req.user.is_superuser || role.grantUserManage) {
         if ('role' in req.body) {
+          if (user.role !== req.body.role) {
+            audit['role'] = {old: user.role, new: req.body.role};
+          }
           user.role = req.body.role;
         }
       }
@@ -315,6 +412,7 @@ userController.editUser = function(req, res) {
               message: t('saveError', {errorline: __line}),
             });
           } else {
+            Audit.user(req.user, user, 'edit', audit);
             return res.json({
               success: true,
               type: 'success',
@@ -343,78 +441,9 @@ userController.editRole = function(req, res) {
         message: t('roleFindError', {errorline: __line}),
       });
     }
-    let basicFirmwareUpgrade = false;
-    let massFirmwareUpgrade = false;
-    if (req.body['grant-firmware-upgrade'] == 2) {
-      basicFirmwareUpgrade = true;
-      massFirmwareUpgrade = true;
-    } else if (req.body['grant-firmware-upgrade'] == 1) {
-      basicFirmwareUpgrade = true;
-    }
-    let basicDeviceRemoval = false;
-    let massDeviceRemoval = false;
-    if (req.body['grant-device-removal'] == 2) {
-      basicDeviceRemoval = true;
-      massDeviceRemoval = true;
-    } else if (req.body['grant-device-removal'] == 1) {
-      basicDeviceRemoval = true;
-    }
-    role.grantWifiInfo = parseInt(req.body['grant-wifi-info']);
-    role.grantPPPoEInfo = parseInt(req.body['grant-pppoe-info']);
-    role.grantPassShow = req.body['grant-pass-show'];
-    role.grantFirmwareUpgrade = basicFirmwareUpgrade;
-    role.grantMassFirmwareUpgrade = massFirmwareUpgrade;
-    role.grantWanType = req.body['grant-wan-type'];
-    role.grantDeviceId = req.body['grant-device-id'];
-    role.grantDeviceActions = req.body['grant-device-actions'];
-    role.grantFactoryReset = req.body['grant-factory-reset'];
-    role.grantDeviceRemoval = basicDeviceRemoval;
-    role.grantDeviceMassRemoval = massDeviceRemoval;
-    role.grantDeviceLicenseBlock = req.body['grant-block-license-at-removal'];
-    role.grantDeviceAdd = req.body['grant-device-add'];
-    role.grantMonitorManage = req.body['grant-monitor-manage'];
-    role.grantFirmwareManage = req.body['grant-firmware-manage'];
-    role.grantUserManage = req.body['grant-user-manage'];
-    role.grantFlashmanManage = req.body['grant-flashman-manage'];
-    role.grantAPIAccess = req.body['grant-api-access'];
-    role.grantDiagAppAccess = req.body['grant-diag-app-access'];
-    role.grantCertificationAccess = req.body['grant-certification-access'];
-    role.grantLOGAccess = req.body['grant-log-access'];
-    role.grantNotificationPopups = req.body['grant-notification-popups'];
-    role.grantLanEdit = req.body['grant-lan-edit'];
-    role.grantOpmodeEdit = req.body['grant-opmode-edit'];
-    role.grantSlaveDisassociate = req.body['grant-slave-disassociate'];
-    role.grantLanDevices = parseInt(req.body['grant-lan-devices']);
-    role.grantLanDevicesBlock = req.body['grant-lan-devices-block'];
-    role.grantSiteSurvey = req.body['grant-site-survey'];
-    role.grantMeasureDevices = parseInt(req.body['grant-measure-devices']);
-    role.grantCsvExport = req.body['grant-csv-export'];
-    role.grantVlan = req.body['grant-vlan'];
-    role.grantVlanProfileEdit = req.body['grant-vlan-profile-edit'];
-    role.grantStatisticsView = req.body['grant-statistics'];
-    role.grantSearchLevel = parseInt(req.body['grant-search-level']);
-    role.grantShowSearchSummary = req.body['grant-search-summary'];
-    role.grantShowRowsPerPage = req.body['grant-rows-per-page'];
-    role.grantFirmwareBetaUpgrade = req.body['grant-firmware-beta-upgrade'];
-    role.grantFirmwareRestrictedUpgrade =
-      req.body['grant-firmware-restricted-upgrade'];
-    role.grantWanAdvancedInfo = req.body['grant-wan-advanced-info'];
 
-    if (role.grantFirmwareRestrictedUpgrade && !role.grantFirmwareUpgrade) {
-      console.log('Role conflict error');
-      return res.json({
-        success: false,
-        type: 'danger',
-        message: t('firmwareUpdateControllConflict', {errorline: __line}),
-      });
-    } else if (role.grantFirmwareBetaUpgrade && !role.grantFirmwareUpgrade) {
-      console.log('Role conflict error');
-      return res.json({
-        success: false,
-        type: 'danger',
-        message: t('firmwareBetaUpdateControllConflict', {errorline: __line}),
-      });
-    }
+    const ret = setRolePermissions(req, role);
+    if (!ret.success) return res.json(ret);
 
     role.save(function(err) {
       if (err) {
@@ -425,6 +454,7 @@ userController.editRole = function(req, res) {
           message: t('roleSaveError', {errorline: __line}),
         });
       }
+      Audit.role(req.user, role, 'edit', ret.audit);
       return res.json({
         success: true,
         type: 'success',
@@ -495,6 +525,7 @@ userController.deleteUser = function(req, res) {
         message: t('userDeleteErrorContactDev', {errorline: __line}),
       });
     }
+    Audit.users(req.user, users, 'delete');
     users.forEach((user) => {
       user.remove();
     });
@@ -521,6 +552,7 @@ userController.deleteRole = function(req, res) {
         roles.forEach((role) => {
           role.remove();
         });
+        Audit.roles(req.user, roles, 'delete');
         return res.json({
           success: true,
           type: 'success',
