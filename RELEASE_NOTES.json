@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.63.2",
+	"latest_version": "2.64.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,21 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.64.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Mercusys MR30G por TR-069"
+		],
+		"fixes": [
+			"Consertamos um bug onde o Flashman poderia alterar configurações de múltiplas WANs quando uma CPE TR-069 possuir multiplas WANs"
+		],
+		"improvements": [
+			"Melhoramos o processo de instalação Mesh quando uma CPE principal TR-069 possuir problemas de comunicação com o Flashman"
+		],
+		"features": [
+			"Adicionamos suporte a ferramenta de auditoria FlashAudit."
+		]
 	},
 	"2.63.2": {
 		"custom_firmware_compatibilities": [],
