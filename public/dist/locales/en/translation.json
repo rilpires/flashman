@@ -169,6 +169,7 @@
 	"updatingCpes": "Updating CPEs",
 	"updatedSuccessfully": "Successfully updated",
 	"errorDuringUpdate": "There was an error updating",
+	"timeoutUpdate": "Update timed out",
 	"errorDuringTopologyValidation": "An error occurred while validating the topology",
 	"errorDuringTopologyCollect": "An error occurred while collecting the topology",
 	"updateStartFailedMeshNetwork": "Failed to start mesh network update",
@@ -293,6 +294,7 @@
 	"valueInvalid": "Invalid value",
 	"commandNotFound": "This command does not exist ({{errorline}})",
 	"incompatibleRulesError": "Has non-compliant rule",
+	"deviceHaveWrongPortMappingError": "This CPE has port opening rules incompatible with Flashman, which were registered directly in the CPE's web interface. To manage the rules by Flashman, remove the rules in the CPE interface, remove the CPE from flashman, wait for the CPE to re-register and recreate them using Flashman itself.",
 	"jsonError": "Error handling JSON ({{errorline}})",
 	"jsonInvalidFormat": "JSON out of format ({{errorline}})",
 	"cpeNotFound": "CPE not found ({{errorline}})",
@@ -1073,5 +1075,8 @@
 	"caution": "Caution!",
 	"noReturnToFlashmanUpgrade": "The option that CPEs won't return to Flashman was checked. This option will make Flashman not wait for the CPE to come back online to trigger the next update, which can generate CPU load if the equipment actually comes back online in Flashman.</br></br>Are you sure the devices won't come back online when doing this firmware upgrade?",
 	"yesSure": "Yes, I'm sure",
-	"noBack": "No, return"
+	"noBack": "No, return",
+	"updateTimeLimit": "Time limit for updating 1 CPE: {{peiod}} minutes",
+	"updateTimeLimitInputText": "Time limit for updating 1 CPE, in minutes (Default: {{default}} minutes)",
+	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes."
 }

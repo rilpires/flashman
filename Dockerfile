@@ -61,6 +61,7 @@ ENV production=true \
     FLM_ALLOW_DEV_UPDATE_REST_DATA=false \
     FLM_MONGODB_HOST="localhost" \
     FLM_MONGODB_PORT=27017 \
+    FLM_MONGODB_HA_LIST="" \
     FLM_ADM_USER="admin" \
     FLM_ADM_PASS="flashman" \
     FLM_CONCURRENT_UPDATES_LIMIT=5 \
@@ -75,7 +76,8 @@ ENV production=true \
     AIX_PROVIDER="provider" \
     AIX_B2_BUCKET="" \
     AIX_B2_ACCOUNT="" \
-    AIX_B2_SECRET=""
+    AIX_B2_SECRET="" \
+    MONGODB_USE_HA=false
 
 EXPOSE 8000
 EXPOSE 1883
