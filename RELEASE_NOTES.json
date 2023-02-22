@@ -17,7 +17,7 @@
 			"Consertamos um bug onde o Flashman poderia alterar configurações de múltiplas WANs quando uma CPE TR-069 possuir multiplas WANs"
 		],
 		"improvements": [
-			"Melhoramos o processo de instalação Mesh quando uma CPE principal TR-069 possuir problemas de comunicação com o Fleshman"
+			"Melhoramos o processo de instalação Mesh quando uma CPE principal TR-069 possuir problemas de comunicação com o Flashman"
 		],
 		"features": [
 			"Adicionamos suporte a ferramenta de auditoria FlashAudit."
