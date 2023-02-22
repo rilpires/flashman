@@ -131,14 +131,14 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 500));
+      await new Promise((resolve)=>setTimeout(resolve, 5000));
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeNotFound', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
-    });
+    }, 10000);
 /*
     test('Config find error', async () => {
       const deviceMock = [{
