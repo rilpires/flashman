@@ -2237,7 +2237,7 @@ acsDeviceInfoController.updateInfo = async function(
   // If there are changes in the WAN fields, we have to replace the fields that
   // have wildcards with the correct indexes. Only the fields referring to the
   // WAN are changed
-  if (changes.wan && changes.wan !== {}) {
+  if (changes.wan && Object.keys(changes.wan).length > 0) {
     try {
       let ret = await replaceWanFieldsWildcards(
         acsID, wildcardFlag, fields, changes, task,
