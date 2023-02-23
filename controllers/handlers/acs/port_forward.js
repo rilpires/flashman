@@ -395,7 +395,10 @@ acsPortForwardHandler.changePortForwardRules = async function(
   // connection while running the task
   let needsToQueueTasks = cpe.modelPermissions().wan.portForwardQueueTasks;
   let currentLength = device.port_mapping.length;
-  /*  */
+  /* Before even add rules, clean the port mapping branch to proper index
+    counting. That is done in the scenario were the CPE already had rules
+    and the user want to manage port forward in flashman and is aware that
+    all current rules will be deleted */
   if (deleteAllRules) {
     try {
       changeEntriesSizeTask.name = 'deleteObject';
