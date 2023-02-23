@@ -335,7 +335,7 @@ acsPortForwardHandler.getIPInterface = async function(
 };
 
 acsPortForwardHandler.changePortForwardRules = async function(
-  device, rulesDiffLength, interfaceValue = null,
+  device, rulesDiffLength, interfaceValue = null, deleteAllRules = false,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -362,7 +362,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     return;
   }
   let fields = cpe.getModelFields();
-  let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
+  let changeEntriesSizeTask = {name: '', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
@@ -390,12 +390,31 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> DC in '+acsID);
     return;
   }
-  let currentLength = device.port_mapping.length;
   // The flag needsToQueueTasks marks the models that need to queue the tasks of
   // addObject and deleteObject - this happens because they reboot or lose
   // connection while running the task
   let needsToQueueTasks = cpe.modelPermissions().wan.portForwardQueueTasks;
-  if (rulesDiffLength < 0) {
+  let currentLength = device.port_mapping.length;
+  /*  */
+  if (deleteAllRules) {
+    try {
+      changeEntriesSizeTask.name = 'deleteObject';
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.*';
+      let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
+      let requestConn = (!needsToQueueTasks) || noRuleToAdd;
+      ret = await TasksAPI.addTask(
+        acsID, changeEntriesSizeTask, null, 0, requestConn,
+      );
+      // Need to check for executed flag if we sent requestConn flag to true
+      if (!ret || !ret.success || (requestConn && !ret.executed)) {
+        return;
+      }
+    } catch (e) {
+      console.log('[!] -> '+e.message+' in '+acsID);
+    }
+    console.log('[#] -> D(*) in '+acsID);
+  }
+  if (rulesDiffLength < 0 && !deleteAllRules) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
     for (i = 0; i < rulesDiffLength; i++) {
@@ -423,6 +442,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
   } else if (rulesDiffLength > 0) {
+    changeEntriesSizeTask.name = 'addObject';
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
