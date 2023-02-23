@@ -3315,23 +3315,12 @@ deviceListController.setPortForwardTr069 = async function(
   }
 
   // verify well formation of rules object
-  if (Array.isArray(rules)) {
-    isJsonInFormat = rules.every((r) => {
-      return !!r.ip &&
-       !!r.external_port_start &&
-       !!r.external_port_end &&
-       !!r.internal_port_start &&
-       !!r.internal_port_end;
-    });
-  } else {
-    isJsonInFormat = false;
-  }
-  if (!isJsonInFormat) {
+  let validator = new Validator();
+  if (!validator.checkPortMappingObj(rules)) {
     ret.success = false;
     ret.message = t('jsonInvalidFormat', {errorline: __line});
     return ret;
   }
-  let validator = new Validator();
   let validity = validator.checkPortMappingValidity(rules,
     device.lan_subnet, device.lan_netmask);
   if (!validity.success) return validity;

@@ -403,6 +403,22 @@
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    Validator.prototype.checkPortMappingObj = function(rules) {
+      let isJsonInFormat = false;
+      if (Array.isArray(rules)) {
+        let keys = ['ip', 'external_port_start', 'external_port_end',
+          'internal_port_start', 'internal_port_end'];
+        rules.every((r) => {
+          let boolCheck = true;
+          keys.forEach((k) => {
+            boolCheck = boolCheck && Object.keys(r).contains(k);
+          });
+          return boolCheck;
+        });
+      }
+      return isJsonInFormat;
+    };
+
     /* Function to verify if the set of port mapping values is allowed
       in terms of: ip address, emptyness, numberness, rangeness,
       oddness, range equality */
