@@ -3242,10 +3242,6 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
-<<<<<<< HEAD
-deviceListController.setPortForwardTr069 = async function(device, content) {
-=======
-
 // receives an array of tr069 validated 'port_mapping' rules and returns an
 // Object where each key is an IP and value is an Object with an attribute
 // called 'ports' that is an array with all badges values representing opened
@@ -3300,9 +3296,6 @@ deviceListController.mapFirmwarePortRulesForDevices = function(devicesArray) {
 deviceListController.setPortForwardTr069 = async function(
   device, content, user,
 ) {
-  let i;
-  let j;
->>>>>>> development
   let rules;
   let isJsonInFormat;
   let diffPortForwardLength;
