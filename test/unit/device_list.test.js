@@ -903,6 +903,20 @@ describe('Controllers - Device List', () => {
           {name: 'content', errorline: __line}));
     });
   });
+  /* input:
+      device
+      content
+      user
+    output:
+      'success-message object':
+        success(2) - true, false
+        message(10) - t('operationSuccessful'), t('outOfSubnetRangeError'),
+          t('fieldShouldBeFilledError'), t('portsSouldBeNumberError'),
+          t('portsSouldBeBetweenError'), t('portRangesAreDifferentError'),
+          t('portRangesInvertedLimitsError'), t('overlappingMappingError'),
+          t('incompatibleRulesError')
+    total tests = x */
+  describe('setPortForwardTr069 function(device, content, user)', () => {});
 
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {

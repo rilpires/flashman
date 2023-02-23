@@ -10,9 +10,14 @@ describe('Controllers - Handlers - Port Forward', () => {
     TasksAPI.addTask
     DeviceModel.findOne
   */
-  describe('', () => {
-    test('', async () => {
-      expect(true).toBe(true);
-    });
-  });
+  /* input:
+      device
+      rulesDiffLength
+      interfaceValue
+      deleteAllRules
+    output:
+      null (check TasksAPI.addTask)
+    total tests = x */
+  describe('changePortForwardRules function(device, rulesDiffLength'+
+    ', interfaceValue, deleteAllRules)', () => {});
 });
