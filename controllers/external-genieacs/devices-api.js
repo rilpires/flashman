@@ -149,7 +149,7 @@ const getTR069UpgradeableModels = async function() {
 
 
   // Loop all devices in flashman and append their installed firmwares
-  if (allDevices) {
+  if (allDevices && allDevices.constructor === Array) {
     allDevices.forEach((device) => {
       let cpeInstance = instantiateCPEByModelFromDevice(device);
       let cpe = cpeInstance.cpe;
