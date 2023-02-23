@@ -59,6 +59,7 @@ const tr069Models = {
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  multilaserRE708Model: require('./cpe-models/multilaser-re708'),
   nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
@@ -261,6 +262,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
     result = {success: true, cpe: tr069Models.multilaserH199Model};
+  } else if (modelName === 'RE1200R4GC-2T2R-V3') {
+    // Multilaser ZTE RE708
+    result = {success: true, cpe: tr069Models.multilaserRE708Model};
   } else if (modelName === 'NXT-425AC') {
     // Next Fiber NXT-425
     result = {success: true, cpe: tr069Models.nextFiberNXT425Model};
