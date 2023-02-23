@@ -8,6 +8,16 @@
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
 	},
+	"2.64.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug inserido no versão 2.64.0 que impedia a sincronização de alguns dados com CPEs TR-069",
+			"Consertamos um bug que impedia a detecção de configurações PPPoE para o modelo Mercusys MR30G"
+		],
+		"improvements": [],
+		"features": []
+	},
 	"2.64.0": {
 		"custom_firmware_compatibilities": [],
 		"tr069_compatibilities": [
