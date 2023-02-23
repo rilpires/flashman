@@ -28,6 +28,7 @@ const {Parser} = require('json2csv');
 const crypto = require('crypto');
 const path = require('path');
 const t = require('./language').i18next.t;
+const Audit = require('./audit');
 
 let deviceListController = {};
 
@@ -159,7 +160,7 @@ const getOnlineCountMesh = function(query, lastHour) {
 };
 
 deviceListController.sendCustomPing = async function(
-  device, reqBody, username, sessionID,
+  device, reqBody, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -198,7 +199,7 @@ deviceListController.sendCustomPing = async function(
     started_at: now,
     last_modified_at: now,
     targets: approvedTempHosts,
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
@@ -217,11 +218,11 @@ deviceListController.sendCustomPing = async function(
     }
   }
 
-  return await initiatePingCommand(device, username, sessionID);
+  return await initiatePingCommand(device, user, sessionID);
 };
 
 deviceListController.sendGenericPing = async function(
-  device, username, sessionID,
+  device, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -243,17 +244,17 @@ deviceListController.sendGenericPing = async function(
     started_at: now,
     last_modified_at: now,
     targets: device.ping_hosts.map((item) => item),
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
 
-  return await initiatePingCommand(device, username, sessionID);
+  return await initiatePingCommand(device, user, sessionID);
 };
 
 deviceListController.sendCustomSpeedTest = async function(
-  device, reqBody, username, sessionID,
+  device, reqBody, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -305,7 +306,7 @@ deviceListController.sendCustomSpeedTest = async function(
     started_at: now,
     last_modified_at: now,
     targets: [reqBody.content.url],
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
@@ -324,11 +325,11 @@ deviceListController.sendCustomSpeedTest = async function(
     }
   }
 
-  return await initiateSpeedTest(device, username, sessionID);
+  return await initiateSpeedTest(device, user, sessionID);
 };
 
 deviceListController.sendGenericSpeedTest = async function(
-  device, username, sessionID,
+  device, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -363,16 +364,16 @@ deviceListController.sendGenericSpeedTest = async function(
     started_at: now,
     last_modified_at: now,
     targets: [firmwareUrl],
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
-  return await initiateSpeedTest(device, username, sessionID);
+  return await initiateSpeedTest(device, user, sessionID);
 };
 
 deviceListController.sendCustomTraceRoute = async function(
-  device, reqBody, username, sessionID,
+  device, reqBody, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -413,7 +414,7 @@ deviceListController.sendCustomTraceRoute = async function(
     started_at: now,
     last_modified_at: now,
     targets: approvedTempHosts,
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
@@ -433,11 +434,11 @@ deviceListController.sendCustomTraceRoute = async function(
     }
   }
 
-  return await initiateTracerouteTest(device, username, sessionID);
+  return await initiateTracerouteTest(device, user, sessionID);
 };
 
 deviceListController.sendGenericTraceRoute = async function(
-  device, username, sessionID,
+  device, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -453,17 +454,17 @@ deviceListController.sendGenericTraceRoute = async function(
     started_at: now,
     last_modified_at: now,
     targets: device.ping_hosts.map((e)=>e),
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
 
-  return await initiateTracerouteTest(device, username, sessionID);
+  return await initiateTracerouteTest(device, user, sessionID);
 };
 
 deviceListController.sendGenericSiteSurvey = async function(
-  device, username, sessionID,
+  device, user, sessionID,
 ) {
   let err = checkNewDiagnosticAvailability(device);
   if (err) {
@@ -478,18 +479,18 @@ deviceListController.sendGenericSiteSurvey = async function(
     in_progress: true,
     started_at: now,
     last_modified_at: now,
-    user: username,
+    user: user.name,
     webhook_url: '',
     webhook_user: '',
     webhook_secret: '',
   };
 
-  return await initiateSiteSurvey(device, username, sessionID);
+  return await initiateSiteSurvey(device, user, sessionID);
 };
 
 // This should be called right after sendCustomPingTest or sendGenericPingTest
 // Common validations and device.save goes here
-const initiatePingCommand = async function(device, username, sessionID) {
+const initiatePingCommand = async function(device, user, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantPingTest) {
     return {
@@ -511,17 +512,20 @@ const initiatePingCommand = async function(device, username, sessionID) {
   }
 
   metricsApi.newDiagnosticState('ping', 'requested');
+  let result;
   if (device.use_tr069) {
-    return await acsDiagnosticsHandler.firePingDiagnose(device);
+    result = await acsDiagnosticsHandler.firePingDiagnose(device);
   } else {
     mqtt.anlixMessageRouterPingTest(device._id.toUpperCase());
-    return {success: true};
+    result = {success: true};
   }
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'ping'});
+  return result;
 };
 
 // This should be called right after sendCustomSpeedTest or sendGenericSpeedTest
 // Common validations and device.save goes here
-const initiateSpeedTest = async function(device, username, sessionID) {
+const initiateSpeedTest = async function(device, user, sessionID) {
   let mac = device._id;
   if (!device.use_tr069) {
     const isDevOn = Object.values(mqtt.unifiedClientsMap).some((map)=>{
@@ -553,10 +557,10 @@ const initiateSpeedTest = async function(device, username, sessionID) {
     };
   });
 
+  let result;
   if (device.use_tr069) {
-    let fireResult = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
+    result = await acsDiagnosticsHandler.fireSpeedDiagnose(device);
     metricsApi.newDiagnosticState('speedtest', 'requested');
-    return fireResult;
   } else {
     if (device.current_diagnostic.customized) {
       if (!permissions.grantCustomSpeedTest) {
@@ -565,20 +569,22 @@ const initiateSpeedTest = async function(device, username, sessionID) {
           message: t('cpeWithoutCommand'),
         };
       } else {
-        mqtt.anlixMessageRouterSpeedTestRaw(mac, username);
+        mqtt.anlixMessageRouterSpeedTestRaw(mac, user.name);
       }
     } else {
       mqtt.anlixMessageRouterSpeedTest(mac,
-        device.current_diagnostic.targets[0], username);
+        device.current_diagnostic.targets[0], user.name);
     }
     metricsApi.newDiagnosticState('speedtest', 'requested');
-    return {success: true};
+    result = {success: true};
   }
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'speedtest'});
+  return result;
 };
 
 // This should be called right after sendGenericSiteSurvey
 // Common validations and device.save goes here
-const initiateSiteSurvey = async function(device, username, sessionID) {
+const initiateSiteSurvey = async function(device, user, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantSiteSurvey) {
     return {
@@ -611,17 +617,20 @@ const initiateSiteSurvey = async function(device, username, sessionID) {
   }
 
   metricsApi.newDiagnosticState('sitesurvey', 'requested');
+  let result;
   if (device.use_tr069) {
-    return await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
+    result = await acsDiagnosticsHandler.fireSiteSurveyDiagnose(device);
   } else {
     mqtt.anlixMessageRouterSiteSurvey(device._id.toUpperCase());
-    return {success: true};
+    result = {success: true};
   }
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'sitesurvey'});
+  return result;
 };
 
 // This should be called right after sendCustomTraceRoute
 // or sendGenericTraceRoute. Common validations and device.save goes here
-const initiateTracerouteTest = async function(device, username, sessionID) {
+const initiateTracerouteTest = async function(device, user, sessionID) {
   let permissions = DeviceVersion.devicePermissions(device);
   if (!permissions.grantTraceroute) {
     return {
@@ -647,8 +656,9 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
 
   // Start Traceroute
   metricsApi.newDiagnosticState('traceroute', 'requested');
+  let result;
   if (device.use_tr069) {
-    return await acsDiagnosticsHandler.fireTraceDiagnose(device);
+    result = await acsDiagnosticsHandler.fireTraceDiagnose(device);
   } else {
     mqtt.anlixMessageRouterTraceroute(
       device._id,
@@ -656,8 +666,10 @@ const initiateTracerouteTest = async function(device, username, sessionID) {
       device.traceroute_number_probes,
       device.traceroute_max_wait,
     );
+    result = {success: true};
   }
-  return {success: true};
+  if (result.success) Audit.cpe(user, device, 'trigger', {'cmd': 'traceroute'});
+  return result;
 };
 
 // Common validation used by all diagnostics
@@ -879,12 +891,16 @@ deviceListController.changeUpdate = async function(req, res) {
     return res.status(200).json({'success': true});
   // Simple CPE upgrade logic
   } else {
+    const release = req.params.release.trim();
+    const audit = {'cmd': 'firmware_upgrade', 'release': release};
     if (doUpdate) {
-      matchedDevice.release = req.params.release.trim();
+      audit['currentRelease'] = matchedDevice.release;
+      matchedDevice.release = release;
       matchedDevice.do_update_status = 0; // waiting
       messaging.sendUpdateMessage(matchedDevice);
     } else {
       matchedDevice.do_update_status = 1; // success
+      audit['canceled'] = true;
     }
     matchedDevice.do_update = doUpdate;
     try {
@@ -893,6 +909,7 @@ deviceListController.changeUpdate = async function(req, res) {
       return res.status(500).json({success: false,
         message: t('cpeSaveError', {errorline: __line})});
     }
+    Audit.cpe(req.user, matchedDevice, 'trigger', audit);
     if (matchedDevice.use_tr069 && doUpdate) {
       let response = await acsFirmwareHandler.upgradeFirmware(matchedDevice);
       if (response.success) {
@@ -1449,7 +1466,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
 
 // Function that matches and removes general CPE ids from database
 // Returns JSON with status, message and removed CPE ids
-const delDeviceOnDatabase = async function(devIds) {
+const delDeviceOnDatabase = async function(devIds, user, licenseBlocked) {
   let removedDevIds = [];
   // Creating an Array for the error messages
   let failedAtRemoval = {};
@@ -1469,6 +1486,10 @@ const delDeviceOnDatabase = async function(devIds) {
       errors: failedAtRemoval,
     };
   }
+
+  const cpesIds = []; // all CPEs ids that a user could search for.
+  let totalRemoved = 0; // counting CPEs removed in database.
+
   // Try to remove each device
   for (let device of matchedDevices) {
     let deviceId = device._id;
@@ -1487,6 +1508,12 @@ const delDeviceOnDatabase = async function(devIds) {
         t('operationUnsuccessful', {errorline: __line});
       continue;
     }
+    totalRemoved++;
+    Audit.appendCpeIds(cpesIds, device);
+    // Further failing in removing CPE from GenieACS does not mean the CPE
+    // removal has failed. At this point in the code, the CPE has already been
+    // removed from database, and that is what users see in the front end.
+
     if (device.use_tr069) {
       removalOK = await TasksAPI.deleteDeviceFromGenie(device);
       if (!removalOK) {
@@ -1497,6 +1524,13 @@ const delDeviceOnDatabase = async function(devIds) {
     }
     removedDevIds.push(deviceId);
   }
+
+  const audit = {
+    'licenseBlocked': licenseBlocked,
+    'totalRemoved': totalRemoved,
+  };
+  if (totalRemoved) Audit.cpes(user, cpesIds, 'delete', audit);
+
   // If there are any errors in the array, we log the details and inform which
   // cpes failed to be removed in the response
   let errCount = Object.keys(failedAtRemoval).length;
@@ -1535,7 +1569,7 @@ deviceListController.delDeviceReg = async function(req, res) {
       return await deviceListController.delDeviceAndBlockLicense(req, res);
     }
     // Else: Only remove from database
-    let delRetObj = await delDeviceOnDatabase(removeList);
+    let delRetObj = await delDeviceOnDatabase(removeList, req.user, false);
     if (!delRetObj.success) {
       return res.status(500).json({
         success: false,
@@ -1573,7 +1607,7 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
       devIds = [devIds];
     }
     // Delete entries from database
-    let delRetObj = await delDeviceOnDatabase(devIds);
+    let delRetObj = await delDeviceOnDatabase(devIds, req.user, true);
     if (!delRetObj.success) {
       return res.status(500).json({
         success: false,
@@ -1599,7 +1633,7 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
   }
 };
 
-const downloadStockFirmware = async function(model) {
+deviceListController.downloadStockFirmware = async function(model) {
   return new Promise(async (resolve, reject) => {
     let remoteFileUrl = stockFirmwareLink + model + '_9999-aix.zip';
     try {
@@ -1700,7 +1734,7 @@ deviceListController.factoryResetDevice = function(req, res) {
       });
     }
     const model = device.model.replace('N/', '');
-    if (!(await downloadStockFirmware(model))) {
+    if (!(await deviceListController.downloadStockFirmware(model))) {
       return res.status(500).json({
         success: false,
         msg: t('firmwareDownloadStockError'),
@@ -1716,6 +1750,7 @@ deviceListController.factoryResetDevice = function(req, res) {
         message: t('cpeSaveError'),
       });
     });
+    Audit.cpe(req.user, device, 'trigger', {'cmd': 'factoryReset'});
     console.log('UPDATE: Factory resetting router ' + device._id + '...');
     mqtt.anlixMessageRouterUpdate(device._id);
     res.status(200).json({success: true});
@@ -1748,6 +1783,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
     let slaves = (device.mesh_slaves) ? device.mesh_slaves : [];
     let permissions = DeviceVersion.devicePermissions(device);
     let emitMsg = true;
+    let audit = {};
     switch (msgtype) {
       case 'rstapp':
         if (device) {
@@ -1759,6 +1795,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         if (emitMsg) {
           mqtt.anlixMessageRouterResetApp(req.params.id.toUpperCase());
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'resetApp'});
         }
         break;
       case 'rstdevices':
@@ -1780,6 +1817,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         if (emitMsg) {
           mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'resetDevices'});
         }
         break;
       case 'rstmqtt':
@@ -1802,6 +1840,14 @@ deviceListController.sendCommandMsg = async function(req, res) {
                                'accept' : 'reject');
           device.lan_devices.filter(function(lanDevice) {
             if (lanDevice.mac.toUpperCase() === lanDeviceId.toUpperCase()) {
+              audit['lan_devices'] = {
+                [lanDevice.mac.toUpperCase()]: {
+                  'upnp_permission': {
+                    old: lanDevice.upnp_permission,
+                    new: lanDevicePerm,
+                  },
+                },
+              };
               lanDevice.upnp_permission = lanDevicePerm;
               device.upnp_devices_index = Date.now();
               return true;
@@ -1815,6 +1861,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
           });
           if (emitMsg) {
             mqtt.anlixMessageRouterUpdate(req.params.id.toUpperCase());
+            Audit.cpe(req.user, device, 'edit', audit);
           }
         }
         break;
@@ -1828,6 +1875,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
           } else {
             mqtt.anlixMessageRouterLog(req.params.id.toUpperCase());
           }
+          Audit.cpe(req.user, device, 'trigger', {'cmd': 'readLog'});
         } else {
           return res.status(200).json({
             success: false,
@@ -1836,6 +1884,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         break;
       case 'boot':
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'reboot'});
         if (device && device.use_tr069) {
           // acs integration will respond to request
           return await acsDeviceInfo.rebootDevice(device, res);
@@ -1864,6 +1913,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         slaves.forEach((slave)=>{
           mqtt.anlixMessageRouterOnlineLanDevs(slave.toUpperCase());
         });
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'readOnlineDevices'});
         break;
       case 'upstatus':
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1886,6 +1936,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
         slaves.forEach((slave)=>{
           mqtt.anlixMessageRouterUpStatus(slave.toUpperCase());
         });
+        Audit.cpe(req.user, device, 'trigger', {'cmd': 'upstatus'});
         break;
       case 'wanbytes':
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
@@ -1941,10 +1992,15 @@ deviceListController.sendCommandMsg = async function(req, res) {
           return res.status(200).json({
             success: false,
             message: t('fieldNameInvalid',
-              {name: 'activate', errorline: __line})});
+              {name: 'activate', errorline: __line}),
+          });
         }
         mqtt.anlixMessageRouterWpsButton(req.params.id.toUpperCase(),
                                          req.params.activate);
+        Audit.cpe(req.user, device, 'trigger', {
+          'cmd': 'wps',
+          'activated': req.params.activate,
+        });
         break;
       case 'pondata':
         // Check for permission
@@ -2398,6 +2454,7 @@ deviceListController.setDeviceReg = function(req, res) {
               matchedDevice).cpe;
             let changes = {wan: {}, lan: {}, wifi2: {},
                            wifi5: {}, mesh2: {}, mesh5: {}};
+            let audit = {};
 
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
@@ -2405,10 +2462,18 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantWanType) {
                 if (connectionType === 'pppoe') {
                   if (pppoeUser !== '' && pppoePassword !== '') {
+                    audit['connection_type'] = {
+                      old: matchedDevice.connection_type,
+                      new: connectionType,
+                    };
                     matchedDevice.connection_type = connectionType;
                     updateParameters = true;
                   }
                 } else {
+                  audit['connection_type'] = {
+                    old: matchedDevice.connection_type,
+                    new: connectionType,
+                  };
                   matchedDevice.connection_type = connectionType;
                   matchedDevice.pppoe_user = '';
                   matchedDevice.pppoe_password = '';
@@ -2423,6 +2488,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 pppoeUser !== matchedDevice.pppoe_user) {
               if (superuserGrant || role.grantPPPoEInfo > 1) {
                 changes.wan.pppoe_user = pppoeUser;
+                audit['pppoe_user'] = {
+                  old: matchedDevice.pppoe_user,
+                  new: pppoeUser,
+                };
                 matchedDevice.pppoe_user = pppoeUser;
                 updateParameters = true;
               } else {
@@ -2434,6 +2503,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 pppoePassword !== matchedDevice.pppoe_password) {
               if (superuserGrant || role.grantPPPoEInfo > 1) {
                 changes.wan.pppoe_pass = pppoePassword;
+                audit['pppoe_password'] = {
+                  old: matchedDevice.pppoe_password,
+                  new: pppoePassword,
+                };
                 matchedDevice.pppoe_password = pppoePassword;
                 updateParameters = true;
               } else {
@@ -2449,6 +2522,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 } else {
                   changes.wan.mtu = wanMtu;
                 }
+                audit['wan_mtu'] = {
+                  old: matchedDevice.wan_mtu,
+                  new: wanMtu,
+                };
                 matchedDevice.wan_mtu = wanMtu;
                 updateParameters = true;
               } else {
@@ -2463,6 +2540,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 } else {
                   changes.wan.vlan = wanVlan;
                 }
+                audit['wan_vlan'] = {
+                  old: matchedDevice.wan_vlan_id,
+                  new: wanVlan,
+                };
                 matchedDevice.wan_vlan_id = wanVlan;
                 updateParameters = true;
               } else {
@@ -2470,6 +2551,12 @@ deviceListController.setDeviceReg = function(req, res) {
               }
             }
             if (content.hasOwnProperty('ipv6_enabled')) {
+              if (ipv6Enabled !== matchedDevice.ipv6_enabled) {
+                audit['ipv6_enabled'] = {
+                  old: matchedDevice.ipv6_enabled,
+                  new: ipv6Enabled,
+                };
+              }
               matchedDevice.ipv6_enabled = ipv6Enabled;
               updateParameters = true;
             }
@@ -2478,6 +2565,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 ssid !== matchedDevice.wifi_ssid) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.ssid = ssid;
+                audit['wifi2Ssid'] = {
+                  old: matchedDevice.wifi_ssid,
+                  new: ssid,
+                };
                 matchedDevice.wifi_ssid = ssid;
                 updateParameters = true;
               } else {
@@ -2488,6 +2579,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 password !== '' && password !== matchedDevice.wifi_password) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.password = password;
+                audit['wifi2Password'] = {
+                  old: matchedDevice.wifi_password,
+                  new: password,
+                };
                 matchedDevice.wifi_password = password;
                 updateParameters = true;
               } else {
@@ -2498,6 +2593,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 channel !== '' && channel !== matchedDevice.wifi_channel) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.channel = channel;
+                audit['wifi2Channel'] = {
+                  old: matchedDevice.wifi_channel,
+                  new: channel,
+                };
                 matchedDevice.wifi_channel = channel;
                 updateParameters = true;
               } else {
@@ -2511,6 +2610,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 // Discard change to 'auto' if not allowed
                 if (band !== 'auto' || permissions.grantWifiBandAuto2) {
                   changes.wifi2.band = band;
+                  audit['wifi2Band'] = {
+                    old: matchedDevice.wifi_band,
+                    new: band,
+                  };
                   matchedDevice.wifi_band = band;
                   updateParameters = true;
                 }
@@ -2523,6 +2626,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 mode !== '' && mode !== matchedDevice.wifi_mode) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi2.mode = mode;
+                audit['wifi2Mode'] = {
+                  old: matchedDevice.wifi_mode,
+                  new: mode,
+                };
                 matchedDevice.wifi_mode = mode;
                 updateParameters = true;
               } else {
@@ -2537,6 +2644,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 if (wifiState) {
                   changes.wifi2.beacon_type = cpe.getBeaconType();
                 }
+                audit['wifi2Enabled'] = {
+                  old: matchedDevice.wifi_state,
+                  new: wifiState,
+                };
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
               } else {
@@ -2546,6 +2657,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wifi_hidden') &&
                 wifiHidden !== matchedDevice.wifi_hidden) {
               if (superuserGrant || role.grantWifiInfo > 1) {
+                audit['wifi2Hidden'] = {
+                  old: matchedDevice.wifi_hidden,
+                  new: wifiHidden,
+                };
                 matchedDevice.wifi_hidden = wifiHidden;
                 updateParameters = true;
               } else {
@@ -2555,6 +2670,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wifi_power') &&
                 power !== '' && power !== matchedDevice.wifi_power) {
               if (superuserGrant || role.grantWifiInfo > 1) {
+                audit['wifi2Power'] = {
+                  old: matchedDevice.wifi_power,
+                  new: power,
+                };
                 matchedDevice.wifi_power = power;
                 updateParameters = true;
               } else {
@@ -2566,6 +2685,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 ssid5ghz !== matchedDevice.wifi_ssid_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.ssid = ssid5ghz;
+                audit['wifi5Ssid'] = {
+                  old: matchedDevice.wifi_ssid_5ghz,
+                  new: ssid5ghz,
+                };
                 matchedDevice.wifi_ssid_5ghz = ssid5ghz;
                 updateParameters = true;
               } else {
@@ -2577,6 +2700,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 password5ghz !== matchedDevice.wifi_password_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.password = password5ghz;
+                audit['wifi5Password'] = {
+                  old: matchedDevice.wifi_password_5ghz,
+                  new: password5ghz,
+                };
                 matchedDevice.wifi_password_5ghz = password5ghz;
                 updateParameters = true;
               } else {
@@ -2588,6 +2715,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 channel5ghz !== matchedDevice.wifi_channel_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.channel = channel5ghz;
+                audit['wifi5Channel'] = {
+                  old: matchedDevice.wifi_channel_5ghz,
+                  new: channel5ghz,
+                };
                 matchedDevice.wifi_channel_5ghz = channel5ghz;
                 updateParameters = true;
               } else {
@@ -2601,6 +2732,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 // Discard change to 'auto' if not allowed
                 if (band !== 'auto' || permissions.grantWifiBandAuto5) {
                   changes.wifi5.band = band5ghz;
+                  audit['wifi5Band'] = {
+                    old: matchedDevice.wifi_band_5ghz,
+                    new: band5ghz,
+                  };
                   matchedDevice.wifi_band_5ghz = band5ghz;
                   updateParameters = true;
                 }
@@ -2613,6 +2748,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 mode5ghz !== '' && mode5ghz !== matchedDevice.wifi_mode_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
                 changes.wifi5.mode = mode5ghz;
+                audit['wifi5Mode'] = {
+                  old: matchedDevice.wifi_mode_5ghz,
+                  new: mode5ghz,
+                };
                 matchedDevice.wifi_mode_5ghz = mode5ghz;
                 updateParameters = true;
               } else {
@@ -2627,6 +2766,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 if (wifiState5ghz) {
                   changes.wifi5.beacon_type = cpe.getBeaconType();
                 }
+                audit['wifi5Enabled'] = {
+                  old: matchedDevice.wifi_state_5ghz,
+                  new: wifiState5ghz,
+                };
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
               } else {
@@ -2636,6 +2779,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('wifi_hidden_5ghz') &&
                 wifiHidden5ghz !== matchedDevice.wifi_hidden_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
+                audit['wifi5Hidden'] = {
+                  old: matchedDevice.wifi_hidden_5ghz,
+                  new: wifiHidden5ghz,
+                };
                 matchedDevice.wifi_hidden_5ghz = wifiHidden5ghz;
                 updateParameters = true;
               } else {
@@ -2645,6 +2792,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('isSsidPrefixEnabled') &&
                 isSsidPrefixEnabled !== matchedDevice.isSsidPrefixEnabled) {
               if (superuserGrant || role.grantWifiInfo > 1) {
+                audit['ssidPrefixEnabled'] = {
+                  old: matchedDevice.isSsidPrefixEnabled,
+                  new: isSsidPrefixEnabled,
+                };
                 matchedDevice.isSsidPrefixEnabled = isSsidPrefixEnabled;
                 updateParameters = true;
                 // Since we changed the prefix, this implies a change to SSIDs
@@ -2658,6 +2809,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 power5ghz !== '' &&
                 power5ghz !== matchedDevice.wifi_power_5ghz) {
               if (superuserGrant || role.grantWifiInfo > 1) {
+                audit['wifi5Power'] = {
+                  old: matchedDevice.wifi_power_5ghz,
+                  new: power5ghz,
+                };
                 matchedDevice.wifi_power_5ghz = power5ghz;
                 updateParameters = true;
               } else {
@@ -2669,6 +2824,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 lanSubnet !== matchedDevice.lan_subnet) {
               if (superuserGrant || role.grantLanEdit) {
                 changes.lan.router_ip = lanSubnet;
+                audit['lan_subnet'] = {
+                  old: matchedDevice.lan_subnet,
+                  new: lanSubnet,
+                };
                 matchedDevice.lan_subnet = lanSubnet;
                 updateParameters = true;
               } else {
@@ -2680,6 +2839,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 parseInt(lanNetmask) !== matchedDevice.lan_netmask) {
               if (superuserGrant || role.grantLanEdit) {
                 changes.lan.subnet_mask = parseInt(lanNetmask);
+                audit['lan_netmask'] = {
+                  old: matchedDevice.lan_netmask,
+                  new: lanNetmask,
+                };
                 matchedDevice.lan_netmask = lanNetmask;
                 updateParameters = true;
               } else {
@@ -2690,6 +2853,18 @@ deviceListController.setDeviceReg = function(req, res) {
               if (superuserGrant || role.grantDeviceId) {
                 let extRef =
                   util.getExtRefPattern(extReference.kind, extReference.data);
+                if (matchedDevice.external_reference.kind !== extRef.kind) {
+                  audit['userIdKind'] = {
+                    old: matchedDevice.external_reference.kind,
+                    new: extRef.kind,
+                  };
+                }
+                if (matchedDevice.external_reference.data !== extRef.data) {
+                  audit['userId'] = {
+                    old: matchedDevice.external_reference.data,
+                    new: extRef.data,
+                  };
+                }
                 matchedDevice.external_reference.kind = extRef.kind;
                 matchedDevice.external_reference.data = extRef.data;
               } else {
@@ -2714,6 +2889,10 @@ deviceListController.setDeviceReg = function(req, res) {
                   matchedDevice.vlan = [];
                 }
 
+                audit['bridgeMode'] = {
+                  old: matchedDevice.bridge_mode_enabled,
+                  new: bridgeEnabled,
+                };
                 matchedDevice.bridge_mode_enabled = bridgeEnabled;
                 updateParameters = true;
               } else {
@@ -2724,6 +2903,10 @@ deviceListController.setDeviceReg = function(req, res) {
                 bridgeDisableSwitch !==
                 matchedDevice.bridge_mode_switch_disable) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                audit['bridgeSwitchDisabled'] = {
+                  old: matchedDevice.bridge_mode_switch_disable,
+                  new: bridgeDisableSwitch,
+                };
                 matchedDevice.bridge_mode_switch_disable = bridgeDisableSwitch;
                 updateParameters = true;
               } else {
@@ -2733,6 +2916,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('bridgeFixIP') &&
                 bridgeFixIP !== matchedDevice.bridge_mode_ip) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                audit['bridgeIp'] = {
+                  old: matchedDevice.bridge_mode_ip,
+                  new: bridgeFixIP,
+                };
                 matchedDevice.bridge_mode_ip = bridgeFixIP;
                 updateParameters = true;
               } else {
@@ -2742,6 +2929,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('bridgeFixIP') &&
                 bridgeFixGateway !== matchedDevice.bridge_mode_gateway) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                audit['bridgeGateway'] = {
+                  old: matchedDevice.bridge_mode_gateway,
+                  new: bridgeFixGateway,
+                };
                 matchedDevice.bridge_mode_gateway = bridgeFixGateway;
                 updateParameters = true;
               } else {
@@ -2751,6 +2942,10 @@ deviceListController.setDeviceReg = function(req, res) {
             if (content.hasOwnProperty('bridgeFixIP') &&
                 bridgeFixDNS !== matchedDevice.bridge_mode_dns) {
               if (superuserGrant || role.grantOpmodeEdit) {
+                audit['bridgeDns'] = {
+                  old: matchedDevice.bridge_mode_dns,
+                  new: bridgeFixDNS,
+                };
                 matchedDevice.bridge_mode_dns = bridgeFixDNS;
                 updateParameters = true;
               } else {
@@ -2799,6 +2994,10 @@ deviceListController.setDeviceReg = function(req, res) {
                     delete changes.wifi5.channel;
                   }
                 }
+                audit['meshMode'] = {
+                  old: matchedDevice.mesh_mode,
+                  new: meshMode,
+                };
                 meshHandlers.setMeshMode(
                   matchedDevice, meshMode,
                 );
@@ -2846,6 +3045,7 @@ deviceListController.setDeviceReg = function(req, res) {
                   message: t('cpeSaveError', {errorline: __line}),
                 });
               }
+              Audit.cpe(req.user, matchedDevice, 'edit', audit);
               if (!matchedDevice.use_tr069) {
                 // flashbox device, call mqtt
                 mqtt.anlixMessageRouterUpdate(matchedDevice._id);
@@ -2918,6 +3118,8 @@ deviceListController.createDeviceReg = function(req, res) {
         });
       }
 
+      let audit = {release};
+
       // Validate fields
       genericValidate(macAddr, validator.validateMac, 'mac');
       if (connectionType != 'pppoe' && connectionType != 'dhcp' &&
@@ -2932,9 +3134,13 @@ deviceListController.createDeviceReg = function(req, res) {
         genericValidate(pppoeUser, validator.validateUser, 'pppoe_user');
         genericValidate(pppoePassword, validator.validatePassword,
                         'pppoe_password', matchedConfig.pppoePassLength);
+
+        audit['pppoe_user'] = pppoeUser;
+        audit['pppoe_password'] = pppoePassword;
       } else {
         connectionType = 'dhcp';
       }
+      if (connectionType) audit['connection_type'] = connectionType;
       let isSsidPrefixEnabled = false;
       // -> 'new registry' scenario
       let checkResponse = deviceHandlers.checkSsidPrefix(
@@ -2954,9 +3160,16 @@ deviceListController.createDeviceReg = function(req, res) {
       genericValidate(channel, validator.validateChannel, 'channel');
       genericValidate(band, validator.validateBand, 'band');
       genericValidate(mode, validator.validateMode, 'mode');
+      audit['wifi2Ssid'] = ssid;
+      audit['wifi2Password'] = password;
+      audit['wifi2Channel'] = channel;
+      audit['wifi2Band'] = band;
+      audit['wifi2Mode'] = mode;
       if (extReference) {
         genericValidate(extReference, validator.validateExtReference,
           'external_reference');
+        audit['userIdKind'] = extReference.kind;
+        audit['userId'] = extReference.data;
       }
 
       DeviceModel.findById(macAddr, function(err, matchedDevice) {
@@ -3006,6 +3219,7 @@ deviceListController.createDeviceReg = function(req, res) {
                   errors: errors,
                 });
               } else {
+                Audit.cpe(req.user, newDeviceModel, 'create', audit);
                 return res.status(200).json({'success': true});
               }
             });
@@ -3028,7 +3242,67 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
+<<<<<<< HEAD
 deviceListController.setPortForwardTr069 = async function(device, content) {
+=======
+
+// receives an array of tr069 validated 'port_mapping' rules and returns an
+// Object where each key is an IP and value is an Object with an attribute
+// called 'ports' that is an array with all badges values representing opened
+// ports for that IP. This rebuilds the badges from front end and is being used
+// to build the FlashAuduit view of opened ports.
+deviceListController.mapTr069PortRulesToIps = function(rulesArray) {
+  const rulesPerIp = {}; // each key is an IP, each value has 'ports' array'.
+  for (let r of rulesArray) {
+    let str = ''+r.external_port_start; // badge string.
+    if (r.external_port_start !== r.external_port_end) { // if different.
+      str += `-${r.external_port_end}`; // it's a range of ports.
+    }
+    if (r.external_port_start !== r.internal_port_start) { // if different.
+      str += `:${r.internal_port_start}`; // it's asymmetric.
+      // if one side is a range of ports, the other side is also a range.
+      if (r.internal_port_start !== r.internal_port_end) { // if different.
+        str += `-${r.internal_port_end}`; // it's a range of ports.
+      }
+    }
+    let rules = rulesPerIp[r.ip]; // referencing previous rules for ip.
+    // if it's the first time we see that ip, we create an entry for it.
+    if (rules === undefined) rules = rulesPerIp[r.ip] = {'ports': []};
+    rules.ports.push(str); // adding badge to 'ports' array.
+  }
+  return rulesPerIp;
+};
+
+// receives an array of 'lan_devices' and returns an Object where each key is a
+// MAC address and value is an Object with attributes 'ports', that is an array
+// with all badges values representing opened ports for that IP, and 'dmz',
+// that is the dmz flag for that IP. This rebuilds the badges from front end
+// and is being used to build the FlashAuduit view of opened ports.
+deviceListController.mapFirmwarePortRulesForDevices = function(devicesArray) {
+  const rulesPerMac = {}; // maps MAC to Object containing 'ports' and 'dmz'.
+  for (let d of devicesArray) {
+    if (d.port.length === 0) continue; // treat as nonexistent for port forward.
+    const macRules = {'ports': [], 'dmz': d.dmz}; // values for MAC.
+    rulesPerMac[d.mac.toLowerCase()] = macRules; // assigning values to MAC.
+    const isAsymmetric = Boolean(d.router_port); // is asymmetric enabled.
+    for (let i = 0; i < d.port.length; i++) { // for each port for a MAC.
+      // device port value.
+      const port = d.port[i];
+      // opened port in router. if no 'router_port', reuse device port value.
+      const routerPort = isAsymmetric ? d.router_port[i] : port;
+      const str = port !== routerPort ? `${routerPort}:${port}` : ''+port;
+      macRules.ports.push(str); // adding badge to 'ports' array.
+    }
+  }
+  return rulesPerMac;
+};
+
+deviceListController.setPortForwardTr069 = async function(
+  device, content, user,
+) {
+  let i;
+  let j;
+>>>>>>> development
   let rules;
   let isJsonInFormat;
   let diffPortForwardLength;
@@ -3076,6 +3350,13 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
   let portForwardOpts = permissions.grantPortForwardOpts;
   let compatibility = validator.checkIncompatibility(rules, portForwardOpts);
   if (!compatibility.success) return compatibility;
+
+  // mapping of rules just like in front end.
+  let before = deviceListController.mapTr069PortRulesToIps(device.port_mapping);
+  let after = deviceListController.mapTr069PortRulesToIps(rules);
+  // taking changes.
+  let audit = {'port_forward': Audit.buildAttributeChange(before, after)};
+
   // get the difference of length between new entries and old entries
   diffPortForwardLength = rules.length - device.port_mapping.length;
   // passed by validations, json is clean to put in the document
@@ -3091,6 +3372,7 @@ deviceListController.setPortForwardTr069 = async function(device, content) {
     ret.message = t('cpeSaveError', {errorline: __line});
     return ret;
   }
+  Audit.cpe(user, device, 'edit', audit);
   // geniacs-api call
   acsPortForwardHandler.changePortForwardRules(device, diffPortForwardLength);
   ret.success = true;
@@ -3131,7 +3413,8 @@ deviceListController.setPortForward = function(req, res) {
     if (matchedDevice.use_tr069) {
       let result =
         await deviceListController.setPortForwardTr069(matchedDevice,
-                                                       req.body.content);
+                                                       req.body.content,
+                                                       req.user);
       return res.status(200).json({
         success: result.success,
         message: result.message,
@@ -3241,6 +3524,16 @@ deviceListController.setPortForward = function(req, res) {
 
       // If we get here, all is validated!
 
+      // mapping of rules per device, using badges. just like in front end.
+      const before = deviceListController
+        .mapFirmwarePortRulesForDevices(matchedDevice.lan_devices);
+      const after = deviceListController
+        .mapFirmwarePortRulesForDevices(content);
+      // taking changes.
+      const audit = {
+        'port_forward': Audit.buildAttributeChange(before, after),
+      };
+
       // Remove all old firewall rules
       for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
         if (matchedDevice.lan_devices[idx].port.length > 0) {
@@ -3295,6 +3588,7 @@ deviceListController.setPortForward = function(req, res) {
             message: t('cpeSaveError', {errorline: __line}),
           });
         }
+        Audit.cpe(req.user, matchedDevice, 'edit', audit);
         mqtt.anlixMessageRouterUpdate(matchedDevice._id);
 
         return res.status(200).json({
@@ -3874,9 +4168,19 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
                                     {errorline: __line})});
     }
     let devFound = false;
+    const isblocked = req.body.isblocked;
+    const auditLanDevices = {};
+    const audit = {'lan_devices': auditLanDevices};
     for (let idx = 0; idx < matchedDevice.lan_devices.length; idx++) {
-      if (matchedDevice.lan_devices[idx].mac === req.body.lanid) {
-        matchedDevice.lan_devices[idx].is_blocked = req.body.isblocked;
+      let lanDevice = matchedDevice.lan_devices[idx];
+      if (lanDevice.mac === req.body.lanid) {
+        let oldValue = lanDevice.is_blocked;
+        if (oldValue !== isblocked) {
+          auditLanDevices[lanDevice.mac] = {
+            'is_blocked': {old: oldValue, new: isblocked},
+          };
+        }
+        lanDevice.is_blocked = isblocked;
         matchedDevice.blocked_devices_index = Date.now();
         devFound = true;
         break;
@@ -3903,6 +4207,7 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
             success: false,
             message: t('cpeSaveError', {errorline: __line})});
         }
+        Audit.cpe(req.user, matchedDevice, 'edit', audit);
         if (!matchedDevice.use_tr069) {
           mqtt.anlixMessageRouterUpdate(matchedDevice._id);
         }
@@ -4170,7 +4475,7 @@ deviceListController.sendCustomPingAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendCustomPing(
-      devRes.matchedDevice, req.body, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.body, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4181,7 +4486,7 @@ deviceListController.sendGenericPingAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericPing(
-      devRes.matchedDevice, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4192,7 +4497,7 @@ deviceListController.sendCustomSpeedTestAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendCustomSpeedTest(
-      devRes.matchedDevice, req.body, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.body, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4203,7 +4508,7 @@ deviceListController.sendGenericSpeedTestAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericSpeedTest(
-      devRes.matchedDevice, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4214,7 +4519,7 @@ deviceListController.sendCustomTraceRouteAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendCustomTraceRoute(
-      devRes.matchedDevice, req.body, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.body, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4225,7 +4530,7 @@ deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericTraceRoute(
-      devRes.matchedDevice, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {
@@ -4236,7 +4541,7 @@ deviceListController.sendGenericSiteSurveyAPI = async function(req, res) {
   let devRes = await commonDeviceFind(req);
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericSiteSurvey(
-      devRes.matchedDevice, req.user.name, req.sessionID,
+      devRes.matchedDevice, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {

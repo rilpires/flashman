@@ -1807,7 +1807,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantOpmode: cpePermissions.features.meshCable ||
       cpePermissions.features.meshWifi,
     grantVlanSupport: false,
-    grantStatisticsSupport: true,
+    grantStatisticsSupport: cpePermissions.features.wanBytes,
     grantPonSignalSupport: cpePermissions.features.ponSignal,
     grantMeshMode: false,
     grantMeshV2PrimaryModeUpgrade: false,
