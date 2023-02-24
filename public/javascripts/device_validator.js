@@ -408,7 +408,7 @@
       if (Array.isArray(rules)) {
         let keys = ['ip', 'external_port_start', 'external_port_end',
           'internal_port_start', 'internal_port_end'];
-        rules.every((r) => {
+        isJsonInFormat = rules.every((r) => {
           let boolCheck = true;
           keys.forEach((k) => {
             boolCheck = boolCheck && Object.keys(r).includes(k);
