@@ -411,7 +411,7 @@
         rules.every((r) => {
           let boolCheck = true;
           keys.forEach((k) => {
-            boolCheck = boolCheck && Object.keys(r).contains(k);
+            boolCheck = boolCheck && Object.keys(r).includes(k);
           });
           return boolCheck;
         });
