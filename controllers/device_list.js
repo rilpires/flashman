@@ -3297,7 +3297,6 @@ deviceListController.setPortForwardTr069 = async function(
   device, content, user,
 ) {
   let rules;
-  let isJsonInFormat;
   let diffPortForwardLength;
   let ret = {};
   if (device.wrong_port_mapping) {
