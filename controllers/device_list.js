@@ -3242,7 +3242,6 @@ deviceListController.createDeviceReg = function(req, res) {
   }
 };
 
-
 // receives an array of tr069 validated 'port_mapping' rules and returns an
 // Object where each key is an IP and value is an Object with an attribute
 // called 'ports' that is an array with all badges values representing opened
@@ -3297,20 +3296,8 @@ deviceListController.mapFirmwarePortRulesForDevices = function(devicesArray) {
 deviceListController.setPortForwardTr069 = async function(
   device, content, user,
 ) {
-  let i;
-  let j;
   let rules;
-  let isOnSubnetRange;
-  let isPortsNumber;
-  let isPortsOnRange;
-  let isPortsNotEmpty;
-  let isRangeOfSameSize;
-  let isRangeNegative;
   let isJsonInFormat;
-  let portToCheck;
-  let portsValues;
-  let firstSlice;
-  let secondSlice;
   let diffPortForwardLength;
   let ret = {};
   if (device.wrong_port_mapping) {
@@ -3328,112 +3315,23 @@ deviceListController.setPortForwardTr069 = async function(
   }
 
   // verify well formation of rules object
-  if (Array.isArray(rules)) {
-    isJsonInFormat = rules.every((r) => {
-      return !!r.ip &&
-       !!r.external_port_start &&
-       !!r.external_port_end &&
-       !!r.internal_port_start &&
-       !!r.internal_port_end;
-    });
-  } else {
-    isJsonInFormat = false;
-  }
-  if (!isJsonInFormat) {
+  let validator = new Validator();
+  if (!validator.checkPortMappingObj(rules)) {
     ret.success = false;
     ret.message = t('jsonInvalidFormat', {errorline: __line});
     return ret;
   }
-  for (i = 0; i < rules.length; i++) {
-    isPortsNumber = true;
-    isPortsOnRange = true;
-    isPortsNotEmpty = true;
-    isRangeOfSameSize = true;
-    isRangeNegative = true;
-    portsValues = [];
-    portsValues[0] = rules[i].external_port_start;
-    portsValues[1] = rules[i].external_port_end;
-    portsValues[2] = rules[i].internal_port_start;
-    portsValues[3] = rules[i].internal_port_end;
-    // verify if the given ip is on subnet range
-    let validator = new Validator();
-    isOnSubnetRange = validator.checkAddressSubnetRange(
-      device.lan_subnet,
-      rules[i].ip,
-      device.lan_netmask,
-    );
-    // verify if is number, empty, on 2^16 range,
-    for (j = 0; j < 4; j++) {
-      portToCheck = portsValues[j];
-      if (portToCheck == '') {
-        isPortsNotEmpty = false;
-      } else if (isNaN(parseInt(portToCheck))) {
-        isPortsNumber = false;
-      } else if (!(parseInt(portToCheck) >= 1 &&
-                   parseInt(portToCheck) <= 65535 &&
-                   parseInt(portToCheck) != 22 &&
-                   parseInt(portToCheck) != 23 &&
-                   parseInt(portToCheck) != 80 &&
-                   parseInt(portToCheck) != 443 &&
-                   parseInt(portToCheck) != 7547 &&
-                   parseInt(portToCheck) != 58000)) {
-        isPortsOnRange = false;
-      }
-    }
-    if (!isPortsNumber) {
-      ret.success = false;
-      ret.message = t('portsSouldBeNumberError', {ip: rules[i].ip});
-      return ret;
-    }
-    // verify if range is on same size and start/end order
-    firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
-    secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
-    if (firstSlice != secondSlice) {
-      isRangeOfSameSize = false;
-    }
-    if (firstSlice < 0 || secondSlice < 0) {
-      isRangeNegative = false;
-    }
-    if (!isPortsOnRange) {
-      ret.success = false;
-      ret.message = t('portsSouldBeBetweenError', {ip: rules[i].ip});
-      return ret;
-    }
-    if (!isPortsNotEmpty) {
-      ret.success = false;
-      ret.message = t('fieldShouldBeFilledError', {ip: rules[i].ip});
-      return ret;
-    }
-    if (!isRangeOfSameSize) {
-      ret.success = false;
-      ret.message = t('portRangesAreDifferentError', {ip: rules[i].ip});
-      return ret;
-    }
-    if (!isRangeNegative) {
-      ret.success = false;
-      ret.message = t('portRangesInvertedLimitsError', {ip: rules[i].ip});
-      return ret;
-    }
-    if (!isOnSubnetRange) {
-      ret.success = false;
-      ret.message = t('outOfSubnetRangeError', {ip: rules[i].ip});
-      return ret;
-    }
-  }
+  let validity = validator.checkPortMappingValidity(rules,
+    device.lan_subnet, device.lan_netmask);
+  if (!validity.success) return validity;
   // check overlapping port mapping
-  if (acsPortForwardHandler.checkOverlappingPorts(rules)) {
-    ret.success = false;
-    ret.message = t('overlappingMappingError');
-    return ret;
-  }
+  let overlapping = validator.checkOverlappingPorts(rules);
+  if (!overlapping.success) return overlapping;
   // check compatibility in mode of port mapping
   let permissions = DeviceVersion.devicePermissions(device);
   let portForwardOpts = permissions.grantPortForwardOpts;
-  if (acsPortForwardHandler.checkIncompatibility(rules, portForwardOpts)) {
-    ret.success = false;
-    ret.message = t('incompatibleRulesError');
-    return ret;
-  }
+  let compatibility = validator.checkIncompatibility(rules, portForwardOpts);
+  if (!compatibility.success) return compatibility;
 
   // mapping of rules just like in front end.
   let before = deviceListController.mapTr069PortRulesToIps(device.port_mapping);
