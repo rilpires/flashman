@@ -7,8 +7,17 @@ const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const updateFlashmanController = require('../../controllers/update_flashman');
 const ConfigModel = require('../../models/config');
-const RoleModel = require('../../models/role');
 const utils = require('../utils');
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 describe('Controllers - Update Flashman', () => {
   let connection;
