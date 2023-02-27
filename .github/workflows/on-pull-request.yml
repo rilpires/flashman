@@ -1,4 +1,4 @@
-name: Master pull request checks
+name: Pull Request check
 
 on:
   pull_request:
