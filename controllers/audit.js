@@ -97,6 +97,12 @@ controller.roles = function(user, roles, operation, values) {
   return buildAndSendMessage(user, 'role', searchable, operation, values);
 };
 
+// Creating an audit message operation for a vlan profile.
+controller.vlan = function(user, vlan, operation, values) {
+  return buildAndSendMessage(user, 'vlan', [vlan.profile_name], operation,
+    values);
+};
+
 // Creating a audit message that will end up in the audit server. Returns
 // an Error object in case of invalid arguments.
 const buildAndSendMessage = async function(
@@ -136,10 +142,11 @@ controller.appendCpeIds = (array, cpe) => {
                     ' tr069 identifications.');
     } else if (tr069Id !== cpe._id) {
       array.push(cpe._id, tr069Id);
-      return;
+      return array;
     }
   }
   array.push(cpe._id);
+  return array;
 };
 
 // putting a string into FlashAudit i18n syntax for tag recursion.
