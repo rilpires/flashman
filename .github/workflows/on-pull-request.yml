@@ -20,8 +20,9 @@ jobs:
 
       - name: Getting latest version & check if version is available
         run: |
-          # We proceed with this check only if on main
-          if [ $(git branch --show-current) != "main" ]; then
+          current_branch="$(git branch --show-current)"
+          if [ "$current_branch" != "main" ]; then
+            echo "Verificação de versão ignorada pois a branch atual é '$current_branch'"
             exit 0
           fi
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
