@@ -62,11 +62,6 @@ tplinkModel.getPortForwardRuleName = function(index) {
   return 'Anlix_' + index.toString();
 };
 
-tplinkModel.useModelAlias = function(fwVersion) {
-  // Use this for the firmwares that have IGD as ModelName
-  return 'EC220-G5 v2';
-};
-
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   Object.keys(fields.wifi5).forEach((k)=>{
