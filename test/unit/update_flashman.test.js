@@ -2,7 +2,6 @@
 /* global __line */
 
 require('../../bin/globals.js');
-const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const updateFlashmanController = require('../../controllers/update_flashman');
@@ -20,20 +19,6 @@ jest.mock('../../mqtts', () => {
 });
 
 describe('Controllers - Update Flashman', () => {
-  let connection;
-
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
   /* list of functions that may be mocked:
     Config.findOne
     Role.findOne
