@@ -20,7 +20,7 @@ jobs:
 
       - name: Getting latest version & check if version is available
         run: |
-          current_branch="$(git branch --show-current)"
+          current_branch="$(git symbolic-ref --short HEAD)"
           if [ "$current_branch" != "main" ]; then
             echo "Verificação de versão ignorada pois a branch atual é '$current_branch'"
             exit 0
