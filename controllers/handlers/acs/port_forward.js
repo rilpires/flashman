@@ -281,7 +281,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     return;
   }
   let fields = cpe.getModelFields();
-  let changeEntriesSizeTask = {name: '', objectName: ''};
+  let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
@@ -297,6 +297,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
     tasks = await TasksAPI.getFromCollection('tasks', query);
   } catch (e) {
     console.log('[!] -> '+e.message+' in '+acsID);
+    return;
   }
   if (!Array.isArray(tasks)) return;
   // if find some task with name addObject or deleteObject
@@ -333,6 +334,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
       }
     } catch (e) {
       console.log('[!] -> '+e.message+' in '+acsID);
+      return;
     }
     console.log('[#] -> D(*) in '+acsID);
   }
@@ -360,6 +362,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
@@ -377,6 +380,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> A('+rulesDiffLength+') in '+acsID);
