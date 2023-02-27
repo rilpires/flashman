@@ -316,11 +316,10 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     result = {success: true, cpe: tr069Models.tplinkArcherC6};
-  } else if (modelSerial === 'IGD' && modelName === 'EC220-G5') {
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('v2')) {
     // TP-Link EC220-G5 v2
     result = {success: true, cpe: tr069Models.tplinkEC220G5V2Model};
-  } else if (modelName === 'EC220-G5' &&
-             ['EC220-G5', 'EC220%2DG5'].includes(modelSerial)) {
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('3.0')) {
     // TP-Link EC220-G5 v3
     result = {success: true, cpe: tr069Models.tplinkEC220G5V3Model};
   } else if (modelName === 'EC225-G5') {
