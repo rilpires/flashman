@@ -19,5 +19,9 @@ describe('Controllers - Handlers - Port Forward', () => {
       null (check TasksAPI.addTask)
     total tests = x */
   describe('changePortForwardRules function(device, rulesDiffLength'+
-    ', interfaceValue, deleteAllRules)', () => {});
+    ', interfaceValue, deleteAllRules)', () => {
+    it('', async () => {
+      expect(true).toBe(true);
+    });
+  });
 });

@@ -2,14 +2,49 @@
 require('../../bin/globals.js');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
+const acsPortForwardHandler = require(
+  '../../controllers/handlers/acs/port_forward');
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
+const DeviceVersion = require('../../models/device_version');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
 const UserModel = require('../../models/user');
+
+let portForwardPermissions = [
+  { // noAsymNoRanges: {
+    simpleSymmetric: true,
+    simpleAsymmetric: false,
+    rangeSymmetric: false,
+    rangeAsymmetric: false,
+  },
+  {// noRanges: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: false,
+   rangeAsymmetric: false,
+  },
+  {// noAsym: {
+   simpleSymmetric: true,
+   simpleAsymmetric: false,
+   rangeSymmetric: true,
+   rangeAsymmetric: false,
+  },
+  {// noAsymRanges: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: true,
+   rangeAsymmetric: false,
+  },
+  {// fullSupport: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: true,
+   rangeAsymmetric: true,
+  }];
 
 const utils = require('../utils');
 const testUtils = require('../common/utils');
@@ -20,6 +55,26 @@ jest.mock('../../mqtts', () => ({
 
 const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
+
+let testSetPortForwardTr069 = async function(device, content, permissions,
+  rulesDiff, expectedSuccess, expectedMessage,
+  expectedWrongPortMapping, calledChange) {
+  // 'get permissions' mock
+  jest.spyOn(DeviceVersion, 'devicePermissions')
+    .mockReturnValue(permissions);
+  // changePortForwardRules mock
+  jest.spyOn(acsPortForwardHandler, 'changePortForwardRules')
+    .mockReturnValue(undefined);
+  let ret = await deviceListController.setPortForwardTr069(device, content, {});
+  expect(ret.message).toMatch(expectedMessage);
+  expect(ret.success).toBe(expectedSuccess);
+  if (calledChange) {
+    expect(acsPortForwardHandler.changePortForwardRules)
+      .toHaveBeenCalledWith(
+        device, rulesDiff, null, expectedWrongPortMapping,
+      );
+  }
+};
 
 describe('Controllers - Device List', () => {
   /* list of functions that may be mocked:
@@ -908,19 +963,236 @@ describe('Controllers - Device List', () => {
     });
   });
   /* input:
-      device
-      content
-      user
+      device:
+        lan_subnet
+        lan_netmask
+        port_mapping
+        wrong_port_mapping
+      content:
+        [{ip, external_port_start, external_port_end
+          internal_port_start, internal_port_end}]
+      user - {}
     output:
       'success-message object':
         success(2) - true, false
-        message(10) - t('operationSuccessful'), t('outOfSubnetRangeError'),
-          t('fieldShouldBeFilledError'), t('portsSouldBeNumberError'),
-          t('portsSouldBeBetweenError'), t('portRangesAreDifferentError'),
-          t('portRangesInvertedLimitsError'), t('overlappingMappingError'),
-          t('incompatibleRulesError')
-    total tests = x */
-  describe('setPortForwardTr069 function(device, content, user)', () => {});
+        message(12) - t('jsonError'), t('jsonInvalidFormat'),
+          t('outOfSubnetRangeError'), t('fieldShouldBeFilledError'),
+          t('portsSouldBeNumberError'), t('portsSouldBeBetweenError'),
+          t('portRangesAreDifferentError'), t('portRangesInvertedLimitsError'),
+          t('overlappingMappingError'), t('incompatibleRulesError'),
+          t('cpeSaveError'), t('operationSuccessful')
+    total tests = 13 */
+  describe('setPortForwardTr069 function(device, content, user)', () => {
+    it('jsonError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{ip:192.168.10.10,external_port_start:1010,'+
+        'external_port_end:1020,internal_port_start:1010,'+
+        'internal_port_end:1020}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('jsonError', {errorline: __line}, false, false));
+    });
+    it('jsonInvalidFormat', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.10.10","external_port_start":"1010",'+
+        '"external_port_end":"1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('jsonInvalidFormat', {errorline: __line}, false, false));
+    });
+    it('outOfSubnetRangeError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.10.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('outOfSubnetRangeError',
+        {ip: '192.168.10.10'}, false, false));
+    });
+    it('fieldShouldBeFilledError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"",'+
+        '"external_port_end":"","internal_port_start":"",'+
+        '"internal_port_end":""}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('fieldShouldBeFilledError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portsSouldBeNumberError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"abc",'+
+        '"external_port_end":"cde","internal_port_start":"abc",'+
+        '"internal_port_end":"cde"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portsSouldBeNumberError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portsSouldBeBetweenError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"101042",'+
+        '"external_port_end":"102042","internal_port_start":"101042",'+
+        '"internal_port_end":"102042"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portsSouldBeBetweenError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portRangesAreDifferentError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1030"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portRangesAreDifferentError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portRangesInvertedLimitsError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"920","internal_port_start":"1010",'+
+        '"internal_port_end":"920"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portRangesInvertedLimitsError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('overlappingMappingError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1020"},{"ip":"192.168.1.20",'+
+        '"external_port_start":"1020","external_port_end":"1030",'+
+        '"internal_port_start":"1020","internal_port_end":"1030"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 2, false,
+        utils.tt('overlappingMappingError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('incompatibleRulesError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1020", "internal_port_start": "1010",'+
+        '"internal_port_end": "1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[0]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('incompatibleRulesError', {ip: '192.168.1.10'}, false, false));
+    });
+    it('cpeSaveError', async () => {
+      let device = {
+        save: jest.fn(() => {
+          throw new Error('cpeSaveError test');
+        }),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [{ip: '192.168.1.10', external_port_start: 1010,
+          external_port_end: 1010, internal_port_start: 1010,
+          internal_port_end: 1010}],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms, 0, false,
+        utils.tt('cpeSaveError', {errorline: __line}, false, false));
+    });
+    it('operationSuccessful', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [{ip: '192.168.1.10', external_port_start: 1010,
+          external_port_end: 1010, internal_port_start: 1010,
+          internal_port_end: 1010}],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms,
+        0, true, utils.tt('operationSuccessful'), false, true);
+    });
+    it('operationSuccessful with wrong_port_mapping', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: true,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms,
+        1, true, utils.tt('operationSuccessful'), true, true);
+    });
+  });
 
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
