@@ -1,7 +1,14 @@
 require('../../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const utils = require('../../common/utils');
 const models = require('../../common/models');
 const ConfigModel = require('../../../models/config');
+
+// Used to cancel scheduler
+const SchedulerCommon = require('../../../controllers/update_scheduler_common');
 
 // Mock the filesystem
 jest.mock('fs', () => ({
@@ -9,6 +16,15 @@ jest.mock('fs', () => ({
   readdirSync: () => [],
 }));
 
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 /* Validates the response */
 const checkResponse = function(response, statusCode, success, data) {
@@ -82,6 +98,10 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     );
   });
 
+  afterEach(() => {
+    // Cancel schedule after test (avoid jest hang waiting a timer)
+    SchedulerCommon.removeOfflineWatchdog();
+  });
 
   // Empty data
   test('Validate start route - {}', async () => {

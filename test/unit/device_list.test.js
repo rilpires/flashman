@@ -14,6 +14,10 @@ const UserModel = require('../../models/user');
 const utils = require('../utils');
 const testUtils = require('../common/utils');
 
+jest.mock('../../mqtts', () => ({
+  anlixMessageRouterUpdate: jest.fn(() => undefined),
+}));
+
 const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
 

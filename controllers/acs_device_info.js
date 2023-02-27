@@ -42,16 +42,18 @@ let syncStats = {
 };
 
 // Show statistics every 10 minutes if have sync
-setInterval(() => {
-  if ((SYNCMAX > 0) && (syncStats.cpes > 0)) {
-    console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
-      `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
-      `Timeouts: ${syncStats.timeout}`);
-    syncStats.cpes = 0;
-    syncStats.time = 0;
-    syncStats.timeout = 0;
-  }
-}, 10 * 60 * 1000);
+if (SYNCMAX > 0) {
+  setInterval(() => {
+    if (syncStats.cpes > 0) {
+      console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
+        `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
+        `Timeouts: ${syncStats.timeout}`);
+      syncStats.cpes = 0;
+      syncStats.time = 0;
+      syncStats.timeout = 0;
+    }
+  }, 10 * 60 * 1000);
+}
 
 let syncRateControl = new Map();
 
@@ -2237,7 +2239,7 @@ acsDeviceInfoController.updateInfo = async function(
   // If there are changes in the WAN fields, we have to replace the fields that
   // have wildcards with the correct indexes. Only the fields referring to the
   // WAN are changed
-  if (changes.wan && changes.wan !== {}) {
+  if (changes.wan && Object.keys(changes.wan).length > 0) {
     try {
       let ret = await replaceWanFieldsWildcards(
         acsID, wildcardFlag, fields, changes, task,
