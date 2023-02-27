@@ -63,8 +63,11 @@ let testSetPortForwardTr069 = async function(device, content, permissions,
   jest.spyOn(DeviceVersion, 'devicePermissions')
     .mockReturnValue(permissions);
   // changePortForwardRules mock
-  jest.spyOn(acsPortForwardHandler, 'changePortForwardRules')
-    .mockReturnValue(undefined);
+  jest.spyOn(acsPortForwardHandler, 'changePortForwardRules');
+  jest.spyOn(TasksAPI, 'getFromCollection')
+    .mockReturnValue([]);
+  jest.spyOn(TasksAPI, 'addTask')
+    .mockReturnValue({success: true, executed: true});
   let ret = await deviceListController.setPortForwardTr069(device, content, {});
   expect(ret.message).toMatch(expectedMessage);
   expect(ret.success).toBe(expectedSuccess);
