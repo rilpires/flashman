@@ -120,7 +120,7 @@ firmwareController.index = function(req, res) {
         indexContent.update = matchedConfig.hasUpdate;
         indexContent.majorUpdate = matchedConfig.hasMajorUpdate;
       }
-      Role.findOne({name: req.user.role}, function(err, role) {
+      Role.findOne({name: req.user.role}, async function(err, role) {
         if (err) {
           console.log(err);
           indexContent.type = 'danger';
@@ -128,7 +128,7 @@ firmwareController.index = function(req, res) {
           return res.render('error', indexContent);
         }
         indexContent.role = role;
-        indexContent.tr069Infos = DevicesAPI.getTR069UpgradeableModels();
+        indexContent.tr069Infos = await DevicesAPI.getTR069UpgradeableModels();
         return res.render('firmware', indexContent);
       });
     });

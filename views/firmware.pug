@@ -75,23 +75,13 @@ block content
                   label
                     | #{t('Version')}
                   select#select-version.custom-select.md-select(
-                    name="version",
-                    onchange="setVersionNameInput(this)",
-                    required
+                    name="version", required
                   )
                     option(value='')
                   .invalid-feedback= t('selectAnyVersion')
               .col-md-3.md-form#input-version-name-col(
                 style= "display: none;"
               )
-                .input-entry.mt-1
-                  label.active.ml-3.mt-1
-                    | #{t('VersionName')}
-                  input#input-version-name.form-control(
-                    name="versionname",
-                    oninput="updateVersionName()"
-                  )
-                  #input-version-name-invalid-feedback.invalid-feedback= t('typeVersionName')
             .row
               .col-md-12.col-12.mt-4
                 .input-group
