@@ -323,9 +323,15 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // WAN MAC Address - Device Model: wan_bssid
   let wanMacAddr;
-  if (hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+  if (
+    hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value
+    && utilHandlers.isMacValid(data.wan.wan_mac_ppp.value)
+  ) {
     wanMacAddr = data.wan.wan_mac_ppp.value.toUpperCase();
-  } else if (data.wan.wan_mac && data.wan.wan_mac.value) {
+  } else if (
+    data.wan.wan_mac && data.wan.wan_mac.value
+    && utilHandlers.isMacValid(data.wan.wan_mac.value)
+  ) {
     wanMacAddr = data.wan.wan_mac.value.toUpperCase();
   }
 
@@ -1486,7 +1492,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
 
     // Get WAN MAC address
-    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value
+        && utilHandlers.isMacValid(data.wan.wan_mac_ppp.value)) {
       device.wan_bssid = data.wan.wan_mac_ppp.value.toUpperCase();
     }
 
@@ -1506,7 +1513,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
 
     // Get WAN MAC address
-    if (data.wan.wan_mac && data.wan.wan_mac.value) {
+    if (data.wan.wan_mac && data.wan.wan_mac.value
+        && utilHandlers.isMacValid(data.wan.wan_mac.value)) {
       device.wan_bssid = data.wan.wan_mac.value.toUpperCase();
     }
 
