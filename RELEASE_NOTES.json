@@ -19,7 +19,7 @@
 			"Corrigimos um problema impedia o cadastro de senhas customizadas para WEB para os modelos Multilaser/ZTE F6600 e F670L v9"
 		],
 		"improvements": [
-			"Melhoramos o filtro para inclusão de novas firmware para upgrade de CPEs TR-069",
+			"Melhoramos o filtro para inclusão de novas firmware para upgrade de CPEs TR-069"
 		],
 		"features": [
 		]
