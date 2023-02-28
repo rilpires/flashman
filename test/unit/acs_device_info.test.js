@@ -568,4 +568,249 @@ describe('ACS Device Info Tests', () => {
     expect(result.executed).toBe(false);
     expect(result.message).toContain(t('noDevicesFound'));
   });
+
+
+  describe('informDevice function', () => {
+    beforeEach(() => {
+      jest.resetModules();
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+      jest.useRealTimers();
+    });
+
+    test('Invalid config', async () => {
+      let acsID = models.defaultMockDevices[0].acs_id;
+
+      // Mocks
+      utils.common.mockConfigs(null, 'findOne');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: acsID},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('configFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    test('New device', async () => {
+      let acsID = models.defaultMockDevices[0].acs_id;
+      let tr069Config = models.defaultMockConfigs[0].tr069;
+
+      // Mocks
+      utils.common.mockAwaitConfigs(models.defaultMockConfigs[0], 'findOne');
+      utils.common.mockDevices(null, 'findOne');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: acsID},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.measure).toBe(true);
+      expect(result.body.measure_type).toBe('newDevice');
+      expect(result.body.connection_login).toBe(
+        tr069Config.connection_login,
+      );
+      expect(result.body.connection_password).toBe(
+        tr069Config.connection_password,
+      );
+      expect(result.body.sync_connection_login).toBe(true);
+    });
+
+
+    test('Non TR-069 device', async () => {
+      let acsID = models.defaultMockDevices[0].acs_id;
+
+      // Mocks
+      utils.common.mockDefaultAwaitConfigs();
+      // Use a firmware device
+      utils.common.mockAwaitDevices(models.defaultMockDevices[1], 'findOne');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: acsID},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('nonTr069AcsSyncError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    test('Hard reset', async () => {
+      let tr069Config = models.defaultMockConfigs[0].tr069;
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {recovering_tr069_reset: true},
+      );
+
+      // Mocks
+      utils.common.mockDefaultAwaitConfigs();
+      utils.common.mockAwaitDevices(device, 'findOne');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: device.acs_id},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.measure).toBe(true);
+      expect(result.body.measure_type).toBe('updateDevice');
+      expect(result.body.connection_login).toBe(
+        tr069Config.connection_login,
+      );
+      expect(result.body.connection_password).toBe(
+        tr069Config.connection_password,
+      );
+      expect(result.body.sync_connection_login).toBe(true);
+    });
+
+
+    test('Updated', async () => {
+      let tr069Config = models.defaultMockConfigs[0].tr069;
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          do_update: true,
+          do_update_status: 0,
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultAwaitConfigs();
+      utils.common.mockAwaitDevices(device, 'findOne');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: device.acs_id},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.measure).toBe(true);
+      expect(result.body.measure_type).toBe('updateDevice');
+      expect(result.body.connection_login).toBe(
+        tr069Config.connection_login,
+      );
+      expect(result.body.connection_password).toBe(
+        tr069Config.connection_password,
+      );
+      expect(result.body.sync_connection_login).toBe(true);
+    });
+
+
+    test('Update failed and not sync', async () => {
+      let tr069Config = models.defaultMockConfigs[0].tr069;
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          do_update: true,
+          do_update_status: 1,
+          last_tr069_sync: Date.now(),
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultAwaitConfigs();
+      utils.common.mockAwaitDevices(device, 'findOne');
+      let requestSyncSpy = jest.spyOn(acsDeviceInfoController, 'requestSync');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: device.acs_id},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.measure).toBe(false);
+      expect(result.body.connection_login).toBe(
+        tr069Config.connection_login,
+      );
+      expect(result.body.connection_password).toBe(
+        tr069Config.connection_password,
+      );
+      expect(result.body.sync_connection_login).toBe(false);
+      expect(requestSyncSpy).not.toBeCalled();
+    });
+
+
+    test('Normal sync', async () => {
+      let tr069Config = models.defaultMockConfigs[0].tr069;
+
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {tr069: tr069Config},
+      );
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {last_tr069_sync: Date.now() - 10000000},
+      );
+
+      // Mocks
+      utils.common.mockAwaitConfigs(config, 'findOne');
+      utils.common.mockAwaitDevices(device, 'findOne');
+      let requestSyncSpy = jest.spyOn(acsDeviceInfoController, 'requestSync');
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.informDevice,
+        {acs_id: device.acs_id},
+        undefined,
+        undefined,
+        undefined,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.measure).toBe(false);
+      expect(result.body.connection_login).toBe(
+        tr069Config.connection_login,
+      );
+      expect(result.body.connection_password).toBe(
+        tr069Config.connection_password,
+      );
+      expect(result.body.sync_connection_login).toBe(true);
+      expect(requestSyncSpy).toBeCalled();
+    });
+  });
 });
