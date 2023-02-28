@@ -23,6 +23,8 @@ let almostValidDevice = function(m) {
 
 let deviceH199A;
 
+let deviceH198A;
+
 let testChangePortForwardRules = async function(device, rulesDiff,
   interfaceValue, deleteAllRules, retFromTask, retFromCollection,
   calledTask, timesCalledAddTask) {
@@ -95,6 +97,8 @@ describe('Controllers - Handlers - Port Forward', () => {
       deviceH199A = almostValidDevice('ZXHN H199A');
       deviceH199A.port_mapping = [
         createSimplePortMapping('192.168.1.10', '1010')];
+      deviceH198A = almostValidDevice('ZXHN H198A V3.0');
+      deviceH198A.connection_type = 'pppoe';
     });
     test.each([[0],
       ['test'],
@@ -146,7 +150,8 @@ describe('Controllers - Handlers - Port Forward', () => {
       await testChangePortForwardRules(deviceH199A, 0, null,
         false, {}, [{name: 'addObject'}], [], 0);
     });
-    it('deleteAllRules call (2 + rules.length addTask)', async () => {
+    it('deleteAllRules call (2 + rules.length addTask)'+
+      ' [connection_type dhcp]', async () => {
       let tasks = [];
       let filePath = './test/assets/set_port_mapping.values.1.txt';
       let setParameterValues = fs.readFileSync(filePath, 'utf8');
@@ -172,23 +177,60 @@ describe('Controllers - Handlers - Port Forward', () => {
         true, {success: true, executed: true}, [], [], 0);
       expect(TasksAPI.getFromCollection).toHaveBeenCalledTimes(0);
     });
-    /*
-    it('from 0 to 2 rules (connection_type dhcp) [check calledTask]',
+    it('from 0 to 2 rules [check calledTask]',
       async () => {
-      expect(true).toBe(true);
+      deviceH198A.port_mapping = [
+        createSimplePortMapping('192.168.1.10', '1010'),
+        createSimplePortMapping('192.168.1.20', '2020')];
+      let tasks = [];
+      let filePath = './test/assets/set_port_mapping.values.2.txt';
+      let setParameterValues = fs.readFileSync(filePath, 'utf8');
+      let pmBase = basicCPEModel.getModelFields().port_mapping_ppp;
+      tasks.push({name: 'addObject', objectName: pmBase});
+      tasks.push({name: 'addObject', objectName: pmBase});
+      tasks.push(JSON.parse(setParameterValues));
+      await testChangePortForwardRules(deviceH198A, 2, null,
+        false, {success: true, executed: true}, [], tasks, 3);
     });
     it('from 3 to 4 rules [check calledTask]', async () => {
-      expect(true).toBe(true);
+      deviceH198A.port_mapping = [
+        createSimplePortMapping('192.168.1.10', '1010'),
+        createSimplePortMapping('192.168.1.20', '2020'),
+        createSimplePortMapping('192.168.1.30', '3030'),
+        createSimplePortMapping('192.168.1.40', '4040')];
+      let tasks = [];
+      let filePath = './test/assets/set_port_mapping.values.4.txt';
+      let setParameterValues = fs.readFileSync(filePath, 'utf8');
+      let pmBase = basicCPEModel.getModelFields().port_mapping_ppp;
+      tasks.push({name: 'addObject', objectName: pmBase});
+      tasks.push(JSON.parse(setParameterValues));
+      await testChangePortForwardRules(deviceH198A, 1, null,
+        false, {success: true, executed: true}, [], tasks, 2);
     });
     it('from 5 to 2 rules [check calledTask]', async () => {
-      expect(true).toBe(true);
+      deviceH198A.port_mapping = [
+        createSimplePortMapping('192.168.1.10', '1010'),
+        createSimplePortMapping('192.168.1.20', '2020')];
+      let tasks = [];
+      let filePath = './test/assets/set_port_mapping.values.2.txt';
+      let setParameterValues = fs.readFileSync(filePath, 'utf8');
+      let pmBase = basicCPEModel.getModelFields().port_mapping_ppp;
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.3'});
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.4'});
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.5'});
+      tasks.push(JSON.parse(setParameterValues));
+      await testChangePortForwardRules(deviceH198A, -3, null,
+        false, {success: true, executed: true}, [], tasks, 4);
     });
     it('from 3 to 0 rules [check calledTask]', async () => {
-      expect(true).toBe(true);
+      deviceH198A.port_mapping = [];
+      let tasks = [];
+      let pmBase = basicCPEModel.getModelFields().port_mapping_ppp;
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.1'});
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.2'});
+      tasks.push({name: 'deleteObject', objectName: pmBase+'.3'});
+      await testChangePortForwardRules(deviceH198A, -3, null,
+        false, {success: true, executed: true}, [], tasks, 3);
     });
-    // await testChangePortForwardRules(device, rulesDiff, interfaceValue,
-    //   deleteAllRules, retFromTask, retFromCollection, calledTask,
-    //   timesCalledAddTask);
-    */
   });
 });
