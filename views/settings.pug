@@ -269,6 +269,53 @@ block content
                     )
                       a.md-addon.fas.fa-question-circle
                     #error-onu-web-password.invalid-feedback= t('insertValidPassword')
+
+
+                  //- TR-069 connection login
+                  .md-form.input-group
+                    //- Login label
+                    label(style="pointer-events: none;")= t('cpesWebinterfaceLogin')
+
+                    //- Login input
+                    input#tr069-connection-login.form-control.px-0(
+                      type="text",
+                      name="tr069-connection-login",
+                      oninput="checkTR069ConnectionFields()"
+                    )
+
+                    //- Login tooltip
+                    .input-group-append(
+                      data-toggle="tooltip",
+                      title=t('tr069ConnectionFieldTooltip')
+                    )
+                      a.md-addon.fas.fa-question-circle
+
+                    //- Login input error message
+                    #error-tr069-connection-login.invalid-feedback= t('insertValidLogin')
+
+                  //- TR-069 connection password
+                  .md-form.input-group
+                    //- Password label
+                    label(style="pointer-events: none;")= t('cpesWebinterfacePassword')
+
+                    //- Password input
+                    input#tr069-connection-password.form-control.px-0(
+                      type="text",
+                      name="tr069-connection-password",
+                      oninput="checkTR069ConnectionFields()"
+                    )
+
+                    //- Password tooltip
+                    .input-group-append(
+                      data-toggle="tooltip",
+                      title=t('tr069ConnectionFieldTooltip')
+                    )
+                      a.md-addon.fas.fa-question-circle
+
+                    //- Password input error message
+                    #error-tr069-connection-password.invalid-feedback= t('insertValidPassword')
+
+
                   span &nbsp;
                   .custom-control.custom-checkbox
                     input#onu_web_remote.custom-control-input(
