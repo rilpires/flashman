@@ -1,8 +1,5 @@
 require('../../../bin/globals');
 
-// Override process environment variable to avoid starting genie
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
-
 const utils = require('../../common/utils');
 const models = require('../../common/models');
 
