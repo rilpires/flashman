@@ -289,8 +289,10 @@ acsPortForwardHandler.changePortForwardRules = async function(
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
     portMappingTemplate = fields.port_mapping_ppp;
-  } else {
+  } else if (device.connection_type === 'dhcp') {
     portMappingTemplate = fields.port_mapping_dhcp;
+  } else {
+    return;
   }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
