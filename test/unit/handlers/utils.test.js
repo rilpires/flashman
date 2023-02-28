@@ -3,22 +3,7 @@ require('../../../bin/globals');
 const utils = require('../../common/utils');
 const models = require('../../common/models');
 
-// Mock the config (used in language.js)
-utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
-
 const utilHandlers = require('../../../controllers/handlers/util');
-
-const t = require('../../../controllers/language').i18next.t;
-
-// Mock the mqtts (avoid aedes)
-jest.mock('../../../mqtts', () => {
-  return {
-    __esModule: false,
-    unifiedClientsMap: {},
-    anlixMessageRouterUpdate: () => undefined,
-    getConnectedClients: () => [],
-  };
-});
 
 describe('Utils Handler Tests', () => {
   beforeEach(() => {
