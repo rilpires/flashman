@@ -405,7 +405,8 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // Collect WAN max transmit rate, if available
   let wanRate;
-  if (data.wan.rate && data.wan.rate.value) {
+  if (data.wan.rate && data.wan.rate.value
+      && cpe.modelPermissions().wan.canTrustWanRate) {
     wanRate = cpe.convertWanRate(data.wan.rate.value);
   }
 
@@ -1491,7 +1492,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
-  if (data.wan.rate && data.wan.rate.value) {
+  if (data.wan.rate && data.wan.rate.value &&
+      cpe.modelPermissions().wan.canTrustWanRate) {
     device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }
   if (data.wan.duplex && data.wan.duplex.value) {

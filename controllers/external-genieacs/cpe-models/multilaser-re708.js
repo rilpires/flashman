@@ -16,6 +16,7 @@ multilaserModel.modelPermissions = function() {
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.dhcpUptime = true;
   permissions.wan.hasUptimeField = true;
+  permissions.wan.canTrustWanRate = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];
