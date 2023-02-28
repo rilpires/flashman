@@ -9,6 +9,16 @@ const basicCPEModel = require(cPath +
   '/external-genieacs/cpe-models/base-model');
 process.env.FLM_GENIE_IGNORED = 'test';
 
+let createSimplePortMapping = function(ip, port) {
+  return {ip: ip, external_port_start: port, external_port_end: port,
+  internal_port_start: port, internal_port_end: port};
+};
+
+let almostValidDevice = function(m) {
+  return {use_tr069: true, acs_id: 'test', model: m,
+        version: 'test', hw_version: 'test', port_mapping: 'test'};
+};
+
 let testChangePortForwardRules = async function(device, rulesDiff,
   interfaceValue, deleteAllRules, retFromTask, retFromCollection,
   calledTask, timesCalledAddTask, callback = null) {
@@ -74,8 +84,7 @@ describe('Controllers - Handlers - Port Forward', () => {
       [{use_tr069: true, acs_id: 'test'}],
       [{use_tr069: true, acs_id: 'test', model: 'test',
         version: 'test', hw_version: 'test'}],
-      [{use_tr069: true, acs_id: 'test', model: 'ZXHN H199A',
-        version: 'test', hw_version: 'test', port_mapping: 'test'}],
+      [almostValidDevice('ZXHN H199A')],
       ])('bogus device (0 addTask, 0 getModelFields) %o',
       async (device) => {
       jest.spyOn(basicCPEModel, 'getModelFields');
@@ -86,38 +95,42 @@ describe('Controllers - Handlers - Port Forward', () => {
     it('check if configFileEditing is called (0 addTask)', async () => {
       jest.spyOn(acsXMLConfigHandler, 'configFileEditing')
         .mockReturnValue(undefined);
-      let device = {
-        acs_id: 'test',
-        model: '120AC',
-        version: 'test',
-        hw_version: 'test',
-        use_tr069: true,
-        connection_type: 'test',
-        port_mapping: [{ip: '192.168.1.10',
-          external_port_start: '1010',
-          external_port_end: '1010',
-          internal_port_start: '1010',
-          internal_port_end: '1010'}]};
+      let device = almostValidDevice('120AC');
+      device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
       await testChangePortForwardRules(device, 0, null,
         false, {}, [], {}, 0);
       expect(acsXMLConfigHandler.configFileEditing).toHaveBeenCalledTimes(1);
       expect(acsXMLConfigHandler.configFileEditing)
         .toHaveBeenCalledWith(device, ['port-forward']);
     });
-      // await testChangePortForwardRules(device, rulesDiff, interfaceValue,
-      //   deleteAllRules, retFromTask, retFromCollection, calledTask,
-      //   timesCalledAddTask);
-    /*
     it('check if getIPInterface is called (0 addTask)', async () => {
-      expect(true).toBe(true);
+      jest.spyOn(pfAcsHandlers, 'getIPInterface')
+        .mockReturnValue(undefined);
+      let device = almostValidDevice('HC220-G5');
+      device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
+      await testChangePortForwardRules(device, 0, null,
+        false, {}, [], {}, 0);
+      expect(pfAcsHandlers.getIPInterface).toHaveBeenCalledTimes(1);
+      expect(pfAcsHandlers.getIPInterface)
+        .toHaveBeenCalledWith(device, 0, 'Device.IP.Interface');
     });
     it('tasks not being a array (0 addTask)', async () => {
-      expect(true).toBe(true);
+      let device = almostValidDevice('ZXHN H199A');
+        device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
+      await testChangePortForwardRules(device, 0, null,
+        false, {}, 'test', {}, 0);
     });
     it('tasks array with faulty object without name property (0 addTask)',
       async () => {
-      expect(true).toBe(true);
+      let device = almostValidDevice('ZXHN H199A');
+      device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
+      await testChangePortForwardRules(device, 0, null,
+        false, {}, [{test: 'test'}], {}, 0);
     });
+    /*
+    // await testChangePortForwardRules(device, rulesDiff, interfaceValue,
+    //   deleteAllRules, retFromTask, retFromCollection, calledTask,
+    //   timesCalledAddTask);
     it('tasks array with (add|delete)Object name (0 addTask)', async () => {
       expect(true).toBe(true);
     });
