@@ -341,7 +341,7 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
   Outputs:
     promise - A promise to wait for the response
 */
-utils.common.sendFakeRequest = async function(func, data, files, query) {
+utils.common.sendFakeRequest = async function(func, data, files, query, user) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -353,7 +353,8 @@ utils.common.sendFakeRequest = async function(func, data, files, query) {
   func(
     {
       body: data,
-      user: {
+      // Use the user passed or a default
+      user: (user) ? user : {
         role: undefined,
         is_superuser: true,
       },
