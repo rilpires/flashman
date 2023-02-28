@@ -257,15 +257,19 @@ acsPortForwardHandler.changePortForwardRules = async function(
   device, rulesDiffLength, interfaceValue = null, deleteAllRules = false,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let validator = new Validator();
+  if (!device || !device.use_tr069 || !device.acs_id ||
+    !validator.checkPortMappingObj(device.port_mapping)) return;
   let i;
   let ret;
   // let mac = device._id;
   let acsID = device.acs_id;
-  let model = device.model;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
-  let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
+  let instance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+  if (!instance.success) return;
+  let cpe = instance.cpe;
+  let fields = cpe.getModelFields();
+  let interfaceRoot = fields.port_mapping_fields_interface_root;
+  let interfaceKey = fields.port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
   if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
@@ -280,7 +284,6 @@ acsPortForwardHandler.changePortForwardRules = async function(
     );
     return;
   }
-  let fields = cpe.getModelFields();
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
