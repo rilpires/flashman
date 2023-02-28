@@ -77,19 +77,18 @@ utils.common.loginAsAdmin = async function() {
 };
 
 
-/*
-  Description:
-    Sets an interception to the mongo access when calling func to return the
-    device setted by data.
-
-  Inputs:
-    model - Which model to intercept
-    data  - The model parameters to be setted for the model
-    func  - The function to be intercepted
-
-  Outputs:
-
-*/
+/**
+ * Sets an interception to the mongo access when calling func to return the
+ * device setted by data.
+ * There is a case that this function will not work and the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
+ * this case, use the function `mockAwaitMongo`. It usually happens due to
+ * await.
+ *
+ * @param {model} model - Which model to intercept
+ * @param {object} data - The model parameters to be setted for the model
+ * @param {string} func - The function to be intercepted
+ */
 utils.common.mockMongo = function(model, data, func) {
   let mock = jest.fn().mockReturnValue(data);
 
@@ -97,6 +96,16 @@ utils.common.mockMongo = function(model, data, func) {
 };
 
 
+/**
+ * When the normal mockMongo does not work due to the use of await, this
+ * function takes place. It sets an interception to the mongo access when
+ * calling func to return the device setted by data.
+ *
+ * @param {model} model - Which model to intercept
+ * @param {object} data - The model parameters to be setted for the model
+ * @param {string} func - The function to be intercepted
+ * @param {boolean} shouldError - If the catch callback should be called or not
+ */
 utils.common.mockAwaitMongo = function(
   model,
   data,
@@ -124,11 +133,30 @@ utils.common.mockAwaitMongo = function(
 };
 
 
+/**
+ * Mock a device
+ * There is a case that this function will not work and the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
+ * this case, use the function `mockAwaitDevices`. It usually happens due to
+ * await.
+ *
+ * @param {object} data - The model parameters to be setted for the device
+ * @param {string} func - The function to be intercepted
+ */
 utils.common.mockDevices = function(data, func) {
   utils.common.mockMongo(DeviceModel, data, func);
 };
 
 
+/**
+ * Mock a config when the usual `mockConfigs` does not work. This is related to
+ * the use of await when trying to get the config. Usually the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ *
+ * @param {object} data - The model parameters to be setted for the device
+ * @param {function} func  - The function to be intercepted
+ * @param {boolean} shouldError - If the catch callback should be called or not
+ */
 utils.common.mockAwaitDevices = function(data, func, shouldError = false) {
   utils.common.mockAwaitMongo(DeviceModel, data, func, shouldError);
 };
@@ -150,32 +178,54 @@ utils.common.mockFirmwares = function(data, func) {
 };
 
 
-/*
-  Description:
-    Mock a config
-
-  Inputs:
-    data  - The model parameters to be setted for the config
-    func  - The function to be intercepted
-
-  Outputs:
-
-*/
+/**
+ * Mock a config
+ * There is a case that this function will not work and the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
+ * this case, use the function `mockAwaitConfigs`. It usually happens due to
+ * await.
+ *
+ * @param {object} data - The model parameters to be setted for the config
+ * @param {string} func - The function to be intercepted
+ */
 utils.common.mockConfigs = function(data, func) {
   utils.common.mockMongo(ConfigModel, data, func);
 };
 
 
+/**
+ * Mock a config when the usual `mockConfigs` does not work. This is related to
+ * the use of await when trying to get the config. Usually the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ *
+ * @param {object} data - The model parameters to be setted for the config
+ * @param {function} func  - The function to be intercepted
+ * @param {boolean} shouldError - If the catch callback should be called or not
+ */
 utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
   utils.common.mockAwaitMongo(ConfigModel, data, func, shouldError);
 };
 
+
+/**
+ * Mock a Role
+ *
+ * @param {object} data - The model parameters to be setted for the role
+ * @param {string} func - The function to be intercepted
+ *
+ */
 utils.common.mockRoles = function(data, func) {
   utils.common.mockMongo(RoleModel, data, func);
 };
 
 
-*/
+/**
+ * Mock devices in defaultMockDevices. There is a case that this function will
+ * not work and the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
+ * this case, use the function `mockDefaultAwaitDevices`. It usually happens
+ * due to await.
+ */
 utils.common.mockDefaultDevices = function() {
   utils.common.mockDevices(models.defaultMockDevices, 'find');
   utils.common.mockDevices(models.defaultMockDevices[0], 'findOne');
@@ -183,6 +233,12 @@ utils.common.mockDefaultDevices = function() {
 };
 
 
+/**
+ * Mock devices in defaultMockDevices when the usual `mockDefaultDevices`
+ * does not work. This is related to the use of await when trying to get
+ * the device. Usually the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ */
 utils.common.mockDefaultAwaitDevices = function() {
   utils.common.mockAwaitDevices(models.defaultMockDevices, 'find');
   utils.common.mockAwaitDevices(models.defaultMockDevices[0], 'findOne');
@@ -206,15 +262,13 @@ utils.common.mockDefaultFirmwares = function() {
 };
 
 
-/*
-  Description:
-    Mock configs in defaultMockConfigs
-
-  Inputs:
-
-  Outputs:
-
-*/
+/**
+ * Mock configs in defaultMockConfigs. There is a case that this function will
+ * not work and the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
+ * this case, use the function `mockDefaultAwaitConfigs`. It usually happens
+ * due to await.
+ */
 utils.common.mockDefaultConfigs = function() {
   utils.common.mockConfigs(models.defaultMockConfigs, 'find');
   utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
@@ -222,6 +276,12 @@ utils.common.mockDefaultConfigs = function() {
 };
 
 
+/**
+ * Mock configs in defaultMockConfigs when the usual `mockDefaultConfigs`
+ * does not work. This is related to the use of await when trying to get
+ * the config. Usually the error
+ * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ */
 utils.common.mockDefaultAwaitConfigs = function() {
   utils.common.mockAwaitConfigs(models.defaultMockConfigs, 'find');
   utils.common.mockAwaitConfigs(models.defaultMockConfigs[0], 'findOne');
@@ -229,6 +289,9 @@ utils.common.mockDefaultAwaitConfigs = function() {
 };
 
 
+/**
+ * Mock roles in defaultMockRoles
+ */
 utils.common.mockDefaultRoles = function() {
   utils.common.mockRoles(models.defaultMockRoles, 'find');
   utils.common.mockRoles(models.defaultMockRoles[0], 'findOne');

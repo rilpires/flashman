@@ -87,6 +87,15 @@ const setPasswordWebInterfaceError = function() {
   webPasswordErrorElement.style.display = 'block';
 };
 
+
+/**
+ * Sets the error for inputs and error elements.
+ *
+ * @param {boolean} setError - If happened an error in the `inputElement`
+ * @param {string} message - The string to be setted in the `inputElement`
+ * @param {element} inputElement - The user input element
+ * @param {element} errorElement - The error element to be displayed
+ */
 const setInputError = function(
   setError,
   message,
@@ -133,6 +142,11 @@ if (tr069Section) {
     }
     return;
   };
+
+
+  /**
+   * Validate TR-069 connection login and password
+   */
   window.checkTR069ConnectionFields = function() {
     let validator = new Validator();
 

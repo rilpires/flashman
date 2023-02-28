@@ -492,17 +492,16 @@ const copyFrom = function(models, id, data) {
 };
 
 
-/*
-  Description:
-    Copy a firmware from defaultMockFirmwares and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the firmware
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a firmware from defaultMockFirmwares and adds a new one with the
+ * parameters modified.
+ *
+ * @param {string} id - The _id of the firmware
+ * @param {object} data - An object with the parameters to modify and their
+ * values
+ *
+ * @return {object} - The firmware with parameters modified
+ */
 models.copyFirmwareFrom = function(id, data) {
   // Get the firmware with the same id
   let firmware = copyFrom(models.defaultMockFirmwares, id, data);
@@ -514,17 +513,16 @@ models.copyFirmwareFrom = function(id, data) {
 };
 
 
-/*
-  Description:
-    Copy a firmware from defaultMockDevices and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the device
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a device from defaultMockevices and adds a new one with the
+ * parameters modified.
+ *
+ * @param {string} id - The _id of the config
+ * @param {object} data - An object with the parameters to modify and their
+ * values
+ *
+ * @return {object} The role with parameters modified
+ */
 models.copyDeviceFrom = function(id, data) {
   // Get the device with the same id
   let device = copyFrom(models.defaultMockDevices, id, data);
@@ -536,17 +534,16 @@ models.copyDeviceFrom = function(id, data) {
 };
 
 
-/*
-  Description:
-    Copy a config from defaultMockConfigs and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the config
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a config from defaultMockConfigs and adds a new one with the
+ * parameters modified.
+ *
+ * @param {string} id - The _id of the config
+ * @param {object} data - An object with the parameters to modify and their
+ * values
+ *
+ * @return {object} The config with parameters modified
+ */
 models.copyConfigFrom = function(id, data) {
   // Get the config with the same id
   let config = copyFrom(models.defaultMockConfigs, id, data);
@@ -558,6 +555,16 @@ models.copyConfigFrom = function(id, data) {
 };
 
 
+/**
+ * Copy a role from defaultMockevices and adds a new one with the
+ * parameters modified.
+ *
+ * @param {string} id - The _id of the device
+ * @param {object} data - An object with the parameters to modify and their
+ * values
+ *
+ * @return {object} The device with parameters modified
+ */
 models.copyRoleFrom = function(id, data) {
   // Get the config with the same id
   let config = copyFrom(models.defaultMockRoles, id, data);

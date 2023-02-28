@@ -229,6 +229,15 @@
       return {valid: valid, err: Array.from(err).map((ind)=>messages[ind])};
     };
 
+
+    /**
+     * Validates the string passed if is at least 1 character long and at most
+     * 32 characters long. The string must only contain numbers and characters.
+     *
+     * @param {string} field - A string to be validated
+     *
+     * @return {{valid: boolean, err: string[]}}
+     */
     Validator.prototype.validateTR069ConnectionField = function(field) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
