@@ -32,7 +32,7 @@ block content
             .row
               .col-md-6.pl-0.pr-md-4.pr-0
                 .md-form.input-entry
-                  label= t('minimumAmountOfPppoePaswordChars')
+                  label(style="pointer-events: none;")= t('minimumAmountOfPppoePaswordChars')
                   input#minlength-pass-pppoe.form-control(
                     type="number",
                     name="minlength-pass-pppoe",
@@ -43,19 +43,19 @@ block content
                   .invalid-feedback= t('insertANumberBetweenMinMax', {min: 1, max: 63})
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('ignoreFlashboxFirmwwareAlterationWarning')
+                    label(style="pointer-events: none;")= t('ignoreFlashboxFirmwwareAlterationWarning')
                     select.browser-default.md-select(name="bypass-mqtt-secret-check")
                       option(value="false")= t('No')
                       option(value="true")= t('Yes')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mustBlockLicenseAtDeviceRemoval')
+                    label(style="pointer-events: none;")= t('mustBlockLicenseAtDeviceRemoval')
                     select.browser-default.md-select(name="must-block-license-at-removal")
                       option(value="false")= t('No')
                       option(value="true")= t('Yes')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('FlashmanLanguage')
+                    label(style="pointer-events: none;")= t('FlashmanLanguage')
                     select.browser-default.md-select(name="selected-language")
                       option(value="en") 🇬🇧 English
                       option(value="es") 🇪🇸 Español
@@ -70,7 +70,7 @@ block content
                   .invalid-feedback
               .col-md-6.pl-0.pr-0
                 .md-form.input-entry
-                  label= t('opticalSignalYellowAlertDbm')
+                  label(style="pointer-events: none;")= t('opticalSignalYellowAlertDbm')
                   input#pon-signal-threshold.form-control(
                     type="number",
                     name="pon-signal-threshold",
@@ -80,7 +80,7 @@ block content
                   )
                   .invalid-feedback= t('insertValidDbmNumber')
                 .md-form.input-entry
-                  label= t('opticalSignalRedAlertDbm')
+                  label(style="pointer-events: none;")= t('opticalSignalRedAlertDbm')
                   input#pon-signal-threshold-critical.form-control(
                     type="number",
                     name="pon-signal-threshold-critical",
@@ -90,7 +90,7 @@ block content
                   )
                   .invalid-feedback= t('insertValidDbmNumber')
                 .md-form.input-entry
-                  label= t('opticalSignalElevatedRedAlertDbm')
+                  label(style="pointer-events: none;")= t('opticalSignalElevatedRedAlertDbm')
                   input#pon-signal-threshold-critical-high.form-control(
                     type="number",
                     name="pon-signal-threshold-critical-high",
@@ -114,7 +114,7 @@ block content
                   span &nbsp; #{t('warningPrefixWiFi')}
                 .col-md-6.my-auto
                   .md-form.input-entry#ssid-prefix-box
-                    label= t('ssidPrefix')
+                    label(style="pointer-events: none;")= t('ssidPrefix')
                     input#ssid-prefix.form-control(
                       type="text",
                       name="ssid-prefix"
@@ -142,7 +142,7 @@ block content
                 span.card-title= t('speedMeasureServerConfigurations')
           #speed-measurement.card-body.collapse.out
             .md-form.input-entry
-              label= t('speedMeasureServerIpAddress')
+              label(style="pointer-events: none;")= t('speedMeasureServerIpAddress')
               input#measure-server-ip.form-control.ip-mask-field(
                 type="text",
                 name="measure-server-ip",
@@ -153,7 +153,7 @@ block content
               )
               .invalid-feedback= t('insertValidIp')
             .md-form.input-entry
-              label= t('speedMeasureServerPort')
+              label(style="pointer-events: none;")= t('speedMeasureServerPort')
               input#measure-server-port.form-control(
                 type="number",
                 name="measure-server-port",
@@ -180,13 +180,13 @@ block content
               .col-md-6.col-12.pl-0.pr-md-4.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mandatoryWanVerification')
+                    label(style="pointer-events: none;")= t('mandatoryWanVerification')
                     select.browser-default.md-select(name="wan-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mandatoryFlashmanRegisterVerification')
+                    label(style="pointer-events: none;")= t('mandatoryFlashmanRegisterVerification')
                     select.browser-default.md-select(name="flashman-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
@@ -204,25 +204,25 @@ block content
               .col-md-6.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('speedTestExecution')
+                    label(style="pointer-events: none;")= t('speedTestExecution')
                     select.browser-default.md-select(name="speedtest-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mandatoryIpvxVerification', {x: 4})
+                    label(style="pointer-events: none;")= t('mandatoryIpvxVerification', {x: 4})
                     select.browser-default.md-select(name="ipv4-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mandatoryIpvxVerification', {x: 6})
+                    label(style="pointer-events: none;")= t('mandatoryIpvxVerification', {x: 6})
                     select.browser-default.md-select(name="ipv6-step-required")
                       option(value="false")= t('Disabled')
                       option(value="true")= t('Enabled')
                 .md-form
                   .md-selectfield.form-control.my-0
-                    label= t('mandatoryDnsVerification')
+                    label(style="pointer-events: none;")= t('mandatoryDnsVerification')
                     select.browser-default.md-select(name="dns-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
@@ -242,14 +242,14 @@ block content
               .row
                 .col-md-6.col-12.pl-0.pr-md-4.pr-0
                   .md-form.input-entry
-                    label= t('flashmansTr069ServerFqdn')
+                    label(style="pointer-events: none;")= t('flashmansTr069ServerFqdn')
                     input#tr069-server-url.form-control(
                       type="text",
                       name="tr069-server-url"
                     )
                     .invalid-feedback= t('insertValidFqdn')
                   .md-form.input-entry
-                    label= t('cpesWebinterfaceLogin')
+                    label(style="pointer-events: none;")= t('cpesWebinterfaceLogin')
                     input#onu-web-login.form-control(
                       type="text",
                       name="onu-web-login",
@@ -257,8 +257,8 @@ block content
                     )
                     #error-onu-web-login.invalid-feedback= t('insertValidLogin')
                   .md-form.input-group
-                    label= t('cpesWebinterfacePassword')
-                    input#onu-web-password.form-control(
+                    label(style="pointer-events: none;")= t('cpesWebinterfacePassword')
+                    input#onu-web-password.form-control.px-0(
                       type="text",
                       name="onu-web-password",
                       oninput="checkPasswordWebInterface()"
@@ -347,7 +347,7 @@ block content
                       .invalid-feedback
                 .col-md-6.col-12.pl-0.pr-0.text-center
                   .md-form.input-entry
-                    label= t('tr069InformIntervalSeconds')
+                    label(style="pointer-events: none;")= t('tr069InformIntervalSeconds')
                     input#inform-interval.form-control(
                       type="number",
                       name="inform-interval",
@@ -358,7 +358,7 @@ block content
                     )
                     .invalid-feedback= t('tr069InformIntervalInvalidFeedback')
                   .md-form.input-entry
-                    label= t('tr069DataSynchronizationIntervalSeconds')
+                    label(style="pointer-events: none;")= t('tr069DataSynchronizationIntervalSeconds')
                     input#sync-interval.form-control(
                       type="number",
                       name="sync-interval",
@@ -369,7 +369,7 @@ block content
                     )
                     .invalid-feedback= t('tr069DataSynchronizationIntervalInvalidFeedback')
                   .md-form.input-entry
-                    label= t('lostInformsForUnstableCpe')
+                    label(style="pointer-events: none;")= t('lostInformsForUnstableCpe')
                     input#lost-informs-recovery-threshold.form-control(
                       type="number",
                       name="lost-informs-recovery-threshold",
@@ -380,7 +380,7 @@ block content
                     )
                     #error-lost-informs-recovery-threshold.invalid-feedback= t('lostInformsInvalidFeedback')
                   .md-form.input-entry
-                    label= t('lostInformsForOfflineCpe')
+                    label(style="pointer-events: none;")= t('lostInformsForOfflineCpe')
                     input#lost-informs-offline-threshold.form-control(
                       type="number",
                       name="lost-informs-offline-threshold",
