@@ -632,7 +632,7 @@ describe('ACS Device Info Tests', () => {
           },
           wan: {
             pppoe_enable: { value: true, writable: 1 },
-            pppoe_user: { value: 'admin123', writable: 1 },
+            pppoe_user: { value: 'user', writable: 1 },
             pppoe_pass: { value: '', writable: 1 },
             rate: { value: '100', writable: 1 },
             duplex: { value: 'Full', writable: 1 },
@@ -654,7 +654,7 @@ describe('ACS Device Info Tests', () => {
             dns_servers: { value: '', writable: 1 }
           },
           wifi2: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
             bssid: { value: '94:46:96:8c:23:64', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 6, writable: 1 },
@@ -664,7 +664,7 @@ describe('ACS Device Info Tests', () => {
             beacon_type: { value: '11i', writable: 1 }
           },
           wifi5: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
             bssid: { value: '94:46:96:8c:23:63', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 40, writable: 1 },
@@ -674,7 +674,7 @@ describe('ACS Device Info Tests', () => {
             beacon_type: { value: '11i', writable: 1 }
           },
           mesh2: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
             bssid: { value: '94:46:96:8c:23:64', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 6, writable: 1 },
@@ -764,7 +764,7 @@ describe('ACS Device Info Tests', () => {
           },
           wan: {
             pppoe_enable: { value: true, writable: 1 },
-            pppoe_user: { value: 'admin123', writable: 1 },
+            pppoe_user: { value: 'user', writable: 1 },
             pppoe_pass: { value: '', writable: 1 },
             rate: { value: '100', writable: 1 },
             duplex: { value: 'Full', writable: 1 },
@@ -786,7 +786,7 @@ describe('ACS Device Info Tests', () => {
             dns_servers: { value: '', writable: 1 }
           },
           wifi2: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
             bssid: { value: '94:46:96:8c:23:64', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 6, writable: 1 },
@@ -796,7 +796,7 @@ describe('ACS Device Info Tests', () => {
             beacon_type: { value: '11i', writable: 1 }
           },
           wifi5: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
             bssid: { value: '94:46:96:8c:23:63', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 40, writable: 1 },
@@ -806,7 +806,7 @@ describe('ACS Device Info Tests', () => {
             beacon_type: { value: '11i', writable: 1 }
           },
           mesh2: {
-            ssid: { value: 'AP_2.4G_RE708', writable: 1 },
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
             bssid: { value: '94:46:96:8c:23:64', writable: 0 },
             password: { value: '', writable: 1 },
             channel: { value: 6, writable: 1 },
