@@ -391,4 +391,48 @@ describe('Validate functions used both in front and back end', () => {
       expect(result.valid).toBe(true);
     });
   });
+  /*
+    input:
+      rules(16) - 1 int, 1 float, 1 undefined, 1 null, 1 string, 1 empty array,
+        1 array of invalid objects, 1 array of almost valid rules,
+        7 array of rules with errors, 1 valid array of rules
+      subnet(1) - (1 int, 1 float, 1 undefined, 1 null, 1 invalid string,
+        1 almost valid IP) [may test the checkAddressSubnetRange], 1 valid IP
+      mask(1) - (1 string, 1 float, 1 undefined, 1 null, 1 negative int,
+        1 int higher than 26) [may test the checkAddressSubnetRange],
+        1 int between 0 and 26
+    output:
+      'success-message object':
+        success(2) - true, false
+        message(8) - t('operationSuccessful'), t('outOfSubnetRangeError'),
+          t('fieldShouldBeFilledError'), t('portsSouldBeNumberError'),
+          t('portsSouldBeBetweenError'), t('portRangesAreDifferentError'),
+          t('portRangesInvertedLimitsError')
+    total tests = 16 */
+  describe('checkPortMappingValidity function(rules, subnet, mask)', () => {});
+  /*
+    input:
+      rules(15) - 1 int, 1 float, 1 undefined, 1 null, 1 string, 1 empty array,
+        1 array of invalid objects, 1 array of almost valid objects,
+        6 array of valid rules with overlapping (start, end, both, edge start,
+        edge end, both edge), 1 array of overlapping valid rules
+    output:
+      'success-message object':
+        success(2) - true, false
+        message(2) - t('operationSuccessful'), t('overlappingMappingError')
+    total tests = 15 */
+  describe('checkOverlappingPorts function(rules)', () => {});
+  /*
+    input:
+      rules(14) - 1 int, 1 float, 1 undefined, 1 null, 1 string, 1 empty array,
+        1 array of invalid objects, 1 array of almost valid objects,
+        5 array of almost compatible rules, 1 array of compatible rules
+      compatibility(12) - 1 int, 1 float, 1 undefined, 1 null, 1 string,
+        1 empty object, 1 almost valid object, 5 valid objects
+    output:
+      'success-message object':
+        success(2) - true, false
+        message(2) - t('operationSuccessful'), t('incompatibleRulesError')
+    total tests = 21 */
+  describe('checkIncompatibility function(rules, compatibility)', () => {});
 });
