@@ -426,6 +426,185 @@
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    Validator.prototype.checkPortMappingObj = function(rules) {
+      let isJsonInFormat = false;
+      if (Array.isArray(rules)) {
+        let keys = ['ip', 'external_port_start', 'external_port_end',
+          'internal_port_start', 'internal_port_end'];
+        isJsonInFormat = rules.every((r) => {
+          let boolCheck = true;
+          keys.forEach((k) => {
+            boolCheck = boolCheck && Object.keys(r).includes(k);
+          });
+          return boolCheck;
+        });
+      }
+      return isJsonInFormat;
+    };
+
+    /* Function to verify if the set of port mapping values is allowed
+      in terms of: ip address, emptyness, numberness, rangeness,
+      oddness, range equality */
+    Validator.prototype
+    .checkPortMappingValidity = function(rules, subnet, mask) {
+      let i;
+      let j;
+      let portToCheck;
+      let portsValues;
+      let firstSlice;
+      let secondSlice;
+      for (i = 0; i < rules.length; i++) {
+        portsValues = [];
+        portsValues.push(rules[i].external_port_start);
+        portsValues.push(rules[i].external_port_end);
+        portsValues.push(rules[i].internal_port_start);
+        portsValues.push(rules[i].internal_port_end);
+        // verify if the given ip is on subnet range
+        if (!Validator.prototype.checkAddressSubnetRange(
+              subnet, rules[i].ip, mask,
+          )) {
+          return {
+            success: false,
+            message: t('outOfSubnetRangeError', {ip: rules[i].ip}),
+          };
+        }
+        // verify if is number, empty, on 2^16 range,
+        for (j = 0; j < 4; j++) {
+          portToCheck = portsValues[j];
+          if (portToCheck == '') {
+            return {
+              success: false,
+              message: t('fieldShouldBeFilledError', {ip: rules[i].ip}),
+            };
+          } else if (isNaN(parseInt(portToCheck))) {
+            return {
+              success: false,
+              message: t('portsSouldBeNumberError', {ip: rules[i].ip}),
+            };
+          } else if (!(parseInt(portToCheck) >= 1 &&
+                       parseInt(portToCheck) <= 65535 &&
+                       parseInt(portToCheck) != 22 &&
+                       parseInt(portToCheck) != 23 &&
+                       parseInt(portToCheck) != 80 &&
+                       parseInt(portToCheck) != 443 &&
+                       parseInt(portToCheck) != 7547 &&
+                       parseInt(portToCheck) != 58000)) {
+            return {
+              success: false,
+              message: t('portsSouldBeBetweenError', {ip: rules[i].ip}),
+            };
+          }
+        }
+        // verify if range is on same size and start/end order
+        firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
+        secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
+        if (firstSlice != secondSlice) {
+          return {
+            success: false,
+            message: t('portRangesAreDifferentError', {ip: rules[i].ip}),
+          };
+        }
+        if (firstSlice < 0 || secondSlice < 0) {
+          return {
+            success: false,
+            message: t('portRangesInvertedLimitsError', {ip: rules[i].ip}),
+          };
+        }
+      }
+      return {
+        success: true,
+        message: t('operationSuccessful'),
+      };
+    };
+
+    /* Function to verify if there is ports overlapping each other */
+    Validator.prototype.checkOverlappingPorts = function(rules) {
+      let successRet = {success: true, message: t('operationSuccessful')};
+      let errorRet = {success: false, message: ''};
+      let i;
+      let j;
+      let ipI;
+      let ipJ;
+      let exStart;
+      let exEnd;
+      let inStart;
+      let inEnd;
+      if (rules.length > 1) {
+        for (i = 0; i < rules.length; i++) {
+          ipI = rules[i].ip;
+          exStart = rules[i].external_port_start;
+          exEnd = rules[i].external_port_end;
+          inStart = rules[i].internal_port_start;
+          inEnd = rules[i].internal_port_end;
+          errorRet.message = t('overlappingMappingError',
+            {ip: rules[i].ip});
+          for (j = i+1; j < rules.length; j++) {
+            ipJ = rules[j].ip;
+            let port = rules[j].external_port_start;
+            if (port >= exStart && port <= exEnd) {
+              return errorRet;
+            }
+            port = rules[j].external_port_end;
+            if (port >= exStart && port <= exEnd) {
+              return errorRet;
+            }
+            port = rules[j].internal_port_start;
+            if (ipI == ipJ && port >= inStart && port <= inEnd) {
+              return errorRet;
+            }
+            port = rules[j].internal_port_end;
+            if (ipI == ipJ && port >= inStart && port <= inEnd) {
+              return errorRet;
+            }
+          }
+        }
+      }
+      return successRet;
+    };
+
+    /* Function to check if exists rules that are not compatible to the device:
+      Returns a success-message object: false case exist a rule that is not
+      possible to do in the device; true if is all clean; */
+    Validator.prototype.checkIncompatibility = function(rules, compatibility) {
+      let successRet = {success: true, message: t('operationSuccessful')};
+      let errorRet = {success: false, message: ''};
+      let i;
+      let exStart;
+      let exEnd;
+      let inStart;
+      let inEnd;
+      for (i = 0; i < rules.length; i++) {
+        exStart = rules[i].external_port_start;
+        exEnd = rules[i].external_port_end;
+        inStart = rules[i].internal_port_start;
+        inEnd = rules[i].internal_port_end;
+        errorRet.message = t('incompatibleRulesError',
+          {ip: rules[i].ip});
+        if (!compatibility.simpleSymmetric) {
+          if (exStart == exEnd && inStart == inEnd) {
+            return errorRet;
+          }
+        }
+        if (!compatibility.simpleAsymmetric) {
+          if (exStart != inStart && exEnd != inEnd) {
+            return errorRet;
+          }
+        }
+        if (!compatibility.rangeSymmetric) {
+          if (exStart != exEnd && inStart != inEnd) {
+            return errorRet;
+          }
+        }
+        if (!compatibility.rangeAsymmetric) {
+          if (exStart != inStart && exEnd != inEnd &&
+             exStart != exEnd && inStart != inEnd) {
+            return errorRet;
+          }
+        }
+      }
+      return successRet;
+    };
+
     return Validator;
   })();
 

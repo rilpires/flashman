@@ -42,16 +42,18 @@ let syncStats = {
 };
 
 // Show statistics every 10 minutes if have sync
-setInterval(() => {
-  if ((SYNCMAX > 0) && (syncStats.cpes > 0)) {
-    console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
-      `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
-      `Timeouts: ${syncStats.timeout}`);
-    syncStats.cpes = 0;
-    syncStats.time = 0;
-    syncStats.timeout = 0;
-  }
-}, 10 * 60 * 1000);
+if (SYNCMAX > 0) {
+  setInterval(() => {
+    if (syncStats.cpes > 0) {
+      console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
+        `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
+        `Timeouts: ${syncStats.timeout}`);
+      syncStats.cpes = 0;
+      syncStats.time = 0;
+      syncStats.timeout = 0;
+    }
+  }, 10 * 60 * 1000);
+}
 
 let syncRateControl = new Map();
 
