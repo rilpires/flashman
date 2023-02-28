@@ -5,8 +5,10 @@ const pfAcsHandlers = require(cPath + '/handlers/acs/port_forward');
 const TasksAPI = require(cPath + '/external-genieacs/tasks-api');
 const acsXMLConfigHandler = require(cPath + '/handlers/acs/xmlconfig');
 const DevicesAPI = require(cPath + '/external-genieacs/devices-api');
+const util = require(cPath + '/handlers/util');
 const basicCPEModel = require(cPath +
   '/external-genieacs/cpe-models/base-model');
+const fs = require('fs');
 process.env.FLM_GENIE_IGNORED = 'test';
 
 let createSimplePortMapping = function(ip, port) {
@@ -19,20 +21,32 @@ let almostValidDevice = function(m) {
         version: 'test', hw_version: 'test', port_mapping: 'test'};
 };
 
+let deviceH199A;
+
 let testChangePortForwardRules = async function(device, rulesDiff,
   interfaceValue, deleteAllRules, retFromTask, retFromCollection,
-  calledTask, timesCalledAddTask, callback = null) {
+  calledTask, timesCalledAddTask) {
   jest.spyOn(TasksAPI, 'getFromCollection')
     .mockReturnValue(retFromCollection);
-  jest.spyOn(TasksAPI, 'addTask')
-    .mockReturnValue(retFromTask);
+  let calls = [];
+  let addTaskSpy = jest.spyOn(TasksAPI, 'addTask')
+    .mockImplementation(async (deviceid, task, callback=null,
+      legacyTimeout=0, requestConn=true) => {
+      calls.push(util.deepCopyObject(task));
+      return {success: true, executed: true};
+    });
   await pfAcsHandlers.changePortForwardRules(device,
     rulesDiff, interfaceValue, deleteAllRules);
-  expect(TasksAPI.addTask)
+  expect(addTaskSpy)
     .toHaveBeenCalledTimes(timesCalledAddTask);
-  if (timesCalledAddTask > 0) {
-    expect(TasksAPI.addTask)
-      .toHaveBeenCalledWith(device.acs_id, calledTask, callback);
+  if (timesCalledAddTask > 0 && calledTask.length > 0) {
+    let i = 0;
+    calledTask.forEach((ct) => {
+      expect(addTaskSpy.mock.calls[i][0]).toBe(device.acs_id);
+      expect(JSON.stringify(calls[i]))
+        .toBe(JSON.stringify(ct));
+      i++;
+    });
   }
 };
 
@@ -77,6 +91,11 @@ describe('Controllers - Handlers - Port Forward', () => {
     total tests = 19 */
   describe('changePortForwardRules function(device, rulesDiffLength'+
     ', interfaceValue, deleteAllRules)', () => {
+    beforeAll(async () => {
+      deviceH199A = almostValidDevice('ZXHN H199A');
+      deviceH199A.port_mapping = [
+        createSimplePortMapping('192.168.1.10', '1010')];
+    });
     test.each([[0],
       ['test'],
       [{}],
@@ -88,7 +107,7 @@ describe('Controllers - Handlers - Port Forward', () => {
       ])('bogus device (0 addTask, 0 getModelFields) %o',
       async (device) => {
       jest.spyOn(basicCPEModel, 'getModelFields');
-      await testChangePortForwardRules(device, 0, null, false, {}, [], {}, 0);
+      await testChangePortForwardRules(device, 0, null, false, {}, [], [], 0);
       expect(basicCPEModel.getModelFields)
         .toHaveBeenCalledTimes(0);
     });
@@ -98,7 +117,7 @@ describe('Controllers - Handlers - Port Forward', () => {
       let device = almostValidDevice('120AC');
       device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
       await testChangePortForwardRules(device, 0, null,
-        false, {}, [], {}, 0);
+        false, {}, [], [], 0);
       expect(acsXMLConfigHandler.configFileEditing).toHaveBeenCalledTimes(1);
       expect(acsXMLConfigHandler.configFileEditing)
         .toHaveBeenCalledWith(device, ['port-forward']);
@@ -109,40 +128,51 @@ describe('Controllers - Handlers - Port Forward', () => {
       let device = almostValidDevice('HC220-G5');
       device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
       await testChangePortForwardRules(device, 0, null,
-        false, {}, [], {}, 0);
+        false, {}, [], [], 0);
       expect(pfAcsHandlers.getIPInterface).toHaveBeenCalledTimes(1);
       expect(pfAcsHandlers.getIPInterface)
         .toHaveBeenCalledWith(device, 0, 'Device.IP.Interface');
     });
     it('tasks not being a array (0 addTask)', async () => {
-      let device = almostValidDevice('ZXHN H199A');
-        device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
-      await testChangePortForwardRules(device, 0, null,
-        false, {}, 'test', {}, 0);
+      await testChangePortForwardRules(deviceH199A, 0, null,
+        false, {}, 'test', [], 0);
     });
     it('tasks array with faulty object without name property (0 addTask)',
       async () => {
-      let device = almostValidDevice('ZXHN H199A');
-      device.port_mapping = [createSimplePortMapping('192.168.1.10', '1010')];
-      await testChangePortForwardRules(device, 0, null,
-        false, {}, [{test: 'test'}], {}, 0);
+      await testChangePortForwardRules(deviceH199A, 0, null,
+        false, {}, [{test: 'test'}], [], 0);
     });
-    /*
-    // await testChangePortForwardRules(device, rulesDiff, interfaceValue,
-    //   deleteAllRules, retFromTask, retFromCollection, calledTask,
-    //   timesCalledAddTask);
     it('tasks array with (add|delete)Object name (0 addTask)', async () => {
-      expect(true).toBe(true);
+      await testChangePortForwardRules(deviceH199A, 0, null,
+        false, {}, [{name: 'addObject'}], [], 0);
     });
     it('deleteAllRules call (2 + rules.length addTask)', async () => {
-      expect(true).toBe(true);
+      let tasks = [];
+      let filePath = './test/assets/set_port_mapping.values.1.txt';
+      let setParameterValues = fs.readFileSync(filePath, 'utf8');
+      let pmBase = basicCPEModel.getModelFields().port_mapping_dhcp;
+      tasks.push({name: 'deleteObject', objectName: pmBase + '.*'});
+      // tasks.push({name: 'addObject', objectName: pmBase});
+      tasks.push({name: 'addObject', objectName: pmBase});
+      tasks.push(JSON.parse(setParameterValues));
+      deviceH199A.connection_type = 'dhcp';
+      await testChangePortForwardRules(deviceH199A, 1, null,
+        true, {success: true, executed: true}, [], tasks, 3);
+      deviceH199A.connection_type = 'test';
     });
     it('no connection_type property (0 addTask)', async () => {
-      expect(true).toBe(true);
+      delete deviceH199A['connection_type'];
+      await testChangePortForwardRules(deviceH199A, 1, null,
+        true, {success: true, executed: true}, [], [], 0);
+      expect(TasksAPI.getFromCollection).toHaveBeenCalledTimes(0);
+      deviceH199A['connection_type'] = 'test';
     });
     it('connection_type with wrong string (0 addTask)', async () => {
-      expect(true).toBe(true);
+      await testChangePortForwardRules(deviceH199A, 1, null,
+        true, {success: true, executed: true}, [], [], 0);
+      expect(TasksAPI.getFromCollection).toHaveBeenCalledTimes(0);
     });
+    /*
     it('from 0 to 2 rules (connection_type dhcp) [check calledTask]',
       async () => {
       expect(true).toBe(true);
@@ -156,6 +186,9 @@ describe('Controllers - Handlers - Port Forward', () => {
     it('from 3 to 0 rules [check calledTask]', async () => {
       expect(true).toBe(true);
     });
+    // await testChangePortForwardRules(device, rulesDiff, interfaceValue,
+    //   deleteAllRules, retFromTask, retFromCollection, calledTask,
+    //   timesCalledAddTask);
     */
   });
 });
