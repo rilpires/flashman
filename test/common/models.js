@@ -320,6 +320,8 @@ models.defaultMockConfigs = [
       server_url: '192.168.88.72',
       web_login: 'admin',
       web_password: 'teste123',
+      connection_login: 'teste123',
+      connection_password: 'teste321',
       remote_access: false,
       inform_interval: 60000,
       sync_interval: 300000,
