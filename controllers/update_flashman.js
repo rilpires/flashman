@@ -691,7 +691,13 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: t('configNotFound', {errorline: __line})};
+    let error = new Error('Config error');
+
+    if (!config) {
+      error.message = t('configNotFound', {errorline: __line});
+      throw error;
+    }
+
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
