@@ -305,7 +305,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
   if (!Array.isArray(tasks)) return;
   // if find some task with name addObject or deleteObject
   let hasAlreadySentTasks = tasks.some((t) => {
-    return t.name === 'addObject' ||
+    return !('name' in t) || t.name === 'addObject' ||
     t.name === 'deleteObject';
   });
   // drop this call of changePortForwardRules
