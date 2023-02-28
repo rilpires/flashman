@@ -175,7 +175,7 @@ utils.common.mockRoles = function(data, func) {
 };
 
 
-*/
+
 utils.common.mockDefaultDevices = function() {
   utils.common.mockDevices(models.defaultMockDevices, 'find');
   utils.common.mockDevices(models.defaultMockDevices[0], 'findOne');
