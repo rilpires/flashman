@@ -6,6 +6,7 @@ const models = require('./models');
 const DeviceModel = require('../../models/device');
 const FirmwareModel = require('../../models/firmware');
 const ConfigModel = require('../../models/config');
+const RoleModel = require('../../models/role');
 
 // Environments
 process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
@@ -189,6 +190,13 @@ utils.common.mockDefaultConfigs = function() {
   utils.common.mockConfigs(models.defaultMockConfigs, 'find');
   utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
   utils.common.mockConfigs(models.defaultMockConfigs[0], 'findById');
+};
+
+
+utils.common.mockDefaultRoles = function() {
+  utils.common.mockRoles(models.defaultMockRoles, 'find');
+  utils.common.mockRoles(models.defaultMockRoles[0], 'findOne');
+  utils.common.mockRoles(models.defaultMockRoles[0], 'findById');
 };
 
 

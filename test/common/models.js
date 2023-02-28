@@ -412,6 +412,55 @@ models.defaultMockConfigs = [
 ];
 
 
+// Roles
+models.defaultMockRoles = [
+  {
+    _id: '636181e078ffa476f1c2a083',
+    is_hidden: true,
+    grantWifiInfo: 2,
+    grantPPPoEInfo: 2,
+    grantPassShow: true,
+    grantFirmwareUpgrade: true,
+    grantMassFirmwareUpgrade: true,
+    grantWanType: true,
+    grantDeviceId: true,
+    grantDeviceActions: true,
+    grantDeviceRemoval: true,
+    grantDeviceMassRemoval: true,
+    grantDeviceLicenseBlock: true,
+    grantFactoryReset: true,
+    grantDeviceAdd: true,
+    grantMonitorManage: true,
+    grantFirmwareManage: true,
+    grantUserManage: true,
+    grantFlashmanManage: true,
+    grantAPIAccess: true,
+    grantDiagAppAccess: true,
+    grantCertificationAccess: 0,
+    grantLOGAccess: true,
+    grantNotificationPopups: true,
+    grantLanEdit: true,
+    grantLanDevices: 2,
+    grantSiteSurvey: true,
+    grantLanDevicesBlock: true,
+    grantMeasureDevices: 1,
+    grantOpmodeEdit: true,
+    grantVlan: 0,
+    grantVlanProfileEdit: true,
+    grantStatisticsView: true,
+    grantCsvExport: true,
+    grantSearchLevel: 2,
+    grantShowSearchSummary: true,
+    grantShowRowsPerPage: true,
+    grantFirmwareBetaUpgrade: true,
+    grantFirmwareRestrictedUpgrade: true,
+    grantSlaveDisassociate: true,
+    name: 'admin',
+    __v: 0,
+  },
+];
+
+
 /*
   Description:
     Copy from the models passed and return a new one with the
@@ -502,6 +551,17 @@ models.copyConfigFrom = function(id, data) {
 
   // Push to array
   models.defaultMockConfigs.push(config);
+
+  return config;
+};
+
+
+models.copyRoleFrom = function(id, data) {
+  // Get the config with the same id
+  let config = copyFrom(models.defaultMockRoles, id, data);
+
+  // Push to array
+  models.defaultMockRoles.push(config);
 
   return config;
 };
