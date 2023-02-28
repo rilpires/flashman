@@ -848,4 +848,285 @@ describe('ACS Device Info Tests', () => {
       );
     },
   );
+  
+  // Validate createRegistry - Flag canTrustWanRate is false - Is expected the
+  // fields rate and duplex to be rejectec and not included in device creation
+  test(
+    'Validate createRegistry - Cannot trust rate',
+    async () => {
+      // Flag canTrustWanRate for Multilaser RE708 is false
+      const id = models.defaultMockDevices[0]._id;
+      const device = models.copyDeviceFrom(
+        id,
+        {
+          _id: '94:46:96:8c:23:61',
+          acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
+          model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
+          version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
+          hw_version: '81xx',
+        },
+      );
+      let splitID = device.acs_id.split('-');
+      let model = splitID.slice(1, splitID.length-1).join('-');
+
+      const cpe = devicesAPI.instantiateCPEByModel(
+        model, device.model, device.version, device.hw_version,
+      ).cpe;
+
+      let permissions = deviceVersion.devicePermissions(device);
+
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      let body = {
+        acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
+        data: {
+          common: {
+            mac: { value: '94:46:96:8c:23:61', writable: 0 },
+            model: { value: 'RE1200R4GC-2T2R-V3', writable: 0 },
+            version: { value: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B', writable: 0 },
+            hw_version: { value: '81xx', writable: 0 },
+            uptime: { value: 1028, writable: 0 },
+            ip: { value: 'http://192.168.89.58:7547/tr069', writable: 0 },
+            acs_url: { value: 'http://192.168.88.47:57547', writable: 1 },
+            interval: { value: 113, writable: 1 }
+          },
+          wan: {
+            pppoe_enable: { value: true, writable: 1 },
+            pppoe_user: { value: 'user', writable: 1 },
+            pppoe_pass: { value: '', writable: 1 },
+            rate: { value: '100', writable: 1 },
+            duplex: { value: 'Full', writable: 1 },
+            wan_ip_ppp: { value: '192.168.89.58', writable: 0 },
+            wan_mac_ppp: { value: '000000000000\n', writable: 0 },
+            uptime_ppp: { value: 1005, writable: 0 },
+            mtu_ppp: { value: 1452, writable: 1 },
+            recv_bytes: { value: 695251, writable: 0 },
+            sent_bytes: { value: 642883, writable: 0 },
+            port_mapping_entries_ppp: { value: 0, writable: 0 }
+          },
+          lan: {
+            config_enable: { value: false, writable: 1 },
+            router_ip: { value: '10.0.0.2', writable: 1 },
+            subnet_mask: { value: '255.255.255.0', writable: 1 },
+            lease_min_ip: { value: '10.0.0.100', writable: 1 },
+            lease_max_ip: { value: '10.0.0.200', writable: 1 },
+            ip_routers: { value: '0.0.0.0', writable: 1 },
+            dns_servers: { value: '', writable: 1 }
+          },
+          wifi2: {
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
+            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
+            password: { value: '', writable: 1 },
+            channel: { value: 6, writable: 1 },
+            auto: { value: false, writable: 1 },
+            mode: { value: 'b,g,n', writable: 0 },
+            enable: { value: true, writable: 1 },
+            beacon_type: { value: '11i', writable: 1 }
+          },
+          wifi5: {
+            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
+            bssid: { value: '94:46:96:8c:23:63', writable: 0 },
+            password: { value: '', writable: 1 },
+            channel: { value: 40, writable: 1 },
+            auto: { value: false, writable: 1 },
+            mode: { value: 'a,n,ac', writable: 0 },
+            enable: { value: true, writable: 1 },
+            beacon_type: { value: '11i', writable: 1 }
+          },
+          mesh2: {
+            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
+            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
+            password: { value: '', writable: 1 },
+            channel: { value: 6, writable: 1 },
+            auto: { value: false, writable: 1 },
+            mode: { value: 'b,g,n', writable: 0 },
+            enable: { value: true, writable: 1 },
+            advertise: { value: true, writable: 1 },
+            encryption: { value: 'TKIPandAESEncryption ', writable: 1 },
+            beacon_type: { value: '11i', writable: 1 }
+          },
+          mesh5: {},
+        },
+      };
+
+      // Mocks
+      const mockRequest = () => {return {app: app, body: body}};
+      let req = mockRequest();
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let ret = await acsDeviceInfoController.__testCreateRegistry(
+        req, cpe, permissions,
+      );
+
+      // Verify
+      expect(ret).toStrictEqual(true);
+
+      // It is expected that rate and duplex are rejected and that the device
+      // object does not have the corresponding properties
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.not.objectContaining({
+            wan_negociated_speed: expect.any(String),
+            wan_negociated_duplex: expect.any(String),
+          }),
+        ]),
+      );
+    },
+  );
+  
+  // Validate createRegistry - Flag canTrustWanRate is true - Is expected the
+  // the fields rate and duplex to be accepted and included in device creation
+  test(
+    'Validate createRegistry - Can trust rate',
+    async () => {
+      // Flag canTrustWanRate for ZTE H199 is true
+      const id = models.defaultMockDevices[0]._id;
+      const device = models.copyDeviceFrom(
+        id,
+        {
+          _id: 'c0:b1:01:31:71:6e',
+          acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
+          model: 'ZXHN H199A', // ZTE H199
+          version: 'V9.1.0P4N1_MUL',
+          hw_version: 'V9.1.1',
+        },
+      );
+      let splitID = device.acs_id.split('-');
+      let model = splitID.slice(1, splitID.length-1).join('-');
+
+      const cpe = devicesAPI.instantiateCPEByModel(
+        model, device.model, device.version, device.hw_version,
+      ).cpe;
+
+      let permissions = deviceVersion.devicePermissions(device);
+
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      let body = {
+        acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
+        data: {
+          common: {
+           mac: { value: 'c0:b1:01:31:71:6e', writable: 0 },
+           model: { value: 'ZXHN H199A', writable: 0 },
+           version: { value: 'V9.1.0P4N1_MUL', writable: 0 },
+           hw_version: { value: 'V9.1.1', writable: 0 },
+           uptime: { value: 2339753, writable: 0 },
+           ip: { value: 'http://192.168.88.204:7547/', writable: 0 },
+           acs_url: { value: 'http://192.168.88.47:57547/', writable: 1 },
+           interval: { value: 118, writable: 1 },
+           stun_enable: { value: false, writable: 1 },
+           stun_udp_conn_req_addr: { value: '192.168.88.204', writable: 0 }
+         },
+         wan: {
+           rate: { value: 'Auto', writable: 1 },
+           duplex: { value: 'Auto', writable: 1 },
+           wan_ip: { value: '192.168.88.204', writable: 1 },
+           wan_mac: { value: 'c0:b1:01:31:71:6f', writable: 1 },
+           uptime: { value: 19841, writable: 0 },
+           mtu: { value: 1500, writable: 1 },
+           recv_bytes: { value: 9182195992, writable: 0 },
+           sent_bytes: { value: 757192873, writable: 0 },
+           port_mapping_entries_dhcp: { value: 1, writable: 0 }
+         },
+         lan: {
+           config_enable: { value: true, writable: 1 },
+           router_ip: { value: '192.168.1.1', writable: 1 },
+           subnet_mask: { value: '255.255.255.0', writable: 1 },
+           lease_min_ip: { value: '192.168.1.33', writable: 1 },
+           lease_max_ip: { value: '192.168.1.253', writable: 1 },
+           ip_routers: { value: '192.168.1.1', writable: 1 },
+           dns_servers: { value: '192.168.1.1', writable: 1 }
+         },
+         wifi2: {
+           ssid: { value: 'Anlix-ZTE-H199', writable: 1 },
+           bssid: { value: 'c0:b1:01:31:71:6e', writable: 0 },
+           password: { value: '', writable: 1 },
+           channel: { value: 3, writable: 1 },
+           auto: { value: true, writable: 1 },
+           mode: { value: 'b,g,n', writable: 1 },
+           enable: { value: true, writable: 1 },
+           beacon_type: { value: '11i', writable: 1 },
+           band: { value: 'Auto', writable: 1 }
+         },
+         wifi5: {
+           ssid: { value: 'Anlix-ZTE-H199-5G', writable: 1 },
+           bssid: { value: 'c0:b1:01:31:71:6f', writable: 0 },
+           password: { value: '', writable: 1 },
+           channel: { value: 60, writable: 1 },
+           auto: { value: true, writable: 1 },
+           mode: { value: 'a,n,ac', writable: 1 },
+           enable: { value: true, writable: 1 },
+           beacon_type: { value: '11i', writable: 1 },
+           band: { value: '80MHz', writable: 1 }
+         },
+         mesh2: {
+           ssid: { value: 'SSID2', writable: 1 },
+           bssid: { value: 'c2:b1:01:11:71:6e', writable: 0 },
+           password: { value: '', writable: 1 },
+           channel: { value: 3, writable: 1 },
+           auto: { value: true, writable: 1 },
+           mode: { value: 'b,g,n', writable: 0 },
+           enable: { value: false, writable: 1 },
+           advertise: { value: true, writable: 1 },
+           encryption: { value: 'AESEncryption', writable: 1 },
+           beacon_type: { value: '11i', writable: 1 }
+         },
+         mesh5: {
+           ssid: { value: 'SSID6', writable: 1 },
+           bssid: { value: 'c2:b1:01:11:71:6f', writable: 0 },
+           password: { value: '', writable: 1 },
+           channel: { value: 60, writable: 1 },
+           auto: { value: true, writable: 1 },
+           mode: { value: 'a,n,ac', writable: 0 },
+           enable: { value: false, writable: 1 },
+           advertise: { value: true, writable: 1 },
+           encryption: { value: 'AESEncryption', writable: 1 },
+           beacon_type: { value: '11i', writable: 1 }
+         },
+        },
+      };
+
+      // Mocks
+      const mockRequest = () => {return {app: app, body: body}};
+      let req = mockRequest();
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let ret = await acsDeviceInfoController.__testCreateRegistry(
+        req, cpe, permissions,
+      );
+
+      // Verify
+      expect(ret).toStrictEqual(true);
+
+      // It is expected that rate and duplex values are added when assembling
+      // the device object and that the value of the corresponding properties is
+      // exactly equal to the values received
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.objectContaining({
+            wan_negociated_speed: body.data.wan.rate.value,
+            wan_negociated_duplex: body.data.wan.duplex.value,
+          }),
+        ]),
+      );
+    },
+  );
 });
