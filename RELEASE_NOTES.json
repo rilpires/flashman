@@ -15,7 +15,8 @@
 			"Adicionamos suporte ao modelo Multilaser RE708 por TR-069"
 		],
 		"fixes": [
-			"Corrigimos um problema que permitia o cadastro de MACs da WAN de CPEs TR-069 que eram informados de maneira errada."
+			"Corrigimos um problema que permitia o cadastro de MACs da WAN de CPEs TR-069 que eram informados de maneira errada",
+			"Corrigimos um problema impedia o cadastro de senhas customizadas para WEB para os modelos Multilaser/ZTE F6600 e F670L v9"
 		],
 		"improvements": [
 			"Melhoramos o filtro para inclusão de novas firmware para upgrade de CPEs TR-069",
