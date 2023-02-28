@@ -42,16 +42,18 @@ let syncStats = {
 };
 
 // Show statistics every 10 minutes if have sync
-setInterval(() => {
-  if ((SYNCMAX > 0) && (syncStats.cpes > 0)) {
-    console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
-      `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
-      `Timeouts: ${syncStats.timeout}`);
-    syncStats.cpes = 0;
-    syncStats.time = 0;
-    syncStats.timeout = 0;
-  }
-}, 10 * 60 * 1000);
+if (SYNCMAX > 0) {
+  setInterval(() => {
+    if (syncStats.cpes > 0) {
+      console.log(`RC STAT: CPEs: ${syncStats.cpes } `+
+        `Time: ${(syncStats.time/syncStats.cpes ).toFixed(2)} ms `+
+        `Timeouts: ${syncStats.timeout}`);
+      syncStats.cpes = 0;
+      syncStats.time = 0;
+      syncStats.timeout = 0;
+    }
+  }, 10 * 60 * 1000);
+}
 
 let syncRateControl = new Map();
 
@@ -321,9 +323,15 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // WAN MAC Address - Device Model: wan_bssid
   let wanMacAddr;
-  if (hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+  if (
+    hasPPPoE && data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value
+    && utilHandlers.isMacValid(data.wan.wan_mac_ppp.value)
+  ) {
     wanMacAddr = data.wan.wan_mac_ppp.value.toUpperCase();
-  } else if (data.wan.wan_mac && data.wan.wan_mac.value) {
+  } else if (
+    data.wan.wan_mac && data.wan.wan_mac.value
+    && utilHandlers.isMacValid(data.wan.wan_mac.value)
+  ) {
     wanMacAddr = data.wan.wan_mac.value.toUpperCase();
   }
 
@@ -451,13 +459,12 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
   /* only process port mapping coming from sync if
-  is the feature is enabled to that device */
+    the feature is enabled to that device */
+  let wrongPortMapping = false;
   let portMapping = [];
   if (cpe.modelPermissions().features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
-    portMapping = acsPortForwardHandler
-      .convertPortForwardFromGenieToFlashman(data.port_mapping,
-        cpe.getModelFields());
+    wrongPortMapping = true;
   }
 
   let newDevice = new DeviceModel({
@@ -501,6 +508,7 @@ const createRegistry = async function(req, cpe, permissions) {
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
     port_mapping: portMapping,
+    wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_negociated_speed: wanRate,
@@ -553,11 +561,29 @@ const createRegistry = async function(req, cpe, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     let acceptLocalChanges = false;
     if (!acceptLocalChanges) {
-      acsDeviceInfoController.updateInfo(newDevice, changes);
+      // Delay the execution of this function as it needs the device to exists
+      // in genie database, but the device will only be created at the end of
+      // this function, thus causing a racing condition.
+      delayExecutionGenie(
+        newDevice,
+        async () => {
+          await acsDeviceInfoController
+            .updateInfo(newDevice, changes, false);
+        },
+      );
     }
   }
   if (syncXmlConfigs) {
-    acsXMLConfigHandler.configFileEditing(newDevice, ['web-admin']);
+    // Delay the execution of this function as it needs the device to exists in
+    // genie database, but the device will only be created at the end of this
+    // function, thus causing a racing condition.
+    delayExecutionGenie(
+      newDevice,
+      async () => {
+        await acsXMLConfigHandler
+          .configFileEditing(newDevice, ['web-admin']);
+      },
+    );
   }
 
   if (createPrefixErrNotification) {
@@ -585,6 +611,124 @@ const createRegistry = async function(req, cpe, permissions) {
   }
   return true;
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testCreateRegistry = createRegistry;
+
+
+/*
+ *  Description:
+ *    This function returns a promise and only resolves when the time in
+ *    miliseconds timeout after calling this function.
+ *
+ *  Inputs:
+ *    miliseconds - Amount of time in miliseconds to sleep
+ *
+ *  Outputs:
+ *    promise - The promise that is only resolved when the timer ends.
+ *
+ */
+const sleep = function(miliseconds) {
+  let promise = new Promise(
+    (resolve) => setTimeout(resolve, miliseconds),
+  );
+
+  return promise;
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testSleep = sleep;
+
+
+
+/*
+ *  Description:
+ *    This function calls an async function (func) after delayTime. If it fails,
+ *    the func will be called again with twice the time it was executed.
+ *    It will repeat this process until the device exists in genie or the
+ *    repeatQuantity reaches zero. Every iteration, the repeatQuantity will be
+ *    reduced by one and delayTime will doubled from what it was before.
+ *
+ *  Inputs:
+ *    func - The function that will be called
+ *    repeatQuantity - Amount of repetitions until giving up calling the
+ *      function
+ *    delayTime - Amount of time to call the function again
+ *
+ *  Outputs:
+ *    object:
+ *      - success: If could start the delay loop
+ *      - executed: If could execute the func
+ *      - message: An error or okay message about what happened
+ *      - result: the return of func, only included if could ran the func
+ */
+const delayExecutionGenie = async function(
+  device,
+  func,
+  repeatQuantity = 3,
+  delayTime = 1000,
+) {
+  // Exit if repeatQuantity or delayTime is less than 0
+  if (repeatQuantity <= 0 || delayTime <= 0) {
+    console.log('Invalid parameters passed');
+    return {
+      success: false,
+      executed: false,
+      message: t('parametersError', {errorline: __line}),
+    };
+  }
+
+  let sleepTime = delayTime;
+
+  // Loop the amount of repeatQuantity
+  for (let repeat = repeatQuantity; repeat > 0; repeat--) {
+    // Wait until timeout sleepTime timer
+    await sleep(sleepTime);
+
+    // Double the timer
+    sleepTime = 2 * sleepTime;
+
+
+    // Try getting the device from genie database
+    let query = {_id: device.acs_id};
+    let genieDevice = await TasksAPI
+        .getFromCollection('devices', query, '_id');
+
+
+    // Check if device does exist
+    if (
+      genieDevice && genieDevice.length > 0 &&
+      genieDevice[0]._id === device.acs_id
+    ) {
+      // Call the function
+      let result = await func();
+
+      return {
+        success: true,
+        executed: true,
+        result: result,
+        message: t('Ok'),
+      };
+    }
+  }
+
+
+  return {
+    success: true,
+    executed: false,
+    message: t('noDevicesFound'),
+  };
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
+
 
 // Receives GenieACS inform event, to register the CPE as online - updating last
 // contact information. For new CPEs, it replies with "measure" as true, to
@@ -1302,7 +1446,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
 
     // Get WAN MAC address
-    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value) {
+    if (data.wan.wan_mac_ppp && data.wan.wan_mac_ppp.value
+        && utilHandlers.isMacValid(data.wan.wan_mac_ppp.value)) {
       device.wan_bssid = data.wan.wan_mac_ppp.value.toUpperCase();
     }
 
@@ -1322,7 +1467,8 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
 
     // Get WAN MAC address
-    if (data.wan.wan_mac && data.wan.wan_mac.value) {
+    if (data.wan.wan_mac && data.wan.wan_mac.value
+        && utilHandlers.isMacValid(data.wan.wan_mac.value)) {
       device.wan_bssid = data.wan.wan_mac.value.toUpperCase();
     }
 
@@ -1738,8 +1884,9 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // daily data fetching
   if (doDailySync) {
-    // Every day fetch device port forward entries
-    if (permissions.grantPortForward) {
+    /* Every day fetch device port forward entries, except in the case
+      which device is registred with upcoming port mapping values */
+    if (permissions.grantPortForward && !device.wrong_port_mapping) {
       // Stavix XML devices should not sync port forward daily
       if (!cpe.modelPermissions().stavixXMLConfig.portForward) {
         let entriesDiff = 0;
@@ -1945,8 +2092,63 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
+const replaceWanFieldsWildcards = async function (
+  acsID, wildcardFlag, fields, changes, task,
+) {
+  // WAN fields cannot have wildcards. So we query the genie database to get
+  // access to the index from which the wildcard should be replaced. The
+  // projection will be a concatenation of the fields requested for editing,
+  // separated by a comma
+  let data;
+  let query = {_id: acsID};
+  let projection = Object.keys(changes.wan).map((k)=>{
+    if (!fields.wan[k]) return;
+    return fields.wan[k].split('.*')[0];
+  }).join(',');
+  // Fetch Genie database and retrieve data
+  try {
+    data = await TasksAPI.getFromCollection('devices', query, projection);
+    data = data[0];
+  } catch (e) {
+    console.log('Exception fetching Genie database: ' + e);
+    return {'success': false};
+  }
+  // Iterates through changes to WAN fields and replaces the corresponding value
+  // in task
+  let fieldName = '';
+  let success = false;
+  Object.keys(changes.wan).forEach((key)=>{
+    if (!fields.wan[key]) return;
+    if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
+      fieldName = utilHandlers.replaceNestedKeyWildcards(
+        data, fields.wan[key], wildcardFlag,
+      );
+    } else {
+      return;
+    }
+    // Find matching field in task and replace it
+    for (let i = 0; i < task.parameterValues.length; i++) {
+      if (task.parameterValues[i][0] === fields.wan[key]) {
+        task.parameterValues[i][0] = fieldName;
+        success = true;
+        break;
+      }
+    }
+  });
+  return {
+    'success': success,
+    'task': (success)? task : undefined,
+  };
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testReplaceWanFieldsWildcards =
+  replaceWanFieldsWildcards;
+
 acsDeviceInfoController.updateInfo = async function(
-  device, changes, awaitUpdate = false,
+  device, changes, awaitUpdate = false, mustExecute = true,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -1954,6 +2156,7 @@ acsDeviceInfoController.updateInfo = async function(
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
+  let wildcardFlag = cpe.modelPermissions().useLastIndexOnWildcard;
 
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
@@ -2041,6 +2244,25 @@ acsDeviceInfoController.updateInfo = async function(
       hasChanges = true;
     });
   });
+  // If there are changes in the WAN fields, we have to replace the fields that
+  // have wildcards with the correct indexes. Only the fields referring to the
+  // WAN are changed
+  if (changes.wan && Object.keys(changes.wan).length > 0) {
+    try {
+      let ret = await replaceWanFieldsWildcards(
+        acsID, wildcardFlag, fields, changes, task,
+      );
+      if (ret.success) {
+        task = ret.task;
+      } else {
+        // If the wildcards are not replaced correctly, it prevents the update
+        // from taking place
+        return;
+      }
+    } catch (e) {
+      return;
+    }
+  }
   // CPEs needs to reboot after change PPPoE parameters
   if (
     cpe.modelPermissions().wan.mustRebootAfterChanges &&
@@ -2061,7 +2283,8 @@ acsDeviceInfoController.updateInfo = async function(
       // We need to wait for task to be completed before we can return - caller
       // expects a return "true" after task is done
       let result = await TasksAPI.addTask(acsID, task);
-      if (!result || !result.success || !result.executed) {
+
+      if (!result || !result.success || (mustExecute && !result.executed)) {
         return;
       }
       return taskCallback(acsID);
@@ -2073,6 +2296,11 @@ acsDeviceInfoController.updateInfo = async function(
     return;
   }
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testUpdateInfo = acsDeviceInfoController.updateInfo;
 
 acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   acsDeviceInfoController.pingOfflineDevices();
@@ -2223,8 +2451,17 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
     meshChannel5GHz,
     createOk.populate,
   );
-  const updated =
-    await acsDeviceInfoController.updateInfo(device, changes, true);
+
+  // If the task must be executed, only if it is not going to disable or cable
+  const mustExecute = (targetMode !== 0 && targetMode !== 1);
+
+  const updated = await acsDeviceInfoController.updateInfo(
+    device,
+    changes,
+    true,
+    mustExecute,
+  );
+
   if (!updated) {
     return {success: false, msg: t('errorSendingMeshParamtersToCpe')};
   }

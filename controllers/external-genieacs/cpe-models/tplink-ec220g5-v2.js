@@ -20,6 +20,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '3.16.0 0.9.1 v6055.0 Build 201228 Rel.13643n': [],
+    '3.16.0 0.9.1 v6055.0 Build 220706 Rel.79244n': [],
   };
   return permissions;
 };

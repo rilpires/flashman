@@ -18,6 +18,7 @@ const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
+const DeviceModel = require('../../models/device');
 
 // Import each and every model
 const tr069Models = {
@@ -52,6 +53,7 @@ const tr069Models = {
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
+  mercusysMR30GModel: require('./cpe-models/mercusys-mr30g'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
@@ -59,6 +61,7 @@ const tr069Models = {
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  multilaserRE708Model: require('./cpe-models/multilaser-re708'),
   nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
@@ -75,7 +78,8 @@ const tr069Models = {
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
-  tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkEC220G5V2Model: require('./cpe-models/tplink-ec220g5-v2'),
+  tplinkEC220G5V3Model: require('./cpe-models/tplink-ec220g5-v3'),
   tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
   tplinkEX510Model: require('./cpe-models/tplink-ex510'),
@@ -105,8 +109,31 @@ const getTR069CustomFactoryModels = function() {
   return ret;
 };
 
-const getTR069UpgradeableModels = function() {
+const getTR069UpgradeableModels = async function() {
   let ret = {vendors: {}, versions: {}};
+
+  // Get all firmwares from devices to be appended
+  let allDevices = null;
+  try {
+    allDevices = await DeviceModel.find(
+      {use_tr069: true},
+      {
+        acs_id: true,
+        model: true,
+        version: true,
+        hw_version: true,
+        installed_release: true,
+      },
+    );
+
+  // Continue in the function as this procedure is not necessary
+  } catch (error) {
+    console.log(
+      'Error getting devices in getTR069UpgradeableModels: ' + error,
+    );
+  }
+
+
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
@@ -122,6 +149,40 @@ const getTR069UpgradeableModels = function() {
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
     }
   });
+
+
+  // Loop all devices in flashman and append their installed firmwares
+  if (allDevices && allDevices.constructor === Array) {
+    allDevices.forEach((device) => {
+      let cpeInstance = instantiateCPEByModelFromDevice(device);
+      let cpe = cpeInstance.cpe;
+
+      // Continue to the next iteration if the cpe is invalid
+      if (!cpeInstance.success) return;
+
+      let vendor = cpe.identifier.vendor;
+      let model = cpe.identifier.model;
+      let fullID = vendor + ' ' + cpe.identifier.model;
+
+      // Continue to the next iteration if the installed_release is invalid
+      if (!device.installed_release) return;
+
+
+      // If the entry does not exist in ret.versions
+      if (
+        ret.versions[fullID] &&
+        !(ret.versions[fullID].includes(device.installed_release))
+      ) {
+        ret.versions[fullID].push(device.installed_release);
+
+      // If the model was not added
+      } else if (!ret.versions[fullID]) {
+        ret.vendors[vendor] = [model];
+        ret.versions[fullID] = [device.installed_release];
+      }
+    });
+  }
+
   return ret;
 };
 
@@ -240,6 +301,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === '1200R') {
     // Intelbras WiFiber 1200R InMesh
     result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
+  } else if (modelName === 'MR30G') {
+    // Mercusys MR30G
+    result = {success: true, cpe: tr069Models.mercusysMR30GModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
@@ -261,6 +325,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
     result = {success: true, cpe: tr069Models.multilaserH199Model};
+  } else if (modelName === 'RE1200R4GC-2T2R-V3') {
+    // Multilaser ZTE RE708
+    result = {success: true, cpe: tr069Models.multilaserRE708Model};
   } else if (modelName === 'NXT-425AC') {
     // Next Fiber NXT-425
     result = {success: true, cpe: tr069Models.nextFiberNXT425Model};
@@ -311,9 +378,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     result = {success: true, cpe: tr069Models.tplinkArcherC6};
-  } else if (modelName === 'EC220-G5') {
-    // TP-Link EC220-G5
-    result = {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('v2')) {
+    // TP-Link EC220-G5 v2
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V2Model};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('3.0')) {
+    // TP-Link EC220-G5 v3
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V3Model};
   } else if (modelName === 'EC225-G5') {
     // TP-Link EC225-G5
     result = {success: true, cpe: tr069Models.tplinkEC225G5Model};
@@ -401,6 +471,7 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    measure_type: flashRes.data.measure_type,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };

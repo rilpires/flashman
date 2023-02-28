@@ -1,6 +1,5 @@
 /* global __line */
 require('../../bin/globals.js');
-const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const deviceListController = require('../../controllers/device_list');
@@ -15,24 +14,14 @@ const UserModel = require('../../models/user');
 const utils = require('../utils');
 const testUtils = require('../common/utils');
 
+jest.mock('../../mqtts', () => ({
+  anlixMessageRouterUpdate: jest.fn(() => undefined),
+}));
+
 const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
 
 describe('Controllers - Device List', () => {
-  let connection;
-
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
   /* list of functions that may be mocked:
     DeviceModel.findByMacOrSerial
     Config.findOne
@@ -129,6 +118,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
@@ -512,7 +502,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 55));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -593,7 +583,7 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 55));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
@@ -881,6 +871,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].errors.length).toBe(2);
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+
     test('Field name invalid', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -917,7 +908,6 @@ describe('Controllers - Device List', () => {
     });
   });
 
-
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
     // Mocks
@@ -950,8 +940,6 @@ describe('Controllers - Device List', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe(undefined);
   });
-
-
   // Index route: Empty filter
   test('Index: Empty filter', async () => {
     // Mocks

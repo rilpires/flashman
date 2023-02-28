@@ -115,7 +115,7 @@ const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
     {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
-  ).lean().catch((err) => err);
+  ).lean().exec().catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
   debug('User expiration session (epoch) is: ' + sessionExpirationDate);
@@ -404,7 +404,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         // Notify if ssid prefix was impossible to be assigned
         let matchedNotif = await Notification
         .findOne({'message_code': 5, 'target': device._id})
-        .catch(function(err) {
+        .exec().catch(function(err) {
           console.error('Error fetching database: ' + err);
         });
         if (!matchedNotif || matchedNotif.allow_duplicate) {
@@ -668,7 +668,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             licenseApiSecret: true,
             company: true,
           },
-        ).lean().catch((err) => err)
+        ).lean().exec().catch((err) => err)
       );
 
       if (config.tr069) {
@@ -1010,11 +1010,11 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     for (let possibleSlaveMac of slaveMacAddrList) {
       if (!utilHandlers.isMacValid(possibleSlaveMac)) continue;
       let possibleMatch = await DeviceModel.findById(
-        possibleSlaveMac, {_id: true})
-      .catch((err) => {
+        possibleSlaveMac, {_id: true}).exec().catch((e) => e);
+      if (possibleMatch instanceof Error) {
         response.message = t('cpeFindError', {errorline: __line});
         return res.status(500).json(response);
-      });
+      }
       if (possibleMatch && possibleMatch._id) {
         slaveMacAddr = possibleMatch._id;
         break;
@@ -1223,12 +1223,13 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   let matchedSlave = await DeviceModel.findById(
     slaveMacAddr,
     'mesh_master mesh_slaves mesh_mode use_tr069 serial_tr069 alt_uid_tr069',
-  ).catch((err) => {
+  ).exec().catch((e) => e);
+  if (matchedSlave instanceof Error) {
     return res.status(500).json({
       success: false,
       message: t('cpeFindError', {errorline: __line}),
     });
-  });
+  }
   if (!matchedSlave) {
     return res.status(404).json({
       success: false,
@@ -1254,12 +1255,13 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
     masterMacAddr,
     'mesh_master mesh_slaves mesh_mode use_tr069 last_contact '+
       'do_update_status serial_tr069 alt_uid_tr069',
-  ).catch((err) => {
+  ).exec().catch((e) => e);
+  if (matchedMaster instanceof Error) {
     return res.status(500).json({
       success: false,
       message: t('cpeFindError', {errorline: __line}),
     });
-  });
+  }
   if (!matchedMaster) {
     return res.status(404).json({
       success: false,
@@ -1355,10 +1357,11 @@ diagAppAPIController.poolFlashmanField = async function(req, res) {
   }
   const field = req.body.field;
   let matchedDevice = await DeviceModel.findById(macAddr, field)
-  .catch((err) => {
+  .exec().catch((e) => e);
+  if (matchedDevice instanceof Error) {
     return res.status(500).json({message:
       t('cpeFindError', {errorline: __line})});
-  });
+  }
   if (!matchedDevice) {
     return res.status(404).json({message:
       t('cpeNotFound', {errorline: __line})});

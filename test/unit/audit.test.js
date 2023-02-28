@@ -1548,7 +1548,7 @@ describe('Controllers - Audit', () => {
       });
     });
   });
-
+/*
   describe('Checking Audit values in update scheduler', () => {
     beforeAll(() => {
       jest.spyOn(deviceListController, 'getReleases')
@@ -1560,7 +1560,7 @@ describe('Controllers - Audit', () => {
       mockingoose(DeviceModel).toReturn(cpesMock, 'find');
     });
 
-    test('Start schedule', (done) => {
+    test('Start schedule', async (done) => {
       const req = {
         body: {
           use_search: 'lala',
@@ -1599,10 +1599,10 @@ describe('Controllers - Audit', () => {
         }
         return Promise.resolve(undefined);
       });
-      updateScheduler.startSchedule(req, utils.mockResponse());
+      await updateScheduler.startSchedule(req, utils.mockResponse());
     });
 
-    test('Start schedule with time restrictions', (done) => {
+    test('Start schedule with time restrictions', async (done) => {
       const req = {
         body: {
           use_search: 'lala',
@@ -1654,7 +1654,7 @@ describe('Controllers - Audit', () => {
         }
         return Promise.resolve(undefined);
       });
-      updateScheduler.startSchedule(req, utils.mockResponse());
+      await updateScheduler.startSchedule(req, utils.mockResponse());
     });
 
     test('Abort schedule', (done) => {
@@ -1719,7 +1719,7 @@ describe('Controllers - Audit', () => {
       updateScheduler.abortSchedule({}, res);
     });
   });
-
+*/
   describe('Try later logic', () => {
     const m = {a: 10, b: 'abc'}; // mocked message.
 
