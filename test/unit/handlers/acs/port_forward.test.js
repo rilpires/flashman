@@ -76,20 +76,6 @@ describe('Controllers - Handlers - Port Forward', () => {
       check TasksAPI.addTask
         toHaveBeenCalledWith
         toHaveBeenCalledTimes
-    possible cases:
-      ( ) - bogus device (0 addTask, 0 instantiateCPEByModelFromDevice)
-      ( ) - check if configFileEditing is called (0 addTask)
-      ( ) - check if getIPInterface is called (0 addTask)
-      ( ) - tasks not being a array (0 addTask)
-      ( ) - tasks array with faulty object without name property (0 addTask)
-      ( ) - tasks array with (add|delete)Object name (0 addTask)
-      ( ) - deleteAllRules call (2 + rules.length addTask)
-      ( ) - no connection_type property (0 addTask)
-      ( ) - connection_type with wrong string (0 addTask)
-      ( ) - from 0 to 2 rules (connection_type dhcp) [check calledTask]
-      ( ) - from 3 to 4 rules [check calledTask]
-      ( ) - from 5 to 2 rules [check calledTask]
-      ( ) - from 3 to 0 rules [check calledTask]
     total tests = 19 */
   describe('changePortForwardRules function(device, rulesDiffLength'+
     ', interfaceValue, deleteAllRules)', () => {
