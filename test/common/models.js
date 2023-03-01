@@ -411,6 +411,7 @@ models.defaultMockConfigs = [
   },
 ];
 
+
 /*
   Description:
     Copy from the models passed and return a new one with the
@@ -504,5 +505,6 @@ models.copyConfigFrom = function(id, data) {
 
   return config;
 };
+
 
 module.exports = models;
