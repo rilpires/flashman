@@ -1,6 +1,5 @@
 require('../../bin/globals.js');
 const nock = require('nock');
-const {MongoClient} = require('mongodb');
 process.env.FLM_GENIE_IGNORED = 'asd';
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
@@ -15,20 +14,6 @@ let nbiTest4 = nock('http://localhost:7557')
   .replyWithError('Error: connect ECONNREFUSED localhost:7557');
 
 describe('Controllers - External GenieACS - TasksAPI', () => {
-  let connection;
-
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
   /* list of functions that may be mocked:
     http.request
   */

@@ -1,5 +1,14 @@
 /* eslint require-jsdoc: 0 */
 
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
+const utils = require('../common/utils');
+const models = require('../common/models');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
+
 const vlanController = require('../../controllers/vlan.js');
 const ConfigModel = require('../../models/config');
 const mockingoose = require('mockingoose');
