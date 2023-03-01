@@ -22,9 +22,9 @@ jobs:
 
       - name: Getting latest version & check if version is available
         run: |
-          current_branch="${{ github.base_ref }}"
-          if [ "$current_branch" != "main" ]; then
-            echo "Verificação de versão ignorada pois a branch atual é '$current_branch'"
+          target_branch="${{ github.base_ref }}"
+          if [ "$target_branch" != "main" ]; then
+            echo "Verificação de versão ignorada pois a branch de destino é '$target_branch'"
             exit 0
           fi
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
