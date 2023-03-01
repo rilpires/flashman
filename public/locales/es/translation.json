@@ -295,6 +295,7 @@
 	"commandNotFound": "Este comando no existe ({{errorline}})",
 	"incompatibleRulesError": "Tiene una regla que no cumple",
 	"deviceHaveWrongPortMappingError": "Este CPE tiene reglas de apertura de puertos incompatibles con Flashman, las cuales fueron registradas directamente en la interfaz web del CPE. Para administrar las reglas por Flashman, elimine las reglas en la interfaz de CPE, elimine el CPE de flashman, espere a que se vuelva a registrar el CPE y vuelva a crearlas utilizando el propio Flashman.",
+	"allowPortMappingManagementWarning": "Este CPE tiene reglas incluidas antes de la gestión de Flashman. Administrar la apertura de puertos hacia Flashman eliminará todas las reglas actuales del CPE. ¿Seguro que desea continuar?",
 	"jsonError": "Error al manejar JSON ({{errorline}})",
 	"jsonInvalidFormat": "JSON fuera de formato ({{errorline}})",
 	"cpeNotFound": "CPE no encontrado ({{errorline}})",

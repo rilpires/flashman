@@ -3299,11 +3299,6 @@ deviceListController.setPortForwardTr069 = async function(
   let rules;
   let diffPortForwardLength;
   let ret = {};
-  if (device.wrong_port_mapping) {
-    ret.success = false;
-    ret.message = t('deviceHaveWrongPortMappingError');
-    return ret;
-  }
   try {
     rules = JSON.parse(content);
   } catch (e) {
@@ -3345,6 +3340,10 @@ deviceListController.setPortForwardTr069 = async function(
   // push a hash from rules json
   device.forward_index =
     crypto.createHash('md5').update(JSON.stringify(content)).digest('base64');
+  /* If is the scenario where the user accepted the fact that all current port
+    mapping rules of the CPE will be deleted, so trigger to delete them all */
+  let deleteAllRules = device.wrong_port_mapping;
+  device.wrong_port_mapping = false;
   try {
     await device.save();
   } catch (err) {
@@ -3355,7 +3354,8 @@ deviceListController.setPortForwardTr069 = async function(
   }
   Audit.cpe(user, device, 'edit', audit);
   // geniacs-api call
-  acsPortForwardHandler.changePortForwardRules(device, diffPortForwardLength);
+  acsPortForwardHandler.changePortForwardRules(device,
+    diffPortForwardLength, null, deleteAllRules);
   ret.success = true;
   ret.message = t('operationSuccessful');
   return ret;

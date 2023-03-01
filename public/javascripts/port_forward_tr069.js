@@ -519,6 +519,25 @@ let buildMappingTable = function(ip) {
   );
 };
 
+let triggerModalShow = function(res) {
+  fillSessionStorage(res.content);
+  setPortForwardStorage('compatibility', res.compatibility);
+  window.checkAdvancedOptions();
+  $('#port-forward-tr069-main-label').text(
+    getPortForwardStorage('serialId'));
+  $('#port-forward-tr069-modal').modal('show');
+  showIncompatibilityMessage(res.compatibility);
+  if (res.xmlWarning) {
+    $('#port-forward-tr069-modal-reboot-info')
+      .removeClass('d-none')
+      .addClass('d-block');
+  } else {
+    $('#port-forward-tr069-modal-reboot-info')
+      .removeClass('d-block')
+      .addClass('d-none');
+  }
+};
+
 anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-port-forward-tr069-modal', function(event) {
     let row = $(event.target).parents('tr');
@@ -545,31 +564,31 @@ anlixDocumentReady.add(function() {
       dataType: 'json',
       success: function(res) {
         if (res.wrongPortMapping) {
+          let alertDiv = '<div class="alert alert-danger text-center">' +
+            '<div class="fas fa-exclamation-triangle fa-lg"></div>' +
+            '<span>&nbsp;&nbsp;'+t('allowPortMappingManagementWarning') +
+            '</span></div>';
           swal.fire({
-            title: t('deviceHaveWrongPortMappingError'),
-            text: res.message,
-            icon: 'error',
-            confirmButtonColor: '#4db6ac',
+            icon: 'warning',
+            title: t('portOpenning'),
+            html: alertDiv,
+            // Edit button
+            confirmButtonText: t('Edit'),
+            confirmButtonColor: '#ff3547',
+            showConfirmButton: true,
+            // Cancel button
+            cancelButtonText: t('Cancel'),
+            cancelButtonColor: '#4db6ac',
+            showCancelButton: true,
+          }).then((result)=>{
+            if (result.isConfirmed && res.success) {
+              triggerModalShow(res);
+            }
           });
           return;
         }
         if (res.success) {
-          fillSessionStorage(res.content);
-          setPortForwardStorage('compatibility', res.compatibility);
-          window.checkAdvancedOptions();
-          $('#port-forward-tr069-main-label').text(
-            getPortForwardStorage('serialId'));
-          $('#port-forward-tr069-modal').modal('show');
-          showIncompatibilityMessage(res.compatibility);
-          if (res.xmlWarning) {
-            $('#port-forward-tr069-modal-reboot-info')
-              .removeClass('d-none')
-              .addClass('d-block');
-          } else {
-            $('#port-forward-tr069-modal-reboot-info')
-              .removeClass('d-block')
-              .addClass('d-none');
-          }
+          triggerModalShow(res);
         } else {
           let badge = $(event.target).closest('.actions-opts')
                                      .find('.badge-warning');
