@@ -62,7 +62,7 @@ jobs:
       #  run: npm run test
       
       - name: Initializing flashman
-        run: eval $(cat ./test.env) && node ./bin/www
+        run: for l in $(cat test.env) ; do export $l ; done; node ./bin/www
 
       - name: Run Blackbox tests
         run: npm run bb-test
