@@ -52,7 +52,11 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies & run tests
-        run: |
-          npm install
-          npm test
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm run test
+      
+      - name: Run Blackbox tests
+        run: npm run bb-test
