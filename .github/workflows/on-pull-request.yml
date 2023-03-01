@@ -55,14 +55,14 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: NPM Run build
-        run: npm run build
+      #- name: NPM Run build
+      #  run: npm run build
 
       #- name: Run unit tests
       #  run: npm run test
       
       - name: Initializing flashman
-        run: . ./test.env ; node ./bin/www
+        run: set -a && . ./test.env && set +a && node ./bin/www
 
       - name: Run Blackbox tests
         run: npm run bb-test
