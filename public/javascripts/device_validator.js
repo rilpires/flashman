@@ -565,7 +565,6 @@
         errorRet.message = t('jsonInvalidFormat', {errorline: __line});
         return errorRet;
       }
-      console.log('!@#', rules, compatibility);
       for (i = 0; i < rules.length; i++) {
         exStart = rules[i].external_port_start;
         exEnd = rules[i].external_port_end;
