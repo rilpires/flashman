@@ -62,7 +62,15 @@ jobs:
       #  run: npm run test
       
       - name: Initializing flashman
-        run: set -a && . ./test.env && set +a && node ./bin/www
+        run: |
+          set -a
+          . ./test.env
+          set +a
+          node ./bin/www &
 
       - name: Run Blackbox tests
-        run: npm run bb-test
+        run: |
+          npm run bb-test
+          exit_code=$?
+          kill $(pgrep node)
+          exit $exit_code
