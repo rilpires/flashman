@@ -411,56 +411,6 @@ models.defaultMockConfigs = [
   },
 ];
 
-models.defaultNewDeviceBodyData = [
-  {
-    _id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
-    // Common
-    mac: { value: 'c0:b1:01:31:71:6e', writable: 0 },
-    model: { value: 'ZXHN H199A', writable: 0 },
-    version: { value: 'V9.1.0P4N1_MUL', writable: 0 },
-    hw_version: { value: 'V9.1.1', writable: 0 },
-    uptime: { value: 2339753, writable: 0 },
-    ip: { value: 'http://192.168.88.204:7547/', writable: 0 },
-    acs_url: { value: 'http://192.168.88.47:57547/', writable: 1 },
-    interval: { value: 118, writable: 1 },
-    // Wan
-    pppoe_enable: { value: true, writable: 1 },
-    pppoe_user: { value: 'user', writable: 1 },
-    pppoe_pass: { value: '', writable: 1 },
-    stun_enable: { value: false, writable: 1 },
-    stun_udp_conn_req_addr: { value: '192.168.88.204', writable: 0 },
-    rate: { value: 'Auto', writable: 1 },
-    duplex: { value: 'Auto', writable: 1 },
-    wan_ip_ppp: { value: '192.168.88.204', writable: 1 },
-    wan_mac_ppp: { value: 'c0:b1:01:31:71:6f', writable: 1 },
-    wan_uptime: { value: 19841, writable: 0 },
-    mtu: { value: 1500, writable: 1 },
-    recv_bytes: { value: 9182195992, writable: 0 },
-    sent_bytes: { value: 757192873, writable: 0 },
-    port_mapping_entries_dhcp: { value: 1, writable: 0 },
-    // Lan
-    config_enable: { value: true, writable: 1 },
-    router_ip: { value: '192.168.1.1', writable: 1 },
-    subnet_mask: { value: '255.255.255.0', writable: 1 },
-    lease_min_ip: { value: '192.168.1.33', writable: 1 },
-    lease_max_ip: { value: '192.168.1.253', writable: 1 },
-    ip_routers: { value: '192.168.1.1', writable: 1 },
-    dns_servers: { value: '192.168.1.1', writable: 1 },
-    // Wifi and Mesh
-    ssid: { value: 'Anlix-ZTE-H199', writable: 1 },
-    bssid: { value: 'c0:b1:01:31:71:6e', writable: 0 },
-    password: { value: '', writable: 1 },
-    channel: { value: 3, writable: 1 },
-    auto: { value: true, writable: 1 },
-    mode: { value: 'b,g,n', writable: 1 },
-    enable: { value: true, writable: 1 },
-    beacon_type: { value: '11i', writable: 1 },
-    band: { value: 'Auto', writable: 1 },
-    advertise: { value: true, writable: 1 },
-    encryption: { value: 'AESEncryption', writable: 1 },
-  },
-];
-
 /*
   Description:
     Copy from the models passed and return a new one with the
@@ -553,27 +503,6 @@ models.copyConfigFrom = function(id, data) {
   models.defaultMockConfigs.push(config);
 
   return config;
-};
-
-/*
-  Description:
-    Copy a new device data from defaultNewDeviceBodyData and adds a new one with
-    the parameters modified.
-
-  Inputs:
-    id - The _id of the newDeviceData
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
-models.copyNewDeviceBodyData = function(id, data) {
-  // Get the new device body data with the same id
-  let newDeviceData = copyFrom(models.defaultNewDeviceBodyData, id, data);
-
-  // Push to array
-  models.defaultNewDeviceBodyData.push(newDeviceData);
-
-  return newDeviceData;
 };
 
 module.exports = models;
