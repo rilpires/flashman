@@ -364,9 +364,9 @@ meshHandlers.setMeshMode = function(device, targetMode) {
 };
 
 // tags for numeric 'device.mesh_mode' that can be put into a translation json.
-meshHandlers.stringTagForMeshMode = [
-  'Disabled', 'Cable', 'Cable&Wifi2', 'Cable&Wifi2', 'Cable&Wifis',
+meshHandlers.modeTag = [
   //   0         1           2              3              4.
+  'Disabled', 'Cable', 'Cable&Wifi2', 'Cable&Wifi2', 'Cable&Wifis',
 ];
 
 /*

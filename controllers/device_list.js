@@ -2996,11 +2996,9 @@ deviceListController.setDeviceReg = function(req, res) {
                 }
                 audit['meshMode'] = {
                   old: Audit.toTranslate(
-                    meshHandlers.textualMeshMode[matchedDevice.mesh_mode],
+                    meshHandlers.modeTag[matchedDevice.mesh_mode],
                   ),
-                  new: Audit.toTranslate(
-                    meshHandlers.textualMeshMode[meshMode],
-                  ),
+                  new: Audit.toTranslate(meshHandlers.modeTag[meshMode]),
                 };
                 meshHandlers.setMeshMode(
                   matchedDevice, meshMode,

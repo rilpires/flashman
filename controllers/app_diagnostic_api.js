@@ -381,8 +381,8 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (mode !== device.wifi_mode_5ghz) {
           audit['wifi5Mode'] = {old: device.wifi_mode_5ghz, new: mode};
         }
-        device.wifi_mode_5ghz = content.wifi_mode_5ghz.trim();
-        changes.wifi5.mode = content.wifi_mode_5ghz.trim();
+        device.wifi_mode_5ghz = mode;
+        changes.wifi5.mode = mode;
         updateParameters = true;
       }
       // If no fields were changed, we can safely reply here
@@ -481,24 +481,24 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         });
       }
     }
+
     const oldMeshMode = device.mesh_mode;
-    
     meshHandlers.setMeshMode(device, targetMode);
     
-    if (oldMeshMode !== targetMode) {
-      Audit.cpe(req.use, device, 'edit', {
-        'meshMode': {
-          old: Audit.toTranslate(meshHandlers.textualMeshMode[oldMeshMode]),
-          new: Audit.toTranslate(meshHandlers.textualMeshMode[targetMode]),
-        },
-      });
-    }
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
     if (!device.use_tr069) {
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
+    }
+    if (oldMeshMode !== targetMode) {
+      Audit.cpe(req.user, device, 'edit', {
+        'meshMode': {
+          old: Audit.toTranslate(meshHandlers.modeTag[oldMeshMode]),
+          new: Audit.toTranslate(meshHandlers.modeTag[targetMode]),
+        },
+      });
     }
     return res.status(200).json({'success': true});
   } catch (err) {
@@ -559,11 +559,15 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
         return res.status(500).json({'error':
           t('operationUnsuccessful', {errorline: __line})});
       }
+      Audit.cpes(req.user, [device.mesh_master, device._id], 'trigger', {
+        'cmd': 'disassociatedSlaveMesh',
+        'primary': device.mesh_master,
+        'secondary': device._id,
+      });
     } else {
       return res.status(403).json({'error':
         t('macUndefined', {errorline: __line})});
     }
-    Audit.cpe(req.user, device, 'delete');
   } catch (err) {
     console.log(err);
     return res.status(500).json({'error':
@@ -1039,7 +1043,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   'mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state wifi_hidden '+
   'isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable wifi_ssid_5ghz '+
   'wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz wifi_state_5ghz '+
-  'wifi_hidden_5ghz wifi_channel_5ghz use_tr069 serial_tr069 alt_uid_tr069';
+  'wifi_hidden_5ghz wifi_channel_5ghz';
   let matchedMaster;
   try {
     matchedMaster = await DeviceModel.findById(masterMacAddr, masterProjection);
@@ -1068,8 +1072,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
   'mesh_key mesh_id wifi_ssid wifi_password wifi_band wifi_mode wifi_state '+
   'wifi_hidden isSsidPrefixEnabled wifi_channel wifi_is_5ghz_capable '+
   'wifi_ssid_5ghz wifi_password_5ghz wifi_band_5ghz wifi_mode_5ghz '+
-  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz serial_tr069 '+
-  'alt_uid_tr069';
+  'wifi_state_5ghz wifi_hidden_5ghz wifi_channel_5ghz';
   let matchedSlave;
   try {
     matchedSlave = await DeviceModel.findById(slaveMacAddr, slaveProjection);
@@ -1195,12 +1198,10 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.lastBootDate = lastBootDate.getTime();
   }
 
-  const masterIds = Audit.appendCpeIds([], matchedMaster);
-  const slaveIds = Audit.appendCpeIds([], matchedSlave);
-  Audit.cpes(req.user, masterIds.concat(slaveIds), 'trigger', {
-    'cmd': 'associatedSlaveMeshV2',
-    'master': masterIds,
-    'slave': slaveIds,
+  Audit.cpes(req.user, [matchedMaster._id,matchedSlave._id], 'trigger', {
+    'cmd': 'associatedSlaveMesh',
+    'primary': matchedMaster._id,
+    'secondary': matchedSlave._id,
   });
 
   return res.status(200).json(response);
@@ -1220,10 +1221,8 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
       message: t('secondaryIndicatedCpeMacInvalid', {errorline: __line}),
     });
   }
-  let matchedSlave = await DeviceModel.findById(
-    slaveMacAddr,
-    'mesh_master mesh_slaves mesh_mode use_tr069 serial_tr069 alt_uid_tr069',
-  ).exec().catch((e) => e);
+  let matchedSlave = await DeviceModel.findById(slaveMacAddr,
+    'mesh_master mesh_slaves mesh_mode').exec().catch((e) => e);
   if (matchedSlave instanceof Error) {
     return res.status(500).json({
       success: false,
@@ -1251,11 +1250,10 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
     });
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
-  let matchedMaster = await DeviceModel.findById(
-    masterMacAddr,
-    'mesh_master mesh_slaves mesh_mode use_tr069 last_contact '+
-      'do_update_status serial_tr069 alt_uid_tr069',
-  ).exec().catch((e) => e);
+  let matchedMaster = await DeviceModel.findById(masterMacAddr,
+    'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
+  .exec().catch((e) => e);
+  console.log('here 0')
   if (matchedMaster instanceof Error) {
     return res.status(500).json({
       success: false,
@@ -1331,12 +1329,10 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   });
   if (isSlaveOn) mqtt.anlixMessageRouterUpdate(slaveMacAddr);
 
-  const masterIds = Audit.appendCpeIds([], matchedMaster);
-  const slaveIds = Audit.appendCpeIds([], matchedSlave);
-  Audit.cpes(req.user, masterIds.concat(slaveIds), 'trigger', {
-    'cmd': 'disassociatedSlaveMeshV2',
-    'master': masterIds,
-    'slave': slaveIds,
+  Audit.cpes(req.user, [matchedMaster._id,matchedSlave._id], 'trigger', {
+    'cmd': 'disassociatedSlaveMesh',
+    'primary': matchedMaster._id,
+    'secondary': matchedSlave._id,
   });
 
   return res.status(200).json({
