@@ -81,12 +81,6 @@ let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
 let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1});
 
-// Get current connection request credentials preset configuration
-let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
-let currentUsername = declare(usernameField, {value: now});
-let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
-let currentPassword = declare(passwordField, {value: now});
-
 // 2. Run the script
 genieID = genieID.value[0];
 log('Provision for device ' + genieID + ' started at ' + now.toString());
@@ -124,6 +118,12 @@ if (!result.success || !result.fields) {
 
 // Apply connection request credentials preset configuration
 if (result.sync_connection_login) {
+  // Get current connection request credentials preset configuration
+  let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+  let currentUsername = declare(usernameField, {value: now});
+  let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+  let currentPassword = declare(passwordField, {value: now});
+
   currentUsername = currentUsername.value[0];
   let targetLogin = (result.connection_login) ?
     result.connection_login : 'anlix';
