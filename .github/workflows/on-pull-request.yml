@@ -22,7 +22,7 @@ jobs:
 
       - name: Getting latest version & check if version is available
         run: |
-          current_branch="$(git symbolic-ref --short HEAD)"
+          current_branch="${{ github.base_ref }}"
           if [ "$current_branch" != "main" ]; then
             echo "Verificação de versão ignorada pois a branch atual é '$current_branch'"
             exit 0
