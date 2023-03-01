@@ -878,6 +878,9 @@ describe('ACS Device Info Tests', () => {
       // Verify
       expect(ret).toStrictEqual(true);
 
+      // Assert that canTrustWanRate is really false
+      expect(permissions.grantCanTrustWanRate).toStrictEqual(false);
+
       // It is expected that rate and duplex are rejected and that the device
       // object does not have the corresponding properties
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
@@ -945,6 +948,9 @@ describe('ACS Device Info Tests', () => {
 
       // Verify
       expect(ret).toStrictEqual(true);
+
+      // Assert that canTrustWanRate is really true
+      expect(permissions.grantCanTrustWanRate).toStrictEqual(true);
 
       // It is expected that rate and duplex values are added when assembling
       // the device object and that the value of the corresponding properties is
