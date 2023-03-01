@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.64.1",
+	"latest_version": "2.65.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,22 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.65.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo TP-Link EC220-G5 v3 por TR-069",
+			"Adicionamos suporte ao modelo Multilaser RE708 por TR-069"
+		],
+		"fixes": [
+			"Corrigimos um problema que permitia o cadastro de MACs da WAN de CPEs TR-069 que eram informados de maneira errada",
+			"Corrigimos um problema impedia o cadastro de senhas customizadas para WEB para os modelos Multilaser/ZTE F6600 e F670L v9"
+		],
+		"improvements": [
+			"Melhoramos o filtro para inclusão de novas firmware para upgrade de CPEs TR-069"
+		],
+		"features": [
+		]
 	},
 	"2.64.1": {
 		"custom_firmware_compatibilities": [],

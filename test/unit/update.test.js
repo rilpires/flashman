@@ -3,6 +3,12 @@ require('../../bin/globals');
 // Override process environment variable to avoid starting genie
 process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
+const utils = require('../common/utils');
+const models = require('../common/models');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
+
 const firmwareController = require('../../controllers/firmware');
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
@@ -12,15 +18,21 @@ const acsDeviceInfo = require(
 );
 const devicesAPI = require('../../controllers/external-genieacs/devices-api');
 const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
-const utilHandlers = require('../../controllers/handlers/util');
-
-const utils = require('../common/utils');
-const models = require('../common/models');
 
 const fs = require('fs');
 const path = require('path');
 
 const t = require('../../controllers/language').i18next.t;
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 let wanDataSuccess = fs.readFileSync(
   path.resolve(
@@ -516,9 +528,9 @@ describe('Update Tests - Functions', () => {
       };
 
       // Spies
-      let getFromCollectionSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+      jest.spyOn(tasksAPI, 'getFromCollection')
         .mockImplementation(() => JSON.parse('[' + wanDataSuccess + ']'));
-      
+
       // Execute function
       let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
         id, false, deviceFields, changes, task,
@@ -643,7 +655,7 @@ describe('Update Tests - Functions', () => {
 
       let getFromCollectionSpy = jest.spyOn(tasksAPI, 'getFromCollection')
         .mockImplementation(() => JSON.parse('[' + wanDataSuccess + ']'));
-      
+
       // Execute
       await acsDeviceInfo.__testUpdateInfo(device, changes);
 
