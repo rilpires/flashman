@@ -5,7 +5,7 @@ on:
 
 jobs:
   On-pull-request:
-    runs-on: [self-hosted, ubuntu]
+    runs-on: [ubuntu-latest]
 
     strategy:
       matrix:
