@@ -28,91 +28,71 @@ jest.mock('../../mqtts', () => {
   };
 });
 
-assembleBody = function(data) {
+let bodyField = (value, writable) => {
+  return {value: value, writable: writable};
+};
+
+let assembleBody = (device) => {
   return {
-    acs_id: data._id,
+    acs_id: device._id,
     data: {
       common: {
-        mac: data.mac,
-        model: data.model,
-        version: data.version,
-        hw_version: data.hw_version,
-        uptime: data.uptime,
-        ip: data.ip,
-        acs_url: data.acs_url,
-        interval: data.interval,
-        stun_enable: data.stun_enable,
-        stun_udp_conn_req_addr: data.stun_udp_conn_req_addr,
+        mac: bodyField(device._id, 0),
+        model: bodyField(device.model, 0),
+        version: bodyField(device.version, 0),
+        hw_version: bodyField(device.hw_version, 0),
+        uptime: bodyField(device.sys_up_time, 0),
+        ip: bodyField(device.ip, 0),
+        acs_url: bodyField('http://192.168.88.47:57547/', 1),
+        interval: bodyField(device.custom_inform_interval, 1),
+        stun_enable: bodyField(false, 0),
       },
       wan: {
-        pppoe_enable: data.pppoe_enable,
-        pppoe_user: data.pppoe_user,
-        pppoe_pass: data.pppoe_pass,
-        rate: data.rate,
-        duplex: data.duplex,
-        wan_ip_ppp: data.wan_ip_ppp,
-        wan_mac_ppp: data.wan_mac_ppp,
-        uptime: data.wan_uptime,
-        mtu: data.mtu,
-        recv_bytes: data.recv_bytes,
-        sent_bytes: data.sent_bytes,
-        port_mapping_entries_dhcp: data.port_mapping_entries_dhcp,
+        pppoe_enable: bodyField((device.connection_type === 'pppoe'), 1),
+        pppoe_user: bodyField(device.pppoe_user, 1),
+        pppoe_pass: bodyField(device.pppoe_password, 1),
+        rate: bodyField(device.wan_negociated_speed, 1),
+        duplex: bodyField(device.wan_negociated_duplex, 1),
+        wan_ip_ppp: bodyField(device.wan_ip, 1),
+        wan_mac_ppp: bodyField(device.wan_bssid, 1),
+        uptime: bodyField(device.wan_up_time, 0),
+        mtu: bodyField(device.wan_mtu, 1),
+        recv_bytes: bodyField(9182195992, 0),
+        sent_bytes: bodyField(757192873, 0),
       },
       lan: {
-        config_enable: data.config_enable,
-        router_ip: data.router_ip,
-        subnet_mask: data.subnet_mask,
-        lease_min_ip: data.lease_min_ip,
-        lease_max_ip: data.lease_max_ip,
-        ip_routers: data.ip_routers,
-        dns_servers: data.dns_servers,
+        config_enable: bodyField(true, 1),
+        router_ip: bodyField(device.lan_subnet, 1),
+        subnet_mask: bodyField(device.lan_netmask, 1),
+        lease_min_ip: bodyField('192.168.1.33', 1),
+        lease_max_ip: bodyField('192.168.1.253', 1),
+        ip_routers: bodyField('192.168.1.1', 1),
+        dns_servers: bodyField('192.168.1.1', 1),
       },
       wifi2: {
-        ssid: data.ssid,
-        bssid: data.bssid,
-        password: data.password,
-        channel: data.channel,
-        auto: data.auto,
-        mode: data.mode,
-        enable: data.enable,
-        beacon_type: data.beacon_type,
-        band: data.band,
+        ssid: bodyField(device.wifi_ssid, 1),
+        bssid: bodyField(device.wifi_bssid, 0),
+        password: bodyField('', 1),
+        channel: bodyField(device.wifi_channel, 1),
+        auto: bodyField((device.wifi_channel === 'auto'), 1),
+        mode: bodyField(device.wifi_mode, 1),
+        enable: bodyField((device.wifi_state === 1), 1),
+        beacon_type: bodyField('11i', 1),
+        band: bodyField(device.wifi_band, 1),
       },
       wifi5: {
-        ssid: data.ssid,
-        bssid: data.bssid,
-        password: data.password,
-        channel: data.channel,
-        auto: data.auto,
-        mode: data.mode,
-        enable: data.enable,
-        beacon_type: data.beacon_type,
-        band: data.band,
+        ssid: bodyField(device.wifi_bssid_5ghz, 1),
+        bssid: bodyField(device.wifi_bssid_5ghz, 0),
+        password: bodyField('', 1),
+        channel: bodyField(device.wifi_channel_5ghz, 1),
+        auto: bodyField((device.wifi_channel === 'auto'), 1),
+        mode: bodyField(device.wifi_mode, 1),
+        enable: bodyField((device.wifi_state === 1), 1),
+        beacon_type: bodyField('11i', 1),
+        band: bodyField(device.wifi_band_5ghz, 1),
       },
-      mesh2: {
-        ssid: data.ssid,
-        bssid: data.bssid,
-        password: data.password,
-        channel: data.channel,
-        auto: data.auto,
-        mode: data.mode,
-        enable: data.enable,
-        advertise: data.advertise,
-        encryption: data.encryption,
-        beacon_type: data.beacon_type,
-      },
-      mesh5: {
-        ssid: data.ssid,
-        bssid: data.bssid,
-        password: data.password,
-        channel: data.channel,
-        auto: data.auto,
-        mode: data.mode,
-        enable: data.enable,
-        advertise: data.advertise,
-        encryption: data.encryption,
-        beacon_type: data.beacon_type,
-      },
+      mesh2: {},
+      mesh5: {},
     },
   };
 };
@@ -705,21 +685,12 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let newDeviceBodyData = models.copyNewDeviceBodyData(
-        models.defaultNewDeviceBodyData[0]._id,
-        {
-          _id: device.acs_id,
-          model: { value: device.model, writable: 0 },
-          version: { value: device.version, writable: 0 },
-          hw_version: { value: device.hw_version, writable: 0 },
-          wan_mac_ppp: { value: '000000000000\n', writable: 0 }, // Invalid
-        },
-      );
-
-      let body = assembleBody(newDeviceBodyData);
+      let body = assembleBody(device);
 
       // Mocks
-      const mockRequest = () => {return {app: app, body: body}};
+      const mockRequest = () => {
+        return {app: app, body: body};
+      };
       let req = mockRequest();
 
       // Spies
@@ -744,7 +715,7 @@ describe('ACS Device Info Tests', () => {
       );
     },
   );
-  
+
   // Validate createRegistry - Receives valid value for field wan_mac_ppp - Is
   // expected the field to be accepted as a valid MAC address and included in
   // device criation
@@ -777,21 +748,12 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let newDeviceBodyData = models.copyNewDeviceBodyData(
-        models.defaultNewDeviceBodyData[0]._id,
-        {
-          _id: device.acs_id,
-          model: { value: device.model, writable: 0 },
-          version: { value: device.version, writable: 0 },
-          hw_version: { value: device.hw_version, writable: 0 },
-          wan_mac_ppp: { value: '9C:A2:F4:5D:19:09', writable: 0 }, // Valid
-        },
-      );
-
-      let body = assembleBody(newDeviceBodyData);
+      let body = assembleBody(device);
 
       // Mocks
-      const mockRequest = () => {return {app: app, body: body}};
+      const mockRequest = () => {
+        return {app: app, body: body};
+      };
       let req = mockRequest();
 
       // Spies
@@ -817,7 +779,7 @@ describe('ACS Device Info Tests', () => {
       );
     },
   );
-  
+
   // Validate createRegistry - Flag canTrustWanRate is false - Is expected the
   // fields rate and duplex to be rejectec and not included in device creation
   test(
@@ -850,20 +812,12 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let newDeviceBodyData = models.copyNewDeviceBodyData(
-        models.defaultNewDeviceBodyData[0]._id,
-        {
-          _id: device.acs_id,
-          model: { value: device.model, writable: 0 },
-          version: { value: device.version, writable: 0 },
-          hw_version: { value: device.hw_version, writable: 0 },
-        },
-      );
-
-      let body = assembleBody(newDeviceBodyData);
+      let body = assembleBody(device);
 
       // Mocks
-      const mockRequest = () => {return {app: app, body: body}};
+      const mockRequest = () => {
+        return {app: app, body: body};
+      };
       let req = mockRequest();
 
       // Spies
@@ -894,7 +848,7 @@ describe('ACS Device Info Tests', () => {
       );
     },
   );
-  
+
   // Validate createRegistry - Flag canTrustWanRate is true - Is expected the
   // the fields rate and duplex to be accepted and included in device creation
   test(
@@ -927,14 +881,12 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let newDeviceBodyData = models.copyNewDeviceBodyData(
-        models.defaultNewDeviceBodyData[0]._id, {},
-      );
-
-      let body = assembleBody(newDeviceBodyData);
+      let body = assembleBody(device);
 
       // Mocks
-      const mockRequest = () => {return {app: app, body: body}};
+      const mockRequest = () => {
+        return {app: app, body: body};
+      };
       let req = mockRequest();
 
       // Spies
