@@ -16,7 +16,6 @@ const updateSchedulerCommon =
 const utils = require('../utils');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Audit = require('../../controllers/audit');
-const utils2 = require('../common/utils');
 
 
 // mocked CPEs to be used in all tests.
@@ -1586,7 +1585,6 @@ describe('Controllers - Audit', () => {
       const auditCallPromise = new Promise((r) => auditResolved = r);
       sendMock.mockImplementationOnce((message) => {
         auditResolved(message);
-        console.log('Audit called')
         return Promise.resolve(undefined);
       });
 
@@ -1643,12 +1641,11 @@ describe('Controllers - Audit', () => {
         },
         user: {_id: '1234', role: 'tester'},
       };
-      
+
       let auditResolved;
       const auditCallPromise = new Promise((r) => auditResolved = r);
       sendMock.mockImplementationOnce((message) => {
         auditResolved(message);
-        console.log('Audit called')
         return Promise.resolve(undefined);
       });
 
@@ -1936,7 +1933,8 @@ describe('Controllers - Audit', () => {
         }
         return Promise.resolve(undefined);
       });
-      technicianAppController.disassociateSlaveMeshV2(req, utils.mockResponse());
+      technicianAppController.disassociateSlaveMeshV2(req,
+        utils.mockResponse());
     });
   });
 

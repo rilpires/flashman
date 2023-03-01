@@ -484,7 +484,7 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
 
     const oldMeshMode = device.mesh_mode;
     meshHandlers.setMeshMode(device, targetMode);
-    
+
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
@@ -905,31 +905,31 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
       const audit = {};
       let content = req.body;
       if (content.pppoe_user) {
-        const pppoe_user = content.pppoe_user.trim();
-        if (device.pppoe_user !== pppoe_user) {
-          audit['pppoe_user'] = {old: device.pppoe_user, new: pppoe_user};
+        const pppoeUser = content.pppoe_user.trim();
+        if (device.pppoe_user !== pppoeUser) {
+          audit['pppoe_user'] = {old: device.pppoe_user, new: pppoeUser};
         }
-        device.pppoe_user = pppoe_user;
+        device.pppoe_user = pppoeUser;
       }
       if (content.pppoe_password) {
-        const pppoe_password = content.pppoe_password.trim();
-        if (device.pppoe_password !== pppoe_password) {
+        const pppoePassword = content.pppoe_password.trim();
+        if (device.pppoe_password !== pppoePassword) {
           audit['pppoe_password'] = {
             old: device.pppoe_password,
-            new: pppoe_password,
+            new: pppoePassword,
           };
         }
-        device.pppoe_password = pppoe_password;
+        device.pppoe_password = pppoePassword;
       }
       if (content.connection_type) {
-        const connection_type = content.connection_type.trim();
-        if (device.connection_type !== connection_type) {
+        const connectionType = content.connection_type.trim();
+        if (device.connection_type !== connectionType) {
           audit['connection_type'] = {
             old: device.connection_type,
-            new: connection_type,
+            new: connectionType,
           };
         }
-        device.connection_type = connection_type;
+        device.connection_type = connectionType;
       }
       // Apply changes to database and reply
       await device.save();
@@ -1198,7 +1198,7 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.lastBootDate = lastBootDate.getTime();
   }
 
-  Audit.cpes(req.user, [matchedMaster._id,matchedSlave._id], 'trigger', {
+  Audit.cpes(req.user, [matchedMaster._id, matchedSlave._id], 'trigger', {
     'cmd': 'associatedSlaveMesh',
     'primary': matchedMaster._id,
     'secondary': matchedSlave._id,
@@ -1253,7 +1253,6 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
     'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
   .exec().catch((e) => e);
-  console.log('here 0')
   if (matchedMaster instanceof Error) {
     return res.status(500).json({
       success: false,
@@ -1329,7 +1328,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   });
   if (isSlaveOn) mqtt.anlixMessageRouterUpdate(slaveMacAddr);
 
-  Audit.cpes(req.user, [matchedMaster._id,matchedSlave._id], 'trigger', {
+  Audit.cpes(req.user, [matchedMaster._id, matchedSlave._id], 'trigger', {
     'cmd': 'disassociatedSlaveMesh',
     'primary': matchedMaster._id,
     'secondary': matchedSlave._id,
