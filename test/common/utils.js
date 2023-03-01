@@ -1,3 +1,16 @@
+/**
+ * This file includes test utilities.
+ * @namespace test/common/utils
+ */
+/**
+ * All test utilities that can be used in all tests.
+ * @namespace test/common/utils.common
+ */
+/**
+ * Test utilities that can be used for update scheduler.
+ * @namespace test/common/utils.schedulerCommon
+ */
+
 const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
@@ -22,6 +35,17 @@ let utils = {
 };
 
 
+/**
+ * Array of test cases.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @type {Array}
+ *
+ * @param {Any} x - The parameter to be passed.
+ *
+ * @return {Any} The parameter passed.
+ */
 utils.common.TEST_PARAMETERS = [
   'AAAAAAAAAAAA',
   '',
@@ -55,16 +79,16 @@ utils.common.TEST_PARAMETERS = [
 ];
 
 
-/*
-  Description:
-    Login as admin in flashman and return the response that can be used to
-    access the api.
-
-  Inputs:
-
-  Outputs:
-    response - The login response with the cookie to be setted
-*/
+/**
+ * Login as admin in flashman and return the response that can be used to
+ * access the api.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @return {Response} The login response with the cookie to be setted.
+ */
 utils.common.loginAsAdmin = async function() {
   return (request('localhost:8000')
     .post('/login')
@@ -85,9 +109,13 @@ utils.common.loginAsAdmin = async function() {
  * this case, use the function `mockAwaitMongo`. It usually happens due to
  * await.
  *
- * @param {model} model - Which model to intercept
- * @param {object} data - The model parameters to be setted for the model
- * @param {string} func - The function to be intercepted
+ * @memberOf test/common/utils.common
+ *
+ * @param {Model} model - Which model to intercept.
+ * @param {Object} data - The model parameters to be setted for the model.
+ * @param {String} func - The function to be intercepted.
+ *
+ * @see {@linkcode utils.common.mockAwaitMongo} in case of this error.
  */
 utils.common.mockMongo = function(model, data, func) {
   let mock = jest.fn().mockReturnValue(data);
@@ -97,14 +125,18 @@ utils.common.mockMongo = function(model, data, func) {
 
 
 /**
- * When the normal mockMongo does not work due to the use of await, this
+ * When the normal `mockMongo` does not work due to the use of await, this
  * function takes place. It sets an interception to the mongo access when
  * calling func to return the device setted by data.
  *
- * @param {model} model - Which model to intercept
- * @param {object} data - The model parameters to be setted for the model
- * @param {string} func - The function to be intercepted
- * @param {boolean} shouldError - If the catch callback should be called or not
+ * @memberOf test/common/utils.common
+ *
+ * @param {Model} model - Which model to intercept.
+ * @param {Object} data - The model parameters to be setted for the model.
+ * @param {String} func - The function to be intercepted.
+ * @param {Boolean} shouldError - If the catch callback should be called or not.
+ *
+ * @see {@linkcode utils.common.mockMongo} for default mocking.
  */
 utils.common.mockAwaitMongo = function(
   model,
@@ -140,8 +172,12 @@ utils.common.mockAwaitMongo = function(
  * this case, use the function `mockAwaitDevices`. It usually happens due to
  * await.
  *
- * @param {object} data - The model parameters to be setted for the device
- * @param {string} func - The function to be intercepted
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the device.
+ * @param {String} func - The function to be intercepted.
+ *
+ * @see {@linkcode utils.common.mockAwaitDevices} in case of this error.
  */
 utils.common.mockDevices = function(data, func) {
   utils.common.mockMongo(DeviceModel, data, func);
@@ -149,44 +185,49 @@ utils.common.mockDevices = function(data, func) {
 
 
 /**
- * Mock a config when the usual `mockConfigs` does not work. This is related to
- * the use of await when trying to get the config. Usually the error
+ * Mock a config when the usual `mockDevices` does not work. This is related to
+ * the use of await when trying to get the device. Usually the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
  *
- * @param {object} data - The model parameters to be setted for the device
- * @param {function} func  - The function to be intercepted
- * @param {boolean} shouldError - If the catch callback should be called or not
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the device.
+ * @param {Function} func  - The function to be intercepted.
+ * @param {Boolean} shouldError - If the catch callback should be called or not.
+ *
+ * @see {@linkcode utils.common.mockDevices} for default mocking.
  */
 utils.common.mockAwaitDevices = function(data, func, shouldError = false) {
   utils.common.mockAwaitMongo(DeviceModel, data, func, shouldError);
 };
 
 
-/*
-  Description:
-    Mock a firmware
-
-  Inputs:
-    data  - The model parameters to be setted for the firmware
-    func  - The function to be intercepted
-
-  Outputs:
-
-*/
+/**
+ * Mock a firmware.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the firmware.
+ * @param {String} func - The function to be intercepted.
+ */
 utils.common.mockFirmwares = function(data, func) {
   utils.common.mockMongo(FirmwareModel, data, func);
 };
 
 
 /**
- * Mock a config
+ * Mock a config.
  * There is a case that this function will not work and the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
  * this case, use the function `mockAwaitConfigs`. It usually happens due to
  * await.
  *
- * @param {object} data - The model parameters to be setted for the config
- * @param {string} func - The function to be intercepted
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the config.
+ * @param {String} func - The function to be intercepted.
+ *
+ * @see {@linkcode utils.common.mockAwaitConfigs} in case of this error.
  */
 utils.common.mockConfigs = function(data, func) {
   utils.common.mockMongo(ConfigModel, data, func);
@@ -198,9 +239,13 @@ utils.common.mockConfigs = function(data, func) {
  * the use of await when trying to get the config. Usually the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
  *
- * @param {object} data - The model parameters to be setted for the config
- * @param {function} func  - The function to be intercepted
- * @param {boolean} shouldError - If the catch callback should be called or not
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the config.
+ * @param {Function} func  - The function to be intercepted.
+ * @param {Boolean} shouldError - If the catch callback should be called or not.
+ *
+ * @see {@linkcode utils.common.mockConfigs} for default mocking.
  */
 utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
   utils.common.mockAwaitMongo(ConfigModel, data, func, shouldError);
@@ -208,11 +253,12 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
 
 
 /**
- * Mock a Role
+ * Mock a Role.
  *
- * @param {object} data - The model parameters to be setted for the role
- * @param {string} func - The function to be intercepted
+ * @memberOf test/common/utils.common
  *
+ * @param {Object} data - The model parameters to be setted for the role.
+ * @param {String} func - The function to be intercepted.
  */
 utils.common.mockRoles = function(data, func) {
   utils.common.mockMongo(RoleModel, data, func);
@@ -220,11 +266,15 @@ utils.common.mockRoles = function(data, func) {
 
 
 /**
- * Mock devices in defaultMockDevices. There is a case that this function will
+ * Mock devices in `defaultMockDevices`. There is a case that this function will
  * not work and the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
  * this case, use the function `mockDefaultAwaitDevices`. It usually happens
  * due to await.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @see {@linkcode utils.common.mockDefaultAwaitDevices} in case of this error.
  */
 utils.common.mockDefaultDevices = function() {
   utils.common.mockDevices(models.defaultMockDevices, 'find');
@@ -234,10 +284,14 @@ utils.common.mockDefaultDevices = function() {
 
 
 /**
- * Mock devices in defaultMockDevices when the usual `mockDefaultDevices`
+ * Mock devices in `defaultMockDevices` when the usual `mockDefaultDevices`
  * does not work. This is related to the use of await when trying to get
  * the device. Usually the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @see {@linkcode utils.common.mockDefaultDevices} for default mocking.
  */
 utils.common.mockDefaultAwaitDevices = function() {
   utils.common.mockAwaitDevices(models.defaultMockDevices, 'find');
@@ -246,15 +300,11 @@ utils.common.mockDefaultAwaitDevices = function() {
 };
 
 
-/*
-  Description:
-    Mock firmwares in defaultMockFirmwares
-
-  Inputs:
-
-  Outputs:
-
-*/
+/**
+ * Mock firmwares in `defaultMockFirmwares`.
+ *
+ * @memberOf test/common/utils.common
+ */
 utils.common.mockDefaultFirmwares = function() {
   utils.common.mockFirmwares(models.defaultMockFirmwares, 'find');
   utils.common.mockFirmwares(models.defaultMockFirmwares[0], 'findOne');
@@ -263,11 +313,15 @@ utils.common.mockDefaultFirmwares = function() {
 
 
 /**
- * Mock configs in defaultMockConfigs. There is a case that this function will
+ * Mock configs in `defaultMockConfigs`. There is a case that this function will
  * not work and the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown. In
  * this case, use the function `mockDefaultAwaitConfigs`. It usually happens
  * due to await.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @see {@linkcode utils.common.mockDefaultAwaitConfigs} in case of this error.
  */
 utils.common.mockDefaultConfigs = function() {
   utils.common.mockConfigs(models.defaultMockConfigs, 'find');
@@ -277,10 +331,14 @@ utils.common.mockDefaultConfigs = function() {
 
 
 /**
- * Mock configs in defaultMockConfigs when the usual `mockDefaultConfigs`
+ * Mock configs in `defaultMockConfigs` when the usual `mockDefaultConfigs`
  * does not work. This is related to the use of await when trying to get
  * the config. Usually the error
  * `TypeError: Cannot read property 'Decimal128' of null` will be thrown.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @see {@linkcode utils.common.mockDefaultConfigs} for default mocking.
  */
 utils.common.mockDefaultAwaitConfigs = function() {
   utils.common.mockAwaitConfigs(models.defaultMockConfigs, 'find');
@@ -290,7 +348,9 @@ utils.common.mockDefaultAwaitConfigs = function() {
 
 
 /**
- * Mock roles in defaultMockRoles
+ * Mock roles in `defaultMockRoles`
+ *
+ * @memberOf test/common/utils.common
  */
 utils.common.mockDefaultRoles = function() {
   utils.common.mockRoles(models.defaultMockRoles, 'find');
@@ -299,62 +359,65 @@ utils.common.mockDefaultRoles = function() {
 };
 
 
-/*
-  Description:
-    Get all device models based on the query passed.
-
-  Inputs:
-    query - The query to find the devices
-
-  Outputs:
-    devices - All device models matched by query
-*/
+/**
+ * Get all device models based on the query passed.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {Query} query - The query to find the devices.
+ *
+ * @return {Array} All device models matched by query.
+ */
 utils.common.getDevices = async function(query) {
   const matchedDevices = DeviceModel
     .find(query)
     .lean()
     .catch((error) => console.log(error));
 
-    return matchedDevices;
+  return matchedDevices;
 };
 
 
 /** ************ Update Scheduler ************ **/
 
 
-/*
-  Description:
-    Send a request get scheduler releases and return the request.
-
-  Inputs:
-    cookie - The cookie login
-    data - The data to be sent
-
-  Outputs:
-    releases - The request sent to get the releases
-*/
+/**
+ * Send a request get scheduler releases and return the request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @param {Object} cookie - The cookie login.
+ * @param {Object} data - The data to be sent.
+ *
+ * @return {Object} The request sent to get the releases.
+ */
 utils.schedulerCommon.getReleases = async function(cookie, data) {
   return (request('localhost:8000')
-      .put('/devicelist/scheduler/releases')
-      .set('Cookie', cookie)
-      .send(data)
-      .catch((error) => console.log(error))
+    .put('/devicelist/scheduler/releases')
+    .set('Cookie', cookie)
+    .send(data)
+    .catch((error) => console.log(error))
   );
 };
 
 
-/*
-  Description:
-    Create a basic fake response
-
-  Inputs:
-    errorCode - The error code of the response
-    promiseResolve - The resolver of the promise to be called when finished
-    data - The body of the response
-
-  Outputs:
-    response - An object containing the statusCode and the data
-*/
+/**
+ * Create a basic fake response.
+ *
+ * @memberof test/common/utils
+ *
+ * @param {Integer} errorCode - The error code of the response.
+ * @param {Promise} promiseResolve - The resolver of the promise to be called.
+ * when finished.
+ * @param {Object} header - The header of the response.
+ * @param {Object} data - The body of the response.
+ *
+ * @return {Object} An object containing the statusCode and the data (response).
+ */
 const fakeJson = function(errorCode, promiseResolve, header, data) {
   // Build the response
   let response = {
@@ -370,18 +433,19 @@ const fakeJson = function(errorCode, promiseResolve, header, data) {
 };
 
 
-/*
-  Description:
-    Create a fake response status
-
-  Inputs:
-    errorCode - The error code of the response
-    promiseResolve - The resolver of the promise to be called when finished
-
-  Outputs:
-    status - An object containing the statusCode and a json function that
-    can generate a basic fake response
-*/
+/**
+ * Create a fake response status.
+ *
+ * @memberof test/common/utils
+ *
+ * @param {Integer} errorCode - The error code of the response.
+ * @param {PromiseResolver} promiseResolve - The resolver of the promise to be
+ * called when finished.
+ * @param {Object} header - The header to be sent in the response.
+ *
+ * @return {Object} An object containing the statusCode and a json function that
+ * can generate a basic fake response.
+ */
 const fakeStatus = function(errorCode, promiseResolve, header) {
   return {
     statusCode: errorCode,
@@ -391,19 +455,28 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
 };
 
 
-/*
-  Description:
-    Call the function passed faking a request.
-
-  Inputs:
-    func - The function to be called
-    data - The data to be sent
-    files - All files to be sent
-    query - URL parameters to be passed
-
-  Outputs:
-    promise - A promise to wait for the response
-*/
+/**
+ * Call the function passed, faking a request. This is not a real http request
+ * but pretends to be.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {Function} func - The function to be called.
+ * @param {Object} data - The data to be sent.
+ * @param {Object} files - All files to be sent.
+ * @param {Object} query - URL parameters to be passed.
+ * @param {Object} user - An object containing user and role information.
+ *
+ * @return {Promise} A promise to wait for the response.
+ *
+ * @example <caption>Example usage of sendFakeRequest.</caption>
+ * let result = await utils.common.sendFakeRequest(
+ *  acsDeviceInfoController.informDevice,
+ *  {acs_id: '1234'},
+ * );
+ */
 utils.common.sendFakeRequest = async function(func, data, files, query, user) {
   let promiseResolve;
 
@@ -443,16 +516,17 @@ utils.common.sendFakeRequest = async function(func, data, files, query, user) {
 };
 
 
-/*
-  Description:
-    Call the function getDevicesReleases faking a request.
-
-  Inputs:
-    data - The data to be sent
-
-  Outputs:
-    releases - A promise to get the releases
-*/
+/**
+ * Call the function `getDevicesReleases` faking a request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @param {Object} data - The data to be sent.
+ *
+ * @return {Promise} A promise to get the releases.
+ */
 utils.schedulerCommon.getReleasesFake = async function(data) {
   let promise = utils.common.sendFakeRequest(
     updateScheduler.getDevicesReleases,
@@ -463,16 +537,17 @@ utils.schedulerCommon.getReleasesFake = async function(data) {
 };
 
 
-/*
-  Description:
-    Call the function startSchedule faking a request.
-
-  Inputs:
-    data - The data to be sent
-
-  Outputs:
-    promise - A promise to start the scheduler
-*/
+/**
+ * Call the function startSchedule faking a request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @param {Object} data - The data to be sent.
+ *
+ * @return {Promise} A promise to start the scheduler.
+ */
 utils.schedulerCommon.startSchedulerFake = async function(data) {
   let promise = utils.common.sendFakeRequest(
     updateScheduler.startSchedule,
@@ -483,15 +558,15 @@ utils.schedulerCommon.startSchedulerFake = async function(data) {
 };
 
 
-/*
-  Description:
-    Call the function abortSchedule faking a request.
-
-  Inputs:
-
-  Outputs:
-    promise - A promise to abort the scheduler
-*/
+/**
+ * Call the function `abortSchedule` faking a request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @return {Promise} A promise to abort the scheduler.
+ */
 utils.schedulerCommon.abortSchedulerFake = async function() {
   let promise = utils.common.sendFakeRequest(
     updateScheduler.abortSchedule,
@@ -502,15 +577,15 @@ utils.schedulerCommon.abortSchedulerFake = async function() {
 };
 
 
-/*
-  Description:
-    Call the function scheduleResult faking a request.
-
-  Inputs:
-
-  Outputs:
-    promise - A promise to get the result of the scheduler
-*/
+/**
+ * Call the function `scheduleResult` faking a request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @return {Promise} A promise to get the result of the scheduler.
+ */
 utils.schedulerCommon.schedulerResultFake = async function() {
   let promise = utils.common.sendFakeRequest(
     updateScheduler.scheduleResult,
@@ -521,25 +596,29 @@ utils.schedulerCommon.schedulerResultFake = async function() {
 };
 
 
-/*
-  Description:
-    Send a request to start the scheduler and return the request.
-
-  Inputs:
-    cookie - The cookie login
-    data - The data to be sent
-
-  Outputs:
-    releases - The request sent to start the scheduler
-*/
+/**
+ * Send a real request to start the scheduler and return the request.
+ *
+ * @memberOf test/common/utils.schedulerCommon
+ *
+ * @async
+ *
+ * @param {Object} cookie - The cookie login.
+ * @param {Object} data - The data to be sent.
+ *
+ * @return {Object} The request sent to start the scheduler.
+ */
 utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
   return (request('localhost:8000')
-      .post('/devicelist/scheduler/start')
-      .set('Cookie', cookie)
-      .send(data)
-      .catch((error) => console.log(error))
+    .post('/devicelist/scheduler/start')
+    .set('Cookie', cookie)
+    .send(data)
+    .catch((error) => console.log(error))
   );
 };
 
 
+/**
+ * @exports test/common/utils
+ */
 module.exports = utils;
