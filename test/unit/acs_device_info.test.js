@@ -28,6 +28,95 @@ jest.mock('../../mqtts', () => {
   };
 });
 
+assembleBody = function(data) {
+  return {
+    acs_id: data._id,
+    data: {
+      common: {
+        mac: data.mac,
+        model: data.model,
+        version: data.version,
+        hw_version: data.hw_version,
+        uptime: data.uptime,
+        ip: data.ip,
+        acs_url: data.acs_url,
+        interval: data.interval,
+        stun_enable: data.stun_enable,
+        stun_udp_conn_req_addr: data.stun_udp_conn_req_addr,
+      },
+      wan: {
+        pppoe_enable: data.pppoe_enable,
+        pppoe_user: data.pppoe_user,
+        pppoe_pass: data.pppoe_pass,
+        rate: data.rate,
+        duplex: data.duplex,
+        wan_ip_ppp: data.wan_ip_ppp,
+        wan_mac_ppp: data.wan_mac_ppp,
+        uptime: data.wan_uptime,
+        mtu: data.mtu,
+        recv_bytes: data.recv_bytes,
+        sent_bytes: data.sent_bytes,
+        port_mapping_entries_dhcp: data.port_mapping_entries_dhcp,
+      },
+      lan: {
+        config_enable: data.config_enable,
+        router_ip: data.router_ip,
+        subnet_mask: data.subnet_mask,
+        lease_min_ip: data.lease_min_ip,
+        lease_max_ip: data.lease_max_ip,
+        ip_routers: data.ip_routers,
+        dns_servers: data.dns_servers,
+      },
+      wifi2: {
+        ssid: data.ssid,
+        bssid: data.bssid,
+        password: data.password,
+        channel: data.channel,
+        auto: data.auto,
+        mode: data.mode,
+        enable: data.enable,
+        beacon_type: data.beacon_type,
+        band: data.band,
+      },
+      wifi5: {
+        ssid: data.ssid,
+        bssid: data.bssid,
+        password: data.password,
+        channel: data.channel,
+        auto: data.auto,
+        mode: data.mode,
+        enable: data.enable,
+        beacon_type: data.beacon_type,
+        band: data.band,
+      },
+      mesh2: {
+        ssid: data.ssid,
+        bssid: data.bssid,
+        password: data.password,
+        channel: data.channel,
+        auto: data.auto,
+        mode: data.mode,
+        enable: data.enable,
+        advertise: data.advertise,
+        encryption: data.encryption,
+        beacon_type: data.beacon_type,
+      },
+      mesh5: {
+        ssid: data.ssid,
+        bssid: data.bssid,
+        password: data.password,
+        channel: data.channel,
+        auto: data.auto,
+        mode: data.mode,
+        enable: data.enable,
+        advertise: data.advertise,
+        encryption: data.encryption,
+        beacon_type: data.beacon_type,
+      },
+    },
+  };
+};
+
 // controllers/acs_device_info
 describe('ACS Device Info Tests', () => {
   beforeEach(() => {
@@ -616,78 +705,18 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      // The body receives an invalid value for the wan_mac_ppp field
-      let body = {
-        acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-        data: {
-          common: {
-            mac: { value: '94:46:96:8c:23:61', writable: 0 },
-            model: { value: 'RE1200R4GC-2T2R-V3', writable: 0 },
-            version: { value: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B', writable: 0 },
-            hw_version: { value: '81xx', writable: 0 },
-            uptime: { value: 1028, writable: 0 },
-            ip: { value: 'http://192.168.89.58:7547/tr069', writable: 0 },
-            acs_url: { value: 'http://192.168.88.47:57547', writable: 1 },
-            interval: { value: 113, writable: 1 }
-          },
-          wan: {
-            pppoe_enable: { value: true, writable: 1 },
-            pppoe_user: { value: 'user', writable: 1 },
-            pppoe_pass: { value: '', writable: 1 },
-            rate: { value: '100', writable: 1 },
-            duplex: { value: 'Full', writable: 1 },
-            wan_ip_ppp: { value: '192.168.89.58', writable: 0 },
-            wan_mac_ppp: { value: '000000000000\n', writable: 0 },
-            uptime_ppp: { value: 1005, writable: 0 },
-            mtu_ppp: { value: 1452, writable: 1 },
-            recv_bytes: { value: 695251, writable: 0 },
-            sent_bytes: { value: 642883, writable: 0 },
-            port_mapping_entries_ppp: { value: 0, writable: 0 }
-          },
-          lan: {
-            config_enable: { value: false, writable: 1 },
-            router_ip: { value: '10.0.0.2', writable: 1 },
-            subnet_mask: { value: '255.255.255.0', writable: 1 },
-            lease_min_ip: { value: '10.0.0.100', writable: 1 },
-            lease_max_ip: { value: '10.0.0.200', writable: 1 },
-            ip_routers: { value: '0.0.0.0', writable: 1 },
-            dns_servers: { value: '', writable: 1 }
-          },
-          wifi2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          wifi5: {
-            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:63', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 40, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'a,n,ac', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            advertise: { value: true, writable: 1 },
-            encryption: { value: 'TKIPandAESEncryption ', writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh5: {},
+      let newDeviceBodyData = models.copyNewDeviceBodyData(
+        models.defaultNewDeviceBodyData[0]._id,
+        {
+          _id: device.acs_id,
+          model: { value: device.model, writable: 0 },
+          version: { value: device.version, writable: 0 },
+          hw_version: { value: device.hw_version, writable: 0 },
+          wan_mac_ppp: { value: '000000000000\n', writable: 0 }, // Invalid
         },
-      };
+      );
+
+      let body = assembleBody(newDeviceBodyData);
 
       // Mocks
       const mockRequest = () => {return {app: app, body: body}};
@@ -748,78 +777,18 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      // The body receives a valid value for the wan_mac_ppp field
-      let body = {
-        acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-        data: {
-          common: {
-            mac: { value: '94:46:96:8c:23:61', writable: 0 },
-            model: { value: 'RE1200R4GC-2T2R-V3', writable: 0 },
-            version: { value: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B', writable: 0 },
-            hw_version: { value: '81xx', writable: 0 },
-            uptime: { value: 1028, writable: 0 },
-            ip: { value: 'http://192.168.89.58:7547/tr069', writable: 0 },
-            acs_url: { value: 'http://192.168.88.47:57547', writable: 1 },
-            interval: { value: 113, writable: 1 }
-          },
-          wan: {
-            pppoe_enable: { value: true, writable: 1 },
-            pppoe_user: { value: 'user', writable: 1 },
-            pppoe_pass: { value: '', writable: 1 },
-            rate: { value: '100', writable: 1 },
-            duplex: { value: 'Full', writable: 1 },
-            wan_ip_ppp: { value: '192.168.89.58', writable: 0 },
-            wan_mac_ppp: { value: '9C:A2:F4:5D:19:09', writable: 0 },
-            uptime_ppp: { value: 1005, writable: 0 },
-            mtu_ppp: { value: 1452, writable: 1 },
-            recv_bytes: { value: 695251, writable: 0 },
-            sent_bytes: { value: 642883, writable: 0 },
-            port_mapping_entries_ppp: { value: 0, writable: 0 }
-          },
-          lan: {
-            config_enable: { value: false, writable: 1 },
-            router_ip: { value: '10.0.0.2', writable: 1 },
-            subnet_mask: { value: '255.255.255.0', writable: 1 },
-            lease_min_ip: { value: '10.0.0.100', writable: 1 },
-            lease_max_ip: { value: '10.0.0.200', writable: 1 },
-            ip_routers: { value: '0.0.0.0', writable: 1 },
-            dns_servers: { value: '', writable: 1 }
-          },
-          wifi2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          wifi5: {
-            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:63', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 40, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'a,n,ac', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            advertise: { value: true, writable: 1 },
-            encryption: { value: 'TKIPandAESEncryption ', writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh5: {},
+      let newDeviceBodyData = models.copyNewDeviceBodyData(
+        models.defaultNewDeviceBodyData[0]._id,
+        {
+          _id: device.acs_id,
+          model: { value: device.model, writable: 0 },
+          version: { value: device.version, writable: 0 },
+          hw_version: { value: device.hw_version, writable: 0 },
+          wan_mac_ppp: { value: '9C:A2:F4:5D:19:09', writable: 0 }, // Valid
         },
-      };
+      );
+
+      let body = assembleBody(newDeviceBodyData);
 
       // Mocks
       const mockRequest = () => {return {app: app, body: body}};
@@ -881,77 +850,17 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let body = {
-        acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-        data: {
-          common: {
-            mac: { value: '94:46:96:8c:23:61', writable: 0 },
-            model: { value: 'RE1200R4GC-2T2R-V3', writable: 0 },
-            version: { value: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B', writable: 0 },
-            hw_version: { value: '81xx', writable: 0 },
-            uptime: { value: 1028, writable: 0 },
-            ip: { value: 'http://192.168.89.58:7547/tr069', writable: 0 },
-            acs_url: { value: 'http://192.168.88.47:57547', writable: 1 },
-            interval: { value: 113, writable: 1 }
-          },
-          wan: {
-            pppoe_enable: { value: true, writable: 1 },
-            pppoe_user: { value: 'user', writable: 1 },
-            pppoe_pass: { value: '', writable: 1 },
-            rate: { value: '100', writable: 1 },
-            duplex: { value: 'Full', writable: 1 },
-            wan_ip_ppp: { value: '192.168.89.58', writable: 0 },
-            wan_mac_ppp: { value: '000000000000\n', writable: 0 },
-            uptime_ppp: { value: 1005, writable: 0 },
-            mtu_ppp: { value: 1452, writable: 1 },
-            recv_bytes: { value: 695251, writable: 0 },
-            sent_bytes: { value: 642883, writable: 0 },
-            port_mapping_entries_ppp: { value: 0, writable: 0 }
-          },
-          lan: {
-            config_enable: { value: false, writable: 1 },
-            router_ip: { value: '10.0.0.2', writable: 1 },
-            subnet_mask: { value: '255.255.255.0', writable: 1 },
-            lease_min_ip: { value: '10.0.0.100', writable: 1 },
-            lease_max_ip: { value: '10.0.0.200', writable: 1 },
-            ip_routers: { value: '0.0.0.0', writable: 1 },
-            dns_servers: { value: '', writable: 1 }
-          },
-          wifi2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          wifi5: {
-            ssid: { value: 'Anlix-Multilaser-RE708-5G', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:63', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 40, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'a,n,ac', writable: 0 },
-            enable: { value: true, writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh2: {
-            ssid: { value: 'Anlix-Multilaser-RE708', writable: 1 },
-            bssid: { value: '94:46:96:8c:23:64', writable: 0 },
-            password: { value: '', writable: 1 },
-            channel: { value: 6, writable: 1 },
-            auto: { value: false, writable: 1 },
-            mode: { value: 'b,g,n', writable: 0 },
-            enable: { value: true, writable: 1 },
-            advertise: { value: true, writable: 1 },
-            encryption: { value: 'TKIPandAESEncryption ', writable: 1 },
-            beacon_type: { value: '11i', writable: 1 }
-          },
-          mesh5: {},
+      let newDeviceBodyData = models.copyNewDeviceBodyData(
+        models.defaultNewDeviceBodyData[0]._id,
+        {
+          _id: device.acs_id,
+          model: { value: device.model, writable: 0 },
+          version: { value: device.version, writable: 0 },
+          hw_version: { value: device.hw_version, writable: 0 },
         },
-      };
+      );
+
+      let body = assembleBody(newDeviceBodyData);
 
       // Mocks
       const mockRequest = () => {return {app: app, body: body}};
@@ -1015,89 +924,11 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
-      let body = {
-        acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
-        data: {
-          common: {
-           mac: { value: 'c0:b1:01:31:71:6e', writable: 0 },
-           model: { value: 'ZXHN H199A', writable: 0 },
-           version: { value: 'V9.1.0P4N1_MUL', writable: 0 },
-           hw_version: { value: 'V9.1.1', writable: 0 },
-           uptime: { value: 2339753, writable: 0 },
-           ip: { value: 'http://192.168.88.204:7547/', writable: 0 },
-           acs_url: { value: 'http://192.168.88.47:57547/', writable: 1 },
-           interval: { value: 118, writable: 1 },
-           stun_enable: { value: false, writable: 1 },
-           stun_udp_conn_req_addr: { value: '192.168.88.204', writable: 0 }
-         },
-         wan: {
-           rate: { value: 'Auto', writable: 1 },
-           duplex: { value: 'Auto', writable: 1 },
-           wan_ip: { value: '192.168.88.204', writable: 1 },
-           wan_mac: { value: 'c0:b1:01:31:71:6f', writable: 1 },
-           uptime: { value: 19841, writable: 0 },
-           mtu: { value: 1500, writable: 1 },
-           recv_bytes: { value: 9182195992, writable: 0 },
-           sent_bytes: { value: 757192873, writable: 0 },
-           port_mapping_entries_dhcp: { value: 1, writable: 0 }
-         },
-         lan: {
-           config_enable: { value: true, writable: 1 },
-           router_ip: { value: '192.168.1.1', writable: 1 },
-           subnet_mask: { value: '255.255.255.0', writable: 1 },
-           lease_min_ip: { value: '192.168.1.33', writable: 1 },
-           lease_max_ip: { value: '192.168.1.253', writable: 1 },
-           ip_routers: { value: '192.168.1.1', writable: 1 },
-           dns_servers: { value: '192.168.1.1', writable: 1 }
-         },
-         wifi2: {
-           ssid: { value: 'Anlix-ZTE-H199', writable: 1 },
-           bssid: { value: 'c0:b1:01:31:71:6e', writable: 0 },
-           password: { value: '', writable: 1 },
-           channel: { value: 3, writable: 1 },
-           auto: { value: true, writable: 1 },
-           mode: { value: 'b,g,n', writable: 1 },
-           enable: { value: true, writable: 1 },
-           beacon_type: { value: '11i', writable: 1 },
-           band: { value: 'Auto', writable: 1 }
-         },
-         wifi5: {
-           ssid: { value: 'Anlix-ZTE-H199-5G', writable: 1 },
-           bssid: { value: 'c0:b1:01:31:71:6f', writable: 0 },
-           password: { value: '', writable: 1 },
-           channel: { value: 60, writable: 1 },
-           auto: { value: true, writable: 1 },
-           mode: { value: 'a,n,ac', writable: 1 },
-           enable: { value: true, writable: 1 },
-           beacon_type: { value: '11i', writable: 1 },
-           band: { value: '80MHz', writable: 1 }
-         },
-         mesh2: {
-           ssid: { value: 'SSID2', writable: 1 },
-           bssid: { value: 'c2:b1:01:11:71:6e', writable: 0 },
-           password: { value: '', writable: 1 },
-           channel: { value: 3, writable: 1 },
-           auto: { value: true, writable: 1 },
-           mode: { value: 'b,g,n', writable: 0 },
-           enable: { value: false, writable: 1 },
-           advertise: { value: true, writable: 1 },
-           encryption: { value: 'AESEncryption', writable: 1 },
-           beacon_type: { value: '11i', writable: 1 }
-         },
-         mesh5: {
-           ssid: { value: 'SSID6', writable: 1 },
-           bssid: { value: 'c2:b1:01:11:71:6f', writable: 0 },
-           password: { value: '', writable: 1 },
-           channel: { value: 60, writable: 1 },
-           auto: { value: true, writable: 1 },
-           mode: { value: 'a,n,ac', writable: 0 },
-           enable: { value: false, writable: 1 },
-           advertise: { value: true, writable: 1 },
-           encryption: { value: 'AESEncryption', writable: 1 },
-           beacon_type: { value: '11i', writable: 1 }
-         },
-        },
-      };
+      let newDeviceBodyData = models.copyNewDeviceBodyData(
+        models.defaultNewDeviceBodyData[0]._id, {},
+      );
+
+      let body = assembleBody(newDeviceBodyData);
 
       // Mocks
       const mockRequest = () => {return {app: app, body: body}};
