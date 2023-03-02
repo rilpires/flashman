@@ -229,6 +229,29 @@
       return {valid: valid, err: Array.from(err).map((ind)=>messages[ind])};
     };
 
+    Validator.prototype.validateTR069ConnectionField = function(field) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
+        t('tr069ConnectionFieldTooltip'),
+        t('mustBeAString'),
+      ];
+
+      const onlyCharsAndNumbers = new RegExp(/^[a-zA-Z0-9]+$/);
+      let validRegex = validateRegex(field, 1, 32, onlyCharsAndNumbers);
+
+      let errorSet = new Set();
+      validRegex.err.forEach(
+        (error) => errorSet.add(error),
+      );
+
+      return {
+        valid: validRegex.valid,
+        err: Array.from(errorSet).map((ind) => messages[ind]),
+      };
+    };
+
+
     Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
