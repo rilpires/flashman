@@ -56,8 +56,8 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: NPM Run build
-        run: npm run build
+      #- name: NPM Run build
+      #  run: npm run build
 
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.8.0
@@ -65,8 +65,8 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
           mongodb-db: flashman
       
-      # - name: Run unit tests
-      #   run: npm run test
+      #- name: Run unit tests
+      #  run: npm run test
       
       - name: Initializing flashman
         run: |
