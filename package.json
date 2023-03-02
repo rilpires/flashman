@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest --forceExit test/unit/*",
-    "bb-test": "jest --runInBand --detectOpenHandles test/black-box/*",
+    "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
+    "bb-test": "jest --runInBand --detectOpenHandles test/black-box/*.test.js",
     "build": "webpack --config webpack.prod.js"
   },
   "updater": {

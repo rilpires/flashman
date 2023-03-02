@@ -63,6 +63,7 @@ jobs:
         uses: supercharge/mongodb-github-action@1.8.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-db: flashman-test
 
       - name: Run unit tests
         run: npm run test
@@ -75,8 +76,8 @@ jobs:
           node ./bin/www &
 
       - name: Run Blackbox tests
-        run: |
-          npm run bb-test
-          exit_code=$?
-          echo "Killing node process..." && kill $(pgrep node) && echo "KILLED"
-          exit $exit_code
+        run: npm run bb-test
+      
+      - name: Killing flashman process
+        if: always()
+        run: kill $(pgrep node)
