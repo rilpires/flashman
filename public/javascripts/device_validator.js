@@ -1,3 +1,8 @@
+/**
+ * @namespace public/javascripts/device_validator
+ */
+
+
 (function() {
   // this code is used in both back end and front end and we need to use
   // i18next in both. So this will handle i18next for both cases.
@@ -229,6 +234,17 @@
       return {valid: valid, err: Array.from(err).map((ind)=>messages[ind])};
     };
 
+
+    /**
+     * Validates the string passed if is at least 1 character long and at most
+     * 32 characters long. The string must only contain numbers and characters.
+     *
+     * @memberof public/javascripts/device_validator
+     *
+     * @param {string} field - A string to be validated.
+     *
+     * @return {{valid: boolean, err: string[]}}
+     */
     Validator.prototype.validateTR069ConnectionField = function(field) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
@@ -609,6 +625,9 @@
   })();
 
   if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    /**
+   * @exports public/javascripts/device_validator
+   */
     module.exports = deviceValidator;
   } else {
     window.Validator = deviceValidator;
