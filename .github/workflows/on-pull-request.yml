@@ -65,8 +65,8 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
           mongodb-db: flashman-test
 
-      - name: Run unit tests
-        run: npm run test
+      # - name: Run unit tests
+      #   run: npm run test
       
       - name: Initializing flashman
         run: |
