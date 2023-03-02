@@ -13,7 +13,7 @@
 		"tr069_compatibilities": [
 		],
 		"fixes": [
-			"Corrigimos um bug introduzido na 2.65.0 que afetava instancias em Docker e podia causar a falha de sincronismo de CPEs TR-069",
+			"Corrigimos um bug introduzido na 2.65.0 que afetava instancias em Docker e podia causar a falha de sincronismo de CPEs TR-069"
 		],
 		"improvements": [
 		],
