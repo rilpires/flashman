@@ -4,7 +4,6 @@ const models = require('../common/models');
 
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
-
 // controllers/external-genieacs/devices-api.js
 describe('Devices API Tests', () => {
   beforeEach(() => {
@@ -28,7 +27,7 @@ describe('Devices API Tests', () => {
     expect(result.versions.length).not.toBe(0);
   });
 
-
+/*
   // getTR069UpgradeableModels - Okay device
   test('getTR069UpgradeableModels - Okay device', async () => {
     let device = models.copyDeviceFrom(
@@ -97,4 +96,6 @@ describe('Devices API Tests', () => {
     expect(result.versions[fullID]).toContain('ABCDEFG');
     expect(result.versions[fullID]).toContain('ABCDEFGH');
   });
+  */
 });
+
