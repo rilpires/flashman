@@ -63,8 +63,8 @@ jobs:
         uses: supercharge/mongodb-github-action@1.8.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
-          mongodb-db: flashman-test
-
+          mongodb-db: flashman
+      
       # - name: Run unit tests
       #   run: npm run test
       
