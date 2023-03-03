@@ -2121,7 +2121,7 @@ const replaceWanFieldsWildcards = async function (
     if (!fields.wan[key]) return;
     if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
       fieldName = utilHandlers.replaceNestedKeyWildcards(
-        data, fields.wan[key], wildcardFlag,
+        data, fields.wan[key], wildcardFlag, true,
       );
     } else {
       return;
