@@ -463,6 +463,34 @@ models.defaultMockRoles = [
 ];
 
 
+/**
+ * User models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - Admin user model.
+ */
+models.defaultMockUsers = [
+  {
+    _id: '62b9f57c6beaae3b4f9d466f',
+    autoUpdate: true,
+    maxElementsPerPage: 50,
+    visibleColumnsOnPage: [4, 5, 6, 7, 8, 12],
+    is_superuser: true,
+    name: 'admin',
+    password: '$2a$05$8jo34oHgtscxpva56AjDae33yWtK/8lEu0SDo2sd.7ZEJzqY2aPNq',
+    createdAt: Date('2022-06-27T18:22:52.906Z'),
+    deviceCertifications: [],
+    __v: 3,
+    lastLogin: Date('2023-03-02T12:06:07.226Z'),
+    is_hidden: false,
+    role: 'Admin',
+  },
+];
+
+
 /*
   Description:
     Copy from the models passed and return a new one with the
@@ -566,6 +594,29 @@ models.copyRoleFrom = function(id, data) {
   models.defaultMockRoles.push(config);
 
   return config;
+};
+
+
+/**
+ * Copy a user from `defaultMockUsers` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the user.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The user with parameters modified.
+ */
+models.copyUserFrom = function(id, data) {
+  // Get the user with the same id
+  let user = copyFrom(models.defaultMockUsers, id, data);
+
+  // Push to array
+  models.defaultMockUsers.push(user);
+
+  return user;
 };
 
 

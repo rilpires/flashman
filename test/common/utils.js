@@ -170,10 +170,23 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
   utils.common.mockAwaitMongo(ConfigModel, data, func, shouldError);
 };
 
+
+/**
+ * Mock a User.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the user.
+ * @param {String} func - The function to be intercepted.
+ */
+utils.common.mockUsers = function(data, func) {
+  utils.common.mockMongo(UserModel, data, func);
+};
+
+
 utils.common.mockRoles = function(data, func) {
   utils.common.mockMongo(RoleModel, data, func);
 };
-
 
 
 utils.common.mockDefaultDevices = function() {
@@ -233,6 +246,18 @@ utils.common.mockDefaultRoles = function() {
   utils.common.mockRoles(models.defaultMockRoles, 'find');
   utils.common.mockRoles(models.defaultMockRoles[0], 'findOne');
   utils.common.mockRoles(models.defaultMockRoles[0], 'findById');
+};
+
+
+/**
+ * Mock users in `defaultMockUsers`.
+ *
+ * @memberOf test/common/utils.common
+ */
+utils.common.mockDefaultUsers = function() {
+  utils.common.mockUsers(models.defaultMockUsers, 'find');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findOne');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findById');
 };
 
 
