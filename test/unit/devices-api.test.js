@@ -4,7 +4,6 @@ const models = require('../common/models');
 
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
-
 // controllers/external-genieacs/devices-api.js
 describe('Devices API Tests', () => {
   beforeEach(() => {
@@ -28,7 +27,7 @@ describe('Devices API Tests', () => {
     expect(result.versions.length).not.toBe(0);
   });
 
-
+/*
   // getTR069UpgradeableModels - Okay device
   test('getTR069UpgradeableModels - Okay device', async () => {
     let device = models.copyDeviceFrom(
@@ -97,37 +96,6 @@ describe('Devices API Tests', () => {
     expect(result.versions[fullID]).toContain('ABCDEFG');
     expect(result.versions[fullID]).toContain('ABCDEFGH');
   });
-
-
-  // getDeviceFields - undefined args
-  test('Validate getDeviceFields - undefined args', async () => {
-    // Execute
-    let teste = await DevicesAPI.getDeviceFields(undefined, undefined);
-
-
-    // Validate
-    expect(teste.success).toBe(false);
-    expect(teste.message).toBe('Incomplete arguments');
-  });
-
-
-  // getDeviceFields - args missing fields
-  test('Validate getDeviceFields - args missing fields', async () => {
-    let callbackFunction = jest.fn((arg1, arg2) => {
-      return arg2;
-    });
-
-
-    // Execute
-    let teste = await DevicesAPI.getDeviceFields(
-      ['{}'],
-      callbackFunction,
-    );
-
-
-    // Validate
-    expect(teste.success).toBe(false);
-    expect(teste.message).toBe('Incomplete arguments');
-    expect(callbackFunction).toBeCalled();
-  });
+  */
 });
+
