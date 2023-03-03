@@ -280,7 +280,6 @@ describe('Tests for controllers/firmware.js', () => {
       );
       expect(result.body.role).toBeDefined();
 
-      console.log(result.body.tr069Infos);
       utils.devicesAPICommon.validateUpgradeableModels(result.body.tr069Infos);
       expect(result.body.tr069Infos.vendors[vendor]).not.toContain(model);
       expect(result.body.tr069Infos.versions[fullID]).not.toBeDefined();
