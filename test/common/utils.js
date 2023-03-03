@@ -1,3 +1,8 @@
+/**
+ * Test utilities that can be used for devices-api.
+ * @namespace test/common/utils.devicesAPI
+ */
+
 const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
@@ -7,6 +12,7 @@ const DeviceModel = require('../../models/device');
 const FirmwareModel = require('../../models/firmware');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
+const UserModel = require('../../models/user');
 
 // Environments
 process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
@@ -15,10 +21,14 @@ process.env.FLM_MAX_TIMEOUT_PERIOD = '1440';
 // Scheduler
 const updateScheduler = require('../../controllers/update_scheduler');
 
+// Devices API
+const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
+
 
 let utils = {
   common: {},
   schedulerCommon: {},
+  devicesAPICommon: {},
 };
 
 
@@ -501,6 +511,40 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
       .send(data)
       .catch((error) => console.log(error))
   );
+};
+
+
+/** ************ Devices API ************ **/
+
+
+utils.devicesAPICommon.validateUpgradeableModels = function(data) {
+  Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
+    let device = DevicesAPI.__testTR069Models[modelName];
+    let permission = device.modelPermissions();
+
+    let vendor = device.identifier.vendor;
+    let model = device.identifier.model;
+    let fullID = vendor + ' ' + model;
+
+    if (!permission.features.firmwareUpgrade) {
+      expect(data.vendors[vendor])
+        .not.toContain(model);
+
+      return;
+    }
+
+    expect(data.vendors[vendor])
+      .toContain(model);
+
+    let allFirmwares = Object.keys(
+      permission.firmwareUpgrades,
+    );
+
+    allFirmwares.forEach((firmware) => {
+      expect(data.versions[fullID])
+        .toContain(firmware);
+    });
+  });
 };
 
 
