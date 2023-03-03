@@ -1,8 +1,26 @@
 require('../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const utils = require('../common/utils');
-const models = require('../common/models');
+
+// Mock the config (used in language.js)
+utils.common.mockDefaultConfigs();
 
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
+
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
+
 
 // controllers/external-genieacs/devices-api.js
 describe('Devices API Tests', () => {
@@ -12,90 +30,18 @@ describe('Devices API Tests', () => {
   });
 
 
-  // getTR069UpgradeableModels - Test devices mock
-  test.each(
-    utils.common.TEST_PARAMETERS,
-  )('getTR069UpgradeableModels - Test devices mock: %p', async (parameter) => {
-    // Mocks
-    utils.common.mockDevices(parameter, 'find');
+  // getTR069UpgradeableModels - Test normal operation
+  describe('getTR069UpgradeableModels', () => {
+    test('Test normal operation', async () => {
+      // Execute
+      let result = await DevicesAPI.getTR069UpgradeableModels();
 
-    // Execute
-    let result = await DevicesAPI.getTR069UpgradeableModels();
+      // validate
+      expect(result.vendors.length).not.toBe(0);
+      expect(result.versions.length).not.toBe(0);
 
-    // validate
-    expect(result.vendors.length).not.toBe(0);
-    expect(result.versions.length).not.toBe(0);
+      utils.devicesAPICommon.validateUpgradeableModels(result);
+    });
   });
-
-/*
-  // getTR069UpgradeableModels - Okay device
-  test('getTR069UpgradeableModels - Okay device', async () => {
-    let device = models.copyDeviceFrom(
-      models.defaultMockDevices[0]._id,
-      {
-        _id: '1234',
-        installed_release: 'ABCDEFG',
-      },
-    );
-    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-
-    let vendor = cpe.identifier.vendor;
-    let model = cpe.identifier.model;
-    let fullID = vendor + ' ' + cpe.identifier.model;
-
-
-    // Mocks
-    utils.common.mockDevices([device], 'find');
-
-
-    // Execute
-    let result = await DevicesAPI.getTR069UpgradeableModels();
-
-
-    // Validate
-    expect(result.vendors[vendor]).toContain(model);
-    expect(result.versions[fullID]).toContain('ABCDEFG');
-  });
-
-
-  // getTR069UpgradeableModels - Multiple devices
-  test('getTR069UpgradeableModels - Multiple devices', async () => {
-    let device1 = models.copyDeviceFrom(
-      models.defaultMockDevices[0]._id,
-      {
-        _id: '1234',
-        installed_release: 'ABCDEFG',
-      },
-    );
-    let device2 = models.copyDeviceFrom(
-      models.defaultMockDevices[0]._id,
-      {
-        _id: '1235',
-        installed_release: 'ABCDEFGH',
-      },
-    );
-
-
-    let cpe1 = DevicesAPI.instantiateCPEByModelFromDevice(device1).cpe;
-
-    let vendor = cpe1.identifier.vendor;
-    let model = cpe1.identifier.model;
-    let fullID = vendor + ' ' + cpe1.identifier.model;
-
-
-    // Mocks
-    utils.common.mockDevices([device1, device2], 'find');
-
-
-    // Execute
-    let result = await DevicesAPI.getTR069UpgradeableModels();
-
-
-    // Validate
-    expect(result.vendors[vendor]).toContain(model);
-    expect(result.versions[fullID]).toContain('ABCDEFG');
-    expect(result.versions[fullID]).toContain('ABCDEFGH');
-  });
-  */
 });
 
