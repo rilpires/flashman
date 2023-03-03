@@ -40,7 +40,7 @@ utilHandlers.orderNumericGenieKeys = function(keys) {
 };
 
 utilHandlers.traverseNestedKey = function(
-  data, key, useLastIndexOnWildcard = false,
+  data, key, useLastIndexOnWildcard = false, checkForWanEnable = false,
 ) {
   if (!data) return {success: false};
   let current = data;
@@ -56,6 +56,12 @@ utilHandlers.traverseNestedKey = function(
       } else {
         targetIndex = orderedKeys[0];
       }
+      if (checkForWanEnable) {
+        let wanEnabled = utilHandlers.isWanEnabled(
+          orderedKeys, current, useLastIndexOnWildcard,
+        );
+        if (wanEnabled.success) targetIndex = wanEnabled.index;
+      }
       splitKey[i] = targetIndex;
     }
     if (!current.hasOwnProperty(splitKey[i])) {
@@ -68,7 +74,92 @@ utilHandlers.traverseNestedKey = function(
     key: splitKey.join('.'),
     value: current,
   };
-}
+};
+
+/*
+ * The purpose of this function is to find out what the correct WAN index is. To
+ * do this check, we look for the Enable key. If the wildcardFlag is false, the
+ * data object is traversed forward. Otherwise, it is traversed backwards.
+ * The index returned, in the case of wildcardFlag true, is the first one that
+ * corresponds to an enabled WAN, that is, that has _value equal to true
+ * associated with the Enable object. Analogously, when the wildcardFlag is
+ * false, the returned index is the first backwards.
+ *
+ * (irelevant parameters in data object have been omitted for the following
+ * examples)
+ *
+ * Example 1: wildcardFlag = false
+ * data = {
+ *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ * }
+ * returns: {success: true, index: '1'}
+ *
+ * Example 2: wildcardFlag = false
+ * data = {
+ *  '1': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ * }
+ * returns: {success: true, index: '2'}
+ *
+ * Example 3: wildcardFlag = false
+ * data = {
+ *  '1': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ *  '2': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ *  '3': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ * }
+ * returns: {success: false, index: null}
+ *
+ * Example 4: wildcardFlag = true
+ * data = {
+ *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ * }
+ * returns: {success: true, index: '3'}
+
+ * Example 5: wildcardFlag = true
+ * data = {
+ *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
+ *  '2': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ *  '3': {WANPPPConnection: {'1': Enable: {_value: false}}},
+ * }
+ * returns: {success: true, index: '1'}
+ */
+utilHandlers.isWanEnabled = function(orderedKeys, data, wildcardFlag = false) {
+  let success = false;
+  let indexPos = wildcardFlag ? orderedKeys.length - 1 : 0;
+
+  let checkForEnableKey = (obj) => {
+    if (success) return;
+
+    const entries = Object.entries(obj);
+    const startIndex = wildcardFlag ? entries.length - 1 : 0;
+    const endIndex = wildcardFlag ? -1 : entries.length;
+    const step = wildcardFlag ? -1 : 1;
+
+    for (let i = startIndex; i !== endIndex; i += step) {
+      const [key, value] = entries[i];
+      if (typeof value === 'object') {
+        checkForEnableKey(value);
+      }
+      if (key === 'Enable') {
+        if (value._value) success = true;
+        else if (wildcardFlag) indexPos--;
+        else indexPos++;
+      }
+    }
+  };
+
+  checkForEnableKey(data);
+
+  return {
+    success: success,
+    index: success ? orderedKeys[indexPos] : null,
+  };
+};
 
 utilHandlers.checkForNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
@@ -95,7 +186,7 @@ utilHandlers.replaceNestedKeyWildcards = function(
   let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
   if (!ret.success) return undefined;
   return ret.key;
-}
+};
 
 // Returns {key: genieFieldValue}
 utilHandlers.getAllNestedKeysFromObject = function(
