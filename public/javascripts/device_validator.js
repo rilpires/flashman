@@ -248,13 +248,13 @@
     Validator.prototype.validateTR069ConnectionField = function(field) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max: 32}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
         t('tr069ConnectionFieldTooltip'),
         t('mustBeAString'),
       ];
 
       const onlyCharsAndNumbers = new RegExp(/^[a-zA-Z0-9]+$/);
-      let validRegex = validateRegex(field, 1, 32, onlyCharsAndNumbers);
+      let validRegex = validateRegex(field, 1, 16, onlyCharsAndNumbers);
 
       let errorSet = new Set();
       validRegex.err.forEach(
