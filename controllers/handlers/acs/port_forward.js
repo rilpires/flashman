@@ -254,18 +254,22 @@ acsPortForwardHandler.getIPInterface = async function(
 };
 
 acsPortForwardHandler.changePortForwardRules = async function(
-  device, rulesDiffLength, interfaceValue = null,
+  device, rulesDiffLength, interfaceValue = null, deleteAllRules = false,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let validator = new Validator();
+  if (!device || !device.use_tr069 || !device.acs_id ||
+    !validator.checkPortMappingObj(device.port_mapping)) return;
   let i;
   let ret;
   // let mac = device._id;
   let acsID = device.acs_id;
-  let model = device.model;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
-  let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
+  let instance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+  if (!instance.success) return;
+  let cpe = instance.cpe;
+  let fields = cpe.getModelFields();
+  let interfaceRoot = fields.port_mapping_fields_interface_root;
+  let interfaceKey = fields.port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
   if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
@@ -280,14 +284,15 @@ acsPortForwardHandler.changePortForwardRules = async function(
     );
     return;
   }
-  let fields = cpe.getModelFields();
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
     portMappingTemplate = fields.port_mapping_ppp;
-  } else {
+  } else if (device.connection_type === 'dhcp') {
     portMappingTemplate = fields.port_mapping_dhcp;
+  } else {
+    return;
   }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
@@ -297,11 +302,12 @@ acsPortForwardHandler.changePortForwardRules = async function(
     tasks = await TasksAPI.getFromCollection('tasks', query);
   } catch (e) {
     console.log('[!] -> '+e.message+' in '+acsID);
+    return;
   }
   if (!Array.isArray(tasks)) return;
   // if find some task with name addObject or deleteObject
   let hasAlreadySentTasks = tasks.some((t) => {
-    return t.name === 'addObject' ||
+    return !('name' in t) || t.name === 'addObject' ||
     t.name === 'deleteObject';
   });
   // drop this call of changePortForwardRules
@@ -309,12 +315,35 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> DC in '+acsID);
     return;
   }
-  let currentLength = device.port_mapping.length;
   // The flag needsToQueueTasks marks the models that need to queue the tasks of
   // addObject and deleteObject - this happens because they reboot or lose
   // connection while running the task
   let needsToQueueTasks = cpe.modelPermissions().wan.portForwardQueueTasks;
-  if (rulesDiffLength < 0) {
+  let currentLength = device.port_mapping.length;
+  /* Before even add rules, clean the port mapping branch to proper index
+    counting. That is done in the scenario were the CPE already had rules
+    and the user want to manage port forward in flashman and is aware that
+    all current rules will be deleted */
+  if (deleteAllRules) {
+    try {
+      changeEntriesSizeTask.name = 'deleteObject';
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.*';
+      let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
+      let requestConn = (!needsToQueueTasks) || noRuleToAdd;
+      ret = await TasksAPI.addTask(
+        acsID, changeEntriesSizeTask, null, 0, requestConn,
+      );
+      // Need to check for executed flag if we sent requestConn flag to true
+      if (!ret || !ret.success || (requestConn && !ret.executed)) {
+        return;
+      }
+    } catch (e) {
+      console.log('[!] -> '+e.message+' in '+acsID);
+      return;
+    }
+    console.log('[#] -> D(*) in '+acsID);
+  }
+  if (rulesDiffLength < 0 && !deleteAllRules) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
     for (i = 0; i < rulesDiffLength; i++) {
@@ -338,10 +367,12 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
   } else if (rulesDiffLength > 0) {
+    changeEntriesSizeTask.name = 'addObject';
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
@@ -354,6 +385,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> A('+rulesDiffLength+') in '+acsID);
