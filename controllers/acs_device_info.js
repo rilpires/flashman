@@ -1371,6 +1371,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
+  let cpeDidUpdate = false;
 
   // Update firmware version, if data available
   if (data.common.version && data.common.version.value) {
@@ -1379,8 +1380,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
     // Check if the device is updating
     if (device.do_update) {
-      let cpeDidUpdate = false;
-
       // If the device is updating with a different release than it is
       // installed
       if (device.release !== device.installed_release) {
@@ -1871,19 +1870,29 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.web_admin_password = data.common.web_admin_password.value;
   }
 
+
   // Force a web credentials sync when device is recovering from hard reset
   if (
-    device.recovering_tr069_reset &&
+    (
+      cpeDidUpdate ||
+      device.recovering_tr069_reset
+    ) &&
     data.common.web_admin_username &&
-    data.common.web_admin_username.writable
+    data.common.web_admin_username.writable &&
+    config.tr069.web_login
   ) {
     changes.common.web_admin_username = config.tr069.web_login;
     hasChanges = true;
   }
+
   if (
-    device.recovering_tr069_reset &&
+    (
+      cpeDidUpdate ||
+      device.recovering_tr069_reset
+    ) &&
     data.common.web_admin_password &&
-    data.common.web_admin_password.writable
+    data.common.web_admin_password.writable &&
+    config.tr069.web_password
   ) {
     changes.common.web_admin_password = config.tr069.web_password;
     hasChanges = true;
@@ -1923,7 +1932,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     // Bypass if recovering from hard reset
     let acceptLocalChanges = false;
-    if (wasRecoveringHardReset || !acceptLocalChanges) {
+    if (wasRecoveringHardReset || cpeDidUpdate || !acceptLocalChanges) {
       await acsDeviceInfoController.updateInfo(device, changes);
     }
   }
