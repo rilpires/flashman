@@ -99,4 +99,7 @@ globalConfig.json
 # Flashman OpenAPI spec
 flashman_spec.json
 
+# Documents
+docs/
+
 # End of https://www.gitignore.io/api/code,vim,node

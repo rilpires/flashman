@@ -1,9 +1,20 @@
-const v8 = require('v8');
-
+/**
+ * This file includes models to be copied and used as a base for tests.
+ * @namespace test/common/models
+ */
 
 let models = {};
 
-// Firmwares
+/**
+ * Firmware models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - TR-069 firmware model.
+ * @property {Object} [1] - Flashbox firmware model.
+ */
 models.defaultMockFirmwares = [
   // TR-069
   {
@@ -39,7 +50,16 @@ models.defaultMockFirmwares = [
 ];
 
 
-// Devices
+/**
+ * Device models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - TR-069 device model.
+ * @property {Object} [1] - Flashbox device model.
+ */
 models.defaultMockDevices = [
   // TR-069
   {
@@ -312,7 +332,15 @@ models.defaultMockDevices = [
 ];
 
 
-// Configs
+/**
+ * Config models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - A default config model.
+ */
 models.defaultMockConfigs = [
   {
     _id: '62b9f57c6beaae3b4f9d4656',
@@ -320,6 +348,8 @@ models.defaultMockConfigs = [
       server_url: '192.168.88.72',
       web_login: 'admin',
       web_password: 'teste123',
+      connection_login: 'teste123',
+      connection_password: 'teste321',
       remote_access: false,
       inform_interval: 60000,
       sync_interval: 300000,
@@ -412,24 +442,81 @@ models.defaultMockConfigs = [
 ];
 
 
-/*
-  Description:
-    Copy from the models passed and return a new one with the
-    parameters modified.
+/**
+ * Role models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - A default role model.
+ */
+models.defaultMockRoles = [
+  {
+    _id: '636181e078ffa476f1c2a083',
+    is_hidden: true,
+    grantWifiInfo: 2,
+    grantPPPoEInfo: 2,
+    grantPassShow: true,
+    grantFirmwareUpgrade: true,
+    grantMassFirmwareUpgrade: true,
+    grantWanType: true,
+    grantDeviceId: true,
+    grantDeviceActions: true,
+    grantDeviceRemoval: true,
+    grantDeviceMassRemoval: true,
+    grantDeviceLicenseBlock: true,
+    grantFactoryReset: true,
+    grantDeviceAdd: true,
+    grantMonitorManage: true,
+    grantFirmwareManage: true,
+    grantUserManage: true,
+    grantFlashmanManage: true,
+    grantAPIAccess: true,
+    grantDiagAppAccess: true,
+    grantCertificationAccess: 0,
+    grantLOGAccess: true,
+    grantNotificationPopups: true,
+    grantLanEdit: true,
+    grantLanDevices: 2,
+    grantSiteSurvey: true,
+    grantLanDevicesBlock: true,
+    grantMeasureDevices: 1,
+    grantOpmodeEdit: true,
+    grantVlan: 0,
+    grantVlanProfileEdit: true,
+    grantStatisticsView: true,
+    grantCsvExport: true,
+    grantSearchLevel: 2,
+    grantShowSearchSummary: true,
+    grantShowRowsPerPage: true,
+    grantFirmwareBetaUpgrade: true,
+    grantFirmwareRestrictedUpgrade: true,
+    grantSlaveDisassociate: true,
+    name: 'admin',
+    __v: 0,
+  },
+];
 
-  Inputs:
-    models - The array of entries
-    id - The _id to be copied
-    data - An object with the parameters to modify and their values
 
-  Outputs:
-    model - The new model with parameters already modified
-*/
+/**
+ * Copy from the models passed and return a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {Array} models - The array of entries.
+ * @param {String} id - The `_id` to be copied.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The new model with parameters already modified.
+ */
 const copyFrom = function(models, id, data) {
   // Get the model with the same id
-  let model = v8.deserialize(v8.serialize(models.find((entry) => {
+  let model = {...models.find((entry) => {
     if (entry._id === id) return true;
-  })));
+  })};
 
   // Loop through every key in data and assign the value
   let keys = Object.keys(data);
@@ -441,17 +528,18 @@ const copyFrom = function(models, id, data) {
 };
 
 
-/*
-  Description:
-    Copy a firmware from defaultMockFirmwares and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the firmware
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a firmware from `defaultMockFirmwares` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the firmware.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} - The firmware with parameters modified.
+ */
 models.copyFirmwareFrom = function(id, data) {
   // Get the firmware with the same id
   let firmware = copyFrom(models.defaultMockFirmwares, id, data);
@@ -463,17 +551,18 @@ models.copyFirmwareFrom = function(id, data) {
 };
 
 
-/*
-  Description:
-    Copy a firmware from defaultMockDevices and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the device
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a device from `defaultMockevices` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the device.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The device with parameters modified.
+ */
 models.copyDeviceFrom = function(id, data) {
   // Get the device with the same id
   let device = copyFrom(models.defaultMockDevices, id, data);
@@ -485,17 +574,18 @@ models.copyDeviceFrom = function(id, data) {
 };
 
 
-/*
-  Description:
-    Copy a config from defaultMockConfigs and adds a new one with the
-    parameters modified.
-
-  Inputs:
-    id - The _id of the config
-    data - An object with the parameters to modify and their values
-
-  Outputs:
-*/
+/**
+ * Copy a config from `defaultMockConfigs` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the config.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The config with parameters modified.
+ */
 models.copyConfigFrom = function(id, data) {
   // Get the config with the same id
   let config = copyFrom(models.defaultMockConfigs, id, data);
@@ -507,4 +597,30 @@ models.copyConfigFrom = function(id, data) {
 };
 
 
+/**
+ * Copy a role from `defaultMockevices` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the role.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The role with parameters modified.
+ */
+models.copyRoleFrom = function(id, data) {
+  // Get the config with the same id
+  let config = copyFrom(models.defaultMockRoles, id, data);
+
+  // Push to array
+  models.defaultMockRoles.push(config);
+
+  return config;
+};
+
+
+/**
+ * @exports test/common/models
+ */
 module.exports = models;
