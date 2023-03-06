@@ -15,6 +15,9 @@ const deviceVersion = require('../../models/device_version');
 const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const deviceHandlers = require('../../controllers/handlers/devices');
 const acsMeshDeviceHandler = require('../../controllers/handlers/acs/mesh.js');
+const updateSchedulerCommon = require(
+  '../../controllers/update_scheduler_common',
+);
 
 const t = require('../../controllers/language').i18next.t;
 
@@ -1092,5 +1095,180 @@ describe('ACS Device Info Tests', () => {
       expect(result.body.sync_connection_login).toBe(true);
       expect(requestSyncSpy).toBeCalled();
     });
+  });
+
+
+  describe('syncDeviceData', () => {
+    // Not updating
+    test('Not updating', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+    });
+
+
+    // Updating different release same version
+    test('Updating different release same version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '12345'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+    });
+
+
+    // Updating different release and version
+    test('Updating different release and version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+    });
+
+
+    // Updating same release and version
+    test('Updating same release and version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '1234',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+    });
+
   });
 });
