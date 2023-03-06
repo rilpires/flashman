@@ -405,8 +405,14 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // Collect WAN max transmit rate, if available
   let wanRate;
-  if (data.wan.rate && data.wan.rate.value) {
+  if (data.wan.rate && data.wan.rate.value
+      && cpe.modelPermissions().wan.canTrustWanRate) {
     wanRate = cpe.convertWanRate(data.wan.rate.value);
+  }
+  let wanDuplex;
+  if (data.wan.duplex && data.wan.duplex.value &&
+      cpe.modelPermissions().wan.canTrustWanRate) {
+    wanDuplex = data.wan.duplex.value;
   }
 
   let mode2;
@@ -512,8 +518,7 @@ const createRegistry = async function(req, cpe, permissions) {
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_negociated_speed: wanRate,
-    wan_negociated_duplex: (data.wan.duplex && data.wan.duplex.value) ?
-      data.wan.duplex.value : undefined,
+    wan_negociated_duplex: wanDuplex,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
     created_at: Date.now(),
@@ -1537,10 +1542,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
-  if (data.wan.rate && data.wan.rate.value) {
+  if (data.wan.rate && data.wan.rate.value &&
+      cpe.modelPermissions().wan.canTrustWanRate) {
     device.wan_negociated_speed = cpe.convertWanRate(data.wan.rate.value);
   }
-  if (data.wan.duplex && data.wan.duplex.value) {
+  if (data.wan.duplex && data.wan.duplex.value &&
+      cpe.modelPermissions().wan.canTrustWanRate) {
     device.wan_negociated_duplex = data.wan.duplex.value;
   }
 
