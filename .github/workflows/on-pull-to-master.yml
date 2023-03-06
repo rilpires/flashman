@@ -2,32 +2,25 @@ name: Pull Request check
 
 on:
   pull_request:
+    branches: [ master ]
 
 jobs:
-  On-pull-request:
+  On-pull-to-master:
     runs-on: [ubuntu-latest]
 
     strategy:
       matrix:
         node-version: [12.x]
-        mongodb-version: ['4.4']
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Get tags
         run: git fetch --tags origin
 
       - name: Getting latest version & check if version is available
         run: |
-          target_branch="${{ github.base_ref }}"
-          if [ "$target_branch" != "main" ]; then
-            echo "Verificação de versão ignorada pois a branch de destino é '$target_branch'"
-            exit 0
-          fi
           VERSION=$(cat ./RELEASE_NOTES.json | jq -r .latest_version)
           echo "$VERSION" | grep -G -q "^[0-9]*\.[0-9]*\.[0-9]*$"
           if [ $? -ne 0 ]; then

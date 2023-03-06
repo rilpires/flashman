@@ -5,7 +5,7 @@ on:
     branches: [ master ]
 
 jobs:
-  On-push-to-master:
+  On-merge-to-master:
     runs-on: ubuntu-latest
 
     strategy:
