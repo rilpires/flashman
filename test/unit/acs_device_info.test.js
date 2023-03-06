@@ -15,6 +15,9 @@ const deviceVersion = require('../../models/device_version');
 const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const deviceHandlers = require('../../controllers/handlers/devices');
 const acsMeshDeviceHandler = require('../../controllers/handlers/acs/mesh.js');
+const updateSchedulerCommon = require(
+  '../../controllers/update_scheduler_common',
+);
 
 const t = require('../../controllers/language').i18next.t;
 
@@ -1160,6 +1163,624 @@ describe('ACS Device Info Tests', () => {
       );
       expect(result.body.sync_connection_login).toBe(true);
       expect(requestSyncSpy).toBeCalled();
+    });
+  });
+
+
+  describe('syncDeviceData - Update web admin login', () => {
+    // New config
+    test('New config', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true, value: oldLogin},
+            web_admin_password: {writable: true, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(device, {
+        common: {
+          web_admin_username: newLogin,
+          web_admin_password: newPass,
+        }, lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+      });
+      expect(device.web_admin_username).toBe(newLogin);
+      expect(device.web_admin_password).toBe(newPass);
+    });
+
+
+    // Undefined device password
+    test('Undefined device password', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: undefined,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true, value: oldLogin},
+            web_admin_password: {writable: true, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(device, {
+        common: {
+          web_admin_username: newLogin,
+          web_admin_password: newPass,
+        }, lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+      });
+      expect(device.web_admin_username).toBe(newLogin);
+      expect(device.web_admin_password).toBe(newPass);
+    });
+
+
+    // Undefined device login
+    test('Undefined device login', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: undefined,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true, value: oldLogin},
+            web_admin_password: {writable: true, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(device, {
+        common: {
+          web_admin_username: newLogin,
+          web_admin_password: newPass,
+        }, lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+      });
+      expect(device.web_admin_username).toBe(newLogin);
+      expect(device.web_admin_password).toBe(newPass);
+    });
+
+
+    // Login not writable
+    test('Login not writable', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: false, value: oldLogin},
+            web_admin_password: {writable: false, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).toBe(oldLogin);
+      expect(device.web_admin_password).toBe(oldPass);
+    });
+
+
+    // Login not writable and no value
+    test('Login not writable and no value', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: false},
+            web_admin_password: {writable: false},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).toBe(oldLogin);
+      expect(device.web_admin_password).toBe(oldPass);
+    });
+
+
+    // No cpe info
+    test('No cpe info', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+      let newLogin = '123teste';
+      let newPass = '321teste';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: newLogin,
+            web_password: newPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).toBe(oldLogin);
+      expect(device.web_admin_password).toBe(oldPass);
+    });
+
+
+    // Invalid config
+    test('Invalid config', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: undefined,
+            web_password: undefined,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true, value: oldLogin},
+            web_admin_password: {writable: true, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).toBe(oldLogin);
+      expect(device.web_admin_password).toBe(oldPass);
+    });
+
+
+    // Everything is undefined
+    test('Everything is undefined', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: undefined,
+          web_admin_password: undefined,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: undefined,
+            web_password: undefined,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true},
+            web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).not.toBeDefined();
+      expect(device.web_admin_password).not.toBeDefined();
+    });
+
+
+    // Same config
+    test('New config', async () => {
+      let oldLogin = 'teste123';
+      let oldPass = 'teste321';
+
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+          web_admin_username: oldLogin,
+          web_admin_password: oldPass,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: oldLogin,
+            web_password: oldPass,
+          },
+        },
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true, value: oldLogin},
+            web_admin_password: {writable: true, value: oldPass},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.web_admin_username).toBe(oldLogin);
+      expect(device.web_admin_password).toBe(oldPass);
     });
   });
 });
