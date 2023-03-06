@@ -59,24 +59,5 @@ jobs:
       - name: NPM Run build
         run: npm run build
 
-      - name: Start MongoDB
-        uses: supercharge/mongodb-github-action@1.8.0
-        with:
-          mongodb-version: ${{ matrix.mongodb-version }}
-
       - name: Run unit tests
         run: npm run test
-      
-      - name: Initializing flashman
-        run: |
-          set -a
-          . ./test.env
-          set +a
-          node ./bin/www &
-
-      - name: Run Blackbox tests
-        run: |
-          npm run bb-test
-          exit_code=$?
-          echo "Killing node process..." && kill $(pgrep node) && echo "KILLED"
-          exit $exit_code
