@@ -742,14 +742,45 @@ acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
+  let config = null;
+
+  // Get TR069 Connection login and password
+  try {
+    config = await Config.findOne(
+      {is_default: true},
+      {tr069: true},
+    ).lean();
+  } catch (error) {
+    console.log('Error getting config in function informDevice: ' + error);
+    return res.status(500).json({
+      success: false,
+      message: t('configFindError', {errorline: __line}),
+    });
+  }
+
+  // New devices need to sync immediately
+  if (!config || !config.tr069) {
+    return res.status(500).json({
+      success: false,
+      message: t('configFindError', {errorline: __line}),
+    });
+  }
+
+
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
       message: t('cpeFindError', {errorline: __line})});
   });
   // New devices need to sync immediately
   if (!device) {
-    return res.status(200).json({success: true,
-      measure: true, measure_type: 'newDevice'});
+    return res.status(200).json({
+      success: true,
+      measure: true,
+      measure_type: 'newDevice',
+      connection_login: config.tr069.connection_login,
+      connection_password: config.tr069.connection_password,
+      sync_connection_login: true,
+    });
   }
   // Why is a non tr069 device calling this function? Just a sanity check
   if (!device.use_tr069) {
@@ -769,16 +800,18 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-    return res.status(200).json({success: true,
-      measure: true, measure_type: 'updateDevice'});
+
+    return res.status(200).json({
+      success: true,
+      measure: true,
+      measure_type: 'updateDevice',
+      connection_login: config.tr069.connection_login,
+      connection_password: config.tr069.connection_password,
+      sync_connection_login: true,
+    });
   }
-  // Other registered devices should always collect information through
-  // flashman, never using genieacs provision
-  res.status(200).json({success: true, measure: false});
-  let config = await Config.findOne({is_default: true}, {tr069: true}).lean()
-  .catch((err)=>{
-    console.log('Error reading config during requestSync');
-  });
+
+
   let doSync = false;
   // Only request a sync if over the sync threshold
   if (config && config.tr069) {
@@ -791,6 +824,19 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       }
     }
   }
+
+
+  // Other registered devices should always collect information through
+  // flashman, never using genieacs provision
+  res.status(200).json({
+    success: true,
+    measure: false,
+    connection_login: config.tr069.connection_login,
+    connection_password: config.tr069.connection_password,
+    sync_connection_login: doSync,
+  });
+
+
   await device.save().catch((err) => {
     console.log('Error saving last contact and last tr-069 sync');
   });
