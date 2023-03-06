@@ -2,6 +2,7 @@
 require('../../bin/globals.js');
 const Validator = require('../../public/javascripts/device_validator');
 const utils = require('../utils');
+const testUtils = require('../common/utils');
 
 let createSimplePortMapping = function(ip,
   p1, p2 = null, p3 = null, p4 = null) {
@@ -442,6 +443,58 @@ describe('Validate functions used both in frontend and backend', () => {
       let result = validator.validateWebInterfacePassword(pass);
       expect(result).toHaveProperty('valid');
       expect(result.valid).toBe(false);
+    });
+  });
+
+
+  describe('validateTR069ConnectionField function(pass)', () => {
+    test.each(testUtils.common.TEST_PARAMETERS.slice(1))(
+      'Invalid field: %p', (pass) => {
+      let validator = new Validator();
+      let result = validator.validateTR069ConnectionField(pass);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    test('Minimum length', () => {
+      let validator = new Validator();
+      let pass = '';
+      let result = validator.validateTR069ConnectionField(pass);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    test('Maximum length', () => {
+      let validator = new Validator();
+      let pass = 'a'.repeat(33);
+      let result = validator.validateTR069ConnectionField(pass);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    test('Invalid characters', () => {
+      let validator = new Validator();
+      let pass = '1A3p5@78/*';
+      let result = validator.validateTR069ConnectionField(pass);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    test('Valid characters', () => {
+      let validator = new Validator();
+      let pass = 'ABmowe179';
+      let result = validator.validateTR069ConnectionField(pass);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(true);
     });
   });
   /*

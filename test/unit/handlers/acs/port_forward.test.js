@@ -1,15 +1,31 @@
 require('../../../../bin/globals.js');
 
+process.env.FLM_GENIE_IGNORED = 'test';
+
+const models = require('../../../common/models');
+const utils = require('../../../common/utils');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
+
 let cPath = '../../../../controllers';
 const pfAcsHandlers = require(cPath + '/handlers/acs/port_forward');
 const TasksAPI = require(cPath + '/external-genieacs/tasks-api');
 const acsXMLConfigHandler = require(cPath + '/handlers/acs/xmlconfig');
-const DevicesAPI = require(cPath + '/external-genieacs/devices-api');
 const util = require(cPath + '/handlers/util');
 const basicCPEModel = require(cPath +
   '/external-genieacs/cpe-models/base-model');
 const fs = require('fs');
-process.env.FLM_GENIE_IGNORED = 'test';
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 let createSimplePortMapping = function(ip, port) {
   return {ip: ip, external_port_start: port, external_port_end: port,

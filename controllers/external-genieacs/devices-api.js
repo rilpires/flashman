@@ -18,7 +18,6 @@ const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
-const DeviceModel = require('../../models/device');
 
 // Import each and every model
 const tr069Models = {
@@ -109,30 +108,8 @@ const getTR069CustomFactoryModels = function() {
   return ret;
 };
 
-const getTR069UpgradeableModels = async function() {
+const getTR069UpgradeableModels = function() {
   let ret = {vendors: {}, versions: {}};
-
-  // Get all firmwares from devices to be appended
-  let allDevices = null;
-  try {
-    allDevices = await DeviceModel.find(
-      {use_tr069: true},
-      {
-        acs_id: true,
-        model: true,
-        version: true,
-        hw_version: true,
-        installed_release: true,
-      },
-    );
-
-  // Continue in the function as this procedure is not necessary
-  } catch (error) {
-    console.log(
-      'Error getting devices in getTR069UpgradeableModels: ' + error,
-    );
-  }
-
 
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
@@ -149,39 +126,6 @@ const getTR069UpgradeableModels = async function() {
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
     }
   });
-
-
-  // Loop all devices in flashman and append their installed firmwares
-  if (allDevices && allDevices.constructor === Array) {
-    allDevices.forEach((device) => {
-      let cpeInstance = instantiateCPEByModelFromDevice(device);
-      let cpe = cpeInstance.cpe;
-
-      // Continue to the next iteration if the cpe is invalid
-      if (!cpeInstance.success) return;
-
-      let vendor = cpe.identifier.vendor;
-      let model = cpe.identifier.model;
-      let fullID = vendor + ' ' + cpe.identifier.model;
-
-      // Continue to the next iteration if the installed_release is invalid
-      if (!device.installed_release) return;
-
-
-      // If the entry does not exist in ret.versions
-      if (
-        ret.versions[fullID] &&
-        !(ret.versions[fullID].includes(device.installed_release))
-      ) {
-        ret.versions[fullID].push(device.installed_release);
-
-      // If the model was not added
-      } else if (!ret.versions[fullID]) {
-        ret.vendors[vendor] = [model];
-        ret.versions[fullID] = [device.installed_release];
-      }
-    });
-  }
 
   return ret;
 };
@@ -448,13 +392,32 @@ const getModelFields = function(
 };
 
 const getDeviceFields = async function(args, callback) {
-  let params = JSON.parse(args[0]);
+  let params = null;
+
+  // If callback not defined, define a simple one
+  if (!callback) {
+    callback = (arg1, arg2) => {
+      return arg2;
+    };
+  }
+
+
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
   if (!params || !params.oui || !params.model) {
     return callback(null, {
       success: false,
       message: 'Incomplete arguments',
     });
   }
+
   let flashRes = await sendFlashmanRequest('device/inform', params);
   if (!flashRes['success'] ||
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
@@ -472,6 +435,9 @@ const getDeviceFields = async function(args, callback) {
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
     measure_type: flashRes.data.measure_type,
+    connection_login: flashRes.data.connection_login,
+    connection_password: flashRes.data.connection_password,
+    sync_connection_login: flashRes.data.sync_connection_login,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
