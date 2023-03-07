@@ -145,7 +145,7 @@ utilHandlers.isWanEnabled = function(data, field, wildcardFlag) {
       if (typeof value === 'object') {
         checkForEnableKey(value, [...parentKeyChain, key]);
       }
-      if (key === 'Enable' && value._value) {
+      if ((key === 'Enable' || key === 'Status') && value._value) {
         // The parentKeyChain variable shows the path followed in the data
         // object to get to the Enable key. If the array only has numeric keys,
         // no choice needs to be made, returns true. Otherwise, to choose which
