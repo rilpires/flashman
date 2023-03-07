@@ -2013,6 +2013,30 @@ describe('Controllers - Audit', () => {
     test('Remove VLAN Profiles', (done) => {
       const req = {
         body: {
+          ids: ['100', '200'],
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(req.body.ids);
+          expect(message.operation).toBe('delete');
+          expect(message.values).toEqual({
+            totalRemoved: req.body.ids.length,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.removeVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Edit VLAN Profiles in CPE', (done) => {
+      const req = {
+        body: {
           vlans: JSON.stringify([
             {port: 1, vlan_id: 100},
             {port: 2, vlan_id: 200},

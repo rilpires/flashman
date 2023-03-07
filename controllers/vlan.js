@@ -373,7 +373,7 @@ vlanController.removeVlanProfile = async function(req, res) {
     }
     if (deletedVlanIds.length > 0) {
       Audit.vlans(req.user, deletedVlanIds, 'delete', {
-        'total': deletedVlanIds.length,
+        'totalRemoved': deletedVlanIds.length,
       });
     }
     return res.json({success: true, type: 'success',
