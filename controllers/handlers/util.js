@@ -58,7 +58,7 @@ utilHandlers.traverseNestedKey = function(
       }
       if (checkForWanEnable) {
         let wanEnabled = utilHandlers.isWanEnabled(
-          orderedKeys, current, useLastIndexOnWildcard,
+          current, key, useLastIndexOnWildcard,
         );
         if (wanEnabled.success) targetIndex = wanEnabled.index;
       }
@@ -128,11 +128,11 @@ utilHandlers.traverseNestedKey = function(
  * }
  * returns: {success: true, index: '1'}
  */
-utilHandlers.isWanEnabled = function(orderedKeys, data, wildcardFlag = false) {
+utilHandlers.isWanEnabled = function(data, field, wildcardFlag) {
   let success = false;
-  let indexPos = wildcardFlag ? orderedKeys.length - 1 : 0;
+  let index;
 
-  let checkForEnableKey = (obj) => {
+  let checkForEnableKey = (obj, parentKeyChain = []) => {
     if (success) return;
 
     const entries = Object.entries(obj);
@@ -143,12 +143,24 @@ utilHandlers.isWanEnabled = function(orderedKeys, data, wildcardFlag = false) {
     for (let i = startIndex; i !== endIndex; i += step) {
       const [key, value] = entries[i];
       if (typeof value === 'object') {
-        checkForEnableKey(value);
+        checkForEnableKey(value, [...parentKeyChain, key]);
       }
-      if (key === 'Enable') {
-        if (value._value) success = true;
-        else if (wildcardFlag) indexPos--;
-        else indexPos++;
+      if (key === 'Enable' && value._value) {
+        // The parentKeyChain variable shows the path followed in the data
+        // object to get to the Enable key. If the array only has numeric keys,
+        // no choice needs to be made, returns true. Otherwise, to choose which
+        // way to go, it checks if the non-numeric keys of parentKeyChain are
+        // contained in field
+        let hasOnlyNumericKeys = parentKeyChain.every(
+          (i) => !isNaN(parseInt(i)),
+        );
+        let hasSomeKeyContainedInField = parentKeyChain.some(
+          (item) => isNaN(parseInt(item)) && field.includes(item),
+        );
+        if (hasOnlyNumericKeys || hasSomeKeyContainedInField) {
+          success = true;
+          index = parentKeyChain[0];
+        }
       }
     }
   };
@@ -157,7 +169,7 @@ utilHandlers.isWanEnabled = function(orderedKeys, data, wildcardFlag = false) {
 
   return {
     success: success,
-    index: success ? orderedKeys[indexPos] : null,
+    index: success ? index : null,
   };
 };
 
