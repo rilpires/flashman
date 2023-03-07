@@ -83,50 +83,7 @@ utilHandlers.traverseNestedKey = function(
  * The index returned, in the case of wildcardFlag true, is the first one that
  * corresponds to an enabled WAN, that is, that has _value equal to true
  * associated with the Enable object. Analogously, when the wildcardFlag is
- * false, the returned index is the first backwards.
- *
- * (irelevant parameters in data object have been omitted for the following
- * examples)
- *
- * Example 1: wildcardFlag = false
- * data = {
- *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
- * }
- * returns: {success: true, index: '1'}
- *
- * Example 2: wildcardFlag = false
- * data = {
- *  '1': {WANPPPConnection: {'1': Enable: {_value: false}}},
- *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
- * }
- * returns: {success: true, index: '2'}
- *
- * Example 3: wildcardFlag = false
- * data = {
- *  '1': {WANPPPConnection: {'1': Enable: {_value: false}}},
- *  '2': {WANPPPConnection: {'1': Enable: {_value: false}}},
- *  '3': {WANPPPConnection: {'1': Enable: {_value: false}}},
- * }
- * returns: {success: false, index: null}
- *
- * Example 4: wildcardFlag = true
- * data = {
- *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '2': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '3': {WANPPPConnection: {'1': Enable: {_value: true}}},
- * }
- * returns: {success: true, index: '3'}
-
- * Example 5: wildcardFlag = true
- * data = {
- *  '1': {WANPPPConnection: {'1': Enable: {_value: true}}},
- *  '2': {WANPPPConnection: {'1': Enable: {_value: false}}},
- *  '3': {WANPPPConnection: {'1': Enable: {_value: false}}},
- * }
- * returns: {success: true, index: '1'}
+ * false, the returned index is the first backwards
  */
 utilHandlers.isWanEnabled = function(data, field, wildcardFlag) {
   let success = false;
@@ -152,7 +109,7 @@ utilHandlers.isWanEnabled = function(data, field, wildcardFlag) {
         // way to go, it checks if the non-numeric keys of parentKeyChain are
         // contained in field
         let hasOnlyNumericKeys = parentKeyChain.every(
-          (i) => !isNaN(parseInt(i)),
+          (item) => !isNaN(parseInt(item)),
         );
         let hasSomeKeyContainedInField = parentKeyChain.some(
           (item) => isNaN(parseInt(item)) && field.includes(item),
