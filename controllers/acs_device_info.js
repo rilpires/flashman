@@ -560,6 +560,7 @@ const createRegistry = async function(req, cpe, permissions) {
   if (cpe.modelPermissions().lan.needEnableConfig) {
     changes.lan.enable_config = '1';
   }
+
   if (doChanges) {
     // Increment sync task loops
     newDevice.acs_sync_loops += 1;
@@ -578,6 +579,7 @@ const createRegistry = async function(req, cpe, permissions) {
       );
     }
   }
+
   if (syncXmlConfigs) {
     // Delay the execution of this function as it needs the device to exists in
     // genie database, but the device will only be created at the end of this
@@ -691,13 +693,6 @@ const delayExecutionGenie = async function(
 
   // Loop the amount of repeatQuantity
   for (let repeat = repeatQuantity; repeat > 0; repeat--) {
-    // Wait until timeout sleepTime timer
-    await sleep(sleepTime);
-
-    // Double the timer
-    sleepTime = 2 * sleepTime;
-
-
     // Try getting the device from genie database
     let query = {_id: device.acs_id};
     let genieDevice = await TasksAPI
@@ -719,6 +714,12 @@ const delayExecutionGenie = async function(
         message: t('Ok'),
       };
     }
+
+    // Wait until timeout sleepTime timer
+    await sleep(sleepTime);
+
+    // Double the timer
+    sleepTime = 2 * sleepTime;
   }
 
 
