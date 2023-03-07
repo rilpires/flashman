@@ -116,13 +116,15 @@ if (!result.success || !result.fields) {
 
 // Apply connection request credentials preset configuration
 if (result.connection) {
+  let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+  let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+
   let targetLogin = (result.connection.login) ?
     result.connection.login : 'anlix';
   declare(usernameField, null, {value: targetLogin});
 
   let targetPassword = (result.connection.password) ?
     result.connection.password : 'landufrj123';
-
   declare(passwordField, null, {value: targetPassword});
 }
 
