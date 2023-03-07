@@ -7,7 +7,7 @@ const utils = require('../common/utils');
 const models = require('../common/models');
 
 // Mock the config (used in language.js)
-utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 
 const acsDeviceInfoController = require('../../controllers/acs_device_info');
 const devicesAPI = require('../../controllers/external-genieacs/devices-api');
@@ -100,7 +100,6 @@ let assembleBody = (device) => {
 // controllers/acs_device_info
 describe('ACS Device Info Tests', () => {
   beforeEach(() => {
-    // jest.resetModules();
     jest.restoreAllMocks();
     jest.clearAllMocks();
     jest.useRealTimers();
@@ -152,7 +151,6 @@ describe('ACS Device Info Tests', () => {
     expect(result).toBe(true);
   });
 
-
   // updateInfo - mustExecute = true & not executed
   test('Validate updateInfo - mustExecute = true & not executed', async () => {
     let device = models.defaultMockDevices[0];
@@ -198,7 +196,6 @@ describe('ACS Device Info Tests', () => {
     );
     expect(result).toBe(undefined);
   });
-
 
   // updateInfo - mustExecute = false & executed
   test('Validate updateInfo - mustExecute = false & executed', async () => {
@@ -494,6 +491,7 @@ describe('ACS Device Info Tests', () => {
     let genieSpy = jest.spyOn(tasksAPI, 'getFromCollection')
       .mockImplementationOnce(() => [])
       .mockImplementationOnce(() => [])
+      .mockImplementationOnce(() => [])
       .mockImplementation(() => [{_id: acsId}]);
 
     // Execute
@@ -509,7 +507,7 @@ describe('ACS Device Info Tests', () => {
     expect(timeSpy.mock.calls[0][1]).toEqual(5000);
     expect(timeSpy.mock.calls[1][1]).toEqual(10000);
     expect(timeSpy.mock.calls[2][1]).toEqual(20000);
-    expect(genieSpy).toHaveBeenCalledTimes(3);
+    expect(genieSpy).toHaveBeenCalledTimes(4);
     expect(asyncFunc).toHaveBeenCalledTimes(1);
     expect(result.success).toBe(true);
     expect(result.executed).toBe(true);
@@ -529,6 +527,7 @@ describe('ACS Device Info Tests', () => {
     let genieSpy = jest.spyOn(tasksAPI, 'getFromCollection')
       .mockImplementationOnce(() => [])
       .mockImplementationOnce(() => [])
+      .mockImplementationOnce(() => [])
       .mockImplementation(() => [{_id: acsId}]);
 
     // Execute
@@ -544,7 +543,7 @@ describe('ACS Device Info Tests', () => {
     expect(timeSpy.mock.calls[0][1]).toEqual(1000);
     expect(timeSpy.mock.calls[1][1]).toEqual(2000);
     expect(timeSpy.mock.calls[2][1]).toEqual(4000);
-    expect(genieSpy).toHaveBeenCalledTimes(3);
+    expect(genieSpy).toHaveBeenCalledTimes(4);
     expect(asyncFunc).toHaveBeenCalledTimes(1);
     expect(result.success).toBe(true);
     expect(result.executed).toBe(true);
@@ -653,271 +652,288 @@ describe('ACS Device Info Tests', () => {
     expect(result.message).toContain(t('noDevicesFound'));
   });
 
-  // Validate createRegistry - Receives invalid value for field wan_mac_ppp - Is
-  // expected the field to be rejected as an invalid MAC address and not
-  // included in device creation
-  test(
-    'Validate createRegistry - Receives invalid value for field wan_mac_ppp',
-    async () => {
-      const id = models.defaultMockDevices[0]._id;
-      const device = models.copyDeviceFrom(
-        id,
-        {
-          _id: '94:46:96:8c:23:61',
-          acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-          model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
-          version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
-          hw_version: '81xx',
-        },
-      );
-      let splitID = device.acs_id.split('-');
-      let model = splitID.slice(1, splitID.length-1).join('-');
+  describe('Validate createRegistry', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+      jest.useRealTimers();
 
-      const cpe = devicesAPI.instantiateCPEByModel(
-        model, device.model, device.version, device.hw_version,
-      ).cpe;
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{_id: '94:46:96:8c:23:61'}]);
 
-      let permissions = deviceVersion.devicePermissions(device);
+      jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => {
+          return {success: true, executed: true, message: 'task success'};
+      });
+    });
 
-      let app = {
-        locals: {
-          secret: '123',
-        },
-      };
+    // Validate createRegistry - Receives invalid value for field
+    // wan_mac_ppp - Is expected the field to be rejected as an invalid
+    // MAC address and not included in device creation
+    test(
+      'Receives invalid value for field wan_mac_ppp',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
+            model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
+            version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
+            hw_version: '81xx',
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
 
-      let body = assembleBody(device);
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
 
-      // Mocks
-      const mockRequest = () => {
-        return {app: app, body: body};
-      };
-      let req = mockRequest();
+        let permissions = deviceVersion.devicePermissions(device);
 
-      // Spies
-      let reportOnuDevicesSpy =
-        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
 
-      // Execute
-      let ret = await acsDeviceInfoController.__testCreateRegistry(
-        req, cpe, permissions,
-      );
+        let body = assembleBody(device);
 
-      // Verify
-      expect(ret).toStrictEqual(true);
+        // Mocks
+        const mockRequest = () => {
+          return {app: app, body: body};
+        };
+        let req = mockRequest();
 
-      // It is expected that wan_mac_ppp value is rejected and that the device
-      // object does not have the corresponding property (wan_bssid)
-      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
-        expect.arrayContaining([
-          expect.not.objectContaining({wan_bssid: expect.any(String)}),
-        ]),
-      );
-    },
-  );
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
 
-  // Validate createRegistry - Receives valid value for field wan_mac_ppp - Is
-  // expected the field to be accepted as a valid MAC address and included in
-  // device criation
-  test(
-    'Validate createRegistry - Receives valid value for field wan_mac_ppp',
-    async () => {
-      const id = models.defaultMockDevices[0]._id;
-      const device = models.copyDeviceFrom(
-        id,
-        {
-          _id: '94:46:96:8c:23:61',
-          acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-          model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
-          version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
-          hw_version: '81xx',
-        },
-      );
-      let splitID = device.acs_id.split('-');
-      let model = splitID.slice(1, splitID.length-1).join('-');
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
 
-      const cpe = devicesAPI.instantiateCPEByModel(
-        model, device.model, device.version, device.hw_version,
-      ).cpe;
+        // Verify
+        expect(ret).toStrictEqual(true);
 
-      let permissions = deviceVersion.devicePermissions(device);
+        // It is expected that wan_mac_ppp value is rejected and that the device
+        // object does not have the corresponding property (wan_bssid)
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.not.objectContaining({wan_bssid: expect.any(String)}),
+          ]),
+        );
+      },
+    );
 
-      let app = {
-        locals: {
-          secret: '123',
-        },
-      };
+    // Validate createRegistry - Receives valid value for field wan_mac_ppp - Is
+    // expected the field to be accepted as a valid MAC address and included in
+    // device criation
+    test(
+      'Receives valid value for field wan_mac_ppp',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
+            model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
+            version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
+            hw_version: '81xx',
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
 
-      let body = assembleBody(device);
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
 
-      // Mocks
-      const mockRequest = () => {
-        return {app: app, body: body};
-      };
-      let req = mockRequest();
+        let permissions = deviceVersion.devicePermissions(device);
 
-      // Spies
-      let reportOnuDevicesSpy =
-        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
 
-      // Execute
-      let ret = await acsDeviceInfoController.__testCreateRegistry(
-        req, cpe, permissions,
-      );
+        let body = assembleBody(device);
 
-      // Verify
-      expect(ret).toStrictEqual(true);
+        // Mocks
+        const mockRequest = () => {
+          return {app: app, body: body};
+        };
+        let req = mockRequest();
 
-      // It is expected that wan_mac_ppp value is added when assembling the
-      // device object and that the value of the corresponding property
-      // (wan_bssid) is exactly equal to the value received
-      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
-        expect.arrayContaining([
-          expect.objectContaining({wan_bssid: body.data.wan.wan_mac_ppp.value}),
-        ]),
-      );
-    },
-  );
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
 
-  // Validate createRegistry - Flag canTrustWanRate is false - Is expected the
-  // fields rate and duplex to be rejectec and not included in device creation
-  test(
-    'Validate createRegistry - Cannot trust rate',
-    async () => {
-      // Flag canTrustWanRate for Multilaser RE708 is false
-      const id = models.defaultMockDevices[0]._id;
-      const device = models.copyDeviceFrom(
-        id,
-        {
-          _id: '94:46:96:8c:23:61',
-          acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
-          model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
-          version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
-          hw_version: '81xx',
-        },
-      );
-      let splitID = device.acs_id.split('-');
-      let model = splitID.slice(1, splitID.length-1).join('-');
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
 
-      const cpe = devicesAPI.instantiateCPEByModel(
-        model, device.model, device.version, device.hw_version,
-      ).cpe;
+        // Verify
+        expect(ret).toStrictEqual(true);
 
-      let permissions = deviceVersion.devicePermissions(device);
+        // It is expected that wan_mac_ppp value is added when assembling the
+        // device object and that the value of the corresponding property
+        // (wan_bssid) is exactly equal to the value received
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining(
+              {wan_bssid: body.data.wan.wan_mac_ppp.value}),
+          ]),
+        );
+      },
+    );
 
-      let app = {
-        locals: {
-          secret: '123',
-        },
-      };
+    // Validate createRegistry - Flag canTrustWanRate is false - Is expected the
+    // fields rate and duplex to be rejectec and not included in device creation
+    test(
+      'Cannot trust rate',
+      async () => {
+        // Flag canTrustWanRate for Multilaser RE708 is false
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '944696-WiFi%20AC1200%20Router-9446968c2362',
+            model: 'RE1200R4GC-2T2R-V3', // Multilaser RE708
+            version: 'RE1200R4GC-2T2R-V3_v3411b_MUL015B',
+            hw_version: '81xx',
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
 
-      let body = assembleBody(device);
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
 
-      // Mocks
-      const mockRequest = () => {
-        return {app: app, body: body};
-      };
-      let req = mockRequest();
+        let permissions = deviceVersion.devicePermissions(device);
 
-      // Spies
-      let reportOnuDevicesSpy =
-        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
 
-      // Execute
-      let ret = await acsDeviceInfoController.__testCreateRegistry(
-        req, cpe, permissions,
-      );
+        let body = assembleBody(device);
 
-      // Verify
-      expect(ret).toStrictEqual(true);
+        // Mocks
+        const mockRequest = () => {
+          return {app: app, body: body};
+        };
+        let req = mockRequest();
 
-      // Assert that canTrustWanRate is really false
-      expect(permissions.grantCanTrustWanRate).toStrictEqual(false);
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
 
-      // It is expected that rate and duplex are rejected and that the device
-      // object does not have the corresponding properties
-      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
-        expect.arrayContaining([
-          expect.not.objectContaining({
-            wan_negociated_speed: expect.any(String),
-            wan_negociated_duplex: expect.any(String),
-          }),
-        ]),
-      );
-    },
-  );
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
 
-  // Validate createRegistry - Flag canTrustWanRate is true - Is expected the
-  // the fields rate and duplex to be accepted and included in device creation
-  test(
-    'Validate createRegistry - Can trust rate',
-    async () => {
-      // Flag canTrustWanRate for ZTE H199 is true
-      const id = models.defaultMockDevices[0]._id;
-      const device = models.copyDeviceFrom(
-        id,
-        {
-          _id: 'c0:b1:01:31:71:6e',
-          acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
-          model: 'ZXHN H199A', // ZTE H199
-          version: 'V9.1.0P4N1_MUL',
-          hw_version: 'V9.1.1',
-        },
-      );
-      let splitID = device.acs_id.split('-');
-      let model = splitID.slice(1, splitID.length-1).join('-');
+        // Verify
+        expect(ret).toStrictEqual(true);
 
-      const cpe = devicesAPI.instantiateCPEByModel(
-        model, device.model, device.version, device.hw_version,
-      ).cpe;
+        // Assert that canTrustWanRate is really false
+        expect(permissions.grantCanTrustWanRate).toStrictEqual(false);
 
-      let permissions = deviceVersion.devicePermissions(device);
+        // It is expected that rate and duplex are rejected and that the device
+        // object does not have the corresponding properties
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.not.objectContaining({
+              wan_negociated_speed: expect.any(String),
+              wan_negociated_duplex: expect.any(String),
+            }),
+          ]),
+        );
+      },
+    );
 
-      let app = {
-        locals: {
-          secret: '123',
-        },
-      };
+    // Validate createRegistry - Flag canTrustWanRate is true - Is expected the
+    // the fields rate and duplex to be accepted and included in device creation
+    test(
+      'Can trust rate',
+      async () => {
+        // Flag canTrustWanRate for ZTE H199 is true
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
+            model: 'ZXHN H199A', // ZTE H199
+            version: 'V9.1.0P4N1_MUL',
+            hw_version: 'V9.1.1',
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
 
-      let body = assembleBody(device);
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
 
-      // Mocks
-      const mockRequest = () => {
-        return {app: app, body: body};
-      };
-      let req = mockRequest();
+        let permissions = deviceVersion.devicePermissions(device);
 
-      // Spies
-      let reportOnuDevicesSpy =
-        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
 
-      // Execute
-      let ret = await acsDeviceInfoController.__testCreateRegistry(
-        req, cpe, permissions,
-      );
+        let body = assembleBody(device);
 
-      // Verify
-      expect(ret).toStrictEqual(true);
+        // Mocks
+        const mockRequest = () => {
+          return {app: app, body: body};
+        };
+        let req = mockRequest();
 
-      // Assert that canTrustWanRate is really true
-      expect(permissions.grantCanTrustWanRate).toStrictEqual(true);
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
 
-      // It is expected that rate and duplex values are added when assembling
-      // the device object and that the value of the corresponding properties is
-      // exactly equal to the values received
-      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
-        expect.arrayContaining([
-          expect.objectContaining({
-            wan_negociated_speed: body.data.wan.rate.value,
-            wan_negociated_duplex: body.data.wan.duplex.value,
-          }),
-        ]),
-      );
-    },
-  );
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // Assert that canTrustWanRate is really true
+        expect(permissions.grantCanTrustWanRate).toStrictEqual(true);
+
+        // It is expected that rate and duplex values are added when assembling
+        // the device object and that the value of the corresponding
+        // properties is exactly equal to the values received
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({
+              wan_negociated_speed: body.data.wan.rate.value,
+              wan_negociated_duplex: body.data.wan.duplex.value,
+            }),
+          ]),
+        );
+      },
+    );
+  });
 
   describe('informDevice function', () => {
     beforeEach(() => {
@@ -950,7 +966,6 @@ describe('ACS Device Info Tests', () => {
       );
     });
 
-
     test('New device', async () => {
       let acsID = models.defaultMockDevices[0].acs_id;
       let tr069Config = models.defaultMockConfigs[0].tr069;
@@ -982,7 +997,6 @@ describe('ACS Device Info Tests', () => {
       expect(result.body.sync_connection_login).toBe(true);
     });
 
-
     test('Non TR-069 device', async () => {
       let acsID = models.defaultMockDevices[0].acs_id;
 
@@ -1007,7 +1021,6 @@ describe('ACS Device Info Tests', () => {
         t('nonTr069AcsSyncError').replace('({{errorline}})', ''),
       );
     });
-
 
     test('Hard reset', async () => {
       let tr069Config = models.defaultMockConfigs[0].tr069;
@@ -1042,7 +1055,6 @@ describe('ACS Device Info Tests', () => {
       );
       expect(result.body.sync_connection_login).toBe(true);
     });
-
 
     test('Updated', async () => {
       let tr069Config = models.defaultMockConfigs[0].tr069;
@@ -1080,7 +1092,6 @@ describe('ACS Device Info Tests', () => {
       );
       expect(result.body.sync_connection_login).toBe(true);
     });
-
 
     test('Update failed and not sync', async () => {
       let tr069Config = models.defaultMockConfigs[0].tr069;
@@ -1121,7 +1132,6 @@ describe('ACS Device Info Tests', () => {
       expect(requestSyncSpy).not.toBeCalled();
     });
 
-
     test('Normal sync', async () => {
       let tr069Config = models.defaultMockConfigs[0].tr069;
 
@@ -1138,6 +1148,11 @@ describe('ACS Device Info Tests', () => {
       utils.common.mockAwaitConfigs(config, 'findOne');
       utils.common.mockAwaitDevices(device, 'findOne');
       let requestSyncSpy = jest.spyOn(acsDeviceInfoController, 'requestSync');
+
+      jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => {
+          return {success: true, executed: true, message: 'task success'};
+      });
 
       // Execute
       let result = await utils.common.sendFakeRequest(
