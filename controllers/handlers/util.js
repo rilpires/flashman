@@ -193,9 +193,11 @@ utilHandlers.getFromNestedKey = function(
 };
 
 utilHandlers.replaceNestedKeyWildcards = function(
-  data, key, useLastIndexOnWildcard = false,
+  data, key, useLastIndexOnWildcard = false, checkForWanEnable = false,
 ) {
-  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  let ret = utilHandlers.traverseNestedKey(
+    data, key, useLastIndexOnWildcard, checkForWanEnable,
+  );
   if (!ret.success) return undefined;
   return ret.key;
 };
