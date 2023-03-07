@@ -3,20 +3,13 @@ process.env.FLASHAUDIT_ENABLED = 'true';
 require('../../bin/globals.js');
 const {MongoClient, ObjectID} = require('mongodb');
 const mockingoose = require('mockingoose');
+const utils = require('../utils');
+const FlashAudit = require('@anlix-io/flashaudit-node-client');
+const Audit = require('../../controllers/audit');
 const ConfigModel = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const UserModel = require('../../models/user');
 const RoleModel = require('../../models/role');
-const deviceListController = require('../../controllers/device_list');
-const userController = require('../../controllers/user');
-const updateScheduler = require('../../controllers/update_scheduler');
-const technicianAppController = require('../../controllers/app_diagnostic_api');
-const updateSchedulerCommon =
-  require('../../controllers/update_scheduler_common');
-const utils = require('../utils');
-const FlashAudit = require('@anlix-io/flashaudit-node-client');
-const Audit = require('../../controllers/audit');
-
 
 // mocked CPEs to be used in all tests.
 const cpesMock = [{
@@ -35,6 +28,11 @@ const cpesMock = [{
     {mac: 'ab:ab:ab:ab:ab:ac', port: [44], router_port: [44]},
     {mac: 'ab:ab:ab:ab:ab:ad'},
     {mac: 'ab:ab:ab:ab:ab:ae'},
+  ],
+  vlan: [
+    {port: 1, vlan_id: 100},
+    {port: 2, vlan_id: 500},
+    {port: 4, vlan_id: 900},
   ],
 }, {
   _id: 'AB:AB:AB:AB:AB:AB',
@@ -71,7 +69,7 @@ const cpesMock = [{
   }],
 }];
 
-// mocked User to be used in all tests.
+// mocked Users to be used in all tests.
 const usersMock = [{
   // eslint-disable-next-line new-cap
   _id: ObjectID(),
@@ -138,6 +136,13 @@ const configMock = {
     used_search: 'AB:AB:AB:AB:AB:AA',
     date: new Date('2023-01-31T04:25:23.393Z'),
   },
+  vlans_profiles: [{
+    vlan_id: 100,
+    profile_name: 'vlanName1',
+  }, {
+    vlan_id: 200,
+    profile_name: 'vlanName2',
+  }],
 };
 
 // mocking FlashAudit node client.
@@ -271,6 +276,15 @@ jest.mock('../../controllers/acs_device_info', () => ({
 jest.mock('../../controllers/external-genieacs/tasks-api', () => ({
   deleteDeviceFromGenie: async () => true,
 }));
+
+// Modules to be tested.
+const deviceListController = require('../../controllers/device_list');
+const userController = require('../../controllers/user');
+const updateScheduler = require('../../controllers/update_scheduler');
+const technicianAppController = require('../../controllers/app_diagnostic_api');
+const updateSchedulerCommon =
+  require('../../controllers/update_scheduler_common');
+const vlanController = require('../../controllers/vlan');
 
 // eslint-disable-next-line no-multiple-empty-lines
 
@@ -1598,7 +1612,7 @@ describe('Controllers - Audit', () => {
         },
       };
 
-      await updateScheduler.startSchedule(req, res);
+      updateScheduler.startSchedule(req, res);
       await responsePromise;
       const message = await auditCallPromise;
 
@@ -1659,7 +1673,7 @@ describe('Controllers - Audit', () => {
         },
       };
 
-      await updateScheduler.startSchedule(req, res);
+      updateScheduler.startSchedule(req, res);
       await responsePromise;
       const message = await auditCallPromise;
 
@@ -1935,6 +1949,107 @@ describe('Controllers - Audit', () => {
       });
       technicianAppController.disassociateSlaveMeshV2(req,
         utils.mockResponse());
+    });
+  });
+
+  describe('Checking Audit values in VLAN', () => {
+    test('Adding VLAN Profile', (done) => {
+      const req = {
+        body: {
+          id: 99,
+          name: 'testVlan',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual([String(req.body.id)]);
+          expect(message.operation).toBe('create');
+          expect(message.values).toEqual({
+            name: req.body.name,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.addVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Editing VLAN Profile', (done) => {
+      const req = {
+        body: {
+          profilename: 'testVlan',
+        },
+        params: {
+          vid: '100',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(
+            [String(configMock.vlans_profiles[0].vlan_id)],
+          );
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            name: {
+              old: configMock.vlans_profiles[0].profile_name,
+              new: req.body.profilename,
+            },
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.editVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Remove VLAN Profiles', (done) => {
+      const req = {
+        body: {
+          vlans: JSON.stringify([
+            {port: 1, vlan_id: 100},
+            {port: 2, vlan_id: 200},
+            {port: 3, vlan_id: 300},
+          ]),
+        },
+        params: {
+          deviceid: cpesMock[0]._id,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual([cpesMock[0]._id]);
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            vlans: {
+              2: {
+                vlan_id: {
+                  old: cpesMock[0].vlan[1].vlan_id,
+                  new: req.body.vlans[1].vlan_id,
+                },
+              },
+              3: {
+                vlan_id: req.body.vlans[2].vlan_id,
+              },
+              4: null,
+            },
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.updateVlans(req, utils.mockResponse());
     });
   });
 

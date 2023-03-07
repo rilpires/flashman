@@ -9,6 +9,7 @@ const DeviceVersion = require('../models/device_version');
 const Role = require('../models/role');
 const crypto = require('crypto');
 const util = require('./handlers/util');
+const Audit = require('./audit');
 const t = require('./language').i18next.t;
 
 let vlanController = {};
@@ -210,6 +211,9 @@ vlanController.addVlanProfile = async function(req, res) {
         return res.json({success: false, type: 'danger',
           message: t('configSaveError', {errorline: __line})});
       }
+      Audit.vlan(req.user, newVlanProfile, 'create', {
+        'name': newVlanProfile.profile_name,
+      });
       return res.json({success: true, type: 'success',
                        message: t('operationSuccessful')});
     } else if (!is_vlan_id_unique) {
@@ -252,6 +256,8 @@ vlanController.editVlanProfile = async function(req, res) {
         message: t('vlanProfileNameInvalidLength', {errorline: __line})});
     }
 
+    let audit = {};
+    let editedVlan;
     for (let i = 0; i < config.vlans_profiles.length; i++) {
       if (config.vlans_profiles[i].profile_name === req.body.profilename) {
         return res.json({
@@ -262,6 +268,11 @@ vlanController.editVlanProfile = async function(req, res) {
 
       if (config.vlans_profiles[i].vlan_id == parseInt(req.params.vid)) {
         exist_vlan_profile = true;
+        editedVlan = config.vlans_profiles[i];
+        audit['name'] = {
+          old: config.vlans_profiles[i].profile_name,
+          new: req.body.profilename,
+        };
         config.vlans_profiles[i].profile_name = req.body.profilename;
       }
     }
@@ -271,6 +282,7 @@ vlanController.editVlanProfile = async function(req, res) {
         return res.json({success: false, type: 'danger',
           message: t('configSaveError', {errorline: __line})});
       }
+      Audit.vlan(req.user, editedVlan, 'edit', audit);
       return res.json({success: true, type: 'success',
                        message: t('operationSuccessful')});
     } else {
@@ -346,13 +358,23 @@ vlanController.removeVlanProfile = async function(req, res) {
 
     req.body.ids = req.body.ids.map((i) => i.toString());
 
-    config.vlans_profiles = config.vlans_profiles.filter(
-      (obj) => !req.body.ids.includes(obj.vlan_id.toString()) &&
-               !req.body.ids.includes(obj._id.toString()));
+    const deletedVlanIds = [];
+    config.vlans_profiles = config.vlans_profiles.filter((obj) => {
+      const vlanId = obj.vlan_id.toString();
+      const ret = !req.body.ids.includes(vlanId) &&
+                  !req.body.ids.includes(obj._id.toString());
+      if (!ret) deletedVlanIds.push(vlanId);
+      return ret;
+    });
 
     if ((config.save().catch((e) => e)) instanceof Error) {
       return res.json({success: false, type: 'danger',
         message: t('configSaveError', {errorline: __line})});
+    }
+    if (deletedVlanIds.length > 0) {
+      Audit.vlans(req.user, deletedVlanIds, 'delete', {
+        'total': deletedVlanIds.length,
+      });
     }
     return res.json({success: true, type: 'success',
                      message: t('operationSuccessful')});
@@ -410,13 +432,48 @@ vlanController.updateVlans = async function(req, res) {
     }
 
     if (is_vlans_valid) {
+      const vlansBefore = {}; // mapping of ports to VLAN ids.
+      for (const vlan of device.vlan) vlansBefore[vlan.port] = vlan.vlan_id;
+
       device.vlan = req.body.vlans;
+
+      const vlansAfter = {}; // mapping of ports to VLAN ids.
+      for (const vlan of device.vlan) vlansAfter[vlan.port] = vlan.vlan_id;
+
+      // auditing VLAN changes.
+      let audit = {'vlans': {}}; // keys are LAN ports and values are VLAN ids.
+      // eslint-disable-next-line guard-for-in
+      for (const port in vlansAfter) { // for each port after the change.
+        if (!vlansBefore[port]) { // if port didn't have a VLAN before.
+          audit['vlans'][port.toString()] = {
+            vlan_id: vlansAfter[port], // VLAN item created.
+          };
+          continue;
+        }
+        // if port had a VLAN before.
+        const before = vlansBefore[port];
+        const after = vlansAfter[port];
+        if (before !== after) {
+          audit['vlans'][port.toString()] = {
+            vlan_id: {old: before, new: after}, // VLAN item edited.
+          };
+        }
+      }
+      for (const port in vlansBefore) { // for each port before the change.
+        // if port has no VLAN after the change.
+        if (!vlansAfter[port]) {
+          audit['vlans'][port.toString()] = null; // VLAN item deleted.
+        }
+      }
 
       mqtt.anlixMessageRouterUpdate(device._id);
 
       if ((await device.save().catch((e) => e)) instanceof Error) {
         return res.json({success: false, type: 'danger',
           message: t('cpeSaveError', {errorline: __line})});
+      }
+      if (Object.keys(audit['vlans']).length > 0) {
+        Audit.cpe(req.user, device, 'edit', audit);
       }
       return res.json({success: true, type: 'success',
                        message: t('operationSuccessful')});

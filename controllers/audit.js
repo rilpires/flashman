@@ -46,14 +46,13 @@ controller.buildAttributeChange = FlashAudit.audit.buildAttributeChange;
 
 // Creating an audit message operation for a CPE.
 controller.cpe = function(user, cpe, operation, values) {
-  // building the values this device could be searched by so users
-  // can find it in FlashAudit.
-  const searchable = [];
-  controller.appendCpeIds(searchable, cpe);
+  // building the values this device could be searched by so users can
+  // find it in FlashAudit.
+  const searchable = controller.appendCpeIds([], cpe);
   return buildAndSendMessage(user, 'cpe', searchable, operation, values);
 };
 
-// Creating an audit message operation for several CPEs. Argument 'searchable'
+// Creating an audit message operation for several CPEs. Argument 'cpes'
 // can be an array with all identifications of all CPEs involved or an array of
 // CPEs.
 controller.cpes = function(user, cpes, operation, values) {
@@ -71,9 +70,9 @@ controller.user = function(user, targetUser, operation, values) {
   return buildAndSendMessage(user, 'user', searchable, operation, values);
 };
 
-// Creating an audit message operation for several Users. Argument 'searchable'
-// should be an array with the '_id's of all Users involved or an array of
-// users.
+// Creating an audit message operation for several Users. Argument 'users'
+// should be an array with the stringifyed '_id's of all Users involved or an
+// array of users.
 controller.users = function(user, users, operation, values) {
   let searchable = users;
   if (users[0].constructor !== String) {
@@ -84,23 +83,31 @@ controller.users = function(user, users, operation, values) {
 
 // Creating an audit message operation for a Role.
 controller.role = function(user, role, operation, values) {
-  return buildAndSendMessage(user, 'role', [role.name], operation, values);
-};
-
-// Creating an audit message operation for several Roles. Argument 'searchable'
-// should be an array with the names of all Roles involved or an array of roles.
-controller.roles = function(user, roles, operation, values) {
-  let searchable = roles;
-  if (roles[0].constructor !== String) {
-    searchable = roles.map((r) => r.name);
-  }
+  const searchable = [role.name];
   return buildAndSendMessage(user, 'role', searchable, operation, values);
 };
 
-// Creating an audit message operation for a vlan profile.
+// Creating an audit message operation for several Roles. Argument 'roles'
+// should be an array with the names of all Roles involved or an array of roles.
+controller.roles = function(user, roles, operation, values) {
+  let searchable = roles;
+  if (roles[0].constructor !== String) searchable = roles.map((r) => r.name);
+  return buildAndSendMessage(user, 'role', searchable, operation, values);
+};
+
+// Creating an audit message operation for a VLAN profile.
 controller.vlan = function(user, vlan, operation, values) {
-  return buildAndSendMessage(user, 'vlan', [vlan.profile_name], operation,
-    values);
+  const searchable = [vlan.vlan_id.toString()];
+  return buildAndSendMessage(user, 'vlan', searchable, operation, values);
+};
+
+// Creating an audit message operation for several VLANs. Argument 'vlans'
+// should be an array with the stringifyed 'vlan_id' of all VLANs involved or an
+// array of 'config.vlan_profiles' objects.
+controller.vlans = function(user, vlans, operation, values) {
+  let searchable = vlans;
+  if (vlans[0].constructor !== String) searchable = vlans.map((r) => r.vlan_id);
+  return buildAndSendMessage(user, 'vlan', searchable, operation, values);
 };
 
 // Creating a audit message that will end up in the audit server. Returns
