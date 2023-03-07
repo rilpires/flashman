@@ -29,3 +29,32 @@ jobs:
 
       - name: Run unit tests
         run: npm run test
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-db: flashman
+      
+      - name: Initializing flashman
+        run: |
+          set -a
+          . ./test.env
+          set +a
+          echo Running node version: "$(node --version)"
+          node ./bin/www &
+
+      - name: Setting up genieacs
+        run: |
+          set -a ; . ./test.env ; set +a
+          cd ..
+          git clone https://github.com/anlix-io/genieacs.git
+          cd genieacs
+          npm install
+          npm run build
+          node ./dist/bin/genieacs-cwmp &
+          node ./dist/bin/genieacs-nbi &
+
+
+      - name: Run Blackbox tests
+        run: npm run bb-test
