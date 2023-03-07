@@ -89,7 +89,6 @@ modelClass = modelClass.value[0];
 
 log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
 
-
 // Collect extra information for Flashman model detection
 modelName = modelName.value[0];
 firmwareVersion = firmwareVersion.value[0];
@@ -115,32 +114,17 @@ if (!result.success || !result.fields) {
   return;
 }
 
-
 // Apply connection request credentials preset configuration
-if (result.sync_connection_login) {
-  // Get current connection request credentials preset configuration
-  let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
-  let currentUsername = declare(usernameField, {value: now});
-  let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
-  let currentPassword = declare(passwordField, {value: now});
+if (result.connection) {
+  let targetLogin = (result.connection.login) ?
+    result.connection.login : 'anlix';
+  declare(usernameField, null, {value: targetLogin});
 
-  currentUsername = currentUsername.value[0];
-  let targetLogin = (result.connection_login) ?
-    result.connection_login : 'anlix';
+  let targetPassword = (result.connection.password) ?
+    result.connection.password : 'landufrj123';
 
-  if (currentUsername !== targetLogin) {
-    declare(usernameField, null, {value: targetLogin});
-  }
-
-  currentPassword = currentPassword.value[0];
-  let targetPassword = (result.connection_password) ?
-    result.connection_password : 'landufrj123';
-
-  if (currentPassword !== targetPassword) {
-    declare(passwordField, null, {value: targetPassword});
-  }
+  declare(passwordField, null, {value: targetPassword});
 }
-
 
 // Flashman did not ask for a full provision sync - provision is done
 if (!result.measure) {
