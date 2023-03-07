@@ -789,7 +789,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     console.log('Error getting config in function informDevice: ' + error);
   }
 
-  if (config || config.tr069) {
+  if (config && config.tr069) {
     let connection = {
       login: config.tr069.connection_login,
       password: config.tr069.connection_password,
