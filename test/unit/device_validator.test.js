@@ -55,6 +55,9 @@ rulesObj.push([createSimplePortMapping('192.168.1.10', '1010'),
 rulesObj.push([createSimplePortMapping('192.168.1.10', '1010'),
       createSimplePortMapping('192.168.1.20', '2020'),
       createSimplePortMapping('192.168.1.30', '3030')]);
+let sp = createSimplePortMapping('10.0.0.10',
+  '1010', '2020', '3030', '4040');
+rulesObj.push([{...sp, a: '1', b: '2', c: '3'}]);
 
 rulesValidity.push([createSimplePortMapping('192.168.1.10', '1010')]);
 rulesValidity.push([createSimplePortMapping('10.0.0.10', '')]);
@@ -512,7 +515,7 @@ describe('Validate functions used both in frontend and backend', () => {
       [false, {'a': '1', 'b': '2'}], [false, 23.23], [false, 'test'],
       [false, rulesObj[0]], [false, rulesObj[1]], [false, rulesObj[2]],
       [false, rulesObj[3]], [false, rulesObj[4]], [false, rulesObj[5]],
-      [true, []], [true, rulesObj[6]],
+      [true, []], [true, rulesObj[6]], [true, rulesObj[7]],
       ])('%# -> expects %s', (expected, rules) => {
       let validator = new Validator();
       let ret = validator.checkPortMappingObj(rules);
