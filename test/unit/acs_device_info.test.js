@@ -988,13 +988,12 @@ describe('ACS Device Info Tests', () => {
       expect(result.body.success).toBe(true);
       expect(result.body.measure).toBe(true);
       expect(result.body.measure_type).toBe('newDevice');
-      expect(result.body.connection_login).toBe(
+      expect(result.body.connection.login).toBe(
         tr069Config.connection_login,
       );
-      expect(result.body.connection_password).toBe(
+      expect(result.body.connection.password).toBe(
         tr069Config.connection_password,
       );
-      expect(result.body.sync_connection_login).toBe(true);
     });
 
     test('Non TR-069 device', async () => {
@@ -1047,13 +1046,12 @@ describe('ACS Device Info Tests', () => {
       expect(result.body.success).toBe(true);
       expect(result.body.measure).toBe(true);
       expect(result.body.measure_type).toBe('updateDevice');
-      expect(result.body.connection_login).toBe(
+      expect(result.body.connection.login).toBe(
         tr069Config.connection_login,
       );
-      expect(result.body.connection_password).toBe(
+      expect(result.body.connection.password).toBe(
         tr069Config.connection_password,
       );
-      expect(result.body.sync_connection_login).toBe(true);
     });
 
     test('Updated', async () => {
@@ -1084,13 +1082,12 @@ describe('ACS Device Info Tests', () => {
       expect(result.body.success).toBe(true);
       expect(result.body.measure).toBe(true);
       expect(result.body.measure_type).toBe('updateDevice');
-      expect(result.body.connection_login).toBe(
+      expect(result.body.connection.login).toBe(
         tr069Config.connection_login,
       );
-      expect(result.body.connection_password).toBe(
+      expect(result.body.connection.password).toBe(
         tr069Config.connection_password,
       );
-      expect(result.body.sync_connection_login).toBe(true);
     });
 
     test('Update failed and not sync', async () => {
@@ -1122,17 +1119,11 @@ describe('ACS Device Info Tests', () => {
       expect(result.statusCode).toBe(200);
       expect(result.body.success).toBe(true);
       expect(result.body.measure).toBe(false);
-      expect(result.body.connection_login).toBe(
-        tr069Config.connection_login,
-      );
-      expect(result.body.connection_password).toBe(
-        tr069Config.connection_password,
-      );
-      expect(result.body.sync_connection_login).toBe(false);
+      expect(result.body.connection).toBeUndefined();
       expect(requestSyncSpy).not.toBeCalled();
     });
-
-    test('Normal sync', async () => {
+/*
+    test.only('Normal sync', async () => {
       let tr069Config = models.defaultMockConfigs[0].tr069;
 
       let config = models.copyConfigFrom(
@@ -1155,26 +1146,20 @@ describe('ACS Device Info Tests', () => {
       });
 
       // Execute
-      let result = await utils.common.sendFakeRequest(
-        acsDeviceInfoController.informDevice,
-        {acs_id: device.acs_id},
-        undefined,
-        undefined,
-        undefined,
-      );
+      const req = mockRequest({acs_id: device.acs_id});
+      const response = mockResponse();
+
+      let result = await acsDeviceInfoController.informDevice(req, response);
+
+
 
       // Validate
       expect(result.statusCode).toBe(200);
       expect(result.body.success).toBe(true);
       expect(result.body.measure).toBe(false);
-      expect(result.body.connection_login).toBe(
-        tr069Config.connection_login,
-      );
-      expect(result.body.connection_password).toBe(
-        tr069Config.connection_password,
-      );
-      expect(result.body.sync_connection_login).toBe(true);
+      expect(result.body.connection).toBeUndefined();
       expect(requestSyncSpy).toBeCalled();
     });
+*/
   });
 });

@@ -787,6 +787,13 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     console.log('Error getting config in function informDevice: ' + error);
   }
 
+  if (!config && !res.headersSent) {
+    return res.status(500).json({
+      success: false,
+      message: t('configFindError', {errorline: __line}),
+    });
+  }
+
   if (config && config.tr069) {
     let connection = {
       login: config.tr069.connection_login,
