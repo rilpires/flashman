@@ -1008,7 +1008,7 @@
 	"certificationNotCompleted": "Certificação Não Concluída",
 	"notSpecified": "Não especificado",
 	"connectionType": "Tipo de Conexão",
-	"Bridge (IP Fixo)": "Bridge (IP Fixo)",
+	"Bridge (Fixed IP)": "Bridge (IP Fixo)",
     "Bridge (DHCP)": "Bridge (DHCP)",
     "PPPoE": "PPPoE",
     "DHCP": "DHCP",

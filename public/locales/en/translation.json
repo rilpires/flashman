@@ -1000,7 +1000,7 @@
 	"certificationNotCompleted": "Certification Not Completed",
 	"notSpecified": "Not specified",
 	"connectionType": "Connection Type",
-	"Bridge (IP Fixo)": "Bridge (Fixed IP)",
+	"Bridge (Fixed IP)": "Bridge (Fixed IP)",
     "Bridge (DHCP)": "Bridge (DHCP)",
     "PPPoE": "PPPoE",
     "DHCP": "DHCP",

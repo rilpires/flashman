@@ -251,7 +251,13 @@ const fetchCertification = function(id, name, timestamp) {
         let wanList = $('<ul>').addClass('list-inline').append(
           $('<li>').append(
             $('<strong>').html(`${t('connectionType')}:`),
-            $('<span>').html('&nbsp;'+t(cert.routerConnType)),
+            $('<span>').html('&nbsp;'+t(
+              // fixing value written already translated in database.
+              cert.routerConnType === 'Bridge (IP Fixo)' ||
+              cert.routerConnType === 'Bridge (Fixed IP)' ||
+              cert.routerConnType === 'Bridge (IP Fija)' ?
+                'Bridge (Fixed IP)' : cert.routerConnType
+            )),
           ),
         );
         if (cert.routerConnType === 'PPPoE') {
@@ -281,7 +287,12 @@ const fetchCertification = function(id, name, timestamp) {
               $('<span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
-        } else if (cert.routerConnType === 'Bridge (IP Fixo)') {
+        } else if (
+          // fixing value written already translated in database.
+          cert.routerConnType === 'Bridge (IP Fixo)' ||
+          cert.routerConnType === 'Bridge (Fixed IP)' ||
+          cert.routerConnType === 'Bridge (IP Fija)'
+        ) {
           wanList.append($('<li>').append(
             $('<strong>').html(`${t('cpeFixedIp')}:`),
             $('<span>').html('&nbsp;'+cert.bridgeIP),
