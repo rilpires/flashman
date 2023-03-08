@@ -752,7 +752,6 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 
   let doFullSync = false;
   let doSync = false;
-  let doReturn = false;
 
   if (device) {
     // Why is a non tr069 device calling this function? Just a sanity check
@@ -773,7 +772,6 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     // Registered devices should always collect information through
     // flashman, never using genieacs provision
     if (!doFullSync && !device.do_tr069_update_connection_login) {
-      doReturn = true;
       res.status(200).json({success: true, measure: false});
     }
   }
@@ -816,7 +814,6 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 
       device.last_tr069_sync = dateNow;
 
-      doReturn = true;
       res.status(200).json({
         success: true,
         measure: true,
@@ -835,26 +832,29 @@ acsDeviceInfoController.informDevice = async function(req, res) {
         }
       }
 
-      if (device.do_tr069_update_connection_login && doSync) {
-        device.do_tr069_update_connection_login = false;
-      } else {
-        connection = undefined;
-      }
+      if (device.do_tr069_update_connection_login) {
+        // Need to update connection request login
+        // Do the update only at sync
+        if (doSync) {
+          device.do_tr069_update_connection_login = false;
+        } else {
+          connection = undefined;
+        }
 
-      // Registered devices should always collect information through
-      // flashman, never using genieacs provision
-      // But now, do the connection login update if we need to sync
-      doReturn = true;
-      res.status(200).json({
-        success: true,
-        measure: false,
-        connection: connection,
-      });
+        res.status(200).json({
+          success: true,
+          measure: false,
+          connection: connection,
+        });
+      }
     }
   }
 
-  if (!doReturn) {
+  if (!res.headersSent) {
+    // Check if result has been sent
     // Sanity check - We can never reach this
+    // as a result must be answered above!
+    console.log('Error: No result in InformDevice');
     return res.status(500).json({
       success: false,
       message: t('Error'),
