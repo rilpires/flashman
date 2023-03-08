@@ -21,6 +21,8 @@ let configSchema = new mongoose.Schema({
     web_password: String,
     web_login_user: String,
     web_password_user: String,
+    connection_login: {type: String, default: 'anlix'},
+    connection_password: {type: String, default: 'landufrj123'},
     remote_access: {type: Boolean, default: false},
     inform_interval: {type: Number, required: true, default: 5*60*1000}, // ms
     sync_interval: {type: Number, required: true, default: 5*60*1000}, // ms

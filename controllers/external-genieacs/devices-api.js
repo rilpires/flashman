@@ -52,6 +52,7 @@ const tr069Models = {
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
+  mercusysMR30GModel: require('./cpe-models/mercusys-mr30g'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
@@ -59,6 +60,7 @@ const tr069Models = {
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
   multilaserH198Model: require('./cpe-models/multilaser-h198'),
   multilaserH199Model: require('./cpe-models/multilaser-h199'),
+  multilaserRE708Model: require('./cpe-models/multilaser-re708'),
   nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
@@ -75,7 +77,8 @@ const tr069Models = {
   thinkTkOnuAcDModel: require('./cpe-models/tk-onu-ac-d'),
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
-  tplinkEC220G5Model: require('./cpe-models/tplink-ec220g5'),
+  tplinkEC220G5V2Model: require('./cpe-models/tplink-ec220g5-v2'),
+  tplinkEC220G5V3Model: require('./cpe-models/tplink-ec220g5-v3'),
   tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
   tplinkEX510Model: require('./cpe-models/tplink-ex510'),
@@ -107,6 +110,7 @@ const getTR069CustomFactoryModels = function() {
 
 const getTR069UpgradeableModels = function() {
   let ret = {vendors: {}, versions: {}};
+
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
@@ -122,6 +126,7 @@ const getTR069UpgradeableModels = function() {
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
     }
   });
+
   return ret;
 };
 
@@ -240,6 +245,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === '1200R') {
     // Intelbras WiFiber 1200R InMesh
     result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
+  } else if (modelName === 'MR30G') {
+    // Mercusys MR30G
+    result = {success: true, cpe: tr069Models.mercusysMR30GModel};
   } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
@@ -261,6 +269,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZXHN H199A') {
     // Multilaser ZTE H199
     result = {success: true, cpe: tr069Models.multilaserH199Model};
+  } else if (modelName === 'RE1200R4GC-2T2R-V3') {
+    // Multilaser ZTE RE708
+    result = {success: true, cpe: tr069Models.multilaserRE708Model};
   } else if (modelName === 'NXT-425AC') {
     // Next Fiber NXT-425
     result = {success: true, cpe: tr069Models.nextFiberNXT425Model};
@@ -311,9 +322,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     result = {success: true, cpe: tr069Models.tplinkArcherC6};
-  } else if (modelName === 'EC220-G5') {
-    // TP-Link EC220-G5
-    result = {success: true, cpe: tr069Models.tplinkEC220G5Model};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('v2')) {
+    // TP-Link EC220-G5 v2
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V2Model};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('3.0')) {
+    // TP-Link EC220-G5 v3
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V3Model};
   } else if (modelName === 'EC225-G5') {
     // TP-Link EC225-G5
     result = {success: true, cpe: tr069Models.tplinkEC225G5Model};
@@ -378,13 +392,32 @@ const getModelFields = function(
 };
 
 const getDeviceFields = async function(args, callback) {
-  let params = JSON.parse(args[0]);
+  let params = null;
+
+  // If callback not defined, define a simple one
+  if (!callback) {
+    callback = (arg1, arg2) => {
+      return arg2;
+    };
+  }
+
+
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
   if (!params || !params.oui || !params.model) {
     return callback(null, {
       success: false,
       message: 'Incomplete arguments',
     });
   }
+
   let flashRes = await sendFlashmanRequest('device/inform', params);
   if (!flashRes['success'] ||
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
@@ -401,6 +434,10 @@ const getDeviceFields = async function(args, callback) {
     success: true,
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
+    measure_type: flashRes.data.measure_type,
+    connection_login: flashRes.data.connection_login,
+    connection_password: flashRes.data.connection_password,
+    sync_connection_login: flashRes.data.sync_connection_login,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };

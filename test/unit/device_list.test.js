@@ -1,35 +1,85 @@
 /* global __line */
 require('../../bin/globals.js');
-const {MongoClient} = require('mongodb');
 const mockingoose = require('mockingoose');
 process.env.FLM_GENIE_IGNORED = 'asd';
+const acsPortForwardHandler = require(
+  '../../controllers/handlers/acs/port_forward');
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
+const DeviceVersion = require('../../models/device_version');
 const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
 const UserModel = require('../../models/user');
 
+let portForwardPermissions = [
+  { // noAsymNoRanges: {
+    simpleSymmetric: true,
+    simpleAsymmetric: false,
+    rangeSymmetric: false,
+    rangeAsymmetric: false,
+  },
+  {// noRanges: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: false,
+   rangeAsymmetric: false,
+  },
+  {// noAsym: {
+   simpleSymmetric: true,
+   simpleAsymmetric: false,
+   rangeSymmetric: true,
+   rangeAsymmetric: false,
+  },
+  {// noAsymRanges: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: true,
+   rangeAsymmetric: false,
+  },
+  {// fullSupport: {
+   simpleSymmetric: true,
+   simpleAsymmetric: true,
+   rangeSymmetric: true,
+   rangeAsymmetric: true,
+  }];
+
 const utils = require('../utils');
 const testUtils = require('../common/utils');
 
+jest.mock('../../mqtts', () => ({
+  anlixMessageRouterUpdate: jest.fn(() => undefined),
+}));
+
+const audit = require('../../controllers/audit');
+jest.mock('../../controllers/audit', () => require('../fake_Audit'));
+
+let testSetPortForwardTr069 = async function(device, content, permissions,
+  rulesDiff, expectedSuccess, expectedMessage,
+  expectedWrongPortMapping, calledChange) {
+  // 'get permissions' mock
+  jest.spyOn(DeviceVersion, 'devicePermissions')
+    .mockReturnValue(permissions);
+  // changePortForwardRules mock
+  jest.spyOn(acsPortForwardHandler, 'changePortForwardRules');
+  jest.spyOn(TasksAPI, 'getFromCollection')
+    .mockReturnValue([]);
+  jest.spyOn(TasksAPI, 'addTask')
+    .mockReturnValue({success: true, executed: true});
+  let ret = await deviceListController.setPortForwardTr069(device, content, {});
+  expect(ret.message).toMatch(expectedMessage);
+  expect(ret.success).toBe(expectedSuccess);
+  if (calledChange) {
+    expect(acsPortForwardHandler.changePortForwardRules)
+      .toHaveBeenCalledWith(
+        device, rulesDiff, null, expectedWrongPortMapping,
+      );
+  }
+};
+
 describe('Controllers - Device List', () => {
-  let connection;
-
-  beforeAll(async () => {
-    connection = await MongoClient.connect(global.__MONGO_URI__, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
-    await connection.db();
-  });
-
-  afterAll(async () => {
-    await connection.close();
-  });
-
   /* list of functions that may be mocked:
     DeviceModel.findByMacOrSerial
     Config.findOne
@@ -97,6 +147,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeFindError', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('CPE not found', async () => {
       const deviceMock = [{
@@ -125,11 +176,13 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeNotFound', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Config find error', async () => {
       const deviceMock = [{
@@ -177,6 +230,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('configFindError', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Connection type should be pppoe or dhcp', async () => {
       const deviceMock = [{
@@ -226,6 +280,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('connectionTypeShouldBePppoeDhcp',
           {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Error sending mesh paramaters to CPE', async () => {
       const deviceMock = [{
@@ -295,6 +350,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('errorSendingMeshParamtersToCpe',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Ensure bssid collect error', async () => {
       const deviceMock = [{
@@ -370,6 +426,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].type).toBe('danger');
       expect(res.json.mock.lastCall[0].message)
         .toMatch('task error');
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     }, 10000);
     test('CPE save error', async () => {
       const deviceMock = [{
@@ -431,6 +488,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('cpeSaveError', {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('CPE matchedDevice save success', async () => {
       const deviceMock = [{
@@ -502,11 +560,18 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 55));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
       expect(res.json.mock.lastCall[0].wifi_ssid_5ghz).toBe('new-wifi-test-5g');
+
+      expect(audit.cpe).toHaveBeenCalledTimes(1);
+      expect(audit.cpe.mock.lastCall[2]).toBe('edit');
+      expect(audit.cpe.mock.lastCall[3]).toEqual({
+        wifi2Ssid: {old: 'old-wifi-test', new: 'new-wifi-test'},
+        wifi5Ssid: {old: 'old-wifi-test-5g', new: 'new-wifi-test-5g'},
+      });
     });
     test('modify WAN and MTU with success', async () => {
       const deviceMock = [{
@@ -576,11 +641,18 @@ describe('Controllers - Device List', () => {
       const res = utils.mockResponse();
       // Test
       await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 55));
+      await new Promise((resolve)=>setTimeout(resolve, 2000));
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
       expect(res.json.mock.lastCall[0].wan_vlan_id).toBe(2);
+
+      expect(audit.cpe).toHaveBeenCalledTimes(1);
+      expect(audit.cpe.mock.lastCall[2]).toBe('edit');
+      expect(audit.cpe.mock.lastCall[3]).toEqual({
+        wan_vlan: {old: 1, new: 2},
+        wan_mtu: {old: 1500, new: 1492},
+      });
     });
     test('Enabled to modify fields', async () => {
       const deviceMock = [{
@@ -650,6 +722,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('enabledToModifyFields', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(0);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Not enough permissions fields', async () => {
       const deviceMock = [{
@@ -715,6 +788,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('notEnoughPermissionsForFields',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
 
     test('Trying modify WAN'+
@@ -787,6 +861,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('notEnoughPermissionsForFields',
         {errorline: __line}));
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Fields invalid check errors', async () => {
       const deviceMock = [{
@@ -852,7 +927,9 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].message)
         .toMatch(utils.tt('fieldsInvalidCheckErrors', {errorline: __line}));
       expect(res.json.mock.lastCall[0].errors.length).toBe(2);
+      expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
+
     test('Field name invalid', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -888,7 +965,237 @@ describe('Controllers - Device List', () => {
           {name: 'content', errorline: __line}));
     });
   });
-
+  /* input:
+      device:
+        lan_subnet
+        lan_netmask
+        port_mapping
+        wrong_port_mapping
+      content:
+        [{ip, external_port_start, external_port_end
+          internal_port_start, internal_port_end}]
+      user - {}
+    output:
+      'success-message object':
+        success(2) - true, false
+        message(12) - t('jsonError'), t('jsonInvalidFormat'),
+          t('outOfSubnetRangeError'), t('fieldShouldBeFilledError'),
+          t('portsSouldBeNumberError'), t('portsSouldBeBetweenError'),
+          t('portRangesAreDifferentError'), t('portRangesInvertedLimitsError'),
+          t('overlappingMappingError'), t('incompatibleRulesError'),
+          t('cpeSaveError'), t('operationSuccessful')
+    total tests = 13 */
+  describe('setPortForwardTr069 function(device, content, user)', () => {
+    it('jsonError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{ip:192.168.10.10,external_port_start:1010,'+
+        'external_port_end:1020,internal_port_start:1010,'+
+        'internal_port_end:1020}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('jsonError', {errorline: __line}, false, false));
+    });
+    it('jsonInvalidFormat', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.10.10","external_port_start":"1010",'+
+        '"external_port_end":"1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('jsonInvalidFormat', {errorline: __line}, false, false));
+    });
+    it('outOfSubnetRangeError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.10.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('outOfSubnetRangeError',
+        {ip: '192.168.10.10'}, false, false));
+    });
+    it('fieldShouldBeFilledError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"",'+
+        '"external_port_end":"","internal_port_start":"",'+
+        '"internal_port_end":""}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('fieldShouldBeFilledError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portsSouldBeNumberError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"abc",'+
+        '"external_port_end":"cde","internal_port_start":"abc",'+
+        '"internal_port_end":"cde"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portsSouldBeNumberError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portsSouldBeBetweenError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"101042",'+
+        '"external_port_end":"102042","internal_port_start":"101042",'+
+        '"internal_port_end":"102042"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portsSouldBeBetweenError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portRangesAreDifferentError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1030"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portRangesAreDifferentError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('portRangesInvertedLimitsError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"920","internal_port_start":"1010",'+
+        '"internal_port_end":"920"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('portRangesInvertedLimitsError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('overlappingMappingError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip":"192.168.1.10","external_port_start":"1010",'+
+        '"external_port_end":"1020","internal_port_start":"1010",'+
+        '"internal_port_end":"1020"},{"ip":"192.168.1.20",'+
+        '"external_port_start":"1020","external_port_end":"1030",'+
+        '"internal_port_start":"1020","internal_port_end":"1030"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[3]};
+      await testSetPortForwardTr069(device, content, perms, 2, false,
+        utils.tt('overlappingMappingError',
+        {ip: '192.168.1.10'}, false, false));
+    });
+    it('incompatibleRulesError', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1020", "internal_port_start": "1010",'+
+        '"internal_port_end": "1020"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[0]};
+      await testSetPortForwardTr069(device, content, perms, 1, false,
+        utils.tt('incompatibleRulesError', {ip: '192.168.1.10'}, false, false));
+    });
+    it('cpeSaveError', async () => {
+      let device = {
+        save: jest.fn(() => {
+          throw new Error('cpeSaveError test');
+        }),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [{ip: '192.168.1.10', external_port_start: 1010,
+          external_port_end: 1010, internal_port_start: 1010,
+          internal_port_end: 1010}],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms, 0, false,
+        utils.tt('cpeSaveError', {errorline: __line}, false, false));
+    });
+    it('operationSuccessful', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [{ip: '192.168.1.10', external_port_start: 1010,
+          external_port_end: 1010, internal_port_start: 1010,
+          internal_port_end: 1010}],
+        wrong_port_mapping: false,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms,
+        0, true, utils.tt('operationSuccessful'), false, true);
+    });
+    it('operationSuccessful with wrong_port_mapping', async () => {
+      let device = {
+        save: jest.fn(),
+        lan_subnet: '192.168.1.1',
+        lan_netmask: 24,
+        port_mapping: [],
+        wrong_port_mapping: true,
+      };
+      let content = '[{"ip": "192.168.1.10", "external_port_start": "1010",'+
+        '"external_port_end": "1010", "internal_port_start": "1010",'+
+        '"internal_port_end": "1010"}]';
+      let perms = {grantPortForwardOpts: portForwardPermissions[4]};
+      await testSetPortForwardTr069(device, content, perms,
+        1, true, utils.tt('operationSuccessful'), true, true);
+    });
+  });
 
   // Index route: Invalid filter
   test('Index: Invalid filter', async () => {
@@ -922,8 +1229,6 @@ describe('Controllers - Device List', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe(undefined);
   });
-
-
   // Index route: Empty filter
   test('Index: Empty filter', async () => {
     // Mocks
@@ -990,8 +1295,10 @@ describe('Controllers - Device List', () => {
       {
         filter: ',,A,D,EEE,,,!,",,,<script>alert(1)</script>,/,/ou,',
       },
+
     );
     expect(response.statusCode).toBe(200);
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
+    expect(audit.cpe).toHaveBeenCalledTimes(0);
   });
 });

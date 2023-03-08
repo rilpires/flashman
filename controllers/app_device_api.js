@@ -1649,6 +1649,12 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
       return res.status(403).json({message:
         t('cpeUnauthorized', {errorline: __line})});
     }
+    /* Does not allow a port mapping config in case of a device that have
+     port mapping entries that flashman can not handle */
+    if (matchedDevice.wrong_port_mapping) {
+      return res.status(403).json({message:
+        t('deviceHaveWrongPortMappingError', {errorline: __line})});
+    }
     let appObj;
     if (matchedDevice.apps) {
       appObj = matchedDevice.apps.find((app) => app.id === req.body.app_id);

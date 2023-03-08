@@ -4,7 +4,8 @@ const TasksAPI = require('../../external-genieacs/tasks-api');
 const acsXMLConfigHandler = require('./xmlconfig.js');
 const utilHandlers = require('../util.js');
 const http = require('http');
-const debug = require('debug')('ACS_DEVICES_MEASURES');
+const debug = require('debug')('ACS_PORT_FORWARD');
+const Validator = require('../../../public/javascripts/device_validator');
 
 let acsPortForwardHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
@@ -169,88 +170,6 @@ const fetchAndComparePortForward = async function(acsID) {
   req.end();
 };
 
-acsPortForwardHandler.checkOverlappingPorts = function(rules) {
-  let i;
-  let j;
-  let ipI;
-  let ipJ;
-  let exStart;
-  let exEnd;
-  let inStart;
-  let inEnd;
-  if (rules.length > 1) {
-    for (i = 0; i < rules.length; i++) {
-      ipI = rules[i].ip;
-      exStart = rules[i].external_port_start;
-      exEnd = rules[i].external_port_end;
-      inStart = rules[i].internal_port_start;
-      inEnd = rules[i].internal_port_end;
-      for (j = i+1; j < rules.length; j++) {
-        ipJ = rules[j].ip;
-        let port = rules[j].external_port_start;
-        if (port >= exStart && port <= exEnd) {
-          return true;
-        }
-        port = rules[j].external_port_end;
-        if (port >= exStart && port <= exEnd) {
-          return true;
-        }
-        port = rules[j].internal_port_start;
-        if (ipI == ipJ && port >= inStart && port <= inEnd) {
-          return true;
-        }
-        port = rules[j].internal_port_end;
-        if (ipI == ipJ && port >= inStart && port <= inEnd) {
-          return true;
-        }
-      }
-    }
-  }
-  return false;
-};
-
-/*
-Function to check if exists rules that are not compatible to the device:
-  Returns true case exist a rule that is not possible to do in the device;
-  False if is all clean;
-*/
-acsPortForwardHandler.checkIncompatibility = function(rules, compatibility) {
-  let ret = false;
-  let i;
-  let exStart;
-  let exEnd;
-  let inStart;
-  let inEnd;
-  for (i = 0; i < rules.length; i++) {
-    exStart = rules[i].external_port_start;
-    exEnd = rules[i].external_port_end;
-    inStart = rules[i].internal_port_start;
-    inEnd = rules[i].internal_port_end;
-    if (!compatibility.simpleSymmetric) {
-      if (exStart == exEnd && inStart == inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.simpleAsymmetric) {
-      if (exStart != inStart && exEnd != inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.rangeSymmetric) {
-      if (exStart != exEnd && inStart != inEnd) {
-        ret = true;
-      }
-    }
-    if (!compatibility.rangeAsymmetric) {
-      if (exStart != inStart && exEnd != inEnd &&
-         exStart != exEnd && inStart != inEnd) {
-        ret = true;
-      }
-    }
-  }
-  return ret;
-};
-
 acsPortForwardHandler.checkPortForwardRules = async function(device) {
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
@@ -335,18 +254,22 @@ acsPortForwardHandler.getIPInterface = async function(
 };
 
 acsPortForwardHandler.changePortForwardRules = async function(
-  device, rulesDiffLength, interfaceValue = null,
+  device, rulesDiffLength, interfaceValue = null, deleteAllRules = false,
 ) {
   // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  let validator = new Validator();
+  if (!device || !device.use_tr069 || !device.acs_id ||
+    !validator.checkPortMappingObj(device.port_mapping)) return;
   let i;
   let ret;
   // let mac = device._id;
   let acsID = device.acs_id;
-  let model = device.model;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let interfaceRoot = cpe.getModelFields().port_mapping_fields_interface_root;
-  let interfaceKey = cpe.getModelFields().port_mapping_fields_interface_key;
+  let instance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+  if (!instance.success) return;
+  let cpe = instance.cpe;
+  let fields = cpe.getModelFields();
+  let interfaceRoot = fields.port_mapping_fields_interface_root;
+  let interfaceKey = fields.port_mapping_fields_interface_key;
   // redirect to config file binding instead of setParametervalues
   if (cpe.modelPermissions().stavixXMLConfig.portForward) {
     acsXMLConfigHandler.configFileEditing(device, ['port-forward']);
@@ -361,14 +284,15 @@ acsPortForwardHandler.changePortForwardRules = async function(
     );
     return;
   }
-  let fields = cpe.getModelFields();
   let changeEntriesSizeTask = {name: 'addObject', objectName: ''};
   let updateTasks = {name: 'setParameterValues', parameterValues: []};
   let portMappingTemplate = '';
   if (device.connection_type === 'pppoe') {
     portMappingTemplate = fields.port_mapping_ppp;
-  } else {
+  } else if (device.connection_type === 'dhcp') {
     portMappingTemplate = fields.port_mapping_dhcp;
+  } else {
+    return;
   }
   // check if already exists add, delete, set sent tasks
   // getting older tasks for this device id.
@@ -378,11 +302,12 @@ acsPortForwardHandler.changePortForwardRules = async function(
     tasks = await TasksAPI.getFromCollection('tasks', query);
   } catch (e) {
     console.log('[!] -> '+e.message+' in '+acsID);
+    return;
   }
   if (!Array.isArray(tasks)) return;
   // if find some task with name addObject or deleteObject
   let hasAlreadySentTasks = tasks.some((t) => {
-    return t.name === 'addObject' ||
+    return !('name' in t) || t.name === 'addObject' ||
     t.name === 'deleteObject';
   });
   // drop this call of changePortForwardRules
@@ -390,12 +315,35 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> DC in '+acsID);
     return;
   }
-  let currentLength = device.port_mapping.length;
   // The flag needsToQueueTasks marks the models that need to queue the tasks of
   // addObject and deleteObject - this happens because they reboot or lose
   // connection while running the task
   let needsToQueueTasks = cpe.modelPermissions().wan.portForwardQueueTasks;
-  if (rulesDiffLength < 0) {
+  let currentLength = device.port_mapping.length;
+  /* Before even add rules, clean the port mapping branch to proper index
+    counting. That is done in the scenario were the CPE already had rules
+    and the user want to manage port forward in flashman and is aware that
+    all current rules will be deleted */
+  if (deleteAllRules) {
+    try {
+      changeEntriesSizeTask.name = 'deleteObject';
+      changeEntriesSizeTask.objectName = portMappingTemplate + '.*';
+      let noRuleToAdd = (currentLength == 0); // Won't do a setParameterValues
+      let requestConn = (!needsToQueueTasks) || noRuleToAdd;
+      ret = await TasksAPI.addTask(
+        acsID, changeEntriesSizeTask, null, 0, requestConn,
+      );
+      // Need to check for executed flag if we sent requestConn flag to true
+      if (!ret || !ret.success || (requestConn && !ret.executed)) {
+        return;
+      }
+    } catch (e) {
+      console.log('[!] -> '+e.message+' in '+acsID);
+      return;
+    }
+    console.log('[#] -> D(*) in '+acsID);
+  }
+  if (rulesDiffLength < 0 && !deleteAllRules) {
     rulesDiffLength = -rulesDiffLength;
     changeEntriesSizeTask.name = 'deleteObject';
     for (i = 0; i < rulesDiffLength; i++) {
@@ -419,10 +367,12 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> D('+rulesDiffLength+') in '+acsID);
   } else if (rulesDiffLength > 0) {
+    changeEntriesSizeTask.name = 'addObject';
     changeEntriesSizeTask.objectName = portMappingTemplate;
     for (i = 0; i < rulesDiffLength; i++) {
       try {
@@ -435,6 +385,7 @@ acsPortForwardHandler.changePortForwardRules = async function(
         }
       } catch (e) {
         console.log('[!] -> '+e.message+' in '+acsID);
+        return;
       }
     }
     console.log('[#] -> A('+rulesDiffLength+') in '+acsID);
@@ -469,89 +420,6 @@ acsPortForwardHandler.changePortForwardRules = async function(
     console.log('[#] -> U('+currentLength+') in '+acsID);
     await TasksAPI.addTask(acsID, updateTasks);
   }
-};
-
-
-const checkPortMappingProperties = function(pm) {
-  if ('ip' in pm &&
-      'external_port_start' in pm &&
-      'external_port_end' in pm &&
-      'internal_port_start' in pm &&
-      'internal_port_end' in pm) {
-    return true;
-  } else {
-    return false;
-  }
-};
-
-acsPortForwardHandler
-  .convertPortForwardFromGenieToFlashman = function(rawPortForward, fields) {
-  let ret = [];
-  let baseRx = '';
-  let pmDhcpRegex;
-  let pmPppRegex;
-  if (fields instanceof Object) {
-    if (fields.port_mapping_dhcp) {
-      pmDhcpRegex = new RegExp(fields
-        .port_mapping_dhcp.replace(/\*/g, '[0-9]'));
-    }
-    if (fields.port_mapping_ppp) {
-      pmPppRegex = RegExp(fields
-        .port_mapping_ppp.replace(/\*/g, '[0-9]'));
-    }
-    // get if the sap of the subtree is dhcp or ppp
-    if (rawPortForward && rawPortForward.length > 0
-        && rawPortForward[0].path) {
-      if (rawPortForward[0].path.match(pmDhcpRegex)) {
-        baseRx = pmDhcpRegex;
-      } else if (rawPortForward[0].path.match(pmPppRegex)) {
-        baseRx = pmPppRegex;
-      }
-    }
-  }
-  let rawPortMapping = {};
-  if (rawPortForward && Array.isArray(rawPortForward)) {
-    rawPortForward.forEach((leaf) => {
-      /* if a value is 0 or '', in case of empty port mapping object in
-      genieacs or misleading registry, do not put in the middle-way object */
-      if (leaf.value && leaf.path && leaf.value.length > 0 && leaf.value[0]) {
-        let rawGenieKey = leaf.path.split(baseRx);
-        if (rawGenieKey.length > 1) {
-          // genie object index
-          let genieIdx = rawGenieKey[1].split(/\./)[1];
-          // genie object property
-          let genieKey = rawGenieKey[1].split(/\./)[2];
-          // associate to a middle-way object a genie index object
-          if (!(genieIdx in rawPortMapping)) {
-            rawPortMapping[genieIdx] = {};
-          }
-          /* search for matching port_mapping_fields because
-          is the values that are stored in flashman */
-          Object.keys(fields.port_mapping_fields).forEach((k) => {
-            let pmField = fields.port_mapping_fields[k];
-            if (pmField && pmField.length > 1 && genieKey == pmField[0]) {
-              /* put the value in the middle-way object
-              compliant with the flashman format */
-              rawPortMapping[genieIdx][pmField[1]] = leaf.value[0];
-            }
-          });
-        }
-      }
-    });
-  }
-  /* iterate through middle-way object and store
-  in the format of flashman, an array of object */
-  Object.keys(rawPortMapping).forEach((k) => {
-    if (checkPortMappingProperties(rawPortMapping[k])) {
-      ret.push(rawPortMapping[k]);
-    }
-  });
-  /* if there is overlapping, does not save the upcoming port
-    mappings already in device */
-  if (acsPortForwardHandler.checkOverlappingPorts(ret)) {
-    ret = [];
-  }
-  return ret;
 };
 
 module.exports = acsPortForwardHandler;

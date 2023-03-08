@@ -1807,7 +1807,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantOpmode: cpePermissions.features.meshCable ||
       cpePermissions.features.meshWifi,
     grantVlanSupport: false,
-    grantStatisticsSupport: true,
+    grantStatisticsSupport: cpePermissions.features.wanBytes,
     grantPonSignalSupport: cpePermissions.features.ponSignal,
     grantMeshMode: false,
     grantMeshV2PrimaryModeUpgrade: false,
@@ -1829,6 +1829,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWanLanInformation: false,
     grantTraceroute: cpePermissions.features.traceroute,
     grantRebootAfterWANChange: cpePermissions.wan.mustRebootAfterChanges,
+    grantCanTrustWanRate: cpePermissions.wan.canTrustWanRate,
   };
   if (permissions.grantPortForward) {
     permissions.grantPortForwardOpts =
@@ -1933,6 +1934,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantWiFiAXSupport = grantWiFiAXSupport(model);
   result.grantTraceroute = grantTraceroute(version);
   result.grantRebootAfterWANChange = grantRebootAfterWANChange();
+  result.grantCanTrustWanRate = true;
   return result;
 };
 

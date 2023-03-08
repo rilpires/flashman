@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.63.0",
+	"latest_version": "2.65.1",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,80 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.65.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+		],
+		"fixes": [
+			"Corrigimos um bug introduzido na 2.65.0 que afetava instancias em Docker e podia causar a falha de sincronismo de CPEs TR-069"
+		],
+		"improvements": [
+		],
+		"features": [
+		]
+	},
+	"2.65.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo TP-Link EC220-G5 v3 por TR-069",
+			"Adicionamos suporte ao modelo Multilaser RE708 por TR-069"
+		],
+		"fixes": [
+			"Corrigimos um problema que permitia o cadastro de MACs da WAN de CPEs TR-069 que eram informados de maneira errada",
+			"Corrigimos um problema impedia o cadastro de senhas customizadas para WEB para os modelos Multilaser/ZTE F6600 e F670L v9"
+		],
+		"improvements": [
+			"Melhoramos o filtro para inclusão de novas firmware para upgrade de CPEs TR-069"
+		],
+		"features": [
+		]
+	},
+	"2.64.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug inserido no versão 2.64.0 que impedia a sincronização de alguns dados com CPEs TR-069",
+			"Consertamos um bug que impedia a detecção de configurações PPPoE para o modelo Mercusys MR30G"
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.64.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Mercusys MR30G por TR-069"
+		],
+		"fixes": [
+			"Consertamos um bug onde o Flashman poderia alterar configurações de múltiplas WANs quando uma CPE TR-069 possuir multiplas WANs"
+		],
+		"improvements": [
+			"Melhoramos o processo de instalação Mesh quando uma CPE principal TR-069 possuir problemas de comunicação com o Flashman"
+		],
+		"features": [
+			"Adicionamos suporte a ferramenta de auditoria FlashAudit."
+		]
+	},
+	"2.63.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug introduzido na 2.62.0 que podia deletar as regras de uma CPE TR-069 no primeiro cadastro",
+			"Consertamos um bug em que alguns parametros não eram sincronizados no primeiro cadastro de uma CPE TR-069"
+		],
+		"improvements": [
+			"Adicionamos suporte a alta disponibilidade do serviço de base de dados"
+		],
+		"features": []
+	},
+	"2.63.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug introduzido na 2.63.0 que evitava o agendamento em massa de firmware quando o timeout era mantido com valor padrão"
+		],
+		"improvements": [],
+		"features": []
 	},
 	"2.63.0": {
 		"custom_firmware_compatibilities": [],
