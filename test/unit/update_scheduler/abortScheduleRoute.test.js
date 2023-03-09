@@ -1,4 +1,8 @@
 require('../../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const utils = require('../../common/utils');
 const models = require('../../common/models');
 
@@ -7,6 +11,16 @@ jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
   readdirSync: () => [],
 }));
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 
 /* Validates the response */
@@ -45,7 +59,7 @@ describe('TR-069 Update Scheduler Tests - Abort', () => {
 
 
   // Empty config
-  test('Validate abort route - Empty config', async () => {
+  test('Empty config', async () => {
     utils.common.mockConfigs([], 'find');
     utils.common.mockConfigs({}, 'findOne');
     utils.common.mockConfigs({}, 'findById');
@@ -57,14 +71,14 @@ describe('TR-069 Update Scheduler Tests - Abort', () => {
 
   // Scheduler already aborted
   // The config of models.defaultMockConfigs is aborted
-  test('Validate abort route - Already aborted', async () => {
+  test('Already aborted', async () => {
     let response = await utils.schedulerCommon.abortSchedulerFake();
     checkResponse(response, 500, false);
   });
 
 
   // Invalid device
-  test('Validate abort route - Invalid device', async () => {
+  test('Invalid device', async () => {
     utils.common.mockDevices([], 'find');
     utils.common.mockDevices({}, 'findOne');
     utils.common.mockDevices({}, 'findById');
@@ -75,7 +89,7 @@ describe('TR-069 Update Scheduler Tests - Abort', () => {
 
 
   // Okay
-  test('Validate abort route - Okay', async () => {
+  test('Okay', async () => {
     // Copy the config and use it
     let config = models.copyConfigFrom(
       '62b9f57c6beaae3b4f9d4656',
@@ -115,5 +129,4 @@ describe('TR-069 Update Scheduler Tests - Abort', () => {
     let response = await utils.schedulerCommon.abortSchedulerFake();
     checkResponse(response, 200, true);
   });
-
 });

@@ -1,7 +1,13 @@
 /* eslint require-jsdoc: 0 */
 
-const commonUtils = require('../common/utils');
 require('../../bin/globals.js');
+
+const testUtils = require('../common/utils');
+const models = require('../common/models');
+
+// Mock the config (used in language.js)
+testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
 const mockingoose = require('mockingoose');
 const diagAppAPIController = require('../../controllers/app_diagnostic_api');
 const DeviceModel = require('../../models/device');

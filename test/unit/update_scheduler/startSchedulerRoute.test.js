@@ -104,7 +104,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
   });
 
   // Empty data
-  test('Validate start route - {}', async () => {
+  test('Empty data', async () => {
     let data = {};
 
     let response = await utils.schedulerCommon.startSchedulerFake(data);
@@ -119,7 +119,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     testIndex++
   ) {
     test(
-      'Validate start route - TEST_PARAMETERS: ' +
+      'TEST_PARAMETERS: ' +
       utils.common.TEST_PARAMETERS[testIndex], async () => {
       let data = {
         use_search: utils.common.TEST_PARAMETERS[test],
@@ -142,7 +142,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
   }
 
   // Page count
-  test('Validate start route - Invalid page count', async () => {
+  test('Invalid page count', async () => {
     let data = {
       use_search: '',
       use_csv: 'false',
@@ -163,7 +163,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Page num
-  test('Validate start route - Invalid page num', async () => {
+  test('Invalid page num', async () => {
     let data = {
       use_search: '',
       use_csv: 'false',
@@ -184,7 +184,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Release
-  test('Validate start route - Invalid Release', async () => {
+  test('Invalid Release', async () => {
     let data = {
       use_search: '',
       use_csv: 'false',
@@ -207,7 +207,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
   // CSV
   // This test will depend that there is no csv file in the filesystem
   // ToDo!: Check full csv logic
-  test('Validate start route - No csv file', async () => {
+  test('No csv file', async () => {
     let data = {
       use_search: '',
       use_csv: 'true',
@@ -228,7 +228,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Not found device
-  test('Validate start route - Not found device', async () => {
+  test('Not found device', async () => {
     utils.common.mockDevices([], 'find');
     utils.common.mockDevices(null, 'findOne');
     utils.common.mockDevices(null, 'findById');
@@ -253,7 +253,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Not found firmware
-  test('Validate start route - Not found firmware', async () => {
+  test('Not found firmware', async () => {
     utils.common.mockFirmwares([], 'find');
     utils.common.mockFirmwares(null, 'findOne');
     utils.common.mockFirmwares(null, 'findById');
@@ -284,7 +284,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     testIndex++
   ) {
     test(
-      'Validate start route - Time Restriction: ' +
+      'Time Restriction: ' +
       utils.common.TEST_PARAMETERS[testIndex], async () => {
       let data = {
         use_search: '',
@@ -313,7 +313,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
     testIndex++
   ) {
     test(
-      'Validate start route - Timeout cases: ' +
+      'Timeout cases: ' +
       utils.common.TEST_PARAMETERS[testIndex], async () => {
       let data = {
         use_search: '',
@@ -337,7 +337,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Invalid timeout 1
-  test('Validate start route - Invalid timeout 1', async () => {
+  test('Invalid timeout 1', async () => {
     let timeoutPeriod = Math.ceil(
       models.defaultMockConfigs[0].tr069.inform_interval / 60000,
     ) + parseInt(process.env.FLM_MIN_TIMEOUT_PERIOD) - 1;
@@ -363,7 +363,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Invalid timeout 2
-  test('Validate start route - Invalid timeout 2', async () => {
+  test('Invalid timeout 2', async () => {
     let timeoutPeriod = parseInt(process.env.FLM_MAX_TIMEOUT_PERIOD) + 1;
 
     let data = {
@@ -387,7 +387,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Okay
-  test('Validate start route - Okay', async () => {
+  test('Okay', async () => {
     let data = {
       use_search: '"online"',
       use_csv: 'false',
@@ -408,7 +408,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Okay 2
-  test('Validate start route - Okay 2', async () => {
+  test('Okay 2', async () => {
     let data = {
       use_search: '"online"',
       use_csv: 'false',
@@ -429,7 +429,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Okay valid timeout
-  test('Validate start route - Okay valid timeout', async () => {
+  test('Okay valid timeout', async () => {
     let timeoutPeriod = Math.ceil(
       models.defaultMockConfigs[0].tr069.inform_interval / 60000,
     ) + process.env.FLM_MIN_TIMEOUT_PERIOD;
@@ -455,7 +455,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Okay strange firmware
-  test('Validate start route - Okay strange firmware', async () => {
+  test('Okay strange firmware', async () => {
     models.copyFirmwareFrom(
       '638f927dd05676c90dbdeeba',
       {
@@ -486,7 +486,7 @@ describe('TR-069 Update Scheduler Tests - Start Schedule', () => {
 
 
   // Okay, no return to flashman
-  test('Validate start route - Okay, no return to flashman', async () => {
+  test('Okay, no return to flashman', async () => {
     let data = {
       use_search: '"online"',
       use_csv: 'false',
