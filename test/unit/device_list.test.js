@@ -999,7 +999,8 @@ describe('Controllers - Device List', () => {
         'internal_port_end:1020}]';
       let perms = {grantPortForwardOpts: portForwardPermissions[3]};
       await testSetPortForwardTr069(device, content, perms, 1, false,
-        utils.tt('jsonError', {errorline: __line}, false, false));
+        utils.tt('fieldNameInvalid', {name: 'content',
+          errorline: __line}, false, false));
     });
     it('jsonInvalidFormat', async () => {
       let device = {

@@ -1,4 +1,4 @@
-name: Master pull request checks
+name: Master pull request check
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
 
 jobs:
   On-pull-to-master:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest]
 
     strategy:
       matrix:
@@ -46,7 +46,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies & run tests
-        run: |
-          npm install
-          npm test
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm run test

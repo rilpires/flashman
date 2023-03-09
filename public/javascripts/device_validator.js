@@ -237,7 +237,7 @@
 
     /**
      * Validates the string passed if is at least 1 character long and at most
-     * 32 characters long. The string must only contain numbers and characters.
+     * 16 characters long. The string must only contain numbers and characters.
      *
      * @memberof public/javascripts/device_validator
      *
@@ -444,11 +444,9 @@
 
     Validator.prototype.checkObjProperties = function(obj, keys) {
       if (!!obj && typeof obj === 'object') {
-        let boolCheck = true;
-        keys.forEach((k) => {
-          boolCheck = boolCheck && Object.keys(obj).includes(k);
+        return keys.every((k) => {
+          return k in obj;
         });
-        return boolCheck;
       }
     };
 
