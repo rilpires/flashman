@@ -1,3 +1,4 @@
+const testUtils = require('../../../common/utils');
 require('../../../../bin/globals.js');
 const acsHandlers = require('../../../../controllers/handlers/acs/xmlconfig');
 const fs = require('fs');

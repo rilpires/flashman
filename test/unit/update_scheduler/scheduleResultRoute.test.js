@@ -21,7 +21,6 @@ const checkResponse = function(response, statusCode, success) {
         expect.stringContaining('Atualização abortada')
       );
     }
-  
   } catch (error) {
     error.message =
       `

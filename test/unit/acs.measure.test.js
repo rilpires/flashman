@@ -1,12 +1,12 @@
 require('../../bin/globals');
+const utils = require('../common/utils');
+const models = require('../common/models');
 const measureController = require('../../controllers/handlers/acs/measures');
 const utilHandlers = require('../../controllers/handlers/util');
 const sio = require('../../sio');
 
 const DeviceModel = require('../../models/device');
 
-const utils = require('../common/utils');
-const models = require('../common/models');
 
 const http = require('http');
 const t = require('../../controllers/language').i18next.t;
