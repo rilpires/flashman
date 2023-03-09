@@ -18,7 +18,6 @@ const checkResponse = function(response, statusCode, success) {
     if (success === false) {
       expect(response.body.error).toBeDefined();
     }
-  
   } catch (error) {
     error.message =
       `

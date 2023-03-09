@@ -1,5 +1,6 @@
 /* eslint require-jsdoc: 0 */
 require('../../bin/globals.js');
+const utils = require('../common/utils');
 const deviceHandlers = require('../../controllers/handlers/devices');
 
 describe('Controllers - Handlers - Devices', () => {
