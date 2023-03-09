@@ -1,5 +1,12 @@
 /* global __line */
 
+
+/**
+ * Interface functions with the ACS.
+ * @namespace controllers/handlers/acs/measure
+ */
+
+
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
@@ -469,4 +476,7 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   }
 };
 
+/**
+ * @exports controllers/handlers/acs/measure
+ */
 module.exports = acsMeasuresHandler;

@@ -2,6 +2,11 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 
+/**
+ * Device functions.
+ * @namespace controllers/deviceList
+ */
+
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
@@ -4718,4 +4723,7 @@ deviceListController.editCoordinates = async function(req, res) {
   });
 };
 
+/**
+ * @exports controllers/deviceList
+ */
 module.exports = deviceListController;

@@ -1,5 +1,13 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
+
+
+/**
+ * Interface functions with the ACS.
+ * @namespace controllers/acsDeviceInfo
+ */
+
+
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
 const SchedulerCommon = require('./update_scheduler_common');
@@ -702,16 +710,15 @@ const createRegistry = async function(req, cpe, permissions) {
 acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
 
-/*
- *  Description:
- *    This function returns a promise and only resolves when the time in
- *    miliseconds timeout after calling this function.
+/**
+ * This function returns a promise and only resolves when the time, in
+ * miliseconds, timeout after calling this function.
  *
- *  Inputs:
- *    miliseconds - Amount of time in miliseconds to sleep
+ * @memberof controllers/acsDeviceInfo
  *
- *  Outputs:
- *    promise - The promise that is only resolved when the timer ends.
+ * @param {Integer} miliseconds - Amount of time in miliseconds to sleep.
+ *
+ * @return {Promise} The promise that is only resolved when the timer ends.
  *
  */
 const sleep = function(miliseconds) {
@@ -728,27 +735,26 @@ const sleep = function(miliseconds) {
 acsDeviceInfoController.__testSleep = sleep;
 
 
-
-/*
- *  Description:
- *    This function calls an async function (func) after delayTime. If it fails,
- *    the func will be called again with twice the time it was executed.
- *    It will repeat this process until the device exists in genie or the
- *    repeatQuantity reaches zero. Every iteration, the repeatQuantity will be
- *    reduced by one and delayTime will doubled from what it was before.
+/**
+ * This function calls an async function (`func`) after `delayTime`. If it
+ * fails, the `func` will be called again with twice the time it was executed.
+ * It will repeat this process until the device exists in genie or the
+ * `repeatQuantity` reaches zero. Every iteration, the `repeatQuantity` will be
+ * reduced by one and `delayTime` will doubled from what it was before.
  *
- *  Inputs:
- *    func - The function that will be called
- *    repeatQuantity - Amount of repetitions until giving up calling the
- *      function
- *    delayTime - Amount of time to call the function again
+ * @memberof controllers/acsDeviceInfo
  *
- *  Outputs:
- *    object:
- *      - success: If could start the delay loop
- *      - executed: If could execute the func
- *      - message: An error or okay message about what happened
- *      - result: the return of func, only included if could ran the func
+ * @param {Device} device - The device to execute the function on.
+ * @param {Function} func - The function that will be called.
+ * @param {Integer} repeatQuantity - Amount of repetitions until giving up.
+ * calling the function
+ * @param {Integer} delayTime - Amount of time to call the function again.
+ *
+ * @return {Object} The object containing:
+ *  - `success`: If could start the delay loop;
+ *  - `executed`: If could execute the `func`;
+ *  - `message`: An error or okay message about what happened;
+ *  - `result`: the return of `func`, only included if could ran the `func`.
  */
 const delayExecutionGenie = async function(
   device,
@@ -814,10 +820,25 @@ const delayExecutionGenie = async function(
 acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 
 
-// Receives GenieACS inform event, to register the CPE as online - updating last
-// contact information. For new CPEs, it replies with "measure" as true, to
-// signal that GenieACS needs to collect information manually. For registered
-// CPEs, it calls requestSync to check for fields that need syncing.
+/**
+ * Receives GenieACS inform event, to register the CPE as online - updating last
+ * contact information. For new CPEs, it replies with "measure" as true, to
+ * signal that GenieACS needs to collect information manually. For registered
+ * CPEs, it calls `requestSync` to check for fields that need syncing.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Request} req - The http request.
+ * @param {Response} res - The http response.
+ *
+ * @return {Response} The body of the response might contains:
+ *  - `success`: If could execute the operation;
+ *  - `measure`: If needs to update measures;
+ *  - `measure_type`: If it is a new device or just updating one;
+ *  - `connection_login`: The TR-069 connection username;
+ *  - `connection_password`: The TR-069 connection password;
+ *  - `sync_connection_login`: If needs to sync.
+ */
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
@@ -1472,9 +1493,21 @@ const fetchSyncResult = async function(
   req.end();
 };
 
-// Legacy GenieACS sync function that is still used for new devices and devices
-// that are recovering from hard reset or from a new firmware upgrade - should
-// only query the database and call createRegistry/syncDeviceData accordingly
+/**
+ * Legacy GenieACS sync function that is still used for new devices and devices
+ * that are recovering from hard reset or from a new firmware upgrade - should
+ * only query the database and call `createRegistry`/`syncDeviceData`
+ * accordingly.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Request} req - The http request.
+ * @param {Response} res - The http response.
+ *
+ * @return {Response} The body of the response might contains:
+ *  - `success`: If could execute the function properly;
+ *  - `message`: The message of what happenned if `success` is false.
+ */
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
@@ -2796,4 +2829,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   }
 };
 
+/**
+ * @exports controllers/acsDeviceInfo
+ */
 module.exports = acsDeviceInfoController;
