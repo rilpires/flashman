@@ -60,6 +60,7 @@ basicCPEModel.modelPermissions = function() {
       wps: false, // will enable wps configs (to be implemented)
       macAccessControl: false,
       wlanAccessControl: false,
+      hasIpv6Information: false, // Has any information about IPv6
     },
     firmwareUpgrades: {
       'v0.0.0': [],
@@ -98,6 +99,23 @@ basicCPEModel.modelPermissions = function() {
       hasUptimeField: true, // flag to handle devices that don't have uptime
       mustRebootAfterChanges: false, // must reboot after change wan parameters
       canTrustWanRate: true, // has wan rate field trustworthy
+      hasIpv4DefaultGatewayField: false, // If the cpe can send IPv4 default
+                                          // gateway
+      hasDnsServerField: false, // If the cpe can send the DNS server
+    },
+    ipv6: {
+      // Address, Mask Gateway
+      hasAddressField: false, // If the cpe can send IPv6 address
+      hasMaskField: false, // If the cpe can send IPv6 mask
+      hasDefaultGatewayField: false, // If the cpe can send IPv6 default
+                                      // gateway
+
+      // Prefix Delegation
+      hasPrefixDelegationAddressField: false, // IPv6 prefix delegation address
+                                              // propagated to lan
+      hasPrefixDelegationMaskField: false, // IPv6 prefix delegation mask
+      hasPrefixDelegationLocalAddressField: false, // IPv6 prefix delegation
+                                                    // self address
     },
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
@@ -675,6 +693,33 @@ basicCPEModel.getModelFields = function() {
       dns_servers: 'InternetGatewayDevice.LANDevice.1.'+
         'LANHostConfigManagement.DNSServers',
     },
+
+    ipv6: {
+      /*
+       * These fields are solely for helping creating support for routers with
+       * IPv6 that contains those proprietary fields, as those fields are does
+       * not belong to TR-069 documentation.
+       *
+       * address: '',
+       * address_ppp: '',
+       *
+       * mask: '',
+       * mask_ppp: '',
+       *
+       * default_gateway: '',
+       * default_gateway_ppp: '',
+       *
+       * prefix_delegation_address: '',
+       * prefix_delegation_address_ppp: '',
+       *
+       * prefix_delegation_mask: '',
+       * prefix_delegation_mask_ppp: '',
+       *
+       * prefix_delegation_local_address: '',
+       * prefix_delegation_local_address_ppp: '',
+       */
+    },
+
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
       bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BSSID',

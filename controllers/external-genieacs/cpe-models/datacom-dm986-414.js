@@ -9,17 +9,25 @@ datacomModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
+  permissions.features.hasIpv6Information = true;
+
   permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.wifi.allowDiacritics = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
+
   permissions.firmwareUpgrades = {
     'V4.6.0-210709': ['V5.4.0-220624'],
     'V5.4.0-220624': [],
@@ -104,6 +112,30 @@ datacomModel.getModelFields = function() {
     'ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'ChannelWidth';
+
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.WANIPConnection.1.X_RTK_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.WANPPPConnection.1.X_RTK_IPv6IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.WANIPConnection.1.X_RTK_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.1.WANPPPConnection.1.X_RTK_DefaultIPv6Gateway';
+
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.1.WANIPConnection.1.X_RTK_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.1.WANPPPConnection.1.X_RTK_IPv6Prefix';
+
+
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
