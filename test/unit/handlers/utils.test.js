@@ -2,11 +2,197 @@ require('../../../bin/globals');
 
 const utilHandlers = require('../../../controllers/handlers/util');
 
+let jsonPath = '../../assets/flashman-test/genie-data/wan/';
+let mercusysMR30GWanData = require(jsonPath + 'mercusys-mr30g.json');
+let tplinkHC220G5WanData = require(jsonPath + 'tplink-hc220g5.json');
+let noWanAvaliableWanData = require(jsonPath + 'no-wan-available.json');
+
+// Get object from key for assertions
+let getFromNestedKey = (data, key) => {
+  let result = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    result = result[splitKey[i]];
+    if (result === undefined) return undefined;
+  }
+  return result;
+};
+
+// Compare mock result value with what is expected
+let assertSpyResult = (results, expected) => {
+  for (let i = 0; i < results.length; i++) {
+    expect(results[i].value).toStrictEqual(expected[i]);
+  }
+};
+
+// Simulates isWanEnabled function call (inside traverseNestedKey)
+let __testIsWanEnabled = (data, key, wildcardFlag = false) => {
+  let current = data;
+  let splitKey = key.split('.');
+  for (let i = 0; i < splitKey.length; i++) {
+    if (splitKey[i] === '*') {
+      // Calls isWanEnabled
+      let wanEnabled = utilHandlers.isWanEnabled(current, key, wildcardFlag);
+      // Replace wildcard with function return
+      if (wanEnabled.success) {
+        splitKey[i] = wanEnabled.index;
+      } else {
+        // In case of function error, keep legacy behavior
+        let orderedKeys = utilHandlers.orderNumericGenieKeys(
+          Object.keys(current),
+        );
+        splitKey[i] = wildcardFlag ?
+          orderedKeys[orderedKeys.length - 1] : orderedKeys[0];
+      }
+    }
+    if (!Object.prototype.hasOwnProperty.call(current, splitKey[i])) {
+      return {success: false};
+    }
+    current = current[splitKey[i]];
+  }
+};
+
 describe('Utils Handler Tests', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
     jest.clearAllMocks();
     jest.useRealTimers();
+  });
+
+  describe('Test functions that handles nested genie object', () => {
+    test('Validate isWanEnabled - wildcardFlag false with success', () => {
+      // The expected result was checked manually from the given json
+      let expectedRets = [
+        {success: true, index: '1'}, // First call return
+        {success: true, index: '2'}, // Second call return
+      ];
+
+      // Simulating editing the MaxMRUSize key
+      let key = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANPPPConnection.*.MaxMRUSize';
+
+      // Spies
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      __testIsWanEnabled(mercusysMR30GWanData, key);
+
+      // Verify
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+    });
+
+    test('Validate isWanEnabled - wildcardFlag true with success', () => {
+      // The expected result was checked manually from the given json
+      let expectedRets = [
+        {success: true, index: '10'}, // First and only call return
+      ];
+
+      // Simulating editing the MaxMRUSize key
+      let key = 'Device.PPP.Interface.*.MaxMRUSize';
+
+      // Spies
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      __testIsWanEnabled(tplinkHC220G5WanData, key, true);
+
+      // Verify
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+    });
+
+    test('Validate isWanEnabled - No WAN enabled', () => {
+      // Json with no wan available
+      let expectedRets = [
+        {success: false, index: null}, // First call return
+        {success: false, index: null}, // Second call return
+      ];
+
+      // Simulating editing the MaxMRUSize key
+      let key = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.MaxMTUSize';
+
+      // Spies
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      __testIsWanEnabled(noWanAvaliableWanData, key);
+
+      // Verify
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+    });
+
+    test('Validate traverseNestedKey with checkForWanEnable true and' +
+         'wildcardFlag false', () => {
+      // Simulating editing the MaxMRUSize key
+      let key = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANPPPConnection.*.MaxMRUSize';
+
+      // Expected return of traverseNestedKey
+      let expectedKey = (key.replace(/\*/, '1')).replace(/\*/, '2');
+      let expectedValue = getFromNestedKey(mercusysMR30GWanData, expectedKey);
+      let expectedRet1 = [
+        // First and only call return
+        {success: true, key: expectedKey, value: expectedValue},
+      ];
+
+      // Expected returns of isWanEnabled
+      let expectedRets2 = [
+        {success: true, index: '1'}, // First call return
+        {success: true, index: '2'}, // Second call return
+      ];
+
+      // Spies
+      let isTraverseNestedKeySpy =
+        jest.spyOn(utilHandlers, 'traverseNestedKey');
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      utilHandlers.traverseNestedKey(mercusysMR30GWanData, key, false, true);
+
+      // Verify
+      expect(isTraverseNestedKeySpy).toHaveBeenCalledTimes(1);
+      assertSpyResult(isTraverseNestedKeySpy.mock.results, expectedRet1);
+
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets2);
+    });
+
+    test('Validate traverseNestedKey with checkForWanEnable true and' +
+         'wildcardFlag true', () => {
+      // Simulating editing the MaxMRUSize key
+      let key = 'Device.PPP.Interface.*.MaxMRUSize';
+
+      // Expected return of traverseNestedKey
+      let expectedKey = key.replace(/\*/, '10');
+      let expectedValue = getFromNestedKey(tplinkHC220G5WanData, expectedKey);
+      let expectedRet1 = [
+        // First and only call return
+        {success: true, key: expectedKey, value: expectedValue},
+      ];
+
+      // Expected returns of isWanEnabled
+      let expectedRets2 = [
+        {success: true, index: '10'}, // First and only call return
+      ];
+
+      // Spies
+      let isTraverseNestedKeySpy =
+        jest.spyOn(utilHandlers, 'traverseNestedKey');
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      utilHandlers.traverseNestedKey(tplinkHC220G5WanData, key, true, true);
+
+      // Verify
+      expect(isTraverseNestedKeySpy).toHaveBeenCalledTimes(1);
+      assertSpyResult(isTraverseNestedKeySpy.mock.results, expectedRet1);
+
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets2);
+    });
   });
 
   describe('Test utils regex functions', () => {
