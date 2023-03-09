@@ -329,7 +329,6 @@ const calculateMaskIpv6 = function(ip, mask) {
       .some((item) => item !==0) &&
       index <= 6
     ) {
-      console.log(bytes.slice(index, bytes.length));
       ipMasked += '::';
       return ipMasked;
     } else {
