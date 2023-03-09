@@ -245,6 +245,13 @@ const fetchCertification = function(id, name, timestamp) {
         $('#diagnostic-none-onu').hide();
         $('#diagnostic-header-onu').hide();
       }
+
+      // fixing certificate router connection type written already translated
+      // in database. Checking values in all languages the app could have sent.
+      const routerConnTypeIsBridgeFixedIp = (routerConnType) =>
+        routerConnType === 'Bridge (IP Fixo)' ||
+        routerConnType === 'Bridge (Fixed IP)';
+
       // Change wan info
       if (cert.didConfigureWan && cert.routerConnType) {
         $('#wan-config-list').html('');
@@ -252,11 +259,8 @@ const fetchCertification = function(id, name, timestamp) {
           $('<li>').append(
             $('<strong>').html(`${t('connectionType')}:`),
             $('<span>').html('&nbsp;'+t(
-              // fixing value written already translated in database.
-              cert.routerConnType === 'Bridge (IP Fixo)' ||
-              cert.routerConnType === 'Bridge (Fixed IP)' ||
-              cert.routerConnType === 'Bridge (IP Fija)' ?
-                'Bridge (Fixed IP)' : cert.routerConnType
+              routerConnTypeIsBridgeFixedIp(cert.routerConnType) ?
+                'Bridge (Fixed IP)' : cert.routerConnType,
             )),
           ),
         );
@@ -287,12 +291,7 @@ const fetchCertification = function(id, name, timestamp) {
               $('<span>').html('&nbsp;'+cert.pppoeUser),
             ));
           }
-        } else if (
-          // fixing value written already translated in database.
-          cert.routerConnType === 'Bridge (IP Fixo)' ||
-          cert.routerConnType === 'Bridge (Fixed IP)' ||
-          cert.routerConnType === 'Bridge (IP Fija)'
-        ) {
+        } else if (routerConnTypeIsBridgeFixedIp(cert.routerConnType)) {
           wanList.append($('<li>').append(
             $('<strong>').html(`${t('cpeFixedIp')}:`),
             $('<span>').html('&nbsp;'+cert.bridgeIP),
@@ -544,7 +543,7 @@ anlixDocumentReady.add(function() {
       {orderable: false, targets: [0, hasTrashButton, 4+hasTrashButton]},
       {
         targets: [2+hasTrashButton],
-        render: function (data, type, row) {
+        render: function(data, type, row) {
           // If display or filter data is requested, format the date
           if (type === 'display' || type === 'filter') {
             let date = new Date(Number(data));
@@ -555,7 +554,6 @@ anlixDocumentReady.add(function() {
             }
             return value;
           }
-   
           // Otherwise the data type requested (`type`) is type detection or
           // sorting data, for which we want to use the integer, so just return
           // that, unaltered
