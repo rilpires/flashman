@@ -319,6 +319,7 @@ let deviceSchema = new Schema({
   isSsidPrefixEnabled: {type: Boolean},
   web_admin_username: String,
   web_admin_password: String,
+  do_tr069_update_connection_login: {type: Boolean, default: false},
   custom_tr069_fields: {
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
     voip_enabled: {type: Boolean, default: false},
