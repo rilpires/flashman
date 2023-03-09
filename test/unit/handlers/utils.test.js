@@ -1,11 +1,30 @@
 require('../../../bin/globals');
 
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
+const utils = require('../../common/utils');
+const models = require('../../common/models');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
 const utilHandlers = require('../../../controllers/handlers/util');
 
 let jsonPath = '../../assets/flashman-test/genie-data/wan/';
 let mercusysMR30GWanData = require(jsonPath + 'mercusys-mr30g.json');
 let tplinkHC220G5WanData = require(jsonPath + 'tplink-hc220g5.json');
 let noWanAvaliableWanData = require(jsonPath + 'no-wan-available.json');
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 // Get object from key for assertions
 let getFromNestedKey = (data, key) => {
