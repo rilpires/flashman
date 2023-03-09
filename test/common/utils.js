@@ -24,16 +24,21 @@ const RoleModel = require('../../models/role');
 // Environments
 process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
 process.env.FLM_MAX_TIMEOUT_PERIOD = '1440';
-
-// Scheduler
-const updateScheduler = require('../../controllers/update_scheduler');
-
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
 let utils = {
   common: {},
   schedulerCommon: {},
 };
-
+// Mock the mqtts (avoid aedes)
+jest.mock('../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 /**
  * Array of test cases.
@@ -358,6 +363,12 @@ utils.common.mockDefaultRoles = function() {
   utils.common.mockRoles(models.defaultMockRoles[0], 'findById');
 };
 
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'updateOne');
+
+// Scheduler
+const updateScheduler = require('../../controllers/update_scheduler');
 
 /**
  * Get all device models based on the query passed.

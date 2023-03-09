@@ -1,8 +1,5 @@
 require('../../bin/globals');
 
-// Override process environment variable to avoid starting genie
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
-
 const utils = require('../common/utils');
 const models = require('../common/models');
 
@@ -15,10 +12,8 @@ const DeviceModel = require('../../models/device');
 const http = require('http');
 const t = require('../../controllers/language').i18next.t;
 
-
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
-
 
 // Mock the mqtts (avoid aedes)
 jest.mock('../../mqtts', () => {
