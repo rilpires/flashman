@@ -1,15 +1,28 @@
 require('../../../bin/globals');
+process.env.FLM_GENIE_IGNORED = 'test';
+
+const models = require('../../common/models');
+const utils = require('../../common/utils');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
 const meshHandler = require('../../../controllers/handlers/mesh');
 const updateCommon = require('../../../controllers/update_scheduler_common');
 
-const utils = require('../../common/utils');
-const models = require('../../common/models');
-
 const ConfigModel = require('../../../models/config');
-const DeviceModel = require('../../../models/device');
 
 const t = require('../../../controllers/language').i18next.t;
 
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 // Test common functions
 describe('TR-069 Update Scheduler Tests - Common Functions', () => {

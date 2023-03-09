@@ -1,8 +1,12 @@
 require('../../../bin/globals');
+process.env.FLM_GENIE_IGNORED = 'test';
 
 // Always load these first as they load environment variables
 const utils = require('../../common/utils');
 const models = require('../../common/models');
+
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 
 const updateCommon = require('../../../controllers/update_scheduler_common');
 const updateScheduler = require('../../../controllers/update_scheduler');
@@ -14,10 +18,22 @@ const messaging = require('../../../controllers/messaging');
 const acsFirmware = require('../../../controllers/handlers/acs/firmware');
 const tasksAPI = require('../../../controllers/external-genieacs/tasks-api');
 
+// Used to cancel scheduler
+const SchedulerCommon = require('../../../controllers/update_scheduler_common');
+
 const DeviceModel = require('../../../models/device');
 
 const t = require('../../../controllers/language').i18next.t;
 
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 // Test update_scheduler
 describe('TR-069 Update Scheduler Tests - Functions', () => {
@@ -28,6 +44,10 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     jest.useRealTimers();
   });
 
+  afterEach(() => {
+    // Cancel schedule after test (avoid jest hang waiting a timer)
+    SchedulerCommon.removeOfflineWatchdog();
+  });
 
   // recoverFromOffline
   test('Validate Update Scheduler - recoverFromOffline', async () => {
@@ -1758,14 +1778,14 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
 
     // Mocks
     utils.common.mockConfigs(model, 'findOne');
-    let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+    jest.spyOn(DeviceModel.prototype, 'save')
       .mockImplementation(() => Promise.resolve(),
     );
-    let removeWatchdogSpy = jest.spyOn(updateCommon, 'removeOfflineWatchdog')
+    jest.spyOn(updateCommon, 'removeOfflineWatchdog')
       .mockImplementation(() => {
         return;
       });
-    let configQuerySpy = jest.spyOn(updateCommon, 'configQuery')
+    jest.spyOn(updateCommon, 'configQuery')
       .mockImplementation(() => {
         return;
       });
@@ -1788,7 +1808,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -1875,7 +1895,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
     // Copy config
     let model = models.copyConfigFrom(
@@ -1961,7 +1981,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2048,7 +2068,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2158,7 +2178,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2454,7 +2474,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2564,7 +2584,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2693,7 +2713,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2766,7 +2786,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config
@@ -2826,7 +2846,7 @@ describe('TR-069 Update Scheduler Tests - Functions', () => {
     let oldDate = new Date(2023, 1, 8, 15, 43, 32);
 
     // Assing a new date, to not be time out
-    let newDate = new Date(2023, 2, 8, 15, 43, 32);
+    let newDate = new Date(2023, 8, 8, 15, 43, 32);
 
 
     // Copy config

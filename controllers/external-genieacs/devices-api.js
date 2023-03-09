@@ -392,13 +392,31 @@ const getModelFields = function(
 };
 
 const getDeviceFields = async function(args, callback) {
-  let params = JSON.parse(args[0]);
+  let params = null;
+
+  // If callback not defined, define a simple one
+  if (!callback) {
+    callback = (arg1, arg2) => {
+      return arg2;
+    };
+  }
+
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
   if (!params || !params.oui || !params.model) {
     return callback(null, {
       success: false,
       message: 'Incomplete arguments',
     });
   }
+
   let flashRes = await sendFlashmanRequest('device/inform', params);
   if (!flashRes['success'] ||
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
@@ -416,6 +434,7 @@ const getDeviceFields = async function(args, callback) {
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
     measure_type: flashRes.data.measure_type,
+    connection: flashRes.data.connection,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };

@@ -1,3 +1,8 @@
+/* global __line */
+/**
+ * @namespace public/javascripts/device_validator
+ */
+
 (function() {
   // this code is used in both back end and front end and we need to use
   // i18next in both. So this will handle i18next for both cases.
@@ -229,6 +234,40 @@
       return {valid: valid, err: Array.from(err).map((ind)=>messages[ind])};
     };
 
+
+    /**
+     * Validates the string passed if is at least 1 character long and at most
+     * 16 characters long. The string must only contain numbers and characters.
+     *
+     * @memberof public/javascripts/device_validator
+     *
+     * @param {string} field - A string to be validated.
+     *
+     * @return {{valid: boolean, err: string[]}}
+     */
+    Validator.prototype.validateTR069ConnectionField = function(field) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 16}),
+        t('tr069ConnectionFieldTooltip'),
+        t('mustBeAString'),
+      ];
+
+      const onlyCharsAndNumbers = new RegExp(/^[a-zA-Z0-9]+$/);
+      let validRegex = validateRegex(field, 1, 16, onlyCharsAndNumbers);
+
+      let errorSet = new Set();
+      validRegex.err.forEach(
+        (error) => errorSet.add(error),
+      );
+
+      return {
+        valid: validRegex.valid,
+        err: Array.from(errorSet).map((ind) => messages[ind]),
+      };
+    };
+
+
     Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
@@ -403,17 +442,23 @@
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    Validator.prototype.checkObjProperties = function(obj, keys) {
+      if (!!obj && typeof obj === 'object') {
+        return keys.every((k) => {
+          return k in obj;
+        });
+      }
+    };
+
+    /* Function to verify if the array of object is
+      in the port_mapping format of device model */
     Validator.prototype.checkPortMappingObj = function(rules) {
       let isJsonInFormat = false;
       if (Array.isArray(rules)) {
         let keys = ['ip', 'external_port_start', 'external_port_end',
           'internal_port_start', 'internal_port_end'];
         isJsonInFormat = rules.every((r) => {
-          let boolCheck = true;
-          keys.forEach((k) => {
-            boolCheck = boolCheck && Object.keys(r).includes(k);
-          });
-          return boolCheck;
+          return Validator.prototype.checkObjProperties(r, keys);
         });
       }
       return isJsonInFormat;
@@ -550,6 +595,12 @@
       let exEnd;
       let inStart;
       let inEnd;
+      if (!Validator.prototype.checkObjProperties(compatibility,
+        ['simpleSymmetric', 'simpleAsymmetric',
+          'rangeSymmetric', 'rangeAsymmetric'])) {
+        errorRet.message = t('jsonInvalidFormat', {errorline: __line});
+        return errorRet;
+      }
       for (i = 0; i < rules.length; i++) {
         exStart = rules[i].external_port_start;
         exEnd = rules[i].external_port_end;
@@ -586,6 +637,9 @@
   })();
 
   if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    /**
+   * @exports public/javascripts/device_validator
+   */
     module.exports = deviceValidator;
   } else {
     window.Validator = deviceValidator;

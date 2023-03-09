@@ -46,30 +46,14 @@ let showIncompatibilityMessage = function(compatibility) {
   });
   let show = false;
   compatInfoList.html('');
-  if (!compatibility.simpleSymmetric) {
-    show = true;
-    compatInfoList.append(
-      $('<li>').html(t('simpleSymmetric')),
-    );
-  }
-  if (!compatibility.simpleAsymmetric) {
-    show = true;
-    compatInfoList.append(
-      $('<li>').html(t('simpleAsymmetric')),
-    );
-  }
-  if (!compatibility.rangeSymmetric) {
-    show = true;
-    compatInfoList.append(
-      $('<li>').html(t('symmetricRangeOfPorts')),
-    );
-  }
-  if (!compatibility.rangeAsymmetric) {
-    show = true;
-    compatInfoList.append(
-      $('<li>').html(t('asymmetricRangeOfPorts')),
-    );
-  }
+  Object.keys(compatibility).forEach((c) => {
+    if (!compatibility[c]) {
+      show = true;
+      compatInfoList.append(
+        $('<li>').html(t(c)),
+      );
+    }
+  });
   message += '';
   if (show) {
     compatInfoDiv
@@ -147,84 +131,6 @@ window.checkAdvancedOptions = function() {
   }
 };
 
-let checkPortsValues = function(portsValues) {
-  let i;
-  let isPortsNumber = true;
-  let isPortsOnRange = true;
-  let isPortsNotEmpty = true;
-  let isRangeOfSameSize = true;
-  let isRangeNegative = true;
-  let isRangeOfPorts =
-    $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
-  let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0].checked;
-  let checkUntil = 1;
-  let portToCheck;
-
-  if (isRangeOfPorts == isAsymOpening) {
-    if (isRangeOfPorts) {
-      checkUntil = 4;
-    }
-  } else {
-    checkUntil = 2;
-  }
-
-  if (Array.isArray(portsValues)) {
-    for (i = 0; i < checkUntil; i++) {
-      portToCheck = portsValues[i];
-      if (portToCheck == '') {
-        isPortsNotEmpty = false;
-      } else if (isNaN(parseInt(portToCheck))) {
-        isPortsNumber = false;
-      } else if (!(parseInt(portToCheck) >= 1 &&
-                   parseInt(portToCheck) <= 65535 &&
-                   parseInt(portToCheck) != 22 &&
-                   parseInt(portToCheck) != 23 &&
-                   parseInt(portToCheck) != 80 &&
-                   parseInt(portToCheck) != 443 &&
-                   parseInt(portToCheck) != 7547 &&
-                   parseInt(portToCheck) != 58000)) {
-        isPortsOnRange = false;
-      }
-    }
-  } else {
-    isPortsNumber = false;
-  }
-  if (!isPortsNumber) {
-    triggerRedAlert(t('portsShouldBeNumbers!'));
-  } else {
-    if (isRangeOfPorts) {
-      let firstSlice = parseInt(portsValues[1]) - parseInt(portsValues[0]);
-      if (isAsymOpening) {
-        let secondSlice = parseInt(portsValues[3]) - parseInt(portsValues[2]);
-        if (firstSlice != secondSlice) {
-          isRangeOfSameSize = false;
-        }
-        if (firstSlice < 1 || secondSlice < 1) {
-          isRangeNegative = false;
-        }
-      } else {
-        if (firstSlice < 1) {
-          isRangeNegative = false;
-        }
-      }
-    }
-  }
-  if (!isPortsOnRange) {
-    triggerRedAlert(t('tr069ValidPortsInstructions'));
-  }
-  if (!isPortsNotEmpty) {
-    triggerRedAlert(t('fieldsShouldBeFilled!'));
-  }
-  if (!isRangeOfSameSize) {
-    triggerRedAlert(t('portRangesAreDifferentInSize!'));
-  }
-  if (!isRangeNegative) {
-    triggerRedAlert(t('portRangesHaveLimitsInverted'));
-  }
-  return (isPortsNumber && isPortsOnRange &&
-    isPortsNotEmpty && isRangeOfSameSize && isRangeNegative);
-};
-
 window.removeOnePortMapping = function(input) {
   let ip = input.dataset['ip'];
   let portMapping = input.dataset['portMapping'];
@@ -293,80 +199,21 @@ window.removeSetOfPortMapping = function(input) {
 window.removeAllPortMapping = function() {
   let portMappingTable = $('#port-forward-tr069-table');
   // get needful variables
-  let deviceId = getPortForwardStorage('deviceId');
-  let serialId = getPortForwardStorage('serialId');
-  let model = getPortForwardStorage('model');
-  let version = getPortForwardStorage('version');
-  let lanSubnet = getPortForwardStorage('lanSubnet');
-  let lanSubmask = getPortForwardStorage('lanSubmask');
-  let compatibility = getPortForwardStorage('compatibility');
+  let variables = ['deviceId', 'serialId', 'model', 'version',
+    'lanSubnet', 'lanSubmask', 'compatibility'];
+  let values = [];
+  variables.forEach((v) => {
+    values.push(getPortForwardStorage(v));
+  });
   // clean dom table and session storage
   portMappingTable.empty();
   deletePortForwardStorage();
   // return needful variables to session storage
-  setPortForwardStorage('deviceId', deviceId);
-  setPortForwardStorage('serialId', serialId);
-  setPortForwardStorage('model', model);
-  setPortForwardStorage('version', version);
-  setPortForwardStorage('lanSubnet', lanSubnet);
-  setPortForwardStorage('lanSubmask', lanSubmask);
-  setPortForwardStorage('compatibility', compatibility);
-};
-
-let checkOverlappingPorts = function(ip, listOfMappings,
-                                     ports, isRangeOfPorts) {
-  let ret = false;
-  let i;
-  for (i = 0; i < listOfMappings.length; i++) {
-    if (ports.length == 1) {
-      if ((ports[0] >= listOfMappings[i].external_port_start &&
-        ports[0] <= listOfMappings[i].external_port_end) ||
-        (ip == listOfMappings[i].ip &&
-          ports[0] >= listOfMappings[i].internal_port_start &&
-          ports[0] <= listOfMappings[i].internal_port_end)) {
-        ret = true;
-      }
-    } else if (ports.length == 2) {
-      if (isRangeOfPorts) {
-        if ((ports[0] >= listOfMappings[i].external_port_start &&
-          ports[0] <= listOfMappings[i].external_port_end) ||
-          (ports[1] >= listOfMappings[i].external_port_start &&
-          ports[1] <= listOfMappings[i].external_port_end) ||
-          (ip == listOfMappings[i].ip &&
-            ports[0] >= listOfMappings[i].internal_port_start &&
-            ports[0] <= listOfMappings[i].internal_port_end) ||
-          (ip == listOfMappings[i].ip &&
-            ports[1] >= listOfMappings[i].internal_port_start &&
-            ports[1] <= listOfMappings[i].internal_port_end)) {
-          ret = true;
-        }
-      } else {
-        if ((ports[0] >= listOfMappings[i].external_port_start &&
-          ports[0] <= listOfMappings[i].external_port_end) ||
-          (ip == listOfMappings[i].ip &&
-            ports[1] >= listOfMappings[i].internal_port_start &&
-            ports[1] <= listOfMappings[i].internal_port_end)) {
-          ret = true;
-        }
-      }
-    } else if (ports.length == 4) {
-      if ((ports[0] >= listOfMappings[i].external_port_start &&
-          ports[0] <= listOfMappings[i].external_port_end) ||
-          (ports[1] >= listOfMappings[i].external_port_start &&
-          ports[1] <= listOfMappings[i].external_port_end) ||
-          (ip == listOfMappings[i].ip &&
-            ports[2] >= listOfMappings[i].internal_port_start &&
-            ports[2] <= listOfMappings[i].internal_port_end) ||
-          (ip == listOfMappings[i].ip &&
-            ports[3] >= listOfMappings[i].internal_port_start &&
-            ports[3] <= listOfMappings[i].internal_port_end)) {
-        ret = true;
-      }
-    } else {
-      triggerRedAlert(t('unexpectedErrorHappened'));
-    }
-  }
-  return ret;
+  let i = 0;
+  variables.forEach((v) => {
+    setPortForwardStorage(v, values[i]);
+    i++;
+  });
 };
 
 let putPortMapping = function(ip, ports) {
@@ -380,153 +227,137 @@ let putPortMapping = function(ip, ports) {
     }]
   */
   let i;
-  let isOverlapping = false;
   let portMappingTable = $('#port-forward-tr069-table');
   let isRangeOfPorts = $('#port-forward-tr069-'+
     'range-of-ports-checkbox')[0].checked;
-
   let compatibility = getPortForwardStorage('compatibility');
   let listOfMappings = getPortForwardStorage('listOfMappings');
   let portsBadges = getPortForwardStorage('portsBadges-' + ip);
-
   if (portsBadges == null) {
     portsBadges = [];
   }
   if (listOfMappings == null) {
     listOfMappings = [];
   }
-  isOverlapping = checkOverlappingPorts(ip, listOfMappings,
-                                        ports, isRangeOfPorts);
-  if (isOverlapping) {
+  if (ports.length == 1) {
+    // 'ip' | 'ports[0]'
+    portsBadges.push(ports[0].toString());
+    listOfMappings.push({
+      'ip': ip,
+      'external_port_start': ports[0],
+      'external_port_end': ports[0],
+      'internal_port_start': ports[0],
+      'internal_port_end': ports[0],
+    });
+  } else if (ports.length == 2) {
+    // 'ip' | 'ports[0]-ports[1]'
+    if (isRangeOfPorts) {
+      portsBadges.push(ports[0].toString()+
+        '-' + ports[1].toString());
+      listOfMappings.push({
+        'ip': ip,
+        'external_port_start': ports[0],
+        'external_port_end': ports[1],
+        'internal_port_start': ports[0],
+        'internal_port_end': ports[1],
+      });
+    } else {
+      // 'ip' | 'ports[0]:ports[1]'
+      portsBadges.push(ports[0].toString()+
+        ':' + ports[1].toString());
+      listOfMappings.push({
+        'ip': ip,
+        'external_port_start': ports[0],
+        'external_port_end': ports[0],
+        'internal_port_start': ports[1],
+        'internal_port_end': ports[1],
+      });
+    }
+  } else if (ports.length == 4) {
+    // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
+    portsBadges.push(ports[0].toString()+
+        '-' + ports[1].toString() +
+        ':' + ports[2].toString() +
+        '-' + ports[3].toString());
+    listOfMappings.push({
+      'ip': ip,
+      'external_port_start': ports[0],
+      'external_port_end': ports[1],
+      'internal_port_start': ports[2],
+      'internal_port_end': ports[3],
+    });
+  } else {
+    triggerRedAlert(t('unexpectedErrorHappened'));
+    return;
+  }
+  // validate the new port mapping among others
+  let validator = new Validator();
+  let isOverlapping = validator.checkOverlappingPorts(listOfMappings);
+  if (!isOverlapping.success) {
     triggerRedAlert(t('portsAreOverlapping!'));
     return;
-  } else {
-    if (ports.length == 1) {
-      // 'ip' | 'ports[0]'
-      if (compatibility.simpleSymmetric) {
-        portsBadges.push(ports[0].toString());
-        listOfMappings.push({
-          'ip': ip,
-          'external_port_start': ports[0],
-          'external_port_end': ports[0],
-          'internal_port_start': ports[0],
-          'internal_port_end': ports[0],
-        });
-      } else {
-        triggerRedAlert(t('incompatibleOption!'));
-        return;
-      }
-    } else if (ports.length == 2) {
-      // 'ip' | 'ports[0]-ports[1]'
-      if (isRangeOfPorts) {
-        if (compatibility.rangeSymmetric) {
-          portsBadges.push(ports[0].toString()+
-            '-' + ports[1].toString());
-          listOfMappings.push({
-            'ip': ip,
-            'external_port_start': ports[0],
-            'external_port_end': ports[1],
-            'internal_port_start': ports[0],
-            'internal_port_end': ports[1],
-          });
-        } else {
-          triggerRedAlert(t('incompatibleOption!'));
-          return;
-        }
-      } else {
-        // 'ip' | 'ports[0]:ports[1]'
-        if (compatibility.simpleAsymmetric) {
-          portsBadges.push(ports[0].toString()+
-            ':' + ports[1].toString());
-          listOfMappings.push({
-            'ip': ip,
-            'external_port_start': ports[0],
-            'external_port_end': ports[0],
-            'internal_port_start': ports[1],
-            'internal_port_end': ports[1],
-          });
-        } else {
-          triggerRedAlert(t('incompatibleOption!'));
-          return;
-        }
-      }
-    } else if (ports.length == 4) {
-      // 'ip' | 'ports[0]-ports[1]:ports[2]-ports[3]'
-      if (compatibility.rangeAsymmetric) {
-        portsBadges.push(ports[0].toString()+
-            '-' + ports[1].toString() +
-            ':' + ports[2].toString() +
-            '-' + ports[3].toString());
-        listOfMappings.push({
-          'ip': ip,
-          'external_port_start': ports[0],
-          'external_port_end': ports[1],
-          'internal_port_start': ports[2],
-          'internal_port_end': ports[3],
-        });
-      } else {
-        triggerRedAlert(t('incompatibleOption!'));
-        return;
-      }
-    } else {
-      triggerRedAlert(t('unexpectedErrorHappened'));
-      return;
-    }
-    let listOfBadges = $('<td>').addClass('align-items-center')
-                                .addClass('justify-content-center');
-    for (i = 0; i < portsBadges.length; i++) {
-      listOfBadges.append(
-            $('<div>')
-              .addClass('badge badge-primary badge-pill mr-2 mb-1')
-              .append(
-                $('<label>')
-                .css('margin-top', '0.4rem')
-                .addClass('mr-1')
-                .html(
-                  portsBadges[i],
-                ),
-              )
-              .append(
-                $('<a>')
-                  .addClass('close')
-                  .attr('onclick', 'removeOnePortMapping(this)')
-                  .attr('data-ip', ip)
-                  .attr('data-port-mapping', portsBadges[i])
-                  .addClass('white-text')
-                  .html('&times;')),
-              );
-    }
-    portMappingTable.find('[data-ip="' + ip + '"]').remove();
-    portMappingTable.append(
-      $('<tr>').append(
-        $('<td>')
-        .addClass('text-left')
-        .append(
-          $('<span>')
-          .css('display', 'block')
-          .html(ip),
-        ),
-        listOfBadges,
-        $('<td>')
-          .addClass('text-right')
-          .append(
-            $('<button>')
-            .append(
-              $('<div>')
-                .addClass('fas fa-times fa-lg'),
-            )
-            .addClass('btn btn-sm btn-danger my-0 mr-0')
-            .attr('type', 'button')
-            .attr('onclick', 'removeSetOfPortMapping(this)')
-            .attr('data-ip', ip),
-          ),
-      ).addClass('bounceIn')
-      .attr('data-ip', ip),
-    );
-
-    setPortForwardStorage('listOfMappings', listOfMappings);
-    setPortForwardStorage('portsBadges-' + ip, portsBadges);
   }
+  let isCompatible = validator.checkIncompatibility(
+    listOfMappings, compatibility);
+  if (!isCompatible.success) {
+    triggerRedAlert(t('incompatibleOption!'));
+    return;
+  }
+  // process frontend information
+  let listOfBadges = $('<td>').addClass('align-items-center')
+                              .addClass('justify-content-center');
+  for (i = 0; i < portsBadges.length; i++) {
+    listOfBadges.append(
+      $('<div>')
+        .addClass('badge badge-primary badge-pill mr-2 mb-1')
+        .append(
+          $('<label>')
+          .css('margin-top', '0.4rem')
+          .addClass('mr-1')
+          .html(
+            portsBadges[i],
+          ),
+        )
+        .append(
+          $('<a>')
+            .addClass('close')
+            .attr('onclick', 'removeOnePortMapping(this)')
+            .attr('data-ip', ip)
+            .attr('data-port-mapping', portsBadges[i])
+            .addClass('white-text')
+            .html('&times;')),
+        );
+  }
+  portMappingTable.find('[data-ip="' + ip + '"]').remove();
+  portMappingTable.append(
+    $('<tr>').append(
+      $('<td>')
+      .addClass('text-left')
+      .append(
+        $('<span>')
+        .css('display', 'block')
+        .html(ip),
+      ),
+      listOfBadges,
+      $('<td>')
+        .addClass('text-right')
+        .append(
+          $('<button>')
+          .append(
+            $('<div>')
+              .addClass('fas fa-times fa-lg'),
+          )
+          .addClass('btn btn-sm btn-danger my-0 mr-0')
+          .attr('type', 'button')
+          .attr('onclick', 'removeSetOfPortMapping(this)')
+          .attr('data-ip', ip),
+        ),
+    ).addClass('bounceIn')
+    .attr('data-ip', ip),
+  );
+  // everything clean, then save in session storage
+  setPortForwardStorage('listOfMappings', listOfMappings);
+  setPortForwardStorage('portsBadges-' + ip, portsBadges);
 };
 
 window.checkPortMappingInputs = function() {
@@ -535,28 +366,38 @@ window.checkPortMappingInputs = function() {
   let maskBits = getPortForwardStorage('lanSubmask');
   let ipAddressGiven = $('#port-forward-tr069-ip-address-input')[0].value;
   let portsInputs = $('.port-forward-tr069-port-input');
-  let isAddressValid;
-  let isPortsValid;
-  let portsValues = [];
+  let isRangeOfPorts =
+    $('#port-forward-tr069-range-of-ports-checkbox')[0].checked;
+  let isAsymOpening = $('#port-forward-tr069-asym-opening-checkbox')[0].checked;
+  let pvs = {ip: ipAddressGiven};
+  if (!isRangeOfPorts && !isAsymOpening) { // simple
+    pvs.external_port_start = pvs.external_port_end =
+    pvs.internal_port_start = pvs.internal_port_end = portsInputs[0].value;
+  } else if (isRangeOfPorts && isAsymOpening) { // asym and range
+    pvs.external_port_start = portsInputs[0].value;
+    pvs.external_port_end = portsInputs[1].value;
+    pvs.internal_port_start = portsInputs[2].value;
+    pvs.internal_port_end = portsInputs[3].value;
+  } else if (isRangeOfPorts && !isAsymOpening) { // only range
+    pvs.external_port_start = pvs.internal_port_start = portsInputs[0].value;
+    pvs.external_port_end = pvs.internal_port_end = portsInputs[1].value;
+  } else if (!isRangeOfPorts && isAsymOpening) { // only asym
+    pvs.external_port_start = pvs.external_port_end = portsInputs[0].value;
+    pvs.internal_port_start = pvs.internal_port_end = portsInputs[1].value;
+  }
+  let rules = [pvs];
   let validator = new Validator();
-  isAddressValid = validator.checkAddressSubnetRange(deviceIp,
-    ipAddressGiven, maskBits);
-  if (!isAddressValid) {
-    triggerRedAlert(t('invalidIpAddress!'));
-  } else {
-    for (i = 0; i < portsInputs.length; i++) {
-      portsValues.push(portsInputs[i].value);
-    }
-    isPortsValid = checkPortsValues(portsValues);
-    portsValues = [];
+  let validity = validator.checkPortMappingValidity(rules, deviceIp, maskBits);
+  if (validity.success) {
+    let portsValues = [];
     for (i = 0; i < portsInputs.length; i++) {
       if (!isNaN(parseInt(portsInputs[i].value))) {
-        portsValues.push(parseInt(portsInputs[i].value));
+        portsValues.push(portsInputs[i].value);
       }
     }
-    if (isAddressValid && isPortsValid) {
-      putPortMapping(ipAddressGiven, portsValues);
-    }
+    putPortMapping(ipAddressGiven, portsValues);
+  } else {
+    triggerRedAlert(validity.message);
   }
 };
 
@@ -678,6 +519,25 @@ let buildMappingTable = function(ip) {
   );
 };
 
+let triggerModalShow = function(res) {
+  fillSessionStorage(res.content);
+  setPortForwardStorage('compatibility', res.compatibility);
+  window.checkAdvancedOptions();
+  $('#port-forward-tr069-main-label').text(
+    getPortForwardStorage('serialId'));
+  $('#port-forward-tr069-modal').modal('show');
+  showIncompatibilityMessage(res.compatibility);
+  if (res.xmlWarning) {
+    $('#port-forward-tr069-modal-reboot-info')
+      .removeClass('d-none')
+      .addClass('d-block');
+  } else {
+    $('#port-forward-tr069-modal-reboot-info')
+      .removeClass('d-block')
+      .addClass('d-none');
+  }
+};
+
 anlixDocumentReady.add(function() {
   $(document).on('click', '.btn-port-forward-tr069-modal', function(event) {
     let row = $(event.target).parents('tr');
@@ -704,31 +564,31 @@ anlixDocumentReady.add(function() {
       dataType: 'json',
       success: function(res) {
         if (res.wrongPortMapping) {
+          let alertDiv = '<div class="alert alert-danger text-center">' +
+            '<div class="fas fa-exclamation-triangle fa-lg"></div>' +
+            '<span>&nbsp;&nbsp;'+t('allowPortMappingManagementWarning') +
+            '</span></div>';
           swal.fire({
-            title: t('deviceHaveWrongPortMappingError'),
-            text: res.message,
-            icon: 'error',
-            confirmButtonColor: '#4db6ac',
+            icon: 'warning',
+            title: t('portOpenning'),
+            html: alertDiv,
+            // Edit button
+            confirmButtonText: t('Edit'),
+            confirmButtonColor: '#ff3547',
+            showConfirmButton: true,
+            // Cancel button
+            cancelButtonText: t('Cancel'),
+            cancelButtonColor: '#4db6ac',
+            showCancelButton: true,
+          }).then((result)=>{
+            if (result.isConfirmed && res.success) {
+              triggerModalShow(res);
+            }
           });
           return;
         }
         if (res.success) {
-          fillSessionStorage(res.content);
-          setPortForwardStorage('compatibility', res.compatibility);
-          window.checkAdvancedOptions();
-          $('#port-forward-tr069-main-label').text(
-            getPortForwardStorage('serialId'));
-          $('#port-forward-tr069-modal').modal('show');
-          showIncompatibilityMessage(res.compatibility);
-          if (res.xmlWarning) {
-            $('#port-forward-tr069-modal-reboot-info')
-              .removeClass('d-none')
-              .addClass('d-block');
-          } else {
-            $('#port-forward-tr069-modal-reboot-info')
-              .removeClass('d-block')
-              .addClass('d-none');
-          }
+          triggerModalShow(res);
         } else {
           let badge = $(event.target).closest('.actions-opts')
                                      .find('.badge-warning');

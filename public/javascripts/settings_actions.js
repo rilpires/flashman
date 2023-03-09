@@ -1,3 +1,8 @@
+/**
+ * This file includes actions for the settings interface.
+ * @namespace public/javascripts/settings_actions
+ */
+
 import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
@@ -23,6 +28,22 @@ let webPasswordInput = document.getElementById('onu-web-password');
 let webLoginErrorElement = document.getElementById('error-onu-web-login');
 let webPasswordErrorElement =
   document.getElementById('error-onu-web-password');
+
+
+// TR-069 Connection login and password
+let tr069ConnectionLoginInput = document.getElementById(
+  'tr069-connection-login',
+);
+let tr069ConnectionPasswordInput = document.getElementById(
+  'tr069-connection-password',
+);
+let tr069ConnectionLoginErrorElement = document.getElementById(
+  'error-tr069-connection-login',
+);
+let tr069ConnectionPasswordErrorElement = document.getElementById(
+  'error-tr069-connection-password',
+);
+
 
 // assigning SSID prefix elements.
 let ssidPrefixInput = document.getElementById('ssid-prefix');
@@ -71,6 +92,28 @@ const setPasswordWebInterfaceError = function() {
   webPasswordErrorElement.style.display = 'block';
 };
 
+
+/**
+ * Sets the error for inputs and error elements.
+ *
+ * @memberof public/javascripts/settings_actions
+ *
+ * @param {boolean} setError - If happened an error in the `inputElement`
+ * @param {string} message - The string to be setted in the `inputElement`
+ * @param {element} inputElement - The user input element
+ * @param {element} errorElement - The error element to be displayed
+ */
+const setInputError = function(
+  setError,
+  message,
+  inputElement,
+  errorElement,
+) {
+  inputElement.setCustomValidity(setError ? message : '');
+  errorElement.style.display = setError ? 'block' : 'none';
+};
+
+
 // if user received the TR069 section, we will validate it.
 if (tr069Section) {
   // will be called in every input after the first time save button is pressed.
@@ -83,6 +126,7 @@ if (tr069Section) {
       resetRecoveryOfflineInputDependencyError(); // reset error message.
     }
   };
+
   window.checkLoginWebInterface = function() {
     let validator = new Validator();
     let validLogin = validator.validateUser(webLoginInput.value);
@@ -93,6 +137,7 @@ if (tr069Section) {
     }
     return;
   };
+
   window.checkPasswordWebInterface = function() {
     let validator = new Validator();
     let validPass = validator
@@ -102,6 +147,61 @@ if (tr069Section) {
     } else {
       resetPasswordWebInterfaceError();
     }
+    return;
+  };
+
+
+  /**
+   * Validate TR-069 connection login and password.
+   *
+   * @memberof public/javascripts/settings_actions
+   */
+  window.checkTR069ConnectionFields = function() {
+    let validator = new Validator();
+
+    let validLogin = validator.validateTR069ConnectionField(
+      tr069ConnectionLoginInput.value,
+    );
+    let validPass = validator.validateTR069ConnectionField(
+      tr069ConnectionPasswordInput.value,
+    );
+
+
+    // Login
+    if (!validLogin.valid || !tr069ConnectionLoginInput.value) {
+      setInputError(
+        true,
+        t('insertValidLogin'),
+        tr069ConnectionLoginInput,
+        tr069ConnectionLoginErrorElement,
+      );
+    } else {
+      setInputError(
+        false,
+        '',
+        tr069ConnectionLoginInput,
+        tr069ConnectionLoginErrorElement,
+      );
+    }
+
+
+    // Password
+    if (!validPass.valid || !tr069ConnectionPasswordInput.value) {
+      setInputError(
+        true,
+        t('insertValidLogin'),
+        tr069ConnectionPasswordInput,
+        tr069ConnectionPasswordErrorElement,
+      );
+    } else {
+      setInputError(
+        false,
+        '',
+        tr069ConnectionPasswordInput,
+        tr069ConnectionPasswordErrorElement,
+      );
+    }
+
     return;
   };
 }
@@ -305,6 +405,23 @@ anlixDocumentReady.add(function() {
         $('#onu-web-password').val(resp.tr069WebPassword)
                               .siblings('label').addClass('active');
       }
+
+
+      // TR-069 Connection Login and Password
+      if (resp.tr069ConnectionLogin) {
+        $('#tr069-connection-login')
+          .val(resp.tr069ConnectionLogin)
+          .siblings('label')
+          .addClass('active');
+      }
+      if (resp.tr069ConnectionPassword) {
+        $('#tr069-connection-password')
+          .val(resp.tr069ConnectionPassword)
+          .siblings('label')
+          .addClass('active');
+      }
+
+
       if (resp.tr069WebRemote) {
         $('#onu_web_remote').prop('checked', true).change();
       }
