@@ -1,3 +1,8 @@
+/**
+ * This file includes actions for the settings interface.
+ * @namespace public/javascripts/settings_actions
+ */
+
 import {anlixDocumentReady} from '../src/common.index.js';
 import {displayAlertMsg} from './common_actions.js';
 import Validator from './device_validator.js';
@@ -87,6 +92,17 @@ const setPasswordWebInterfaceError = function() {
   webPasswordErrorElement.style.display = 'block';
 };
 
+
+/**
+ * Sets the error for inputs and error elements.
+ *
+ * @memberof public/javascripts/settings_actions
+ *
+ * @param {boolean} setError - If happened an error in the `inputElement`
+ * @param {string} message - The string to be setted in the `inputElement`
+ * @param {element} inputElement - The user input element
+ * @param {element} errorElement - The error element to be displayed
+ */
 const setInputError = function(
   setError,
   message,
@@ -133,6 +149,13 @@ if (tr069Section) {
     }
     return;
   };
+
+
+  /**
+   * Validate TR-069 connection login and password.
+   *
+   * @memberof public/javascripts/settings_actions
+   */
   window.checkTR069ConnectionFields = function() {
     let validator = new Validator();
 

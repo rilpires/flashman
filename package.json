@@ -1,12 +1,14 @@
 {
   "name": "flashman",
-  "version": "2.65.1",
+  "version": "2.66.0",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest --forceExit test/unit/*",
-    "e2e": "jest --runInBand --detectOpenHandles test/black-box/*",
-    "build": "webpack --config webpack.prod.js"
+    "bb-test": "jest --runInBand --detectOpenHandles test/black-box/*",
+    "build": "webpack --config webpack.prod.js",
+    "gen-doc": "jsdoc --configure jsdoc.config.json --verbose",
+    "gen-test-doc": "jsdoc --configure jsdoc.test.config.json --verbose"
   },
   "updater": {
     "jsonHost": "raw.githubusercontent.com",
@@ -98,12 +100,15 @@
     "clean-css-cli": "^4.3.0",
     "copy-webpack-plugin": "~9.1.0",
     "css-loader": "^5.2.4",
+    "docdash": "^2.0.1",
     "eslint": "^7.32.0",
     "eslint-config-google": "^0.9.1",
     "eslint-plugin-i18n-json": "^3.1.0",
     "eslint-plugin-jest": "^24.3.6",
     "file-loader": "^6.2.0",
     "jest": "^27.5.1",
+    "jsdoc": "^4.0.2",
+    "jsdoc-to-markdown": "^8.0.0",
     "mockingoose": "https://github.com/anlix-io/mockingoose.git",
     "mqtt": "1.14.0",
     "nock": "^13.3.0",

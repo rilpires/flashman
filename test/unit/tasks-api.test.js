@@ -1,6 +1,6 @@
 require('../../bin/globals.js');
 const nock = require('nock');
-process.env.FLM_GENIE_IGNORED = 'asd';
+const utils = require('../common/utils');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
 let nbiTest1 = nock('http://localhost:7557')

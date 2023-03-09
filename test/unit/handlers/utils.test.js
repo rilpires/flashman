@@ -1,5 +1,5 @@
 require('../../../bin/globals');
-
+const utils = require('../../common/utils');
 const utilHandlers = require('../../../controllers/handlers/util');
 
 describe('Utils Handler Tests', () => {

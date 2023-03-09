@@ -13,15 +13,8 @@ const vlanController = require('../../controllers/vlan.js');
 const ConfigModel = require('../../models/config');
 const mockingoose = require('mockingoose');
 const crypto = require('crypto');
-const mqtt = require('../../mqtts');
 
 describe('VLAN Controller', () => {
-  afterAll((done) => {
-    mqtt.close(() => {
-      done();
-    });
-  });
-
   /* list of possibilities
     model
       1 - null

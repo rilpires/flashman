@@ -5,4 +5,5 @@ module.exports = {
   users: jest.fn(() => undefined),
   role: jest.fn(() => undefined),
   roles: jest.fn(() => undefined),
+  buildAttributeChange: jest.fn(() => undefined),
 };
