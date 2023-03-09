@@ -444,11 +444,9 @@
 
     Validator.prototype.checkObjProperties = function(obj, keys) {
       if (!!obj && typeof obj === 'object') {
-        let boolCheck = true;
-        keys.forEach((k) => {
-          boolCheck = boolCheck && Object.keys(obj).includes(k);
+        return keys.every((k) => {
+          return k in obj;
         });
-        return boolCheck;
       }
     };
 
