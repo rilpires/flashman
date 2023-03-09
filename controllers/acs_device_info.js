@@ -2405,7 +2405,7 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-const replaceWanFieldsWildcards = async function (
+const replaceWanFieldsWildcards = async function(
   acsID, wildcardFlag, fields, changes, task,
 ) {
   // WAN fields cannot have wildcards. So we query the genie database to get
