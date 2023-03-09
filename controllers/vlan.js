@@ -446,7 +446,7 @@ vlanController.updateVlans = async function(req, res) {
       for (const port in vlansAfter) { // for each port after the change.
         if (!vlansBefore[port]) { // if port didn't have a VLAN before.
           audit['vlans'][port.toString()] = {
-            vlan_id: vlansAfter[port], // VLAN item created.
+            'vlan_id': vlansAfter[port], // VLAN item created.
           };
           continue;
         }
@@ -455,7 +455,7 @@ vlanController.updateVlans = async function(req, res) {
         const after = vlansAfter[port];
         if (before !== after) {
           audit['vlans'][port.toString()] = {
-            vlan_id: {old: before, new: after}, // VLAN item edited.
+            'vlan_id': {old: before, new: after}, // VLAN item edited.
           };
         }
       }
