@@ -208,7 +208,7 @@
                   "_object":false,
                   "_timestamp":"2023-03-07T16:56:14.023Z",
                   "_type":"xsd:boolean",
-                  "_value":true,
+                  "_value":false,
                   "_writable":true
                 },
                 "ExternalIPAddress":{
@@ -376,7 +376,7 @@
                   "_object":false,
                   "_timestamp":"2023-03-07T16:56:14.025Z",
                   "_type":"xsd:boolean",
-                  "_value":false,
+                  "_value":true,
                   "_writable":true
                 },
                 "ExternalIPAddress":{
