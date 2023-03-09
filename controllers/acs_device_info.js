@@ -196,7 +196,9 @@ const createRegistry = async function(req, cpe, permissions) {
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  let cpePermissions = cpe.modelPermissions();
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
   let cpeIP;
@@ -321,6 +323,77 @@ const createRegistry = async function(req, cpe, permissions) {
   }
 
 
+  // IPv6
+  let suffixPPPoE = hasPPPoE ? '_ppp' : '';
+  let wanIPv6;
+  let maskIPv6 = 0;
+  let defaultGatewayIPv6;
+  let prefixAddress;
+  let prefixMask;
+  let prefixLocal;
+
+  if (cpePermissions.features.hasIpv6Information) {
+    // Address
+    if (
+      cpePermissions.ipv6.hasAddressField &&
+      data.ipv6['address' + suffixPPPoE] &&
+      data.ipv6['address' + suffixPPPoE].value
+    ) {
+      wanIPv6 = data.ipv6['address' + suffixPPPoE].value;
+    }
+
+    // Mask
+    if (
+      cpePermissions.ipv6.hasMaskField &&
+      data.ipv6['mask' + suffixPPPoE] &&
+      data.ipv6['mask' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.ipv6['mask' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 128) {
+        maskIPv6 = mask;
+      }
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.ipv6.hasDefaultGatewayField &&
+      data.ipv6['default_gateway' + suffixPPPoE] &&
+      data.ipv6['default_gateway' + suffixPPPoE].value
+    ) {
+      defaultGatewayIPv6 = data.ipv6['default_gateway' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationAddressField &&
+      data.ipv6['prefix_address' + suffixPPPoE] &&
+      data.ipv6['prefix_address' + suffixPPPoE].value
+    ) {
+      prefixAddress = data.ipv6['prefix_address' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Mask
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationMaskField &&
+      data.ipv6['prefix_mask' + suffixPPPoE] &&
+      data.ipv6['prefix_mask' + suffixPPPoE].value
+    ) {
+      prefixMask = data.ipv6['prefix_mask' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Local Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationLocalAddressField &&
+      data.ipv6['prefix_local_address' + suffixPPPoE] &&
+      data.ipv6['prefix_local_address' + suffixPPPoE].value
+    ) {
+      prefixLocal = data.ipv6['prefix_local_address' + suffixPPPoE].value;
+    }
+  }
+
+
   // WAN MAC Address - Device Model: wan_bssid
   let wanMacAddr;
   if (
@@ -383,7 +456,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.common.web_admin_password = matchedConfig.tr069.web_password;
     doChanges = true;
   } else if (
-    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    cpePermissions.stavixXMLConfig.webCredentials &&
     matchedConfig.tr069.web_password
   ) {
     webAdminPass = matchedConfig.tr069.web_password;
@@ -517,10 +590,16 @@ const createRegistry = async function(req, cpe, permissions) {
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
+    wan_ipv6: wanIPv6,
+    wan_ipv6_mask: maskIPv6,
     wan_negociated_speed: wanRate,
     wan_negociated_duplex: wanDuplex,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
+    default_gateway_v6: defaultGatewayIPv6,
+    prefix_delegation_addr: prefixAddress,
+    prefix_delegation_mask: prefixMask,
+    prefix_delegation_local: prefixLocal,
     created_at: Date.now(),
     last_contact: Date.now(),
     last_tr069_sync: Date.now(),
@@ -851,12 +930,14 @@ acsDeviceInfoController.requestSync = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
+  let cpePermissions = cpe.modelPermissions();
   let dataToFetch = {
     basic: false,
     alt_uid: false,
     web_admin_user: false,
     web_admin_pass: false,
     wan: false,
+    ipv6: false,
     vlan: false,
     bytes: false,
     pon: false,
@@ -925,6 +1006,49 @@ acsDeviceInfoController.requestSync = async function(device) {
     parameterNames.push(fields.wan.pon_rxpower);
     parameterNames.push(fields.wan.pon_txpower);
   }
+
+  // IPv6
+  if (cpePermissions.features.hasIpv6Information) {
+    dataToFetch.ipv6 = true;
+
+    // Get all fields that can be requested
+    // Address
+    if (cpePermissions.ipv6.hasAddressField) {
+      parameterNames.push(fields.ipv6.address);
+      parameterNames.push(fields.ipv6.address_ppp);
+    }
+
+    // Mask
+    if (cpePermissions.ipv6.hasMaskField) {
+      parameterNames.push(fields.ipv6.mask);
+      parameterNames.push(fields.ipv6.mask_ppp);
+    }
+
+    // Default Gateway
+    if (cpePermissions.ipv6.hasDefaultGatewayField) {
+      parameterNames.push(fields.ipv6.default_gateway);
+      parameterNames.push(fields.ipv6.default_gateway_ppp);
+    }
+
+    // Prefix Delegation Address
+    if (cpePermissions.ipv6.hasPrefixDelegationAddressField) {
+      parameterNames.push(fields.ipv6.prefix_delegation_address);
+      parameterNames.push(fields.ipv6.prefix_delegation_address_ppp);
+    }
+
+    // Prefix Delegation Mask
+    if (cpePermissions.ipv6.hasPrefixDelegationMaskField) {
+      parameterNames.push(fields.ipv6.prefix_delegation_mask);
+      parameterNames.push(fields.ipv6.prefix_delegation_mask_ppp);
+    }
+
+    // Prefix Delegation Local Address
+    if (cpePermissions.ipv6.hasPrefixDelegationLocalAddressField) {
+      parameterNames.push(fields.ipv6.prefix_delegation_local_address);
+      parameterNames.push(fields.ipv6.prefix_delegation_local_address_ppp);
+    }
+  }
+
   // LAN configuration fields
   dataToFetch.lan = true;
   parameterNames.push(fields.lan.router_ip);
@@ -1053,6 +1177,7 @@ const fetchSyncResult = async function(
       let fields = dataToFetch.fields;
       let acsData = {
        common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {},
+       ipv6: {},
       };
       if (dataToFetch.basic) {
         let common = fields.common;
@@ -1129,6 +1254,70 @@ const fetchSyncResult = async function(
           data, wan.mtu_ppp, useLastIndexOnWildcard,
         );
       }
+
+      // IPv6
+      if (dataToFetch.ipv6) {
+        // Address
+        acsData.ipv6.address = getFieldFromGenieData(
+          data, fields.ipv6.address, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.address_ppp = getFieldFromGenieData(
+          data, fields.ipv6.address_ppp, useLastIndexOnWildcard,
+        );
+
+        // Mask
+        acsData.ipv6.mask = getFieldFromGenieData(
+          data, fields.ipv6.mask, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.mask_ppp = getFieldFromGenieData(
+          data, fields.ipv6.mask_ppp, useLastIndexOnWildcard,
+        );
+
+        // Default Gateway
+        acsData.ipv6.default_gateway = getFieldFromGenieData(
+          data, fields.ipv6.default_gateway, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.default_gateway_ppp = getFieldFromGenieData(
+          data, fields.ipv6.default_gateway_ppp, useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Address
+        acsData.ipv6.prefix_address = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_address,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_address_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_address_ppp,
+          useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Mask
+        acsData.ipv6.prefix_mask = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_mask,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_mask_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_mask_ppp,
+          useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Local Address
+        acsData.ipv6.prefix_local_address = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_local_address,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_local_address_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_local_address,
+          useLastIndexOnWildcard,
+        );
+      }
+
       if (dataToFetch.vlan) {
         acsData.wan.vlan = getFieldFromGenieData(
           data, fields.wan.vlan, useLastIndexOnWildcard,
@@ -1362,6 +1551,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let hasChanges = false;
   let splitID = acsID.split('-');
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let cpePermissions = cpe.modelPermissions();
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
@@ -1539,6 +1729,76 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.pppoe_user = '';
     device.pppoe_password = '';
   }
+
+
+  // IPv6
+  let suffixPPPoE = hasPPPoE ? '_ppp' : '';
+
+  if (cpePermissions.features.hasIpv6Information) {
+    // Address
+    if (
+      cpePermissions.ipv6.hasAddressField &&
+      data.ipv6['address' + suffixPPPoE] &&
+      data.ipv6['address' + suffixPPPoE].value
+    ) {
+      device.wan_ipv6 = data.ipv6['address' + suffixPPPoE].value;
+    }
+
+    // Mask
+    if (
+      cpePermissions.ipv6.hasMaskField &&
+      data.ipv6['mask' + suffixPPPoE] &&
+      data.ipv6['mask' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.ipv6['mask' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 128) {
+        device.wan_ipv6_mask = mask;
+      }
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.ipv6.hasDefaultGatewayField &&
+      data.ipv6['default_gateway' + suffixPPPoE] &&
+      data.ipv6['default_gateway' + suffixPPPoE].value
+    ) {
+      device.default_gateway_v6 =
+        data.ipv6['default_gateway' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationAddressField &&
+      data.ipv6['prefix_address' + suffixPPPoE] &&
+      data.ipv6['prefix_address' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_addr =
+        data.ipv6['prefix_address' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Mask
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationMaskField &&
+      data.ipv6['prefix_mask' + suffixPPPoE] &&
+      data.ipv6['prefix_mask' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_mask =
+        data.ipv6['prefix_mask' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Local Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationLocalAddressField &&
+      data.ipv6['prefix_local_address' + suffixPPPoE] &&
+      data.ipv6['prefix_local_address' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_local =
+        data.ipv6['prefix_local_address' + suffixPPPoE].value;
+    }
+  }
+
 
   // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
