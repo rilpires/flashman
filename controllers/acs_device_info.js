@@ -225,7 +225,7 @@ const createRegistry = async function(req, cpe, permissions) {
   }
   let macAddr = data.common.mac.value.toUpperCase();
   let model = (data.common.model) ? data.common.model.value : '';
-  let wifi5Capable = cpe.modelPermissions().wifi.dualBand;
+  let wifi5Capable = cpePermissions.wifi.dualBand;
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
@@ -304,13 +304,13 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // Remove DHCP uptime for Archer C6
   let wanUptime;
-  if (cpe.modelPermissions().wan.hasUptimeField) {
+  if (cpePermissions.wan.hasUptimeField) {
     if (hasPPPoE && data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
       wanUptime = data.wan.uptime_ppp.value;
     } else if (data.wan.uptime && data.wan.uptime.value) {
       wanUptime = data.wan.uptime.value;
     }
-    if (!hasPPPoE && !cpe.modelPermissions().wan.dhcpUptime) {
+    if (!hasPPPoE && !cpePermissions.wan.dhcpUptime) {
       wanUptime = undefined;
     }
   }
@@ -440,7 +440,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
   } else if (
-    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    cpePermissions.stavixXMLConfig.webCredentials &&
     matchedConfig.tr069.web_login &&
     cpe.isAllowedWebadminUsername(matchedConfig.tr069.web_login)
   ) {
@@ -479,12 +479,12 @@ const createRegistry = async function(req, cpe, permissions) {
   // Collect WAN max transmit rate, if available
   let wanRate;
   if (data.wan.rate && data.wan.rate.value
-      && cpe.modelPermissions().wan.canTrustWanRate) {
+      && cpePermissions.wan.canTrustWanRate) {
     wanRate = cpe.convertWanRate(data.wan.rate.value);
   }
   let wanDuplex;
   if (data.wan.duplex && data.wan.duplex.value &&
-      cpe.modelPermissions().wan.canTrustWanRate) {
+    cpePermissions.wan.canTrustWanRate) {
     wanDuplex = data.wan.duplex.value;
   }
 
@@ -541,7 +541,7 @@ const createRegistry = async function(req, cpe, permissions) {
     the feature is enabled to that device */
   let wrongPortMapping = false;
   let portMapping = [];
-  if (cpe.modelPermissions().features.portForward &&
+  if (cpePermissions.features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
     wrongPortMapping = true;
   }
@@ -636,7 +636,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.stun.port = 3478;
     doChanges = true;
   }
-  if (cpe.modelPermissions().lan.needEnableConfig) {
+  if (cpePermissions.lan.needEnableConfig) {
     changes.lan.enable_config = '1';
   }
   if (doChanges) {
@@ -983,7 +983,7 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.wan_ip_ppp);
   parameterNames.push(fields.wan.wan_mac);
   parameterNames.push(fields.wan.wan_mac_ppp);
-  if (cpe.modelPermissions().wan.hasUptimeField) {
+  if (cpePermissions.wan.hasUptimeField) {
     parameterNames.push(fields.wan.uptime);
     parameterNames.push(fields.wan.uptime_ppp);
   }
