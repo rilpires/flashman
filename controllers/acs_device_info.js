@@ -1890,25 +1890,47 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Collect admin web credentials, if available
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
-    if (typeof config.tr069.web_login !== 'undefined' &&
-        data.common.web_admin_username.writable &&
-        config.tr069.web_login !== '' &&
-        config.tr069.web_login !== data.common.web_admin_username.value) {
-      changes.common.web_admin_username = config.tr069.web_login;
-      hasChanges = true;
-    }
+    // Save the current web admin username
     device.web_admin_username = data.common.web_admin_username.value;
   }
+
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
-    if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_admin_password.writable &&
-        config.tr069.web_password !== '' &&
-        config.tr069.web_password !== data.common.web_admin_password.value) {
-      changes.common.web_admin_password = config.tr069.web_password;
-      hasChanges = true;
-    }
+    // Save the current web admin password
     device.web_admin_password = data.common.web_admin_password.value;
   }
+
+
+  // If the web login was modified, change for the cpe
+  if (
+    typeof config.tr069.web_login !== 'undefined' &&
+    data.common.web_admin_username &&
+    data.common.web_admin_username.writable &&
+    config.tr069.web_login !== '' &&
+    config.tr069.web_login !== device.web_admin_username
+  ) {
+    // Update the current web admin username in database
+    device.web_admin_username = config.tr069.web_login;
+
+    // Update in cpe
+    changes.common.web_admin_username = config.tr069.web_login;
+    hasChanges = true;
+  }
+
+  if (
+    typeof config.tr069.web_password !== 'undefined' &&
+    data.common.web_admin_password &&
+    data.common.web_admin_password.writable &&
+    config.tr069.web_password !== '' &&
+    config.tr069.web_password !== device.web_admin_password
+  ) {
+    // Update the current web admin password in database
+    device.web_admin_password = config.tr069.web_password;
+
+    // Update in cpe
+    changes.common.web_admin_password = config.tr069.web_password;
+    hasChanges = true;
+  }
+
 
   // Force a web credentials sync when device is recovering from hard reset
   if (
