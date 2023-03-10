@@ -98,7 +98,7 @@ router.route('/device/tracediagnostic/:id').put(
   deviceListController.sendCustomTraceRouteAPI);
 
 // Set/Get Port forward
-router.route('/device/portforward/:id').get(
+router.route('/device/portforward(tr069)?/:id').get(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.getPortForward)
                                 .put(

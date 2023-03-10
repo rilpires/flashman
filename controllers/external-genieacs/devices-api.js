@@ -420,7 +420,6 @@ const getDeviceFields = async function(args, callback) {
     };
   }
 
-
   try {
     params = JSON.parse(args[0]);
   } catch (error) {
@@ -454,9 +453,7 @@ const getDeviceFields = async function(args, callback) {
     fields: fieldsResult.fields,
     measure: flashRes.data.measure,
     measure_type: flashRes.data.measure_type,
-    connection_login: flashRes.data.connection_login,
-    connection_password: flashRes.data.connection_password,
-    sync_connection_login: flashRes.data.sync_connection_login,
+    connection: flashRes.data.connection,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };

@@ -97,6 +97,7 @@ basicCPEModel.modelPermissions = function() {
       speedTestLimit: 0, // speedtest limit, values above show as "limit+ Mbps"
       hasUptimeField: true, // flag to handle devices that don't have uptime
       mustRebootAfterChanges: false, // must reboot after change wan parameters
+      canTrustWanRate: true, // has wan rate field trustworthy
     },
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
