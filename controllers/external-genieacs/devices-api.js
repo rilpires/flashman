@@ -18,7 +18,6 @@ const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
-const DeviceModel = require('../../models/device');
 
 // Import each and every model
 const tr069Models = {
@@ -112,28 +111,6 @@ const getTR069CustomFactoryModels = function() {
 const getTR069UpgradeableModels = async function() {
   let ret = {vendors: {}, versions: {}};
 
-  // Get all firmwares from devices to be appended
-  let allDevices = null;
-  try {
-    allDevices = await DeviceModel.find(
-      {use_tr069: true},
-      {
-        acs_id: true,
-        model: true,
-        version: true,
-        hw_version: true,
-        installed_release: true,
-      },
-    );
-
-  // Continue in the function as this procedure is not necessary
-  } catch (error) {
-    console.log(
-      'Error getting devices in getTR069UpgradeableModels: ' + error,
-    );
-  }
-
-
   Object.values(tr069Models).forEach((cpe)=>{
     let permissions = cpe.modelPermissions();
     // Only include models with firmware upgrades
@@ -149,39 +126,6 @@ const getTR069UpgradeableModels = async function() {
       ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
     }
   });
-
-
-  // Loop all devices in flashman and append their installed firmwares
-  if (allDevices && allDevices.constructor === Array) {
-    allDevices.forEach((device) => {
-      let cpeInstance = instantiateCPEByModelFromDevice(device);
-      let cpe = cpeInstance.cpe;
-
-      // Continue to the next iteration if the cpe is invalid
-      if (!cpeInstance.success) return;
-
-      let vendor = cpe.identifier.vendor;
-      let model = cpe.identifier.model;
-      let fullID = vendor + ' ' + cpe.identifier.model;
-
-      // Continue to the next iteration if the installed_release is invalid
-      if (!device.installed_release) return;
-
-
-      // If the entry does not exist in ret.versions
-      if (
-        ret.versions[fullID] &&
-        !(ret.versions[fullID].includes(device.installed_release))
-      ) {
-        ret.versions[fullID].push(device.installed_release);
-
-      // If the model was not added
-      } else if (!ret.versions[fullID]) {
-        ret.vendors[vendor] = [model];
-        ret.versions[fullID] = [device.installed_release];
-      }
-    });
-  }
 
   return ret;
 };

@@ -1,6 +1,5 @@
 require('../../bin/globals');
 const utils = require('../common/utils');
-const models = require('../common/models');
 
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
