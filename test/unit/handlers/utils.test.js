@@ -13,7 +13,8 @@ const utilHandlers = require('../../../controllers/handlers/util');
 
 let jsonPath = '../../assets/flashman-test/genie-data/wan/';
 let mercusysMR30GWanData = require(jsonPath + 'mercusys-mr30g.json');
-let tplinkHC220G5WanData = require(jsonPath + 'tplink-hc220g5.json');
+let tplinkHC220G5PPPWanData = require(jsonPath + 'tplink-hc220g5-PPP.json');
+let tplinkHC220G5IPWanData = require(jsonPath + 'tplink-hc220g5-IP.json');
 let noWanAvaliableWanData = require(jsonPath + 'no-wan-available.json');
 
 // Mock the mqtts (avoid aedes)
@@ -79,7 +80,7 @@ describe('Utils Handler Tests', () => {
   });
 
   describe('Test functions that handles nested genie object', () => {
-    test('Validate isWanEnabled - wildcardFlag false with success', () => {
+    test('Validate isWanEnabled - TR-069 + PPP with success', () => {
       // The expected result was checked manually from the given json
       let expectedRets = [
         {success: true, index: '1'}, // First call return
@@ -101,10 +102,10 @@ describe('Utils Handler Tests', () => {
       assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
     });
 
-    test('Validate isWanEnabled - wildcardFlag true with success', () => {
+    test('Validate isWanEnabled - TR-181 + PPP with success', () => {
       // The expected result was checked manually from the given json
       let expectedRets = [
-        {success: true, index: '10'}, // First and only call return
+        {success: true, index: '20'}, // First and only call return
       ];
 
       // Simulating editing the MaxMRUSize key
@@ -114,14 +115,34 @@ describe('Utils Handler Tests', () => {
       let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
 
       // Execute
-      __testIsWanEnabled(tplinkHC220G5WanData, key, true);
+      __testIsWanEnabled(tplinkHC220G5PPPWanData, key, true);
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
       assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
     });
 
-    test('Validate isWanEnabled - No WAN enabled', () => {
+    test('Validate isWanEnabled - TR-181 + IP with success', () => {
+      // The expected result was checked manually from the given json
+      let expectedRets = [
+        {success: true, index: '36'}, // First and only call return
+      ];
+
+      // Simulating editing the MaxMRUSize key
+      let key = 'Device.IP.Interface.*.MaxMTUSize';
+
+      // Spies
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      __testIsWanEnabled(tplinkHC220G5IPWanData, key, true);
+
+      // Verify
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+    });
+
+    test('Validate isWanEnabled - TR-069 + IP with failure', () => {
       // Json with no wan available
       let expectedRets = [
         {success: false, index: null}, // First call return
@@ -143,8 +164,7 @@ describe('Utils Handler Tests', () => {
       assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
     });
 
-    test('Validate traverseNestedKey with checkForWanEnable true and' +
-         'wildcardFlag false', () => {
+    test('Validate traverseNestedKey - TR-069 + PPP with success', () => {
       // Simulating editing the MaxMRUSize key
       let key = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
         'WANPPPConnection.*.MaxMRUSize';
@@ -179,14 +199,14 @@ describe('Utils Handler Tests', () => {
       assertSpyResult(isWanEnabledSpy.mock.results, expectedRets2);
     });
 
-    test('Validate traverseNestedKey with checkForWanEnable true and' +
-         'wildcardFlag true', () => {
+    test('Validate traverseNestedKey - TR-181 + PPP with success ', () => {
       // Simulating editing the MaxMRUSize key
       let key = 'Device.PPP.Interface.*.MaxMRUSize';
 
       // Expected return of traverseNestedKey
-      let expectedKey = key.replace(/\*/, '10');
-      let expectedValue = getFromNestedKey(tplinkHC220G5WanData, expectedKey);
+      let expectedKey = key.replace(/\*/, '20');
+      let expectedValue =
+        getFromNestedKey(tplinkHC220G5PPPWanData, expectedKey);
       let expectedRet1 = [
         // First and only call return
         {success: true, key: expectedKey, value: expectedValue},
@@ -194,7 +214,7 @@ describe('Utils Handler Tests', () => {
 
       // Expected returns of isWanEnabled
       let expectedRets2 = [
-        {success: true, index: '10'}, // First and only call return
+        {success: true, index: '20'}, // First and only call return
       ];
 
       // Spies
@@ -203,7 +223,7 @@ describe('Utils Handler Tests', () => {
       let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
 
       // Execute
-      utilHandlers.traverseNestedKey(tplinkHC220G5WanData, key, true, true);
+      utilHandlers.traverseNestedKey(tplinkHC220G5PPPWanData, key, true, true);
 
       // Verify
       expect(isTraverseNestedKeySpy).toHaveBeenCalledTimes(1);
