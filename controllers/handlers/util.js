@@ -87,42 +87,76 @@ utilHandlers.traverseNestedKey = function(
  */
 utilHandlers.isWanEnabled = function(data, field, wildcardFlag) {
   let success = false;
+  let enableKeyTrueCounter = 0;
+  let foundEnableKey = false;
+  let foundConnStatusKey = false;
   let index;
 
-  let checkForEnableKey = (obj, parentKeyChain = []) => {
-    if (success) return;
+  let isCorrectPath = (parentKeyChain) => {
+    // The parentKeyChain shows the path of keys followed in the data object to
+    // get th a specific key. If the array only has numeric keys, no choice
+    // needs to be made, returns true. Otherwise, to choose which way to go, it
+    // checks if the non-numeric keys of parentKeyChain are contained in
+    // provided field
+    let hasOnlyNumericKeys = parentKeyChain.every(
+      (item) => !isNaN(parseInt(item)),
+    );
+    let hasSomeKeyContainedInField = parentKeyChain.some(
+      (item) => isNaN(parseInt(item)) && field.includes(item),
+    );
+    return (hasOnlyNumericKeys || hasSomeKeyContainedInField);
+  };
 
+  let checkForEnabledWan = (obj, parentKeyChain = []) => {
     const entries = Object.entries(obj);
     const startIndex = wildcardFlag ? entries.length - 1 : 0;
     const endIndex = wildcardFlag ? -1 : entries.length;
     const step = wildcardFlag ? -1 : 1;
 
     for (let i = startIndex; i !== endIndex; i += step) {
+      // The stopping criterion is when the first WAN that has Enable true and
+      // ConnectionStatus Connected is found. For TR-181, the stopping criterion
+      // is when foundEnableKey is true, because the key ConnectionStatus doesnt
+      // exists
+      if (foundEnableKey && ((foundConnStatusKey && !wildcardFlag) ||
+          wildcardFlag)) {
+        return;
+      }
+
       const [key, value] = entries[i];
       if (typeof value === 'object') {
-        checkForEnableKey(value, [...parentKeyChain, key]);
+        checkForEnabledWan(value, [...parentKeyChain, key]);
       }
-      if ((key === 'Enable' || key === 'Status') && value._value) {
-        // The parentKeyChain variable shows the path followed in the data
-        // object to get to the Enable key. If the array only has numeric keys,
-        // no choice needs to be made, returns true. Otherwise, to choose which
-        // way to go, it checks if the non-numeric keys of parentKeyChain are
-        // contained in field
-        let hasOnlyNumericKeys = parentKeyChain.every(
-          (item) => !isNaN(parseInt(item)),
-        );
-        let hasSomeKeyContainedInField = parentKeyChain.some(
-          (item) => isNaN(parseInt(item)) && field.includes(item),
-        );
-        if (hasOnlyNumericKeys || hasSomeKeyContainedInField) {
-          success = true;
+      // Some TR-181 devices do not have an Enable key in the PPP tree. In such
+      // cases, check the Status
+      if ((wildcardFlag && key === 'Status' && value._value === 'Up') ||
+          (!wildcardFlag && key === 'Enable' && value._value)) {
+        if (isCorrectPath(parentKeyChain)) {
+          enableKeyTrueCounter++;
+          foundEnableKey = true;
+          index = parentKeyChain[0];
+        }
+      }
+      // To reduce redundancy, the ConnectionStatus field, if exists, is checked
+      if (key === 'ConnectionStatus' && value._value === 'Connected') {
+        if (isCorrectPath(parentKeyChain) && foundEnableKey) {
+          foundConnStatusKey = true;
           index = parentKeyChain[0];
         }
       }
     }
   };
 
-  checkForEnableKey(data);
+  checkForEnabledWan(data);
+
+  // Verify success. In cases where more than one WAN with Enable true is found,
+  // and it was not possible to eliminate redundancy by analyzing the
+  // ConnectionStatus key, it was NOT possible to choose a WAN
+  if (foundEnableKey) {
+    success = true;
+  } else if (enableKeyTrueCounter > 1 && !foundConnStatusKey && !wildcardFlag) {
+    success = false;
+  }
 
   return {
     success: success,
