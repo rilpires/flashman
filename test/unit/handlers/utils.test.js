@@ -16,6 +16,7 @@ let mercusysMR30GWanData = require(jsonPath + 'mercusys-mr30g.json');
 let tplinkHC220G5PPPWanData = require(jsonPath + 'tplink-hc220g5-PPP.json');
 let tplinkHC220G5IPWanData = require(jsonPath + 'tplink-hc220g5-IP.json');
 let noWanAvaliableWanData = require(jsonPath + 'no-wan-available.json');
+let moreThanOneWanData = require(jsonPath + 'more-than-one-wan-available.json');
 
 // Mock the mqtts (avoid aedes)
 jest.mock('../../../mqtts', () => {
@@ -142,7 +143,9 @@ describe('Utils Handler Tests', () => {
       assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
     });
 
-    test('Validate isWanEnabled - TR-069 + IP with failure', () => {
+    test(
+      'Validate isWanEnabled - TR-069 + IP with failure - No WAN Available',
+      () => {
       // Json with no wan available
       let expectedRets = [
         {success: false, index: null}, // First call return
@@ -158,6 +161,31 @@ describe('Utils Handler Tests', () => {
 
       // Execute
       __testIsWanEnabled(noWanAvaliableWanData, key);
+
+      // Verify
+      expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
+      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+    });
+
+    test(
+      'Validate isWanEnabled - TR-069 + IP with failure - ' +
+      'Cannot resolve conflict',
+      () => {
+      // Json with no wan available
+      let expectedRets = [
+        {success: false, index: null}, // First call return
+        {success: false, index: null}, // Second call return
+      ];
+
+      // Simulating editing the MaxMRUSize key
+      let key = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.MaxMTUSize';
+
+      // Spies
+      let isWanEnabledSpy = jest.spyOn(utilHandlers, 'isWanEnabled');
+
+      // Execute
+      __testIsWanEnabled(moreThanOneWanData, key);
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
