@@ -118,13 +118,32 @@ const getTR069UpgradeableModels = function() {
     let vendor = cpe.identifier.vendor;
     let model = cpe.identifier.model;
     let fullID = vendor + ' ' + model;
-    if (ret.vendors[vendor]) {
-      ret.vendors[vendor].push(model);
-      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
-    } else {
-      ret.vendors[vendor] = Array.from([model]);
-      ret.versions[fullID] = Object.keys(permissions.firmwareUpgrades);
-    }
+
+    Object.keys(permissions.firmwareUpgrades).forEach((firmware) => {
+      // Vendor exists, adding a new model and new firmware
+      if (
+        ret.vendors[vendor] &&
+        !ret.vendors[vendor].includes(model) &&
+        !ret.versions[fullID]
+      ) {
+        ret.vendors[vendor].push(model);
+        ret.versions[fullID] = [firmware];
+
+      // Vendor exists, model exists, adding a new firmware
+      } else if (
+        ret.vendors[vendor] &&
+        ret.vendors[vendor].includes(model) &&
+        ret.versions[fullID] &&
+        !ret.versions[fullID].includes(firmware)
+      ) {
+        ret.versions[fullID].push(firmware);
+
+      // Vendor does not exists, add both
+      } else if (!ret.vendors[vendor] && !ret.versions[fullID]) {
+        ret.vendors[vendor] = Array.from([model]);
+        ret.versions[fullID] = [firmware];
+      }
+    });
   });
 
   return ret;
@@ -528,3 +547,9 @@ exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
+
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+exports.__testTR069Models = tr069Models;
