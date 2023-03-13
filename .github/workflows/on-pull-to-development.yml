@@ -6,7 +6,7 @@ on:
 
 jobs:
   On-pull-to-development:
-    runs-on: [ubuntu-latest]
+    runs-on: ubuntu-latest
 
     strategy:
       matrix:
@@ -37,14 +37,6 @@ jobs:
           mongodb-version: ${{ matrix.mongodb-version }}
           mongodb-db: flashman
       
-      - name: Initializing flashman
-        run: |
-          set -a
-          . ./test.env
-          set +a
-          echo Running node version: "$(node --version)"
-          node ./bin/www &
-
       - name: Setting up genieacs
         run: |
           set -a ; . ./test.env ; set +a
@@ -53,9 +45,26 @@ jobs:
           cd genieacs
           npm install
           npm run build
-          node ./dist/bin/genieacs-cwmp &
           node ./dist/bin/genieacs-nbi &
+          sleep 3
+          node ./dist/bin/genieacs-cwmp &
 
+      - name: Initializing flashman
+        run: |
+          set -a
+          . ./test.env
+          set +a
+          echo Running node version: "$(node --version)"
+          node ./bin/www &
 
       - name: Run Blackbox tests
         run: npm run bb-test
+
+      - name: Destroying mongodb container
+        if: ${{ always() }}
+        run: docker container kill mongodb ; docker container prune -f
+      
+      - name: Removing current genieacs folder
+        if: ${{ always() }}
+        run: |
+          rm -r ../genieacs/ ;

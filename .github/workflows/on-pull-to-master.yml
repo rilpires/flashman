@@ -52,21 +52,13 @@ jobs:
 
       - name: Run unit tests
         run: npm run test
-      
+
       - name: Start MongoDB
         uses: supercharge/mongodb-github-action@1.8.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
           mongodb-db: flashman
       
-      - name: Initializing flashman
-        run: |
-          set -a
-          . ./test.env
-          set +a
-          echo Running node version: "$(node --version)"
-          node ./bin/www &
-
       - name: Setting up genieacs
         run: |
           set -a ; . ./test.env ; set +a
@@ -75,9 +67,28 @@ jobs:
           cd genieacs
           npm install
           npm run build
-          node ./dist/bin/genieacs-cwmp &
           node ./dist/bin/genieacs-nbi &
+          sleep 3
+          node ./dist/bin/genieacs-cwmp &
 
+      - name: Initializing flashman
+        run: |
+          set -a
+          . ./test.env
+          set +a
+          echo Running node version: "$(node --version)"
+          node ./bin/www &
 
       - name: Run Blackbox tests
         run: npm run bb-test
+
+      - name: Destroying mongodb container
+        if: ${{ always() }}
+        run: docker container kill mongodb ; docker container prune -f
+      
+      - name: Removing current flashman folder
+        if: ${{ always() }}
+        run: |
+          cd .. ;
+          rm -r ./flashman/ ;
+          rm -r ./genieacs/ ;

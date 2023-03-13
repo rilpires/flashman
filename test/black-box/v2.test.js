@@ -1,7 +1,7 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const request = require('supertest');
-const {runSimulation} = require('genieacs-sim');
+const {runSimulation} = require('@anlix-io/genieacs-sim');
 
 
 describe('api_v2', () => {
@@ -22,10 +22,14 @@ describe('api_v2', () => {
         name: basicAuthUser,
         password: basicAuthPass,
       });
+
     adminCookie = adminLogin.header['set-cookie'];
 
     if (adminCookie === undefined) {
-      throw new Error('Failed to get admin cookie');
+      throw new Error(`Failed to get admin cookie.\n`
+      + `Status code: ${adminLogin.statusCode}\n`,
+      + `HTTP error: ${adminLogin.error}\n`,
+      );
     }
   });
 
@@ -50,7 +54,7 @@ describe('api_v2', () => {
 
     // Creating a device
     // runSimulation(acsUrl, dataModel, serialNumber, macAddr)
-    runSimulation(genieCwmpHost, deviceModelH199, 1000, '00:00:00:00:00:02'),
+    runSimulation(genieCwmpHost, deviceModelH199, 1000, 'FF:FF:FF:00:00:01'),
     await new Promise((resolve, reject)=>setTimeout(resolve, 5000));
 
     // Checking new result
@@ -65,8 +69,8 @@ describe('api_v2', () => {
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
     expect(res.body.success).toBe(true);
-    expect(res.body.status.onlinenum).toBeGreaterThan(0);
     expect(res.body.status.totalnum).toBeGreaterThan(0);
+    expect(res.body.status.onlinenum).toBeGreaterThan(0);
     expect(res.body.status.offlinenum).toEqual(0);
   });
 
