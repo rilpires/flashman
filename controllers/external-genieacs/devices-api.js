@@ -78,6 +78,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5V2Model: require('./cpe-models/tplink-ec220g5-v2'),
+  tplinkEC220G5V2dot2Model: require('./cpe-models/tplink-ec220g5-v2.2'),
   tplinkEC220G5V3Model: require('./cpe-models/tplink-ec220g5-v3'),
   tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
@@ -341,6 +342,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     result = {success: true, cpe: tr069Models.tplinkArcherC6};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('v2.2')) {
+    // TP-Link EC220-G5 v2.2
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V2dot2Model};
   } else if (modelName === 'EC220-G5' && hwVersion.includes('v2')) {
     // TP-Link EC220-G5 v2
     result = {success: true, cpe: tr069Models.tplinkEC220G5V2Model};
