@@ -1967,6 +1967,36 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       }
     }
 
+    if (matchedDevice.current_diagnostic.customized &&
+      matchedDevice.current_diagnostic.type == 'sitesurvey' &&
+      matchedDevice.current_diagnostic.in_progress
+    ) {
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
+        let requestOptions = {};
+        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
+        requestOptions.method = 'PUT';
+        requestOptions.json = {
+          'id': matchedDevice._id,
+          'type': 'device',
+          'sitesurvey_results': outData,
+        };
+        if (matchedDevice.current_diagnostic.webhook_user &&
+          matchedDevice.current_diagnostic.webhook_secret
+        ) {
+          requestOptions.auth = {
+            user: matchedDevice.current_diagnostic.webhook_user,
+            pass: matchedDevice.current_diagnostic.webhook_secret,
+          };
+        }
+        request(requestOptions).then(() => { }, () => { });
+      }
+    } else {
+      // Not a customized sitesurvey call, send to generic trap
+      sio.anlixSendSiteSurveyNotifications(id, outData);
+      console.log('Site Survey Receiving for device ' +
+        id + ' successfully.');
+    }
+
     metricsApi.newDiagnosticState('sitesurvey', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
@@ -1978,11 +2008,6 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       console.log('Error saving site survey to database');
       return res.status(500).json({processed: 0});
     });
-
-    // if someone is waiting for this message, send the information
-    sio.anlixSendSiteSurveyNotifications(id, outData);
-    console.log('Site Survey Receiving for device ' +
-      id + ' successfully.');
 
     return res.status(200).json({processed: 1});
   });
