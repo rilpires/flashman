@@ -397,8 +397,11 @@ const calculateSiteSurveyDiagnostic = async function(
     });
   });
   // Iterate on our result structure to update/create database entries
-  let finalData = [];
+  let outDataGeneric = [];
+  let outDataCustom = [];
   neighborAPs.forEach((ap)=>{
+    let outDevCustom = {};
+
     // Make sure we have a mac and ssid
     if (!ap.mac || !ap.ssid) {
       return;
@@ -423,6 +426,16 @@ const calculateSiteSurveyDiagnostic = async function(
     if (ap.mode && ap.mode.includes('ac')) {
       devVHT = true;
     }
+
+    outDevCustom.mac = ap.mac.toLowerCase();
+    outDevCustom.ssid = ap.ssid;
+    outDevCustom.freq = ap.freq;
+    outDevCustom.signal = ap.signal;
+    outDevCustom.width = devWidth;
+    outDevCustom.VHT = devVHT;
+    outDevCustom.last_seen = Date.now();
+    outDevCustom.first_seen = Date.now();
+
     // Check if this AP is already registered in database, so we know whether to
     // update it or create an entry for it
     let devReg = device.getAPSurveyDevice(ap.mac.toLowerCase());
@@ -435,6 +448,8 @@ const calculateSiteSurveyDiagnostic = async function(
       devReg.last_seen = Date.now();
       if (!devReg.first_seen) {
         devReg.first_seen = Date.now();
+      } else {
+        outDevCustom.first_seen = devReg.first_seen;
       }
     } else {
       device.ap_survey.push({
@@ -448,13 +463,27 @@ const calculateSiteSurveyDiagnostic = async function(
         last_seen: Date.now(),
       });
     }
-    finalData.push({mac: ap.mac.toLowerCase()});
+    outDataGeneric.push({mac: ap.mac.toLowerCase()});
+    outDataCustom.push(outDevCustom);
   });
   device.last_site_survey = Date.now();
   await saveCurrentDiagnostic(device, 'done', false);
-  // Send information to socket.io connections
-  sio.anlixSendSiteSurveyNotifications(device._id.toUpperCase(), finalData);
-  console.log('Site Survey for device ' + device.acs_id + ' received.');
+  if (device.current_diagnostic.type == 'sitesurvey' &&
+    device.current_diagnostic.customized &&
+    device.current_diagnostic.in_progress
+  ) {
+    if (device.current_diagnostic.webhook_url != '') {
+      deviceHandlers.sendSitesurveyResultToCustomTrap(
+        device, outDataCustom,
+      );
+    }
+  } else {
+    // Not a customized sitesurvey call, send to generic trap
+    sio.anlixSendSiteSurveyNotifications(
+      device._id.toUpperCase(), outDataGeneric,
+    );
+    console.log('Site Survey for device ' + device.acs_id + ' received.');
+  }
 };
 
 

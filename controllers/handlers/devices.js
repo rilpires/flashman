@@ -678,6 +678,28 @@ const sendSpeedtestResultToCustomTrap = async function(device, result) {
   request(requestOptions).then(()=>{}, ()=>{});
 };
 
+deviceHandlers.sendSitesurveyResultToCustomTrap = async function(
+  device, result,
+) {
+  let requestOptions = {};
+  requestOptions.url = device.current_diagnostic.webhook_url;
+  requestOptions.method = 'PUT';
+  requestOptions.json = {
+    'id': device._id,
+    'type': 'device',
+    'sitesurvey_result': result,
+  };
+  if (device.current_diagnostic.webhook_user != '' &&
+      device.current_diagnostic.webhook_secret != ''
+  ) {
+    requestOptions.auth = {
+      user: device.current_diagnostic.webhook_user,
+      pass: device.current_diagnostic.webhook_secret,
+    };
+  }
+  request(requestOptions).then(()=>{}, ()=>{});
+};
+
 const formatSpeedtestResult = function(result) {
   let randomString = parseInt(Math.random()*10000000).toString();
   let now = new Date();

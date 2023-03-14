@@ -1986,23 +1986,9 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       matchedDevice.current_diagnostic.in_progress
     ) {
       if (matchedDevice.current_diagnostic.webhook_url != '') {
-        let requestOptions = {};
-        requestOptions.url = matchedDevice.current_diagnostic.webhook_url;
-        requestOptions.method = 'PUT';
-        requestOptions.json = {
-          'id': matchedDevice._id,
-          'type': 'device',
-          'sitesurvey_results': outDataCustom,
-        };
-        if (matchedDevice.current_diagnostic.webhook_user &&
-          matchedDevice.current_diagnostic.webhook_secret
-        ) {
-          requestOptions.auth = {
-            user: matchedDevice.current_diagnostic.webhook_user,
-            pass: matchedDevice.current_diagnostic.webhook_secret,
-          };
-        }
-        request(requestOptions).then(() => { }, () => { });
+        deviceHandlers.sendSitesurveyResultToCustomTrap(
+          matchedDevice, outDataCustom,
+        );
       }
     } else {
       // Not a customized sitesurvey call, send to generic trap
