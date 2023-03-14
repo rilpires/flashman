@@ -108,7 +108,7 @@ const getTR069CustomFactoryModels = function() {
   return ret;
 };
 
-const getTR069UpgradeableModels = async function() {
+const getTR069UpgradeableModels = function() {
   let ret = {vendors: {}, versions: {}};
 
   Object.values(tr069Models).forEach((cpe)=>{
