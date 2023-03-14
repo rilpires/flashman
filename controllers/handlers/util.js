@@ -1,6 +1,13 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 
+
+/**
+ * Utilities functions.
+ * @namespace controllers/handlers/util
+ */
+
+
 const t = require('../language').i18next.t;
 const certman = require('../external-api/certman');
 const fs = require('fs');
@@ -342,4 +349,9 @@ utilHandlers.getMaskFromAddress = function(address) {
 
   return mask;
 };
+
+
+/**
+ * @exports controllers/handlers/util
+ */
 module.exports = utilHandlers;
