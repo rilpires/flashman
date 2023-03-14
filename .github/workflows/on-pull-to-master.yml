@@ -86,9 +86,7 @@ jobs:
         if: ${{ always() }}
         run: docker container kill mongodb ; docker container prune -f
       
-      - name: Removing current flashman folder
+      - name: Removing current genieacs folder
         if: ${{ always() }}
         run: |
-          cd .. ;
-          rm -r ./flashman/ ;
-          rm -r ./genieacs/ ;
+          rm -r ../genieacs/ ;
