@@ -1826,6 +1826,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Process wan connection type, but only if data sent
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  const suffixPPPoE = hasPPPoE ? '_ppp' : '';
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
   // Process WAN fields, separated by connection type - force cast to bool in
@@ -1906,9 +1907,58 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
 
-  // IPv6
-  let suffixPPPoE = hasPPPoE ? '_ppp' : '';
+  // IPv4 Mask
+  if (
+    cpePermissions.wan.hasIpv4MaskField &&
+    data.wan['mask_ipv4' + suffixPPPoE] &&
+    data.wan['mask_ipv4' + suffixPPPoE].value
+  ) {
+    let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
 
+    // Validate the mask as number
+    if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+      device.wan_ipv4_mask = mask;
+    }
+  }
+
+  // Remote IP Address
+  if (
+    cpePermissions.wan.hasIpv4RemoteAddressField &&
+    data.wan['remote_address' + suffixPPPoE] &&
+    data.wan['remote_address' + suffixPPPoE].value
+  ) {
+    device.pppoe_ip = data.wan['remote_address' + suffixPPPoE].value;
+  }
+
+  // Remote MAC
+  if (
+    cpePermissions.wan.hasIpv4RemoteMacField &&
+    data.wan['remote_mac' + suffixPPPoE] &&
+    data.wan['remote_mac' + suffixPPPoE].value
+  ) {
+    device.pppoe_mac = data.wan['remote_mac' + suffixPPPoE].value;
+  }
+
+  // Default Gateway
+  if (
+    cpePermissions.wan.hasIpv4DefaultGatewayField &&
+    data.wan['default_gateway' + suffixPPPoE] &&
+    data.wan['default_gateway' + suffixPPPoE].value
+  ) {
+    device.default_gateway_v4 = data.wan['default_gateway' + suffixPPPoE].value;
+  }
+
+  // DNS Servers
+  if (
+    cpePermissions.wan.hasDnsServerField &&
+    data.wan['dns_servers' + suffixPPPoE] &&
+    data.wan['dns_servers' + suffixPPPoE].value
+  ) {
+    device.dns_server = data.wan['dns_servers' + suffixPPPoE].value;
+  }
+
+
+  // IPv6
   if (cpePermissions.features.hasIpv6Information) {
     // Address
     if (
@@ -1951,9 +2001,18 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     ) {
       device.prefix_delegation_addr =
         data.ipv6['prefix_address' + suffixPPPoE].value;
+
+      // Try getting the mask from address
+      let mask = utilHandlers.getMaskFromAddress(
+        data.ipv6['prefix_address' + suffixPPPoE].value,
+      );
+
+      device.prefix_delegation_mask = (mask ? mask : '');
     }
 
     // Prefix Delegation Mask
+    // This value might have been setted from address, but this field has
+    // precedence over extracting it from address, thus override the device
     if (
       cpePermissions.ipv6.hasPrefixDelegationMaskField &&
       data.ipv6['prefix_mask' + suffixPPPoE] &&
