@@ -2103,8 +2103,8 @@ describe('syncDeviceData', () => {
     });
 
 
-    // Not update web admin login
-    test('Not update web admin login', async () => {
+    // Update web admin login due to missing fields
+    test('Update web admin login due to missing fields', async () => {
       let device = models.copyDeviceFrom(
         models.defaultMockDevices[0]._id,
         {
@@ -2147,6 +2147,79 @@ describe('syncDeviceData', () => {
             version: {value: '1234'},
             web_admin_username: {writable: true},
             web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(
+        device,
+        {
+          common: {
+            web_admin_username: config.tr069.web_login,
+            web_admin_password: config.tr069.web_password,
+          },
+          lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+        },
+      );
+    });
+
+
+    // Not update web admin login due to same fields
+    test('Not update web admin login due to same fields', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste567',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {
+              value: config.tr069.web_login,
+              writable: true,
+            },
+            web_admin_password: {
+              value: config.tr069.web_password,
+              writable: true,
+            },
           },
           wan: {}, lan: {}, wifi2: {}, wifi5: {},
         },
