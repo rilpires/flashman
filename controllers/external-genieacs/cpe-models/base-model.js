@@ -99,6 +99,9 @@ basicCPEModel.modelPermissions = function() {
       hasUptimeField: true, // flag to handle devices that don't have uptime
       mustRebootAfterChanges: false, // must reboot after change wan parameters
       canTrustWanRate: true, // has wan rate field trustworthy
+      hasIpv4MaskField: false, // If the cpe can send IPv4 mask
+      hasIpv4RemoteAddressField: false, // If the cpe can send IPv4 remote ip
+      hasIpv4RemoteMacField: false, // If the cpe can send IPv4 remote mac
       hasIpv4DefaultGatewayField: false, // If the cpe can send IPv4 default
                                           // gateway
       hasDnsServerField: false, // If the cpe can send the DNS server
@@ -614,6 +617,31 @@ basicCPEModel.getModelFields = function() {
       wan_mac_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
         'WANPPPConnection.*.MACAddress',
 
+      // IPv4 Mask
+      // mask_ipv4: '',
+      // mask_ipv4_ppp: '',
+
+      // Remote Address
+      // remote_address: '',
+      remote_address_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.RemoteIPAddress',
+
+      // Remote Mac
+      // remote_mac: '',
+      // remote_mac_ppp: '',
+
+      // Default Gateway
+      default_gateway: 'InternetGatewayDevice.WANDevice.1' +
+        '.WANConnectionDevice.*.WANIPConnection.*.DefaultGateway',
+      default_gateway_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.DefaultGateway',
+
+      // DNS Server
+      dns_servers: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANIPConnection.*.DNSServers',
+      dns_servers_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.DNSServers',
+
       // Uptime
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANIPConnection.*.Uptime',
@@ -697,8 +725,8 @@ basicCPEModel.getModelFields = function() {
     ipv6: {
       /*
        * These fields are solely for helping creating support for routers with
-       * IPv6 that contains those proprietary fields, as those fields are does
-       * not belong to TR-069 documentation.
+       * IPv6 that contains those proprietary fields, as those fields does not
+       * belong to TR-069 documentation.
        *
        * address: '',
        * address_ppp: '',
