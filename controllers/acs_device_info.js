@@ -2554,6 +2554,195 @@ acsDeviceInfoController.requestStatistics = function(device) {
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
 };
 
+
+/**
+ * Request WAN information from CPE.
+ *
+ * @memberOf controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The CPE device to send the request to.
+ */
+acsDeviceInfoController.requestWanInformation = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestWanInformation!');
+    return;
+  }
+
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
+
+  let acsID = device.acs_id;
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+
+  // Get all fields
+  let parameterNames = [];
+  let hasPPPoE = (device.connection_type === 'pppoe' ? true : false);
+  let suffixPPPoE = (hasPPPoE ? '_ppp' : '');
+
+  let assignFields = {
+    wanIpv4: {
+      permission: true,
+      field: 'wan_ip',
+    },
+    wanIpv4Mask: {
+      permission: permissions.wan.hasIpv4MaskField,
+      field: 'mask_ipv4',
+    },
+    remoteAddress: {
+      permission: permissions.wan.hasIpv4RemoteAddressField,
+      field: 'remote_address',
+    },
+    remoteMac: {
+      permission: permissions.wan.hasIpv4RemoteMacField,
+      field: 'remote_mac',
+    },
+    defaultGatewayV4: {
+      permission: permissions.wan.hasIpv4DefaultGatewayField,
+      field: 'default_gateway',
+    },
+    dnsServers: {
+      permission: permissions.wan.hasDnsServerField,
+      field: 'dns_servers',
+    },
+    wanIpv6: {
+      permission: permissions.ipv6.hasAddressField,
+      field: 'address',
+      isIPv6: true,
+    },
+    wanIpv6Mask: {
+      permission: permissions.ipv6.hasMaskField,
+      field: 'mask',
+      isIPv6: true,
+    },
+    defaultGatewayV6: {
+      permission: permissions.ipv6.hasDefaultGatewayField,
+      field: 'default_gateway',
+      isIPv6: true,
+    },
+  };
+
+
+  // Push all parameters
+  Object.keys(assignFields).forEach((fieldName) => {
+    let fieldObject = assignFields[fieldName];
+    let fieldParam = null;
+
+    // If does not have permission continue to the next field
+    if (!fieldObject.permission) return;
+
+    // Set the field according
+    if (fieldObject.isIPv6) {
+      fieldParam = fields.ipv6[fieldObject.path + suffixPPPoE];
+    } else {
+      fieldParam = fields.wan[fieldObject.path + suffixPPPoE];
+    }
+
+    // Push the parameter
+    if (fieldParam) {
+      parameterNames.push(fieldParam);
+    }
+  });
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: parameterNames,
+  };
+
+  // Send the task
+  TasksAPI.addTask(
+    acsID,
+    task,
+    acsMeasuresHandler.fetchWanInformationFromGenie,
+  );
+};
+
+
+/**
+ * Request LAN information from CPE.
+ *
+ * @memberOf controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The CPE device to send the request to.
+ */
+acsDeviceInfoController.requestLanInformation = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestWanInformation!');
+    return;
+  }
+
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
+
+  let acsID = device.acs_id;
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+
+
+  // If there is no information to request, return
+  if (!permissions.features.hasIpv6Information) return;
+
+
+  // Get all fields
+  let parameterNames = [];
+  let suffixPPPoE = (device.connection_type === 'pppoe' ? '_ppp' : '');
+
+  if (permissions.ipv6.prefix_delegation_address) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_address' + suffixPPPoE],
+    );
+  }
+
+  if (permissions.ipv6.hasPrefixDelegationMaskField) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_mask' + suffixPPPoE],
+    );
+  }
+
+  if (permissions.ipv6.hasPrefixDelegationLocalAddressField) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_local_address' + suffixPPPoE],
+    );
+  }
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: parameterNames,
+  };
+
+  // Send the task
+  TasksAPI.addTask(
+    acsID,
+    task,
+    acsMeasuresHandler.fetchLanInformationFromGenie,
+  );
+};
+
+
 acsDeviceInfoController.requestPonData = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
