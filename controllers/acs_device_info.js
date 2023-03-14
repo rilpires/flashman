@@ -1363,6 +1363,47 @@ const fetchSyncResult = async function(
         acsData.wan.wan_mac_ppp = getFieldFromGenieData(
           data, wan.wan_mac_ppp, useLastIndexOnWildcard,
         );
+
+        // IPv4 Mask
+        acsData.wan.mask_ipv4 = getFieldFromGenieData(
+          data, wan.mask_ipv4, useLastIndexOnWildcard,
+        );
+        acsData.wan.mask_ipv4_ppp = getFieldFromGenieData(
+          data, wan.mask_ipv4_ppp, useLastIndexOnWildcard,
+        );
+
+        // Remote IP Address
+        acsData.wan.remote_address = getFieldFromGenieData(
+          data, wan.remote_address, useLastIndexOnWildcard,
+        );
+        acsData.wan.remote_address_ppp = getFieldFromGenieData(
+          data, wan.remote_address_ppp, useLastIndexOnWildcard,
+        );
+
+        // Remote MAC
+        acsData.wan.remote_mac = getFieldFromGenieData(
+          data, wan.remote_mac, useLastIndexOnWildcard,
+        );
+        acsData.wan.remote_mac_ppp = getFieldFromGenieData(
+          data, wan.remote_mac_ppp, useLastIndexOnWildcard,
+        );
+
+        // IPv4 Default Gateway
+        acsData.wan.default_gateway = getFieldFromGenieData(
+          data, wan.default_gateway, useLastIndexOnWildcard,
+        );
+        acsData.wan.default_gateway_ppp = getFieldFromGenieData(
+          data, wan.default_gateway_ppp, useLastIndexOnWildcard,
+        );
+
+        // DNS Servers
+        acsData.wan.dns_servers = getFieldFromGenieData(
+          data, wan.dns_servers, useLastIndexOnWildcard,
+        );
+        acsData.wan.dns_servers_ppp = getFieldFromGenieData(
+          data, wan.dns_servers_ppp, useLastIndexOnWildcard,
+        );
+
         acsData.wan.uptime = getFieldFromGenieData(
           data, wan.uptime, useLastIndexOnWildcard,
         );
