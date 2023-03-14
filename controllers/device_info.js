@@ -1961,7 +1961,11 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
           if (!devReg.first_seen) {
             devReg.first_seen = Date.now();
           } else {
-            outDevCustom.first_seen = devReg.first_seen;
+            if (devReg.first_seen instanceof Date) {
+              outDevCustom.first_seen = devReg.first_seen;
+            } else {
+              outDevCustom.first_seen = new Date(devReg.first_seen);
+            }
           }
         } else {
           matchedDevice.ap_survey.push({
