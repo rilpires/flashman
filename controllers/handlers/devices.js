@@ -687,7 +687,7 @@ deviceHandlers.sendSitesurveyResultToCustomTrap = async function(
   requestOptions.json = {
     'id': device._id,
     'type': 'device',
-    'sitesurvey_result': result,
+    'sitesurvey_results': result,
   };
   if (device.current_diagnostic.webhook_user != '' &&
       device.current_diagnostic.webhook_secret != ''
