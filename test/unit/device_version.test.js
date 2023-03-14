@@ -1,4 +1,5 @@
 require('../../bin/globals.js');
+const utils = require('../common/utils');
 const DeviceVersion = require('../../models/device_version');
 
 const noRangePortForwawrdOpts = {

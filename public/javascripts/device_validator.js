@@ -1,7 +1,7 @@
+/* global __line */
 /**
  * @namespace public/javascripts/device_validator
  */
-
 
 (function() {
   // this code is used in both back end and front end and we need to use
@@ -237,7 +237,7 @@
 
     /**
      * Validates the string passed if is at least 1 character long and at most
-     * 32 characters long. The string must only contain numbers and characters.
+     * 16 characters long. The string must only contain numbers and characters.
      *
      * @memberof public/javascripts/device_validator
      *
@@ -442,17 +442,23 @@
       } else return {valid: false, err: [t('emptyField')]};
     };
 
+    Validator.prototype.checkObjProperties = function(obj, keys) {
+      if (!!obj && typeof obj === 'object') {
+        return keys.every((k) => {
+          return k in obj;
+        });
+      }
+    };
+
+    /* Function to verify if the array of object is
+      in the port_mapping format of device model */
     Validator.prototype.checkPortMappingObj = function(rules) {
       let isJsonInFormat = false;
       if (Array.isArray(rules)) {
         let keys = ['ip', 'external_port_start', 'external_port_end',
           'internal_port_start', 'internal_port_end'];
         isJsonInFormat = rules.every((r) => {
-          let boolCheck = true;
-          keys.forEach((k) => {
-            boolCheck = boolCheck && Object.keys(r).includes(k);
-          });
-          return boolCheck;
+          return Validator.prototype.checkObjProperties(r, keys);
         });
       }
       return isJsonInFormat;
@@ -589,6 +595,12 @@
       let exEnd;
       let inStart;
       let inEnd;
+      if (!Validator.prototype.checkObjProperties(compatibility,
+        ['simpleSymmetric', 'simpleAsymmetric',
+          'rangeSymmetric', 'rangeAsymmetric'])) {
+        errorRet.message = t('jsonInvalidFormat', {errorline: __line});
+        return errorRet;
+      }
       for (i = 0; i < rules.length; i++) {
         exStart = rules[i].external_port_start;
         exEnd = rules[i].external_port_end;

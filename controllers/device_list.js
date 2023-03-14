@@ -3315,7 +3315,18 @@ deviceListController.setPortForwardTr069 = async function(
   let diffPortForwardLength;
   let ret = {};
   try {
-    rules = JSON.parse(content);
+    if (typeof content == 'string' &&
+        util.isJsonString(content)
+    ) {
+      rules = JSON.parse(content);
+    } else if (typeof content == 'object') {
+      rules = content;
+    } else {
+      ret.success = false,
+      ret.message = t('fieldNameInvalid',
+          {name: 'content', errorline: __line});
+      return ret;
+    }
   } catch (e) {
     console.log(e.message);
     ret.success = false;

@@ -6,7 +6,7 @@ const models = require('../../../common/models');
 const utils = require('../../../common/utils');
 
 // Mock the config (used in language.js)
-utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 
 let cPath = '../../../../controllers';
 const pfAcsHandlers = require(cPath + '/handlers/acs/port_forward');

@@ -3432,6 +3432,9 @@ anlixDocumentReady.add(function() {
             .removeClass('grey-text pending-update');
         });
       },
+      complete: () => {
+        searchingDevices = false;
+      },
     });
   };
   // Initial table
@@ -3467,10 +3470,14 @@ anlixDocumentReady.add(function() {
     );
   }
 
+  let searchingDevices = false;
   $(document).on('submit', '#devices-search-form', function(event) {
-    let filterList = $('#devices-search-input').val();
-    filterList += ',' + columnToSort + ',' + columnSortType;
-    loadDevicesTable(1, filterList);
+    if (!searchingDevices) {
+      searchingDevices = true;
+      let filterList = $('#devices-search-input').val();
+      filterList += ',' + columnToSort + ',' + columnSortType;
+      loadDevicesTable(1, filterList);
+    }
     return false;
   });
 

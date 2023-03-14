@@ -191,7 +191,7 @@ scheduleController.checkAndRemoveTimeoutDevices = async function() {
     // the next device
     if (
       !device.marked_update_date ||
-      device.marked_update_date.constructor !== Date
+      !(device.marked_update_date instanceof Date)
     ) {
       // Exit this iteration of forEach
       return;
