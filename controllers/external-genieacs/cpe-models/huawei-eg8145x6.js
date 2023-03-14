@@ -22,6 +22,9 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 850;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
 
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasMaskField = true;
