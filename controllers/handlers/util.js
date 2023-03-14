@@ -42,7 +42,9 @@ utilHandlers.orderNumericGenieKeys = function(keys) {
 utilHandlers.traverseNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return {success: false};
+  // Validate inputs
+  if (!data || !key) return {success: false};
+
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
@@ -313,4 +315,31 @@ utilHandlers.catchDatabaseError = function(error) {
   return {success: false, error: t('saveError', {errorline: __line})};
 };
 
+
+/**
+ * Try to get the mask from an address. The address must be in the format
+ * `1234:5678::/xx` or `192.168.0.1/xx`. This function splits the `/` and
+ * returns the mask as `String` or a `null` if the mask is invalid.
+ *
+ * @memberof controllers/handlers/util
+ *
+ * @param {String} address - The IPv4 or IPv6 address.
+ *
+ * @return {String | Null} The mask as `String` or `null`.
+ */
+utilHandlers.getMaskFromAddress = function(address) {
+  if (!address || address.constructor !== String || address.length <= 0) {
+    return null;
+  }
+
+  // Split the / and get the second item from array
+  const mask = address.split('/')[1];
+  if (!mask) return null;
+
+  // Check if the mask is a valid value
+  const maskInteger = parseInt(mask, 10);
+  if (!maskInteger || maskInteger < 0 || maskInteger > 128) return null;
+
+  return mask;
+};
 module.exports = utilHandlers;
