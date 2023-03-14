@@ -29,10 +29,8 @@ parksModel.modelPermissions = function() {
   permissions.wifi.bandWrite5 = false;
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
-  // permissions.traceroute.minProbesPerHop = 3;
+  permissions.traceroute.minProbesPerHop = 3;
   permissions.traceroute.hopCountExceededState = 'Error_Other';
-  permissions.traceroute.protocol = 'ICMP';
-  // permissions.traceroute.completeAsRequested = UNKNOWN;
   permissions.firmwareUpgrades = {
     'V4.1.0-220609': [],
   };
