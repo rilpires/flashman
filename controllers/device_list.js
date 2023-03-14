@@ -463,6 +463,44 @@ deviceListController.sendGenericTraceRoute = async function(
   return await initiateTracerouteTest(device, user, sessionID);
 };
 
+deviceListController.sendCustomSiteSurvey = async function(
+  device, reqBody, user, sessionID,
+) {
+  let err = checkNewDiagnosticAvailability(device);
+  if (err) {
+    return err;
+  }
+
+  let now = new Date();
+  device.current_diagnostic = {
+    type: 'sitesurvey',
+    stage: 'initiating',
+    customized: true,
+    in_progress: true,
+    started_at: now,
+    last_modified_at: now,
+    user: user.name,
+    webhook_url: '',
+    webhook_user: '',
+    webhook_secret: '',
+  };
+
+  if (typeof reqBody.content.webhook == 'object' &&
+      typeof(device.current_diagnostic.webhook_url) == 'string'
+  ) {
+    device.current_diagnostic.webhook_url = reqBody.content.webhook.url;
+    if (typeof reqBody.content.webhook.user == 'string' &&
+        typeof reqBody.content.webhook.secret == 'string'
+    ) {
+      device.current_diagnostic.webhook_user = reqBody.content.webhook.user;
+      device.current_diagnostic.webhook_secret =
+        reqBody.content.webhook.secret;
+    }
+  }
+
+  return await initiateSiteSurvey(device, user, sessionID);
+};
+
 deviceListController.sendGenericSiteSurvey = async function(
   device, user, sessionID,
 ) {
@@ -4523,6 +4561,17 @@ deviceListController.sendGenericTraceRouteAPI = async function(req, res) {
   if (devRes.success) {
     let commandResponse = await deviceListController.sendGenericTraceRoute(
       devRes.matchedDevice, req.user, req.sessionID,
+    );
+    return res.status(200).json(commandResponse);
+  } else {
+    return res.status(200).json(devRes);
+  }
+};
+deviceListController.sendCustomSiteSurveyAPI = async function(req, res) {
+  let devRes = await commonDeviceFind(req);
+  if (devRes.success) {
+    let commandResponse = await deviceListController.sendCustomSiteSurvey(
+      devRes.matchedDevice, req.body, req.user, req.sessionID,
     );
     return res.status(200).json(commandResponse);
   } else {

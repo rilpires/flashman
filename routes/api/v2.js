@@ -97,6 +97,11 @@ router.route('/device/tracediagnostic/:id').put(
   authController.ensurePermission('grantAPIAccess'),
   deviceListController.sendCustomTraceRouteAPI);
 
+// Send a customized sitesurvey command
+router.route('/device/surveydiagnostic/:id').put(
+  authController.ensurePermission('grantAPIAccess'),
+  deviceListController.sendCustomSiteSurveyAPI);
+
 // Set/Get Port forward
 router.route('/device/portforward(tr069)?/:id').get(
   authController.ensurePermission('grantAPIAccess'),
