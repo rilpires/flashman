@@ -77,7 +77,7 @@ utilHandlers.traverseNestedKey = function(
     key: splitKey.join('.'),
     value: current,
   };
-}
+};
 
 utilHandlers.checkForNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
@@ -104,7 +104,7 @@ utilHandlers.replaceNestedKeyWildcards = function(
   let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
   if (!ret.success) return undefined;
   return ret.key;
-}
+};
 
 // Returns {key: genieFieldValue}
 utilHandlers.getAllNestedKeysFromObject = function(
