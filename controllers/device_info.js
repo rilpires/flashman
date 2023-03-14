@@ -1905,11 +1905,13 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
     }
 
     let apsData = req.body.survey;
-    let outData = [];
+    let outDataGeneric = [];
+    let outDataCustom = [];
 
     for (let connApMac in apsData) {
       if (Object.prototype.hasOwnProperty.call(apsData, connApMac)) {
-        let outDev = {};
+        let outDevGeneric = {};
+        let outDevCustom = {};
         let upConnApMac = connApMac.toLowerCase();
         let upConnDev = apsData[upConnApMac];
         if (!upConnDev) continue;
@@ -1940,6 +1942,15 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
           }
         }
 
+        outDevCustom.mac = upConnApMac;
+        outDevCustom.ssid = upConnDev.SSID;
+        outDevCustom.freq = upConnDev.freq;
+        outDevCustom.signal = upConnDev.signal;
+        outDevCustom.width = devWidth;
+        outDevCustom.VHT = devVHT;
+        outDevCustom.last_seen = Date.now();
+        outDevCustom.first_seen = Date.now();
+
         if (devReg) {
           devReg.ssid = upConnDev.SSID;
           devReg.freq = upConnDev.freq;
@@ -1949,6 +1960,8 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
           devReg.last_seen = Date.now();
           if (!devReg.first_seen) {
             devReg.first_seen = Date.now();
+          } else {
+            outDevCustom.first_seen = devReg.first_seen;
           }
         } else {
           matchedDevice.ap_survey.push({
@@ -1962,8 +1975,9 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
             last_seen: Date.now(),
           });
         }
-        outDev.mac = upConnApMac;
-        outData.push(outDev);
+        outDevGeneric.mac = upConnApMac;
+        outDataGeneric.push(outDevGeneric);
+        outDataCustom.push(outDevCustom);
       }
     }
 
@@ -1978,7 +1992,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'sitesurvey_results': outData,
+          'sitesurvey_results': outDataGeneric,
         };
         if (matchedDevice.current_diagnostic.webhook_user &&
           matchedDevice.current_diagnostic.webhook_secret
@@ -1992,7 +2006,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       }
     } else {
       // Not a customized sitesurvey call, send to generic trap
-      sio.anlixSendSiteSurveyNotifications(id, outData);
+      sio.anlixSendSiteSurveyNotifications(id, outDataGeneric);
       console.log('Site Survey Receiving for device ' +
         id + ' successfully.');
     }
