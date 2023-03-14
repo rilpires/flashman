@@ -204,6 +204,7 @@ const createRegistry = async function(req, cpe, permissions) {
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  const suffixPPPoE = hasPPPoE ? '_ppp' : '';
   let cpePermissions = cpe.modelPermissions();
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
 
@@ -331,8 +332,63 @@ const createRegistry = async function(req, cpe, permissions) {
   }
 
 
+  // IPv4 Mask
+  let maskIPv4;
+  if (
+    cpePermissions.wan.hasIpv4MaskField &&
+    data.wan['mask_ipv4' + suffixPPPoE] &&
+    data.wan['mask_ipv4' + suffixPPPoE].value
+  ) {
+    let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
+
+    // Validate the mask as number
+    if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+      maskIPv4 = mask;
+    }
+  }
+
+  // Remote IP Address
+  let pppoeIp;
+  if (
+    cpePermissions.wan.hasIpv4RemoteAddressField &&
+    data.wan['remote_address' + suffixPPPoE] &&
+    data.wan['remote_address' + suffixPPPoE].value
+  ) {
+    pppoeIp = data.wan['remote_address' + suffixPPPoE].value;
+  }
+
+  // Remote MAC
+  let pppoeMac;
+  if (
+    cpePermissions.wan.hasIpv4RemoteMacField &&
+    data.wan['remote_mac' + suffixPPPoE] &&
+    data.wan['remote_mac' + suffixPPPoE].value
+  ) {
+    pppoeMac = data.wan['remote_mac' + suffixPPPoE].value;
+  }
+
+  // Default Gateway
+  let defaultGatewayV4;
+  if (
+    cpePermissions.wan.hasIpv4DefaultGatewayField &&
+    data.wan['default_gateway' + suffixPPPoE] &&
+    data.wan['default_gateway' + suffixPPPoE].value
+  ) {
+    defaultGatewayV4 = data.wan['default_gateway' + suffixPPPoE].value;
+  }
+
+  // DNS Servers
+  let dnsServers;
+  if (
+    cpePermissions.wan.hasDnsServerField &&
+    data.wan['dns_servers' + suffixPPPoE] &&
+    data.wan['dns_servers' + suffixPPPoE].value
+  ) {
+    dnsServers = data.wan['dns_servers' + suffixPPPoE].value;
+  }
+
+
   // IPv6
-  let suffixPPPoE = hasPPPoE ? '_ppp' : '';
   let wanIPv6;
   let maskIPv6 = 0;
   let defaultGatewayIPv6;
@@ -380,9 +436,18 @@ const createRegistry = async function(req, cpe, permissions) {
       data.ipv6['prefix_address' + suffixPPPoE].value
     ) {
       prefixAddress = data.ipv6['prefix_address' + suffixPPPoE].value;
+
+      // Try getting the mask from address
+      let mask = utilHandlers.getMaskFromAddress(
+        data.ipv6['prefix_address' + suffixPPPoE].value,
+      );
+
+      prefixMask = (mask ? mask : '');
     }
 
     // Prefix Delegation Mask
+    // This value might have been setted from address, but this field has
+    // precedence over extracting it from address, thus override the device
     if (
       cpePermissions.ipv6.hasPrefixDelegationMaskField &&
       data.ipv6['prefix_mask' + suffixPPPoE] &&
@@ -599,12 +664,17 @@ const createRegistry = async function(req, cpe, permissions) {
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
     wan_ipv6: wanIPv6,
+    wan_ipv4_mask: maskIPv4,
     wan_ipv6_mask: maskIPv6,
     wan_negociated_speed: wanRate,
     wan_negociated_duplex: wanDuplex,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
+    default_gateway_v4: defaultGatewayV4,
     default_gateway_v6: defaultGatewayIPv6,
+    dns_server: dnsServers,
+    pppoe_mac: pppoeMac,
+    pppoe_ip: pppoeIp,
     prefix_delegation_addr: prefixAddress,
     prefix_delegation_mask: prefixMask,
     prefix_delegation_local: prefixLocal,
