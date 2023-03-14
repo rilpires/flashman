@@ -1074,6 +1074,37 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.wan_ip_ppp);
   parameterNames.push(fields.wan.wan_mac);
   parameterNames.push(fields.wan.wan_mac_ppp);
+
+  // IPv4 Mask
+  if (cpePermissions.wan.hasIpv4MaskField) {
+    parameterNames.push(fields.wan.mask_ipv4);
+    parameterNames.push(fields.wan.mask_ipv4_ppp);
+  }
+
+  // Remote IP Address
+  if (cpePermissions.wan.hasIpv4RemoteAddressField) {
+    parameterNames.push(fields.wan.remote_address);
+    parameterNames.push(fields.wan.remote_address_ppp);
+  }
+
+  // Remote MAC
+  if (cpePermissions.wan.hasIpv4RemoteMacField) {
+    parameterNames.push(fields.wan.remote_mac);
+    parameterNames.push(fields.wan.remote_mac_ppp);
+  }
+
+  // IPv4 Default Gateway
+  if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
+    parameterNames.push(fields.wan.default_gateway);
+    parameterNames.push(fields.wan.default_gateway_ppp);
+  }
+
+  // DNS Server
+  if (cpePermissions.wan.hasDnsServerField) {
+    parameterNames.push(fields.wan.dns_servers);
+    parameterNames.push(fields.wan.dns_servers_ppp);
+  }
+
   if (cpePermissions.wan.hasUptimeField) {
     parameterNames.push(fields.wan.uptime);
     parameterNames.push(fields.wan.uptime_ppp);
