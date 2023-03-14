@@ -1992,7 +1992,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
         requestOptions.json = {
           'id': matchedDevice._id,
           'type': 'device',
-          'sitesurvey_results': outDataGeneric,
+          'sitesurvey_results': outDataCustom,
         };
         if (matchedDevice.current_diagnostic.webhook_user &&
           matchedDevice.current_diagnostic.webhook_secret
