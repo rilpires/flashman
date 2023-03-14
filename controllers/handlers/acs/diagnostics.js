@@ -449,10 +449,10 @@ const calculateSiteSurveyDiagnostic = async function(
       if (!devReg.first_seen) {
         devReg.first_seen = Date.now();
       } else {
-        if (devReg.first_seen instanceof Date) {
-          outDevCustom.first_seen = devReg.first_seen;
-        } else {
+        if (typeof devReg.first_seen === 'number') {
           outDevCustom.first_seen = new Date(devReg.first_seen);
+        } else {
+          outDevCustom.first_seen = devReg.first_seen;
         }
       }
     } else {
