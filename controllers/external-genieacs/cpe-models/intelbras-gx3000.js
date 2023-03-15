@@ -7,13 +7,13 @@ intelbrasModel.identifier = {vendor: 'Intelbras', model: 'GX3000'};
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
-  // permissions.features.pingTest = true; // It has tree, but it doesn't work
+  permissions.features.pingTest = true; // Needs polling
   permissions.features.ponSignal = false;
-  permissions.features.portForward = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymNoRanges;
+  // permissions.features.portForward = true; // Needs refactor
+  // permissions.wan.portForwardPermissions =
+    // basicCPEModel.portForwardPermissions.noAsymNoRanges;
   permissions.features.stun = true;
-  // permissions.features.speedTest = true; // It has tree, but it doesn't work
+  // permissions.features.speedTest = true; // Needs polling
   permissions.lan.configWrite = false; // TODO Manual Review
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendDnsOnLANChange = false; // TODO Manual Review
@@ -33,7 +33,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
-  permissions.useLastIndexOnWildcard = true;
+  // permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
   permissions.firmwareUpgrades = {
     'FG10_CPE_V02.02.03': [],
@@ -124,7 +124,6 @@ intelbrasModel.getModelFields = function() {
   fields.port_mapping_fields_interface_root = 'Device.IP.Interface';
   fields.port_mapping_fields_interface_key =
     'Device.NAT.PortMapping.1.Interface';
-  fields.port_mapping_values.enable[0] = 'PortMappingEnable'; // Atencao!!!!!!!!
   // Lan
   fields.lan.ip_routers = 'Device.DHCPv4.Server.Pool.1.IPRouters';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';
