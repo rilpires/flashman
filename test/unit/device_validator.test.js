@@ -1,8 +1,8 @@
 /* global __line */
 require('../../bin/globals.js');
-const Validator = require('../../public/javascripts/device_validator');
-const utils = require('../utils');
 const testUtils = require('../common/utils');
+const utils = require('../utils');
+const Validator = require('../../public/javascripts/device_validator');
 
 let createSimplePortMapping = function(ip,
   p1, p2 = null, p3 = null, p4 = null) {

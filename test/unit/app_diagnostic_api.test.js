@@ -1,6 +1,13 @@
 /* eslint require-jsdoc: 0 */
 
 require('../../bin/globals.js');
+
+const testUtils = require('../common/utils');
+const models = require('../common/models');
+
+// Mock the config (used in language.js)
+testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
 const mockingoose = require('mockingoose');
 const diagAppAPIController = require('../../controllers/app_diagnostic_api');
 const DeviceModel = require('../../models/device');
@@ -8,7 +15,6 @@ const ConfigModel = require('../../models/config');
 const utils = require('../utils');
 
 describe('Technician App API', () => {
-
   test('Must fail if request has invalid body', async () => {
     // Request
     const bodyEmpty = {};

@@ -77,10 +77,10 @@ multilaserModel.convertToDbm = function(power) {
 
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_ZTE-COM_AdminAccount.Username';
-  fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
-    'X_ZTE-COM_AdminAccount.Password';
+  fields.common.web_admin_username = 'InternetGatewayDevice.' +
+    'User.1.Username';
+  fields.common.web_admin_password = 'InternetGatewayDevice.' +
+    'User.1.Password';
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.AssociatedDevice';
   fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.' +
