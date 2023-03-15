@@ -2694,9 +2694,9 @@ acsDeviceInfoController.requestWanInformation = function(device) {
 
     // Set the field according
     if (fieldObject.isIPv6) {
-      fieldParam = fields.ipv6[fieldObject.path + suffixPPPoE];
+      fieldParam = fields.ipv6[fieldObject.field + suffixPPPoE];
     } else {
-      fieldParam = fields.wan[fieldObject.path + suffixPPPoE];
+      fieldParam = fields.wan[fieldObject.field + suffixPPPoE];
     }
 
     // Push the parameter
