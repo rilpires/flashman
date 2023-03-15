@@ -17,8 +17,6 @@ zteModel.modelPermissions = function() {
   // permissions.wan.speedTestLimit = 45;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noRanges;
   permissions.wifi.dualBand = false;
   permissions.wifi.modeWrite = false;
   permissions.wifi.bandRead5 = false;
