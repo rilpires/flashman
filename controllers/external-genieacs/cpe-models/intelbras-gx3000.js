@@ -7,24 +7,20 @@ intelbrasModel.identifier = {vendor: 'Intelbras', model: 'GX3000'};
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.customAppPassword = false;
-  permissions.features.pingTest = true; // Needs polling
+  // permissions.features.pingTest = true; // Needs polling
   permissions.features.ponSignal = false;
   // permissions.features.portForward = true; // Needs refactor
   // permissions.wan.portForwardPermissions =
-    // basicCPEModel.portForwardPermissions.noAsymNoRanges;
+  //   basicCPEModel.portForwardPermissions.noAsymNoRanges;
   permissions.features.stun = true;
   // permissions.features.speedTest = true; // Needs polling
-  permissions.lan.configWrite = false; // TODO Manual Review
   permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.sendDnsOnLANChange = false; // TODO Manual Review
-  permissions.lan.sendRoutersOnLANChange = false; // TODO Manual Review
   permissions.lan.LANDeviceHasAssocTree = false;
   permissions.wan.allowReadWanMtu = false;
   permissions.wan.allowEditWanMtu = false;
   permissions.wan.allowReadWanVlan = false;
   permissions.wan.allowEditWanVlan = false;
   permissions.wan.pingTestSingleAttempt = true;
-  permissions.wan.portForwardQueueTasks = false; // TODO Review
   permissions.wan.dhcpUptime = false;
   permissions.wan.hasUptimeField = false;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
@@ -33,7 +29,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
-  // permissions.useLastIndexOnWildcard = true;
+  permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
   permissions.firmwareUpgrades = {
     'FG10_CPE_V02.02.03': [],
