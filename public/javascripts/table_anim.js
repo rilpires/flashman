@@ -1445,6 +1445,7 @@ anlixDocumentReady.add(function() {
           let grantPingTest = device.permissions.grantPingTest;
           let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
+          let grantLanDnsEdit = device.permissions.grantLanDnsEdit;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
@@ -2052,19 +2053,33 @@ anlixDocumentReady.add(function() {
             '</div>'+
             '<div class="row">'+
               '<div class="col-6">'+
-                '<div class="md-form input-entry">'+
+                '<div class="md-form input-entry input-group">'+
                   '<label class="active">'+
-                    (grantLanGwEdit ? t('cpeIp') : t('networkIp'))+
+                    (grantLanGwEdit ? t('cpeIp') : t('networkIp')) +
                   '</label>'+
-                  '<input class="form-control ip-mask-field" type="text" '+
-                    'id="edit_lan_subnet-'+index+'" '+
-                    'maxlength="15" value="'+device.lan_subnet+
-                    '" $REPLACE_LAN_EN>'+
-                  '</input>'+
-                  '<div class="invalid-feedback"></div>'+
+                    '<input class="form-control my-2 ip-mask-field" ' +
+                      'type="text" id="edit_lan_subnet-'+index+'" '+
+                      'maxlength="15" value="'+device.lan_subnet+
+                      '" $REPLACE_LAN_EN>'+
+                    '</input>'+
+                    '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                (grantLanDnsEdit ?
+                  '<div class="md-form input-entry input-group mb-2">'+
+                    '<label class="active">' +
+                      t('lanDnsServers') +
+                    '</label>'+
+                    '<input class="form-control lan-dns-field my-2" ' +
+                      'type="text" id="edit_lan_dns-'+index+'" '+
+                      'maxlength="15" value="'+device.lan_dns_servers+
+                      '" $REPLACE_LAN_EN>'+
+                    '</input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>' :
+                  ''
+                )+
                 (grantLanGwEdit ?
-                  '<div class="alert alert-info">'+
+                  '<div class="alert alert-info my-0">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
                     '<span>'+t('networkIpCalculationDescription')+'</span>'+
                   '</div>' :
@@ -2075,8 +2090,8 @@ anlixDocumentReady.add(function() {
                 '<div class="md-form input-group">'+
                   '<div class="md-selectfield form-control my-0">'+
                     '<label class="active">'+t('Mask')+'</label>'+
-                    '<select class="browser-default md-select" type="text" '+
-                      'id="edit_lan_netmask-'+index+'" '+
+                    '<select class="browser-default md-select my-0" ' +
+                      'type="text"  id="edit_lan_netmask-'+index+'" '+
                       'maxlength="15" $REPLACE_LAN_EN>'+
                         '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
                         '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
@@ -2084,15 +2099,13 @@ anlixDocumentReady.add(function() {
                     '</select>'+
                   '</div>'+
                 '</div>'+
-
                 // LAN MAC address section
                 // Always show this section as it will always have an valid _id
-                '<div class="md-form input-entry pt-1">' +
-                  '<label class="active">' + t('lanMacAddress') + '</label>' +
-                  '<input class="form-control" type="text" disabled=""' +
-                    'value="' + device._id + '">' +
-                '</div>' +
-
+                '<div class="md-form input-entry input-group">'+
+                  '<label class="active">' + t('lanMacAddress') + '</label>'+
+                    '<input class="form-control my-2 mr-2" type="text" ' +
+                      'disabled="" value="' + device._id + '">' +
+                '</div>'+
               '</div>'+
             '</div>'+
             '$REPLACE_LAN_INFO'+
