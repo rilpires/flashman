@@ -384,7 +384,7 @@ updateController.rebootGenie = function(instances) {
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
-          if (config.tr069.insecure_enable) {
+          if (config && config.tr069.insecure_enable) {
             exec('pm2 start genieacs-cwmp-http');
           }
         });
@@ -564,6 +564,8 @@ updateController.getAutoConfig = function(req, res) {
         tr069WebLogin: matchedConfig.tr069.web_login,
         tr069WebPassword: matchedConfig.tr069.web_password,
         tr069WebRemote: matchedConfig.tr069.remote_access,
+        tr069ConnectionLogin: matchedConfig.tr069.connection_login,
+        tr069ConnectionPassword: matchedConfig.tr069.connection_password,
         // transforming from milliseconds to seconds.
         tr069InformInterval: matchedConfig.tr069.inform_interval/1000,
         tr069SyncInterval: matchedConfig.tr069.sync_interval/1000,
@@ -661,12 +663,19 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
   console.log('Finished migrating prefixes for all devices');
 };
 
-const migrateDeviceInforms = async function(config) {
+const migrateDeviceInforms = async function(config,
+    informInterval=false, connectionLogin=false) {
   // We must update the devices already in database with new values for their
-  // inform, based on the one configured. We always take up to 10% margin,
-  // chosen randomly so that they immediately spread out over the new interval
+  // inform, based on the one configured.
+  // We use the inform to change two paramenters:
+  // inform_interval: Update the CPE inform interval. We always take up to
+  // 10% margin, chosen randomly so that they immediately spread out over
+  // the new interval
+  // connectionLogin: Update the connection request login when the CPE
+  // do the next sync.
   let inform = config.tr069.inform_interval / 1000; // Always compute in seconds
-  let projection = {_id: 1, acs_id: 1, use_tr069: 1, custom_inform_interval: 1};
+  let projection = {_id: 1, acs_id: 1, use_tr069: 1,
+    custom_inform_interval: 1, do_tr069_update_connection_login: 1};
   let devices;
   try {
     devices = await Devices.find({use_tr069: true}, projection);
@@ -677,8 +686,14 @@ const migrateDeviceInforms = async function(config) {
   console.log('Starting inform migration for all devices');
   devices.forEach(async (device)=>{
     try {
-      let customInform = deviceHandler.makeCustomInformInterval(device, inform);
-      device.custom_inform_interval = customInform;
+      if (informInterval) {
+        let customInform = deviceHandler
+          .makeCustomInformInterval(device, inform);
+        device.custom_inform_interval = customInform;
+      }
+      if (connectionLogin) {
+        device.do_tr069_update_connection_login = true;
+      }
       await device.save();
     } catch (e) {
       console.log('Error migrating inform for device ' + device._id);
@@ -691,7 +706,13 @@ updateController.setAutoConfig = async function(req, res) {
   try {
     let config = await Config.findOne({is_default: true});
     let validator = new Validator();
-    if (!config) throw new {message: t('configNotFound', {errorline: __line})};
+    let error = new Error('Config error');
+
+    if (!config) {
+      error.message = t('configNotFound', {errorline: __line});
+      throw error;
+    }
+
     config.autoUpdate = req.body.autoupdate == 'on' ? true : false;
     config.pppoePassLength = parseInt(req.body['minlength-pass-pppoe']);
     let bypassMqttSecretCheck = req.body['bypass-mqtt-secret-check'] === 'true';
@@ -814,7 +835,8 @@ updateController.setAutoConfig = async function(req, res) {
 
     // checking TR069 configuration fields.
     // flags that can change depending on TR069 values, after their validation.
-    let willMigrateDeviceInforms = false;
+    let willMigrateDeviceInformInterval = false;
+    let willMigrateDeviceConnectionLogin = false;
     let changedInsecure = false;
 
     // getting user role to check TR069 config permission (suser has no role)
@@ -836,16 +858,19 @@ updateController.setAutoConfig = async function(req, res) {
     if (req.user.is_superuser || (role && role.grantMonitorManage)) {
       // reading fields and parsing them to their respective data types.
       let tr069ServerURL = req.body['tr069-server-url'];
+
       let onuWebLogin = req.body['onu-web-login'];
       if (!onuWebLogin && onuWebLogin != '') {
         // in case of falsey value, use current one
         onuWebLogin = config.tr069.web_login;
       }
+
       let onuWebPassword = req.body['onu-web-password'];
       if (!onuWebPassword && onuWebPassword != '') {
         // in case of falsey value, use current one
         onuWebPassword = config.tr069.web_password;
       }
+
       if (onuWebLogin !== config.tr069.web_login) {
         let validUser = validator.validateUser(onuWebLogin);
         if (!validUser.valid && onuWebLogin != '') {
@@ -855,6 +880,7 @@ updateController.setAutoConfig = async function(req, res) {
           });
         }
       }
+
       // validate that it is a strong password, but only if value changes
       // first character cannot be special character
       if (onuWebPassword !== config.tr069.web_password) {
@@ -868,6 +894,74 @@ updateController.setAutoConfig = async function(req, res) {
           });
         }
       }
+
+
+      // Get TR-069 Connection login
+      let tr069ConnectionLogin = req.body['tr069-connection-login'];
+      if (
+        !tr069ConnectionLogin ||
+        tr069ConnectionLogin.constructor !== String
+      ) {
+        // in case of falsey value, use current one
+        tr069ConnectionLogin = config.tr069.connection_login;
+      }
+
+      // Validate TR-069 Connection login
+      if (tr069ConnectionLogin !== config.tr069.connection_login) {
+        // Validate if contains only numbers and characters and is at most 32
+        // characters long
+        let validLogin = validator.validateTR069ConnectionField(
+          tr069ConnectionLogin,
+        );
+
+        // If did not pass the validation, return
+        if (
+          !validLogin.valid ||
+          !tr069ConnectionLogin ||
+          tr069ConnectionLogin.constructor !== String
+        ) {
+          return res.status(500).json({
+            type: 'danger',
+            message: validLogin.err,
+          });
+        }
+        willMigrateDeviceConnectionLogin = true;
+      }
+
+
+      // Get TR-069 Connection password
+      let tr069ConnectionPassword = req.body['tr069-connection-password'];
+      if (
+        !tr069ConnectionPassword ||
+        tr069ConnectionPassword.constructor !== String
+      ) {
+        // in case of falsey value, use current one
+        tr069ConnectionPassword = config.tr069.connection_password;
+      }
+
+      // Validate TR-069 Connection password
+      if (tr069ConnectionPassword !== config.tr069.connection_password) {
+        // Validate if contains only numbers and characters and is at most 16
+        // characters long
+        let validPass = validator.validateTR069ConnectionField(
+          tr069ConnectionPassword,
+        );
+
+        // If did not pass the validation, return
+        if (
+          !validPass.valid ||
+          !tr069ConnectionPassword ||
+          tr069ConnectionPassword.constructor !== String
+        ) {
+          return res.status(500).json({
+            type: 'danger',
+            message: validPass.err,
+          });
+        }
+        willMigrateDeviceConnectionLogin = true;
+      }
+
+
       let onuRemote = (req.body.onu_web_remote === 'on') ? true : false;
       let tr069InformInterval = Number(req.body['inform-interval']);
       let tr069SyncInterval = Number(req.body['sync-interval']);
@@ -896,10 +990,12 @@ updateController.setAutoConfig = async function(req, res) {
         config.tr069.server_url = tr069ServerURL;
         config.tr069.web_login = onuWebLogin;
         config.tr069.web_password = onuWebPassword;
+        config.tr069.connection_login = tr069ConnectionLogin;
+        config.tr069.connection_password = tr069ConnectionPassword;
         config.tr069.remote_access = onuRemote;
         // transforming from seconds to milliseconds.
         if (config.tr069.inform_interval !== tr069InformInterval*1000) {
-          willMigrateDeviceInforms = true;
+          willMigrateDeviceInformInterval = true;
         }
         config.tr069.inform_interval = tr069InformInterval*1000;
         config.tr069.sync_interval = tr069SyncInterval*1000;
@@ -965,8 +1061,10 @@ updateController.setAutoConfig = async function(req, res) {
     if (willMigrateDevicePrefixes.migrate) {
       migrateDevicePrefixes(config, willMigrateDevicePrefixes.oldPrefix);
     }
-    if (willMigrateDeviceInforms) {
-      migrateDeviceInforms(config);
+    if (willMigrateDeviceInformInterval || willMigrateDeviceConnectionLogin) {
+      migrateDeviceInforms(config,
+        willMigrateDeviceInformInterval,
+        willMigrateDeviceConnectionLogin);
     }
 
     // Start / stop insecure GenieACS instance if parameter changed

@@ -81,12 +81,6 @@ let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
 let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1});
 
-// Get current connection request credentials preset configuration
-let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
-let currentUsername = declare(usernameField, {value: 1});
-let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
-let currentPassword = declare(passwordField, {value: 1});
-
 // 2. Run the script
 genieID = genieID.value[0];
 log('Provision for device ' + genieID + ' started at ' + now.toString());
@@ -94,16 +88,6 @@ oui = oui.value[0];
 modelClass = modelClass.value[0];
 
 log('Detected device ' + genieID + ' as ' + (isIGDModel ? 'IGD model' : 'Device model'));
-
-// Apply connection request credentials preset configuration
-currentUsername = currentUsername.value[0];
-if (currentUsername !== 'anlix') {
-  declare(usernameField, null, {value: 'anlix'});
-}
-currentPassword = currentPassword.value[0];
-if (currentPassword !== 'landufrj123') {
-  declare(passwordField, null, {value: 'landufrj123'});
-}
 
 // Collect extra information for Flashman model detection
 modelName = modelName.value[0];
@@ -129,6 +113,21 @@ if (!result.success || !result.fields) {
   log('Model identified: ' + modelClass);
   return;
 }
+
+// Apply connection request credentials preset configuration
+if (result.connection) {
+  let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+  let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+
+  let targetLogin = (result.connection.login) ?
+    result.connection.login : 'anlix';
+  declare(usernameField, null, {value: targetLogin});
+
+  let targetPassword = (result.connection.password) ?
+    result.connection.password : 'landufrj123';
+  declare(passwordField, null, {value: targetPassword});
+}
+
 // Flashman did not ask for a full provision sync - provision is done
 if (!result.measure) {
   return;

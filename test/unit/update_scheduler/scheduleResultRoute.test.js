@@ -1,12 +1,27 @@
 require('../../../bin/globals');
+
+// Override process environment variable to avoid starting genie
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 const utils = require('../../common/utils');
 const models = require('../../common/models');
+
 
 // Mock the filesystem
 jest.mock('fs', () => ({
   ...jest.requireActual('fs'),
   readdirSync: () => [],
 }));
+
+// Mock the mqtts (avoid aedes)
+jest.mock('../../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 
 /* Validates the response */
@@ -18,10 +33,9 @@ const checkResponse = function(response, statusCode, success) {
       expect(response.body.message).toBeDefined();
     } else {
       expect(response.body).toEqual(
-        expect.stringContaining('Atualização abortada')
+        expect.stringContaining('Atualização abortada'),
       );
     }
-  
   } catch (error) {
     error.message =
       `
@@ -49,7 +63,7 @@ describe('TR-069 Update Scheduler Tests - Schedule Result', () => {
 
 
   // Empty config
-  test('Validate result route - Empty config', async () => {
+  test('Empty config', async () => {
     utils.common.mockConfigs([], 'find');
     utils.common.mockConfigs(null, 'findOne');
     utils.common.mockConfigs(null, 'findById');
@@ -61,14 +75,14 @@ describe('TR-069 Update Scheduler Tests - Schedule Result', () => {
 
   // Scheduler already aborted
   // The config of models.defaultMockConfigs is aborted
-  test('Validate abort route - Already aborted', async () => {
+  test('Already aborted', async () => {
     let response = await utils.schedulerCommon.schedulerResultFake();
     checkResponse(response, 200, true);
   });
 
 
   // Invalid device
-  test('Validate result route - Invalid device', async () => {
+  test('Invalid device', async () => {
     utils.common.mockDevices([], 'find');
     utils.common.mockDevices(null, 'findOne');
     utils.common.mockDevices(null, 'findById');
@@ -79,7 +93,7 @@ describe('TR-069 Update Scheduler Tests - Schedule Result', () => {
 
 
   // Okay
-  test('Validate result route - Okay', async () => {
+  test('Okay', async () => {
     // Copy the config and use it
     let config = models.copyConfigFrom(
       '62b9f57c6beaae3b4f9d4656',
@@ -119,5 +133,4 @@ describe('TR-069 Update Scheduler Tests - Schedule Result', () => {
     let response = await utils.schedulerCommon.schedulerResultFake();
     checkResponse(response, 200, true);
   });
-
 });

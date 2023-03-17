@@ -1,4 +1,4 @@
-name: Master pull request checks
+name: Master pull request check
 
 on:
   pull_request:
@@ -6,11 +6,12 @@ on:
 
 jobs:
   On-pull-to-master:
-    runs-on: ubuntu-latest
+    runs-on: [ubuntu-latest]
 
     strategy:
       matrix:
         node-version: [12.x]
+        mongodb-version: ['4.4']
 
     steps:
       - name: Checkout code
@@ -46,7 +47,46 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      - name: Install dependencies & run tests
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run unit tests
+        run: npm run test
+
+      - name: Start MongoDB
+        uses: supercharge/mongodb-github-action@1.8.0
+        with:
+          mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-db: flashman
+      
+      - name: Setting up genieacs
         run: |
+          set -a ; . ./test.env ; set +a
+          cd ..
+          git clone https://github.com/anlix-io/genieacs.git
+          cd genieacs
           npm install
-          npm test
+          npm run build
+          node ./dist/bin/genieacs-nbi &
+          sleep 3
+          node ./dist/bin/genieacs-cwmp &
+
+      - name: Initializing flashman
+        run: |
+          set -a
+          . ./test.env
+          set +a
+          echo Running node version: "$(node --version)"
+          node ./bin/www &
+
+      - name: Run Blackbox tests
+        run: npm run bb-test
+
+      - name: Destroying mongodb container
+        if: ${{ always() }}
+        run: docker container kill mongodb ; docker container prune -f
+      
+      - name: Removing current genieacs folder
+        if: ${{ always() }}
+        run: |
+          rm -r ../genieacs/ ;

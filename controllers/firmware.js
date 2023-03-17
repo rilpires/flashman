@@ -5,6 +5,7 @@ let User = require('../models/user');
 let Config = require('../models/config');
 let Firmware = require('../models/firmware');
 const Role = require('../models/role');
+const DeviceModel = require('../models/device');
 const controlApi = require('./external-api/control');
 const acsFirmwareHandler = require('./handlers/acs/firmware');
 const DevicesAPI = require('./external-genieacs/devices-api');
@@ -128,7 +129,79 @@ firmwareController.index = function(req, res) {
           return res.render('error', indexContent);
         }
         indexContent.role = role;
-        indexContent.tr069Infos = await DevicesAPI.getTR069UpgradeableModels();
+        indexContent.tr069Infos = DevicesAPI.getTR069UpgradeableModels();
+
+        // Get all firmwares from devices to be appended
+        let allDevices = null;
+        try {
+          allDevices = await DeviceModel.find(
+            {use_tr069: true},
+            {
+              acs_id: true,
+              model: true,
+              version: true,
+              hw_version: true,
+              installed_release: true,
+            },
+          );
+
+        // Continue in the function as this procedure is not necessary
+        } catch (error) {
+          console.log(
+            'Error getting devices in getTR069UpgradeableModels: ' + error,
+          );
+        }
+
+        // Loop all devices in flashman and append their installed firmwares
+        if (allDevices && allDevices.constructor === Array) {
+          allDevices.forEach((device) => {
+            let cpeInstance = DevicesAPI
+              .instantiateCPEByModelFromDevice(device);
+            let cpe = cpeInstance.cpe;
+
+            // Continue to the next iteration if the cpe is invalid
+            if (!cpeInstance.success) return;
+
+            let vendor = cpe.identifier.vendor;
+            let model = cpe.identifier.model;
+            let fullID = vendor + ' ' + cpe.identifier.model;
+
+            // Continue to the next iteration if the installed_release is
+            // invalid
+            if (!device.installed_release) return;
+
+            // If cannot update, do not add it
+            if (!cpe.modelPermissions().features.firmwareUpgrade) return;
+
+            // If the entry does not exist in versions
+            if (
+              indexContent.tr069Infos.versions[fullID] &&
+              !(indexContent.tr069Infos.versions[fullID].includes(
+                device.installed_release,
+              ))
+            ) {
+              indexContent.tr069Infos.versions[fullID].push(
+                device.installed_release,
+              );
+
+            // If the model and vendor was not added
+            } else if (
+              !indexContent.tr069Infos.vendors[vendor] &&
+              !indexContent.tr069Infos.versions[fullID]
+            ) {
+              indexContent.tr069Infos.vendors[vendor] = [model];
+              indexContent.tr069Infos.versions[fullID] =
+                [device.installed_release];
+
+            // If the model was not added
+            } else if (!indexContent.tr069Infos.versions[fullID]) {
+              indexContent.tr069Infos.vendors[vendor] = [model];
+              indexContent.tr069Infos.versions[fullID] =
+                [device.installed_release];
+            }
+          });
+        }
+
         return res.render('firmware', indexContent);
       });
     });

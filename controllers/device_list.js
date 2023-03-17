@@ -1210,7 +1210,11 @@ deviceListController.getDevices = async function(req, res) {
 deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
-  let queryContents = req.body.filter_list.split(',');
+  let queryContents = [];
+  if ('filter_list' in req.body &&
+    typeof req.body.filter_list === 'string') {
+    queryContents = req.body.filter_list.split(',');
+  }
   let sortKeys = {};
   let sortTypeOrder = 1;
   // Filter sort type order before filtering query
@@ -1281,12 +1285,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
-
-  if (req.query.page) {
+  if (!isNaN(parseInt(req.query.page))) {
     reqPage = parseInt(req.query.page);
   }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
+  }
+  if (!isNaN(parseInt(req.query.limit))) {
+    elementsPerPage = parseInt(req.query.limit) > 50 ?
+      50 : parseInt(req.query.limit);
   }
 
   let paginateOpts = {
@@ -1429,7 +1436,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                 return res.json({
                 success: true,
                   type: 'success',
-                  limit: req.user.maxElementsPerPage,
+                  limit: elementsPerPage,
                   page: matchedDevices.page,
                   pages: matchedDevices.pages,
                   min_length_pass_pppoe: matchedConfig.pppoePassLength,
@@ -3301,13 +3308,19 @@ deviceListController.setPortForwardTr069 = async function(
   let rules;
   let diffPortForwardLength;
   let ret = {};
-  if (device.wrong_port_mapping) {
-    ret.success = false;
-    ret.message = t('deviceHaveWrongPortMappingError');
-    return ret;
-  }
   try {
-    rules = JSON.parse(content);
+    if (typeof content == 'string' &&
+        util.isJsonString(content)
+    ) {
+      rules = JSON.parse(content);
+    } else if (typeof content == 'object') {
+      rules = content;
+    } else {
+      ret.success = false,
+      ret.message = t('fieldNameInvalid',
+          {name: 'content', errorline: __line});
+      return ret;
+    }
   } catch (e) {
     console.log(e.message);
     ret.success = false;
@@ -3347,6 +3360,10 @@ deviceListController.setPortForwardTr069 = async function(
   // push a hash from rules json
   device.forward_index =
     crypto.createHash('md5').update(JSON.stringify(content)).digest('base64');
+  /* If is the scenario where the user accepted the fact that all current port
+    mapping rules of the CPE will be deleted, so trigger to delete them all */
+  let deleteAllRules = device.wrong_port_mapping;
+  device.wrong_port_mapping = false;
   try {
     await device.save();
   } catch (err) {
@@ -3357,7 +3374,8 @@ deviceListController.setPortForwardTr069 = async function(
   }
   Audit.cpe(user, device, 'edit', audit);
   // geniacs-api call
-  acsPortForwardHandler.changePortForwardRules(device, diffPortForwardLength);
+  acsPortForwardHandler.changePortForwardRules(device,
+    diffPortForwardLength, null, deleteAllRules);
   ret.success = true;
   ret.message = t('operationSuccessful');
   return ret;
