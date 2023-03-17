@@ -79,6 +79,7 @@ basicCPEModel.modelPermissions = function() {
       needConfigOnLANChange: false, // will force lan enable on edit (GWR1200)
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
+      dnsServersWrite: true, // can change LAN DNS servers
     },
     wan: {
       allowReadMacAddress: true, // can read WAN MAC address at flashman's wan
