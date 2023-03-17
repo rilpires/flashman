@@ -106,6 +106,15 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
+const parseLanDnsServers = function(dnsServers) {
+  // dnsServers is a string with a comma separated list of IP addresses
+  let dnsServersList = [];
+  dnsServers.split(',').forEach((e) => {
+    dnsServersList.push(e);
+  });
+  return dnsServersList;
+};
+
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -437,6 +446,12 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
+  // Collect LAN Dns Servers and convert do correct format
+  let lanDnsServers;
+  if (data.lan.dns_servers && data.lan.dns_servers.value) {
+    lanDnsServers = parseLanDnsServers(data.lan.dns_servers.value);
+  }
+
   let defaultPingHosts = matchedConfig.default_ping_hosts;
   // If config doesn't have a default, we force it to the legacy value here
   if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
@@ -513,6 +528,7 @@ const createRegistry = async function(req, cpe, permissions) {
     ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
+    lan_dns_servers: lanDnsServers,
     port_mapping: portMapping,
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
@@ -1601,6 +1617,16 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       subnetNumber > 0 && canChangeLAN && device.lan_netmask !== subnetNumber
     ) {
       changes.lan.subnet_mask = device.lan_netmask;
+      hasChanges = true;
+    }
+  }
+  let canChangeLANDns = cpe.modelPermissions().lan.dnsServersWrite;
+  if (data.lan.dns_servers && data.lan.dns_servers.value) {
+    if (!canChangeLANDns || !device.lan_dns_servers) {
+      device.lan_dns_servers = data.lan.lan_dns_servers.value;
+    } else if (canChangeLANDns &&
+      device.lan_dns_servers !== data.lan.dns_servers.value) {
+      changes.lan.dns_servers = device.lan_dns_servers;
       hasChanges = true;
     }
   }
