@@ -14,7 +14,7 @@ tplinkModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
-  permissions.wan.speedTestLimit = 230;
+  permissions.wan.speedTestLimit = 300;
   permissions.wifi.allowDiacritics = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161];
   permissions.wifi.modeWrite = false;
