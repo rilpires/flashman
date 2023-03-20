@@ -1674,6 +1674,12 @@ const fetchSyncResult = async function(
   });
   req.end();
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
+
 
 /**
  * Legacy GenieACS sync function that is still used for new devices and devices
