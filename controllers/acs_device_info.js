@@ -734,7 +734,7 @@ const createRegistry = async function(req, cpe, permissions) {
       // Delay the execution of this function as it needs the device to exists
       // in genie database, but the device will only be created at the end of
       // this function, thus causing a racing condition.
-      delayExecutionGenie(
+      acsDeviceInfoController.delayExecutionGenie(
         newDevice,
         async () => {
           await acsDeviceInfoController
@@ -748,7 +748,7 @@ const createRegistry = async function(req, cpe, permissions) {
     // Delay the execution of this function as it needs the device to exists in
     // genie database, but the device will only be created at the end of this
     // function, thus causing a racing condition.
-    delayExecutionGenie(
+    acsDeviceInfoController.delayExecutionGenie(
       newDevice,
       async () => {
         await acsXMLConfigHandler
@@ -835,7 +835,7 @@ acsDeviceInfoController.__testSleep = sleep;
  *  - `message`: An error or okay message about what happened;
  *  - `result`: the return of `func`, only included if could ran the `func`.
  */
-const delayExecutionGenie = async function(
+acsDeviceInfoController.delayExecutionGenie = async function(
   device,
   func,
   repeatQuantity = 3,
@@ -891,11 +891,6 @@ const delayExecutionGenie = async function(
     message: t('noDevicesFound'),
   };
 };
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 
 
 /**
