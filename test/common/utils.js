@@ -1,8 +1,4 @@
 /**
- * Test utilities that can be used for devices-api.
- * @namespace test/common/utils.devicesAPI
- */
-/**
  * This file includes test utilities.
  * @namespace test/common/utils
  */
@@ -13,6 +9,10 @@
 /**
  * Test utilities that can be used for update scheduler.
  * @namespace test/common/utils.schedulerCommon
+ */
+/**
+ * Test utilities that can be used for devices-api.
+ * @namespace test/common/utils.devicesAPICommon
  */
 
 const request = require('supertest');
@@ -511,6 +511,8 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  * @param {Object} files - All files to be sent.
  * @param {Object} query - URL parameters to be passed.
  * @param {Object} user - An object containing user and role information.
+ * @param {Object} params - The object containing params of the request.
+ * @param {Object} sessionID - The session ID of the request.
  *
  * @return {Promise} A promise to wait for the response.
  *
@@ -520,7 +522,9 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  *  {acs_id: '1234'},
  * );
  */
-utils.common.sendFakeRequest = async function(func, data, files, query, user) {
+utils.common.sendFakeRequest = async function(
+  func, data, files, query, user, params, sessionID,
+) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -539,6 +543,8 @@ utils.common.sendFakeRequest = async function(func, data, files, query, user) {
       },
       files: files,
       query: query,
+      params: params,
+      sessionID: sessionID,
     },
 
     // Pass the promise resolve
