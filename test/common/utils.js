@@ -698,6 +698,69 @@ utils.devicesAPICommon.validateUpgradeableModels = function(data) {
   });
 };
 
+
+/**
+ * Mocks the function `instantiateCPEByModelFromDevice` and the return a `jest`
+ * spy.
+ *
+ * @memberOf test/common/utils.devicesAPICommon
+ *
+ * @param {Boolean} success - If should return success.
+ * @param {Object} permissions - The permissions object to be returned.
+ * @param {Object} fields - The fields object to be returned.
+ *
+ * @return {Spy} The `jest` spy of the function.
+ */
+utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
+  success, permissions, fields,
+) {
+  return jest.spyOn(
+    DevicesAPI,
+    'instantiateCPEByModelFromDevice',
+  ).mockImplementation(() => {
+    return {
+      success: success,
+      cpe: {
+        // Permissions
+        modelPermissions: () => {
+          return permissions;
+        },
+
+        // Fields
+        getModelFields: () => {
+          return fields;
+        },
+
+        // PPPoE Enable
+        convertPPPoEEnable: (enable) => {
+          return enable === 'true' || enable === 1 || enable === true;
+        },
+
+        // Get Serial
+        convertGenieSerial: (serial, mac) => {
+          return serial;
+        },
+
+        // Convert Band
+        convertWifiBandToFlashman: (band, isAC) => {
+          return band;
+        },
+
+        // Check Login
+        isAllowedWebadminUsername: (login) => {
+          return true;
+        },
+
+        // Convert WAN Rate
+        convertWanRate: (rate) => {
+          return rate;
+        },
+      },
+    };
+  });
+};
+
+
 /**
  * @exports test/common/utils
  */
