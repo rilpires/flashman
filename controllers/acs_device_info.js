@@ -106,15 +106,6 @@ const convertSubnetMaskToInt = function(mask) {
   return 0;
 };
 
-const parseLanDnsServers = function(dnsServers) {
-  // dnsServers is a string with a comma separated list of IP addresses
-  let dnsServersList = [];
-  dnsServers.split(',').forEach((e) => {
-    dnsServersList.push(e);
-  });
-  return dnsServersList;
-};
-
 const convertWifiMode = function(mode, is5ghz) {
   switch (mode) {
     case '11b':
@@ -446,10 +437,10 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
-  // Collect LAN Dns Servers and convert do correct format
+  // Collect LAN Dns Servers
   let lanDnsServers;
   if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    lanDnsServers = parseLanDnsServers(data.lan.dns_servers.value);
+    lanDnsServers = data.lan.dns_servers.value;
   }
 
   let defaultPingHosts = matchedConfig.default_ping_hosts;
