@@ -1957,6 +1957,14 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         break;
       case 'waninfo':
+        // Check permission
+        if (!permissions.grantWanLanInformation) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
         // Wait notification
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForWanInfoNotification(
@@ -1976,6 +1984,14 @@ deviceListController.sendCommandMsg = async function(req, res) {
 
         break;
       case 'laninfo':
+        // Check permission
+        if (!permissions.grantWanLanInformation) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
         // Wait notification
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForLanInfoNotification(
