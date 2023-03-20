@@ -439,7 +439,7 @@
 	"acceptableCharsAre0-9a-zA-Z .-ul": "Somente são aceitos: caracteres alfanuméricos, espaços, ponto, - e _",
 	"acceptableCharsAre0-9a-zA-Z.-ul": "Somente são aceitos: caracteres alfanuméricos, ponto, - e _",
 	"thisFieldMustHaveValidIpFormat": "Este campo deve conter um formato IP válido",
-	"dnsMustBeSeparatedByComma": " separados por vírgula. Se você deseja configurar um único servidor, não inclua vírgulas.",
+	"dnsMustBeSeparatedByComma": " separados por vírgula. Não deve haver espaço entre as vírgulas. Se você deseja configurar um único servidor, não inclua vírgulas.",
 	"maxOfThreeDNSAddresses": "São aceitos no máximo três endereços DNS",
 	"thisFieldCannotHaveTheValueValItIsReserved": "Este campo não pode conter o valor {{-val}}. O valor é reservado.",
 	"willOnlyAcceptValueMask": "Somente são aceitas as máscaras 24, 25 ou 26",
