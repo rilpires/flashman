@@ -332,59 +332,63 @@ const createRegistry = async function(req, cpe, permissions) {
   }
 
 
-  // IPv4 Mask
   let maskIPv4;
-  if (
-    cpePermissions.wan.hasIpv4MaskField &&
-    data.wan['mask_ipv4' + suffixPPPoE] &&
-    data.wan['mask_ipv4' + suffixPPPoE].value
-  ) {
-    let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
-
-    // Validate the mask as number
-    if (!isNaN(mask) && mask >= 0 && mask <= 32) {
-      maskIPv4 = mask;
-    }
-  }
-
-  // Remote IP Address
   let pppoeIp;
-  if (
-    cpePermissions.wan.hasIpv4RemoteAddressField &&
-    data.wan['remote_address' + suffixPPPoE] &&
-    data.wan['remote_address' + suffixPPPoE].value
-  ) {
-    pppoeIp = data.wan['remote_address' + suffixPPPoE].value;
-  }
-
-  // Remote MAC
   let pppoeMac;
-  if (
-    cpePermissions.wan.hasIpv4RemoteMacField &&
-    data.wan['remote_mac' + suffixPPPoE] &&
-    data.wan['remote_mac' + suffixPPPoE].value
-  ) {
-    pppoeMac = data.wan['remote_mac' + suffixPPPoE].value;
-  }
-
-  // Default Gateway
   let defaultGatewayV4;
-  if (
-    cpePermissions.wan.hasIpv4DefaultGatewayField &&
-    data.wan['default_gateway' + suffixPPPoE] &&
-    data.wan['default_gateway' + suffixPPPoE].value
-  ) {
-    defaultGatewayV4 = data.wan['default_gateway' + suffixPPPoE].value;
-  }
-
-  // DNS Servers
   let dnsServers;
-  if (
-    cpePermissions.wan.hasDnsServerField &&
-    data.wan['dns_servers' + suffixPPPoE] &&
-    data.wan['dns_servers' + suffixPPPoE].value
-  ) {
-    dnsServers = data.wan['dns_servers' + suffixPPPoE].value;
+
+  // WAN and LAN information
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (
+      cpePermissions.wan.hasIpv4MaskField &&
+      data.wan['mask_ipv4' + suffixPPPoE] &&
+      data.wan['mask_ipv4' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+        maskIPv4 = mask;
+      }
+    }
+
+    // Remote IP Address
+    if (
+      cpePermissions.wan.hasIpv4RemoteAddressField &&
+      data.wan['remote_address' + suffixPPPoE] &&
+      data.wan['remote_address' + suffixPPPoE].value
+    ) {
+      pppoeIp = data.wan['remote_address' + suffixPPPoE].value;
+    }
+
+    // Remote MAC
+    if (
+      cpePermissions.wan.hasIpv4RemoteMacField &&
+      data.wan['remote_mac' + suffixPPPoE] &&
+      data.wan['remote_mac' + suffixPPPoE].value
+    ) {
+      pppoeMac = data.wan['remote_mac' + suffixPPPoE].value;
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.wan.hasIpv4DefaultGatewayField &&
+      data.wan['default_gateway' + suffixPPPoE] &&
+      data.wan['default_gateway' + suffixPPPoE].value
+    ) {
+      defaultGatewayV4 = data.wan['default_gateway' + suffixPPPoE].value;
+    }
+
+    // DNS Servers
+    if (
+      cpePermissions.wan.hasDnsServerField &&
+      data.wan['dns_servers' + suffixPPPoE] &&
+      data.wan['dns_servers' + suffixPPPoE].value
+    ) {
+      dnsServers = data.wan['dns_servers' + suffixPPPoE].value;
+    }
   }
 
 
@@ -396,7 +400,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let prefixMask;
   let prefixLocal;
 
-  if (cpePermissions.features.hasIpv6Information) {
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
     // Address
     if (
       cpePermissions.ipv6.hasAddressField &&
@@ -1107,34 +1114,37 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.wan_mac);
   parameterNames.push(fields.wan.wan_mac_ppp);
 
-  // IPv4 Mask
-  if (cpePermissions.wan.hasIpv4MaskField) {
-    parameterNames.push(fields.wan.mask_ipv4);
-    parameterNames.push(fields.wan.mask_ipv4_ppp);
-  }
+  // WAN and LAN information
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (cpePermissions.wan.hasIpv4MaskField) {
+      parameterNames.push(fields.wan.mask_ipv4);
+      parameterNames.push(fields.wan.mask_ipv4_ppp);
+    }
 
-  // Remote IP Address
-  if (cpePermissions.wan.hasIpv4RemoteAddressField) {
-    parameterNames.push(fields.wan.remote_address);
-    parameterNames.push(fields.wan.remote_address_ppp);
-  }
+    // Remote IP Address
+    if (cpePermissions.wan.hasIpv4RemoteAddressField) {
+      parameterNames.push(fields.wan.remote_address);
+      parameterNames.push(fields.wan.remote_address_ppp);
+    }
 
-  // Remote MAC
-  if (cpePermissions.wan.hasIpv4RemoteMacField) {
-    parameterNames.push(fields.wan.remote_mac);
-    parameterNames.push(fields.wan.remote_mac_ppp);
-  }
+    // Remote MAC
+    if (cpePermissions.wan.hasIpv4RemoteMacField) {
+      parameterNames.push(fields.wan.remote_mac);
+      parameterNames.push(fields.wan.remote_mac_ppp);
+    }
 
-  // IPv4 Default Gateway
-  if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
-    parameterNames.push(fields.wan.default_gateway);
-    parameterNames.push(fields.wan.default_gateway_ppp);
-  }
+    // IPv4 Default Gateway
+    if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
+      parameterNames.push(fields.wan.default_gateway);
+      parameterNames.push(fields.wan.default_gateway_ppp);
+    }
 
-  // DNS Server
-  if (cpePermissions.wan.hasDnsServerField) {
-    parameterNames.push(fields.wan.dns_servers);
-    parameterNames.push(fields.wan.dns_servers_ppp);
+    // DNS Server
+    if (cpePermissions.wan.hasDnsServerField) {
+      parameterNames.push(fields.wan.dns_servers);
+      parameterNames.push(fields.wan.dns_servers_ppp);
+    }
   }
 
   if (cpePermissions.wan.hasUptimeField) {
@@ -1161,8 +1171,11 @@ acsDeviceInfoController.requestSync = async function(device) {
     parameterNames.push(fields.wan.pon_txpower);
   }
 
-  // IPv6
-  if (cpePermissions.features.hasIpv6Information) {
+  // WAN and LAN information - IPv6
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
     dataToFetch.ipv6 = true;
 
     // Get all fields that can be requested
@@ -1939,59 +1952,65 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
 
 
-  // IPv4 Mask
-  if (
-    cpePermissions.wan.hasIpv4MaskField &&
-    data.wan['mask_ipv4' + suffixPPPoE] &&
-    data.wan['mask_ipv4' + suffixPPPoE].value
-  ) {
-    let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (
+      cpePermissions.wan.hasIpv4MaskField &&
+      data.wan['mask_ipv4' + suffixPPPoE] &&
+      data.wan['mask_ipv4' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
 
-    // Validate the mask as number
-    if (!isNaN(mask) && mask >= 0 && mask <= 32) {
-      device.wan_ipv4_mask = mask;
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+        device.wan_ipv4_mask = mask;
+      }
     }
-  }
 
-  // Remote IP Address
-  if (
-    cpePermissions.wan.hasIpv4RemoteAddressField &&
-    data.wan['remote_address' + suffixPPPoE] &&
-    data.wan['remote_address' + suffixPPPoE].value
-  ) {
-    device.pppoe_ip = data.wan['remote_address' + suffixPPPoE].value;
-  }
+    // Remote IP Address
+    if (
+      cpePermissions.wan.hasIpv4RemoteAddressField &&
+      data.wan['remote_address' + suffixPPPoE] &&
+      data.wan['remote_address' + suffixPPPoE].value
+    ) {
+      device.pppoe_ip = data.wan['remote_address' + suffixPPPoE].value;
+    }
 
-  // Remote MAC
-  if (
-    cpePermissions.wan.hasIpv4RemoteMacField &&
-    data.wan['remote_mac' + suffixPPPoE] &&
-    data.wan['remote_mac' + suffixPPPoE].value
-  ) {
-    device.pppoe_mac = data.wan['remote_mac' + suffixPPPoE].value;
-  }
+    // Remote MAC
+    if (
+      cpePermissions.wan.hasIpv4RemoteMacField &&
+      data.wan['remote_mac' + suffixPPPoE] &&
+      data.wan['remote_mac' + suffixPPPoE].value
+    ) {
+      device.pppoe_mac = data.wan['remote_mac' + suffixPPPoE].value;
+    }
 
-  // Default Gateway
-  if (
-    cpePermissions.wan.hasIpv4DefaultGatewayField &&
-    data.wan['default_gateway' + suffixPPPoE] &&
-    data.wan['default_gateway' + suffixPPPoE].value
-  ) {
-    device.default_gateway_v4 = data.wan['default_gateway' + suffixPPPoE].value;
-  }
+    // Default Gateway
+    if (
+      cpePermissions.wan.hasIpv4DefaultGatewayField &&
+      data.wan['default_gateway' + suffixPPPoE] &&
+      data.wan['default_gateway' + suffixPPPoE].value
+    ) {
+      device.default_gateway_v4 =
+        data.wan['default_gateway' + suffixPPPoE].value;
+    }
 
-  // DNS Servers
-  if (
-    cpePermissions.wan.hasDnsServerField &&
-    data.wan['dns_servers' + suffixPPPoE] &&
-    data.wan['dns_servers' + suffixPPPoE].value
-  ) {
-    device.dns_server = data.wan['dns_servers' + suffixPPPoE].value;
+    // DNS Servers
+    if (
+      cpePermissions.wan.hasDnsServerField &&
+      data.wan['dns_servers' + suffixPPPoE] &&
+      data.wan['dns_servers' + suffixPPPoE].value
+    ) {
+      device.dns_server = data.wan['dns_servers' + suffixPPPoE].value;
+    }
   }
 
 
   // IPv6
-  if (cpePermissions.features.hasIpv6Information) {
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
     // Address
     if (
       cpePermissions.ipv6.hasAddressField &&
@@ -2689,6 +2708,9 @@ acsDeviceInfoController.requestWanInformation = function(device) {
     let fieldObject = assignFields[fieldName];
     let fieldParam = null;
 
+    // If is IPv6 and does not have permission, continue to the next field
+    if (fieldObject.isIPv6 && !permissions.features.hasIpv6Information) return;
+
     // If does not have permission continue to the next field
     if (!fieldObject.permission) return;
 
@@ -2760,19 +2782,28 @@ acsDeviceInfoController.requestLanInformation = function(device) {
   let parameterNames = [];
   let suffixPPPoE = (device.connection_type === 'pppoe' ? '_ppp' : '');
 
-  if (permissions.ipv6.prefix_delegation_address) {
+  if (
+    permissions.ipv6.hasPrefixDelegationAddressField &&
+    fields.ipv6['prefix_delegation_address' + suffixPPPoE]
+  ) {
     parameterNames.push(
       fields.ipv6['prefix_delegation_address' + suffixPPPoE],
     );
   }
 
-  if (permissions.ipv6.hasPrefixDelegationMaskField) {
+  if (
+    permissions.ipv6.hasPrefixDelegationMaskField &&
+    fields.ipv6['prefix_delegation_mask' + suffixPPPoE]
+  ) {
     parameterNames.push(
       fields.ipv6['prefix_delegation_mask' + suffixPPPoE],
     );
   }
 
-  if (permissions.ipv6.hasPrefixDelegationLocalAddressField) {
+  if (
+    permissions.ipv6.hasPrefixDelegationLocalAddressField &&
+    fields.ipv6['prefix_delegation_local_address' + suffixPPPoE]
+  ) {
     parameterNames.push(
       fields.ipv6['prefix_delegation_local_address' + suffixPPPoE],
     );
