@@ -582,7 +582,7 @@ basicCPEModel.getModelFields = function() {
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
       interval: 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval',
       // These should only be added whenever they exist, for legacy reasons:
-        // web_admin_user: 'InternetGatewayDevice.User.1.Username',
+        // web_admin_username: 'InternetGatewayDevice.User.1.Username',
         // web_admin_password: 'InternetGatewayDevice.User.1.Password',
         // stun_enable: 'InternetGatewayDevice.ManagementServer.STUNEnable',
         // stun_udp_conn_req_addr: 'InternetGatewayDevice.ManagementServer.' +
