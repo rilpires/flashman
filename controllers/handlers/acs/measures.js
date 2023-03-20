@@ -454,6 +454,11 @@ const checkAndGetGenieField = function(
 
   return response;
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsMeasuresHandler.__testCheckAndGetGenieField = checkAndGetGenieField;
 
 
 /**
