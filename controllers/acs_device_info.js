@@ -2751,7 +2751,7 @@ acsDeviceInfoController.requestWanInformation = function(device) {
 acsDeviceInfoController.requestLanInformation = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) {
-    console.error('Invalid device received in requestWanInformation!');
+    console.error('Invalid device received in requestLanInformation!');
     return;
   }
 
