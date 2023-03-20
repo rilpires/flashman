@@ -68,7 +68,11 @@ mongoose.connect(
    useFindAndModify: false,
    useCreateIndex: true,
    maxPoolSize: 200,
-});
+})
+.then((_)=>console.log(`Connected to Mongo database "${databaseName}"`
+                       + ` on "${MONGOHOST}:${MONGOPORT}"`))
+.catch((_)=>console.error(`Couldnt connect to Mongo database "${databaseName}"`
+                       + `on "${MONGOHOST}:${MONGOPORT}`));
 mongoose.set('useCreateIndex', true);
 
 // Release dir must exists

@@ -313,8 +313,10 @@ utilHandlers.getTr069CACert = async function() {
 
 /* ****Functions for test utilities**** */
 
-utilHandlers.catchError = function(error) {
-  console.log(error);
+utilHandlers.errorHandler = function(message) {
+  return function(err) {
+    throw Error(`${message}, ${err}`);
+  };
 };
 
 utilHandlers.catchDatabaseError = function(error) {

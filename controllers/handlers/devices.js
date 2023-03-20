@@ -605,7 +605,7 @@ deviceHandlers.processTracerouteTraps = function(device) {
           'traceroute_results': {results: results},
         };
         if (device.current_diagnostic.webhook_user &&
-          device.current_diagnostic.webook_secret
+          device.current_diagnostic.webhook_secret
         ) {
           requestOptions.auth = {
             user: device.current_diagnostic.webhook_user,
