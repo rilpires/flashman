@@ -473,7 +473,7 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
     device = await DeviceModel.findOne({acs_id: acsID});
   } catch (error) {
     console.error(
-      'Could not get device in fetchLanInformationFromGenie: ' + error,
+      'Could not get device in fetchWanInformationFromGenie: ' + error,
     );
 
     return;
@@ -481,7 +481,7 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
 
   // Check if is a TR-069 valid device
   if (!device || !device.use_tr069) {
-    console.error('Invalid device in fetchLanInformationFromGenie!');
+    console.error('Invalid device in fetchWanInformationFromGenie!');
     return;
   }
 
@@ -490,7 +490,7 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
   let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
 
   if (!cpeInstance.success) {
-    console.error('Invalid CPE in fetchLanInformationFromGenie!');
+    console.error('Invalid CPE in fetchWanInformationFromGenie!');
     return;
   }
 
@@ -592,7 +592,7 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
     response.setEncoding('utf8');
     let receivedData = '';
 
-    response.on('data', (chunk)=> receivedData += chunk);
+    response.on('data', (chunk) => receivedData += chunk);
     response.on('end', async () => {
       let data = null;
       let saveDevice = false;
@@ -810,7 +810,7 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
     response.setEncoding('utf8');
     let receivedData = '';
 
-    response.on('data', (chunk)=> receivedData += chunk);
+    response.on('data', (chunk) => receivedData += chunk);
     response.on('end', async () => {
       let data = null;
       let saveDevice = false;
