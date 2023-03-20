@@ -18,6 +18,7 @@ parksModel.modelPermissions = function() {
   permissions.wan.dhcpUptime = true;
   permissions.wan.hasUptimeField = true;
   permissions.wan.speedTestLimit = 230;
+  permissions.wan.canTrustWanRate = false;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 108,
     112, 116, 136, 140, 149, 157, 161, 165,
