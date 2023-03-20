@@ -13,6 +13,8 @@ const DeviceModel = require('../../models/device');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
 const UserModel = require('../../models/user');
+const mqtt = require('../../mqtts');
+const sio = require('../../sio');
 
 let portForwardPermissions = [
   { // noAsymNoRanges: {
@@ -48,10 +50,15 @@ let portForwardPermissions = [
 
 const utils = require('../utils');
 const testUtils = require('../common/utils');
+const models = require('../common/models');
 
 jest.mock('../../mqtts', () => ({
   anlixMessageRouterUpdate: jest.fn(() => undefined),
+  anlixMessageRouterWanInfo: jest.fn(() => undefined),
+  anlixMessageRouterLanInfo: jest.fn(() => undefined),
 }));
+
+const t = require('../../controllers/language').i18next.t;
 
 const audit = require('../../controllers/audit');
 jest.mock('../../controllers/audit', () => require('../fake_Audit'));
@@ -1302,4 +1309,449 @@ describe('Controllers - Device List', () => {
     expect(response.body.urlqueryfilterlist).toBe('A,D,EEE,!,/,/ou');
     expect(audit.cpe).toHaveBeenCalledTimes(0);
   });
+
+
+  // sendCommandMsg
+  describe('sendCommandMsg', () => {
+    // Invalid route
+    test('Invalid route', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      jest.spyOn(console, 'log').mockImplementationOnce(() => true);
+      testUtils.common.mockDevices([device], 'find');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'abcdef',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, {id: '12345'},
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('commandNotFound').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No device found
+    test('No device found', async () => {
+      // Mocks
+      testUtils.common.mockDevices(null, 'find');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'abcdef',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, {id: '12345'},
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeNotFound').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Device not online
+    test('Device not online', async () => {
+      // Mocks
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0],
+        {
+          use_tr069: false,
+        }, {id: '12345'},
+      );
+      testUtils.common.mockDevices([device], 'find');
+      mqtt.unifiedClientsMap = {};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'log',
+          id: 'aa:bb:cc:dd:ee:ff',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeNotOnline').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No permission - waninfo
+    test('No permission - waninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      testUtils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, {grantWanLanInformation: false}, {},
+      );
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'waninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, {id: '12345'},
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeWithoutFunction').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No permission - laninfo
+    test('No permission - laninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      testUtils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, {grantWanLanInformation: false}, {},
+      );
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'laninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, {id: '12345'},
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeWithoutFunction').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No sessionID - waninfo
+    test('No sessionID - waninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'waninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).toBeCalled();
+      expect(requestLanSpy).not.toBeCalled();
+    });
+
+
+    // No sessionID - laninfo
+    test('No sessionID - laninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'laninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).not.toBeCalled();
+      expect(requestLanSpy).toBeCalled();
+    });
+
+
+    // No sio connection - waninfo
+    test('No sio connection - waninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = false;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'waninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).toBeCalled();
+      expect(requestLanSpy).not.toBeCalled();
+    });
+
+
+    // No sio connection - laninfo
+    test('No sio connection - laninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+        let sessionID = 'sessionID';
+        sio.anlixConnections[sessionID] = false;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'laninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).not.toBeCalled();
+      expect(requestLanSpy).toBeCalled();
+    });
+
+
+    // TR-069 - waninfo
+    test('TR-069 - waninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'waninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).toBeCalled();
+      expect(requestLanSpy).not.toBeCalled();
+    });
+
+
+    // TR-069 - laninfo
+    test('TR-069 - laninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      let requestWanSpy = jest.spyOn(acsDeviceInfo, 'requestWanInformation')
+        .mockImplementation(() => true);
+      let requestLanSpy = jest.spyOn(acsDeviceInfo, 'requestLanInformation')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'laninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).toBeCalled();
+      expect(requestWanSpy).not.toBeCalled();
+      expect(requestLanSpy).toBeCalled();
+    });
+
+
+    // Flashbox - waninfo
+    test('Flashbox - waninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[1];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      // Those functions were spied at the beginning of this file
+      let requestWanSpy = mqtt.anlixMessageRouterWanInfo;
+      let requestLanSpy = mqtt.anlixMessageRouterLanInfo;
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+      mqtt.unifiedClientsMap = {client: {'AA:BB:CC:DD:EE:FF': true}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'waninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).toBeCalled();
+      expect(waitForLanSpy).not.toBeCalled();
+      expect(requestWanSpy).toBeCalled();
+      expect(requestLanSpy).not.toBeCalled();
+    });
+
+
+    // Flashbox - laninfo
+    test('Flashbox - laninfo', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[1];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantWanLanInformation: true};
+        });
+      let waitForWanSpy = jest.spyOn(sio, 'anlixWaitForWanInfoNotification')
+        .mockImplementation(() => true);
+      let waitForLanSpy = jest.spyOn(sio, 'anlixWaitForLanInfoNotification')
+        .mockImplementation(() => true);
+      // Those functions were spied at the beginning of this file
+      let requestWanSpy = mqtt.anlixMessageRouterWanInfo;
+      let requestLanSpy = mqtt.anlixMessageRouterLanInfo;
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+      mqtt.unifiedClientsMap = {client: {'AA:BB:CC:DD:EE:FF': true}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'laninfo',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForWanSpy).not.toBeCalled();
+      expect(waitForLanSpy).toBeCalled();
+      expect(requestWanSpy).not.toBeCalled();
+      expect(requestLanSpy).toBeCalled();
+    });
+  });
+
+
 });
