@@ -444,6 +444,8 @@
 	"acceptableCharsAre0-9a-zA-Z .-ul": "Only alphanumeric characters, spaces, period, - and _ are accepted",
 	"acceptableCharsAre0-9a-zA-Z.-ul": "Only alphanumeric characters, period, - and _ are accepted",
 	"thisFieldMustHaveValidIpFormat": "This field must contain a valid IP format",
+	"dnsMustBeSeparatedByComma": " separated by comma. If you want to configure a single server, do not include commas.",
+	"maxOfThreeDNSAddresses": "A maximum of three DNS addresses are accepted",
 	"thisFieldCannotHaveTheValueValItIsReserved": "This field cannot contain the value {{-val}}. The value is reserved.",
 	"willOnlyAcceptValueMask": "Only 24, 25 or 26 masks are accepted",
 	"invalidValueToDeactiveIpv6": "Invalid value to enable or disable IPv6",
