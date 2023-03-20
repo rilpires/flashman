@@ -3410,6 +3410,14 @@ deviceListController.setPortForward = function(req, res) {
     }
     // TR-069 routers
     if (matchedDevice.use_tr069) {
+      if (typeof req.originalUrl === 'string' &&
+        req.originalUrl.includes('api/v2') &&
+        matchedDevice.wrong_port_mapping == true) {
+        return res.status(200).json({
+          success: false,
+          message: t('deviceHaveWrongPortMappingError'),
+        });
+      }
       let result =
         await deviceListController.setPortForwardTr069(matchedDevice,
                                                        req.body.content,
