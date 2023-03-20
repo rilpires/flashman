@@ -2064,29 +2064,6 @@ anlixDocumentReady.add(function() {
                     '</input>'+
                     '<div class="invalid-feedback"></div>'+
                 '</div>'+
-                (grantLanDnsEdit ?
-                  '<div class="md-form input-entry input-group mb-2">'+
-                    '<label class="active">' +
-                      t('lanDnsServers') +
-                    '</label>'+
-                    '<input class="form-control lan-dns-field my-2" ' +
-                      'type="text" id="edit_lan_dns-'+index+'" '+
-                      'maxlength="15" value="'+device.lan_dns_servers+
-                      '" $REPLACE_LAN_EN>'+
-                    '</input>'+
-                    '<div class="invalid-feedback"></div>'+
-                  '</div>' :
-                  ''
-                )+
-                (grantLanGwEdit ?
-                  '<div class="alert alert-info my-0">'+
-                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
-                    '<span>'+t('networkIpCalculationDescription')+'</span>'+
-                  '</div>' :
-                  ''
-                )+
-              '</div>'+
-              '<div class="col-6">'+
                 '<div class="md-form input-group">'+
                   '<div class="md-selectfield form-control my-0">'+
                     '<label class="active">'+t('Mask')+'</label>'+
@@ -2099,6 +2076,15 @@ anlixDocumentReady.add(function() {
                     '</select>'+
                   '</div>'+
                 '</div>'+
+                (grantLanGwEdit ?
+                  '<div class="alert alert-info my-2">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>'+t('networkIpCalculationDescription')+'</span>'+
+                  '</div>' :
+                  ''
+                )+
+              '</div>'+
+              '<div class="col-6">'+
                 // LAN MAC address section
                 // Always show this section as it will always have an valid _id
                 '<div class="md-form input-entry input-group">'+
@@ -2106,6 +2092,27 @@ anlixDocumentReady.add(function() {
                     '<input class="form-control my-2 mr-2" type="text" ' +
                       'disabled="" value="' + device._id + '">' +
                 '</div>'+
+                (grantLanDnsEdit ?
+                  '<div class="md-form input-entry input-group">'+
+                    '<label class="active">' +
+                      t('dnsServerInfoTitle') +
+                    '</label>'+
+                    '<input class="form-control lan-dns-field my-2 mr-2" ' +
+                      'type="text" id="edit_lan_dns-'+index+'" '+
+                      'maxlength="48" value="'+device.lan_dns_servers+
+                      '" $REPLACE_LAN_EN>'+
+                    '</input>'+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>' :
+                  ''
+                )+
+                (grantLanDnsEdit ?
+                  '<div class="alert alert-info my-2 mr-2">'+
+                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
+                    '<span>'+t('dnsServerTip')+'</span>'+
+                  '</div>' :
+                  ''
+                )+
               '</div>'+
             '</div>'+
             '$REPLACE_LAN_INFO'+
