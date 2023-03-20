@@ -745,13 +745,12 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   if (device.current_diagnostic.type=='speedtest' &&
       device.current_diagnostic.in_progress
   ) {
+    if (device.current_diagnostic.customized &&
+        device.current_diagnostic.webhook_url) {
+      sendSpeedtestResultToCustomTrap(device, result);
+    }
     if (result.last_speedtest_error) {
       device.last_speedtest_error = result.last_speedtest_error;
-    } else if (device.current_diagnostic.customized ) {
-      // Don't care about waiting on sending to custom trap
-      if (device.current_diagnostic.webhook_url) {
-        sendSpeedtestResultToCustomTrap(device, result);
-      }
     } else {
       // We need to change some map keys
       let resultToStore = util.deepCopyObject(result);
