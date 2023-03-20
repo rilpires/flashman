@@ -466,6 +466,9 @@ const checkAndGetGenieField = function(
 acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
   let device;
 
+  // Check acs ID
+  if (!acsID) return;
+
   try {
     device = await DeviceModel.findOne({acs_id: acsID});
   } catch (error) {
@@ -608,9 +611,8 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
       }
 
       // Check data
-      if (!data) {
-        return;
-      }
+      if (!data) return;
+
 
       // Get all data
       Object.keys(assignFields).forEach((fieldName) => {
@@ -710,6 +712,9 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
  */
 acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
   let device;
+
+  // Check acs ID
+  if (!acsID) return;
 
   try {
     device = await DeviceModel.findOne({acs_id: acsID});
@@ -824,9 +829,7 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
       }
 
       // Check data
-      if (!data) {
-        return;
-      }
+      if (!data) return;
 
 
       // Get all data
@@ -851,14 +854,18 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
       });
 
 
+      // Try getting the mask
+      let mask = utilHandlers
+        .getMaskFromAddress(assignFields.prefixAddressField.value);
+
+      if (!mask) mask = '';
+
+
       // Check if needs to save the device. Made this way to reduce unnecessary
       // save calls
       if (saveDevice) {
         // Update last contact
         device.last_contact = Date.now();
-
-        let mask = utilHandlers
-          .getMaskFromAddress(assignFields.prefixAddressField.value);
 
         device.prefix_delegation_addr = assignFields.prefixAddressField.value;
 
@@ -883,13 +890,13 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
         }
       }
 
+
       // Always send the notification, even if it is empty
       sio.anlixSendLanInfoNotification(device._id, {
         prefix_delegation_addr: assignFields.prefixAddressField.value,
         prefix_delegation_mask: (
           assignFields.prefixMaskField.value ?
-          assignFields.prefixMaskField.value :
-          utilHandlers.getMaskFromAddress(assignFields.prefixAddressField.value)
+          assignFields.prefixMaskField.value : mask
         ),
         prefix_delegation_local: assignFields.prefixLocalAddressField.value,
       });
