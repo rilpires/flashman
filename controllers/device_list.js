@@ -2211,6 +2211,8 @@ deviceListController.setDeviceReg = function(req, res) {
         util.returnObjOrEmptyStr(content.lan_subnet).toString().trim();
       let lanNetmask =
         parseInt(util.returnObjOrNum(content.lan_netmask, 24));
+      let lanDnsServers =
+        util.returnObjOrEmptyStr(content.lan_dns_servers).toString().trim();
       let ssid =
         util.returnObjOrEmptyStr(content.wifi_ssid).toString().trim();
       let password =
@@ -2844,6 +2846,21 @@ deviceListController.setDeviceReg = function(req, res) {
                   new: lanNetmask,
                 };
                 matchedDevice.lan_netmask = lanNetmask;
+                updateParameters = true;
+              } else {
+                hasPermissionError = true;
+              }
+            }
+            if (content.hasOwnProperty('lan_dns_servers') &&
+                lanDnsServers !== '' && !matchedDevice.bridge_mode_enabled &&
+                lanDnsServers !== matchedDevice.lan_dns_servers) {
+              if (superuserGrant || role.grantLanEdit) {
+                changes.lan.dns_servers = lanDnsServers;
+                audit['lan_dns_servers'] = {
+                  old: matchedDevice.lan_dns_servers,
+                  new: lanDnsServers,
+                };
+                matchedDevice.lan_dns_servers = lanDnsServers;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
