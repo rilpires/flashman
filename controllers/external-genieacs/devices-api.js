@@ -91,6 +91,7 @@ const tr069Models = {
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zteH196Model: require('./cpe-models/zte-h196'),
+  zteF660Model: require('./cpe-models/zte-f660'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
@@ -268,7 +269,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'MR30G') {
     // Mercusys MR30G
     result = {success: true, cpe: tr069Models.mercusysMR30GModel};
-  } else if (modelName === 'F660') {
+  } else if (modelName === 'F660' && hwVersion === 'V7.1') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
   } else if (modelName === 'F6600') {
@@ -384,6 +385,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
+  } else if (modelName === 'F660' && hwVersion === 'V8.0') {
+    // ZTE F660
+    result = {success: true, cpe: tr069Models.zteF660Model};
   } else if (modelName === 'F673AV9') {
     // ZTE F673AV9
     result = {success: true, cpe: tr069Models.zteF673Model};
