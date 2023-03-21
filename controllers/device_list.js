@@ -4350,7 +4350,7 @@ deviceListController.getWanInfo = async function(request, response) {
   DeviceModel.findById(deviceId, function(error, matchedDevice) {
     // If an error occurred while finding the device
     if (error) {
-      return request.status(400).json({
+      return response.status(400).json({
         processed: 0,
         success: false,
       });
@@ -4358,7 +4358,7 @@ deviceListController.getWanInfo = async function(request, response) {
 
     // If could not find the device
     if (!matchedDevice) {
-      return request.status(404).json({
+      return response.status(404).json({
         success: false,
         message: t('cpeNotFound', {errorline: __line}),
       });
@@ -4413,7 +4413,7 @@ deviceListController.getLanInfo = async function(request, response) {
   DeviceModel.findById(deviceId, function(error, matchedDevice) {
     // If an error occurred while finding the device
     if (error) {
-      return request.status(400).json({
+      return response.status(400).json({
         processed: 0,
         success: false,
       });
@@ -4421,7 +4421,7 @@ deviceListController.getLanInfo = async function(request, response) {
 
     // If could not find the device
     if (!matchedDevice) {
-      return request.status(404).json({
+      return response.status(404).json({
         success: false,
         message: t('cpeNotFound', {errorline: __line}),
       });
