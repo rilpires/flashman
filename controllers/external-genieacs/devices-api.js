@@ -68,6 +68,7 @@ const tr069Models = {
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG1426MAModel: require('./cpe-models/nokia-g1426ma'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
+  parksFiberlink501: require('./cpe-models/parks-fiberlink-501'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
   raisecomRevNModel: require('./cpe-models/raisecom-ht803g-rev-n'),
   raisecomRevTModel: require('./cpe-models/raisecom-ht803g-rev-t'),
@@ -78,6 +79,7 @@ const tr069Models = {
   tplinkArcherC6: require('./cpe-models/tplink-archer-c6'),
   tplinkArcherC5: require('./cpe-models/tplink-archer-c5'),
   tplinkEC220G5V2Model: require('./cpe-models/tplink-ec220g5-v2'),
+  tplinkEC220G5V2dot2Model: require('./cpe-models/tplink-ec220g5-v2.2'),
   tplinkEC220G5V3Model: require('./cpe-models/tplink-ec220g5-v3'),
   tplinkEC225G5Model: require('./cpe-models/tplink-ec225g5'),
   tplinkEX220Model: require('./cpe-models/tplink-ex220'),
@@ -90,6 +92,7 @@ const tr069Models = {
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
   zteH196Model: require('./cpe-models/zte-h196'),
+  zteF660Model: require('./cpe-models/zte-f660'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
@@ -267,7 +270,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'MR30G') {
     // Mercusys MR30G
     result = {success: true, cpe: tr069Models.mercusysMR30GModel};
-  } else if (modelName === 'F660') {
+  } else if (modelName === 'F660' && hwVersion === 'V7.1') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
   } else if (modelName === 'F6600') {
@@ -314,6 +317,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     result = {success: true, cpe: tr069Models.nokiaG2425Model};
+  } else if (modelName === 'Fiberlink501') {
+    // Parks Fiberlink 501
+    result = {success: true, cpe: tr069Models.parksFiberlink501};
   } else if (modelName === 'P20') {
     // Phyhome P20
     result = {success: true, cpe: tr069Models.phyhomeP20Model};
@@ -341,6 +347,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'Archer C6') {
     // TP-Link Archer C6
     result = {success: true, cpe: tr069Models.tplinkArcherC6};
+  } else if (modelName === 'EC220-G5' && hwVersion.includes('v2.2')) {
+    // TP-Link EC220-G5 v2.2
+    result = {success: true, cpe: tr069Models.tplinkEC220G5V2dot2Model};
   } else if (modelName === 'EC220-G5' && hwVersion.includes('v2')) {
     // TP-Link EC220-G5 v2
     result = {success: true, cpe: tr069Models.tplinkEC220G5V2Model};
@@ -380,6 +389,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
+  } else if (modelName === 'F660' && hwVersion === 'V8.0') {
+    // ZTE F660
+    result = {success: true, cpe: tr069Models.zteF660Model};
   } else if (modelName === 'F673AV9') {
     // ZTE F673AV9
     result = {success: true, cpe: tr069Models.zteF673Model};
