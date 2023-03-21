@@ -3983,6 +3983,37 @@ deviceListController.getLanDevices = async function(req, res) {
   }
 };
 
+deviceListController.getLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    function(err, matchedDevice) {
+      let device;
+      let responseDNSServers = '';
+
+      if (err) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeFindError', {errorline: __line}),
+        });
+      }
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        device = matchedDevice[0];
+      } else {
+        return res.status(200).json({success: false,
+                                   message: t('cpeNotFound',
+                                    {errorline: __line})});
+      }
+      // Get LAN DNS servers data
+      responseDNSServers = device.lan_dns_servers;
+      // Get permissions to get max LAN DNS servers router accepts
+      let permissions = DeviceVersion.devicePermissions(device);
+      return res.status(200).json({
+      success: true,
+      lan_dns_servers_list: responseDNSServers.split(','),
+      max_dns: permissions.grantLanDnsLimit,
+    });
+  });
+};
+
 deviceListController.getSiteSurvey = function(req, res) {
   DeviceModel.findById(req.params.id.toUpperCase(),
   function(err, matchedDevice) {

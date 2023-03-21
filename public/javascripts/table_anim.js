@@ -385,6 +385,10 @@ anlixDocumentReady.add(function() {
     $('#upgrade-scheduler').modal('show');
   });
 
+  $(document).on('click', '#btn-config-lan-dns-modal', function(event) {
+    $('#config-lan-dns-modal.modal').modal('show');
+  });
+
   // Refresh table content
   $(document).on('click', '#refresh-table-content', function(event) {
     let pageNum = parseInt($('#curr-page-link').html());
@@ -2102,14 +2106,14 @@ anlixDocumentReady.add(function() {
                       'maxlength="48" value="'+device.lan_dns_servers+
                       '" $REPLACE_LAN_EN>'+
                     '</input>'+
+                    '<div class="input-group-append">'+
+                      '<button class="btn btn-primary btn-sm px-3"' +
+                          'type="button" id="btn-config-lan-dns-modal" '+
+                          'data-index='+index+'>'+
+                        '<i class="fas fa-pen fa-lg"></i>'+
+                      '</button>'+
+                    '</div>'+
                     '<div class="invalid-feedback"></div>'+
-                  '</div>' :
-                  ''
-                )+
-                (grantLanDnsEdit ?
-                  '<div class="alert alert-info my-2 mr-2">'+
-                    '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
-                    '<span>'+t('dnsServerTip')+'</span>'+
                   '</div>' :
                   ''
                 )+

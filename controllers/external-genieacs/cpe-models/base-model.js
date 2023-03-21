@@ -80,6 +80,7 @@ basicCPEModel.modelPermissions = function() {
       sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
       dnsServersWrite: true, // can change LAN DNS servers
+      dnsServersLimit: 1, // Number of DNS servers accepted by the router
     },
     wan: {
       allowReadMacAddress: true, // can read WAN MAC address at flashman's wan
