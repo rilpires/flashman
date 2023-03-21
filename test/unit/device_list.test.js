@@ -1754,4 +1754,250 @@ describe('Controllers - Device List', () => {
   });
 
 
+  // getWanInfo
+  describe('getWanInfo', () => {
+    // Invalid device
+    test('Invalid device', async () => {
+      // Mocks
+      testUtils.common.mockDevices(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getWanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(404);
+      expect(response.body.success).toBe(false);
+    });
+
+
+    // Empty device
+    test('Empty device', async () => {
+      // Mocks
+      testUtils.common.mockDevices({_id: '1234'}, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getWanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_gateway_v4).toBe('');
+      expect(response.body.default_gateway_v6).toBe('');
+      expect(response.body.dns_server).toBe('');
+      expect(response.body.pppoe_mac).toBe('');
+      expect(response.body.pppoe_ip).toBe('');
+      expect(response.body.ipv4_address).toBe('');
+      expect(response.body.ipv4_mask).toBe('');
+      expect(response.body.ipv6_address).toBe('');
+      expect(response.body.ipv6_mask).toBe('');
+    });
+
+
+    // Full report - pppoe
+    test('Full report - pppoe', async () => {
+      // Mocks
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0],
+        {
+          connection_type: 'pppoe',
+          default_gateway_v4: '192.168.0.1',
+          default_gateway_v6: '2804::a1',
+          dns_server: '8.8.8.8',
+          pppoe_mac: 'aa:bb:cc:dd:ee:ff',
+          pppoe_ip: '192.168.0.2',
+          wan_ip: '192.168.0.3',
+          wan_ipv4_mask: 15,
+          wan_ipv6: '2804::a2',
+          wan_ipv6_mask: 45,
+        },
+      );
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getWanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_gateway_v4).toBe(device.default_gateway_v4);
+      expect(response.body.default_gateway_v6).toBe(device.default_gateway_v6);
+      expect(response.body.dns_server).toBe(device.dns_server);
+      expect(response.body.pppoe_mac).toBe(device.pppoe_mac);
+      expect(response.body.pppoe_ip).toBe(device.pppoe_ip);
+      expect(response.body.ipv4_address).toBe(device.wan_ip);
+      expect(response.body.ipv4_mask).toBe(device.wan_ipv4_mask);
+      expect(response.body.ipv6_address).toBe(device.wan_ipv6);
+      expect(response.body.ipv6_mask).toBe(device.wan_ipv6_mask);
+    });
+
+
+    // Full report - dhcp
+    test('Full report - dhcp', async () => {
+      // Mocks
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0],
+        {
+          connection_type: 'dhcp',
+          default_gateway_v4: '192.168.0.1',
+          default_gateway_v6: '2804::a1',
+          dns_server: '8.8.8.8',
+          pppoe_mac: 'aa:bb:cc:dd:ee:ff',
+          pppoe_ip: '192.168.0.2',
+          wan_ip: '192.168.0.3',
+          wan_ipv4_mask: 15,
+          wan_ipv6: '2804::a2',
+          wan_ipv6_mask: 45,
+        },
+      );
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getWanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_gateway_v4).toBe(device.default_gateway_v4);
+      expect(response.body.default_gateway_v6).toBe(device.default_gateway_v6);
+      expect(response.body.dns_server).toBe(device.dns_server);
+      expect(response.body.pppoe_mac).toBe('');
+      expect(response.body.pppoe_ip).toBe('');
+      expect(response.body.ipv4_address).toBe(device.wan_ip);
+      expect(response.body.ipv4_mask).toBe(device.wan_ipv4_mask);
+      expect(response.body.ipv6_address).toBe(device.wan_ipv6);
+      expect(response.body.ipv6_mask).toBe(device.wan_ipv6_mask);
+    });
+  });
+
+
+  // getLanInfo
+  describe('getLanInfo', () => {
+    // Invalid device
+    test('Invalid device', async () => {
+      // Mocks
+      testUtils.common.mockDevices(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getLanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(404);
+      expect(response.body.success).toBe(false);
+    });
+
+
+    // Empty device
+    test('Empty device', async () => {
+      // Mocks
+      testUtils.common.mockDevices({_id: '1234'}, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getLanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.prefix_delegation_addr).toBe('');
+      expect(response.body.prefix_delegation_mask).toBe('');
+      expect(response.body.prefix_delegation_local).toBe('');
+    });
+
+
+    // Full report - pppoe
+    test('Full report - pppoe', async () => {
+      // Mocks
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0],
+        {
+          connection_type: 'pppoe',
+          prefix_delegation_addr: '2804::a5',
+          prefix_delegation_mask: '76',
+          prefix_delegation_local: '2804::a6',
+        },
+      );
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getLanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.prefix_delegation_addr)
+        .toBe(device.prefix_delegation_addr);
+      expect(response.body.prefix_delegation_mask)
+        .toBe(device.prefix_delegation_mask);
+      expect(response.body.prefix_delegation_local)
+        .toBe(device.prefix_delegation_local);
+    });
+
+
+    // Full report - dhcp
+    test('Full report - dhcp', async () => {
+      // Mocks
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0],
+        {
+          connection_type: 'dhcp',
+          prefix_delegation_addr: '2804::a5',
+          prefix_delegation_mask: '76',
+          prefix_delegation_local: '2804::a6',
+        },
+      );
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getLanInfo,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.prefix_delegation_addr)
+        .toBe(device.prefix_delegation_addr);
+      expect(response.body.prefix_delegation_mask)
+        .toBe(device.prefix_delegation_mask);
+      expect(response.body.prefix_delegation_local)
+        .toBe(device.prefix_delegation_local);
+    });
+  });
 });

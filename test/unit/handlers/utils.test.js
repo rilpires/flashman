@@ -137,6 +137,104 @@ describe('Utils Handler Tests', () => {
       expect(result).toBe(null);
     });
   });
+
+
+  // traverseNestedKey
+  describe('traverseNestedKey', () => {
+    // Invalid data
+    test('Invalid data', () => {
+      // Execute
+      let result = utilHandlers.traverseNestedKey(null, '123456');
+
+      // Validate
+      expect(result.success).toBe(false);
+    });
+
+
+    // Invalid key
+    test('Invalid key', () => {
+      // Execute
+      let result = utilHandlers.traverseNestedKey({
+        teste: '123',
+        teste2: '456',
+      }, '');
+
+      // Validate
+      expect(result.success).toBe(false);
+    });
+
+
+    // No key in data
+    test('No key in data', () => {
+      // Execute
+      let result = utilHandlers.traverseNestedKey({
+        teste: '123',
+        teste2: '456',
+      }, 'teste3.teste4');
+
+      // Validate
+      expect(result.success).toBe(false);
+    });
+
+
+    // Valid key and data
+    test('Valid key and data', () => {
+      let data = {
+        teste: {teste2: '456'},
+        teste3: {teste2: '123'},
+      };
+
+      // Execute
+      let result = utilHandlers.traverseNestedKey(data, 'teste.teste2');
+
+      // Validate
+      expect(result.success).toBe(true);
+      expect(result.key).toBe('teste.teste2');
+      expect(result.value).toBe('456');
+    });
+
+
+    // Multiple keys
+    test('Multiple keys', () => {
+      let data = {
+        teste: {
+          0: {teste2: 'abc'},
+          1: {teste2: '123'},
+          2: {teste2: '456'},
+          3: {teste2: '789'},
+          4: {teste2: '012'},
+        },
+      };
+
+      // Execute
+      let result = utilHandlers.traverseNestedKey(data, 'teste.*.teste2');
+
+      // Validate
+      expect(result.success).toBe(true);
+      expect(result.key).toBe('teste.0.teste2');
+      expect(result.value).toBe('abc');
+    });
+
+
+    // Multiple keys - Last index
+    test('Multiple keys - Last index', () => {
+      let data = {
+        teste: {
+          0: {teste2: 'abc'},
+          1: {teste2: '123'},
+          2: {teste2: '456'},
+          3: {teste2: '789'},
+          4: {teste2: '012'},
+        },
+      };
+
+      // Execute
+      let result = utilHandlers.traverseNestedKey(data, 'teste.*.teste2', true);
+
+      // Validate
+      expect(result.success).toBe(true);
+      expect(result.key).toBe('teste.4.teste2');
+      expect(result.value).toBe('012');
     });
   });
 });
