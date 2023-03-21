@@ -2119,7 +2119,7 @@ deviceListController.ensureBssidCollected = async function(
     // It might take some time for some CPEs to enable their Wi-Fi interface
     // after the command is sent. Since the BSSID is only available after the
     // interface is up, we need to wait here to ensure we get a valid read
-    await new Promise((r)=>setTimeout(r, 4000));
+    await util.sleep(4000);
     const bssidsObj = await acsMeshDeviceHandler.getMeshBSSIDFromGenie(
       device, targetMode,
     );

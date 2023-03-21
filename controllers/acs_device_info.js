@@ -624,34 +624,6 @@ const createRegistry = async function(req, cpe, permissions) {
  */
 acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
-
-/*
- *  Description:
- *    This function returns a promise and only resolves when the time in
- *    miliseconds timeout after calling this function.
- *
- *  Inputs:
- *    miliseconds - Amount of time in miliseconds to sleep
- *
- *  Outputs:
- *    promise - The promise that is only resolved when the timer ends.
- *
- */
-const sleep = function(miliseconds) {
-  let promise = new Promise(
-    (resolve) => setTimeout(resolve, miliseconds),
-  );
-
-  return promise;
-};
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testSleep = sleep;
-
-
-
 /*
  *  Description:
  *    This function calls an async function (func) after delayTime. If it fails,
@@ -716,7 +688,7 @@ const delayExecutionGenie = async function(
     }
 
     // Wait until timeout sleepTime timer
-    await sleep(sleepTime);
+    await utilHandlers.sleep(sleepTime);
 
     // Double the timer
     sleepTime = 2 * sleepTime;

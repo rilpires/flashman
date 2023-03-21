@@ -302,6 +302,26 @@ utilHandlers.getTr069CACert = async function() {
   return fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
 };
 
+/*
+ *  Description:
+ *    This function returns a promise and only resolves when the time in
+ *    miliseconds timeout after calling this function.
+ *
+ *  Inputs:
+ *    miliseconds - Amount of time in miliseconds to sleep
+ *
+ *  Outputs:
+ *    promise - The promise that is only resolved when the timer ends.
+ *
+ */
+utilHandlers.sleep = function(miliseconds) {
+  let promise = new Promise(
+    (resolve) => setTimeout(resolve, miliseconds),
+  );
+
+  return promise;
+};
+
 /* ****Functions for test utilities**** */
 
 utilHandlers.errorHandler = function(message) {
