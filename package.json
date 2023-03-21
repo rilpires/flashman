@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest --forceExit test/unit/*",
-    "bb-test": "jest --runInBand --detectOpenHandles test/black-box/*",
+    "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
+    "bb-test": "jest --forceExit --runInBand --detectOpenHandles test/black-box/*",
     "build": "webpack --config webpack.prod.js",
     "gen-doc": "jsdoc --configure jsdoc.config.json --verbose",
     "gen-test-doc": "jsdoc --configure jsdoc.test.config.json --verbose"
@@ -95,7 +96,6 @@
   "devDependencies": {
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
-    "@shelf/jest-mongodb": "^2.2.1",
     "babel-loader": "^8.2.2",
     "clean-css-cli": "^4.3.0",
     "copy-webpack-plugin": "~9.1.0",
@@ -110,6 +110,7 @@
     "jsdoc": "^4.0.2",
     "jsdoc-to-markdown": "^8.0.0",
     "mockingoose": "https://github.com/anlix-io/mockingoose.git",
+    "@anlix-io/genieacs-sim": "1.0.0",
     "mqtt": "1.14.0",
     "nock": "^13.3.0",
     "nodemon": "^2.0.3",
