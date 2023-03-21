@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.68.0",
+	"latest_version": "2.68.1",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,16 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.68.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+		],
+		"fixes": [
+			"Consertamos um bug inserido na 2.68.0 que falhava na identificação de uma ZTE F660 com modelo de hardware 7.1"
+		],
+		"improvements": [],
+		"features": []
 	},
 	"2.68.0": {
 		"custom_firmware_compatibilities": [],
