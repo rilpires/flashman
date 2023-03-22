@@ -59,16 +59,18 @@ let syncRateControl = new Map();
 
 // This is used for inform only. We are always calling Config.findOne, but
 // this could be easily cached, with no need to call mongo
-const informCachedConfig = async function() {
+let cachedConfigValidity = null;
+let cachedConfig = null;
+const getCachedConfig = async function() {
   let now = Date.now();
-  if (!this.config || !this.expires_on || now > this.expires_on ) {
-    this.config = await Config.findOne(
+  if (!cachedConfig || !cachedConfigValidity || now > cachedConfigValidity ) {
+    cachedConfig = await Config.findOne(
       {is_default: true},
       {tr069: true},
     ).lean();
-    this.expires_on = now + 60000;
+    cachedConfigValidity = now + 60000;
   }
-  return this.config;
+  return cachedConfig;
 };
 
 const addRCSync = function(acsID) {
@@ -792,7 +794,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   // Get the config
   // From now on, everything needs the config
   try {
-    config = await informCachedConfig();
+    config = await getCachedConfig();
   } catch (error) {
     console.log('Error getting config in function informDevice: ' + error);
   }
