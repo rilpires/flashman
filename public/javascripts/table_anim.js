@@ -6,7 +6,9 @@ import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
 import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
-import {setConfigStorage, getConfigStorage} from './session_storage.js';
+import {
+  setConfigStorage, getConfigStorage, deleteDNSServersList,
+} from './session_storage.js';
 import Stepper from 'bs-stepper';
 
 const t = i18next.t;
@@ -387,6 +389,10 @@ anlixDocumentReady.add(function() {
 
   $(document).on('click', '#btn-config-lan-dns-modal', function(event) {
     $('#config-lan-dns-modal.modal').modal('show');
+  });
+
+  $(document).on('click', '#btn-edit-submit', function(event) {
+    deleteDNSServersList();
   });
 
   // Refresh table content
@@ -958,7 +964,7 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+
+        '<button class="btn btn-primary mx-0 id="btn-edit-submit'+
           meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+

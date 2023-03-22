@@ -23,7 +23,8 @@ const getDNSServers = function(event) {
         if (res.max_dns && res.max_dns > 0) {
           MAX_DNS_SERVERS = res.max_dns;
         }
-        if (res.lan_dns_servers_list) {
+        if (res.lan_dns_servers_list &&
+            getDNSServersList('dnsServersInfo') === null) {
           setDNSServersList(
             'dnsServersInfo',
             res.lan_dns_servers_list.slice(0, MAX_DNS_SERVERS),
