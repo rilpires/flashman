@@ -391,6 +391,10 @@ anlixDocumentReady.add(function() {
     $('#config-lan-dns-modal.modal').modal('show');
   });
 
+  $('#config-lan-dns-modal').on('hidden.bs.modal', function(event) {
+    deleteDNSServersList();
+  });
+
   $(document).on('click', '#btn-edit-submit', function(event) {
     deleteDNSServersList();
   });
