@@ -794,31 +794,6 @@ acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
 
 /**
- * This function returns a promise and only resolves when the time, in
- * miliseconds, timeout after calling this function.
- *
- * @memberof controllers/acsDeviceInfo
- *
- * @param {Integer} miliseconds - Amount of time in miliseconds to sleep.
- *
- * @return {Promise} The promise that is only resolved when the timer ends.
- *
- */
-const sleep = function(miliseconds) {
-  let promise = new Promise(
-    (resolve) => setTimeout(resolve, miliseconds),
-  );
-
-  return promise;
-};
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testSleep = sleep;
-
-
-/**
  * This function calls an async function (`func`) after `delayTime`. If it
  * fails, the `func` will be called again with twice the time it was executed.
  * It will repeat this process until the device exists in genie or the
