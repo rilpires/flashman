@@ -968,6 +968,7 @@ acsDeviceInfoController.requestSync = async function(device) {
   dataToFetch.lan = true;
   parameterNames.push(fields.lan.router_ip);
   parameterNames.push(fields.lan.subnet_mask);
+  parameterNames.push(fields.lan.dns_servers);
   // WiFi configuration fields
   dataToFetch.wifi2 = true;
   parameterNames.push(fields.wifi2.enable);
@@ -1202,6 +1203,9 @@ const fetchSyncResult = async function(
           data, lan.router_ip, useLastIndexOnWildcard);
         acsData.lan.subnet_mask = getFieldFromGenieData(
           data, lan.subnet_mask, useLastIndexOnWildcard,
+        );
+        acsData.lan.dns_servers = getFieldFromGenieData(
+          data, lan.dns_servers, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.wifi2) {

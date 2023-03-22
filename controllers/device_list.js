@@ -2406,6 +2406,10 @@ deviceListController.setDeviceReg = function(req, res) {
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
         }
+        if (content.hasOwnProperty('lan_dns_servers')) {
+          genericValidate(lanDnsServers, validator.validateDnsServers,
+                          'lan_dns_servers');
+        }
         if (bridgeEnabled && bridgeFixIP) {
           genericValidate(bridgeFixIP, validator.validateIP,
                           'bridge_fixed_ip');
