@@ -2,14 +2,13 @@
 /* global __line */
 
 import {anlixDocumentReady} from '../src/common.index.js';
-import {
-  setDNSServersList, getDNSServersList, deleteDNSServersList,
-} from './session_storage.js';
+import {setDNSServersList, getDNSServersList} from './session_storage.js';
 
 const t = i18next.t;
 
 let MAX_DNS_SERVERS = 3;
 let TARGET_INDEX = null;
+let LAN_SUBNET = null;
 
 const getDNSServers = function(event) {
   // Get device id
@@ -30,9 +29,13 @@ const getDNSServers = function(event) {
             res.lan_dns_servers_list.slice(0, MAX_DNS_SERVERS),
           );
         }
+        if (res.lan_subnet) {
+          LAN_SUBNET = res.lan_subnet;
+        }
         cannotAddNewDNSToggle();
         buildDNSServersTable();
         dnsServersTableToggle();
+        cannotRemoveAllAlertToggle(true);
       } else {
         swal.fire({
           icon: res.type,
@@ -79,6 +82,26 @@ const cannotAddNewDNSToggle = function() {
   }
 };
 
+const cannotRemoveAllAlertToggle = function(hide) {
+  if (hide) {
+    $('#cannot-remove-all-warning').hide();
+  } else {
+    $('#cannot-remove-all-warning').show();
+  }
+};
+
+const removeAllDNSFromTable = function() {
+  // Clears DNS Servers list
+  setDNSServersList('dnsServersInfo', []);
+  $('#config-lan-dns-table').empty();
+  // Add a new line with DNS = device's LAN IP
+  dnsServersTableToggle(true);
+  buildTableLine(LAN_SUBNET);
+  setDNSServersList('dnsServersInfo', [LAN_SUBNET]);
+  // Toggle warning
+  cannotRemoveAllAlertToggle(false);
+};
+
 const buildDNSServersTable = function() {
   $('#config-lan-dns-table').empty();
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
@@ -118,32 +141,6 @@ const buildTableLine = function(dns) {
     .addClass('bounceIn')
     .attr('data-id', dns),
   );
-};
-
-window.removeDNSFromTable = function(input) {
-  let dnsTable = $('#config-lan-dns-table');
-  let dns = input.dataset['id'];
-  let newDNSInfo = getDNSServersList('dnsServersInfo').filter(
-    (item) => (item != dns),
-  );
-  setDNSServersList('dnsServersInfo', newDNSInfo);
-  dnsTable.find('[data-id="' + dns + '"]').remove();
-  dnsServersTableToggle();
-  cannotAddNewDNSToggle();
-  // Update DNS type
-  dnsTable.find('tr').each(function(index) {
-    let dns = $(this).attr('data-id');
-    $(this).find('td:first-child span').html(
-      '<b>' + findDNSTypeFromTableIndex(index) + ': </b>' + dns,
-    );
-  });
-};
-
-const findDNSTypeFromTableIndex = function(index) {
-  return (index === 0) ? t('primaryDNS') :
-         (index === 1) ? t('secondaryDNS') :
-         (index === 2) ? t('tertiaryDNS') :
-         t('dnsServerAddress');
 };
 
 const addNewDNSServer = function(event) {
@@ -187,6 +184,35 @@ const addNewDNSServer = function(event) {
   }
 };
 
+window.removeDNSFromTable = function(input) {
+  let dnsTable = $('#config-lan-dns-table');
+  let dns = input.dataset['id'];
+  let newDNSInfo = getDNSServersList('dnsServersInfo').filter(
+    (item) => (item != dns),
+  );
+  setDNSServersList('dnsServersInfo', newDNSInfo);
+  dnsTable.find('[data-id="' + dns + '"]').remove();
+  dnsServersTableToggle();
+  cannotAddNewDNSToggle();
+  // Update DNS type
+  dnsTable.find('tr').each(function(index) {
+    let dns = $(this).attr('data-id');
+    $(this).find('td:first-child span').html(
+      '<b>' + findDNSTypeFromTableIndex(index) + ': </b>' + dns,
+    );
+  });
+  if (getDNSServersList('dnsServersInfo').length === 0) {
+    removeAllDNSFromTable();
+  }
+};
+
+const findDNSTypeFromTableIndex = function(index) {
+  return (index === 0) ? t('primaryDNS') :
+         (index === 1) ? t('secondaryDNS') :
+         (index === 2) ? t('tertiaryDNS') :
+         t('dnsServerAddress');
+};
+
 const setDNSServers = function() {
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
   if (TARGET_INDEX === undefined || TARGET_INDEX === null) {
@@ -201,8 +227,6 @@ const setDNSServers = function() {
     $('#edit_lan_dns-' + TARGET_INDEX).val(
       dnsServersInfo.slice(0, MAX_DNS_SERVERS).join(','),
     );
-    // Clear storage
-    deleteDNSServersList();
     // Close modal
     $('#config-lan-dns-modal.modal').modal('hide');
   }
@@ -217,15 +241,18 @@ anlixDocumentReady.add(function() {
   });
   // Remove all DNS servers from table
   $(document).on('click', '#config-lan-dns-remove-all', (event) => {
-    setDNSServersList('dnsServersInfo', []);
+    // It is not possible for the DNS field to be empty. If the user wants to
+    // delete all configured DNS servers, the DNS value will automatically be
+    // equal to the LAN IP
+    removeAllDNSFromTable();
     dnsServersTableToggle();
     cannotAddNewDNSToggle();
-    $('#config-lan-dns-table').empty();
   });
   // Add a new DNS server
   $(document).on('click', '#config-lan-dns-add-button', (event) => {
     cannotAddNewDNSToggle();
     addNewDNSServer(event);
+    cannotRemoveAllAlertToggle(true);
     cannotAddNewDNSToggle();
     $('#config-lan-dns-input').val('');
   });

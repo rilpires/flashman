@@ -243,6 +243,7 @@
 	"emptyDNSError": "¡El campo de DNS no puede estar vacío!",
 	"duplicatedDNS": "¡La dirección {{-dns}} ya está registrada!",
 	"configDnsServers": "Configurar Servidores de Dominio (DNS)",
+	"dnsCannotBeEmpty": "¡Cuidadoso! No es posible eliminar todos los servidores DNS configurados. Si desea continuar con esta acción, se configurará un servidor DNS que asume el mismo valor que la IP de la LAN.",
 	"prefixDelegationInfoTitle": "Delegación de Prefijo",
 	"ipv6PrefixDelegation": "Delegación de Prefijo IPv6",
 	"ipv6PrefixDelegationMask": "Máscara de Delegación de Prefijo IPv6",

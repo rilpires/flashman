@@ -1558,6 +1558,7 @@ anlixDocumentReady.add(function() {
           }
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
+          formAttr += ' data-lan-dns="'+device.lan_dns_servers+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+
             ((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';

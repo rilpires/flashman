@@ -4018,6 +4018,7 @@ deviceListController.getLanDNSServers = async function(req, res) {
       return res.status(200).json({
       success: true,
       lan_dns_servers_list: responseDNSServers.split(','),
+      lan_subnet: device.lan_subnet,
       max_dns: permissions.grantLanDnsLimit,
     });
   });
