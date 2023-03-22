@@ -153,9 +153,10 @@ const addNewDNSServer = function(event) {
   // The program flow should prevent this scenario from happening, but, to
   // prevent javascript injection, it performs this check
   if (dnsServersInfo.length > MAX_DNS_SERVERS) {
+    let plural = (MAX_DNS_SERVERS !== 1) ? 's' : '';
     swal.fire({
       icon: 'error',
-      title: t('maxThreeDnsServerAddresses'),
+      title: t('dnsLimitReached', {max: MAX_DNS_SERVERS, plural: plural}),
       confirmButtonColor: '#4db6ac',
     });
     return;
