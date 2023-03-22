@@ -270,7 +270,10 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'MR30G') {
     // Mercusys MR30G
     result = {success: true, cpe: tr069Models.mercusysMR30GModel};
-  } else if (modelName === 'F660' && hwVersion === 'V7.1') {
+  } else if (modelName === 'F660' && hwVersion.includes('V8.0')) {
+    // ZTE F660
+    result = {success: true, cpe: tr069Models.zteF660Model};
+  } else if (modelName === 'F660') {
     // Multilaser ZTE F660
     result = {success: true, cpe: tr069Models.multilaserF660Model};
   } else if (modelName === 'F6600') {
@@ -389,9 +392,6 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ZT199') {
     // ZTE ZT199
     result = {success: true, cpe: tr069Models.zteZT199Model};
-  } else if (modelName === 'F660' && hwVersion === 'V8.0') {
-    // ZTE F660
-    result = {success: true, cpe: tr069Models.zteF660Model};
   } else if (modelName === 'F673AV9') {
     // ZTE F673AV9
     result = {success: true, cpe: tr069Models.zteF673Model};

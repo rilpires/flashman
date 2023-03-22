@@ -882,7 +882,7 @@ acsDeviceInfoController.delayExecutionGenie = async function(
     }
 
     // Wait until timeout sleepTime timer
-    await sleep(sleepTime);
+    await utilHandlers.sleep(sleepTime);
 
     // Double the timer
     sleepTime = 2 * sleepTime;
@@ -919,12 +919,17 @@ acsDeviceInfoController.delayExecutionGenie = async function(
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
-  let config = null;
+  let config = undefined;
+  let device = undefined;
 
-  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
+  try {
+    device = await DeviceModel.findOne({acs_id: id});
+  } catch (error) {
+    console.log('Error getting device in informDevice: ('
+      + id +'):' + error);
     return res.status(500).json({success: false,
       message: t('cpeFindError', {errorline: __line})});
-  });
+  }
 
   let doFullSync = false;
   let doSync = false;
@@ -960,7 +965,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       {tr069: true},
     ).lean();
   } catch (error) {
-    console.log('Error getting config in function informDevice: ' + error);
+    console.log('Error getting config in informDevice: ' + error);
   }
 
   if (!config && !res.headersSent) {

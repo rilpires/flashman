@@ -7,6 +7,7 @@ const acsPortForwardHandler = require(
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
+const utilsHandlers = require('../../controllers/handlers/util');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const DeviceVersion = require('../../models/device_version');
 const DeviceModel = require('../../models/device');
@@ -424,17 +425,20 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
+      utilsHandlers.sleep = jest.fn().mockResolvedValue();
+
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 4555));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
+
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].type).toBe('danger');
       expect(res.json.mock.lastCall[0].message)
         .toMatch('task error');
       expect(audit.cpe).toHaveBeenCalledTimes(0);
-    }, 10000);
+    });
     test('CPE save error', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
