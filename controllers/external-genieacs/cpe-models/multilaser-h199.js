@@ -14,20 +14,36 @@ multilaserModel.modelPermissions = function() {
   permissions.features.stun = true;
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
+  permissions.features.hasIpv6Information = true;
+
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
+
   permissions.traceroute.maxProbesPerHop = 3;
   permissions.traceroute.protocol = 'ICMP';
+
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 550;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasMaskField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+  permissions.ipv6.hasPrefixDelegationMaskField = true;
+  permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
     100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140,
     149, 153, 157, 161, 165,
   ];
   permissions.wifi.bandAuto5 = false;
+
   permissions.mesh.objectExists = true;
+
   permissions.firmwareUpgrades = {
     'V9.1.0P1_MUL': ['V9.1.0P3N2_MUL', 'V9.1.0P4N1_MUL'],
     'V9.1.0P3N1_MUL': ['V9.1.0P4N1_MUL', 'V9.1.0P4N3_MUL'],
@@ -114,6 +130,39 @@ multilaserModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_ExternalIPv6Address';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_ExternalIPv6Address';
+
+  // Mask
+  fields.ipv6.mask = 'InternetGatewayDevice.Layer3Forwarding.' +
+    'X_ZTE-COM_IPv6Forwarding.2.PrefixLen';
+  fields.ipv6.mask_ppp = 'InternetGatewayDevice.Layer3Forwarding.' +
+    'X_ZTE-COM_IPv6Forwarding.2.PrefixLen';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_PD';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_PD';
+
+  // Mask
+  fields.ipv6.prefix_delegation_mask = 'InternetGatewayDevice.' +
+    'Layer3Forwarding.X_ZTE-COM_IPv6Forwarding.5.PrefixLen';
+  fields.ipv6.prefix_delegation_mask_ppp = 'InternetGatewayDevice.' +
+    'Layer3Forwarding.X_ZTE-COM_IPv6Forwarding.5.PrefixLen';
+
+  // Local Address
+  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice'+
+    '.Layer3Forwarding.X_ZTE-COM_IPv6Forwarding.3.DestIPPrefix';
+  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice'+
+    '.Layer3Forwarding.X_ZTE-COM_IPv6Forwarding.3.DestIPPrefix';
+
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceRssi';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
