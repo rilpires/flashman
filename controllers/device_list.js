@@ -4004,7 +4004,7 @@ deviceListController.getLanDNSServers = async function(req, res) {
       }
       // Get LAN DNS servers data
       if (typeof device.lan_dns_servers == 'undefined' ||
-          device.lan_dns_servers == 0) {
+          device.lan_dns_servers.length == 0) {
         responseDNSServers = '';
       } else {
         responseDNSServers = device.lan_dns_servers;
