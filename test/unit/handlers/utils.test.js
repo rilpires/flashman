@@ -41,7 +41,7 @@ describe('Utils Handler Tests', () => {
       utils.common.TEST_PARAMETERS,
     )('Invalid types and strings: %p', async (parameter) => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress(parameter);
+      let result = utilHandlers.getMaskFromAddress(parameter, false);
 
       // validate
       expect(result).toBe(null);
@@ -51,7 +51,7 @@ describe('Utils Handler Tests', () => {
     // Multiple /
     test('Multiple /', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('/////////////');
+      let result = utilHandlers.getMaskFromAddress('/////////////', false);
 
       // validate
       expect(result).toBe(null);
@@ -61,7 +61,7 @@ describe('Utils Handler Tests', () => {
     // Invalid number - Negative
     test('Invalid number - Negative', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/-1');
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/-1', false);
 
       // validate
       expect(result).toBe(null);
@@ -71,7 +71,30 @@ describe('Utils Handler Tests', () => {
     // Invalid number - Big
     test('Invalid number - Big', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/500');
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/500', false);
+
+      // validate
+      expect(result).toBe(null);
+    });
+
+
+    // Invalid number - Big 2
+    test('Invalid number - Big 2', () => {
+      // Execute
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/33', false);
+
+      // validate
+      expect(result).toBe(null);
+    });
+
+
+    // Invalid number - Big 3
+    test('Invalid number - Big 3', () => {
+      // Execute
+      let result = utilHandlers.getMaskFromAddress(
+        '2804:1234:5678::/200',
+        true,
+      );
 
       // validate
       expect(result).toBe(null);
@@ -81,7 +104,7 @@ describe('Utils Handler Tests', () => {
     // Okay IPv4
     test('Okay IPv4', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/24');
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/24', false);
 
       // validate
       expect(result).toBe('24');
@@ -91,7 +114,7 @@ describe('Utils Handler Tests', () => {
     // Okay IPv6
     test('Okay IPv6', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('2804:1234:5678::/56');
+      let result = utilHandlers.getMaskFromAddress('2804:1234:5678::/56', true);
 
       // validate
       expect(result).toBe('56');
@@ -101,7 +124,7 @@ describe('Utils Handler Tests', () => {
     // Limits - 0
     test('Limits - 0', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/0');
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/0', false);
 
       // validate
       expect(result).toBe(null);
@@ -111,17 +134,46 @@ describe('Utils Handler Tests', () => {
     // Limits - 1
     test('Limits - 1', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/1');
+      let result = utilHandlers.getMaskFromAddress('192.168.0.1/1', false);
 
       // validate
       expect(result).toBe('1');
     });
 
 
+    // Limits - 32
+    test('Limits - 32', () => {
+      // Execute
+      let result = utilHandlers.getMaskFromAddress(
+        '192.168.0.1/32',
+        false,
+      );
+
+      // validate
+      expect(result).toBe('32');
+    });
+
+
+    // Limits - 33
+    test('Limits - 33', () => {
+      // Execute
+      let result = utilHandlers.getMaskFromAddress(
+        '192.168.0.1/33',
+        false,
+      );
+
+      // validate
+      expect(result).toBe(null);
+    });
+
+
     // Limits - 128
     test('Limits - 128', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/128');
+      let result = utilHandlers.getMaskFromAddress(
+        '2804:1234:5678::/128',
+        true,
+      );
 
       // validate
       expect(result).toBe('128');
@@ -131,7 +183,10 @@ describe('Utils Handler Tests', () => {
     // Limits - 129
     test('Limits - 129', () => {
       // Execute
-      let result = utilHandlers.getMaskFromAddress('192.168.0.1/129');
+      let result = utilHandlers.getMaskFromAddress(
+        '2804:1234:5678::/129',
+        true,
+      );
 
       // validate
       expect(result).toBe(null);

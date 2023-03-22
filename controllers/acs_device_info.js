@@ -447,8 +447,10 @@ const createRegistry = async function(req, cpe, permissions) {
       // Try getting the mask from address
       let mask = utilHandlers.getMaskFromAddress(
         data.ipv6['prefix_address' + suffixPPPoE].value,
+        true,
       );
 
+      // If prefixAddress has '/', remove it
       prefixMask = (mask ? mask : '');
     }
 
@@ -2056,6 +2058,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       // Try getting the mask from address
       let mask = utilHandlers.getMaskFromAddress(
         data.ipv6['prefix_address' + suffixPPPoE].value,
+        true,
       );
 
       device.prefix_delegation_mask = (mask ? mask : '');

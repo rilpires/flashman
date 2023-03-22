@@ -861,7 +861,7 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
 
       // Try getting the mask
       let mask = utilHandlers
-        .getMaskFromAddress(assignFields.prefixAddressField.value);
+        .getMaskFromAddress(assignFields.prefixAddressField.value, true);
 
       if (!mask) mask = '';
 

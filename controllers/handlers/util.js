@@ -333,10 +333,11 @@ utilHandlers.catchDatabaseError = function(error) {
  * @memberof controllers/handlers/util
  *
  * @param {String} address - The IPv4 or IPv6 address.
+ * @param {Boolean} isIPv6 - If the field is IPv6 or not.
  *
  * @return {String | Null} The mask as `String` or `null`.
  */
-utilHandlers.getMaskFromAddress = function(address) {
+utilHandlers.getMaskFromAddress = function(address, isIPv6) {
   if (!address || address.constructor !== String || address.length <= 0) {
     return null;
   }
@@ -345,9 +346,12 @@ utilHandlers.getMaskFromAddress = function(address) {
   const mask = address.split('/')[1];
   if (!mask) return null;
 
+  let maskMax = 32;
+  if (isIPv6) maskMax = 128;
+
   // Check if the mask is a valid value
   const maskInteger = parseInt(mask, 10);
-  if (!maskInteger || maskInteger < 0 || maskInteger > 128) return null;
+  if (!maskInteger || maskInteger < 0 || maskInteger > maskMax) return null;
 
   return mask;
 };
