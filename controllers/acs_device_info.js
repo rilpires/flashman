@@ -451,6 +451,8 @@ const createRegistry = async function(req, cpe, permissions) {
       );
 
       // If prefixAddress has '/', remove it
+      prefixAddress = prefixAddress.split('/')[0];
+
       prefixMask = (mask ? mask : '');
     }
 
@@ -2060,6 +2062,10 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
         data.ipv6['prefix_address' + suffixPPPoE].value,
         true,
       );
+
+      // If prefix_delegation_addr has '/', remove it
+      device.prefix_delegation_addr =
+        device.prefix_delegation_addr.split('/')[0];
 
       device.prefix_delegation_mask = (mask ? mask : '');
     }

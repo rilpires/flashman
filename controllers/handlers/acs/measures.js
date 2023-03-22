@@ -650,7 +650,8 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
         // Update fields
         // Address
         device.wan_ip = assignFields.wanIPv4Field.value;
-        device.wan_ipv6 = assignFields.wanIPv6Field.value;
+        // Remove the mask if came with it
+        device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
 
         // Mask
         let mask = parseInt(assignFields.maskIPv4Field.value);
@@ -690,7 +691,8 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
         ipv4_address: assignFields.wanIPv4Field.value,
         ipv4_mask: assignFields.maskIPv4Field.value,
 
-        ipv6_address: assignFields.wanIPv6Field.value,
+        // Remove the mask if came with it
+        ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
         ipv6_mask: assignFields.maskIPv6Field.value,
 
         default_gateway_v4: assignFields.gatewayIPv4Field.value,
@@ -872,6 +874,9 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
         // Update last contact
         device.last_contact = Date.now();
 
+        // If prefixAddressField has '/', remove it
+        assignFields.prefixAddressField.value =
+          assignFields.prefixAddressField.value.split('/')[0];
         device.prefix_delegation_addr = assignFields.prefixAddressField.value;
 
         // If the mask field came empty, try using the one from the address

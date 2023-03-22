@@ -1183,7 +1183,7 @@ describe('Handlers/ACS/Measures Tests', () => {
         {
           ipv4_address: '1234/24',
           ipv4_mask: '56',
-          ipv6_address: '1234/24',
+          ipv6_address: '1234',
           ipv6_mask: '56',
 
           default_gateway_v4: '2341',
@@ -1275,7 +1275,7 @@ describe('Handlers/ACS/Measures Tests', () => {
         {
           ipv4_address: '1234/24',
           ipv4_mask: '56',
-          ipv6_address: '1234/24',
+          ipv6_address: '1234',
           ipv6_mask: '56',
 
           default_gateway_v4: '2341',
@@ -1899,7 +1899,7 @@ describe('Handlers/ACS/Measures Tests', () => {
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
         {
-          prefix_delegation_addr: '1234/24',
+          prefix_delegation_addr: '1234',
           prefix_delegation_mask: '24',
           prefix_delegation_local: '9012',
         },
@@ -1975,7 +1975,7 @@ describe('Handlers/ACS/Measures Tests', () => {
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
         {
-          prefix_delegation_addr: '1234/24',
+          prefix_delegation_addr: '1234',
           prefix_delegation_mask: '56',
           prefix_delegation_local: '9012',
         },
