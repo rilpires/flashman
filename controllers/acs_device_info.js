@@ -57,6 +57,20 @@ if (SYNCMAX > 0) {
 
 let syncRateControl = new Map();
 
+// This is used for inform only. We are always calling Config.findOne, but
+// this could be easily cached, with no need to call mongo
+const informCachedConfig = async function() {
+  let now = Date.now();
+  if (!this.config || !this.expires_on || now > this.expires_on ) {
+    this.config = await Config.findOne(
+      {is_default: true},
+      {tr069: true},
+    ).lean();
+    this.expires_on = now + 60000;
+  }
+  return this.config;
+};
+
 const addRCSync = function(acsID) {
   // RC Disabled
   if (SYNCMAX == 0) return true;
@@ -651,7 +665,6 @@ const sleep = function(miliseconds) {
 acsDeviceInfoController.__testSleep = sleep;
 
 
-
 /*
  *  Description:
  *    This function calls an async function (func) after delayTime. If it fails,
@@ -779,10 +792,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   // Get the config
   // From now on, everything needs the config
   try {
-    config = await Config.findOne(
-      {is_default: true},
-      {tr069: true},
-    ).lean();
+    config = await informCachedConfig();
   } catch (error) {
     console.log('Error getting config in function informDevice: ' + error);
   }
@@ -2199,7 +2209,7 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-const replaceWanFieldsWildcards = async function (
+const replaceWanFieldsWildcards = async function(
   acsID, wildcardFlag, fields, changes, task,
 ) {
   // WAN fields cannot have wildcards. So we query the genie database to get
