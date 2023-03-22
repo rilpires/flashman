@@ -97,9 +97,9 @@ zteModel.convertToDbm = function(power) {
 
 zteModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-  fields.web_admin_user = 'InternetGatewayDevice.DeviceInfo.' +
+  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
     'X_CMCC_TeleComAccount.Username';
-  fields.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
+    fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
     'X_CMCC_TeleComAccount.Password';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'X_CMCC_GponInterfaceConfig.Stats.BytesReceived';
