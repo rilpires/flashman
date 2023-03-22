@@ -2104,7 +2104,7 @@ anlixDocumentReady.add(function() {
                     '<input class="form-control lan-dns-field my-2 mr-2" ' +
                       'type="text" id="edit_lan_dns-'+index+'" '+
                       'maxlength="48" value="'+device.lan_dns_servers+
-                      '" $REPLACE_LAN_EN>'+
+                      '" $REPLACE_LAN_EN disabled>'+
                     '</input>'+
                     '<div class="input-group-append">'+
                       '<button class="btn btn-primary btn-sm px-3"' +

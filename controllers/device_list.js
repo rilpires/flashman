@@ -4003,7 +4003,12 @@ deviceListController.getLanDNSServers = async function(req, res) {
                                     {errorline: __line})});
       }
       // Get LAN DNS servers data
-      responseDNSServers = device.lan_dns_servers;
+      if (typeof device.lan_dns_servers == 'undefined' ||
+          device.lan_dns_servers == 0) {
+        responseDNSServers = '';
+      } else {
+        responseDNSServers = device.lan_dns_servers;
+      }
       // Get permissions to get max LAN DNS servers router accepts
       let permissions = DeviceVersion.devicePermissions(device);
       return res.status(200).json({

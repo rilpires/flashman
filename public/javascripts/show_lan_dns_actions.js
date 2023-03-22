@@ -2,7 +2,9 @@
 /* global __line */
 
 import {anlixDocumentReady} from '../src/common.index.js';
-import {setDNSServersList, getDNSServersList} from './session_storage.js';
+import {
+  setDNSServersList, getDNSServersList, deleteDNSServersList,
+} from './session_storage.js';
 
 const t = i18next.t;
 
@@ -19,7 +21,7 @@ const getDNSServers = function(event) {
     dataType: 'json',
     success: function(res) {
       if (res.success) {
-        if (res.max_dns) {
+        if (res.max_dns && res.max_dns > 0) {
           MAX_DNS_SERVERS = res.max_dns;
         }
         if (res.lan_dns_servers_list) {
@@ -65,7 +67,7 @@ const cannotAddNewDNSToggle = function() {
     // Cannot add
     $('#add-new-dns-section').hide();
     $('#cannot-add-new-dns-section').show();
-
+    // Update warning with correct max of dns servers
     let plural = (MAX_DNS_SERVERS !== 1) ? 's' : '';
     $('#max-dns-warning').text(
       t('dnsLimitReached', {max: MAX_DNS_SERVERS, plural: plural}),
@@ -80,7 +82,7 @@ const cannotAddNewDNSToggle = function() {
 const buildDNSServersTable = function() {
   $('#config-lan-dns-table').empty();
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
-  for (let i = 0; i < MAX_DNS_SERVERS; i++) {
+  for (let i = 0; i < dnsServersInfo.length; i++) {
     buildTableLine(dnsServersInfo[i]);
   }
 };
@@ -141,15 +143,15 @@ const findDNSTypeFromTableIndex = function(index) {
   return (index === 0) ? t('primaryDNS') :
          (index === 1) ? t('secondaryDNS') :
          (index === 2) ? t('tertiaryDNS') :
-         t('dnsServerAddress');;
+         t('dnsServerAddress');
 };
 
 const addNewDNSServer = function(event) {
   dnsServersTableToggle(true);
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
   const newDNS = $('#config-lan-dns-input').val();
-  // The function cannotAddNewDNSToggle should prevent the flow from getting
-  // this far. But, to prevent javascript injection, it performs this check
+  // The program flow should prevent this scenario from happening, but, to
+  // prevent javascript injection, it performs this check
   if (dnsServersInfo.length > MAX_DNS_SERVERS) {
     swal.fire({
       icon: 'error',
@@ -158,6 +160,8 @@ const addNewDNSServer = function(event) {
     });
     return;
   }
+  // It also shouldn't be possible to receive an invalid value as new DNS, but
+  // it also performs that check
   if (!newDNS || newDNS === '') {
     swal.fire({
       icon: 'error',
@@ -166,6 +170,7 @@ const addNewDNSServer = function(event) {
     });
     return;
   }
+  // Does not accept duplicate entries
   if (dnsServersInfo.filter((i) => i === newDNS).length > 0) {
     swal.fire({
       icon: 'error',
@@ -174,6 +179,7 @@ const addNewDNSServer = function(event) {
     });
     return;
   } else {
+    // Successful addition
     buildTableLine(newDNS);
     dnsServersInfo.push(newDNS);
     setDNSServersList('dnsServersInfo', dnsServersInfo);
@@ -190,9 +196,14 @@ const setDNSServers = function() {
     });
     return;
   } else {
+    // Changes the form referring to the device being edited
     $('#edit_lan_dns-' + TARGET_INDEX).val(
       dnsServersInfo.slice(0, MAX_DNS_SERVERS).join(','),
     );
+    // Clear storage
+    deleteDNSServersList();
+    // Close modal
+    $('#config-lan-dns-modal.modal').modal('hide');
   }
 };
 
@@ -218,6 +229,7 @@ anlixDocumentReady.add(function() {
     $('#config-lan-dns-input').val('');
   });
   // Submit button to apply changes
-  $(document).on('click', '#config-lan-dns-submit-button', (event) =>
-    setDNSServers(event));
+  $(document).on('click', '#config-lan-dns-submit-button', (event) => {
+    setDNSServers(event);
   });
+});
