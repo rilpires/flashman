@@ -38,11 +38,7 @@ const updateScheduler = require('../../controllers/update_scheduler');
 // Devices API
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
-let utils = {
-  common: {},
-  schedulerCommon: {},
-  devicesAPICommon: {},
-};
+
 // Mock the mqtts (avoid aedes)
 jest.mock('../../mqtts', () => {
   return {
@@ -52,6 +48,43 @@ jest.mock('../../mqtts', () => {
     getConnectedClients: () => [],
   };
 });
+
+
+let utils = {
+  common: {},
+  schedulerCommon: {},
+  devicesAPICommon: {},
+};
+
+
+// Constants
+/**
+ * The development Flashman host string.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.FLASHMAN_HOST = 'http://localhost:8000';
+
+/**
+ * The development Flashman authentication username.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_USER = 'admin';
+
+/**
+ * The development Flashman authentication password.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_PASS = 'flashman';
+
 
 /**
  * Array of test cases.
@@ -108,12 +141,62 @@ utils.common.TEST_PARAMETERS = [
  * @return {Response} The login response with the cookie to be setted.
  */
 utils.common.loginAsAdmin = async function() {
-  return (request('localhost:8000')
+  return (request(utils.common.FLASHMAN_HOST)
     .post('/login')
     .send({
-      name: 'admin',
-      password: 'landufrj123',
+      name: utils.common.BASIC_AUTH_USER,
+      password: utils.common.BASIC_AUTH_PASS,
     })
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Deletes the CPE passed to this function from Flashman.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} cpeID - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The login cookie.
+ *
+ * @return {Response} The delete response.
+ */
+utils.common.deleteCPE = async function(cpeID, cookie) {
+  return (request(utils.common.FLASHMAN_HOST)
+    .delete('/api/v2/device/delete/' + cpeID)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send()
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Sends the request to the route specified to Flashman, with the data passed.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} type - The type of request(`put`, `delete`, `get`,
+ * `post`...).
+ * @param {String} route - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The cookie login.
+ * @param {Object} data - The data to be sent to the route.
+ *
+ * @return {Response} The response.
+ */
+utils.common.sendRequest = async function(type, route, cookie, data) {
+  let flashmanRequest = request(utils.common.FLASHMAN_HOST);
+
+  return (await flashmanRequest[type](route)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send(data)
     .catch((error) => console.log(error))
   );
 };
