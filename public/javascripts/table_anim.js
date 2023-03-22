@@ -2059,14 +2059,14 @@ anlixDocumentReady.add(function() {
               '<div class="col-6">'+
                 '<div class="md-form input-entry input-group">'+
                   '<label class="active">'+
-                    (grantLanGwEdit ? t('cpeIp') : t('networkIp')) +
+                    (grantLanGwEdit ? t('cpeIp') : t('networkIp'))+
                   '</label>'+
-                    '<input class="form-control my-2 ip-mask-field" ' +
-                      'type="text" id="edit_lan_subnet-'+index+'" '+
-                      'maxlength="15" value="'+device.lan_subnet+
-                      '" $REPLACE_LAN_EN>'+
-                    '</input>'+
-                    '<div class="invalid-feedback"></div>'+
+                  '<input class="form-control my-2 ip-mask-field" ' +
+                    'type="text" id="edit_lan_subnet-'+index+'" '+
+                    'maxlength="15" value="'+device.lan_subnet+
+                    '" $REPLACE_LAN_EN>'+
+                  '</input>'+
+                  '<div class="invalid-feedback"></div>'+
                 '</div>'+
                 '<div class="md-form input-group">'+
                   '<div class="md-selectfield form-control my-0">'+
@@ -2074,9 +2074,9 @@ anlixDocumentReady.add(function() {
                     '<select class="browser-default md-select my-0" ' +
                       'type="text"  id="edit_lan_netmask-'+index+'" '+
                       'maxlength="15" $REPLACE_LAN_EN>'+
-                        '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
-                        '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
-                        '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
+                      '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
+                      '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
+                      '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
                     '</select>'+
                   '</div>'+
                 '</div>'+
