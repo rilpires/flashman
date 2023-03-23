@@ -22,8 +22,6 @@ const updateSchedulerCommon = require(
 );
 const DeviceModel = require('../../models/device');
 
-const DeviceModel = require('../../models/device');
-
 const http = require('http');
 const DeviceVersion = require('../../models/device_version');
 const t = require('../../controllers/language').i18next.t;
