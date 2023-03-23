@@ -607,7 +607,7 @@ InternetGatewayDevice.ManagementServer.NATDetected,false,2022-10-14T15:17:08.064
 InternetGatewayDevice.ManagementServer.ParameterKey,false,2022-10-14T15:17:08.064Z,false,2022-10-14T15:17:08.064Z,"",xsd:string,2022-10-14T17:03:36.149Z,,,,
 InternetGatewayDevice.ManagementServer.Password,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"",,,,,,
 InternetGatewayDevice.ManagementServer.PeriodicInformEnable,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"",,,,,,
-InternetGatewayDevice.ManagementServer.PeriodicInformInterval,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"120",xsd:unsignedInt,2022-10-14T16:53:35.880Z,,,,
+InternetGatewayDevice.ManagementServer.PeriodicInformInterval,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"60",xsd:unsignedInt,2022-10-14T16:53:35.880Z,,,,
 InternetGatewayDevice.ManagementServer.PeriodicInformTime,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"",,,,,,
 InternetGatewayDevice.ManagementServer.STUNEnable,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"false",xsd:boolean,2022-10-14T16:53:35.880Z,,,,
 InternetGatewayDevice.ManagementServer.STUNMaximumKeepAlivePeriod,false,2022-10-14T15:17:08.064Z,true,2022-10-14T15:17:08.064Z,"",,,,,,
