@@ -18,6 +18,7 @@ const acsMeshDeviceHandler = require('../../controllers/handlers/acs/mesh.js');
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
 );
+const DeviceModel = require('../../models/device');
 
 const t = require('../../controllers/language').i18next.t;
 
@@ -677,6 +678,12 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => {
           return {success: true, executed: true, message: 'task success'};
       });
+
+      // We are not testing the updateInfo in this test
+      acsDeviceInfoController.updateInfo = jest.fn().mockResolvedValue();
+
+      // Mock the generic save (workaround from new DeviceModel)
+      DeviceModel.prototype.save = jest.fn();
     });
 
     // Validate createRegistry - Receives invalid value for field
