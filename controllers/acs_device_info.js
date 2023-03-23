@@ -69,9 +69,9 @@ let bulkInformDeviceUpdate = async function() {
   metricsApi.observeDeviceBulkSave(bulkInformUpdateQueue.length);
   bulkInformUpdateQueue = [];
 };
-if (bulkInformUpdateIntervalMs) {
-  setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);
-}
+//if (bulkInformUpdateIntervalMs) {
+//  setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);
+//}
 
 // Bulk inform
 let inputIdQueue = [];
