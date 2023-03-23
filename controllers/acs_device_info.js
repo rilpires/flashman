@@ -22,6 +22,7 @@ const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
 const http = require('http');
+const metricsApi = require('./handlers/metrics/custom_metrics');
 const t = require('./language').i18next.t;
 
 
@@ -65,6 +66,7 @@ let bulkInformDeviceUpdate = async function() {
   await DeviceModel.bulkSave(bulkInformUpdateQueue).catch(function(err) {
     console.error('Error on bulkInformDeviceUpdate:', err);
   });
+  metricsApi.observeDeviceBulkSave(bulkInformUpdateQueue.length);
   bulkInformUpdateQueue = [];
 };
 setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);

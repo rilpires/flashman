@@ -36,6 +36,12 @@ let metrics = {
     help: 'Pushed tasks to tasks-api queue',
     labelNames: ['task_name'],
   }),
+  flm_bulk_save_amount: new promClient.Summary({
+    name: 'flm_bulk_insert_amount',
+    help: 'How many devices were updated together on bulkSaves',
+    percentiles: [0.1, 0.5, 0.9],
+    labelNames: [],
+  }),
 };
 
 // Exported wrappers for usage out there
@@ -47,6 +53,9 @@ let metricsApi = {
   addedTask: function(taskName) {
     metrics.flm_tasks_api
       .inc({'task_name': taskName});
+  },
+  observeDeviceBulkSave: function(amount) {
+    metrics.flm_bulk_insert_amount.observe(amount);
   },
 
   // Below functions register a metric with a provided collector function
