@@ -569,6 +569,9 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
       fieldObject.field = fields.wan[fieldObject.path + suffixPPPoE];
     }
 
+    // If the field does not exist, continue to the next field
+    if (!fieldObject.field) return;
+
     // If projection is not empty, add a comma
     if (projection) projection += ',';
 

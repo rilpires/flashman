@@ -1097,32 +1097,57 @@ acsDeviceInfoController.requestSync = async function(device) {
   if (permissions.grantWanLanInformation) {
     // IPv4 Mask
     if (cpePermissions.wan.hasIpv4MaskField) {
-      parameterNames.push(fields.wan.mask_ipv4);
-      parameterNames.push(fields.wan.mask_ipv4_ppp);
+      if (fields.wan.mask_ipv4) {
+        parameterNames.push(fields.wan.mask_ipv4);
+      }
+
+      if (fields.wan.mask_ipv4_ppp) {
+        parameterNames.push(fields.wan.mask_ipv4_ppp);
+      }
     }
 
     // Remote IP Address
     if (cpePermissions.wan.hasIpv4RemoteAddressField) {
-      parameterNames.push(fields.wan.remote_address);
-      parameterNames.push(fields.wan.remote_address_ppp);
+      if (fields.wan.remote_address) {
+        parameterNames.push(fields.wan.remote_address);
+      }
+
+      if (fields.wan.remote_address_ppp) {
+        parameterNames.push(fields.wan.remote_address_ppp);
+      }
     }
 
     // Remote MAC
     if (cpePermissions.wan.hasIpv4RemoteMacField) {
-      parameterNames.push(fields.wan.remote_mac);
-      parameterNames.push(fields.wan.remote_mac_ppp);
+      if (fields.wan.remote_mac) {
+        parameterNames.push(fields.wan.remote_mac);
+      }
+
+      if (fields.wan.remote_mac_ppp) {
+        parameterNames.push(fields.wan.remote_mac_ppp);
+      }
     }
 
     // IPv4 Default Gateway
     if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
-      parameterNames.push(fields.wan.default_gateway);
-      parameterNames.push(fields.wan.default_gateway_ppp);
+      if (fields.wan.default_gateway) {
+        parameterNames.push(fields.wan.default_gateway);
+      }
+
+      if (fields.wan.default_gateway_ppp) {
+        parameterNames.push(fields.wan.default_gateway_ppp);
+      }
     }
 
     // DNS Server
     if (cpePermissions.wan.hasDnsServerField) {
-      parameterNames.push(fields.wan.dns_servers);
-      parameterNames.push(fields.wan.dns_servers_ppp);
+      if (fields.wan.dns_servers) {
+        parameterNames.push(fields.wan.dns_servers);
+      }
+
+      if (fields.wan.dns_servers_ppp) {
+        parameterNames.push(fields.wan.dns_servers_ppp);
+      }
     }
   }
 
@@ -1160,38 +1185,68 @@ acsDeviceInfoController.requestSync = async function(device) {
     // Get all fields that can be requested
     // Address
     if (cpePermissions.ipv6.hasAddressField) {
-      parameterNames.push(fields.ipv6.address);
-      parameterNames.push(fields.ipv6.address_ppp);
+      if (fields.ipv6.address) {
+        parameterNames.push(fields.ipv6.address);
+      }
+
+      if (fields.ipv6.address_ppp) {
+        parameterNames.push(fields.ipv6.address_ppp);
+      }
     }
 
     // Mask
     if (cpePermissions.ipv6.hasMaskField) {
-      parameterNames.push(fields.ipv6.mask);
-      parameterNames.push(fields.ipv6.mask_ppp);
+      if (fields.ipv6.mask) {
+        parameterNames.push(fields.ipv6.mask);
+      }
+
+      if (fields.ipv6.mask_ppp) {
+        parameterNames.push(fields.ipv6.mask_ppp);
+      }
     }
 
     // Default Gateway
     if (cpePermissions.ipv6.hasDefaultGatewayField) {
-      parameterNames.push(fields.ipv6.default_gateway);
-      parameterNames.push(fields.ipv6.default_gateway_ppp);
+      if (fields.ipv6.default_gateway) {
+        parameterNames.push(fields.ipv6.default_gateway);
+      }
+
+      if (fields.ipv6.default_gateway_ppp) {
+        parameterNames.push(fields.ipv6.default_gateway_ppp);
+      }
     }
 
     // Prefix Delegation Address
     if (cpePermissions.ipv6.hasPrefixDelegationAddressField) {
-      parameterNames.push(fields.ipv6.prefix_delegation_address);
-      parameterNames.push(fields.ipv6.prefix_delegation_address_ppp);
+      if (fields.ipv6.prefix_delegation_address) {
+        parameterNames.push(fields.ipv6.prefix_delegation_address);
+      }
+
+      if (fields.ipv6.prefix_delegation_address_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_address_ppp);
+      }
     }
 
     // Prefix Delegation Mask
     if (cpePermissions.ipv6.hasPrefixDelegationMaskField) {
-      parameterNames.push(fields.ipv6.prefix_delegation_mask);
-      parameterNames.push(fields.ipv6.prefix_delegation_mask_ppp);
+      if (fields.ipv6.prefix_delegation_mask) {
+        parameterNames.push(fields.ipv6.prefix_delegation_mask);
+      }
+
+      if (fields.ipv6.prefix_delegation_mask_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_mask_ppp);
+      }
     }
 
     // Prefix Delegation Local Address
     if (cpePermissions.ipv6.hasPrefixDelegationLocalAddressField) {
-      parameterNames.push(fields.ipv6.prefix_delegation_local_address);
-      parameterNames.push(fields.ipv6.prefix_delegation_local_address_ppp);
+      if (fields.ipv6.prefix_delegation_local_address) {
+        parameterNames.push(fields.ipv6.prefix_delegation_local_address);
+      }
+
+      if (fields.ipv6.prefix_delegation_local_address_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_local_address_ppp);
+      }
     }
   }
 
