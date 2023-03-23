@@ -811,6 +811,8 @@ let bulkInformDevice = async function() {
     let dateNow = Date.now();
     let doFullSync = false;
     let doSync = false;
+    device._update_query = {};
+
 
     if (device) {
       // Why is a non tr069 device calling this function? Just a sanity check
@@ -826,6 +828,8 @@ let bulkInformDevice = async function() {
       }
 
       device.last_contact = dateNow;
+      device._update_query = {'last_contant': dateNow};
+
       doFullSync = ((device.do_update && device.do_update_status === 0) ||
       device.recovering_tr069_reset);
 
@@ -881,9 +885,12 @@ let bulkInformDevice = async function() {
       if (doFullSync) {
         if (device.do_tr069_update_connection_login) {
           device.do_tr069_update_connection_login = false;
+          device._update_query = {'do_tr069_update_connection_login': false};
         }
 
         device.last_tr069_sync = dateNow;
+        device._update_query = {'last_tr069_sync': dateNow};
+
         cachedDeviceResponses[id] = {
           status: 200,
           body: {
@@ -901,6 +908,7 @@ let bulkInformDevice = async function() {
         if (syncDiff >= config.tr069.sync_interval) {
           if (addRCSync(id)) {
             device.last_tr069_sync = dateNow;
+            device._update_query = {'last_tr069_sync': dateNow};
             doSync = true;
           }
         }
@@ -910,6 +918,8 @@ let bulkInformDevice = async function() {
           // Do the update only at sync
           if (doSync) {
             device.do_tr069_update_connection_login = false;
+            device._update_query
+              = {'do_tr069_update_connection_login': false};
           } else {
             connection = undefined;
           }
@@ -945,7 +955,19 @@ let bulkInformDevice = async function() {
     }
   }
 
-  await DeviceModel.bulkSave(fetchedDevices).catch(
+  await DeviceModel.bulkWrite(
+    fetchedDevices.map((device)=>{
+      return {
+        updateOne: {
+          filter: {acs_id: device.acs_id},
+          update: {'$set': device._update_query},
+        },
+      };
+    }),
+    {
+      ordered: false,
+    },
+  ).catch(
     (err)=>console.error('Error on bulkSave (bulkInformDevice)'),
   );
 };
