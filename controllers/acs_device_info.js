@@ -798,6 +798,7 @@ let bulkInformDevice = async function() {
   let config = null;
   let fetchedDevices = await DeviceModel.find({acs_id: {'$in': inputIdQueue}});
   inputIdQueue = [];
+  let dateNow = Date.now();
   // Get the config
   try {
     config = await getCachedConfig();
@@ -808,7 +809,6 @@ let bulkInformDevice = async function() {
   cachedDeviceResponses = {};
   for (let device of fetchedDevices) {
     let id = device.acs_id;
-    let dateNow = Date.now();
     let doFullSync = false;
     let doSync = false;
     device._update_query = {};
@@ -828,7 +828,6 @@ let bulkInformDevice = async function() {
       }
 
       device.last_contact = dateNow;
-      device._update_query = {'last_contant': dateNow};
 
       doFullSync = ((device.do_update && device.do_update_status === 0) ||
       device.recovering_tr069_reset);
@@ -955,12 +954,24 @@ let bulkInformDevice = async function() {
     }
   }
 
-  await DeviceModel.bulkWrite(
-    fetchedDevices.map((device)=>{
+  await DeviceModel
+  .updateMany(
+    {acs_id: {'$in': fetchedDevices.map((device)=>device.acs_id)}},
+    {last_contact: dateNow},
+  )
+  .catch(
+    (err)=>console.error('Error on updateMany last_contant', err),
+  );
+
+  await DeviceModel
+  .bulkWrite(
+    fetchedDevices
+    .filter((device)=>Object.keys(device).length>0)
+    .map((device)=>{
       return {
         updateOne: {
           filter: {acs_id: device.acs_id},
-          update: {'$set': device._update_query},
+          update: device._update_query,
         },
       };
     }),
@@ -968,7 +979,7 @@ let bulkInformDevice = async function() {
       ordered: false,
     },
   ).catch(
-    (err)=>console.error('Error on bulkSave (bulkInformDevice)'),
+    (err)=>console.error('Error on bulkSave (bulkInformDevice)', err),
   );
 };
 
