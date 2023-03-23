@@ -794,10 +794,10 @@ setTimeout(
 );
 
 let bulkInformDevice = async function() {
+  metricsApi.observeDeviceBulkSave(inputIdQueue.length);
   let config = null;
   let fetchedDevices = await DeviceModel.find({acs_id: {'$in': inputIdQueue}});
   inputIdQueue = [];
-
   // Get the config
   try {
     config = await getCachedConfig();
