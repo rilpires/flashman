@@ -57,6 +57,18 @@ if (SYNCMAX > 0) {
 
 let syncRateControl = new Map();
 
+// Bulk inform update
+let bulkInformUpdateIntervalMs
+  = parseInt(process.env.BULK_INFORM_UPDATE_INTERVAL_MS) || 1000;
+let bulkInformUpdateQueue = [];
+let bulkInformDeviceUpdate = async function() {
+  await DeviceModel.bulkSave(bulkInformDeviceUpdate).catch(function(err) {
+    console.error('Error on bulkInformDeviceUpdate:', err);
+  });
+  bulkInformUpdateQueue = [];
+};
+setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);
+
 // This is used for inform only. We are always calling Config.findOne, but
 // this could be easily cached, with no need to call mongo
 let cachedConfigValidity = null;
@@ -759,6 +771,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
   let config = null;
+  let queueOnBulkWrite = false;
 
   let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
     return res.status(500).json({success: false,
@@ -787,6 +800,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     // Registered devices should always collect information through
     // flashman, never using genieacs provision
     if (!doFullSync && !device.do_tr069_update_connection_login) {
+      queueOnBulkWrite = true;
       res.status(200).json({success: true, measure: false});
     }
   }
@@ -880,9 +894,13 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     });
   }
 
-  await device.save().catch((err) => {
-    console.log('Error saving last contact and last tr-069 sync');
-  });
+  if (!queueOnBulkWrite) {
+    await device.save().catch((err) => {
+      console.log('Error saving last contact and last tr-069 sync');
+    });
+  } else {
+    bulkInformUpdateQueue.push(device);
+  }
 
   if (doSync) {
     acsDeviceInfoController.requestSync(device);
