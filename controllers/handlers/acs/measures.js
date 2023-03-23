@@ -641,6 +641,13 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
       });
 
 
+      // Try getting the mask
+      let maskV6 = utilHandlers
+        .getMaskFromAddress(assignFields.wanIPv6Field.value, true);
+
+      if (!maskV6) maskV6 = '0';
+
+
       // Check if needs to save the device. Made this way to reduce unnecessary
       // save calls
       if (saveDevice) {
@@ -657,7 +664,10 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
         let mask = parseInt(assignFields.maskIPv4Field.value);
         device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
 
-        mask = parseInt(assignFields.maskIPv6Field.value);
+        mask = parseInt(
+          assignFields.maskIPv6Field.value ?
+          assignFields.maskIPv6Field.value : maskV6,
+        );
         device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
 
         // PPPoE
@@ -693,7 +703,10 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
 
         // Remove the mask if came with it
         ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
-        ipv6_mask: assignFields.maskIPv6Field.value,
+        ipv6_mask: (
+          assignFields.maskIPv6Field.value ?
+          assignFields.maskIPv6Field.value : maskV6
+        ),
 
         default_gateway_v4: assignFields.gatewayIPv4Field.value,
         default_gateway_v6: assignFields.gatewayIPv6Field.value,
