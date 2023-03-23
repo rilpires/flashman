@@ -9,6 +9,7 @@ const mongodb = require('mongodb');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const SchedulerCommon = require('../update_scheduler_common');
+const metricsApi = require('../handlers/metrics/custom_metrics');
 const t = require('../language').i18next.t;
 
 
@@ -744,6 +745,8 @@ genie.addTask = async function(
   if (!checkTask(task)) {
     return {success: false, message: 'Task not valid: ' + JSON.stringify(task)};
   }
+
+  metricsApi.addedTask(task.name);
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.

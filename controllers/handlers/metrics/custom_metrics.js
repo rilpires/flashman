@@ -32,6 +32,11 @@ let metrics = {
     help: 'A diagnostic state was changed to "diagnostic_state".',
     labelNames: ['diagnostic_type', 'diagnostic_state'],
   }),
+  flm_tasks_api: new promClient.Gauge({
+    name: 'flm_tasks_api',
+    help: 'Pushed tasks to tasks-api queue',
+    labelNames: ['task_name'],
+  }),
   flm_tasks_api_list_length: new promClient.Gauge({
     name: 'flm_tasks_api_list_length',
     help: 'Length of current task watch list',
@@ -47,6 +52,10 @@ let metricsApi = {
   newDiagnosticState: function(type, state) {
     metrics.flm_diagnostics_states
       .inc({'diagnostic_type': type, 'diagnostic_state': state});
+  },
+  addedTask: function(taskName) {
+    metrics.flm_tasks_api
+      .inc({'task_name': taskName});
   },
 
   // Below functions register a metric with a provided collector function
