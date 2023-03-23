@@ -896,12 +896,12 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     });
   }
 
-  if (!queueOnBulkWrite) {
+  if (queueOnBulkWrite) {
+    bulkInformUpdateQueue.push(device);
+  } else {
     await device.save().catch((err) => {
       console.log('Error saving last contact and last tr-069 sync');
     });
-  } else {
-    bulkInformUpdateQueue.push(device);
   }
 
   if (doSync) {

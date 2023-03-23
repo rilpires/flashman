@@ -55,7 +55,7 @@ let metricsApi = {
       .inc({'task_name': taskName});
   },
   observeDeviceBulkSave: function(amount) {
-    metrics.flm_bulk_insert_amount.observe(amount);
+    metrics.flm_bulk_save_amount.observe(amount);
   },
 
   // Below functions register a metric with a provided collector function
