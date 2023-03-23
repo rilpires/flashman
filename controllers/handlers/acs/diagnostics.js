@@ -156,7 +156,7 @@ const calculatePingDiagnostic = async function(
         'ping_results': result,
       };
       if (device.current_diagnostic.webhook_user &&
-        device.current_diagnostic.webook_secret
+        device.current_diagnostic.webhook_secret
       ) {
         requestOptions.auth = {
           user: device.current_diagnostic.webhook_user,

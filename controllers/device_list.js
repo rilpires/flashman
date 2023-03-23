@@ -1210,7 +1210,11 @@ deviceListController.getDevices = async function(req, res) {
 deviceListController.searchDeviceReg = async function(req, res) {
   let reqPage = 1;
   let elementsPerPage = 10;
-  let queryContents = req.body.filter_list.split(',');
+  let queryContents = [];
+  if ('filter_list' in req.body &&
+    typeof req.body.filter_list === 'string') {
+    queryContents = req.body.filter_list.split(',');
+  }
   let sortKeys = {};
   let sortTypeOrder = 1;
   // Filter sort type order before filtering query
@@ -1281,12 +1285,15 @@ deviceListController.searchDeviceReg = async function(req, res) {
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
   }
-
-  if (req.query.page) {
+  if (!isNaN(parseInt(req.query.page))) {
     reqPage = parseInt(req.query.page);
   }
   if (req.user.maxElementsPerPage) {
     elementsPerPage = req.user.maxElementsPerPage;
+  }
+  if (!isNaN(parseInt(req.query.limit))) {
+    elementsPerPage = parseInt(req.query.limit) > 50 ?
+      50 : parseInt(req.query.limit);
   }
 
   let paginateOpts = {
@@ -1429,7 +1436,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                 return res.json({
                 success: true,
                   type: 'success',
-                  limit: req.user.maxElementsPerPage,
+                  limit: elementsPerPage,
                   page: matchedDevices.page,
                   pages: matchedDevices.pages,
                   min_length_pass_pppoe: matchedConfig.pppoePassLength,
@@ -2112,7 +2119,7 @@ deviceListController.ensureBssidCollected = async function(
     // It might take some time for some CPEs to enable their Wi-Fi interface
     // after the command is sent. Since the BSSID is only available after the
     // interface is up, we need to wait here to ensure we get a valid read
-    await new Promise((r)=>setTimeout(r, 4000));
+    await util.sleep(4000);
     const bssidsObj = await acsMeshDeviceHandler.getMeshBSSIDFromGenie(
       device, targetMode,
     );
@@ -3403,6 +3410,14 @@ deviceListController.setPortForward = function(req, res) {
     }
     // TR-069 routers
     if (matchedDevice.use_tr069) {
+      if (typeof req.originalUrl === 'string' &&
+        req.originalUrl.includes('api/v2') &&
+        matchedDevice.wrong_port_mapping == true) {
+        return res.status(200).json({
+          success: false,
+          message: t('deviceHaveWrongPortMappingError'),
+        });
+      }
       let result =
         await deviceListController.setPortForwardTr069(matchedDevice,
                                                        req.body.content,

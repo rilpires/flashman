@@ -33,6 +33,8 @@ intelbrasModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     'V210414': ['1.0-210917'],
     '1.0-210917': [],
+    '1.1-220826': [],
+    '2.2-230201': [],
   };
   return permissions;
 };
