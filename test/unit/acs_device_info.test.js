@@ -3611,6 +3611,89 @@ describe('syncDeviceData - Update web admin login', () => {
     });
 
 
+    // All permissions with no fields
+    test('All permissions with no fields', async () => {
+      const device = models.defaultMockDevices[0];
+      let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+      let fields = {...fieldsAndPermissions.fields[0]};
+
+      fields.ipv6 = fieldsAndPermissions.setAllObjectValues(
+        fields.ipv6, '',
+      );
+
+      let wan = {...fields.wan};
+      wan.mask_ipv4 = '';
+      wan.mask_ipv4_ppp = '';
+      wan.remote_address = '';
+      wan.remote_address_ppp = '';
+      wan.remote_mac = '';
+      wan.remote_mac_ppp = '';
+      wan.default_gateway = '';
+      wan.default_gateway_ppp = '';
+      wan.dns_servers = '';
+      wan.dns_servers_ppp = '';
+      fields.wan = wan;
+
+
+      // Mocks
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => devicePermissions);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fields,
+      );
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      await acsDeviceInfoController.requestSync(device);
+
+
+      // Validate
+      let parameterNames = [];
+      parameterNames = parameterNames.concat(
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].common,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].lan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi2,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi5,
+        ),
+      );
+
+      // Remove unused fields
+      parameterNames = parameterNames.filter((field) => {
+        let removeFields = [
+          'common.hw_version', 'common.mac', 'common.model',
+          'lan.config_enable', 'lan.dns_servers',
+          'lan.ip_routers', 'lan.lease_max_ip', 'lan.lease_min_ip',
+          'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
+          'wifi5.beacon_type', 'wan.mask_ipv4', 'wan.mask_ipv4_ppp',
+          'wan.remote_address', 'wan.remote_address_ppp', 'wan.remote_mac',
+          'wan.remote_mac_ppp', 'wan.default_gateway',
+          'wan.default_gateway_ppp', 'wan.dns_servers', 'wan.dns_servers_ppp',
+        ];
+        if (removeFields.includes(field)) return false;
+        return true;
+      });
+
+      expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
+      expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
+      expect(taskSpy.mock.calls[0][1].parameterNames.sort())
+        .toStrictEqual(parameterNames.sort());
+    });
+
+
     // Without WAN and LAN information
     test('Without WAN and LAN information', async () => {
       const device = models.defaultMockDevices[0];
