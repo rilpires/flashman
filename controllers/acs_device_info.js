@@ -62,7 +62,7 @@ let bulkInformUpdateIntervalMs
   = parseInt(process.env.BULK_INFORM_UPDATE_INTERVAL_MS) || 1000;
 let bulkInformUpdateQueue = [];
 let bulkInformDeviceUpdate = async function() {
-  await DeviceModel.bulkSave(bulkInformDeviceUpdate).catch(function(err) {
+  await DeviceModel.bulkSave(bulkInformUpdateQueue).catch(function(err) {
     console.error('Error on bulkInformDeviceUpdate:', err);
   });
   bulkInformUpdateQueue = [];
