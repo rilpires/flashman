@@ -181,10 +181,10 @@ describe('Controllers - Device List', () => {
           content: {},
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
@@ -568,10 +568,10 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -649,10 +649,10 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
