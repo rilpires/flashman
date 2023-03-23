@@ -60,7 +60,7 @@ let syncRateControl = new Map();
 
 // Bulk inform update
 let bulkInformUpdateIntervalMs
-  = parseInt(process.env.BULK_INFORM_UPDATE_INTERVAL_MS) || 1000;
+  = parseInt(process.env.BULK_INFORM_UPDATE_INTERVAL_MS);
 let bulkInformUpdateQueue = [];
 let bulkInformDeviceUpdate = async function() {
   await DeviceModel.bulkSave(bulkInformUpdateQueue).catch(function(err) {
@@ -69,7 +69,13 @@ let bulkInformDeviceUpdate = async function() {
   metricsApi.observeDeviceBulkSave(bulkInformUpdateQueue.length);
   bulkInformUpdateQueue = [];
 };
-setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);
+if (bulkInformUpdateIntervalMs) {
+  setInterval(bulkInformDeviceUpdate, bulkInformUpdateIntervalMs);
+}
+
+// Bulk inform
+let inputIdQueue = [];
+let cachedDeviceResponses = {};
 
 // This is used for inform only. We are always calling Config.findOne, but
 // this could be easily cached, with no need to call mongo
@@ -770,143 +776,178 @@ acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 // signal that GenieACS needs to collect information manually. For registered
 // CPEs, it calls requestSync to check for fields that need syncing.
 acsDeviceInfoController.informDevice = async function(req, res) {
-  let dateNow = Date.now();
   let id = req.body.acs_id;
-  let config = null;
-  let queueOnBulkWrite = false;
 
-  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
-    return res.status(500).json({success: false,
-      message: t('cpeFindError', {errorline: __line})});
-  });
-
-  let doFullSync = false;
-  let doSync = false;
-
-  if (device) {
-    // Why is a non tr069 device calling this function? Just a sanity check
-    if (!device.use_tr069) {
-      return res.status(500).json({
-        success: false,
-        message: t('nonTr069AcsSyncError', {errorline: __line}),
-      });
-    }
-
-    device.last_contact = dateNow;
-    doFullSync = ((device.do_update && device.do_update_status === 0) ||
-    device.recovering_tr069_reset);
-
-    // Return fast if we do not need to do a Sync
-    // And we do not need to update connection login.
-    //
-    // Registered devices should always collect information through
-    // flashman, never using genieacs provision
-    if (!doFullSync && !device.do_tr069_update_connection_login) {
-      queueOnBulkWrite = true;
-      res.status(200).json({success: true, measure: false});
-    }
+  inputIdQueue.push(id);
+  let cachedResponse = cachedDeviceResponses[id];
+  if (!cachedResponse) {
+    return res.status(200).json({success: true, measure: false});
+  } else {
+    delete cachedDeviceResponses[id];
+    return res.status(cachedResponse.status).json(cachedResponse.body);
   }
+};
+
+setTimeout(
+  ()=>setInterval(bulkInformDevice, bulkInformUpdateIntervalMs),
+  bulkInformUpdateIntervalMs*0.5,
+);
+
+let bulkInformDevice = async function() {
+  let config = null;
+  let fetchedDevices = await DeviceModel.find({acs_id: {'$in': inputIdQueue}});
+  inputIdQueue = [];
 
   // Get the config
-  // From now on, everything needs the config
   try {
     config = await getCachedConfig();
   } catch (error) {
     console.log('Error getting config in function informDevice: ' + error);
   }
 
-  if (!config && !res.headersSent) {
-    return res.status(500).json({
-      success: false,
-      message: t('configFindError', {errorline: __line}),
-    });
-  }
+  cachedDeviceResponses = {};
+  for (let device of fetchedDevices) {
+    let id = device.acs_id;
+    let dateNow = Date.now();
+    let doFullSync = false;
+    let doSync = false;
 
-  if (config && config.tr069) {
-    let connection = {
-      login: config.tr069.connection_login,
-      password: config.tr069.connection_password,
-    };
+    if (device) {
+      // Why is a non tr069 device calling this function? Just a sanity check
+      if (!device.use_tr069) {
+        cachedDeviceResponses[id] = {
+          status: 500,
+          body: {
+            success: false,
+            message: t('nonTr069AcsSyncError', {errorline: __line}),
+          },
+        };
+        continue;
+      }
 
-    // New devices need to sync immediately
-    // Always update login in new devices
-    // As device is new, it has not returned yet
-    if (!device) {
-      return res.status(200).json({
-        success: true,
-        measure: true,
-        measure_type: 'newDevice',
-        connection: connection,
-      });
+      device.last_contact = dateNow;
+      doFullSync = ((device.do_update && device.do_update_status === 0) ||
+      device.recovering_tr069_reset);
+
+      // Return fast if we do not need to do a Sync
+      // And we do not need to update connection login.
+      //
+      // Registered devices should always collect information through
+      // flashman, never using genieacs provision
+      if (!doFullSync && !device.do_tr069_update_connection_login) {
+        cachedDeviceResponses[id] = {
+          status: 200,
+          body: {success: true, measure: false},
+        };
+      }
     }
 
-    // Devices recovering from hard reset or upgrading their firmware need to go
-    // through an immediate full sync
-    if (doFullSync) {
-      if (device.do_tr069_update_connection_login) {
-        device.do_tr069_update_connection_login = false;
+
+    if (!config && !cachedDeviceResponses[id]) {
+      cachedDeviceResponses[id] = {
+        status: 500,
+        body: {
+          success: false,
+          message: t('configFindError', {errorline: __line}),
+        },
+      };
+      continue;
+    }
+
+    if (config && config.tr069) {
+      let connection = {
+        login: config.tr069.connection_login,
+        password: config.tr069.connection_password,
+      };
+
+      // New devices need to sync immediately
+      // Always update login in new devices
+      // As device is new, it has not returned yet
+      if (!device) {
+        cachedDeviceResponses[id] = {
+          status: 200,
+          body: {
+            success: true,
+            measure: true,
+            measure_type: 'newDevice',
+            connection: connection,
+          },
+        };
+        continue;
       }
 
-      device.last_tr069_sync = dateNow;
-
-      res.status(200).json({
-        success: true,
-        measure: true,
-        measure_type: 'updateDevice',
-        connection: connection,
-      });
-    } else {
-      // Only request a sync if over the sync threshold
-      let syncDiff = dateNow - device.last_tr069_sync;
-      // Give an extra 10 seconds to buffer out race conditions
-      syncDiff += 10000;
-      if (syncDiff >= config.tr069.sync_interval) {
-        if (addRCSync(id)) {
-          device.last_tr069_sync = dateNow;
-          doSync = true;
-        }
-      }
-
-      if (device.do_tr069_update_connection_login) {
-        // Need to update connection request login
-        // Do the update only at sync
-        if (doSync) {
+      // Devices recovering from hard reset or upgrading their firmware need to
+      // go through an immediate full sync
+      if (doFullSync) {
+        if (device.do_tr069_update_connection_login) {
           device.do_tr069_update_connection_login = false;
-        } else {
-          connection = undefined;
         }
 
-        res.status(200).json({
-          success: true,
-          measure: false,
-          connection: connection,
-        });
+        device.last_tr069_sync = dateNow;
+        cachedDeviceResponses[id] = {
+          status: 200,
+          body: {
+            success: true,
+            measure: true,
+            measure_type: 'updateDevice',
+            connection: connection,
+          },
+        };
+      } else {
+        // Only request a sync if over the sync threshold
+        let syncDiff = dateNow - device.last_tr069_sync;
+        // Give an extra 10 seconds to buffer out race conditions
+        syncDiff += 10000;
+        if (syncDiff >= config.tr069.sync_interval) {
+          if (addRCSync(id)) {
+            device.last_tr069_sync = dateNow;
+            doSync = true;
+          }
+        }
+
+        if (device.do_tr069_update_connection_login) {
+          // Need to update connection request login
+          // Do the update only at sync
+          if (doSync) {
+            device.do_tr069_update_connection_login = false;
+          } else {
+            connection = undefined;
+          }
+
+          cachedDeviceResponses[id] = {
+            status: 200,
+            body: {
+              success: true,
+              measure: false,
+              connection: connection,
+            },
+          };
+        }
       }
+    }
+
+    if (!cachedDeviceResponses[id]) {
+      // Check if result has been sent
+      // Sanity check - We can never reach this
+      // as a result must be answered above!
+      console.log('Error: No result in InformDevice');
+      cachedDeviceResponses[id] = {
+        status: 500,
+        body: {
+          success: false,
+          message: t('Error'),
+        },
+      };
+    }
+
+    if (doSync) {
+      acsDeviceInfoController.requestSync(device);
     }
   }
 
-  if (!res.headersSent) {
-    // Check if result has been sent
-    // Sanity check - We can never reach this
-    // as a result must be answered above!
-    console.log('Error: No result in InformDevice');
-    return res.status(500).json({
-      success: false,
-      message: t('Error'),
-    });
-  }
-
-  if (queueOnBulkWrite) {
-    bulkInformUpdateQueue.push(device);
-  } else {
-    await device.save().catch((err) => {
-      console.log('Error saving last contact and last tr-069 sync');
-    });
-  }
-
-  if (doSync) {
-    acsDeviceInfoController.requestSync(device);
-  }
+  await DeviceModel.bulkSave(fetchedDevices).catch(
+    (err)=>console.error('Error on bulkSave (bulkInformDevice)'),
+  );
 };
 
 // Builds and sends getParameterValues task to cpe - should only ask for
