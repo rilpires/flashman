@@ -16,6 +16,9 @@ datacomModel.modelPermissions = function() {
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
 
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasDefaultGatewayField = true;
@@ -117,23 +120,23 @@ datacomModel.getModelFields = function() {
   // IPv6
   // Address
   fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANIPConnection.1.X_RTK_IPv6IPAddress';
+    'WANConnectionDevice.*.WANIPConnection.*.X_RTK_IPv6IPAddress';
   fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANPPPConnection.1.X_RTK_IPv6IPAddress';
+    'WANConnectionDevice.*.WANPPPConnection.*.X_RTK_IPv6IPAddress';
 
   // Default gateway
   fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANIPConnection.1.X_RTK_DefaultIPv6Gateway';
+    'WANConnectionDevice.*.WANIPConnection.*.X_RTK_DefaultIPv6Gateway';
   fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.1.WANPPPConnection.1.X_RTK_DefaultIPv6Gateway';
+    'WANConnectionDevice.*.WANPPPConnection.*.X_RTK_DefaultIPv6Gateway';
 
 
   // IPv6 Prefix Delegation
   // Address
   fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice'+
-    '.1.WANConnectionDevice.1.WANIPConnection.1.X_RTK_IPv6Prefix';
+    '.1.WANConnectionDevice.*.WANIPConnection.*.X_RTK_IPv6Prefix';
   fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
-    '.1.WANConnectionDevice.1.WANPPPConnection.1.X_RTK_IPv6Prefix';
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_RTK_IPv6Prefix';
 
 
   Object.keys(fields.wifi2).forEach((k)=>{
