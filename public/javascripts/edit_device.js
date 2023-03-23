@@ -297,7 +297,10 @@ let validateEditDevice = function(event) {
                     '192.168.43');
     genericValidate(lanNetmask,
                     validator.validateNetmask, errors.lan_netmask);
-    genericValidate(lanDns, validator.validateDnsServers, errors.lan_dns);
+    // If field is an empty string, does not include in changes
+    if (lanDns !== '') {
+      genericValidate(lanDns, validator.validateDnsServers, errors.lan_dns);
+    }
   }
   if (validateBridge && useBridgeFixIP) {
     genericValidate(bridgeFixIP, validator.validateIP,
@@ -363,7 +366,9 @@ let validateEditDevice = function(event) {
     if (validateLan) {
       data.content.lan_subnet = lanSubnet;
       data.content.lan_netmask = lanNetmask;
-      data.content.lan_dns_servers = lanDns;
+      if (lanDns !== '') {
+        data.content.lan_dns_servers = lanDns;
+      }
     }
     if (validateBridge) {
       // Keep this logic, because in the fronted was
