@@ -1,5 +1,4 @@
 const promClient = require('prom-client');
-const genie = require('../../external-genieacs/tasks-api');
 
 /**
  *  Check about metric types on Prometheus documentation
@@ -37,14 +36,6 @@ let metrics = {
     help: 'Pushed tasks to tasks-api queue',
     labelNames: ['task_name'],
   }),
-  flm_tasks_api_list_length: new promClient.Gauge({
-    name: 'flm_tasks_api_list_length',
-    help: 'Length of current task watch list',
-    labelNames: [],
-    collect: function() {
-      this.set( genie.getTaskWatchListLength() );
-    },
-  }),
 };
 
 // Exported wrappers for usage out there
@@ -66,6 +57,21 @@ let metricsApi = {
       new promClient.Gauge({
         name: 'flm_audit_memory_queue_size',
         help: 'Length of the list where not sent audit messages are queued',
+        collect: function() {
+          let value = callback();
+          if (typeof(value)=='number' && !isNaN(value)) {
+            this.set(value);
+          }
+        },
+      });
+    }
+  },
+
+  registerTaskApiLength: function(callback) {
+    if (typeof(callback)=='function') {
+      new promClient.Gauge({
+        name: 'flm_tasks_api_list_length',
+        help: 'Length of current task watch list',
         collect: function() {
           let value = callback();
           if (typeof(value)=='number' && !isNaN(value)) {
