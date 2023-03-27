@@ -1,8 +1,4 @@
 /**
- * Test utilities that can be used for devices-api.
- * @namespace test/common/utils.devicesAPI
- */
-/**
  * This file includes test utilities.
  * @namespace test/common/utils
  */
@@ -13,6 +9,10 @@
 /**
  * Test utilities that can be used for update scheduler.
  * @namespace test/common/utils.schedulerCommon
+ */
+/**
+ * Test utilities that can be used for devices-api.
+ * @namespace test/common/utils.devicesAPICommon
  */
 
 const request = require('supertest');
@@ -38,11 +38,7 @@ const updateScheduler = require('../../controllers/update_scheduler');
 // Devices API
 const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
-let utils = {
-  common: {},
-  schedulerCommon: {},
-  devicesAPICommon: {},
-};
+
 // Mock the mqtts (avoid aedes)
 jest.mock('../../mqtts', () => {
   return {
@@ -52,6 +48,43 @@ jest.mock('../../mqtts', () => {
     getConnectedClients: () => [],
   };
 });
+
+
+let utils = {
+  common: {},
+  schedulerCommon: {},
+  devicesAPICommon: {},
+};
+
+
+// Constants
+/**
+ * The development Flashman host string.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.FLASHMAN_HOST = 'http://localhost:8000';
+
+/**
+ * The development Flashman authentication username.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_USER = 'admin';
+
+/**
+ * The development Flashman authentication password.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_PASS = 'flashman';
+
 
 /**
  * Array of test cases.
@@ -108,12 +141,62 @@ utils.common.TEST_PARAMETERS = [
  * @return {Response} The login response with the cookie to be setted.
  */
 utils.common.loginAsAdmin = async function() {
-  return (request('localhost:8000')
+  return (request(utils.common.FLASHMAN_HOST)
     .post('/login')
     .send({
-      name: 'admin',
-      password: 'landufrj123',
+      name: utils.common.BASIC_AUTH_USER,
+      password: utils.common.BASIC_AUTH_PASS,
     })
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Deletes the CPE passed to this function from Flashman.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} cpeID - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The login cookie.
+ *
+ * @return {Response} The delete response.
+ */
+utils.common.deleteCPE = async function(cpeID, cookie) {
+  return (request(utils.common.FLASHMAN_HOST)
+    .delete('/api/v2/device/delete/' + cpeID)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send()
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Sends the request to the route specified to Flashman, with the data passed.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} type - The type of request(`put`, `delete`, `get`,
+ * `post`...).
+ * @param {String} route - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The cookie login.
+ * @param {Object} data - The data to be sent to the route.
+ *
+ * @return {Response} The response.
+ */
+utils.common.sendRequest = async function(type, route, cookie, data) {
+  let flashmanRequest = request(utils.common.FLASHMAN_HOST);
+
+  return (await flashmanRequest[type](route)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send(data)
     .catch((error) => console.log(error))
   );
 };
@@ -511,6 +594,8 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  * @param {Object} files - All files to be sent.
  * @param {Object} query - URL parameters to be passed.
  * @param {Object} user - An object containing user and role information.
+ * @param {Object} params - The object containing params of the request.
+ * @param {Object} sessionID - The session ID of the request.
  *
  * @return {Promise} A promise to wait for the response.
  *
@@ -520,7 +605,9 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  *  {acs_id: '1234'},
  * );
  */
-utils.common.sendFakeRequest = async function(func, data, files, query, user) {
+utils.common.sendFakeRequest = async function(
+  func, data, files, query, user, params, sessionID,
+) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -539,6 +626,8 @@ utils.common.sendFakeRequest = async function(func, data, files, query, user) {
       },
       files: files,
       query: query,
+      params: params,
+      sessionID: sessionID,
     },
 
     // Pass the promise resolve
@@ -691,6 +780,69 @@ utils.devicesAPICommon.validateUpgradeableModels = function(data) {
     });
   });
 };
+
+
+/**
+ * Mocks the function `instantiateCPEByModelFromDevice` and the return a `jest`
+ * spy.
+ *
+ * @memberOf test/common/utils.devicesAPICommon
+ *
+ * @param {Boolean} success - If should return success.
+ * @param {Object} permissions - The permissions object to be returned.
+ * @param {Object} fields - The fields object to be returned.
+ *
+ * @return {Spy} The `jest` spy of the function.
+ */
+utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
+  success, permissions, fields,
+) {
+  return jest.spyOn(
+    DevicesAPI,
+    'instantiateCPEByModelFromDevice',
+  ).mockImplementation(() => {
+    return {
+      success: success,
+      cpe: {
+        // Permissions
+        modelPermissions: () => {
+          return permissions;
+        },
+
+        // Fields
+        getModelFields: () => {
+          return fields;
+        },
+
+        // PPPoE Enable
+        convertPPPoEEnable: (enable) => {
+          return enable === 'true' || enable === 1 || enable === true;
+        },
+
+        // Get Serial
+        convertGenieSerial: (serial, mac) => {
+          return serial;
+        },
+
+        // Convert Band
+        convertWifiBandToFlashman: (band, isAC) => {
+          return band;
+        },
+
+        // Check Login
+        isAllowedWebadminUsername: (login) => {
+          return true;
+        },
+
+        // Convert WAN Rate
+        convertWanRate: (rate) => {
+          return rate;
+        },
+      },
+    };
+  });
+};
+
 
 /**
  * @exports test/common/utils

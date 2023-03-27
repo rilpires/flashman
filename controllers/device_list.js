@@ -2,6 +2,11 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 
+/**
+ * Device functions.
+ * @namespace controllers/deviceList
+ */
+
 const Validator = require('../public/javascripts/device_validator');
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
@@ -1959,32 +1964,58 @@ deviceListController.sendCommandMsg = async function(req, res) {
         }
         break;
       case 'waninfo':
-        // Wait notification, only wait if is not TR069
-        if (req.sessionID && sio.anlixConnections[req.sessionID] &&
-          !device.use_tr069) {
+        // Check permission
+        if (!permissions.grantWanLanInformation) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
+        // Wait notification
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForWanInfoNotification(
             req.sessionID,
             req.params.id.toUpperCase(),
           );
         }
+
         // If does not use TR069 call the mqtt function
         if (device && !device.use_tr069) {
           mqtt.anlixMessageRouterWanInfo(req.params.id.toUpperCase());
+
+        // If TR-069, send a task asking those info
+        } else if (device && device.use_tr069) {
+          acsDeviceInfo.requestWanInformation(device);
         }
+
         break;
       case 'laninfo':
-        // Wait notification, only wait if is not TR069
-        if (req.sessionID && sio.anlixConnections[req.sessionID] &&
-          !device.use_tr069) {
+        // Check permission
+        if (!permissions.grantWanLanInformation) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
+        // Wait notification
+        if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForLanInfoNotification(
             req.sessionID,
             req.params.id.toUpperCase(),
           );
         }
+
         // If does not use TR069 call the mqtt function
         if (device && !device.use_tr069) {
           mqtt.anlixMessageRouterLanInfo(req.params.id.toUpperCase());
+
+        // If TR-069, send a task asking those info
+        } else if (device && device.use_tr069) {
+          acsDeviceInfo.requestLanInformation(device);
         }
+
         break;
       case 'wps':
         if (!permissions.grantWpsFunction) {
@@ -4336,7 +4367,7 @@ deviceListController.getWanInfo = async function(request, response) {
   DeviceModel.findById(deviceId, function(error, matchedDevice) {
     // If an error occurred while finding the device
     if (error) {
-      return request.status(400).json({
+      return response.status(400).json({
         processed: 0,
         success: false,
       });
@@ -4344,15 +4375,7 @@ deviceListController.getWanInfo = async function(request, response) {
 
     // If could not find the device
     if (!matchedDevice) {
-      return request.status(404).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
-    }
-
-    // If it is TR069
-    if (matchedDevice.use_tr069) {
-      return request.status(404).json({
+      return response.status(404).json({
         success: false,
         message: t('cpeNotFound', {errorline: __line}),
       });
@@ -4407,7 +4430,7 @@ deviceListController.getLanInfo = async function(request, response) {
   DeviceModel.findById(deviceId, function(error, matchedDevice) {
     // If an error occurred while finding the device
     if (error) {
-      return request.status(400).json({
+      return response.status(400).json({
         processed: 0,
         success: false,
       });
@@ -4415,15 +4438,7 @@ deviceListController.getLanInfo = async function(request, response) {
 
     // If could not find the device
     if (!matchedDevice) {
-      return request.status(404).json({
-        success: false,
-        message: t('cpeNotFound', {errorline: __line}),
-      });
-    }
-
-    // If it is TR069
-    if (matchedDevice.use_tr069) {
-      return request.status(404).json({
+      return response.status(404).json({
         success: false,
         message: t('cpeNotFound', {errorline: __line}),
       });
@@ -4746,4 +4761,7 @@ deviceListController.editCoordinates = async function(req, res) {
   });
 };
 
+/**
+ * @exports controllers/deviceList
+ */
 module.exports = deviceListController;
