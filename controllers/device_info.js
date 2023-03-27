@@ -1049,7 +1049,7 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
             'lan_netmask':
-              util.returnObjOrEmptyStr(matchedDevice.lan_dns_servers),
+              util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
             'wifi_ssid': wifiSsid2ghz,
             'wifi_password':
               util.returnObjOrEmptyStr(matchedDevice.wifi_password),
