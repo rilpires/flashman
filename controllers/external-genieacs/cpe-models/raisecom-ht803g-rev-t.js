@@ -126,7 +126,7 @@ raisecomModel.getModelFields = function() {
     'LANEthernetInterfaceConfig.1.MACAddress';
 
   // user and password fields
-  fields.common.web_admin_user =
+  fields.common.web_admin_username =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Username';
   fields.common.web_admin_password =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';

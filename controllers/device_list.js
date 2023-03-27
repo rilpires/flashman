@@ -2683,8 +2683,8 @@ deviceListController.setDeviceReg = function(req, res) {
                   changes.wifi2.beacon_type = cpe.getBeaconType();
                 }
                 audit['wifi2Enabled'] = {
-                  old: matchedDevice.wifi_state,
-                  new: wifiState,
+                  old: matchedDevice.wifi_state === 1,
+                  new: wifiState === 1,
                 };
                 matchedDevice.wifi_state = wifiState;
                 updateParameters = true;
@@ -2805,8 +2805,8 @@ deviceListController.setDeviceReg = function(req, res) {
                   changes.wifi5.beacon_type = cpe.getBeaconType();
                 }
                 audit['wifi5Enabled'] = {
-                  old: matchedDevice.wifi_state_5ghz,
-                  new: wifiState5ghz,
+                  old: matchedDevice.wifi_state_5ghz === 1,
+                  new: wifiState5ghz === 1,
                 };
                 matchedDevice.wifi_state_5ghz = wifiState5ghz;
                 updateParameters = true;
@@ -3033,8 +3033,10 @@ deviceListController.setDeviceReg = function(req, res) {
                   }
                 }
                 audit['meshMode'] = {
-                  old: matchedDevice.mesh_mode,
-                  new: meshMode,
+                  old: Audit.toTranslate(
+                    meshHandlers.modeTag[matchedDevice.mesh_mode],
+                  ),
+                  new: Audit.toTranslate(meshHandlers.modeTag[meshMode]),
                 };
                 meshHandlers.setMeshMode(
                   matchedDevice, meshMode,

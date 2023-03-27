@@ -17,6 +17,7 @@ const mqtt = require('../mqtts');
 const debug = require('debug')('APP');
 const controlApi = require('./external-api/control');
 const {sendGenericSpeedTest} = require('./device_list.js');
+const Audit = require('./audit');
 const t = require('./language').i18next.t;
 
 let diagAppAPIController = {};
@@ -205,6 +206,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
       let content = req.body;
       let updateParameters = false;
       let changes = {wifi2: {}, wifi5: {}};
+      const audit = {};
 
       // Get SSID prefix data
       let matchedConfig = await ConfigModel.findOne({is_default: true}).lean();
@@ -251,6 +253,18 @@ diagAppAPIController.configureWifi = async function(req, res) {
         ssid2ghz = checkResponse.ssid2;
         ssid5ghz = checkResponse.ssid5;
         // Replace relevant wifi fields with new values
+        if (ssid2ghz !== device.wifi_ssid) {
+          audit['wifi2Ssid'] = {old: device.wifi_ssid, new: ssid2ghz};
+        }
+        if (ssid5ghz !== device.wifi_ssid_5ghz) {
+          audit['wifi5Ssid'] = {old: device.wifi_ssid_5ghz, new: ssid5ghz};
+        }
+        if (isSsidPrefixEnabled !== device.isSsidPrefixEnabled) {
+          audit['ssidPrefixEnabled'] = {
+            old: device.isSsidPrefixEnabled,
+            new: isSsidPrefixEnabled,
+          };
+        }
         device.wifi_ssid = ssid2ghz;
         device.wifi_ssid_5ghz = ssid5ghz;
         changes.wifi2.ssid = ssid2ghz;
@@ -260,43 +274,74 @@ diagAppAPIController.configureWifi = async function(req, res) {
       } else {
         // Replace relevant wifi fields with new values
         if (content.wifi_ssid) {
-          device.wifi_ssid = content.wifi_ssid.trim();
-          changes.wifi2.ssid = content.wifi_ssid.trim();
+          const ssid = content.wifi_ssid.trim();
+          if (ssid !== device.wifi_ssid) {
+            audit['wifi2Ssid'] = {old: device.wifi_ssid, new: ssid};
+          }
+          device.wifi_ssid = ssid;
+          changes.wifi2.ssid = ssid;
           updateParameters = true;
         }
         if (content.wifi_ssid_5ghz) {
-          device.wifi_ssid_5ghz = content.wifi_ssid_5ghz.trim();
-          changes.wifi5.ssid = content.wifi_ssid_5ghz.trim();
+          const ssid = content.wifi_ssid_5ghz.trim();
+          if (ssid !== device.wifi_ssid_5ghz) {
+            audit['wifi5Ssid'] = {old: device.wifi_ssid_5ghz, new: ssid};
+          }
+          device.wifi_ssid_5ghz = ssid;
+          changes.wifi5.ssid = ssid;
           updateParameters = true;
         }
       }
 
       if (content.wifi_password) {
-        device.wifi_password = content.wifi_password.trim();
-        changes.wifi2.password = content.wifi_password.trim();
+        const password = content.wifi_password.trim();
+        if (password !== device.wifi_password) {
+          audit['wifi2Password'] = {old: device.wifi_password, new: password};
+        }
+        device.wifi_password = password;
+        changes.wifi2.password = password;
         updateParameters = true;
       }
       if (content.wifi_password_5ghz) {
-        device.wifi_password_5ghz = content.wifi_password_5ghz.trim();
-        changes.wifi5.password = content.wifi_password_5ghz.trim();
+        const password = content.wifi_password_5ghz.trim();
+        if (password !== device.wifi_password_5ghz) {
+          audit['wifi5Password'] = {
+            old: device.wifi_password_5ghz,
+            new: password,
+          };
+        }
+        device.wifi_password_5ghz = password;
+        changes.wifi5.password = password;
         updateParameters = true;
       }
       if (content.wifi_channel) {
-        device.wifi_channel = content.wifi_channel.trim();
-        changes.wifi2.channel = content.wifi_channel.trim();
+        const channel = content.wifi_channel.trim();
+        if (channel !== device.wifi_channel) {
+          audit['wifi2Channel'] = {old: device.wifi_password, new: channel};
+        }
+        device.wifi_channel = channel;
+        changes.wifi2.channel = channel;
         updateParameters = true;
       }
       if (content.wifi_band && permissions.grantWifiBandEdit2) {
         // discard change to auto when model doesnt support it
         if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
-          device.wifi_band = content.wifi_band.trim();
-          changes.wifi2.band = content.wifi_band.trim();
+          const band = content.wifi_band.trim();
+          if (band !== device.wifi_band) {
+            audit['wifi5Band'] = {old: device.wifi_password, new: band};
+          }
+          device.wifi_band = band;
+          changes.wifi2.band = band;
           updateParameters = true;
         }
       }
       if (content.wifi_mode && permissions.grantWifiModeEdit) {
-        device.wifi_mode = content.wifi_mode.trim();
-        changes.wifi2.mode = content.wifi_mode.trim();
+        const mode = content.wifi_mode.trim();
+        if (mode !== device.wifi_mode) {
+          audit['wifi2Mode'] = {old: device.wifi_password, new: mode};
+        }
+        device.wifi_mode = mode;
+        changes.wifi2.mode = mode;
         updateParameters = true;
       }
       if (content.wifi_channel_5ghz) {
@@ -305,8 +350,15 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (validator.validateChannel(
           content.wifi_channel_5ghz, permissions.grantWifi5ChannelList,
         ).valid) {
-          device.wifi_channel_5ghz = content.wifi_channel_5ghz.trim();
-          changes.wifi5.channel = content.wifi_channel_5ghz.trim();
+          const channel = content.wifi_channel_5ghz.trim();
+          if (channel !== device.wifi_channel_5ghz) {
+            audit['wifi5Channel'] = {
+              old: device.wifi_channel_5ghz,
+              new: channel,
+            };
+          }
+          device.wifi_channel_5ghz = channel;
+          changes.wifi5.channel = channel;
           updateParameters = true;
         }
       }
@@ -315,14 +367,22 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (
           content.wifi_band_5ghz !== 'auto' || permissions.grantWifiBandAuto5
         ) {
-          device.wifi_band_5ghz = content.wifi_band_5ghz.trim();
-          changes.wifi5.band = content.wifi_band_5ghz.trim();
+          const band = content.wifi_band_5ghz.trim();
+          if (band !== device.wifi_band_5ghz) {
+            audit['wifi5Band'] = {old: device.wifi_band_5ghz, new: band};
+          }
+          device.wifi_band_5ghz = band;
+          changes.wifi5.band = band;
           updateParameters = true;
         }
       }
       if (content.wifi_mode_5ghz && permissions.grantWifiModeEdit) {
-        device.wifi_mode_5ghz = content.wifi_mode_5ghz.trim();
-        changes.wifi5.mode = content.wifi_mode_5ghz.trim();
+        const mode = content.wifi_mode_5ghz.trim();
+        if (mode !== device.wifi_mode_5ghz) {
+          audit['wifi5Mode'] = {old: device.wifi_mode_5ghz, new: mode};
+        }
+        device.wifi_mode_5ghz = mode;
+        changes.wifi5.mode = mode;
         updateParameters = true;
       }
       // If no fields were changed, we can safely reply here
@@ -364,6 +424,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
           );
         }
       }
+      Audit.cpe(req.user, device, 'edit', audit);
       return res.status(200).json({'success': true});
     } else {
       return res.status(403).json({'error':
@@ -420,13 +481,24 @@ diagAppAPIController.configureMeshMode = async function(req, res) {
         });
       }
     }
+
+    const oldMeshMode = device.mesh_mode;
     meshHandlers.setMeshMode(device, targetMode);
+
     device.do_update_parameters = true;
     await device.save();
     meshHandlers.syncSlaves(device);
     if (!device.use_tr069) {
       // flashbox device, call mqtt
       mqtt.anlixMessageRouterUpdate(device._id);
+    }
+    if (oldMeshMode !== targetMode) {
+      Audit.cpe(req.user, device, 'edit', {
+        'meshMode': {
+          old: Audit.toTranslate(meshHandlers.modeTag[oldMeshMode]),
+          new: Audit.toTranslate(meshHandlers.modeTag[targetMode]),
+        },
+      });
     }
     return res.status(200).json({'success': true});
   } catch (err) {
@@ -487,6 +559,11 @@ diagAppAPIController.removeSlaveMeshV1 = async function(req, res) {
         return res.status(500).json({'error':
           t('operationUnsuccessful', {errorline: __line})});
       }
+      Audit.cpes(req.user, [device.mesh_master, device._id], 'trigger', {
+        'cmd': 'disassociatedSlaveMesh',
+        'primary': device.mesh_master,
+        'secondary': device._id,
+      });
     } else {
       return res.status(403).json({'error':
         t('macUndefined', {errorline: __line})});
@@ -825,18 +902,38 @@ diagAppAPIController.configureWanOnu = async function(req, res) {
         return res.status(404).json({'error':
           t('macNotFound', {errorline: __line})});
       }
+      const audit = {};
       let content = req.body;
       if (content.pppoe_user) {
-        device.pppoe_user = content.pppoe_user.trim();
+        const pppoeUser = content.pppoe_user.trim();
+        if (device.pppoe_user !== pppoeUser) {
+          audit['pppoe_user'] = {old: device.pppoe_user, new: pppoeUser};
+        }
+        device.pppoe_user = pppoeUser;
       }
       if (content.pppoe_password) {
-        device.pppoe_password = content.pppoe_password.trim();
+        const pppoePassword = content.pppoe_password.trim();
+        if (device.pppoe_password !== pppoePassword) {
+          audit['pppoe_password'] = {
+            old: device.pppoe_password,
+            new: pppoePassword,
+          };
+        }
+        device.pppoe_password = pppoePassword;
       }
       if (content.connection_type) {
-        device.connection_type = content.connection_type;
+        const connectionType = content.connection_type.trim();
+        if (device.connection_type !== connectionType) {
+          audit['connection_type'] = {
+            old: device.connection_type,
+            new: connectionType,
+          };
+        }
+        device.connection_type = connectionType;
       }
       // Apply changes to database and reply
       await device.save();
+      Audit.cpe(req.user, device, 'edit', audit);
       return res.status(200).json({'success': true});
     } else {
       return res.status(403).json({'error':
@@ -1101,6 +1198,12 @@ diagAppAPIController.associateSlaveMeshV2 = async function(req, res) {
     response.lastBootDate = lastBootDate.getTime();
   }
 
+  Audit.cpes(req.user, [matchedMaster._id, matchedSlave._id], 'trigger', {
+    'cmd': 'associatedSlaveMesh',
+    'primary': matchedMaster._id,
+    'secondary': matchedSlave._id,
+  });
+
   return res.status(200).json(response);
 };
 
@@ -1119,8 +1222,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
     });
   }
   let matchedSlave = await DeviceModel.findById(slaveMacAddr,
-  'mesh_master mesh_slaves mesh_mode')
-  .exec().catch((e) => e);
+    'mesh_master mesh_slaves mesh_mode').exec().catch((e) => e);
   if (matchedSlave instanceof Error) {
     return res.status(500).json({
       success: false,
@@ -1149,7 +1251,7 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
   }
   const masterMacAddr = matchedSlave.mesh_master.toUpperCase();
   let matchedMaster = await DeviceModel.findById(masterMacAddr,
-  'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
+    'mesh_master mesh_slaves mesh_mode use_tr069 last_contact do_update_status')
   .exec().catch((e) => e);
   if (matchedMaster instanceof Error) {
     return res.status(500).json({
@@ -1225,6 +1327,12 @@ diagAppAPIController.disassociateSlaveMeshV2 = async function(req, res) {
     return map[slaveMacAddr];
   });
   if (isSlaveOn) mqtt.anlixMessageRouterUpdate(slaveMacAddr);
+
+  Audit.cpes(req.user, [matchedMaster._id, matchedSlave._id], 'trigger', {
+    'cmd': 'disassociatedSlaveMesh',
+    'primary': matchedMaster._id,
+    'secondary': matchedSlave._id,
+  });
 
   return res.status(200).json({
     success: true,

@@ -3,19 +3,13 @@ process.env.FLASHAUDIT_ENABLED = 'true';
 require('../../bin/globals.js');
 const {ObjectID} = require('mongodb');
 const mockingoose = require('mockingoose');
+const utils = require('../utils');
+const FlashAudit = require('@anlix-io/flashaudit-node-client');
+const Audit = require('../../controllers/audit');
 const ConfigModel = require('../../models/config');
 const DeviceModel = require('../../models/device');
 const UserModel = require('../../models/user');
 const RoleModel = require('../../models/role');
-const deviceListController = require('../../controllers/device_list');
-const userController = require('../../controllers/user');
-const updateScheduler = require('../../controllers/update_scheduler');
-const updateSchedulerCommon =
-  require('../../controllers/update_scheduler_common');
-const utils = require('../utils');
-const FlashAudit = require('@anlix-io/flashaudit-node-client');
-const Audit = require('../../controllers/audit');
-
 
 // mocked CPEs to be used in all tests.
 const cpesMock = [{
@@ -35,11 +29,17 @@ const cpesMock = [{
     {mac: 'ab:ab:ab:ab:ab:ad'},
     {mac: 'ab:ab:ab:ab:ab:ae'},
   ],
+  vlan: [
+    {port: 1, vlan_id: 100},
+    {port: 2, vlan_id: 500},
+    {port: 4, vlan_id: 900},
+  ],
 }, {
   _id: 'AB:AB:AB:AB:AB:AB',
   version: '0.42.0',
   model: 'W5-1200FV1',
   mesh_slaves: ['AB:AB:AB:AB:AB:AC'],
+  mesh_mode: 1,
 }, {
   _id: 'AB:AB:AB:AB:AB:AC',
   version: '0.42.0',
@@ -69,7 +69,7 @@ const cpesMock = [{
   }],
 }];
 
-// mocked User to be used in all tests.
+// mocked Users to be used in all tests.
 const usersMock = [{
   // eslint-disable-next-line new-cap
   _id: ObjectID(),
@@ -136,6 +136,13 @@ const configMock = {
     used_search: 'AB:AB:AB:AB:AB:AA',
     date: new Date('2023-01-31T04:25:23.393Z'),
   },
+  vlans_profiles: [{
+    vlan_id: 100,
+    profile_name: 'vlanName1',
+  }, {
+    vlan_id: 200,
+    profile_name: 'vlanName2',
+  }],
 };
 
 // mocking FlashAudit node client.
@@ -250,6 +257,7 @@ jest.mock('../../controllers/messaging', () => ({
 
 jest.mock('../../controllers/external-api/control', () => ({
   changeLicenseStatus: () => ({success: true}),
+  meshLicenseCredit: () => ({success: true}),
 }));
 
 jest.mock('../../controllers/acs_device_info', () => ({
@@ -268,6 +276,15 @@ jest.mock('../../controllers/acs_device_info', () => ({
 jest.mock('../../controllers/external-genieacs/tasks-api', () => ({
   deleteDeviceFromGenie: async () => true,
 }));
+
+// Modules to be tested.
+const deviceListController = require('../../controllers/device_list');
+const userController = require('../../controllers/user');
+const updateScheduler = require('../../controllers/update_scheduler');
+const technicianAppController = require('../../controllers/app_diagnostic_api');
+const updateSchedulerCommon =
+  require('../../controllers/update_scheduler_common');
+const vlanController = require('../../controllers/vlan');
 
 // eslint-disable-next-line no-multiple-empty-lines
 let db = {
@@ -1588,7 +1605,7 @@ describe('Controllers - Audit', () => {
       });
     });
   });
-/*
+
   describe('Checking Audit values in update scheduler', () => {
     beforeAll(() => {
       jest.spyOn(deviceListController, 'getReleases')
@@ -1600,7 +1617,7 @@ describe('Controllers - Audit', () => {
       mockingoose(DeviceModel).toReturn(cpesMock, 'find');
     });
 
-    test('Start schedule', async (done) => {
+    test('Start schedule', async () => {
       const req = {
         body: {
           use_search: 'lala',
@@ -1617,32 +1634,45 @@ describe('Controllers - Audit', () => {
         },
         user: {_id: '1234', role: 'tester'},
       };
+
+      let auditResolved;
+      const auditCallPromise = new Promise((r) => auditResolved = r);
       sendMock.mockImplementationOnce((message) => {
-        try {
-          expect(message.user).toBe('1234');
-          const searchable = [];
-          const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
-          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
-          expect(message.searchable).toEqual(searchable);
-          expect(message.operation).toBe('trigger');
-          expect(message.values).toEqual({
-            cmd: 'update_scheduler',
-            searchTerms: [cpesMock[0]._id],
-            started: true,
-            release: 'release1',
-            total: cpes.length,
-            allCpes: true,
-          });
-          done();
-        } catch (e) {
-          done(e);
-        }
+        auditResolved(message);
         return Promise.resolve(undefined);
       });
-      await updateScheduler.startSchedule(req, utils.mockResponse());
+
+      let responseResolved;
+      const responsePromise = new Promise((r) => responseResolved = r);
+      const res = {
+        status: (n) => res,
+        json: (json) => {
+          responseResolved(json);
+          return res;
+        },
+      };
+
+      updateScheduler.startSchedule(req, res);
+      await responsePromise;
+      const message = await auditCallPromise;
+
+      expect(message.user).toBe('1234');
+      const searchable = [];
+      const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
+      cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
+      expect(message.searchable).toEqual(searchable);
+      expect(message.operation).toBe('trigger');
+      expect(message.values).toEqual({
+        cmd: 'update_scheduler',
+        searchTerms: [cpesMock[0]._id],
+        started: true,
+        release: 'release1',
+        total: cpes.length,
+        allCpes: true,
+      });
     });
 
-    test('Start schedule with time restrictions', async (done) => {
+    test('Start schedule with time restrictions', async () => {
       const req = {
         body: {
           use_search: 'lala',
@@ -1665,36 +1695,49 @@ describe('Controllers - Audit', () => {
         },
         user: {_id: '1234', role: 'tester'},
       };
+
+      let auditResolved;
+      const auditCallPromise = new Promise((r) => auditResolved = r);
       sendMock.mockImplementationOnce((message) => {
-        try {
-          expect(message.user).toBe('1234');
-          const searchable = [];
-          const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
-          cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
-          expect(message.searchable).toEqual(searchable);
-          expect(message.operation).toBe('trigger');
-          expect(message.values).toEqual({
-            cmd: 'update_scheduler',
-            searchTerms: [cpesMock[0]._id],
-            started: true,
-            release: 'release1',
-            total: cpes.length,
-            allowedTimeRanges: [{
-              start_day: '$t("Sunday")', end_day: '$t("Monday")',
-              start_time: '10:00', end_time: '22:00',
-            }, {
-              start_day: '$t("Wednesday")', end_day: '$t("Friday")',
-              start_time: '22:00', end_time: '06:00',
-            }],
-            allCpes: true,
-          });
-          done();
-        } catch (e) {
-          done(e);
-        }
+        auditResolved(message);
         return Promise.resolve(undefined);
       });
-      await updateScheduler.startSchedule(req, utils.mockResponse());
+
+      let responseResolved;
+      const responsePromise = new Promise((r) => responseResolved = r);
+      const res = {
+        status: (n) => res,
+        json: (json) => {
+          responseResolved(json);
+          return res;
+        },
+      };
+
+      updateScheduler.startSchedule(req, res);
+      await responsePromise;
+      const message = await auditCallPromise;
+
+      expect(message.user).toBe('1234');
+      const searchable = [];
+      const cpes = cpesMock.filter((cpe) => !cpe.mesh_master);
+      cpes.forEach((cpe) => Audit.appendCpeIds(searchable, cpe));
+      expect(message.searchable).toEqual(searchable);
+      expect(message.operation).toBe('trigger');
+      expect(message.values).toEqual({
+        cmd: 'update_scheduler',
+        searchTerms: [cpesMock[0]._id],
+        started: true,
+        release: 'release1',
+        total: cpes.length,
+        allowedTimeRanges: [{
+          start_day: '$t("Sunday")', end_day: '$t("Monday")',
+          start_time: '10:00', end_time: '22:00',
+        }, {
+          start_day: '$t("Wednesday")', end_day: '$t("Friday")',
+          start_time: '22:00', end_time: '06:00',
+        }],
+        allCpes: true,
+      });
     });
 
     test('Abort schedule', (done) => {
@@ -1759,7 +1802,321 @@ describe('Controllers - Audit', () => {
       updateScheduler.abortSchedule({}, res);
     });
   });
-*/
+
+  describe('Checking Audit values in technician app api', () => {
+    test('Wifi configuration', (done) => {
+      const req = {
+        body: {
+          mac: cpesMock[0]._id,
+          wifi_ssid: 'some ssid',
+          wifi_password: 'some password',
+          wifi_ssid_5ghz: 'some ssid 5G',
+          wifi_password_5ghz: 'some password 5G',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(1);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[0]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            wifi2Ssid: {old: 'old-wifi-test', new: 'some ssid'},
+            wifi2Password: {new: 'some password'},
+            wifi5Ssid: {old: 'old-wifi-test-5g', new: 'some ssid 5G'},
+            wifi5Password: {new: 'some password 5G'},
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.configureWifi(req, utils.mockResponse());
+    });
+
+    test('Mesh mode configuration', (done) => {
+      const req = {
+        body: {
+          mac: cpesMock[0]._id,
+          mesh_mode: 1,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(1);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[0]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            meshMode: {old: `$t("Disabled")`, new: `$t("Cable")`},
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.configureMeshMode(req, utils.mockResponse());
+    });
+
+    test('Remove mesh slave v1', (done) => {
+      const req = {
+        body: {
+          remove_mac: cpesMock[2]._id,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(2);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[1]);
+          Audit.appendCpeIds(searchable, cpesMock[2]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
+            cmd: 'disassociatedSlaveMesh',
+            primary: cpesMock[1]._id,
+            secondary: cpesMock[2]._id,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.removeSlaveMeshV1(req, utils.mockResponse());
+    });
+
+    test('ONU WAN configuration', (done) => {
+      const req = {
+        body: {
+          mac: cpesMock[0]._id,
+          pppoe_user: 'pppoe_user',
+          pppoe_password: 'password',
+          connection_type: 'dhcp',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(1);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[0]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            pppoe_user: {new: 'pppoe_user'},
+            pppoe_password: {old: 'dummypass', new: 'password'},
+            connection_type: {new: 'dhcp'},
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.configureWanOnu(req, utils.mockResponse());
+    });
+
+    test('Associate mesh slave v2', (done) => {
+      const req = {
+        body: {
+          master: cpesMock[1]._id,
+          slave: cpesMock[0]._id,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(2);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[1]);
+          Audit.appendCpeIds(searchable, cpesMock[0]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
+            cmd: 'associatedSlaveMesh',
+            primary: cpesMock[1]._id,
+            secondary: cpesMock[0]._id,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.associateSlaveMeshV2(req, utils.mockResponse());
+    });
+
+    test('Disassociate mesh slave v2', (done) => {
+      const req = {
+        body: {
+          master: cpesMock[1]._id,
+          slave: cpesMock[2]._id,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable.length).toBe(2);
+          const searchable = [];
+          Audit.appendCpeIds(searchable, cpesMock[1]);
+          Audit.appendCpeIds(searchable, cpesMock[2]);
+          expect(message.searchable).toEqual(searchable);
+          expect(message.operation).toBe('trigger');
+          expect(message.values).toEqual({
+            cmd: 'disassociatedSlaveMesh',
+            primary: cpesMock[1]._id,
+            secondary: cpesMock[2]._id,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      technicianAppController.disassociateSlaveMeshV2(req,
+        utils.mockResponse());
+    });
+  });
+
+  describe('Checking Audit values in VLAN', () => {
+    test('Adding VLAN Profile', (done) => {
+      const req = {
+        body: {
+          id: 99,
+          name: 'testVlan',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual([String(req.body.id)]);
+          expect(message.operation).toBe('create');
+          expect(message.values).toEqual({
+            name: req.body.name,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.addVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Editing VLAN Profile', (done) => {
+      const req = {
+        body: {
+          profilename: 'testVlan',
+        },
+        params: {
+          vid: '100',
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(
+            [String(configMock.vlans_profiles[0].vlan_id)],
+          );
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            name: {
+              old: configMock.vlans_profiles[0].profile_name,
+              new: req.body.profilename,
+            },
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.editVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Remove VLAN Profiles', (done) => {
+      const req = {
+        body: {
+          ids: ['100', '200'],
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual(req.body.ids);
+          expect(message.operation).toBe('delete');
+          expect(message.values).toEqual({
+            totalRemoved: req.body.ids.length,
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.removeVlanProfile(req, utils.mockResponse());
+    });
+
+    test('Edit VLAN Profiles in CPE', (done) => {
+      const req = {
+        body: {
+          vlans: JSON.stringify([
+            {port: 1, vlan_id: 100},
+            {port: 2, vlan_id: 200},
+            {port: 3, vlan_id: 300},
+          ]),
+        },
+        params: {
+          deviceid: cpesMock[0]._id,
+        },
+        user: {_id: '1234'},
+      };
+      sendMock.mockImplementationOnce((message) => {
+        try {
+          expect(message.user).toBe('1234');
+          expect(message.searchable).toEqual([cpesMock[0]._id]);
+          expect(message.operation).toBe('edit');
+          expect(message.values).toEqual({
+            vlans: {
+              2: {
+                vlan_id: {
+                  old: cpesMock[0].vlan[1].vlan_id,
+                  new: req.body.vlans[1].vlan_id,
+                },
+              },
+              3: {
+                vlan_id: req.body.vlans[2].vlan_id,
+              },
+              4: null,
+            },
+          });
+          done();
+        } catch (e) {
+          done(e);
+        }
+        return Promise.resolve(undefined);
+      });
+      vlanController.updateVlans(req, utils.mockResponse());
+    });
+  });
+
   describe('Try later logic', () => {
     const m = {a: 10, b: 'abc'}; // mocked message.
 
