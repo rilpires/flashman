@@ -2211,8 +2211,6 @@ deviceListController.setDeviceReg = function(req, res) {
         util.returnObjOrEmptyStr(content.lan_subnet).toString().trim();
       let lanNetmask =
         parseInt(util.returnObjOrNum(content.lan_netmask, 24));
-      let lanDnsServers =
-        util.returnObjOrEmptyStr(content.lan_dns_servers).toString().trim();
       let ssid =
         util.returnObjOrEmptyStr(content.wifi_ssid).toString().trim();
       let password =
@@ -2405,10 +2403,6 @@ deviceListController.setDeviceReg = function(req, res) {
         }
         if (content.hasOwnProperty('lan_netmask')) {
           genericValidate(lanNetmask, validator.validateNetmask, 'lan_netmask');
-        }
-        if (content.hasOwnProperty('lan_dns_servers')) {
-          genericValidate(lanDnsServers, validator.validateDnsServers,
-                          'lan_dns_servers');
         }
         if (bridgeEnabled && bridgeFixIP) {
           genericValidate(bridgeFixIP, validator.validateIP,
@@ -2834,6 +2828,33 @@ deviceListController.setDeviceReg = function(req, res) {
                   old: matchedDevice.lan_subnet,
                   new: lanSubnet,
                 };
+                // Before replacing the subnet field with the new value, it is
+                // checked whether it is necessary to change the value of the
+                // DNS field. This scenario happens if the old subnet value is
+                // contained in the DNS servers address list
+                let lanDns = matchedDevice.lan_dns_servers.split(',');
+                if (lanDns.includes(matchedDevice.lan_subnet)) {
+                  let newLanDns = [];
+                  for (let i=0; i<lanDns.length; i++) {
+                    // Replaces the address referring to the old subnet value
+                    // only if it is no longer contained in the DNS server list
+                    if (
+                        lanDns[i] === matchedDevice.lan_subnet &&
+                        !lanDns.includes(lanSubnet) &&
+                        !newLanDns.includes(lanSubnet)
+                      ) {
+                      newLanDns.push(lanSubnet);
+                    } else if (
+                        lanDns[i] !== matchedDevice.lan_subnet &&
+                        !newLanDns.includes(lanDns[i])
+                      ) {
+                      // Otherwise, it keeps the addresses in the list, taking
+                      // care not to add duplicate addresses.
+                      newLanDns.push(lanDns[i]);
+                    }
+                  }
+                  matchedDevice.lan_dns_servers = newLanDns.join(',');
+                }
                 matchedDevice.lan_subnet = lanSubnet;
                 updateParameters = true;
               } else {
@@ -2850,21 +2871,6 @@ deviceListController.setDeviceReg = function(req, res) {
                   new: lanNetmask,
                 };
                 matchedDevice.lan_netmask = lanNetmask;
-                updateParameters = true;
-              } else {
-                hasPermissionError = true;
-              }
-            }
-            if (content.hasOwnProperty('lan_dns_servers') &&
-                lanDnsServers !== '' && !matchedDevice.bridge_mode_enabled &&
-                lanDnsServers !== matchedDevice.lan_dns_servers) {
-              if (superuserGrant || role.grantLanEdit) {
-                changes.lan.dns_servers = lanDnsServers;
-                audit['lan_dns_servers'] = {
-                  old: matchedDevice.lan_dns_servers,
-                  new: lanDnsServers,
-                };
-                matchedDevice.lan_dns_servers = lanDnsServers;
                 updateParameters = true;
               } else {
                 hasPermissionError = true;
@@ -4016,11 +4022,75 @@ deviceListController.getLanDNSServers = async function(req, res) {
       // Get permissions to get max LAN DNS servers router accepts
       let permissions = DeviceVersion.devicePermissions(device);
       return res.status(200).json({
-      success: true,
-      lan_dns_servers_list: responseDNSServers.split(','),
-      lan_subnet: device.lan_subnet,
-      max_dns: permissions.grantLanDnsLimit,
+        success: true,
+        lan_dns_servers_list: responseDNSServers.split(','),
+        lan_subnet: device.lan_subnet,
+        max_dns: permissions.grantLanDnsLimit,
     });
+  });
+};
+
+deviceListController.setLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    async function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+    if (!req.body.dns_servers_list) {
+      return res.status(200).json({
+        success: false,
+        message: t('bodyNotObject', {errorline: __line}),
+      });
+    }
+    let dnsServers = req.body.dns_servers_list;
+    let approvedDnsServersList = [];
+    dnsServers.forEach((dns) => {
+      if (dns.match(util.ipv4Regex)) {
+        approvedDnsServersList.push(dns);
+      }
+    });
+    let approvedDnsServers = approvedDnsServersList.join(',');
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+    let fields = cpe.getModelFields();
+    let task = {
+      name: 'setParameterValues',
+      parameterValues: [
+        [fields.lan.dns_servers, approvedDnsServers, 'xsd:string'],
+      ],
+    };
+    const result = await TasksAPI.addTask(matchedDevice.acs_id, task);
+    if (result.success) {
+      matchedDevice.lan_dns_servers = approvedDnsServers;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+          approved_dns_servers_list: approvedDnsServers,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('genieacsCommunicationError', {errorline: __line}),
+      });
+    }
   });
 };
 
