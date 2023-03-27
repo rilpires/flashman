@@ -2,21 +2,24 @@
 /* global __line */
 
 import {anlixDocumentReady} from '../src/common.index.js';
-import {setDNSServersList, getDNSServersList} from './session_storage.js';
+import {
+  setDNSServersList, getDNSServersList, deleteDNSServersList,
+} from './session_storage.js';
 
 const t = i18next.t;
 
-let MAX_DNS_SERVERS = 3;
+let DEVICE_ID = null;
+let MAX_DNS_SERVERS = 1;
 let TARGET_INDEX = null;
 let LAN_SUBNET = null;
 
 const getDNSServers = function(event) {
   // Get device id
   let row = $(event.target).parents('tr');
-  let id = row.data('deviceid');
+  DEVICE_ID = row.data('deviceid');
   $.ajax({
     type: 'GET',
-    url: '/devicelist/landnsserverslist/' + id,
+    url: '/devicelist/landnsserverslist/' + DEVICE_ID,
     dataType: 'json',
     success: function(res) {
       if (res.success) {
@@ -214,9 +217,9 @@ const findDNSTypeFromTableIndex = function(index) {
          t('dnsServerAddress');
 };
 
-const setDNSServers = function() {
-  let dnsServersInfo = getDNSServersList('dnsServersInfo');
-  if (TARGET_INDEX === undefined || TARGET_INDEX === null) {
+const setDNSServers = function(event) {
+  if ((TARGET_INDEX === undefined || TARGET_INDEX === null)
+      && (DEVICE_ID === undefined || DEVICE_ID === null)) {
     swal.fire({
       icon: 'error',
       title: t('unexpectedErrorHappened'),
@@ -224,12 +227,36 @@ const setDNSServers = function() {
     });
     return;
   } else {
-    // Changes the form referring to the device being edited
-    $('#edit_lan_dns-' + TARGET_INDEX).val(
-      dnsServersInfo.slice(0, MAX_DNS_SERVERS).join(','),
-    );
-    // Close modal
-    $('#config-lan-dns-modal.modal').modal('hide');
+    // Send HTTP post request
+    $.ajax({
+      type: 'POST',
+      url: '/devicelist/landnsserverslist/' + DEVICE_ID,
+      dataType: 'json',
+      data: JSON.stringify({
+        dns_servers_list: getDNSServersList('dnsServersInfo'),
+      }),
+      contentType: 'application/json',
+      success: function(res) {
+        // Changes the form value to the backend approved DNS servers
+        $('#edit_lan_dns-' + TARGET_INDEX).val(res.approved_dns_servers_list);
+        // Clear storage
+        deleteDNSServersList();
+        // Close modal
+        $('#config-lan-dns-modal.modal').modal('hide');
+        swal.fire({
+          icon: 'success',
+          title: res.message,
+          confirmButtonColor: '#4db6ac',
+        });
+      },
+      error: function(xhr, status, error) {
+        swal.fire({
+          icon: 'error',
+          title: error,
+          confirmButtonColor: '#4db6ac',
+        });
+      },
+    });
   }
 };
 

@@ -99,7 +99,6 @@ let validateEditDevice = function(event) {
   let wanVlan = $('#edit_wan_vlan-' + index.toString()).val();
   let lanSubnet = $('#edit_lan_subnet-' + index.toString()).val();
   let lanNetmask = $('#edit_lan_netmask-' + index.toString()).val();
-  let lanDns = $('#edit_lan_dns-' + index.toString()).val();
   let ssid = $('#edit_wifi_ssid-' + index.toString()).val();
   let password = $('#edit_wifi_pass-' + index.toString()).val();
   let channel = $('#edit_wifi_channel-' + index.toString()).val();
@@ -184,7 +183,6 @@ let validateEditDevice = function(event) {
     power5ghz: {field: '#edit_wifi5_power-' + index.toString()},
     lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
     lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
-    lan_dns: {field: '#edit_lan_dns-' + index.toString()},
     bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
     bridge_fixed_gateway: {
       field: '#edit_opmode_fixip_gateway-' + index.toString()},
@@ -297,10 +295,6 @@ let validateEditDevice = function(event) {
                     '192.168.43');
     genericValidate(lanNetmask,
                     validator.validateNetmask, errors.lan_netmask);
-    // If field is an empty string, does not include in changes
-    if (lanDns !== '') {
-      genericValidate(lanDns, validator.validateDnsServers, errors.lan_dns);
-    }
   }
   if (validateBridge && useBridgeFixIP) {
     genericValidate(bridgeFixIP, validator.validateIP,
@@ -366,9 +360,6 @@ let validateEditDevice = function(event) {
     if (validateLan) {
       data.content.lan_subnet = lanSubnet;
       data.content.lan_netmask = lanNetmask;
-      if (lanDns !== '') {
-        data.content.lan_dns_servers = lanDns;
-      }
     }
     if (validateBridge) {
       // Keep this logic, because in the fronted was
@@ -405,6 +396,21 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString())
             .addClass('d-none');
         }
+        // Atualiza campo de DNS
+        $.ajax({
+          type: 'GET',
+          url: '/devicelist/landnsserverslist/' + mac,
+          dataType: 'json',
+          success: function(res) {
+            if (res.success) {
+              if (res.lan_dns_servers_list) {
+                $('#edit_lan_dns-' + index).val(
+                  res.lan_dns_servers_list.join(','),
+                );
+              }
+            }
+          },
+        });
         switchSubmitButton(index);
       },
       error: function(xhr, status, error) {

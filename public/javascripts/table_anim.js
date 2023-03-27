@@ -968,7 +968,7 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 id="edit_button-'+index+
+        '<button class="btn btn-primary mx-0 id="btn-edit-submit'+
           meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
@@ -3937,33 +3937,6 @@ anlixDocumentReady.add(function() {
       if (!cssClass2 == false) {
         cssClass2.add('d-none');
       }
-    }
-  });
-
-  $(document).on('change', '[id^="edit_lan_subnet-"]', (event) => {
-    let subnetField = $(event.currentTarget);
-    let index = subnetField.attr('id').match(/\d+/)[0];
-    let dnsField = $('#edit_lan_dns-' + index);
-    let dnsList = dnsField.val().split(',');
-    let oldSubnetValue = subnetField.attr('value');
-    let newSubnetValue = subnetField.val();
-    let newDnsList = [];
-    for (let i=0; i<dnsList.length; i++) {
-    if (dnsList[i] === oldSubnetValue) {
-      // If the DNS field contains the old subnet value, and the new subnet
-      // value is not already in the list, replace the old subnet value with
-      // the new one in the new DNS value
-      if (!dnsList.includes(newSubnetValue)) {
-        newDnsList.push(newSubnetValue);
-      }
-    } else {
-      // If the address is not equal to newSubnetValue, mantain in the list
-      newDnsList.push(dnsList[i]);
-     }
-    }
-    // Change the field value if necessary
-    if (newDnsList.join(',') !== dnsField.val()) {
-      dnsField.val(newDnsList.join(','));
     }
   });
 });
