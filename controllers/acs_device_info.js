@@ -2561,6 +2561,7 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   // If the task must be executed, only if it is not going to disable or cable
   const mustExecute = (targetMode !== 0 && targetMode !== 1);
+
   const updated = await acsDeviceInfoController.updateInfo(
     device,
     changes,
