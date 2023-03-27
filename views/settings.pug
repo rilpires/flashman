@@ -226,6 +226,30 @@ block content
                     select.browser-default.md-select(name="dns-step-required")
                       option(value="true")= t('Enabled')
                       option(value="false")= t('Disabled')
+                .custom-control.custom-checkbox
+                  input#specific-app-technician-web-login.custom-control-input(
+                    name="specific-app-technician-web-login",
+                    type="checkbox",
+                  )
+                  label.custom-control-label.text-muted(for="specific-app-technician-web-login")
+                    | #{t('enableSpecificAppTechnicianWebLogin')}
+                  .invalid-feedback
+                .md-form.input-entry.mb-2
+                  label(style="pointer-events: none;")= t('User')
+                  input#attempt-web-login.form-control(
+                    type="text",
+                    name="attempt-web-login"
+                    oninput="checkLoginWebInterface()"
+                  )
+                  #error-attempt-web-login.invalid-feedback= t('insertValidLogin')
+                .md-form.input-entry.mb-2
+                  label(style="pointer-events: none;")= t('Password')
+                  input#attempt-web-password.form-control(
+                    type="text",
+                    name="attempt-web-password"
+                    oninput="checkPasswordWebInterface()"
+                  )
+                  #error-attempt-web-password.invalid-feedback= t('insertValidPassword')
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
