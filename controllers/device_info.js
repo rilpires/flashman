@@ -541,8 +541,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         let lanSubnet = util.returnObjOrEmptyStr(req.body.lan_addr).trim();
         let lanNetmask =
           parseInt(util.returnObjOrNum(req.body.lan_netmask, 24));
-        let lanDnsServers =
-          util.returnObjOrEmptyStr(req.body.lan_dns_servers).trim();
         if (((!matchedDevice.lan_subnet || matchedDevice.lan_subnet == '') &&
              lanSubnet != '') || (changeLAN === '1')
         ) {
@@ -552,12 +550,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
         if (!matchedDevice.lan_netmask || (changeLAN === '1')) {
           deviceSetQuery.lan_netmask = lanNetmask;
           matchedDevice.lan_netmask = lanNetmask; // Used in device response
-        }
-        if (((!matchedDevice.lan_dns_servers || matchedDevice.lan_dns_servers ==
-            '') && lanDnsServers != '') || (changeLAN === '1')
-        ) {
-          deviceSetQuery.lan_dns_servers = lanDnsServers;
-          matchedDevice.lan_dns_servers = lanDnsServers;
         }
 
         // Update WAN configuration if it was sent by device
@@ -1057,8 +1049,6 @@ deviceInfoController.updateDevicesInfo = async function(req, res) {
               util.returnObjOrEmptyStr(matchedDevice.pppoe_password),
             'lan_addr': util.returnObjOrEmptyStr(matchedDevice.lan_subnet),
             'lan_netmask':
-              util.returnObjOrEmptyStr(matchedDevice.lan_netmask),
-            'lan_dns_servers':
               util.returnObjOrEmptyStr(matchedDevice.lan_dns_servers),
             'wifi_ssid': wifiSsid2ghz,
             'wifi_password':

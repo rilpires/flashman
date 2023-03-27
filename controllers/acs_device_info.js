@@ -437,12 +437,6 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
-  // Collect LAN Dns Servers
-  let lanDnsServers;
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    lanDnsServers = data.lan.dns_servers.value;
-  }
-
   let defaultPingHosts = matchedConfig.default_ping_hosts;
   // If config doesn't have a default, we force it to the legacy value here
   if (typeof defaultPingHosts == 'undefined' || defaultPingHosts.length == 0) {
@@ -519,7 +513,6 @@ const createRegistry = async function(req, cpe, permissions) {
     ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
-    lan_dns_servers: lanDnsServers,
     port_mapping: portMapping,
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
@@ -968,7 +961,6 @@ acsDeviceInfoController.requestSync = async function(device) {
   dataToFetch.lan = true;
   parameterNames.push(fields.lan.router_ip);
   parameterNames.push(fields.lan.subnet_mask);
-  parameterNames.push(fields.lan.dns_servers);
   // WiFi configuration fields
   dataToFetch.wifi2 = true;
   parameterNames.push(fields.wifi2.enable);
@@ -1203,9 +1195,6 @@ const fetchSyncResult = async function(
           data, lan.router_ip, useLastIndexOnWildcard);
         acsData.lan.subnet_mask = getFieldFromGenieData(
           data, lan.subnet_mask, useLastIndexOnWildcard,
-        );
-        acsData.lan.dns_servers = getFieldFromGenieData(
-          data, lan.dns_servers, useLastIndexOnWildcard,
         );
       }
       if (dataToFetch.wifi2) {
@@ -1612,16 +1601,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       subnetNumber > 0 && canChangeLAN && device.lan_netmask !== subnetNumber
     ) {
       changes.lan.subnet_mask = device.lan_netmask;
-      hasChanges = true;
-    }
-  }
-  let canChangeLANDns = cpe.modelPermissions().lan.dnsServersWrite;
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    if (!canChangeLANDns || !device.lan_dns_servers) {
-      device.lan_dns_servers = data.lan.lan_dns_servers.value;
-    } else if (canChangeLANDns &&
-      device.lan_dns_servers !== data.lan.dns_servers.value) {
-      changes.lan.dns_servers = device.lan_dns_servers;
       hasChanges = true;
     }
   }
@@ -2582,7 +2561,6 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   // If the task must be executed, only if it is not going to disable or cable
   const mustExecute = (targetMode !== 0 && targetMode !== 1);
-
   const updated = await acsDeviceInfoController.updateInfo(
     device,
     changes,
