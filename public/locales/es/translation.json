@@ -910,6 +910,7 @@
 	"mandatoryWanVerification": "Se requiere verificación de WAN",
 	"mandatoryIpvxVerification": "IPv{{-x}} verificación requerida",
 	"mandatoryDnsVerification": "Verificación DNS Obligatoria",
+	"enableSpecificAppTechnicianWebLogin": "Habilite un intento específico de inicio de sesión en la interfaz web en la aplicación del técnico",
 	"mandatoryFlashmanRegisterVerification": "Se requiere verificación de registro de Flashman",
 	"Enable": "Habilitar",
 	"Enabled": "Poder",
