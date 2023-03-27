@@ -3960,7 +3960,7 @@ anlixDocumentReady.add(function() {
         continue;
       }
     } else {
-      // Ih the address is not equal to oldSubnetValue, mantain in the list
+      // If the address is not equal to oldSubnetValue, mantain in the list
       newDnsList.push(dnsList[i]);
      }
     }
