@@ -297,20 +297,6 @@
       return ret;
     };
 
-    Validator.prototype.validateDnsServers = function(dnsServers) {
-      // dnsServers is a string of IP addresses separated by commas. If it
-      // contains a single address, it must not include commas.
-      const messages = [
-        t('thisFieldMustHaveAtLeastMinChars', {min: 7}),
-        t('thisFieldCannotHaveMoreThanMaxChars', {max: 47}),
-        t('thisFieldMustHaveValidIpFormat') + t('dnsMustBeSeparatedByComma'),
-        t('mustBeAString'),
-      ];
-      let ret = validateRegex(dnsServers, 7, 47, /^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))(,((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?).(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))){0,2}$/);
-      ret.err = ret.err.map((ind) => messages[ind]);
-      return ret;
-    };
-
     Validator.prototype.validateFqdn = function(fqdn) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 1}),
