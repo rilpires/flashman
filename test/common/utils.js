@@ -1,4 +1,8 @@
 /**
+ * Test utilities that can be used for devices-api.
+ * @namespace test/common/utils.devicesAPI
+ */
+/**
  * This file includes test utilities.
  * @namespace test/common/utils
  */
@@ -15,11 +19,14 @@ const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
 
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
+
 // Models
 const DeviceModel = require('../../models/device');
 const FirmwareModel = require('../../models/firmware');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
+const UserModel = require('../../models/user');
 
 // Environments
 process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
@@ -28,12 +35,23 @@ process.env.FLM_MAX_TIMEOUT_PERIOD = '1440';
 // Scheduler
 const updateScheduler = require('../../controllers/update_scheduler');
 
+// Devices API
+const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
 
 let utils = {
   common: {},
   schedulerCommon: {},
+  devicesAPICommon: {},
 };
-
+// Mock the mqtts (avoid aedes)
+jest.mock('../../mqtts', () => {
+  return {
+    __esModule: false,
+    unifiedClientsMap: {},
+    anlixMessageRouterUpdate: () => undefined,
+    getConnectedClients: () => [],
+  };
+});
 
 /**
  * Array of test cases.
@@ -253,6 +271,18 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
 
 
 /**
+ * Mock a User.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the user.
+ * @param {String} func - The function to be intercepted.
+ */
+utils.common.mockUsers = function(data, func) {
+  utils.common.mockMongo(UserModel, data, func);
+};
+
+/**
  * Mock a Role.
  *
  * @memberOf test/common/utils.common
@@ -263,7 +293,6 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
 utils.common.mockRoles = function(data, func) {
   utils.common.mockMongo(RoleModel, data, func);
 };
-
 
 /**
  * Mock devices in `defaultMockDevices`. There is a case that this function will
@@ -358,6 +387,20 @@ utils.common.mockDefaultRoles = function() {
   utils.common.mockRoles(models.defaultMockRoles[0], 'findById');
 };
 
+// Mock the config (used in language.js)
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+utils.common.mockConfigs(models.defaultMockConfigs[0], 'updateOne');
+
+/**
+ * Mock users in `defaultMockUsers`.
+ *
+ * @memberOf test/common/utils.common
+ */
+utils.common.mockDefaultUsers = function() {
+  utils.common.mockUsers(models.defaultMockUsers, 'find');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findOne');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findById');
+};
 
 /**
  * Get all device models based on the query passed.
@@ -617,6 +660,37 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
   );
 };
 
+/** ************ Devices API ************ **/
+
+utils.devicesAPICommon.validateUpgradeableModels = function(data) {
+  Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
+    let device = DevicesAPI.__testTR069Models[modelName];
+    let permission = device.modelPermissions();
+
+    let vendor = device.identifier.vendor;
+    let model = device.identifier.model;
+    let fullID = vendor + ' ' + model;
+
+    if (!permission.features.firmwareUpgrade) {
+      expect(data.vendors[vendor])
+        .not.toContain(model);
+
+      return;
+    }
+
+    expect(data.vendors[vendor])
+      .toContain(model);
+
+    let allFirmwares = Object.keys(
+      permission.firmwareUpgrades,
+    );
+
+    allFirmwares.forEach((firmware) => {
+      expect(data.versions[fullID])
+        .toContain(firmware);
+    });
+  });
+};
 
 /**
  * @exports test/common/utils

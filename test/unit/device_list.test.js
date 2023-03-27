@@ -7,6 +7,7 @@ const acsPortForwardHandler = require(
 const deviceListController = require('../../controllers/device_list');
 const acsDeviceInfo = require('../../controllers/acs_device_info');
 const meshHandlers = require('../../controllers/handlers/mesh');
+const utilsHandlers = require('../../controllers/handlers/util');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const DeviceVersion = require('../../models/device_version');
 const DeviceModel = require('../../models/device');
@@ -173,10 +174,10 @@ describe('Controllers - Device List', () => {
           content: {},
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(404);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
@@ -417,17 +418,20 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
+      utilsHandlers.sleep = jest.fn().mockResolvedValue();
+
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 4555));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
+
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].type).toBe('danger');
       expect(res.json.mock.lastCall[0].message)
         .toMatch('task error');
       expect(audit.cpe).toHaveBeenCalledTimes(0);
-    }, 10000);
+    });
     test('CPE save error', async () => {
       const deviceMock = [{
         _id: 'AB:AB:AB:AB:AB:AB',
@@ -557,10 +561,10 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wifi_ssid).toBe('new-wifi-test');
@@ -638,10 +642,10 @@ describe('Controllers - Device List', () => {
           role: 'tester',
         },
       };
-      const res = utils.mockResponse();
+      const res = utils.waitableMockResponse();
       // Test
-      await deviceListController.setDeviceReg(req, res);
-      await new Promise((resolve)=>setTimeout(resolve, 2000));
+      deviceListController.setDeviceReg(req, res);
+      await res.json.waitToHaveBeenCalled(1);
       expect(res.status).toHaveBeenCalledWith(200);
       expect(res.json.mock.lastCall[0]._id).toBe('AB:AB:AB:AB:AB:AB');
       expect(res.json.mock.lastCall[0].wan_mtu).toBe(1492);
@@ -999,7 +1003,8 @@ describe('Controllers - Device List', () => {
         'internal_port_end:1020}]';
       let perms = {grantPortForwardOpts: portForwardPermissions[3]};
       await testSetPortForwardTr069(device, content, perms, 1, false,
-        utils.tt('jsonError', {errorline: __line}, false, false));
+        utils.tt('fieldNameInvalid', {name: 'content',
+          errorline: __line}, false, false));
     });
     it('jsonInvalidFormat', async () => {
       let device = {

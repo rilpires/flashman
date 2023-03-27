@@ -624,34 +624,6 @@ const createRegistry = async function(req, cpe, permissions) {
  */
 acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
-
-/*
- *  Description:
- *    This function returns a promise and only resolves when the time in
- *    miliseconds timeout after calling this function.
- *
- *  Inputs:
- *    miliseconds - Amount of time in miliseconds to sleep
- *
- *  Outputs:
- *    promise - The promise that is only resolved when the timer ends.
- *
- */
-const sleep = function(miliseconds) {
-  let promise = new Promise(
-    (resolve) => setTimeout(resolve, miliseconds),
-  );
-
-  return promise;
-};
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testSleep = sleep;
-
-
-
 /*
  *  Description:
  *    This function calls an async function (func) after delayTime. If it fails,
@@ -716,7 +688,7 @@ const delayExecutionGenie = async function(
     }
 
     // Wait until timeout sleepTime timer
-    await sleep(sleepTime);
+    await utilHandlers.sleep(sleepTime);
 
     // Double the timer
     sleepTime = 2 * sleepTime;
@@ -743,104 +715,140 @@ acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
-  let config = null;
+  let config = undefined;
+  let device = undefined;
 
-  // Get TR069 Connection login and password
+  try {
+    device = await DeviceModel.findOne({acs_id: id});
+  } catch (error) {
+    console.log('Error getting device in informDevice: ('
+      + id +'):' + error);
+    return res.status(500).json({success: false,
+      message: t('cpeFindError', {errorline: __line})});
+  }
+
+  let doFullSync = false;
+  let doSync = false;
+
+  if (device) {
+    // Why is a non tr069 device calling this function? Just a sanity check
+    if (!device.use_tr069) {
+      return res.status(500).json({
+        success: false,
+        message: t('nonTr069AcsSyncError', {errorline: __line}),
+      });
+    }
+
+    device.last_contact = dateNow;
+    doFullSync = ((device.do_update && device.do_update_status === 0) ||
+    device.recovering_tr069_reset);
+
+    // Return fast if we do not need to do a Sync
+    // And we do not need to update connection login.
+    //
+    // Registered devices should always collect information through
+    // flashman, never using genieacs provision
+    if (!doFullSync && !device.do_tr069_update_connection_login) {
+      res.status(200).json({success: true, measure: false});
+    }
+  }
+
+  // Get the config
+  // From now on, everything needs the config
   try {
     config = await Config.findOne(
       {is_default: true},
       {tr069: true},
     ).lean();
   } catch (error) {
-    console.log('Error getting config in function informDevice: ' + error);
+    console.log('Error getting config in informDevice: ' + error);
+  }
+
+  if (!config && !res.headersSent) {
     return res.status(500).json({
       success: false,
       message: t('configFindError', {errorline: __line}),
     });
   }
 
-  // New devices need to sync immediately
-  if (!config || !config.tr069) {
-    return res.status(500).json({
-      success: false,
-      message: t('configFindError', {errorline: __line}),
-    });
-  }
-
-
-  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
-    return res.status(500).json({success: false,
-      message: t('cpeFindError', {errorline: __line})});
-  });
-  // New devices need to sync immediately
-  if (!device) {
-    return res.status(200).json({
-      success: true,
-      measure: true,
-      measure_type: 'newDevice',
-      connection_login: config.tr069.connection_login,
-      connection_password: config.tr069.connection_password,
-      sync_connection_login: true,
-    });
-  }
-  // Why is a non tr069 device calling this function? Just a sanity check
-  if (!device.use_tr069) {
-    return res.status(500).json({
-      success: false,
-      message: t('nonTr069AcsSyncError', {errorline: __line}),
-    });
-  }
-  device.last_contact = dateNow;
-  // Devices recovering from hard reset or upgrading their firmware need to go
-  // through an immediate full sync
-  if (
-    (device.do_update && device.do_update_status === 0) ||
-    device.recovering_tr069_reset
-  ) {
-    device.last_tr069_sync = dateNow;
-    await device.save().catch((err) => {
-      console.log('Error saving last contact and last tr-069 sync');
-    });
-
-    return res.status(200).json({
-      success: true,
-      measure: true,
-      measure_type: 'updateDevice',
-      connection_login: config.tr069.connection_login,
-      connection_password: config.tr069.connection_password,
-      sync_connection_login: true,
-    });
-  }
-
-
-  let doSync = false;
-  // Only request a sync if over the sync threshold
   if (config && config.tr069) {
-    let syncDiff = dateNow - device.last_tr069_sync;
-    syncDiff += 10000; // Give an extra 10 seconds to buffer out race conditions
-    if (syncDiff >= config.tr069.sync_interval) {
-      if (addRCSync(id)) {
-        device.last_tr069_sync = dateNow;
-        doSync = true;
+    let connection = {
+      login: config.tr069.connection_login,
+      password: config.tr069.connection_password,
+    };
+
+    // New devices need to sync immediately
+    // Always update login in new devices
+    // As device is new, it has not returned yet
+    if (!device) {
+      return res.status(200).json({
+        success: true,
+        measure: true,
+        measure_type: 'newDevice',
+        connection: connection,
+      });
+    }
+
+    // Devices recovering from hard reset or upgrading their firmware need to go
+    // through an immediate full sync
+    if (doFullSync) {
+      if (device.do_tr069_update_connection_login) {
+        device.do_tr069_update_connection_login = false;
+      }
+
+      device.last_tr069_sync = dateNow;
+
+      res.status(200).json({
+        success: true,
+        measure: true,
+        measure_type: 'updateDevice',
+        connection: connection,
+      });
+    } else {
+      // Only request a sync if over the sync threshold
+      let syncDiff = dateNow - device.last_tr069_sync;
+      // Give an extra 10 seconds to buffer out race conditions
+      syncDiff += 10000;
+      if (syncDiff >= config.tr069.sync_interval) {
+        if (addRCSync(id)) {
+          device.last_tr069_sync = dateNow;
+          doSync = true;
+        }
+      }
+
+      if (device.do_tr069_update_connection_login) {
+        // Need to update connection request login
+        // Do the update only at sync
+        if (doSync) {
+          device.do_tr069_update_connection_login = false;
+        } else {
+          connection = undefined;
+        }
+
+        res.status(200).json({
+          success: true,
+          measure: false,
+          connection: connection,
+        });
       }
     }
   }
 
-
-  // Other registered devices should always collect information through
-  // flashman, never using genieacs provision
-  res.status(200).json({
-    success: true,
-    measure: false,
-    connection_login: config.tr069.connection_login,
-    connection_password: config.tr069.connection_password,
-    sync_connection_login: doSync,
-  });
-
+  if (!res.headersSent) {
+    // Check if result has been sent
+    // Sanity check - We can never reach this
+    // as a result must be answered above!
+    console.log('Error: No result in InformDevice');
+    return res.status(500).json({
+      success: false,
+      message: t('Error'),
+    });
+  }
 
   await device.save().catch((err) => {
     console.log('Error saving last contact and last tr-069 sync');
   });
+
   if (doSync) {
     acsDeviceInfoController.requestSync(device);
   }
@@ -1377,6 +1385,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
+  let cpeDidUpdate = false;
 
   // Update firmware version, if data available
   if (data.common.version && data.common.version.value) {
@@ -1385,8 +1394,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
     // Check if the device is updating
     if (device.do_update) {
-      let cpeDidUpdate = false;
-
       // If the device is updating with a different release than it is
       // installed
       if (device.release !== device.installed_release) {
@@ -1859,40 +1866,52 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Collect admin web credentials, if available
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
-    if (typeof config.tr069.web_login !== 'undefined' &&
-        data.common.web_admin_username.writable &&
-        config.tr069.web_login !== '' &&
-        config.tr069.web_login !== data.common.web_admin_username.value) {
-      changes.common.web_admin_username = config.tr069.web_login;
-      hasChanges = true;
-    }
+    // Save the current web admin username
     device.web_admin_username = data.common.web_admin_username.value;
   }
+
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
-    if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_admin_password.writable &&
-        config.tr069.web_password !== '' &&
-        config.tr069.web_password !== data.common.web_admin_password.value) {
-      changes.common.web_admin_password = config.tr069.web_password;
-      hasChanges = true;
-    }
+    // Save the current web admin password
     device.web_admin_password = data.common.web_admin_password.value;
   }
 
+  // If the web login was modified, change for the cpe
   // Force a web credentials sync when device is recovering from hard reset
+
   if (
-    device.recovering_tr069_reset &&
+    typeof config.tr069.web_login !== 'undefined' &&
     data.common.web_admin_username &&
-    data.common.web_admin_username.writable
+    data.common.web_admin_username.writable &&
+    config.tr069.web_login !== '' &&
+
+    ( cpeDidUpdate ||
+      device.recovering_tr069_reset ||
+      config.tr069.web_login !== device.web_admin_username )
+
   ) {
+    // Update the current web admin username in database
+    device.web_admin_username = config.tr069.web_login;
+
+    // Update in cpe
     changes.common.web_admin_username = config.tr069.web_login;
     hasChanges = true;
   }
+
   if (
-    device.recovering_tr069_reset &&
+    typeof config.tr069.web_password !== 'undefined' &&
     data.common.web_admin_password &&
-    data.common.web_admin_password.writable
+    data.common.web_admin_password.writable &&
+    config.tr069.web_password !== '' &&
+
+    ( cpeDidUpdate ||
+      device.recovering_tr069_reset ||
+      config.tr069.web_password !== device.web_admin_password )
+
   ) {
+    // Update the current web admin password in database
+    device.web_admin_password = config.tr069.web_password;
+
+    // Update in cpe
     changes.common.web_admin_password = config.tr069.web_password;
     hasChanges = true;
   }
@@ -1931,7 +1950,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     // Bypass if recovering from hard reset
     let acceptLocalChanges = false;
-    if (wasRecoveringHardReset || !acceptLocalChanges) {
+    if (wasRecoveringHardReset || cpeDidUpdate || !acceptLocalChanges) {
       await acsDeviceInfoController.updateInfo(device, changes);
     }
   }

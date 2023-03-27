@@ -384,7 +384,7 @@ updateController.rebootGenie = function(instances) {
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
-          if (config.tr069.insecure_enable) {
+          if (config && config.tr069.insecure_enable) {
             exec('pm2 start genieacs-cwmp-http');
           }
         });
@@ -663,12 +663,19 @@ const migrateDevicePrefixes = async function(config, oldPrefix) {
   console.log('Finished migrating prefixes for all devices');
 };
 
-const migrateDeviceInforms = async function(config) {
+const migrateDeviceInforms = async function(config,
+    informInterval=false, connectionLogin=false) {
   // We must update the devices already in database with new values for their
-  // inform, based on the one configured. We always take up to 10% margin,
-  // chosen randomly so that they immediately spread out over the new interval
+  // inform, based on the one configured.
+  // We use the inform to change two paramenters:
+  // inform_interval: Update the CPE inform interval. We always take up to
+  // 10% margin, chosen randomly so that they immediately spread out over
+  // the new interval
+  // connectionLogin: Update the connection request login when the CPE
+  // do the next sync.
   let inform = config.tr069.inform_interval / 1000; // Always compute in seconds
-  let projection = {_id: 1, acs_id: 1, use_tr069: 1, custom_inform_interval: 1};
+  let projection = {_id: 1, acs_id: 1, use_tr069: 1,
+    custom_inform_interval: 1, do_tr069_update_connection_login: 1};
   let devices;
   try {
     devices = await Devices.find({use_tr069: true}, projection);
@@ -679,8 +686,14 @@ const migrateDeviceInforms = async function(config) {
   console.log('Starting inform migration for all devices');
   devices.forEach(async (device)=>{
     try {
-      let customInform = deviceHandler.makeCustomInformInterval(device, inform);
-      device.custom_inform_interval = customInform;
+      if (informInterval) {
+        let customInform = deviceHandler
+          .makeCustomInformInterval(device, inform);
+        device.custom_inform_interval = customInform;
+      }
+      if (connectionLogin) {
+        device.do_tr069_update_connection_login = true;
+      }
       await device.save();
     } catch (e) {
       console.log('Error migrating inform for device ' + device._id);
@@ -822,7 +835,8 @@ updateController.setAutoConfig = async function(req, res) {
 
     // checking TR069 configuration fields.
     // flags that can change depending on TR069 values, after their validation.
-    let willMigrateDeviceInforms = false;
+    let willMigrateDeviceInformInterval = false;
+    let willMigrateDeviceConnectionLogin = false;
     let changedInsecure = false;
 
     // getting user role to check TR069 config permission (suser has no role)
@@ -911,6 +925,7 @@ updateController.setAutoConfig = async function(req, res) {
             message: validLogin.err,
           });
         }
+        willMigrateDeviceConnectionLogin = true;
       }
 
 
@@ -926,7 +941,7 @@ updateController.setAutoConfig = async function(req, res) {
 
       // Validate TR-069 Connection password
       if (tr069ConnectionPassword !== config.tr069.connection_password) {
-        // Validate if contains only numbers and characters and is at most 32
+        // Validate if contains only numbers and characters and is at most 16
         // characters long
         let validPass = validator.validateTR069ConnectionField(
           tr069ConnectionPassword,
@@ -943,6 +958,7 @@ updateController.setAutoConfig = async function(req, res) {
             message: validPass.err,
           });
         }
+        willMigrateDeviceConnectionLogin = true;
       }
 
 
@@ -979,7 +995,7 @@ updateController.setAutoConfig = async function(req, res) {
         config.tr069.remote_access = onuRemote;
         // transforming from seconds to milliseconds.
         if (config.tr069.inform_interval !== tr069InformInterval*1000) {
-          willMigrateDeviceInforms = true;
+          willMigrateDeviceInformInterval = true;
         }
         config.tr069.inform_interval = tr069InformInterval*1000;
         config.tr069.sync_interval = tr069SyncInterval*1000;
@@ -1045,8 +1061,10 @@ updateController.setAutoConfig = async function(req, res) {
     if (willMigrateDevicePrefixes.migrate) {
       migrateDevicePrefixes(config, willMigrateDevicePrefixes.oldPrefix);
     }
-    if (willMigrateDeviceInforms) {
-      migrateDeviceInforms(config);
+    if (willMigrateDeviceInformInterval || willMigrateDeviceConnectionLogin) {
+      migrateDeviceInforms(config,
+        willMigrateDeviceInformInterval,
+        willMigrateDeviceConnectionLogin);
     }
 
     // Start / stop insecure GenieACS instance if parameter changed

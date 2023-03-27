@@ -319,6 +319,7 @@ let deviceSchema = new Schema({
   isSsidPrefixEnabled: {type: Boolean},
   web_admin_username: String,
   web_admin_password: String,
+  do_tr069_update_connection_login: {type: Boolean, default: false},
   custom_tr069_fields: {
     intelbras_omci_mode: String, // used by WiFiber to specifiy OLT OMCI mode
     voip_enabled: {type: Boolean, default: false},
@@ -420,7 +421,7 @@ deviceSchema.pre('save', function(callback) {
     Config.findOne({is_default: true},
                    {traps_callbacks: true}).lean()
     .exec(function(err, defConfig) {
-      if (err || !defConfig.traps_callbacks ||
+      if (err || !defConfig || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }
