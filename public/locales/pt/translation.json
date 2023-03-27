@@ -245,7 +245,6 @@
 	"duplicatedDNS": "O endereço {{-dns}} já está cadastrado!",
 	"configDnsServers": "Configure Servidores de Domínio (DNS)",
 	"dnsCannotBeEmpty": "Cuidado! Não é possível remover todos os servidores DNS configurados. Caso deseje prosseguir com essa ação, será configurado um servidor DNS que assume o mesmo valor do IP da LAN.",
-	"pressEditInGeneralForm": "Para concluir a edição dos campos DNS, além de aplicar as modificações, é necessário apertar em editar no formulário geral",
 	"prefixDelegationInfoTitle": "Delegação de Prefixo",
 	"ipv6PrefixDelegation": "Delegação de Prefixo IPv6",
 	"ipv6PrefixDelegationMask": "Máscara da Delegação de Prefixo IPv6",
