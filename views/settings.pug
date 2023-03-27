@@ -239,7 +239,7 @@ block content
                   input#attempt-web-login.form-control(
                     type="text",
                     name="attempt-web-login"
-                    oninput="checkLoginWebInterface()"
+                    oninput="checkAttemptLoginWebInterface()"
                   )
                   #error-attempt-web-login.invalid-feedback= t('insertValidLogin')
                 .md-form.input-entry.mb-2
@@ -247,7 +247,7 @@ block content
                   input#attempt-web-password.form-control(
                     type="text",
                     name="attempt-web-password"
-                    oninput="checkPasswordWebInterface()"
+                    oninput="checkAttemptPasswordWebInterface()"
                   )
                   #error-attempt-web-password.invalid-feedback= t('insertValidPassword')
 
