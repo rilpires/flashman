@@ -396,7 +396,7 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString())
             .addClass('d-none');
         }
-        // Atualiza campo de DNS
+        // Update DNS field
         $.ajax({
           type: 'GET',
           url: '/devicelist/landnsserverslist/' + mac,
