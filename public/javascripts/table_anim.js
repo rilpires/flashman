@@ -3949,18 +3949,15 @@ anlixDocumentReady.add(function() {
     let newSubnetValue = subnetField.val();
     let newDnsList = [];
     for (let i=0; i<dnsList.length; i++) {
-     if (dnsList[i] === oldSubnetValue) {
+    if (dnsList[i] === oldSubnetValue) {
+      // If the DNS field contains the old subnet value, and the new subnet
+      // value is not already in the list, replace the old subnet value with
+      // the new one in the new DNS value
       if (!dnsList.includes(newSubnetValue)) {
-        // If the DNS field contains the old subnet value, and the new subnet
-        // value is not already in the list, replace the old subnet value with
-        // the new one in the new DNS value
         newDnsList.push(newSubnetValue);
-      } else {
-        // Otherwise, don't include this ip to the list
-        continue;
       }
     } else {
-      // If the address is not equal to oldSubnetValue, mantain in the list
+      // If the address is not equal to newSubnetValue, mantain in the list
       newDnsList.push(dnsList[i]);
      }
     }
