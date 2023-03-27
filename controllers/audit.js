@@ -29,7 +29,7 @@ const validatesListOfAddresses = (env) => {
   return validated;
 };
 
-let client = process.env.AIX_PROVIDER;
+let client = process.env.AIX_FLASHAUDIT_CLIENT || process.env.AIX_PROVIDER;
 const product = 'flashman';
 const serverBrokers =
   validatesListOfAddresses(process.env.FLASHAUDIT_SERVER_BROKERS) || [

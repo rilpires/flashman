@@ -2119,7 +2119,7 @@ deviceListController.ensureBssidCollected = async function(
     // It might take some time for some CPEs to enable their Wi-Fi interface
     // after the command is sent. Since the BSSID is only available after the
     // interface is up, we need to wait here to ensure we get a valid read
-    await new Promise((r)=>setTimeout(r, 4000));
+    await util.sleep(4000);
     const bssidsObj = await acsMeshDeviceHandler.getMeshBSSIDFromGenie(
       device, targetMode,
     );
@@ -3412,6 +3412,14 @@ deviceListController.setPortForward = function(req, res) {
     }
     // TR-069 routers
     if (matchedDevice.use_tr069) {
+      if (typeof req.originalUrl === 'string' &&
+        req.originalUrl.includes('api/v2') &&
+        matchedDevice.wrong_port_mapping == true) {
+        return res.status(200).json({
+          success: false,
+          message: t('deviceHaveWrongPortMappingError'),
+        });
+      }
       let result =
         await deviceListController.setPortForwardTr069(matchedDevice,
                                                        req.body.content,
