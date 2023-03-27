@@ -108,9 +108,14 @@ router.route('/speedtest/:id').get(
   deviceListController.sendGenericSpeedTestAPI);
 
 // Get LAN DNS Servers list
-router.route('/landnsserverslist/:id').get(
+router.route('/landnsserverslist/:id')
+.get(
   authController.ensurePermission('grantFlashmanManage'),
   deviceListController.getLanDNSServers,
+)
+.post(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.setLanDNSServers,
 );
 
 // Set/Get Ping hosts list
