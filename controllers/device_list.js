@@ -4013,8 +4013,8 @@ deviceListController.getLanDNSServers = async function(req, res) {
                                     {errorline: __line})});
       }
       // Get LAN DNS servers data
-      if (typeof device.lan_dns_servers == 'undefined' ||
-          device.lan_dns_servers.length == 0) {
+      if (typeof device.lan_dns_servers === 'undefined' ||
+          device.lan_dns_servers.length === 0) {
         responseDNSServers = '';
       } else {
         responseDNSServers = device.lan_dns_servers;
@@ -4023,7 +4023,8 @@ deviceListController.getLanDNSServers = async function(req, res) {
       let permissions = DeviceVersion.devicePermissions(device);
       return res.status(200).json({
         success: true,
-        lan_dns_servers_list: responseDNSServers.split(','),
+        lan_dns_servers_list: responseDNSServers === '' ? [] :
+                              responseDNSServers.split(','),
         lan_subnet: device.lan_subnet,
         max_dns: permissions.grantLanDnsLimit,
     });
@@ -4051,6 +4052,13 @@ deviceListController.setLanDNSServers = async function(req, res) {
       return res.status(200).json({
         success: false,
         message: t('bodyNotObject', {errorline: __line}),
+      });
+    }
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
+    if (!permissions.grantLanDnsEdit) {
+      return res.status(200).json({
+        success: false,
+        message: t('permissionDenied', {errorline: __line}),
       });
     }
     let dnsServers = req.body.dns_servers_list;
