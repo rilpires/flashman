@@ -234,22 +234,6 @@ block content
                   label.custom-control-label.text-muted(for="specific-app-technician-web-login")
                     | #{t('enableSpecificAppTechnicianWebLogin')}
                   .invalid-feedback
-                .md-form.input-entry.mb-2
-                  label(style="pointer-events: none;")= t('User')
-                  input#attempt-web-login.form-control(
-                    type="text",
-                    name="attempt-web-login"
-                    oninput="checkAttemptLoginWebInterface()"
-                  )
-                  #error-attempt-web-login.invalid-feedback= t('insertValidLogin')
-                .md-form.input-entry.mb-2
-                  label(style="pointer-events: none;")= t('Password')
-                  input#attempt-web-password.form-control(
-                    type="text",
-                    name="attempt-web-password"
-                    oninput="checkAttemptPasswordWebInterface()"
-                  )
-                  #error-attempt-web-password.invalid-feedback= t('insertValidPassword')
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
