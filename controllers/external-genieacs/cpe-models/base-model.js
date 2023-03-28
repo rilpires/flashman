@@ -435,8 +435,9 @@ basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
     let networkPrefix = subnet.split('.').slice(0, 3).join('.');
     let minIP = networkPrefix + '.' + dhcpRanges.min;
     let maxIP = networkPrefix + '.' + dhcpRanges.max;
+    let dnsServers = device.lan_dns_servers;
     if (permissions.lan.sendDnsOnLANChange) {
-      values.push([fields['lan']['dns_servers'], subnet, 'xsd:string']);
+      values.push([fields['lan']['dns_servers'], dnsServers, 'xsd:string']);
     }
     if (permissions.lan.sendRoutersOnLANChange) {
       values.push([fields['lan']['ip_routers'], subnet, 'xsd:string']);
