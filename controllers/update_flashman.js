@@ -590,6 +590,8 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
+        specificAppTechnicianWebLogin: matchedConfig
+          .specificAppTechnicianWebLogin,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
         language: matchedConfig.language,
       });
