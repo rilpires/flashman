@@ -14,7 +14,7 @@
 			"Adicionamos suporte ao modelo NOKIA G-1425G-B por TR-069"
 		],
 		"fixes": [
-			"Corrigimos a tradução de algumas mensagens de erro do redirecionamento de portas"
+			"Corrigimos a tradução de algumas mensagens de erro do redirecionamento de portas",
 			"Corrigimos a troca da senha web para as CPEs ZTE F673 e RAISECOM HT803g"
 		],
 		"improvements": [
