@@ -13,8 +13,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.hasIpv6Information = true;
-
   permissions.features.traceroute = true;
+  
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
