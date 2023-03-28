@@ -23,7 +23,7 @@ const getDNSServers = function(event) {
     dataType: 'json',
     success: function(res) {
       if (res.success) {
-        if (res.max_dns && res.max_dns > 0) {
+        if (res.max_dns && res.max_dns > 1) {
           MAX_DNS_SERVERS = res.max_dns;
         }
         if (res.lan_dns_servers_list &&
@@ -37,8 +37,8 @@ const getDNSServers = function(event) {
           LAN_SUBNET = res.lan_subnet;
         }
         cannotAddNewDNSToggle();
-        buildDNSServersTable();
         dnsServersTableToggle();
+        buildDNSServersTable();
         cannotRemoveAllAlertToggle(true);
         loadingMessageToggle(true);
       } else {
@@ -76,10 +76,10 @@ const cannotAddNewDNSToggle = function() {
     $('#add-new-dns-section').hide();
     $('#cannot-add-new-dns-section').show();
     // Update warning with correct max of dns servers
-    let plural = (MAX_DNS_SERVERS !== 1) ? 's' : '';
-    $('#max-dns-warning').text(
-      t('dnsLimitReached', {max: MAX_DNS_SERVERS, plural: plural}),
-    );
+    let isPlural = (MAX_DNS_SERVERS !== 1) ?
+      t('dnsLimitReachedMany', {max: MAX_DNS_SERVERS}) :
+      t('dnsLimitReachedOne');
+    $('#max-dns-warning').text(isPlural);
   } else if (dnsServersInfo.length < MAX_DNS_SERVERS) {
     // Can add
     $('#add-new-dns-section').show();
@@ -109,19 +109,27 @@ const removeAllDNSFromTable = function() {
   // Clears DNS Servers list
   setDNSServersList('dnsServersInfo', []);
   $('#config-lan-dns-table').empty();
+  // As the user cannot delete all DNS servers, it adds the LAN IP in the table
+  addLanIpToDnsTable();
+};
+
+const addLanIpToDnsTable = function() {
   // Add a new line with DNS = device's LAN IP
   dnsServersTableToggle(true);
   buildTableLine(LAN_SUBNET);
   setDNSServersList('dnsServersInfo', [LAN_SUBNET]);
   // Toggle warning
   cannotRemoveAllAlertToggle(false);
+  cannotAddNewDNSToggle();
 };
 
 const buildDNSServersTable = function() {
   $('#config-lan-dns-table').empty();
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
-  for (let i = 0; i < dnsServersInfo.length; i++) {
-    buildTableLine(dnsServersInfo[i]);
+  if (dnsServersInfo.length > 0) {
+    for (let i = 0; i < dnsServersInfo.length; i++) {
+      buildTableLine(dnsServersInfo[i]);
+    }
   }
 };
 
@@ -165,10 +173,12 @@ const addNewDNSServer = function(event) {
   // The program flow should prevent this scenario from happening, but, to
   // prevent javascript injection, it performs this check
   if (dnsServersInfo.length > MAX_DNS_SERVERS) {
-    let plural = (MAX_DNS_SERVERS !== 1) ? 's' : '';
+    let isPlural = (MAX_DNS_SERVERS !== 1) ?
+      t('dnsLimitReachedMany', {max: MAX_DNS_SERVERS}) :
+      t('dnsLimitReachedOne');
     swal.fire({
       icon: 'error',
-      title: t('dnsLimitReached', {max: MAX_DNS_SERVERS, plural: plural}),
+      title: isPlural,
       confirmButtonColor: '#4db6ac',
     });
     return;
@@ -209,6 +219,7 @@ window.removeDNSFromTable = function(input) {
   dnsTable.find('[data-id="' + dns + '"]').remove();
   dnsServersTableToggle();
   cannotAddNewDNSToggle();
+  cannotRemoveAllAlertToggle(true);
   // Update DNS type
   dnsTable.find('tr').each(function(index) {
     let dns = $(this).attr('data-id');
@@ -216,9 +227,6 @@ window.removeDNSFromTable = function(input) {
       '<b>' + findDNSTypeFromTableIndex(index) + ': </b>' + dns,
     );
   });
-  if (getDNSServersList('dnsServersInfo').length === 0) {
-    removeAllDNSFromTable();
-  }
 };
 
 const findDNSTypeFromTableIndex = function(index) {
@@ -231,11 +239,17 @@ const findDNSTypeFromTableIndex = function(index) {
 const setDNSServers = function(event) {
   if ((TARGET_INDEX === undefined || TARGET_INDEX === null)
       && (DEVICE_ID === undefined || DEVICE_ID === null)) {
+    loadingMessageToggle(true);
     swal.fire({
       icon: 'error',
       title: t('unexpectedErrorHappened'),
       confirmButtonColor: '#4db6ac',
     });
+    return;
+  } else if (getDNSServersList('dnsServersInfo').length === 0) {
+    // User cannot send an empty list of hosts
+    loadingMessageToggle(true);
+    addLanIpToDnsTable();
     return;
   } else {
     // Send HTTP post request

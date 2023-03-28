@@ -276,6 +276,9 @@ anlixDocumentReady.add(function() {
       let formId = '#form-' + index.toString();
       $(formId).removeClass('d-none');
       $('.slave-'+index).removeClass('d-none');
+      // Clears the storage to prevent the case that the user refreshes the page
+      // without closing the modal and opens the modal again
+      deleteDNSServersList();
     }
     $(event.target).removeClass('fa-chevron-down')
                    .addClass('fa-chevron-up text-primary');
@@ -2114,7 +2117,9 @@ anlixDocumentReady.add(function() {
                     '</label>'+
                     '<input class="form-control lan-dns-field my-2 mr-2" ' +
                       'type="text" id="edit_lan_dns-'+index+'" '+
-                      'maxlength="48" value="'+device.lan_dns_servers+
+                      'maxlength="48" value="'+
+                      ((device.lan_dns_servers) ?
+                        device.lan_dns_servers : '')+ // treat undefined case
                       '" $REPLACE_LAN_EN disabled>'+
                     '</input>'+
                     '<div class="input-group-append">'+
