@@ -92,5 +92,11 @@
             #config-lan-dns-submit-button.button.btn.btn-primary(
               type="button",
             )
-              .fas.fa-check.fa-lg
-              span &nbsp; #{t('Apply')}
+              //- Loading message
+              .div#loading-message
+                .fas.fa-spinner.fa-pulse
+                span &nbsp; #{t('wait')}
+              //- Apply message
+              .div#apply-message
+                .fas.fa-check.fa-lg
+                span &nbsp; #{t('Apply')}

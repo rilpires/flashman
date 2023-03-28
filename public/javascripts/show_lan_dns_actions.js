@@ -40,6 +40,7 @@ const getDNSServers = function(event) {
         buildDNSServersTable();
         dnsServersTableToggle();
         cannotRemoveAllAlertToggle(true);
+        loadingMessageToggle(true);
       } else {
         swal.fire({
           icon: res.type,
@@ -91,6 +92,16 @@ const cannotRemoveAllAlertToggle = function(hide) {
     $('#cannot-remove-all-warning').hide();
   } else {
     $('#cannot-remove-all-warning').show();
+  }
+};
+
+const loadingMessageToggle = function(hide) {
+  if (hide) {
+    $('#loading-message').hide();
+    $('#apply-message').show();
+  } else {
+    $('#loading-message').show();
+    $('#apply-message').hide();
   }
 };
 
@@ -286,6 +297,7 @@ anlixDocumentReady.add(function() {
   });
   // Submit button to apply changes
   $(document).on('click', '#config-lan-dns-submit-button', (event) => {
+    loadingMessageToggle(false);
     setDNSServers(event);
   });
 });

@@ -244,6 +244,7 @@
 	"duplicatedDNS": "The address {{-dns}} is already registered!",
 	"configDnsServers": "Configure Domain Name Servers (DNS)",
 	"dnsCannotBeEmpty": "Careful! It is not possible to remove all configured DNS servers. If you want to proceed with this action, a DNS server will be configured that assumes the same value as the LAN IP.",
+	"wait": "Wait",
 	"prefixDelegationInfoTitle": "Prefix Delegation",
 	"ipv6PrefixDelegation": "IPv6 Prefix Delegation",
 	"ipv6PrefixDelegationMask": "IPv6 Prefix Delegation Mask",
