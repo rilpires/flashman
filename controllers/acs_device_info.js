@@ -473,6 +473,17 @@ const createRegistry = async function(req, cpe, permissions) {
     wrongPortMapping = true;
   }
 
+  // Collect DNS servers info and does not allow repeated values
+  let parsedDnsServers = [];
+  if (data.lan.dns_servers && data.lan.dns_servers.value) {
+    let dnsServers = data.lan.dns_servers.value.split(',');
+    for (let i=0; i<dnsServers.length; i++) {
+      if (!parsedDnsServers.includes(dnsServers[i])) {
+        parsedDnsServers.push(dnsServers[i]);
+      }
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
@@ -513,6 +524,8 @@ const createRegistry = async function(req, cpe, permissions) {
     ) ? 1 : 0,
     lan_subnet: data.lan.router_ip.value,
     lan_netmask: (subnetNumber > 0) ? subnetNumber : undefined,
+    lan_dns_servers: (parsedDnsServers.length > 0) ?
+                     parsedDnsServers.join(',') : undefined,
     port_mapping: portMapping,
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
