@@ -1023,6 +1023,9 @@ updateController.setAutoConfig = async function(req, res) {
     let speedTestStepRequired = req.body['speedtest-step-required'] === 'true';
     let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
     let dnsStepRequired = req.body['dns-step-required'] === 'true';
+    config.specificAppTechnicianWebLogin =
+      (req.body['specific-app-technician-web-login'] &&
+      req.body['specific-app-technician-web-login'] === 'on') ? true : false;
     let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
     if (typeof wanStepRequired === 'boolean') {
       config.certification.wan_step_required = wanStepRequired;
