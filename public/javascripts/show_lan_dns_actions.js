@@ -23,7 +23,7 @@ const getDNSServers = function(event) {
     dataType: 'json',
     success: function(res) {
       if (res.success) {
-        if (res.max_dns && res.max_dns > 1) {
+        if (res.max_dns) {
           MAX_DNS_SERVERS = res.max_dns;
         }
         if (res.lan_dns_servers_list &&
@@ -36,6 +36,7 @@ const getDNSServers = function(event) {
         if (res.lan_subnet) {
           LAN_SUBNET = res.lan_subnet;
         }
+        // Trigger toggles
         cannotAddNewDNSToggle();
         dnsServersTableToggle();
         buildDNSServersTable();
@@ -43,7 +44,7 @@ const getDNSServers = function(event) {
         loadingMessageToggle(true);
       } else {
         swal.fire({
-          icon: res.type,
+          icon: 'error',
           title: res.message,
           confirmButtonColor: '#4db6ac',
         });
@@ -118,7 +119,7 @@ const addLanIpToDnsTable = function() {
   dnsServersTableToggle(true);
   buildTableLine(LAN_SUBNET);
   setDNSServersList('dnsServersInfo', [LAN_SUBNET]);
-  // Toggle warning
+  // Trigger toggles
   cannotRemoveAllAlertToggle(false);
   cannotAddNewDNSToggle();
 };

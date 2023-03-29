@@ -4008,9 +4008,10 @@ deviceListController.getLanDNSServers = async function(req, res) {
       if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
         device = matchedDevice[0];
       } else {
-        return res.status(200).json({success: false,
-                                   message: t('cpeNotFound',
-                                    {errorline: __line})});
+        return res.status(200).json({
+          success: false,
+          message: t('cpeNotFound', {errorline: __line}),
+        });
       }
       // Get LAN DNS servers data
       if (typeof device.lan_dns_servers === 'undefined' ||
