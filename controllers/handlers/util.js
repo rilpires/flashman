@@ -1,6 +1,13 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
 
+
+/**
+ * Utilities functions.
+ * @namespace controllers/handlers/util
+ */
+
+
 const t = require('../language').i18next.t;
 const certman = require('../external-api/certman');
 const fs = require('fs');
@@ -42,7 +49,9 @@ utilHandlers.orderNumericGenieKeys = function(keys) {
 utilHandlers.traverseNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
-  if (!data) return {success: false};
+  // Validate inputs
+  if (!data || !key) return {success: false};
+
   let current = data;
   let splitKey = key.split('.');
   for (let i = 0; i < splitKey.length; i++) {
@@ -68,7 +77,7 @@ utilHandlers.traverseNestedKey = function(
     key: splitKey.join('.'),
     value: current,
   };
-}
+};
 
 utilHandlers.checkForNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
@@ -95,7 +104,7 @@ utilHandlers.replaceNestedKeyWildcards = function(
   let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
   if (!ret.success) return undefined;
   return ret.key;
-}
+};
 
 // Returns {key: genieFieldValue}
 utilHandlers.getAllNestedKeysFromObject = function(
@@ -302,6 +311,26 @@ utilHandlers.getTr069CACert = async function() {
   return fs.readFileSync('./certs/onu-certs/onuCA.pem', 'utf8');
 };
 
+/*
+ *  Description:
+ *    This function returns a promise and only resolves when the time in
+ *    miliseconds timeout after calling this function.
+ *
+ *  Inputs:
+ *    miliseconds - Amount of time in miliseconds to sleep
+ *
+ *  Outputs:
+ *    promise - The promise that is only resolved when the timer ends.
+ *
+ */
+utilHandlers.sleep = function(miliseconds) {
+  let promise = new Promise(
+    (resolve) => setTimeout(resolve, miliseconds),
+  );
+
+  return promise;
+};
+
 /* ****Functions for test utilities**** */
 
 utilHandlers.errorHandler = function(message) {
@@ -315,4 +344,40 @@ utilHandlers.catchDatabaseError = function(error) {
   return {success: false, error: t('saveError', {errorline: __line})};
 };
 
+
+/**
+ * Try to get the mask from an address. The address must be in the format
+ * `1234:5678::/xx` or `192.168.0.1/xx`. This function splits the `/` and
+ * returns the mask as `String` or a `null` if the mask is invalid.
+ *
+ * @memberof controllers/handlers/util
+ *
+ * @param {String} address - The IPv4 or IPv6 address.
+ * @param {Boolean} isIPv6 - If the field is IPv6 or not.
+ *
+ * @return {String | Null} The mask as `String` or `null`.
+ */
+utilHandlers.getMaskFromAddress = function(address, isIPv6) {
+  if (!address || address.constructor !== String || address.length <= 0) {
+    return null;
+  }
+
+  // Split the / and get the second item from array
+  const mask = address.split('/')[1];
+  if (!mask) return null;
+
+  let maskMax = 32;
+  if (isIPv6) maskMax = 128;
+
+  // Check if the mask is a valid value
+  const maskInteger = parseInt(mask, 10);
+  if (!maskInteger || maskInteger < 0 || maskInteger > maskMax) return null;
+
+  return mask;
+};
+
+
+/**
+ * @exports controllers/handlers/util
+ */
 module.exports = utilHandlers;

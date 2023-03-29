@@ -141,6 +141,7 @@ let data = {
   common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
   wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
   lan: updateConfiguration(fields.lan, result.useLastIndexOnWildcard),
+  ipv6: updateConfiguration(fields.ipv6, result.useLastIndexOnWildcard),
   wifi2: updateConfiguration(fields.wifi2, result.useLastIndexOnWildcard),
   wifi5: updateConfiguration(fields.wifi5, result.useLastIndexOnWildcard),
   mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
