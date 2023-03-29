@@ -6,7 +6,6 @@ parksModel.identifier = {vendor: 'Parks', model: 'Fiberlink 501'};
 
 parksModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   // permissions.features.pingTest = true; // Never update AverageResponseTime
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;

@@ -66,6 +66,7 @@ const tr069Models = {
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
   nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
+  nokiaG1425GBModel: require('./cpe-models/nokia-g1425gb'),
   nokiaG1426MAModel: require('./cpe-models/nokia-g1426ma'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   parksFiberlink501: require('./cpe-models/parks-fiberlink-501'),
@@ -100,12 +101,10 @@ const tr069Models = {
 const getTR069CustomFactoryModels = function() {
   let ret = new Map();
   Object.values(tr069Models).forEach((cpe) => {
-    if (cpe.modelPermissions().features.customAppPassword) {
-      if (ret[cpe.identifier.vendor]) {
-        ret[cpe.identifier.vendor].push(cpe.identifier.model);
-      } else {
-        ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
-      }
+    if (ret[cpe.identifier.vendor]) {
+      ret[cpe.identifier.vendor].push(cpe.identifier.model);
+    } else {
+      ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
     }
   });
   return ret;
@@ -314,6 +313,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'G-1425G-A') {
     // Nokia G-1425G-A
     result = {success: true, cpe: tr069Models.nokiaG1425GAModel};
+  } else if (modelName === 'G-1425G-B') {
+    // Nokia G-1425G-A
+    result = {success: true, cpe: tr069Models.nokiaG1425GBModel};
   } else if (modelName === 'G-1426-MA') {
     // Nokia G-1426-MA
     result = {success: true, cpe: tr069Models.nokiaG1426MAModel};
