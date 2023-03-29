@@ -329,7 +329,6 @@ const calculateMaskIpv6 = function(ip, mask) {
       .some((item) => item !==0) &&
       index <= 6
     ) {
-      console.log(bytes.slice(index, bytes.length));
       ipMasked += '::';
       return ipMasked;
     } else {
@@ -370,18 +369,24 @@ const updateValues = function(message) {
 
   // Change other values
   $(IPV4_ADDRESS_AND_MASK_INPUT).text((
-    (message.ipv4_address === '' ||
-    message.ipv4_mask <= 0 ||
-    message.ipv4_mask > 32) ?
+    (message.ipv4_address === '') ?
 
-    t('N/A') : message.ipv4_address + '/' + message.ipv4_mask
+    // Add the address
+    t('N/A') : message.ipv4_address + ' / ' + (
+      // Add the mask
+      (message.ipv4_mask <= 0 || message.ipv4_mask > 32) ?
+      t('N/A') : message.ipv4_mask
+    )
   ));
   $(IPV6_ADDRESS_AND_MASK_INPUT).text((
-    (message.ipv6_address === '' ||
-    message.ipv6_mask <= 0 ||
-    message.ipv6_mask > 128) ?
+    (message.ipv6_address === '') ?
 
-    t('N/A') : message.ipv6_address + '/' + message.ipv6_mask
+    // Add the address
+    t('N/A') : message.ipv6_address + ' / ' + (
+      // Add the mask
+      (message.ipv6_mask <= 0 || message.ipv6_mask > 128) ?
+      t('N/A') : message.ipv6_mask
+    )
   ));
   $(IPV4_MASKED_ADDRESS_INPUT).text((
     (message.ipv4_address === '' ||

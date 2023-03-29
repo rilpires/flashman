@@ -12,6 +12,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
+  permissions.features.hasIpv6Information = true;
+
   permissions.features.traceroute = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.wan.allowReadWanVlan = true;
@@ -20,6 +22,15 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 850;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+  permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
+
   permissions.wifi.axWiFiMode = true;
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128,
@@ -109,6 +120,42 @@ huaweiModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'DefaultGateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'DefaultGateway';
+
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+
+  // Local Address
+  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice'+
+    '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
+    'Prefix';
+  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice'+
+    '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
+    'Prefix';
+
+
   fields.devices.host_cable_rate = 'InternetGatewayDevice.LANDevice.1.' +
     'Hosts.Host.*.X_HW_NegotiatedRate';
   fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
