@@ -6,7 +6,6 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'HG8121H'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;

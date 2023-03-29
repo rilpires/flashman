@@ -6,7 +6,6 @@ shorelineModel.identifier = {vendor: 'Shoreline', model: 'SH1020W'};
 
 shorelineModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;

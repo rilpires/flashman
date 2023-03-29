@@ -44,7 +44,6 @@ basicCPEModel.modelPermissions = function() {
   return {
     features: {
       cableRxRate: false, // can get RX rate from devices connected by cable
-      customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: true, // support for tr-069 firmware upgrade
       meshCable: true, // can create a cable mesh network with Anlix firmwares
       meshWifi: false, // can create a wifi mesh network with Anlix firmwares
