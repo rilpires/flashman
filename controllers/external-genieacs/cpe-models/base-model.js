@@ -77,7 +77,6 @@ basicCPEModel.modelPermissions = function() {
                                       // info (developed for Nokia models)
       needEnableConfig: false, // will force lan enable on registry (Tenda AC10)
       needConfigOnLANChange: false, // will force lan enable on edit (GWR1200)
-      sendDnsOnLANChange: true, // will send dns config on LAN IP/mask change
       sendRoutersOnLANChange: true, // will send lease config on LAN IP/mask chg
       dnsServersWrite: true, // can change LAN DNS servers
       dnsServersLimit: 1, // Number of DNS servers accepted by the router
@@ -436,7 +435,7 @@ basicCPEModel.convertLanEditToTask = function(device, fields, permissions) {
     let minIP = networkPrefix + '.' + dhcpRanges.min;
     let maxIP = networkPrefix + '.' + dhcpRanges.max;
     let dnsServers = device.lan_dns_servers;
-    if (permissions.lan.sendDnsOnLANChange) {
+    if (permissions.lan.dnsServersWrite) {
       values.push([fields['lan']['dns_servers'], dnsServers, 'xsd:string']);
     }
     if (permissions.lan.sendRoutersOnLANChange) {
