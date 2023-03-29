@@ -384,7 +384,7 @@ updateController.rebootGenie = function(instances) {
 
         exec(sedCommand, (err, stdout, stderr)=>{
           exec('pm2 start genieacs-cwmp');
-          if (config.tr069.insecure_enable) {
+          if (config && config.tr069.insecure_enable) {
             exec('pm2 start genieacs-cwmp-http');
           }
         });
