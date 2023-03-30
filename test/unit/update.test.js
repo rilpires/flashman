@@ -606,7 +606,7 @@ describe('Update Tests - Functions', () => {
 
     test(
       'Subnet edit + dnsServersWrite true + Old subnet is contained in DNS ' +
-      'servers = triggers DNS edit removing old subnet anda adding new subnet',
+      'servers = triggers DNS edit removing old subnet and adding new subnet',
       async () => {
         const id = models.defaultMockDevices[0]._id;
         const device = models.copyDeviceFrom(
