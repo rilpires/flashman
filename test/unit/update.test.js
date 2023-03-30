@@ -619,9 +619,9 @@ describe('Update Tests - Functions', () => {
       },
     );
 
-    // Old LAN IP is contained in DNS servers
     test(
-      'LAN IP edit + dnsServersWrite true = triggers DNS edit',
+      'Subnet edit + dnsServersWrite true + Old subnet is contained in DNS ' +
+      'servers = triggers DNS edit removing old subnet anda adding new subnet',
       async () => {
         const id = models.defaultMockDevices[0]._id;
         const device = models.copyDeviceFrom(
@@ -768,9 +768,9 @@ describe('Update Tests - Functions', () => {
       },
     );
 
-    // Old and new LAN IP is contained in DNS servers
     test(
-      'LAN IP edit + dnsServersWrite true = triggers DNS edit',
+      'Subnet edit + dnsServersWrite true + Old and new subnet is contained ' +
+      'in DNS servers = triggers DNS edit only removing old subnet',
       async () => {
         const id = models.defaultMockDevices[0]._id;
         const device = models.copyDeviceFrom(
@@ -917,9 +917,8 @@ describe('Update Tests - Functions', () => {
       },
     );
 
-    // DNS field cannot be edited
     test(
-      'LAN IP edit + dnsServersWrite false = does not triggers DNS edit',
+      'Subnet edit + dnsServersWrite false = does not triggers DNS edit',
       async () => {
         const id = models.defaultMockDevices[0]._id;
         const device = models.copyDeviceFrom(
