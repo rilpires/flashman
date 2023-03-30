@@ -6,7 +6,6 @@ intelbrasModel.identifier = {vendor: 'Intelbras', model: 'GX3000'};
 
 intelbrasModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   // permissions.features.pingTest = true; // Needs polling
   permissions.features.ponSignal = false;
   // permissions.features.portForward = true; // Needs refactor
