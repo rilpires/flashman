@@ -421,7 +421,7 @@ deviceSchema.pre('save', function(callback) {
     Config.findOne({is_default: true},
                    {traps_callbacks: true}).lean()
     .exec(function(err, defConfig) {
-      if (err || !defConfig.traps_callbacks ||
+      if (err || !defConfig || !defConfig.traps_callbacks ||
                  !defConfig.traps_callbacks.devices_crud) {
         return callback(err);
       }

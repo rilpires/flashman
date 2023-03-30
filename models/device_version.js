@@ -1826,7 +1826,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantWpsFunction: false,
     grantSTUN: cpePermissions.features.stun,
     grantWiFiAXSupport: cpePermissions.wifi.axWiFiMode,
-    grantWanLanInformation: false,
+    grantWanLanInformation: cpePermissions.features.hasIpv6Information,
     grantTraceroute: cpePermissions.features.traceroute,
     grantRebootAfterWANChange: cpePermissions.wan.mustRebootAfterChanges,
     grantCanTrustWanRate: cpePermissions.wan.canTrustWanRate,

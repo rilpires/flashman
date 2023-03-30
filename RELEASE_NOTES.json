@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.66.0",
+	"latest_version": "2.69.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,65 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.69.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo NOKIA G-1425G-B por TR-069"
+		],
+		"fixes": [
+			"Corrigimos a tradução de algumas mensagens de erro do redirecionamento de portas",
+			"Corrigimos a troca da senha web para as CPEs ZTE F673 e RAISECOM HT803g"
+		],
+		"improvements": [
+			"Adicionamos suporte ao FlashAudit para as chamadas dos Aplicativos"
+		],
+		"features": [
+			"Adicionamos a visualização de informações IPv6 para CPEs TR-069"
+		]
+	},
+	"2.68.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+		],
+		"fixes": [
+			"Consertamos um bug inserido na 2.68.0 que falhava na identificação de uma ZTE F660 com modelo de hardware 7.1"
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.68.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo PARKS FiberLink 501 por TR-069"
+		],
+		"fixes": [
+			"Consertamos um bug que permitia definir regras de porta pela API quando uma CPE TR-069 esta bloqueada"
+		],
+		"improvements": [
+			"Melhoramos o processo de atualização de senha da interface WEB quando uma CPE TR-069 retorna de um reset ou de um upgrade de firmware",
+			"Melhoramos a tradução de inglês e espanhol",
+			"Adicionamos uma opção para limitar a quantidade de itens por pagina na API de pesquisa de CPEs",
+			"Melhoramos a identificação dos modelos TP-Link EC220-G5 e ZTE F660 para TR-069"
+		],
+		"features": [
+		]
+	},
+	"2.67.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos um bug na interface de pesquisa de CPEs que fazia com que o botão de troca de pagina fosse visualizado mais de uma vez",
+			"Corrigimos a API para liberação de portas que impedia o cadastro de regras para CPEs TR-069",
+			"Corrigimos um bug que evitava que a CPE Multilaser/ZTE H199 realizasse a configuração do usuario e senha da interface web",
+			"Consertamos um bug que evitava que uma CPE TR-069 trocasse a senha da interface web"
+		],
+		"improvements": [
+			"Melhoramos alguns textos e traduções da interface",
+			"A inclusão de novas firmwares TR-069 para upgrade agora lista as firmwares das CPEs já cadastradas no sistema"
+		],
+		"features": [
+		]
 	},
 	"2.66.0": {
 		"custom_firmware_compatibilities": [],

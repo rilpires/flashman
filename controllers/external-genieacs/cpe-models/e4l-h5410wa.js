@@ -6,7 +6,6 @@ e4lModel.identifier = {vendor: 'Easy4Link', model: 'E4L-H5410WA'};
 
 e4lModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   // permissions.features.speedTest = true; // Commented since it caps at 40Mbps

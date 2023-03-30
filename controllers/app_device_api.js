@@ -1567,6 +1567,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     let response = {
       serialOk: true,
       hasPassword: (device.app_password) ? true : false, // cast to bool
+      targetMac: device._id,
     };
     try {
       if (config.tr069) {
