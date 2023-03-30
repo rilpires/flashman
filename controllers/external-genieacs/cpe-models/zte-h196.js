@@ -6,7 +6,6 @@ zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'H196A'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;

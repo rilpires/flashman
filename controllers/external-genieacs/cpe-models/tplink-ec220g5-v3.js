@@ -6,7 +6,6 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'EC220-G5 v3'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.traceroute = true;
   permissions.features.siteSurvey = true;
   // permissions.features.speedTest = true;

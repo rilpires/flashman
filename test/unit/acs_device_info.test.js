@@ -5,6 +5,7 @@ process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
 const utils = require('../common/utils');
 const models = require('../common/models');
+const fieldsAndPermissions = require('../common/fieldsAndPermissions');
 
 // Mock the config (used in language.js)
 utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
@@ -14,11 +15,15 @@ const devicesAPI = require('../../controllers/external-genieacs/devices-api');
 const deviceVersion = require('../../models/device_version');
 const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const deviceHandlers = require('../../controllers/handlers/devices');
+const utilHandlers = require('../../controllers/handlers/util');
 const acsMeshDeviceHandler = require('../../controllers/handlers/acs/mesh.js');
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
 );
+const DeviceModel = require('../../models/device');
 
+const http = require('http');
+const DeviceVersion = require('../../models/device_version');
 const t = require('../../controllers/language').i18next.t;
 
 // Mock the mqtts (avoid aedes)
@@ -30,6 +35,11 @@ jest.mock('../../mqtts', () => {
     getConnectedClients: () => [],
   };
 });
+
+
+const mockRequest = (app, body) => {
+  return {app: app, body: body};
+};
 
 let bodyField = (value, writable) => {
   return {value: value, writable: writable};
@@ -62,6 +72,30 @@ let assembleBody = (device) => {
         mtu: bodyField(device.wan_mtu, 1),
         recv_bytes: bodyField(9182195992, 0),
         sent_bytes: bodyField(757192873, 0),
+        mask_ipv4: bodyField(device.wan_ipv4_mask, 0),
+        mask_ipv4_ppp: bodyField(device.wan_ipv4_mask, 0),
+        remote_address: bodyField(device.pppoe_ip, 0),
+        remote_address_ppp: bodyField(device.pppoe_ip, 0),
+        remote_mac: bodyField(device.pppoe_mac, 0),
+        remote_mac_ppp: bodyField(device.pppoe_mac, 0),
+        default_gateway: bodyField(device.default_gateway_v4, 0),
+        default_gateway_ppp: bodyField(device.default_gateway_v4, 0),
+        dns_servers: bodyField(device.dns_server, 0),
+        dns_servers_ppp: bodyField(device.dns_server, 0),
+      },
+      ipv6: {
+        address: bodyField(device.wan_ipv6, 0),
+        address_ppp: bodyField(device.wan_ipv6, 0),
+        mask: bodyField(device.wan_ipv6_mask, 0),
+        mask_ppp: bodyField(device.wan_ipv6_mask, 0),
+        default_gateway: bodyField(device.default_gateway_v6, 0),
+        default_gateway_ppp: bodyField(device.default_gateway_v6, 0),
+        prefix_address: bodyField(device.prefix_delegation_addr, 0),
+        prefix_address_ppp: bodyField(device.prefix_delegation_addr, 0),
+        prefix_mask: bodyField(device.prefix_delegation_mask, 0),
+        prefix_mask_ppp: bodyField(device.prefix_delegation_mask, 0),
+        prefix_local_address: bodyField(device.prefix_delegation_local, 0),
+        prefix_local_address_ppp: bodyField(device.prefix_delegation_local, 0),
       },
       lan: {
         config_enable: bodyField(true, 1),
@@ -425,6 +459,11 @@ describe('ACS Device Info Tests', () => {
 
   // delayExecutionGenie
   describe('delayExecutionGenie', () => {
+    beforeEach(() => {
+      jest.spyOn(console, 'log').mockImplementation(() => true);
+    });
+
+
     // repeatTimes = 0
     test('repeatTimes = 0', async () => {
       // Create a function to be passed and resolves instantly
@@ -438,7 +477,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         0,
@@ -470,7 +509,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         -1,
@@ -506,7 +545,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         5,
@@ -542,7 +581,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         5,
@@ -578,7 +617,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         5,
@@ -612,7 +651,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => [{_id: acsId}]);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         5,
@@ -644,7 +683,7 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => []);
 
       // Execute
-      let result = await acsDeviceInfoController.__testDelayExecutionGenie(
+      let result = await acsDeviceInfoController.delayExecutionGenie(
         {acs_id: acsId},
         asyncFunc,
         5,
@@ -677,6 +716,12 @@ describe('ACS Device Info Tests', () => {
         .mockImplementation(() => {
           return {success: true, executed: true, message: 'task success'};
       });
+
+      // We are not testing the updateInfo in this test
+      acsDeviceInfoController.updateInfo = jest.fn().mockResolvedValue();
+
+      // Mock the generic save (workaround from new DeviceModel)
+      DeviceModel.prototype.save = jest.fn();
     });
 
     // Validate createRegistry - Receives invalid value for field
@@ -714,10 +759,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -777,10 +819,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -842,10 +881,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -911,10 +947,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -979,10 +1012,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1040,10 +1070,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1103,10 +1130,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1129,7 +1153,333 @@ describe('ACS Device Info Tests', () => {
         );
       },
     );
+
+    // Validate WAN and LAN information
+    test('WAN & LAN information', async () => {
+      const device = models.defaultMockDevices[0];
+      const cpePermissions = {
+        features: {hasIpv6Information: true},
+        lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
+        wan: {
+          hasIpv4MaskField: true,
+          hasIpv4RemoteAddressField: true,
+          hasIpv4RemoteMacField: true,
+          hasIpv4DefaultGatewayField: true,
+          hasDnsServerField: true,
+        },
+        ipv6: {
+          hasAddressField: true,
+          hasMaskField: true,
+          hasDefaultGatewayField: true,
+          hasPrefixDelegationAddressField: true,
+          hasPrefixDelegationMaskField: true,
+          hasPrefixDelegationLocalAddressField: true,
+        },
+      };
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      // Mocks
+      let request = {app: app, body: assembleBody(device)};
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, cpePermissions, null,
+      );
+      jest.spyOn(acsDeviceInfoController, 'delayExecutionGenie')
+        .mockImplementation(() => true);
+
+      // Get the cpe with the mocked permissions
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(
+        device,
+      ).cpe;
+
+      let devicePermissions = deviceVersion.devicePermissions(device);
+      devicePermissions.grantWanLanInformation = true;
+
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let result = await acsDeviceInfoController.__testCreateRegistry(
+        request, cpe, devicePermissions,
+      );
+
+      // Validate
+      expect(result).toBe(true);
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.objectContaining({
+            wan_ipv6: device.wan_ipv6,
+            wan_ipv4_mask: device.wan_ipv4_mask,
+            wan_ipv6_mask: device.wan_ipv6_mask,
+            default_gateway_v4: device.default_gateway_v4,
+            default_gateway_v6: device.default_gateway_v6,
+            dns_server: device.dns_server,
+            pppoe_mac: device.pppoe_mac,
+            pppoe_ip: device.pppoe_ip,
+            prefix_delegation_addr: device.prefix_delegation_addr,
+            prefix_delegation_mask: device.prefix_delegation_mask,
+            prefix_delegation_local: device.prefix_delegation_local,
+          }),
+        ]),
+      );
+    });
+
+
+    // WAN and LAN information without IPv6
+    test('WAN & LAN information without IPv6', async () => {
+      const device = models.defaultMockDevices[0];
+      let cpePermissions = {
+        features: {hasIpv6Information: false},
+        lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
+        wan: {
+          hasIpv4MaskField: true,
+          hasIpv4RemoteAddressField: true,
+          hasIpv4RemoteMacField: true,
+          hasIpv4DefaultGatewayField: true,
+          hasDnsServerField: true,
+        },
+        ipv6: {
+          hasAddressField: true,
+          hasMaskField: true,
+          hasDefaultGatewayField: true,
+          hasPrefixDelegationAddressField: true,
+          hasPrefixDelegationMaskField: true,
+          hasPrefixDelegationLocalAddressField: true,
+        },
+      };
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      // Mocks
+      let request = {app: app, body: assembleBody(device)};
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, cpePermissions, null,
+      );
+      jest.spyOn(acsDeviceInfoController, 'delayExecutionGenie')
+        .mockImplementation(() => true);
+
+      // Get the cpe with the mocked permissions
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(
+        device,
+      ).cpe;
+
+      let devicePermissions = deviceVersion.devicePermissions(device);
+      devicePermissions.grantWanLanInformation = true;
+
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let result = await acsDeviceInfoController.__testCreateRegistry(
+        request, cpe, devicePermissions,
+      );
+
+      // Validate
+      expect(result).toBe(true);
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.objectContaining({
+            wan_ipv4_mask: device.wan_ipv4_mask,
+            default_gateway_v4: device.default_gateway_v4,
+            dns_server: device.dns_server,
+            pppoe_mac: device.pppoe_mac,
+            pppoe_ip: device.pppoe_ip,
+          }),
+        ]),
+      );
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.not.objectContaining({
+            wan_ipv6: device.wan_ipv6,
+            wan_ipv6_mask: device.wan_ipv6_mask,
+            default_gateway_v6: device.default_gateway_v6,
+            prefix_delegation_addr: device.prefix_delegation_addr,
+            prefix_delegation_mask: device.prefix_delegation_mask,
+            prefix_delegation_local: device.prefix_delegation_local,
+          }),
+        ]),
+      );
+    });
+
+
+    // WAN and LAN information no grant
+    test('WAN & LAN information no grant', async () => {
+      const device = models.defaultMockDevices[0];
+      let cpePermissions = {
+        features: {hasIpv6Information: true},
+        lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
+        wan: {
+          hasIpv4MaskField: true,
+          hasIpv4RemoteAddressField: true,
+          hasIpv4RemoteMacField: true,
+          hasIpv4DefaultGatewayField: true,
+          hasDnsServerField: true,
+        },
+        ipv6: {
+          hasAddressField: true,
+          hasMaskField: true,
+          hasDefaultGatewayField: true,
+          hasPrefixDelegationAddressField: true,
+          hasPrefixDelegationMaskField: true,
+          hasPrefixDelegationLocalAddressField: true,
+        },
+      };
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      // Mocks
+      let request = {app: app, body: assembleBody(device)};
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, cpePermissions, null,
+      );
+      jest.spyOn(acsDeviceInfoController, 'delayExecutionGenie')
+        .mockImplementation(() => true);
+
+      // Get the cpe with the mocked permissions
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(
+        device,
+      ).cpe;
+
+      let devicePermissions = deviceVersion.devicePermissions(device);
+      devicePermissions.grantWanLanInformation = false;
+
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let result = await acsDeviceInfoController.__testCreateRegistry(
+        request, cpe, devicePermissions,
+      );
+
+      // Validate
+      expect(result).toBe(true);
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.not.objectContaining({
+            wan_ipv4_mask: device.wan_ipv4_mask,
+            default_gateway_v4: device.default_gateway_v4,
+            dns_server: device.dns_server,
+            pppoe_mac: device.pppoe_mac,
+            pppoe_ip: device.pppoe_ip,
+            wan_ipv6: device.wan_ipv6,
+            wan_ipv6_mask: device.wan_ipv6_mask,
+            default_gateway_v6: device.default_gateway_v6,
+            prefix_delegation_addr: device.prefix_delegation_addr,
+            prefix_delegation_mask: device.prefix_delegation_mask,
+            prefix_delegation_local: device.prefix_delegation_local,
+          }),
+        ]),
+      );
+    });
+
+
+    // Invalid config
+    test('Invalid config', async () => {
+      let device = models.defaultMockDevices[0];
+      device.acs_id = '';
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      // Mocks
+      let request = {app: app, body: assembleBody(device)};
+      utils.common.mockConfigs(null, 'findOne');
+
+      // Get the cpe and permissions
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(
+        device,
+      ).cpe;
+
+      let permissions = deviceVersion.devicePermissions(device);
+
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      let result = await acsDeviceInfoController.__testCreateRegistry(
+        request, cpe, permissions,
+      );
+
+      expect(result).toBe(false);
+      expect(errorSpy).toBeCalled();
+      expect(reportOnuDevicesSpy).not.toBeCalled();
+    });
+
+
+    // All permissions
+    test('All permissions', async () => {
+      const device = models.defaultMockDevices[0];
+      let cpePermissions = fieldsAndPermissions.cpePermissions[0];
+      let app = {
+        locals: {
+          secret: '123',
+        },
+      };
+
+      // Mocks
+      let request = {app: app, body: assembleBody(device)};
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, cpePermissions, null,
+      );
+      utils.common.mockDefaultConfigs();
+      let delaySpy = jest.spyOn(acsDeviceInfoController, 'delayExecutionGenie')
+        .mockImplementation(() => true);
+
+      // Get the cpe with the mocked permissions
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(
+        device,
+      ).cpe;
+
+      let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+
+
+      // Spies
+      let reportOnuDevicesSpy =
+        jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+      // Execute
+      let result = await acsDeviceInfoController.__testCreateRegistry(
+        request, cpe, devicePermissions,
+      );
+
+      // Validate
+      expect(result).toBe(true);
+      expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+        app,
+        expect.arrayContaining([
+          expect.anything(),
+        ]),
+      );
+      expect(delaySpy).toHaveBeenCalledTimes(2);
+    });
   });
+
 
   describe('informDevice function', () => {
     beforeEach(() => {
@@ -1137,6 +1487,8 @@ describe('ACS Device Info Tests', () => {
       jest.restoreAllMocks();
       jest.clearAllMocks();
       jest.useRealTimers();
+
+      jest.spyOn(console, 'log').mockImplementation(() => true);
     });
 
     test('Invalid config', async () => {
@@ -1287,7 +1639,6 @@ describe('ACS Device Info Tests', () => {
     });
 
     test('Update failed and not sync', async () => {
-      let tr069Config = models.defaultMockConfigs[0].tr069;
       let device = models.copyDeviceFrom(
         models.defaultMockDevices[0]._id,
         {
@@ -1347,8 +1698,6 @@ describe('ACS Device Info Tests', () => {
 
       let result = await acsDeviceInfoController.informDevice(req, response);
 
-
-
       // Validate
       expect(result.statusCode).toBe(200);
       expect(result.body.success).toBe(true);
@@ -1359,8 +1708,7 @@ describe('ACS Device Info Tests', () => {
 */
   });
 
-
-  describe('syncDeviceData - Update web admin login', () => {
+describe('syncDeviceData - Update web admin login', () => {
     // New config
     test('New config', async () => {
       let oldLogin = 'teste123';
@@ -1962,7 +2310,7 @@ describe('ACS Device Info Tests', () => {
             web_admin_username: {writable: true, value: oldLogin},
             web_admin_password: {writable: true, value: oldPass},
           },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+          wan: {}, lan: {}, wifi2: {}, wifi5: {}, ipv6: {},
         },
         {
           grantMeshV2HardcodedBssid: null,
@@ -1974,6 +2322,2485 @@ describe('ACS Device Info Tests', () => {
       expect(updateInfoSpy).not.toBeCalled();
       expect(device.web_admin_username).toBe(oldLogin);
       expect(device.web_admin_password).toBe(oldPass);
+    });
+
+
+    // Empty data
+    test('Empty data', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {},
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id, {},
+      );
+
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, ipv6: {},
+        }, {},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+    });
+
+
+    // No WAN/LAN information permission
+    test('No WAN/LAN information permission', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '24'},
+            remote_address: {writable: false, value: '192.168.89.2'},
+            remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
+            default_gateway: {writable: false, value: '192.168.80.1'},
+            dns_servers: {writable: false, value: '8.8.8.8'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            address: {writable: false, value: '2804:1234:5678::a1'},
+            mask: {writable: false, value: '78'},
+            default_gateway: {writable: false, value: '2804:1234:5678::a0'},
+            prefix_address: {writable: false, value: '2804:1234:5679::'},
+            prefix_mask: {writable: false, value: '64'},
+            prefix_local_address:
+              {writable: false, value: '2804:1234:5679::b1'},
+          },
+        },
+        {grantWanLanInformation: false},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv6).toBe('');
+      expect(device.wan_ipv4_mask).toBe(0);
+      expect(device.wan_ipv6_mask).toBe(0);
+      expect(device.pppoe_ip).toBe('');
+      expect(device.pppoe_mac).toBe('');
+      expect(device.default_gateway_v4).toBe('');
+      expect(device.default_gateway_v6).toBe('');
+      expect(device.dns_server).toBe('');
+      expect(device.prefix_delegation_addr).toBe('');
+      expect(device.prefix_delegation_mask).toBe('');
+      expect(device.prefix_delegation_local).toBe('');
+    });
+
+
+    // WAN/LAN information permission with no value
+    test('No WAN/LAN information permission with no value', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, ipv6: {},
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv6).toBe('');
+      expect(device.wan_ipv4_mask).toBe(0);
+      expect(device.wan_ipv6_mask).toBe(0);
+      expect(device.pppoe_ip).toBe('');
+      expect(device.pppoe_mac).toBe('');
+      expect(device.default_gateway_v4).toBe('');
+      expect(device.default_gateway_v6).toBe('');
+      expect(device.dns_server).toBe('');
+      expect(device.prefix_delegation_addr).toBe('');
+      expect(device.prefix_delegation_mask).toBe('');
+      expect(device.prefix_delegation_local).toBe('');
+    });
+
+
+    // No WAN/LAN information IPv6 feature
+    test('No WAN/LAN information IPv6 feature', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: false};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '24'},
+            remote_address: {writable: false, value: '192.168.89.2'},
+            remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
+            default_gateway: {writable: false, value: '192.168.80.1'},
+            dns_servers: {writable: false, value: '8.8.8.8'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            address: {writable: false, value: '2804:1234:5678::a1'},
+            mask: {writable: false, value: '78'},
+            default_gateway: {writable: false, value: '2804:1234:5678::a0'},
+            prefix_address: {writable: false, value: '2804:1234:5679::'},
+            prefix_mask: {writable: false, value: '64'},
+            prefix_local_address:
+              {writable: false, value: '2804:1234:5679::b1'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv6).toBe('');
+      expect(device.wan_ipv4_mask).toBe(24);
+      expect(device.wan_ipv6_mask).toBe(0);
+      expect(device.pppoe_ip).toBe('192.168.89.2');
+      expect(device.pppoe_mac).toBe('AA:BB:CC:DD:EE:FF');
+      expect(device.default_gateway_v4).toBe('192.168.80.1');
+      expect(device.default_gateway_v6).toBe('');
+      expect(device.dns_server).toBe('8.8.8.8');
+      expect(device.prefix_delegation_addr).toBe('');
+      expect(device.prefix_delegation_mask).toBe('');
+      expect(device.prefix_delegation_local).toBe('');
+    });
+
+
+    // All WAN/LAN information
+    test('All WAN/LAN information', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: true};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '24'},
+            remote_address: {writable: false, value: '192.168.89.2'},
+            remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
+            default_gateway: {writable: false, value: '192.168.80.1'},
+            dns_servers: {writable: false, value: '8.8.8.8'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            address: {writable: false, value: '2804:1234:5678::a1'},
+            mask: {writable: false, value: '78'},
+            default_gateway: {writable: false, value: '2804:1234:5678::a0'},
+            prefix_address: {writable: false, value: '2804:1234:5679::'},
+            prefix_mask: {writable: false, value: '64'},
+            prefix_local_address:
+              {writable: false, value: '2804:1234:5679::b1'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv6).toBe('2804:1234:5678::a1');
+      expect(device.wan_ipv4_mask).toBe(24);
+      expect(device.wan_ipv6_mask).toBe(78);
+      expect(device.pppoe_ip).toBe('192.168.89.2');
+      expect(device.pppoe_mac).toBe('AA:BB:CC:DD:EE:FF');
+      expect(device.default_gateway_v4).toBe('192.168.80.1');
+      expect(device.default_gateway_v6).toBe('2804:1234:5678::a0');
+      expect(device.dns_server).toBe('8.8.8.8');
+      expect(device.prefix_delegation_addr).toBe('2804:1234:5679::');
+      expect(device.prefix_delegation_mask).toBe('64');
+      expect(device.prefix_delegation_local).toBe('2804:1234:5679::b1');
+    });
+
+
+    // WAN/LAN information - mask < 0
+    test('WAN/LAN information - mask < 0', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: true};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '-1'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            mask: {writable: false, value: '-1'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv4_mask).toBe(0);
+      expect(device.wan_ipv6_mask).toBe(0);
+    });
+
+
+    // WAN/LAN information - bigger mask value
+    test('WAN/LAN information - bigger mask value', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: true};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '33'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            mask: {writable: false, value: '129'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv4_mask).toBe(0);
+      expect(device.wan_ipv6_mask).toBe(0);
+    });
+
+
+    // WAN/LAN information - upper limit mask value
+    test('WAN/LAN information - upper limit mask value', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 0,
+          wan_ipv6_mask: 0,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: true};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '32'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            mask: {writable: false, value: '128'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv4_mask).toBe(32);
+      expect(device.wan_ipv6_mask).toBe(128);
+    });
+
+
+    // WAN/LAN information - lower limit mask value
+    test('WAN/LAN information - lower limit mask value', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          connection_type: 'dhcp',
+          wan_ipv6: '',
+          wan_ipv4_mask: 5,
+          wan_ipv6_mask: 5,
+          pppoe_ip: '',
+          pppoe_mac: '',
+          default_gateway_v4: '',
+          default_gateway_v6: '',
+          dns_server: '',
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+      let config = models.copyConfigFrom(models.defaultMockConfigs[0]._id, {});
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = {...fieldsAndPermissions.fields[0]};
+      permissions['features'] = {hasIpv6Information: true};
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, {
+          common: {}, wan: {
+            mask_ipv4: {writable: false, value: '0'},
+          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
+            mask: {writable: false, value: '0'},
+          },
+        },
+        {grantWanLanInformation: true},
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+      expect(device.wan_ipv4_mask).toBe(0);
+      expect(device.wan_ipv6_mask).toBe(0);
+    });
+  });
+
+
+  describe('requestWanInformation', () => {
+    // Invalid device - Undefined
+    test('Invalid device - Undefined', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation(undefined);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Null
+    test('Invalid device - Null', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation(null);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Non TR-069
+    test('Invalid device - Not TR-069', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: '1234',
+        use_tr069: false,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - No acs_id
+    test('Invalid device - No acs_id', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: '',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Unknown model
+    test('Unknown model', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: '000000-EG8145X99999-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // No permission
+    test('No permission', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          wan: {
+            hasIpv4MaskField: false,
+            hasIpv4RemoteAddressField: false,
+            hasIpv4RemoteMacField: false,
+            hasIpv4DefaultGatewayField: false,
+            hasDnsServerField: false,
+          },
+          ipv6: {
+            hasAddressField: false,
+            hasMaskField: false,
+            hasDefaultGatewayField: false,
+          },
+        },
+        {wan: {}, ipv6: {}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions with no field
+    test('All permissions with no field', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          wan: {
+            hasIpv4MaskField: true,
+            hasIpv4RemoteAddressField: true,
+            hasIpv4RemoteMacField: true,
+            hasIpv4DefaultGatewayField: true,
+            hasDnsServerField: true,
+          },
+          ipv6: {
+            hasAddressField: true,
+            hasMaskField: true,
+            hasDefaultGatewayField: true,
+          },
+        },
+        {wan: {}, ipv6: {}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions PPPoE
+    test('All permissions PPPoE', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          wan: {
+            hasIpv4MaskField: true,
+            hasIpv4RemoteAddressField: true,
+            hasIpv4RemoteMacField: true,
+            hasIpv4DefaultGatewayField: true,
+            hasDnsServerField: true,
+          },
+          ipv6: {
+            hasAddressField: true,
+            hasMaskField: true,
+            hasDefaultGatewayField: true,
+          },
+        },
+        {
+          wan: {
+            wan_ip_ppp: 'wan.wan_ip',
+            mask_ipv4_ppp: 'wan.mask_ipv4',
+            remote_address_ppp: 'wan.remote_address',
+            remote_mac_ppp: 'wan.remote_mac',
+            default_gateway_ppp: 'wan.default_gateway',
+            dns_servers_ppp: 'wan.dns_servers',
+          },
+          ipv6: {
+            address_ppp: 'ipv6.address',
+            mask_ppp: 'ipv6.mask',
+            default_gateway_ppp: 'ipv6.default_gateway',
+          },
+        },
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.wan_ip',
+            'wan.mask_ipv4',
+            'wan.remote_address',
+            'wan.remote_mac',
+            'wan.default_gateway',
+            'wan.dns_servers',
+            'ipv6.address',
+            'ipv6.mask',
+            'ipv6.default_gateway',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // All permissions DHCP
+    test('All permissions DHCP', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          wan: {
+            hasIpv4MaskField: true,
+            hasIpv4RemoteAddressField: true,
+            hasIpv4RemoteMacField: true,
+            hasIpv4DefaultGatewayField: true,
+            hasDnsServerField: true,
+          },
+          ipv6: {
+            hasAddressField: true,
+            hasMaskField: true,
+            hasDefaultGatewayField: true,
+          },
+        },
+        {
+          wan: {
+            wan_ip: 'wan.wan_ip',
+            mask_ipv4: 'wan.mask_ipv4',
+            remote_address: 'wan.remote_address',
+            remote_mac: 'wan.remote_mac',
+            default_gateway: 'wan.default_gateway',
+            dns_servers: 'wan.dns_servers',
+          },
+          ipv6: {
+            address: 'ipv6.address',
+            mask: 'ipv6.mask',
+            default_gateway: 'ipv6.default_gateway',
+          },
+        },
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'dhcp',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.wan_ip',
+            'wan.mask_ipv4',
+            'wan.remote_address',
+            'wan.remote_mac',
+            'wan.default_gateway',
+            'wan.dns_servers',
+            'ipv6.address',
+            'ipv6.mask',
+            'ipv6.default_gateway',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // Each permission
+    test.each([
+      ['hasIpv4MaskField', 'mask_ipv4_ppp', 'wan'],
+      ['hasIpv4RemoteAddressField', 'remote_address_ppp', 'wan'],
+      ['hasIpv4RemoteMacField', 'remote_mac_ppp', 'wan'],
+      ['hasIpv4DefaultGatewayField', 'default_gateway_ppp', 'wan'],
+      ['hasDnsServerField', 'dns_servers_ppp', 'wan'],
+      ['hasAddressField', 'address_ppp', 'ipv6'],
+      ['hasMaskField', 'mask_ppp', 'ipv6'],
+      ['hasDefaultGatewayField', 'default_gateway_ppp', 'ipv6'],
+    ])('Each permissions: %s', (permission, field, section) => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+      let permissions = {
+        features: {hasIpv6Information: true},
+        wan: {
+          hasIpv4MaskField: false,
+          hasIpv4RemoteAddressField: false,
+          hasIpv4RemoteMacField: false,
+          hasIpv4DefaultGatewayField: false,
+          hasDnsServerField: false,
+        },
+        ipv6: {
+          hasAddressField: false,
+          hasMaskField: false,
+          hasDefaultGatewayField: false,
+        },
+      };
+      let fields = {
+        wan: {
+          wan_ip_ppp: 'wan.wan_ip',
+          mask_ipv4_ppp: '',
+          remote_address_ppp: '',
+          remote_mac_ppp: '',
+          default_gateway_ppp: '',
+          dns_servers_ppp: '',
+        },
+        ipv6: {
+          address_ppp: '',
+          mask_ppp: '',
+          default_gateway_ppp: '',
+        },
+      };
+
+
+      // Change the permission and field
+      permissions[section][permission] = true;
+      fields[section][field] = section + field;
+
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestWanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.wan_ip',
+            section + field,
+          ],
+        },
+        expect.anything(),
+      );
+    });
+  });
+
+
+  describe('requestLanInformation', () => {
+    // Invalid device - Undefined
+    test('Invalid device - Undefined', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation(undefined);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Null
+    test('Invalid device - Null', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation(null);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Non TR-069
+    test('Invalid device - Not TR-069', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '1234',
+        use_tr069: false,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - No acs_id
+    test('Invalid device - No acs_id', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Unknown model
+    test('Unknown model', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '000000-EG8145X99999-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // No IPv6 Information
+    test('No IPv6 Information', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: false},
+          ipv6: {},
+        },
+        {ipv6: {}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '000000-EG8145X99999-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // No permission
+    test('No permission', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          ipv6: {
+            hasPrefixDelegationAddressField: false,
+            hasPrefixDelegationMaskField: false,
+            hasPrefixDelegationLocalAddressField: false,
+          },
+        },
+        {wan: {}, ipv6: {}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions with no field
+    test('All permissions with no field', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          ipv6: {
+            hasPrefixDelegationAddressField: true,
+            hasPrefixDelegationMaskField: true,
+            hasPrefixDelegationLocalAddressField: true,
+          },
+        },
+        {wan: {}, ipv6: {}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions PPPoE
+    test('All permissions PPPoE', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          ipv6: {
+            hasPrefixDelegationAddressField: true,
+            hasPrefixDelegationMaskField: true,
+            hasPrefixDelegationLocalAddressField: true,
+          },
+        },
+        {
+          ipv6: {
+            prefix_delegation_address_ppp: 'address',
+            prefix_delegation_mask_ppp: 'mask',
+            prefix_delegation_local_address_ppp: 'local.address',
+          },
+        },
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'pppoe',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'address',
+            'mask',
+            'local.address',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // All permissions DHCP
+    test('All permissions DHCP', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {hasIpv6Information: true},
+          ipv6: {
+            hasPrefixDelegationAddressField: true,
+            hasPrefixDelegationMaskField: true,
+            hasPrefixDelegationLocalAddressField: true,
+          },
+        },
+        {
+          ipv6: {
+            prefix_delegation_address: 'address',
+            prefix_delegation_mask: 'mask',
+            prefix_delegation_local_address: 'local.address',
+          },
+        },
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'dhcp',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'address',
+            'mask',
+            'local.address',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // Each permission
+    test.each([
+      ['hasPrefixDelegationAddressField', 'prefix_delegation_address'],
+      ['hasPrefixDelegationMaskField', 'prefix_delegation_mask'],
+      [
+        'hasPrefixDelegationLocalAddressField',
+        'prefix_delegation_local_address',
+      ],
+    ])('Each permissions: %s', (permission, field) => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+      let permissions = {
+        features: {hasIpv6Information: true},
+        ipv6: {
+          hasPrefixDelegationAddressField: false,
+          hasPrefixDelegationMaskField: false,
+          hasPrefixDelegationLocalAddressField: false,
+        },
+      };
+      let fields = {
+        ipv6: {
+          prefix_delegation_address: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local_address: '',
+        },
+      };
+
+
+      // Change the permission and field
+      permissions['ipv6'][permission] = true;
+      fields['ipv6'][field] = field;
+
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestLanInformation({
+        acs_id: acsID,
+        use_tr069: true,
+        connection_type: 'dhcp',
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            field,
+          ],
+        },
+        expect.anything(),
+      );
+    });
+  });
+
+
+  describe('requestSync', () => {
+    // All parameters and fields
+    test('All parameters and fields', async () => {
+      const device = models.defaultMockDevices[0];
+      let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+
+
+      // Mocks
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => devicePermissions);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      await acsDeviceInfoController.requestSync(device);
+
+
+      // Validate
+      let parameterNames = [];
+      parameterNames = parameterNames.concat(
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].common,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].lan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].ipv6,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi2,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi5,
+        ),
+      );
+
+      // Remove unused fields
+      parameterNames = parameterNames.filter((field) => {
+        let removeFields = [
+          'common.hw_version', 'common.mac', 'common.model',
+          'lan.config_enable', 'lan.dns_servers',
+          'lan.ip_routers', 'lan.lease_max_ip', 'lan.lease_min_ip',
+          'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
+          'wifi5.beacon_type',
+        ];
+        if (removeFields.includes(field)) return false;
+        return true;
+      });
+
+      expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
+      expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
+      expect(taskSpy.mock.calls[0][1].parameterNames.sort())
+        .toStrictEqual(parameterNames.sort());
+    });
+
+
+    // All permissions with no fields
+    test('All permissions with no fields', async () => {
+      const device = models.defaultMockDevices[0];
+      let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+      let fields = {...fieldsAndPermissions.fields[0]};
+
+      fields.ipv6 = fieldsAndPermissions.setAllObjectValues(
+        fields.ipv6, '',
+      );
+
+      let wan = {...fields.wan};
+      wan.mask_ipv4 = '';
+      wan.mask_ipv4_ppp = '';
+      wan.remote_address = '';
+      wan.remote_address_ppp = '';
+      wan.remote_mac = '';
+      wan.remote_mac_ppp = '';
+      wan.default_gateway = '';
+      wan.default_gateway_ppp = '';
+      wan.dns_servers = '';
+      wan.dns_servers_ppp = '';
+      fields.wan = wan;
+
+
+      // Mocks
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => devicePermissions);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fields,
+      );
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      await acsDeviceInfoController.requestSync(device);
+
+
+      // Validate
+      let parameterNames = [];
+      parameterNames = parameterNames.concat(
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].common,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].lan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi2,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi5,
+        ),
+      );
+
+      // Remove unused fields
+      parameterNames = parameterNames.filter((field) => {
+        let removeFields = [
+          'common.hw_version', 'common.mac', 'common.model',
+          'lan.config_enable', 'lan.dns_servers',
+          'lan.ip_routers', 'lan.lease_max_ip', 'lan.lease_min_ip',
+          'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
+          'wifi5.beacon_type', 'wan.mask_ipv4', 'wan.mask_ipv4_ppp',
+          'wan.remote_address', 'wan.remote_address_ppp', 'wan.remote_mac',
+          'wan.remote_mac_ppp', 'wan.default_gateway',
+          'wan.default_gateway_ppp', 'wan.dns_servers', 'wan.dns_servers_ppp',
+        ];
+        if (removeFields.includes(field)) return false;
+        return true;
+      });
+
+      expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
+      expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
+      expect(taskSpy.mock.calls[0][1].parameterNames.sort())
+        .toStrictEqual(parameterNames.sort());
+    });
+
+
+    // Without WAN and LAN information
+    test('Without WAN and LAN information', async () => {
+      const device = models.defaultMockDevices[0];
+      let devicePermissions = {...fieldsAndPermissions.devicePermissions[0]};
+      devicePermissions.grantWanLanInformation = false;
+
+
+      // Mocks
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => devicePermissions);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      await acsDeviceInfoController.requestSync(device);
+
+
+      // Validate
+      let parameterNames = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0].ipv6,
+      );
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.mask_ipv4);
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.mask_ipv4_ppp);
+
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.remote_address);
+      parameterNames.push(fieldsAndPermissions.fields[0].wan
+        .remote_address_ppp,
+      );
+
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.remote_mac);
+      parameterNames.push(fieldsAndPermissions.fields[0].wan
+        .remote_mac_ppp,
+      );
+
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.default_gateway);
+      parameterNames.push(fieldsAndPermissions.fields[0].wan
+        .default_gateway_ppp,
+      );
+
+      parameterNames.push(fieldsAndPermissions.fields[0].wan.dns_servers);
+      parameterNames.push(fieldsAndPermissions.fields[0].wan
+        .dns_servers_ppp,
+      );
+
+      expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
+      expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
+      expect(taskSpy.mock.calls[0][1].parameterNames).not
+        .toContain(parameterNames);
+    });
+
+
+    // WAN and LAN information with no IPv6
+    test('WAN and LAN information with no IPv6', async () => {
+      const device = models.defaultMockDevices[0];
+      let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+      let cpePermissions = {...fieldsAndPermissions.cpePermissions[0]};
+      cpePermissions.features.hasIpv6Information = false;
+
+
+      // Mocks
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => devicePermissions);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        cpePermissions,
+        fieldsAndPermissions.fields[0],
+      );
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      await acsDeviceInfoController.requestSync(device);
+
+
+      // Validate
+      let parameterNames = [];
+      parameterNames = parameterNames.concat(
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].common,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].lan,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi2,
+        ),
+        fieldsAndPermissions.getAllObjectValues(
+          fieldsAndPermissions.fields[0].wifi5,
+        ),
+      );
+
+      // Remove unused fields
+      parameterNames = parameterNames.filter((field) => {
+        let removeFields = [
+          'common.hw_version', 'common.mac', 'common.model',
+          'lan.config_enable', 'lan.dns_servers',
+          'lan.ip_routers', 'lan.lease_max_ip', 'lan.lease_min_ip',
+          'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
+          'wifi5.beacon_type',
+        ];
+        if (removeFields.includes(field)) return false;
+        return true;
+      });
+      let parameterNamesNotContain = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0].ipv6,
+      );
+
+      expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
+      expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
+      expect(taskSpy.mock.calls[0][1].parameterNames.sort())
+        .toStrictEqual(parameterNames.sort());
+      expect(taskSpy.mock.calls[0][1].parameterNames).not
+        .toContain(parameterNamesNotContain);
+    });
+  });
+
+
+  describe('fetchSyncResult', () => {
+    // Invalid acs ID
+    test('Invalid acs ID', async () => {
+      const device = models.defaultMockDevices[0];
+
+      let parameterNames = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0],
+      );
+
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+
+
+      // Mocks
+      let requestEndSpy = jest.fn();
+      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
+        return {
+          end: requestEndSpy,
+        };
+      });
+
+
+      // Execute
+      await acsDeviceInfoController.__testFetchSyncResult(
+        '', [], parameterNames, cpe,
+      );
+
+      // Validate
+      expect(requestSpy).toBeCalled();
+      expect(requestEndSpy).toBeCalled();
+    });
+
+
+    // Invalid parameter names
+    test('Invalid parameter names', async () => {
+      const device = models.defaultMockDevices[0];
+
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+
+
+      // Mocks
+      let requestEndSpy = jest.fn();
+      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
+        return {
+          end: requestEndSpy,
+        };
+      });
+
+
+      // Execute
+      await acsDeviceInfoController.__testFetchSyncResult(
+        device.acs_id, [], [], cpe,
+      );
+
+      // Validate
+      expect(requestSpy).toBeCalled();
+      expect(requestEndSpy).toBeCalled();
+    });
+
+
+    // Invalid cpe
+    test('Invalid cpe', async () => {
+      const device = {...models.defaultMockDevices[0]};
+      device.acs_id = '';
+
+      let parameterNames = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0],
+      );
+
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+
+
+      // Mocks
+      let requestEndSpy = jest.fn();
+      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
+        return {
+          end: requestEndSpy,
+        };
+      });
+
+
+      // Execute
+      await acsDeviceInfoController.__testFetchSyncResult(
+        device.acs_id, [], parameterNames, cpe,
+      );
+
+      // Validate
+      expect(requestSpy).toBeCalled();
+      expect(requestEndSpy).toBeCalled();
+    });
+
+
+    // No data to fetch
+    test('No data to fetch', async () => {
+      const device = {...models.defaultMockDevices[0]};
+      device.acs_id = '';
+
+      let parameterNames = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0],
+      );
+
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+      let data = '';
+
+
+      // Mocks
+      utils.common.mockDevices(null, 'findOne');
+      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey')
+        .mockImplementation(() => undefined);
+      let permissionSpy = jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => true);
+      let requestEndSpy = jest.fn();
+      let requestSpy = jest.spyOn(http, 'request')
+        .mockImplementation((options, callback) => {
+          callback({
+            setEncoding: () => true,
+            on: async (type, callback2) => {
+              if (type === 'data') callback2(data);
+              if (type === 'end') await callback2();
+            },
+          });
+
+          return {
+            end: requestEndSpy,
+          };
+      });
+
+
+      // Execute
+      await acsDeviceInfoController.__testFetchSyncResult(
+        device.acs_id, [], parameterNames, cpe,
+      );
+
+      // Validate
+      expect(requestSpy).toBeCalled();
+      expect(requestEndSpy).toBeCalled();
+      expect(permissionSpy).not.toBeCalled();
+      expect(nestedSpy).not.toBeCalled();
+    });
+
+
+    // All data to fetch
+    test('All data to fetch', async () => {
+      const device = {...models.defaultMockDevices[0]};
+      device.acs_id = '';
+
+      let parameterNames = fieldsAndPermissions.getAllObjectValues(
+        fieldsAndPermissions.fields[0],
+      );
+
+      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+      let data = '';
+      const dataToFetch = {
+        basic: true, alt_uid: true, web_admin_user: true, web_admin_pass: true,
+        wan: true, ipv6: true, vlan: true, vlan_ppp: true, bytes: true,
+        pon: true, lan: true, wifi2: true, wifiMode: true, wifiBand: true,
+        wifi5: true, mesh2: true, mesh5: true, port_forward: true, stun: true,
+        fields: fieldsAndPermissions.fields[0],
+      };
+
+
+      // Mocks
+      utils.common.mockDevices(null, 'findOne');
+      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey')
+        .mockImplementation(() => undefined);
+      let permissionSpy = jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => true);
+      let requestEndSpy = jest.fn();
+      let requestSpy = jest.spyOn(http, 'request')
+        .mockImplementation((options, callback) => {
+          callback({
+            setEncoding: () => true,
+            on: async (type, callback2) => {
+              if (type === 'data') callback2(data);
+              if (type === 'end') await callback2();
+            },
+          });
+
+          return {
+            end: requestEndSpy,
+          };
+      });
+
+
+      // Execute
+      await acsDeviceInfoController.__testFetchSyncResult(
+        device.acs_id, dataToFetch, parameterNames, cpe,
+      );
+
+
+      // Validate
+      expect(requestSpy).toBeCalled();
+      expect(requestEndSpy).toBeCalled();
+      expect(permissionSpy).not.toBeCalled();
+      expect(nestedSpy).toBeCalledTimes(77);
+    });
+  });
+
+describe('syncDeviceData', () => {
+    // Not updating
+    test('Not updating', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+    });
+
+
+    // Updating different release same version
+    test('Updating different release same version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '12345'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+    });
+
+
+    // Updating different release and version
+    test('Updating different release and version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '12345',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+    });
+
+
+    // Updating same release and version
+    test('Updating same release and version', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '1234',
+        },
+      );
+
+      // Mocks
+      utils.common.mockDefaultConfigs();
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+    });
+
+
+    // Updating web admin login by tr069 reset
+    test('Updating web admin login by tr069 reset', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: true,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste567',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true},
+            web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(
+        device,
+        {
+          common: {
+            web_admin_username: config.tr069.web_login,
+            web_admin_password: config.tr069.web_password,
+          },
+          lan: {}, stun: {}, wan: {},
+          wifi2: {
+            password: models.defaultMockDevices[0].wifi_password,
+          },
+          wifi5: {
+            password: models.defaultMockDevices[0].wifi_password_5ghz,
+          },
+        },
+      );
+    });
+
+
+    // Updating web admin login by upgrade
+    test('Updating web admin login by upgrade', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '5678',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste567',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true},
+            web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(
+        device,
+        {
+          common: {
+            web_admin_username: config.tr069.web_login,
+            web_admin_password: config.tr069.web_password,
+          },
+          lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+        },
+      );
+    });
+
+
+    // Update web admin login due to missing fields
+    test('Update web admin login due to missing fields', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste567',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true},
+            web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).toBeCalledWith(
+        device,
+        {
+          common: {
+            web_admin_username: config.tr069.web_login,
+            web_admin_password: config.tr069.web_password,
+          },
+          lan: {}, stun: {}, wan: {}, wifi2: {}, wifi5: {},
+        },
+      );
+    });
+
+
+    // Not update web admin login due to same fields
+    test('Not update web admin login due to same fields', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: false,
+          release: '1234',
+          installed_release: '1234',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste567',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {
+              value: config.tr069.web_login,
+              writable: true,
+            },
+            web_admin_password: {
+              value: config.tr069.web_password,
+              writable: true,
+            },
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).not.toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+    });
+
+
+    // Not update web admin login due config
+    test('Not update web admin login due config', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '5678',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: '',
+            web_password: '',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: true},
+            web_admin_password: {writable: true},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+    });
+
+
+    // Not update web admin login due to not writable
+    test('Not update web admin login due to not writable', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '5678',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste321',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+            web_admin_username: {writable: false},
+            web_admin_password: {writable: false},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
+    });
+
+
+    // Not update web admin login due data
+    test('Not update web admin login due data', async () => {
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {
+          _id: '1',
+          do_update: true,
+          release: '1234',
+          installed_release: '5678',
+          recovering_tr069_reset: false,
+        },
+      );
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0]._id,
+        {
+          tr069: {
+            web_login: 'teste123',
+            web_password: 'teste321',
+          },
+        },
+      );
+
+      // Mocks
+      utils.common.mockConfigs(config, 'findOne');
+      let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
+        .mockImplementationOnce(() => true);
+      let updateInfoSpy = jest.spyOn(acsDeviceInfoController, 'updateInfo')
+        .mockImplementationOnce(() => true);
+      device.save = function() {
+        return new Promise((resolve) => {
+          resolve();
+        });
+      };
+
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device._id,
+        device,
+        {
+          common: {
+            version: {value: '1234'},
+          },
+          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+        },
+        {
+          grantMeshV2HardcodedBssid: null,
+        },
+      );
+
+      // Validate
+      expect(successUpdateSpy).toBeCalled();
+      expect(updateInfoSpy).not.toBeCalled();
     });
   });
 });

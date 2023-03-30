@@ -26,6 +26,40 @@ const mockResponse = () => {
   return res;
 };
 
+// Extend a mock implementation to wait execution of function
+// Usefull in functions that are not async but need to wait for
+// a return async funcion
+const waitableMock = () => {
+  let resolve;
+  let times;
+  let calledCount = 0;
+  const mock = jest.fn();
+  mock.mockImplementation(() => {
+    calledCount +=1;
+    if (resolve && calledCount >= times) {
+      resolve();
+    }
+  });
+
+  mock.waitToHaveBeenCalled = (t) => {
+    times = t;
+    return new Promise((r) => {
+      resolve = r;
+    });
+  };
+
+  return mock;
+};
+
+// mock a response. Wait for the json function
+// to be called in the test
+const waitableMockResponse = () => {
+  let res = {};
+  res.status = jest.fn().mockReturnValue(res);
+  res.json = waitableMock(res);
+  return res;
+};
+
 const flashmanLogin = async (user, password) => {
   const login = await request('localhost:8000')
     .post('/login')
@@ -46,6 +80,8 @@ const flashmanLogin = async (user, password) => {
 module.exports = {
   mockResponse,
   mockRequest,
+  waitableMock,
+  waitableMockResponse,
   flashmanLogin,
   tt,
 };

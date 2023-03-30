@@ -1,8 +1,5 @@
 require('../../bin/globals');
 
-// Override process environment variable to avoid starting genie
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
-
 const utils = require('../common/utils');
 const models = require('../common/models');
 
@@ -23,18 +20,6 @@ const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
 const fs = require('fs');
 const path = require('path');
-
-const t = require('../../controllers/language').i18next.t;
-
-// Mock the mqtts (avoid aedes)
-jest.mock('../../mqtts', () => {
-  return {
-    __esModule: false,
-    unifiedClientsMap: {},
-    anlixMessageRouterUpdate: () => undefined,
-    getConnectedClients: () => [],
-  };
-});
 
 let wanDataSuccess = fs.readFileSync(
   path.resolve(

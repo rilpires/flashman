@@ -44,7 +44,6 @@ basicCPEModel.modelPermissions = function() {
   return {
     features: {
       cableRxRate: false, // can get RX rate from devices connected by cable
-      customAppPassword: true, // can override default login/pass for app access
       firmwareUpgrade: true, // support for tr-069 firmware upgrade
       meshCable: true, // can create a cable mesh network with Anlix firmwares
       meshWifi: false, // can create a wifi mesh network with Anlix firmwares
@@ -60,6 +59,7 @@ basicCPEModel.modelPermissions = function() {
       wps: false, // will enable wps configs (to be implemented)
       macAccessControl: false,
       wlanAccessControl: false,
+      hasIpv6Information: false, // Has any information about IPv6
     },
     firmwareUpgrades: {
       'v0.0.0': [],
@@ -99,6 +99,26 @@ basicCPEModel.modelPermissions = function() {
       hasUptimeField: true, // flag to handle devices that don't have uptime
       mustRebootAfterChanges: false, // must reboot after change wan parameters
       canTrustWanRate: true, // has wan rate field trustworthy
+      hasIpv4MaskField: false, // If the cpe can send IPv4 mask
+      hasIpv4RemoteAddressField: false, // If the cpe can send IPv4 remote ip
+      hasIpv4RemoteMacField: false, // If the cpe can send IPv4 remote mac
+      hasIpv4DefaultGatewayField: false, // If the cpe can send IPv4 default
+                                          // gateway
+      hasDnsServerField: false, // If the cpe can send the DNS server
+    },
+    ipv6: {
+      // Address, Mask Gateway
+      hasAddressField: false, // If the cpe can send IPv6 address
+      hasMaskField: false, // If the cpe can send IPv6 mask
+      hasDefaultGatewayField: false, // If the cpe can send IPv6 default
+                                      // gateway
+
+      // Prefix Delegation
+      hasPrefixDelegationAddressField: false, // IPv6 prefix delegation address
+                                              // propagated to lan
+      hasPrefixDelegationMaskField: false, // IPv6 prefix delegation mask
+      hasPrefixDelegationLocalAddressField: false, // IPv6 prefix delegation
+                                                    // self address
     },
     wifi: {
       list5ghzChannels: [36, 40, 44, 48, 149, 153, 157, 161, 165],
@@ -563,7 +583,7 @@ basicCPEModel.getModelFields = function() {
       acs_url: 'InternetGatewayDevice.ManagementServer.URL',
       interval: 'InternetGatewayDevice.ManagementServer.PeriodicInformInterval',
       // These should only be added whenever they exist, for legacy reasons:
-        // web_admin_user: 'InternetGatewayDevice.User.1.Username',
+        // web_admin_username: 'InternetGatewayDevice.User.1.Username',
         // web_admin_password: 'InternetGatewayDevice.User.1.Password',
         // stun_enable: 'InternetGatewayDevice.ManagementServer.STUNEnable',
         // stun_udp_conn_req_addr: 'InternetGatewayDevice.ManagementServer.' +
@@ -597,6 +617,31 @@ basicCPEModel.getModelFields = function() {
         'WANIPConnection.*.MACAddress',
       wan_mac_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
         'WANPPPConnection.*.MACAddress',
+
+      // IPv4 Mask
+      // mask_ipv4: '',
+      // mask_ipv4_ppp: '',
+
+      // Remote Address
+      // remote_address: '',
+      remote_address_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.RemoteIPAddress',
+
+      // Remote Mac
+      // remote_mac: '',
+      // remote_mac_ppp: '',
+
+      // Default Gateway
+      default_gateway: 'InternetGatewayDevice.WANDevice.1' +
+        '.WANConnectionDevice.*.WANIPConnection.*.DefaultGateway',
+      default_gateway_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.DefaultGateway',
+
+      // DNS Server
+      dns_servers: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANIPConnection.*.DNSServers',
+      dns_servers_ppp: 'InternetGatewayDevice.WANDevice.1.' +
+        'WANConnectionDevice.*.WANPPPConnection.*.DNSServers',
 
       // Uptime
       uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
@@ -677,6 +722,33 @@ basicCPEModel.getModelFields = function() {
       dns_servers: 'InternetGatewayDevice.LANDevice.1.'+
         'LANHostConfigManagement.DNSServers',
     },
+
+    ipv6: {
+      /*
+       * These fields are solely for helping creating support for routers with
+       * IPv6 that contains those proprietary fields, as those fields does not
+       * belong to TR-069 documentation.
+       *
+       * address: '',
+       * address_ppp: '',
+       *
+       * mask: '',
+       * mask_ppp: '',
+       *
+       * default_gateway: '',
+       * default_gateway_ppp: '',
+       *
+       * prefix_delegation_address: '',
+       * prefix_delegation_address_ppp: '',
+       *
+       * prefix_delegation_mask: '',
+       * prefix_delegation_mask_ppp: '',
+       *
+       * prefix_delegation_local_address: '',
+       * prefix_delegation_local_address_ppp: '',
+       */
+    },
+
     wifi2: {
       ssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID',
       bssid: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BSSID',
