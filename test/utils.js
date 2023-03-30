@@ -51,6 +51,28 @@ const waitableMock = () => {
   return mock;
 };
 
+const waitableSpy = (mod, func) => {
+  let resolve;
+  let times;
+  let calledCount = 0;
+  const spy = jest.spyOn(mod, func);
+  spy.mockImplementation(() => {
+    calledCount +=1;
+    if (resolve && calledCount >= times) {
+      resolve();
+    }
+  });
+
+  spy.waitToHaveBeenCalled = (t) => {
+    times = t;
+    return new Promise((r) => {
+      resolve = r;
+    });
+  };
+
+  return spy;
+};
+
 // mock a response. Wait for the json function
 // to be called in the test
 const waitableMockResponse = () => {
@@ -81,6 +103,7 @@ module.exports = {
   mockResponse,
   mockRequest,
   waitableMock,
+  waitableSpy,
   waitableMockResponse,
   flashmanLogin,
   tt,

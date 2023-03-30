@@ -7,6 +7,7 @@ const models = require('../common/models');
 utils.common.mockConfigs(models.defaultMockConfigs, 'findOne');
 
 const testUtils = require('../utils');
+
 const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
 );
@@ -722,12 +723,12 @@ describe('Update Tests - Functions', () => {
         const res = testUtils.mockResponse();
 
         // Spies
-        let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+        let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
         // Execute
-        await deviceListController.setDeviceReg(req, res);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        deviceListController.setDeviceReg(req, res);
+        await addTaskSpy.waitToHaveBeenCalled(1);
 
         // Verify
         // Assert write permission is true for device
@@ -871,12 +872,12 @@ describe('Update Tests - Functions', () => {
         const res = testUtils.mockResponse();
 
         // Spies
-        let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+        let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
         // Execute
-        await deviceListController.setDeviceReg(req, res);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        deviceListController.setDeviceReg(req, res);
+        await addTaskSpy.waitToHaveBeenCalled(1);
 
         // Verify
         // Assert write permission is true for device
@@ -1000,15 +1001,15 @@ describe('Update Tests - Functions', () => {
         utils.common.mockRoles(role, 'findOne');
 
         let req = mockRequest(params, user, body);
-        const res = testUtils.mockResponse();
+        let res = testUtils.mockResponse();
 
         // Spies
-        let addTaskSpy = jest.spyOn(tasksAPI, 'addTask');
+        let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
         // Execute
-        await deviceListController.setDeviceReg(req, res);
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        deviceListController.setDeviceReg(req, res);
+        await addTaskSpy.waitToHaveBeenCalled(1);
 
         // Verify
         // Assert write permission is false for device
