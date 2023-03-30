@@ -2832,28 +2832,30 @@ deviceListController.setDeviceReg = function(req, res) {
                 // checked whether it is necessary to change the value of the
                 // DNS field. This scenario happens if the old subnet value is
                 // contained in the DNS servers address list
-                let lanDns = matchedDevice.lan_dns_servers.split(',');
-                if (lanDns.includes(matchedDevice.lan_subnet)) {
-                  let newLanDns = [];
-                  for (let i=0; i<lanDns.length; i++) {
-                    // Replaces the address referring to the old subnet value
-                    // only if it is no longer contained in the DNS server list
-                    if (
-                        lanDns[i] === matchedDevice.lan_subnet &&
-                        !lanDns.includes(lanSubnet) &&
-                        !newLanDns.includes(lanSubnet)
-                      ) {
-                      newLanDns.push(lanSubnet);
-                    } else if (
-                        lanDns[i] !== matchedDevice.lan_subnet &&
-                        !newLanDns.includes(lanDns[i])
-                      ) {
-                      // Otherwise, it keeps the addresses in the list, taking
-                      // care not to add duplicate addresses.
-                      newLanDns.push(lanDns[i]);
+                if (matchedDevice.lan_dns_servers) {
+                  let lanDns = matchedDevice.lan_dns_servers.split(',');
+                  if (lanDns.includes(matchedDevice.lan_subnet)) {
+                    let newLanDns = [];
+                    for (let i=0; i<lanDns.length; i++) {
+                      // Replaces the address referring to the old subnet value
+                      // only if it is no longer contained in the DNS list
+                      if (
+                          lanDns[i] === matchedDevice.lan_subnet &&
+                          !lanDns.includes(lanSubnet) &&
+                          !newLanDns.includes(lanSubnet)
+                        ) {
+                        newLanDns.push(lanSubnet);
+                      } else if (
+                          lanDns[i] !== matchedDevice.lan_subnet &&
+                          !newLanDns.includes(lanDns[i])
+                        ) {
+                        // Otherwise, it keeps the addresses in the list, taking
+                        // care not to add duplicate addresses.
+                        newLanDns.push(lanDns[i]);
+                      }
                     }
+                    matchedDevice.lan_dns_servers = newLanDns.join(',');
                   }
-                  matchedDevice.lan_dns_servers = newLanDns.join(',');
                 }
                 matchedDevice.lan_subnet = lanSubnet;
                 updateParameters = true;
