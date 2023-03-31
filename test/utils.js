@@ -60,6 +60,15 @@ const waitableMockResponse = () => {
   return res;
 };
 
+// Compare mock result value with what is expected
+// Usage: assertSpyResultStrictEqual(spy.mock.results, expectedRets);
+let assertSpyResultStrictEqual = (results, expected) => {
+  expect(results.length).toBe(expected.length);
+  for (let i = 0; i < results.length; i++) {
+    expect(results[i].value).toStrictEqual(expected[i]);
+  }
+};
+
 const flashmanLogin = async (user, password) => {
   const login = await request('localhost:8000')
     .post('/login')
@@ -82,6 +91,7 @@ module.exports = {
   mockRequest,
   waitableMock,
   waitableMockResponse,
+  assertSpyResultStrictEqual,
   flashmanLogin,
   tt,
 };

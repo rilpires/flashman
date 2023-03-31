@@ -1,15 +1,9 @@
 require('../../../bin/globals');
 
-// Override process environment variable to avoid starting genie
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
-
 const utils = require('../../common/utils');
-const models = require('../../common/models');
-
-// Mock the config (used in language.js)
-utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 
 const utilHandlers = require('../../../controllers/handlers/util');
+const testUtils = require('../../utils');
 
 let jsonPath = '../../assets/flashman-test/genie-data/wan/';
 let mercusysMR30GWanData = require(jsonPath + 'mercusys-mr30g.json');
@@ -17,16 +11,6 @@ let tplinkHC220G5PPPWanData = require(jsonPath + 'tplink-hc220g5-PPP.json');
 let tplinkHC220G5IPWanData = require(jsonPath + 'tplink-hc220g5-IP.json');
 let noWanAvaliableWanData = require(jsonPath + 'no-wan-available.json');
 let moreThanOneWanData = require(jsonPath + 'more-than-one-wan-available.json');
-
-// Mock the mqtts (avoid aedes)
-jest.mock('../../../mqtts', () => {
-  return {
-    __esModule: false,
-    unifiedClientsMap: {},
-    anlixMessageRouterUpdate: () => undefined,
-    getConnectedClients: () => [],
-  };
-});
 
 // Get object from key for assertions
 let getFromNestedKey = (data, key) => {
@@ -37,13 +21,6 @@ let getFromNestedKey = (data, key) => {
     if (result === undefined) return undefined;
   }
   return result;
-};
-
-// Compare mock result value with what is expected
-let assertSpyResult = (results, expected) => {
-  for (let i = 0; i < results.length; i++) {
-    expect(results[i].value).toStrictEqual(expected[i]);
-  }
 };
 
 // Simulates isWanEnabled function call (inside traverseNestedKey)
@@ -100,7 +77,9 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets,
+      );
     });
 
     test('Validate isWanEnabled - TR-181 + PPP with success', () => {
@@ -120,7 +99,10 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+      console.log(isWanEnabledSpy.mock.results)
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets,
+      );
     });
 
     test('Validate isWanEnabled - TR-181 + IP with success', () => {
@@ -140,7 +122,9 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets,
+      );
     });
 
     test(
@@ -164,7 +148,9 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets,
+      );
     });
 
     test(
@@ -189,7 +175,9 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets,
+      );
     });
 
     test('Validate traverseNestedKey - TR-069 + PPP with success', () => {
@@ -221,10 +209,14 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isTraverseNestedKeySpy).toHaveBeenCalledTimes(1);
-      assertSpyResult(isTraverseNestedKeySpy.mock.results, expectedRet1);
+      testUtils.assertSpyResultStrictEqual(
+        isTraverseNestedKeySpy.mock.results, expectedRet1,
+      );
 
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(2);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets2);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets2,
+      );
     });
 
     test('Validate traverseNestedKey - TR-181 + PPP with success ', () => {
@@ -255,10 +247,14 @@ describe('Utils Handler Tests', () => {
 
       // Verify
       expect(isTraverseNestedKeySpy).toHaveBeenCalledTimes(1);
-      assertSpyResult(isTraverseNestedKeySpy.mock.results, expectedRet1);
+      testUtils.assertSpyResultStrictEqual(
+        isTraverseNestedKeySpy.mock.results, expectedRet1,
+      );
 
       expect(isWanEnabledSpy).toHaveBeenCalledTimes(1);
-      assertSpyResult(isWanEnabledSpy.mock.results, expectedRets2);
+      testUtils.assertSpyResultStrictEqual(
+        isWanEnabledSpy.mock.results, expectedRets2,
+      );
     });
   });
 
