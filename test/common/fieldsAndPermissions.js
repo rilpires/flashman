@@ -241,6 +241,11 @@ fieldsAndPermissions.fields.push({
       band: 'diagnostics.sitesurvey.band',
       mode: 'diagnostics.sitesurvey.mode',
     },
+    statistics: {
+      cpu_usage: 'diagnostics.statistics.cpu_usage',
+      memory_free: 'diagnostics.statistics.memory_free',
+      memory_total: 'diagnostics.statistics.memory_total',
+    },
   },
 });
 
@@ -346,6 +351,8 @@ fieldsAndPermissions.cpePermissions.push({
     macAccessControl: true,
     wlanAccessControl: true,
     hasIpv6Information: true,
+    hasCPUUsage: true,
+    hasMemoryUsage: true,
   },
   firmwareUpgrades: {
     'v1': ['v1', 'v2'],
