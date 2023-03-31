@@ -777,14 +777,19 @@ acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
 // CPEs, it calls requestSync to check for fields that need syncing.
 acsDeviceInfoController.informDevice = async function(req, res) {
   let id = req.body.acs_id;
-
-  inputIdQueue.push(id);
-  let cachedResponse = cachedDeviceResponses[id];
-  if (!cachedResponse) {
-    return res.status(200).json({success: true, measure: false});
+  let ids = req.body.acs_ids;
+  if (id) {
+    inputIdQueue.push(id);
+    let cachedResponse = cachedDeviceResponses[id];
+    if (!cachedResponse) {
+      return res.status(200).json({success: true, measure: false});
+    } else {
+      delete cachedDeviceResponses[id];
+      return res.status(cachedResponse.status).json(cachedResponse.body);
+    }
   } else {
-    delete cachedDeviceResponses[id];
-    return res.status(cachedResponse.status).json(cachedResponse.body);
+    inputIdQueue.push(...ids);
+    return res.status(200).json(cachedDeviceResponses);
   }
 };
 
