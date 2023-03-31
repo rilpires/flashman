@@ -986,7 +986,7 @@ describe('ACS Device Info Tests', () => {
         const device = models.copyDeviceFrom(
           id,
           {
-            _id: 'A0:DE:0F:0C:37:54',
+            _id: '94:46:96:8c:23:61',
             acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
             model: 'WS5200-40', // Huawei  WS5200-40
             version: '2.0.0.505(C947)',
@@ -1044,7 +1044,7 @@ describe('ACS Device Info Tests', () => {
         const device = models.copyDeviceFrom(
           id,
           {
-            _id: 'A0:DE:0F:0C:37:54',
+            _id: '94:46:96:8c:23:61',
             acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
             model: 'WS5200-40', // Huawei  WS5200-40
             version: '2.0.0.505(C947)',
@@ -1102,7 +1102,7 @@ describe('ACS Device Info Tests', () => {
         const device = models.copyDeviceFrom(
           id,
           {
-            _id: '1C:61:B4:85:9F:B6',
+            _id: '94:46:96:8c:23:61',
             acs_id: '1C61B4-IGD-22271K1007249',
             model: 'EC220-G5', // Tp-Link EC220-G5
             version: '3.16.0 0.9.1 v6055.0 Build 220706 Rel.79244n',
