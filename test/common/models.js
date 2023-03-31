@@ -106,8 +106,8 @@ models.defaultMockDevices = [
     mesh_father: '',
     bridge_mode_enabled: false,
     bridge_mode_switch_disable: true,
-    wan_ipv4_mask: 0,
-    wan_ipv6_mask: 0,
+    wan_ipv4_mask: 24,
+    wan_ipv6_mask: 56,
     ipv6_enabled: 2,
     do_update_status: 1,
     mesh_onlinedevs_remaining: 0,
@@ -156,6 +156,15 @@ models.defaultMockDevices = [
     lan_netmask: 24,
     ip: '192.168.89.59',
     wan_ip: '192.168.89.59',
+    wan_ipv6: '2804:1234:5678::0059',
+    default_gateway_v4: '192.168.89.2',
+    default_gateway_v6: '2804:1234:5678::0002',
+    dns_server: '192.168.88.1',
+    pppoe_mac: 'AA:BB:CC:DD:EE:59',
+    pppoe_ip: '192.168.89.1',
+    prefix_delegation_addr: 'fc00:dead:c0de:1000::',
+    prefix_delegation_mask: '64',
+    prefix_delegation_local: 'fc00:dead:c0de:1000::0059',
     wan_negociated_speed: '1000',
     wan_negociated_duplex: 'Full',
     created_at: Date('2022-12-06T18:23:30.688Z'),
@@ -500,6 +509,33 @@ models.defaultMockRoles = [
 
 
 /**
+ * User models.
+ *
+ * @memberOf test/common/models
+ *
+ * @type {Array}
+ *
+ * @property {Object} [0] - Admin user model.
+ */
+models.defaultMockUsers = [
+  {
+    _id: '62b9f57c6beaae3b4f9d466f',
+    autoUpdate: true,
+    maxElementsPerPage: 50,
+    visibleColumnsOnPage: [4, 5, 6, 7, 8, 12],
+    is_superuser: true,
+    name: 'admin',
+    password: '$2a$05$8jo34oHgtscxpva56AjDae33yWtK/8lEu0SDo2sd.7ZEJzqY2aPNq',
+    createdAt: Date('2022-06-27T18:22:52.906Z'),
+    deviceCertifications: [],
+    __v: 3,
+    lastLogin: Date('2023-03-02T12:06:07.226Z'),
+    is_hidden: false,
+    role: 'Admin',
+  },
+];
+
+/*
  * Copy from the models passed and return a new one with the
  * parameters modified.
  *
@@ -527,7 +563,6 @@ const copyFrom = function(models, id, data) {
   return model;
 };
 
-
 /**
  * Copy a firmware from `defaultMockFirmwares` and adds a new one with the
  * parameters modified.
@@ -552,7 +587,7 @@ models.copyFirmwareFrom = function(id, data) {
 
 
 /**
- * Copy a device from `defaultMockevices` and adds a new one with the
+ * Copy a device from `defaultMockDevices` and adds a new one with the
  * parameters modified.
  *
  * @memberOf test/common/models
@@ -572,7 +607,6 @@ models.copyDeviceFrom = function(id, data) {
 
   return device;
 };
-
 
 /**
  * Copy a config from `defaultMockConfigs` and adds a new one with the
@@ -596,7 +630,6 @@ models.copyConfigFrom = function(id, data) {
   return config;
 };
 
-
 /**
  * Copy a role from `defaultMockevices` and adds a new one with the
  * parameters modified.
@@ -619,6 +652,27 @@ models.copyRoleFrom = function(id, data) {
   return config;
 };
 
+/**
+ * Copy a user from `defaultMockUsers` and adds a new one with the
+ * parameters modified.
+ *
+ * @memberOf test/common/models
+ *
+ * @param {String} id - The `_id` of the user.
+ * @param {Object} data - An object with the parameters to modify and their
+ * values.
+ *
+ * @return {Object} The user with parameters modified.
+ */
+models.copyUserFrom = function(id, data) {
+  // Get the user with the same id
+  let user = copyFrom(models.defaultMockUsers, id, data);
+
+  // Push to array
+  models.defaultMockUsers.push(user);
+
+  return user;
+};
 
 /**
  * @exports test/common/models

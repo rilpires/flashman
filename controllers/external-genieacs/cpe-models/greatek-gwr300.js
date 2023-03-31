@@ -6,7 +6,6 @@ greatekModel.identifier = {vendor: 'Greatek', model: 'GWR300'};
 
 greatekModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.lan.configWrite = false;
   permissions.wan.mustRebootAfterChanges = true;

@@ -6,7 +6,6 @@ tpLinkModel.identifier = {vendor: 'TP-Link', model: 'EX220'};
 
 tpLinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =

@@ -1,5 +1,13 @@
 /* eslint-disable no-prototype-builtins */
 /* global __line */
+
+
+/**
+ * Interface functions with the ACS.
+ * @namespace controllers/acsDeviceInfo
+ */
+
+
 const DevicesAPI = require('./external-genieacs/devices-api');
 const TasksAPI = require('./external-genieacs/tasks-api');
 const SchedulerCommon = require('./update_scheduler_common');
@@ -196,7 +204,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  const suffixPPPoE = hasPPPoE ? '_ppp' : '';
+  let cpePermissions = cpe.modelPermissions();
   let subnetNumber = convertSubnetMaskToInt(data.lan.subnet_mask.value);
+
   // Check for common.stun_udp_conn_req_addr to
   // get public IP address from STUN discovery
   let cpeIP;
@@ -223,7 +234,7 @@ const createRegistry = async function(req, cpe, permissions) {
   }
   let macAddr = data.common.mac.value.toUpperCase();
   let model = (data.common.model) ? data.common.model.value : '';
-  let wifi5Capable = cpe.modelPermissions().wifi.dualBand;
+  let wifi5Capable = cpePermissions.wifi.dualBand;
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
@@ -302,13 +313,13 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // Remove DHCP uptime for Archer C6
   let wanUptime;
-  if (cpe.modelPermissions().wan.hasUptimeField) {
+  if (cpePermissions.wan.hasUptimeField) {
     if (hasPPPoE && data.wan.uptime_ppp && data.wan.uptime_ppp.value) {
       wanUptime = data.wan.uptime_ppp.value;
     } else if (data.wan.uptime && data.wan.uptime.value) {
       wanUptime = data.wan.uptime.value;
     }
-    if (!hasPPPoE && !cpe.modelPermissions().wan.dhcpUptime) {
+    if (!hasPPPoE && !cpePermissions.wan.dhcpUptime) {
       wanUptime = undefined;
     }
   }
@@ -318,6 +329,152 @@ const createRegistry = async function(req, cpe, permissions) {
     wanIP = data.wan.wan_ip_ppp.value;
   } else if (data.wan.wan_ip && data.wan.wan_ip.value) {
     wanIP = data.wan.wan_ip.value;
+  }
+
+
+  let maskIPv4;
+  let pppoeIp;
+  let pppoeMac;
+  let defaultGatewayV4;
+  let dnsServers;
+
+  // WAN and LAN information
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (
+      cpePermissions.wan.hasIpv4MaskField &&
+      data.wan['mask_ipv4' + suffixPPPoE] &&
+      data.wan['mask_ipv4' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+        maskIPv4 = mask;
+      }
+    }
+
+    // Remote IP Address
+    if (
+      cpePermissions.wan.hasIpv4RemoteAddressField &&
+      data.wan['remote_address' + suffixPPPoE] &&
+      data.wan['remote_address' + suffixPPPoE].value
+    ) {
+      pppoeIp = data.wan['remote_address' + suffixPPPoE].value;
+    }
+
+    // Remote MAC
+    if (
+      cpePermissions.wan.hasIpv4RemoteMacField &&
+      data.wan['remote_mac' + suffixPPPoE] &&
+      data.wan['remote_mac' + suffixPPPoE].value
+    ) {
+      pppoeMac = data.wan['remote_mac' + suffixPPPoE].value;
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.wan.hasIpv4DefaultGatewayField &&
+      data.wan['default_gateway' + suffixPPPoE] &&
+      data.wan['default_gateway' + suffixPPPoE].value
+    ) {
+      defaultGatewayV4 = data.wan['default_gateway' + suffixPPPoE].value;
+    }
+
+    // DNS Servers
+    if (
+      cpePermissions.wan.hasDnsServerField &&
+      data.wan['dns_servers' + suffixPPPoE] &&
+      data.wan['dns_servers' + suffixPPPoE].value
+    ) {
+      dnsServers = data.wan['dns_servers' + suffixPPPoE].value;
+    }
+  }
+
+
+  // IPv6
+  let wanIPv6;
+  let maskIPv6 = 0;
+  let defaultGatewayIPv6;
+  let prefixAddress;
+  let prefixMask;
+  let prefixLocal;
+
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
+    // Address
+    if (
+      cpePermissions.ipv6.hasAddressField &&
+      data.ipv6['address' + suffixPPPoE] &&
+      data.ipv6['address' + suffixPPPoE].value
+    ) {
+      wanIPv6 = data.ipv6['address' + suffixPPPoE].value;
+    }
+
+    // Mask
+    if (
+      cpePermissions.ipv6.hasMaskField &&
+      data.ipv6['mask' + suffixPPPoE] &&
+      data.ipv6['mask' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.ipv6['mask' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 128) {
+        maskIPv6 = mask;
+      }
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.ipv6.hasDefaultGatewayField &&
+      data.ipv6['default_gateway' + suffixPPPoE] &&
+      data.ipv6['default_gateway' + suffixPPPoE].value
+    ) {
+      defaultGatewayIPv6 = data.ipv6['default_gateway' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationAddressField &&
+      data.ipv6['prefix_address' + suffixPPPoE] &&
+      data.ipv6['prefix_address' + suffixPPPoE].value
+    ) {
+      prefixAddress = data.ipv6['prefix_address' + suffixPPPoE].value;
+
+      // Try getting the mask from address
+      let mask = utilHandlers.getMaskFromAddress(
+        data.ipv6['prefix_address' + suffixPPPoE].value,
+        true,
+      );
+
+      // If prefixAddress has '/', remove it
+      prefixAddress = prefixAddress.split('/')[0];
+
+      prefixMask = (mask ? mask : '');
+    }
+
+    // Prefix Delegation Mask
+    // This value might have been setted from address, but this field has
+    // precedence over extracting it from address, thus override the device
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationMaskField &&
+      data.ipv6['prefix_mask' + suffixPPPoE] &&
+      data.ipv6['prefix_mask' + suffixPPPoE].value
+    ) {
+      prefixMask = data.ipv6['prefix_mask' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Local Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationLocalAddressField &&
+      data.ipv6['prefix_local_address' + suffixPPPoE] &&
+      data.ipv6['prefix_local_address' + suffixPPPoE].value
+    ) {
+      prefixLocal = data.ipv6['prefix_local_address' + suffixPPPoE].value;
+    }
   }
 
 
@@ -367,7 +524,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.common.web_admin_username = matchedConfig.tr069.web_login;
     doChanges = true;
   } else if (
-    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    cpePermissions.stavixXMLConfig.webCredentials &&
     matchedConfig.tr069.web_login &&
     cpe.isAllowedWebadminUsername(matchedConfig.tr069.web_login)
   ) {
@@ -383,7 +540,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.common.web_admin_password = matchedConfig.tr069.web_password;
     doChanges = true;
   } else if (
-    cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+    cpePermissions.stavixXMLConfig.webCredentials &&
     matchedConfig.tr069.web_password
   ) {
     webAdminPass = matchedConfig.tr069.web_password;
@@ -406,12 +563,12 @@ const createRegistry = async function(req, cpe, permissions) {
   // Collect WAN max transmit rate, if available
   let wanRate;
   if (data.wan.rate && data.wan.rate.value
-      && cpe.modelPermissions().wan.canTrustWanRate) {
+      && cpePermissions.wan.canTrustWanRate) {
     wanRate = cpe.convertWanRate(data.wan.rate.value);
   }
   let wanDuplex;
   if (data.wan.duplex && data.wan.duplex.value &&
-      cpe.modelPermissions().wan.canTrustWanRate) {
+    cpePermissions.wan.canTrustWanRate) {
     wanDuplex = data.wan.duplex.value;
   }
 
@@ -468,7 +625,7 @@ const createRegistry = async function(req, cpe, permissions) {
     the feature is enabled to that device */
   let wrongPortMapping = false;
   let portMapping = [];
-  if (cpe.modelPermissions().features.portForward &&
+  if (cpePermissions.features.portForward &&
     data.port_mapping && data.port_mapping.length > 0) {
     wrongPortMapping = true;
   }
@@ -517,10 +674,21 @@ const createRegistry = async function(req, cpe, permissions) {
     wrong_port_mapping: wrongPortMapping,
     ip: (cpeIP) ? cpeIP : undefined,
     wan_ip: wanIP,
+    wan_ipv6: wanIPv6,
+    wan_ipv4_mask: maskIPv4,
+    wan_ipv6_mask: maskIPv6,
     wan_negociated_speed: wanRate,
     wan_negociated_duplex: wanDuplex,
     sys_up_time: data.common.uptime.value,
     wan_up_time: wanUptime,
+    default_gateway_v4: defaultGatewayV4,
+    default_gateway_v6: defaultGatewayIPv6,
+    dns_server: dnsServers,
+    pppoe_mac: pppoeMac,
+    pppoe_ip: pppoeIp,
+    prefix_delegation_addr: prefixAddress,
+    prefix_delegation_mask: prefixMask,
+    prefix_delegation_local: prefixLocal,
     created_at: Date.now(),
     last_contact: Date.now(),
     last_tr069_sync: Date.now(),
@@ -557,7 +725,7 @@ const createRegistry = async function(req, cpe, permissions) {
     changes.stun.port = 3478;
     doChanges = true;
   }
-  if (cpe.modelPermissions().lan.needEnableConfig) {
+  if (cpePermissions.lan.needEnableConfig) {
     changes.lan.enable_config = '1';
   }
 
@@ -570,7 +738,7 @@ const createRegistry = async function(req, cpe, permissions) {
       // Delay the execution of this function as it needs the device to exists
       // in genie database, but the device will only be created at the end of
       // this function, thus causing a racing condition.
-      delayExecutionGenie(
+      acsDeviceInfoController.delayExecutionGenie(
         newDevice,
         async () => {
           await acsDeviceInfoController
@@ -584,7 +752,7 @@ const createRegistry = async function(req, cpe, permissions) {
     // Delay the execution of this function as it needs the device to exists in
     // genie database, but the device will only be created at the end of this
     // function, thus causing a racing condition.
-    delayExecutionGenie(
+    acsDeviceInfoController.delayExecutionGenie(
       newDevice,
       async () => {
         await acsXMLConfigHandler
@@ -625,55 +793,28 @@ const createRegistry = async function(req, cpe, permissions) {
 acsDeviceInfoController.__testCreateRegistry = createRegistry;
 
 
-/*
- *  Description:
- *    This function returns a promise and only resolves when the time in
- *    miliseconds timeout after calling this function.
+/**
+ * This function calls an async function (`func`) after `delayTime`. If it
+ * fails, the `func` will be called again with twice the time it was executed.
+ * It will repeat this process until the device exists in genie or the
+ * `repeatQuantity` reaches zero. Every iteration, the `repeatQuantity` will be
+ * reduced by one and `delayTime` will doubled from what it was before.
  *
- *  Inputs:
- *    miliseconds - Amount of time in miliseconds to sleep
+ * @memberof controllers/acsDeviceInfo
  *
- *  Outputs:
- *    promise - The promise that is only resolved when the timer ends.
+ * @param {Device} device - The device to execute the function on.
+ * @param {Function} func - The function that will be called.
+ * @param {Integer} repeatQuantity - Amount of repetitions until giving up.
+ * calling the function
+ * @param {Integer} delayTime - Amount of time to call the function again.
  *
+ * @return {Object} The object containing:
+ *  - `success`: If could start the delay loop;
+ *  - `executed`: If could execute the `func`;
+ *  - `message`: An error or okay message about what happened;
+ *  - `result`: the return of `func`, only included if could ran the `func`.
  */
-const sleep = function(miliseconds) {
-  let promise = new Promise(
-    (resolve) => setTimeout(resolve, miliseconds),
-  );
-
-  return promise;
-};
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testSleep = sleep;
-
-
-
-/*
- *  Description:
- *    This function calls an async function (func) after delayTime. If it fails,
- *    the func will be called again with twice the time it was executed.
- *    It will repeat this process until the device exists in genie or the
- *    repeatQuantity reaches zero. Every iteration, the repeatQuantity will be
- *    reduced by one and delayTime will doubled from what it was before.
- *
- *  Inputs:
- *    func - The function that will be called
- *    repeatQuantity - Amount of repetitions until giving up calling the
- *      function
- *    delayTime - Amount of time to call the function again
- *
- *  Outputs:
- *    object:
- *      - success: If could start the delay loop
- *      - executed: If could execute the func
- *      - message: An error or okay message about what happened
- *      - result: the return of func, only included if could ran the func
- */
-const delayExecutionGenie = async function(
+acsDeviceInfoController.delayExecutionGenie = async function(
   device,
   func,
   repeatQuantity = 3,
@@ -716,7 +857,7 @@ const delayExecutionGenie = async function(
     }
 
     // Wait until timeout sleepTime timer
-    await sleep(sleepTime);
+    await utilHandlers.sleep(sleepTime);
 
     // Double the timer
     sleepTime = 2 * sleepTime;
@@ -729,26 +870,41 @@ const delayExecutionGenie = async function(
     message: t('noDevicesFound'),
   };
 };
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
+
+
+/**
+ * Receives GenieACS inform event, to register the CPE as online - updating last
+ * contact information. For new CPEs, it replies with "measure" as true, to
+ * signal that GenieACS needs to collect information manually. For registered
+ * CPEs, it calls `requestSync` to check for fields that need syncing.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Request} req - The http request.
+ * @param {Response} res - The http response.
+ *
+ * @return {Response} The body of the response might contains:
+ *  - `success`: If could execute the operation;
+ *  - `measure`: If needs to update measures;
+ *  - `measure_type`: If it is a new device or just updating one;
+ *  - `connection_login`: The TR-069 connection username;
+ *  - `connection_password`: The TR-069 connection password;
+ *  - `sync_connection_login`: If needs to sync.
  */
-acsDeviceInfoController.__testDelayExecutionGenie = delayExecutionGenie;
-
-
-// Receives GenieACS inform event, to register the CPE as online - updating last
-// contact information. For new CPEs, it replies with "measure" as true, to
-// signal that GenieACS needs to collect information manually. For registered
-// CPEs, it calls requestSync to check for fields that need syncing.
 acsDeviceInfoController.informDevice = async function(req, res) {
   let dateNow = Date.now();
   let id = req.body.acs_id;
-  let config = null;
+  let config = undefined;
+  let device = undefined;
 
-  let device = await DeviceModel.findOne({acs_id: id}).catch((err)=>{
+  try {
+    device = await DeviceModel.findOne({acs_id: id});
+  } catch (error) {
+    console.log('Error getting device in informDevice: ('
+      + id +'):' + error);
     return res.status(500).json({success: false,
       message: t('cpeFindError', {errorline: __line})});
-  });
+  }
 
   let doFullSync = false;
   let doSync = false;
@@ -784,7 +940,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       {tr069: true},
     ).lean();
   } catch (error) {
-    console.log('Error getting config in function informDevice: ' + error);
+    console.log('Error getting config in informDevice: ' + error);
   }
 
   if (!config && !res.headersSent) {
@@ -883,12 +1039,14 @@ acsDeviceInfoController.requestSync = async function(device) {
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
+  let cpePermissions = cpe.modelPermissions();
   let dataToFetch = {
     basic: false,
     alt_uid: false,
     web_admin_user: false,
     web_admin_pass: false,
     wan: false,
+    ipv6: false,
     vlan: false,
     bytes: false,
     pon: false,
@@ -934,7 +1092,66 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.wan_ip_ppp);
   parameterNames.push(fields.wan.wan_mac);
   parameterNames.push(fields.wan.wan_mac_ppp);
-  if (cpe.modelPermissions().wan.hasUptimeField) {
+
+  // WAN and LAN information
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (cpePermissions.wan.hasIpv4MaskField) {
+      if (fields.wan.mask_ipv4) {
+        parameterNames.push(fields.wan.mask_ipv4);
+      }
+
+      if (fields.wan.mask_ipv4_ppp) {
+        parameterNames.push(fields.wan.mask_ipv4_ppp);
+      }
+    }
+
+    // Remote IP Address
+    if (cpePermissions.wan.hasIpv4RemoteAddressField) {
+      if (fields.wan.remote_address) {
+        parameterNames.push(fields.wan.remote_address);
+      }
+
+      if (fields.wan.remote_address_ppp) {
+        parameterNames.push(fields.wan.remote_address_ppp);
+      }
+    }
+
+    // Remote MAC
+    if (cpePermissions.wan.hasIpv4RemoteMacField) {
+      if (fields.wan.remote_mac) {
+        parameterNames.push(fields.wan.remote_mac);
+      }
+
+      if (fields.wan.remote_mac_ppp) {
+        parameterNames.push(fields.wan.remote_mac_ppp);
+      }
+    }
+
+    // IPv4 Default Gateway
+    if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
+      if (fields.wan.default_gateway) {
+        parameterNames.push(fields.wan.default_gateway);
+      }
+
+      if (fields.wan.default_gateway_ppp) {
+        parameterNames.push(fields.wan.default_gateway_ppp);
+      }
+    }
+
+    // DNS Server
+    if (cpePermissions.wan.hasDnsServerField) {
+      if (fields.wan.dns_servers) {
+        parameterNames.push(fields.wan.dns_servers);
+      }
+
+      if (fields.wan.dns_servers_ppp) {
+        parameterNames.push(fields.wan.dns_servers_ppp);
+      }
+    }
+  }
+
+  if (cpePermissions.wan.hasUptimeField) {
     parameterNames.push(fields.wan.uptime);
     parameterNames.push(fields.wan.uptime_ppp);
   }
@@ -957,6 +1174,82 @@ acsDeviceInfoController.requestSync = async function(device) {
     parameterNames.push(fields.wan.pon_rxpower);
     parameterNames.push(fields.wan.pon_txpower);
   }
+
+  // WAN and LAN information - IPv6
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
+    dataToFetch.ipv6 = true;
+
+    // Get all fields that can be requested
+    // Address
+    if (cpePermissions.ipv6.hasAddressField) {
+      if (fields.ipv6.address) {
+        parameterNames.push(fields.ipv6.address);
+      }
+
+      if (fields.ipv6.address_ppp) {
+        parameterNames.push(fields.ipv6.address_ppp);
+      }
+    }
+
+    // Mask
+    if (cpePermissions.ipv6.hasMaskField) {
+      if (fields.ipv6.mask) {
+        parameterNames.push(fields.ipv6.mask);
+      }
+
+      if (fields.ipv6.mask_ppp) {
+        parameterNames.push(fields.ipv6.mask_ppp);
+      }
+    }
+
+    // Default Gateway
+    if (cpePermissions.ipv6.hasDefaultGatewayField) {
+      if (fields.ipv6.default_gateway) {
+        parameterNames.push(fields.ipv6.default_gateway);
+      }
+
+      if (fields.ipv6.default_gateway_ppp) {
+        parameterNames.push(fields.ipv6.default_gateway_ppp);
+      }
+    }
+
+    // Prefix Delegation Address
+    if (cpePermissions.ipv6.hasPrefixDelegationAddressField) {
+      if (fields.ipv6.prefix_delegation_address) {
+        parameterNames.push(fields.ipv6.prefix_delegation_address);
+      }
+
+      if (fields.ipv6.prefix_delegation_address_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_address_ppp);
+      }
+    }
+
+    // Prefix Delegation Mask
+    if (cpePermissions.ipv6.hasPrefixDelegationMaskField) {
+      if (fields.ipv6.prefix_delegation_mask) {
+        parameterNames.push(fields.ipv6.prefix_delegation_mask);
+      }
+
+      if (fields.ipv6.prefix_delegation_mask_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_mask_ppp);
+      }
+    }
+
+    // Prefix Delegation Local Address
+    if (cpePermissions.ipv6.hasPrefixDelegationLocalAddressField) {
+      if (fields.ipv6.prefix_delegation_local_address) {
+        parameterNames.push(fields.ipv6.prefix_delegation_local_address);
+      }
+
+      if (fields.ipv6.prefix_delegation_local_address_ppp) {
+        parameterNames.push(fields.ipv6.prefix_delegation_local_address_ppp);
+      }
+    }
+  }
+
   // LAN configuration fields
   dataToFetch.lan = true;
   parameterNames.push(fields.lan.router_ip);
@@ -1085,6 +1378,7 @@ const fetchSyncResult = async function(
       let fields = dataToFetch.fields;
       let acsData = {
        common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {},
+       ipv6: {},
       };
       if (dataToFetch.basic) {
         let common = fields.common;
@@ -1148,6 +1442,47 @@ const fetchSyncResult = async function(
         acsData.wan.wan_mac_ppp = getFieldFromGenieData(
           data, wan.wan_mac_ppp, useLastIndexOnWildcard,
         );
+
+        // IPv4 Mask
+        acsData.wan.mask_ipv4 = getFieldFromGenieData(
+          data, wan.mask_ipv4, useLastIndexOnWildcard,
+        );
+        acsData.wan.mask_ipv4_ppp = getFieldFromGenieData(
+          data, wan.mask_ipv4_ppp, useLastIndexOnWildcard,
+        );
+
+        // Remote IP Address
+        acsData.wan.remote_address = getFieldFromGenieData(
+          data, wan.remote_address, useLastIndexOnWildcard,
+        );
+        acsData.wan.remote_address_ppp = getFieldFromGenieData(
+          data, wan.remote_address_ppp, useLastIndexOnWildcard,
+        );
+
+        // Remote MAC
+        acsData.wan.remote_mac = getFieldFromGenieData(
+          data, wan.remote_mac, useLastIndexOnWildcard,
+        );
+        acsData.wan.remote_mac_ppp = getFieldFromGenieData(
+          data, wan.remote_mac_ppp, useLastIndexOnWildcard,
+        );
+
+        // IPv4 Default Gateway
+        acsData.wan.default_gateway = getFieldFromGenieData(
+          data, wan.default_gateway, useLastIndexOnWildcard,
+        );
+        acsData.wan.default_gateway_ppp = getFieldFromGenieData(
+          data, wan.default_gateway_ppp, useLastIndexOnWildcard,
+        );
+
+        // DNS Servers
+        acsData.wan.dns_servers = getFieldFromGenieData(
+          data, wan.dns_servers, useLastIndexOnWildcard,
+        );
+        acsData.wan.dns_servers_ppp = getFieldFromGenieData(
+          data, wan.dns_servers_ppp, useLastIndexOnWildcard,
+        );
+
         acsData.wan.uptime = getFieldFromGenieData(
           data, wan.uptime, useLastIndexOnWildcard,
         );
@@ -1161,6 +1496,70 @@ const fetchSyncResult = async function(
           data, wan.mtu_ppp, useLastIndexOnWildcard,
         );
       }
+
+      // IPv6
+      if (dataToFetch.ipv6) {
+        // Address
+        acsData.ipv6.address = getFieldFromGenieData(
+          data, fields.ipv6.address, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.address_ppp = getFieldFromGenieData(
+          data, fields.ipv6.address_ppp, useLastIndexOnWildcard,
+        );
+
+        // Mask
+        acsData.ipv6.mask = getFieldFromGenieData(
+          data, fields.ipv6.mask, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.mask_ppp = getFieldFromGenieData(
+          data, fields.ipv6.mask_ppp, useLastIndexOnWildcard,
+        );
+
+        // Default Gateway
+        acsData.ipv6.default_gateway = getFieldFromGenieData(
+          data, fields.ipv6.default_gateway, useLastIndexOnWildcard,
+        );
+        acsData.ipv6.default_gateway_ppp = getFieldFromGenieData(
+          data, fields.ipv6.default_gateway_ppp, useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Address
+        acsData.ipv6.prefix_address = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_address,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_address_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_address_ppp,
+          useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Mask
+        acsData.ipv6.prefix_mask = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_mask,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_mask_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_mask_ppp,
+          useLastIndexOnWildcard,
+        );
+
+        // Prefix Delegation Local Address
+        acsData.ipv6.prefix_local_address = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_local_address,
+          useLastIndexOnWildcard,
+        );
+        acsData.ipv6.prefix_local_address_ppp = getFieldFromGenieData(
+          data,
+          fields.ipv6.prefix_delegation_local_address,
+          useLastIndexOnWildcard,
+        );
+      }
+
       if (dataToFetch.vlan) {
         acsData.wan.vlan = getFieldFromGenieData(
           data, fields.wan.vlan, useLastIndexOnWildcard,
@@ -1314,10 +1713,28 @@ const fetchSyncResult = async function(
   });
   req.end();
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
 
-// Legacy GenieACS sync function that is still used for new devices and devices
-// that are recovering from hard reset or from a new firmware upgrade - should
-// only query the database and call createRegistry/syncDeviceData accordingly
+
+/**
+ * Legacy GenieACS sync function that is still used for new devices and devices
+ * that are recovering from hard reset or from a new firmware upgrade - should
+ * only query the database and call `createRegistry`/`syncDeviceData`
+ * accordingly.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Request} req - The http request.
+ * @param {Response} res - The http response.
+ *
+ * @return {Response} The body of the response might contains:
+ *  - `success`: If could execute the function properly;
+ *  - `message`: The message of what happenned if `success` is false.
+ */
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
@@ -1394,6 +1811,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let hasChanges = false;
   let splitID = acsID.split('-');
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let cpePermissions = cpe.modelPermissions();
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
@@ -1408,6 +1826,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.model = data.common.model.value.trim();
   }
 
+  let cpeDidUpdate = false;
 
   // Update firmware version, if data available
   if (data.common.version && data.common.version.value) {
@@ -1416,8 +1835,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
     // Check if the device is updating
     if (device.do_update) {
-      let cpeDidUpdate = false;
-
       // If the device is updating with a different release than it is
       // installed
       if (device.release !== device.installed_release) {
@@ -1493,6 +1910,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Process wan connection type, but only if data sent
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  const suffixPPPoE = hasPPPoE ? '_ppp' : '';
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
   // Process WAN fields, separated by connection type - force cast to bool in
@@ -1571,6 +1989,145 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     device.pppoe_user = '';
     device.pppoe_password = '';
   }
+
+
+  if (permissions.grantWanLanInformation) {
+    // IPv4 Mask
+    if (
+      cpePermissions.wan.hasIpv4MaskField &&
+      data.wan['mask_ipv4' + suffixPPPoE] &&
+      data.wan['mask_ipv4' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.wan['mask_ipv4' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 32) {
+        device.wan_ipv4_mask = mask;
+      }
+    }
+
+    // Remote IP Address
+    if (
+      cpePermissions.wan.hasIpv4RemoteAddressField &&
+      data.wan['remote_address' + suffixPPPoE] &&
+      data.wan['remote_address' + suffixPPPoE].value
+    ) {
+      device.pppoe_ip = data.wan['remote_address' + suffixPPPoE].value;
+    }
+
+    // Remote MAC
+    if (
+      cpePermissions.wan.hasIpv4RemoteMacField &&
+      data.wan['remote_mac' + suffixPPPoE] &&
+      data.wan['remote_mac' + suffixPPPoE].value
+    ) {
+      device.pppoe_mac = data.wan['remote_mac' + suffixPPPoE].value;
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.wan.hasIpv4DefaultGatewayField &&
+      data.wan['default_gateway' + suffixPPPoE] &&
+      data.wan['default_gateway' + suffixPPPoE].value
+    ) {
+      device.default_gateway_v4 =
+        data.wan['default_gateway' + suffixPPPoE].value;
+    }
+
+    // DNS Servers
+    if (
+      cpePermissions.wan.hasDnsServerField &&
+      data.wan['dns_servers' + suffixPPPoE] &&
+      data.wan['dns_servers' + suffixPPPoE].value
+    ) {
+      device.dns_server = data.wan['dns_servers' + suffixPPPoE].value;
+    }
+  }
+
+
+  // IPv6
+  if (
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information
+  ) {
+    // Address
+    if (
+      cpePermissions.ipv6.hasAddressField &&
+      data.ipv6['address' + suffixPPPoE] &&
+      data.ipv6['address' + suffixPPPoE].value
+    ) {
+      device.wan_ipv6 = data.ipv6['address' + suffixPPPoE].value;
+    }
+
+    // Mask
+    if (
+      cpePermissions.ipv6.hasMaskField &&
+      data.ipv6['mask' + suffixPPPoE] &&
+      data.ipv6['mask' + suffixPPPoE].value
+    ) {
+      let mask = parseInt(data.ipv6['mask' + suffixPPPoE].value, 10);
+
+      // Validate the mask as number
+      if (!isNaN(mask) && mask >= 0 && mask <= 128) {
+        device.wan_ipv6_mask = mask;
+      }
+    }
+
+    // Default Gateway
+    if (
+      cpePermissions.ipv6.hasDefaultGatewayField &&
+      data.ipv6['default_gateway' + suffixPPPoE] &&
+      data.ipv6['default_gateway' + suffixPPPoE].value
+    ) {
+      device.default_gateway_v6 =
+        data.ipv6['default_gateway' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationAddressField &&
+      data.ipv6['prefix_address' + suffixPPPoE] &&
+      data.ipv6['prefix_address' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_addr =
+        data.ipv6['prefix_address' + suffixPPPoE].value;
+
+      // Try getting the mask from address
+      let mask = utilHandlers.getMaskFromAddress(
+        data.ipv6['prefix_address' + suffixPPPoE].value,
+        true,
+      );
+
+      // If prefix_delegation_addr has '/', remove it
+      device.prefix_delegation_addr =
+        device.prefix_delegation_addr.split('/')[0];
+
+      device.prefix_delegation_mask = (mask ? mask : '');
+    }
+
+    // Prefix Delegation Mask
+    // This value might have been setted from address, but this field has
+    // precedence over extracting it from address, thus override the device
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationMaskField &&
+      data.ipv6['prefix_mask' + suffixPPPoE] &&
+      data.ipv6['prefix_mask' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_mask =
+        data.ipv6['prefix_mask' + suffixPPPoE].value;
+    }
+
+    // Prefix Delegation Local Address
+    if (
+      cpePermissions.ipv6.hasPrefixDelegationLocalAddressField &&
+      data.ipv6['prefix_local_address' + suffixPPPoE] &&
+      data.ipv6['prefix_local_address' + suffixPPPoE].value
+    ) {
+      device.prefix_delegation_local =
+        data.ipv6['prefix_local_address' + suffixPPPoE].value;
+    }
+  }
+
 
   // Rate and Duplex WAN fields are processed separately, since connection
   // type does not matter
@@ -1890,40 +2447,52 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Collect admin web credentials, if available
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
-    if (typeof config.tr069.web_login !== 'undefined' &&
-        data.common.web_admin_username.writable &&
-        config.tr069.web_login !== '' &&
-        config.tr069.web_login !== data.common.web_admin_username.value) {
-      changes.common.web_admin_username = config.tr069.web_login;
-      hasChanges = true;
-    }
+    // Save the current web admin username
     device.web_admin_username = data.common.web_admin_username.value;
   }
+
   if (data.common.web_admin_password && data.common.web_admin_password.value) {
-    if (typeof config.tr069.web_password !== 'undefined' &&
-        data.common.web_admin_password.writable &&
-        config.tr069.web_password !== '' &&
-        config.tr069.web_password !== data.common.web_admin_password.value) {
-      changes.common.web_admin_password = config.tr069.web_password;
-      hasChanges = true;
-    }
+    // Save the current web admin password
     device.web_admin_password = data.common.web_admin_password.value;
   }
 
+  // If the web login was modified, change for the cpe
   // Force a web credentials sync when device is recovering from hard reset
+
   if (
-    device.recovering_tr069_reset &&
+    typeof config.tr069.web_login !== 'undefined' &&
     data.common.web_admin_username &&
-    data.common.web_admin_username.writable
+    data.common.web_admin_username.writable &&
+    config.tr069.web_login !== '' &&
+
+    ( cpeDidUpdate ||
+      device.recovering_tr069_reset ||
+      config.tr069.web_login !== device.web_admin_username )
+
   ) {
+    // Update the current web admin username in database
+    device.web_admin_username = config.tr069.web_login;
+
+    // Update in cpe
     changes.common.web_admin_username = config.tr069.web_login;
     hasChanges = true;
   }
+
   if (
-    device.recovering_tr069_reset &&
+    typeof config.tr069.web_password !== 'undefined' &&
     data.common.web_admin_password &&
-    data.common.web_admin_password.writable
+    data.common.web_admin_password.writable &&
+    config.tr069.web_password !== '' &&
+
+    ( cpeDidUpdate ||
+      device.recovering_tr069_reset ||
+      config.tr069.web_password !== device.web_admin_password )
+
   ) {
+    // Update the current web admin password in database
+    device.web_admin_password = config.tr069.web_password;
+
+    // Update in cpe
     changes.common.web_admin_password = config.tr069.web_password;
     hasChanges = true;
   }
@@ -1962,7 +2531,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Possibly TODO: Let acceptLocalChanges be configurable for the admin
     // Bypass if recovering from hard reset
     let acceptLocalChanges = false;
-    if (wasRecoveringHardReset || !acceptLocalChanges) {
+    if (wasRecoveringHardReset || cpeDidUpdate || !acceptLocalChanges) {
       await acsDeviceInfoController.updateInfo(device, changes);
     }
   }
@@ -2092,6 +2661,207 @@ acsDeviceInfoController.requestStatistics = function(device) {
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
 };
 
+
+/**
+ * Request WAN information from CPE.
+ *
+ * @memberOf controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The CPE device to send the request to.
+ */
+acsDeviceInfoController.requestWanInformation = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestWanInformation!');
+    return;
+  }
+
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
+
+  let acsID = device.acs_id;
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+
+  // Get all fields
+  let parameterNames = [];
+  let hasPPPoE = (device.connection_type === 'pppoe' ? true : false);
+  let suffixPPPoE = (hasPPPoE ? '_ppp' : '');
+
+  let assignFields = {
+    wanIpv4: {
+      permission: true,
+      field: 'wan_ip',
+    },
+    wanIpv4Mask: {
+      permission: permissions.wan.hasIpv4MaskField,
+      field: 'mask_ipv4',
+    },
+    remoteAddress: {
+      permission: permissions.wan.hasIpv4RemoteAddressField,
+      field: 'remote_address',
+    },
+    remoteMac: {
+      permission: permissions.wan.hasIpv4RemoteMacField,
+      field: 'remote_mac',
+    },
+    defaultGatewayV4: {
+      permission: permissions.wan.hasIpv4DefaultGatewayField,
+      field: 'default_gateway',
+    },
+    dnsServers: {
+      permission: permissions.wan.hasDnsServerField,
+      field: 'dns_servers',
+    },
+    wanIpv6: {
+      permission: permissions.ipv6.hasAddressField,
+      field: 'address',
+      isIPv6: true,
+    },
+    wanIpv6Mask: {
+      permission: permissions.ipv6.hasMaskField,
+      field: 'mask',
+      isIPv6: true,
+    },
+    defaultGatewayV6: {
+      permission: permissions.ipv6.hasDefaultGatewayField,
+      field: 'default_gateway',
+      isIPv6: true,
+    },
+  };
+
+
+  // Push all parameters
+  Object.keys(assignFields).forEach((fieldName) => {
+    let fieldObject = assignFields[fieldName];
+    let fieldParam = null;
+
+    // If is IPv6 and does not have permission, continue to the next field
+    if (fieldObject.isIPv6 && !permissions.features.hasIpv6Information) return;
+
+    // If does not have permission continue to the next field
+    if (!fieldObject.permission) return;
+
+    // Set the field according
+    if (fieldObject.isIPv6) {
+      fieldParam = fields.ipv6[fieldObject.field + suffixPPPoE];
+    } else {
+      fieldParam = fields.wan[fieldObject.field + suffixPPPoE];
+    }
+
+    // Push the parameter
+    if (fieldParam) {
+      parameterNames.push(fieldParam);
+    }
+  });
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: parameterNames,
+  };
+
+  // Send the task
+  TasksAPI.addTask(
+    acsID,
+    task,
+    acsMeasuresHandler.fetchWanInformationFromGenie,
+  );
+};
+
+
+/**
+ * Request LAN information from CPE.
+ *
+ * @memberOf controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The CPE device to send the request to.
+ */
+acsDeviceInfoController.requestLanInformation = function(device) {
+  // Make sure we only work with TR-069 devices with a valid ID
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestLanInformation!');
+    return;
+  }
+
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
+
+  let acsID = device.acs_id;
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+
+
+  // If there is no information to request, return
+  if (!permissions.features.hasIpv6Information) return;
+
+
+  // Get all fields
+  let parameterNames = [];
+  let suffixPPPoE = (device.connection_type === 'pppoe' ? '_ppp' : '');
+
+  if (
+    permissions.ipv6.hasPrefixDelegationAddressField &&
+    fields.ipv6['prefix_delegation_address' + suffixPPPoE]
+  ) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_address' + suffixPPPoE],
+    );
+  }
+
+  if (
+    permissions.ipv6.hasPrefixDelegationMaskField &&
+    fields.ipv6['prefix_delegation_mask' + suffixPPPoE]
+  ) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_mask' + suffixPPPoE],
+    );
+  }
+
+  if (
+    permissions.ipv6.hasPrefixDelegationLocalAddressField &&
+    fields.ipv6['prefix_delegation_local_address' + suffixPPPoE]
+  ) {
+    parameterNames.push(
+      fields.ipv6['prefix_delegation_local_address' + suffixPPPoE],
+    );
+  }
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
+  let task = {
+    name: 'getParameterValues',
+    parameterNames: parameterNames,
+  };
+
+  // Send the task
+  TasksAPI.addTask(
+    acsID,
+    task,
+    acsMeasuresHandler.fetchLanInformationFromGenie,
+  );
+};
+
+
 acsDeviceInfoController.requestPonData = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
@@ -2177,7 +2947,7 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-const replaceWanFieldsWildcards = async function (
+const replaceWanFieldsWildcards = async function(
   acsID, wildcardFlag, fields, changes, task,
 ) {
   // WAN fields cannot have wildcards. So we query the genie database to get
@@ -2568,4 +3338,7 @@ acsDeviceInfoController.changeAcRules = async function(device) {
   }
 };
 
+/**
+ * @exports controllers/acsDeviceInfo
+ */
 module.exports = acsDeviceInfoController;

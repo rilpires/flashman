@@ -6,7 +6,6 @@ cianetModel.identifier = {vendor: 'Cianet', model: 'ONU HW01N'};
 
 cianetModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true;
   permissions.features.traceroute = true;
   // permissions.features.speedTest = true; // Limit is too low

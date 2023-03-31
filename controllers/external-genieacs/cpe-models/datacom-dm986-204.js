@@ -6,7 +6,6 @@ datacomModel.identifier = {vendor: 'Datacom', model: 'DM986-204'};
 
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.traceroute = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;

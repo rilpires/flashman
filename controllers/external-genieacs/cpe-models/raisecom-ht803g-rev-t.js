@@ -9,7 +9,6 @@ raisecomModel.identifier = {vendor: 'Raisecom', model: 'HT803G-WS2'};
 raisecomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
 
-  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true; // will measure pon rx/tx power
   permissions.features.portForward = false; // will enable port forward dialogs
   permissions.features.pingTest = true; // will enable ping test dialog
@@ -126,7 +125,7 @@ raisecomModel.getModelFields = function() {
     'LANEthernetInterfaceConfig.1.MACAddress';
 
   // user and password fields
-  fields.common.web_admin_user =
+  fields.common.web_admin_username =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Username';
   fields.common.web_admin_password =
     'InternetGatewayDevice.DeviceInfo.X_CT-COM_TeleComAccount.Password';

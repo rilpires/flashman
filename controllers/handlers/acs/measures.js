@@ -1,5 +1,12 @@
 /* global __line */
 
+
+/**
+ * Interface functions with the ACS.
+ * @namespace controllers/handlers/acs/measure
+ */
+
+
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
@@ -406,6 +413,526 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
   req.end();
 };
 
+
+/**
+ * Check if the field passed does exist in Genie and get it's value.
+ *
+ * @memberof controllers/handlers/acs/measure
+ *
+ * @param {Object} data - The data that came from Genie.
+ * @param {String} field - The ACS field of the cpe.
+ * @param {Boolean} useLastIndexOnWildcard - If should use the last index in
+ * field.
+ *
+ * @return {Object} The object containing:
+ *  - `success`: If could extract the value properly.
+ *  - `value`: The value extracted from Genie.
+ */
+const checkAndGetGenieField = function(
+  data,
+  field,
+  useLastIndexOnWildcard = false,
+) {
+  let response = {success: false, value: null};
+
+  if (!data || !field) return response;
+
+  if (utilHandlers.checkForNestedKey(data, field + '._value')) {
+    // Get the value
+    let value = utilHandlers.getFromNestedKey(
+      data,
+      field/* + '._value'*/,
+      useLastIndexOnWildcard,
+    );
+
+    // Validate and return
+    if (value) {
+      response.success = true;
+      response.value = value._value;
+    }
+  }
+
+  return response;
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsMeasuresHandler.__testCheckAndGetGenieField = checkAndGetGenieField;
+
+
+/**
+ * Get the WAN information data requested to the CPE from Genie.
+ *
+ * @memberof controllers/handlers/acs/measure
+ *
+ * @param {String} acsID - The ACS ID of the device.
+ */
+acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
+  let device;
+
+  // Check acs ID
+  if (!acsID) return;
+
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID});
+  } catch (error) {
+    console.error(
+      'Could not get device in fetchWanInformationFromGenie: ' + error,
+    );
+
+    return;
+  }
+
+  // Check if is a TR-069 valid device
+  if (!device || !device.use_tr069) {
+    console.error('Invalid device in fetchWanInformationFromGenie!');
+    return;
+  }
+
+
+  // Get the cpe instance
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    console.error('Invalid CPE in fetchWanInformationFromGenie!');
+    return;
+  }
+
+
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+  let query = {_id: acsID};
+  let projection = '';
+
+  // Check PPPoE
+  let hasPPPoE = device.connection_type === 'pppoe' ? true : false;
+  let suffixPPPoE = hasPPPoE ? '_ppp' : '';
+
+
+  // Assign fields
+  let assignFields = {
+    wanIPv4Field: {
+      permission: true,
+      path: 'wan_ip',
+    },
+    wanIPv6Field: {
+      permission: permissions.ipv6.hasAddressField,
+      path: 'address',
+      isIPv6: true,
+    },
+    maskIPv4Field: {
+      permission: permissions.wan.hasIpv4MaskField,
+      path: 'mask_ipv4',
+    },
+    maskIPv6Field: {
+      permission: permissions.ipv6.hasMaskField,
+      path: 'mask',
+      isIPv6: true,
+    },
+    wanPPPoEAddressField: {
+      permission: permissions.wan.hasIpv4RemoteAddressField,
+      path: 'remote_address',
+    },
+    wanPPPoEMacField: {
+      permission: permissions.wan.hasIpv4RemoteMacField,
+      path: 'remote_mac',
+    },
+    gatewayIPv4Field: {
+      permission: permissions.wan.hasIpv4DefaultGatewayField,
+      path: 'default_gateway',
+    },
+    gatewayIPv6Field: {
+      permission: permissions.ipv6.hasDefaultGatewayField,
+      path: 'default_gateway',
+      isIPv6: true,
+    },
+    dnsServerField: {
+      permission: permissions.wan.hasDnsServerField,
+      path: 'dns_servers',
+    },
+  };
+
+
+  // Set all field names
+  Object.keys(assignFields).forEach((fieldName) => {
+    let fieldObject = assignFields[fieldName];
+
+    // If does not have permission continue to the next field
+    if (!fieldObject.permission) return;
+
+    // Set the field according
+    if (fieldObject.isIPv6) {
+      fieldObject.field = fields.ipv6[fieldObject.path + suffixPPPoE];
+    } else {
+      fieldObject.field = fields.wan[fieldObject.path + suffixPPPoE];
+    }
+
+    // If the field does not exist, continue to the next field
+    if (!fieldObject.field) return;
+
+    // If projection is not empty, add a comma
+    if (projection) projection += ',';
+
+    // Remove everything after * (included) to load the root of the field
+    let fieldRoot = fieldObject.field.replace(/\.\*.*/g, '');
+
+    // Add to projection
+    projection += fieldRoot;
+  });
+
+
+  // Build the request
+  let path = '/devices/?query=' + JSON.stringify(query) +
+    '&projection=' + projection;
+
+  let options = {
+    method: 'GET',
+    hostname: GENIEHOST,
+    port: GENIEPORT,
+    path: encodeURI(path),
+  };
+
+
+  // Send the request
+  let request = http.request(options, (response) => {
+    response.setEncoding('utf8');
+    let receivedData = '';
+
+    response.on('data', (chunk) => receivedData += chunk);
+    response.on('end', async () => {
+      let data = null;
+      let saveDevice = false;
+
+      // If did not received any data
+      if (receivedData.length <= 0) {
+        return;
+      }
+
+      // Try parsing the data
+      try {
+        data = JSON.parse(receivedData)[0];
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      // Check data
+      if (!data) return;
+
+
+      // Get all data
+      Object.keys(assignFields).forEach((fieldName) => {
+        let genieValue = null;
+        let fieldObject = assignFields[fieldName];
+
+        // Get the value from genie
+        genieValue = checkAndGetGenieField(
+          data,
+          fieldObject.field,
+          permissions.useLastIndexOnWildcard,
+        );
+
+        // Set the value and set to save the device
+        if (genieValue.success) {
+          fieldObject.value = genieValue.value;
+          saveDevice = true;
+        } else {
+          fieldObject.value = '';
+        }
+      });
+
+
+      // Try getting the mask
+      let maskV6 = utilHandlers
+        .getMaskFromAddress(assignFields.wanIPv6Field.value, true);
+
+      if (!maskV6) maskV6 = '0';
+
+
+      // Check if needs to save the device. Made this way to reduce unnecessary
+      // save calls
+      if (saveDevice) {
+        // Update last contact
+        device.last_contact = Date.now();
+
+        // Update fields
+        // Address
+        device.wan_ip = assignFields.wanIPv4Field.value;
+        // Remove the mask if came with it
+        device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
+
+        // Mask
+        let mask = parseInt(assignFields.maskIPv4Field.value);
+        device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
+
+        mask = parseInt(
+          assignFields.maskIPv6Field.value ?
+          assignFields.maskIPv6Field.value : maskV6,
+        );
+        device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
+
+        // PPPoE
+        if (hasPPPoE) {
+          device.pppoe_ip = assignFields.wanPPPoEAddressField.value;
+          device.pppoe_mac = assignFields.wanPPPoEMacField.value;
+        }
+
+        // Default Gateway
+        device.default_gateway_v4 = assignFields.gatewayIPv4Field.value;
+        device.default_gateway_v6 = assignFields.gatewayIPv6Field.value;
+
+        // DNS Server
+        device.dns_server = assignFields.dnsServerField.value;
+
+        try {
+          // Save the device
+          await device.save();
+        } catch (error) {
+          console.error(
+            'Error saving device in fetchWanInformationFromGenie: ' + error,
+          );
+
+          return;
+        }
+      }
+
+
+      // Always send the notification, even if there is no value
+      sio.anlixSendWanInfoNotification(device._id, {
+        ipv4_address: assignFields.wanIPv4Field.value,
+        ipv4_mask: assignFields.maskIPv4Field.value,
+
+        // Remove the mask if came with it
+        ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
+        ipv6_mask: (
+          assignFields.maskIPv6Field.value ?
+          assignFields.maskIPv6Field.value : maskV6
+        ),
+
+        default_gateway_v4: assignFields.gatewayIPv4Field.value,
+        default_gateway_v6: assignFields.gatewayIPv6Field.value,
+        dns_server: assignFields.dnsServerField.value,
+
+        wan_conn_type: hasPPPoE ? 'pppoe' : 'dhcp',
+        pppoe_mac: assignFields.wanPPPoEMacField.value,
+        pppoe_ip: assignFields.wanPPPoEAddressField.value,
+      });
+    });
+  });
+
+  request.end();
+};
+
+
+/**
+ * Get the LAN information data requested to the CPE from Genie.
+ *
+ * @memberof controllers/handlers/acs/measure
+ *
+ * @param {String} acsID - The ACS ID of the device.
+ */
+acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
+  let device;
+
+  // Check acs ID
+  if (!acsID) return;
+
+  try {
+    device = await DeviceModel.findOne({acs_id: acsID});
+  } catch (error) {
+    console.error(
+      'Could not get device in fetchLanInformationFromGenie: ' + error,
+    );
+
+    return;
+  }
+
+  // Check if is a TR-069 valid device
+  if (!device || !device.use_tr069) {
+    console.error('Invalid device in fetchLanInformationFromGenie!');
+    return;
+  }
+
+
+  // Get the cpe instance
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    console.error('Invalid CPE in fetchLanInformationFromGenie!');
+    return;
+  }
+
+  let cpe = cpeInstance.cpe;
+  let permissions = cpe.modelPermissions();
+  let fields = cpe.getModelFields();
+  let query = {_id: acsID};
+  let projection = '';
+
+
+  // If does not have any IPv6 information, exit
+  if (!permissions.features.hasIpv6Information) return;
+
+
+  // Check PPPoE
+  let suffixPPPoE = device.connection_type === 'pppoe' ? '_ppp' : '';
+
+
+  // Assign fields
+  let assignFields = {
+    prefixAddressField: {
+      permission: permissions.ipv6.hasPrefixDelegationAddressField,
+      path: 'prefix_delegation_address',
+    },
+    prefixMaskField: {
+      permission: permissions.ipv6.hasPrefixDelegationMaskField,
+      path: 'prefix_delegation_mask',
+    },
+    prefixLocalAddressField: {
+      permission: permissions.ipv6.hasPrefixDelegationLocalAddressField,
+      path: 'prefix_delegation_local_address',
+    },
+  };
+
+
+  // Set all field names
+  Object.keys(assignFields).forEach((fieldName) => {
+    let fieldObject = assignFields[fieldName];
+
+    // If does not have permission continue to the next field
+    if (!fieldObject.permission) return;
+
+    fieldObject.field = fields.ipv6[fieldObject.path + suffixPPPoE];
+
+    // If projection is not empty, add a comma
+    if (projection) projection += ',';
+
+    // Remove everything after * (included) to load the root of the field
+    let fieldRoot = fieldObject.field.replace(/\.\*.*/g, '');
+
+    // Add to projection
+    projection += fieldRoot;
+  });
+
+
+  // Build the request
+  let path = '/devices/?query=' + JSON.stringify(query) +
+    '&projection=' + projection;
+
+  let options = {
+    method: 'GET',
+    hostname: GENIEHOST,
+    port: GENIEPORT,
+    path: encodeURI(path),
+  };
+
+
+  // Send the request
+  let request = http.request(options, (response) => {
+    response.setEncoding('utf8');
+    let receivedData = '';
+
+    response.on('data', (chunk) => receivedData += chunk);
+    response.on('end', async () => {
+      let data = null;
+      let saveDevice = false;
+
+      // If did not received any data
+      if (receivedData.length <= 0) {
+        return;
+      }
+
+      // Try parsing the data
+      try {
+        data = JSON.parse(receivedData)[0];
+      } catch (error) {
+        console.error(error);
+        return;
+      }
+
+      // Check data
+      if (!data) return;
+
+
+      // Get all data
+      Object.keys(assignFields).forEach((fieldName) => {
+        let genieValue = null;
+        let fieldObject = assignFields[fieldName];
+
+        // Get the value from genie
+        genieValue = checkAndGetGenieField(
+          data,
+          fieldObject.field,
+          permissions.useLastIndexOnWildcard,
+        );
+
+        // Set the value and set to save the device
+        if (genieValue.success) {
+          fieldObject.value = genieValue.value;
+          saveDevice = true;
+        } else {
+          fieldObject.value = '';
+        }
+      });
+
+
+      // Try getting the mask
+      let mask = utilHandlers
+        .getMaskFromAddress(assignFields.prefixAddressField.value, true);
+
+      if (!mask) mask = '';
+
+
+      // Check if needs to save the device. Made this way to reduce unnecessary
+      // save calls
+      if (saveDevice) {
+        // Update last contact
+        device.last_contact = Date.now();
+
+        // If prefixAddressField has '/', remove it
+        assignFields.prefixAddressField.value =
+          assignFields.prefixAddressField.value.split('/')[0];
+        device.prefix_delegation_addr = assignFields.prefixAddressField.value;
+
+        // If the mask field came empty, try using the one from the address
+        device.prefix_delegation_mask = (
+          assignFields.prefixMaskField.value ?
+          assignFields.prefixMaskField.value : mask
+        );
+
+        device.prefix_delegation_local =
+          assignFields.prefixLocalAddressField.value;
+
+        try {
+          // Save the device
+          await device.save();
+        } catch (error) {
+          console.error(
+            'Error saving device in fetchLanInformationFromGenie: ' + error,
+          );
+
+          return;
+        }
+      }
+
+
+      // Always send the notification, even if it is empty
+      sio.anlixSendLanInfoNotification(device._id, {
+        prefix_delegation_addr: assignFields.prefixAddressField.value,
+        prefix_delegation_mask: (
+          assignFields.prefixMaskField.value ?
+          assignFields.prefixMaskField.value : mask
+        ),
+        prefix_delegation_local: assignFields.prefixLocalAddressField.value,
+      });
+    });
+  });
+
+  request.end();
+};
+
+
 acsMeasuresHandler.appendBytesMeasure = function(original, recv, sent) {
   if (!original) original = {};
   try {
@@ -469,4 +996,7 @@ acsMeasuresHandler.appendPonSignal = function(original, rxPower, txPower) {
   }
 };
 
+/**
+ * @exports controllers/handlers/acs/measure
+ */
 module.exports = acsMeasuresHandler;

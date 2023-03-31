@@ -6,17 +6,27 @@ datacomModel.identifier = {vendor: 'Datacom', model: 'DM985-424'};
 
 datacomModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
   permissions.features.ponSignal = true;
   permissions.features.traceroute = true;
+  permissions.features.hasIpv6Information = true;
+
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
+
   permissions.firmwareUpgrades = {
     'V3.2.0': [],
   };
@@ -67,6 +77,7 @@ datacomModel.getModelFields = function() {
   // fields.diagnostics.traceroute.protocol = 'Mode';
   // fields.diagnostics.traceroute.hop_rtt_times = 'ResponseTime1';
   fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
+
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
@@ -79,6 +90,27 @@ datacomModel.getModelFields = function() {
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CT-COM_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CT-COM_IPv6IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CT-COM_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CT-COM_DefaultIPv6Gateway';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANIPConnection.*.X_CT-COM_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_CT-COM_IPv6Prefix';
+
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.'+
     '*.InterfaceType';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.'+

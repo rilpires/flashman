@@ -5,6 +5,7 @@ COMPANY="$(cat /tmp/AIX_PROVIDER)"
 BACKBLAZE_BUCKET="$(cat /tmp/AIX_B2_BUCKET)"
 BACKBLAZE_ACCOUNT="$(cat /tmp/AIX_B2_ACCOUNT)"
 BACKBLAZE_APPSECRET="$(cat /tmp/AIX_B2_SECRET)"
+FLM_DOCKER_INSTANCE="$(cat /tmp/FLM_DOCKER_INSTANCE)"
 ZIP_FIRMWARES_FNAME="${COMPANY}_firmwaredata.zip"
 LOG="/tmp/backup-firmwares.log"
 
@@ -32,6 +33,12 @@ if ! which b2 > /dev/null; then
     echo "[$0 ERROR] b2 command not found." | tee -a $LOG
     echo "END|$(date "+%Y%m%d %H:%M:%S")" >> $LOG
     exit 1
+fi
+
+echo "Checking if this instance is the Flashman first container" >> $LOG
+if [ "$FLM_DOCKER_INSTANCE" != "1" ]; then
+    echo "This instance is not the first container. Exiting..." >> $LOG
+    exit 0
 fi
 
 if ! b2 authorize-account $BACKBLAZE_ACCOUNT $BACKBLAZE_APPSECRET >> $LOG 2>&1; then

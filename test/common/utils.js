@@ -10,26 +10,35 @@
  * Test utilities that can be used for update scheduler.
  * @namespace test/common/utils.schedulerCommon
  */
+/**
+ * Test utilities that can be used for devices-api.
+ * @namespace test/common/utils.devicesAPICommon
+ */
 
 const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
+
+process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
 // Models
 const DeviceModel = require('../../models/device');
 const FirmwareModel = require('../../models/firmware');
 const ConfigModel = require('../../models/config');
 const RoleModel = require('../../models/role');
+const UserModel = require('../../models/user');
 
 // Environments
 process.env.FLM_MIN_TIMEOUT_PERIOD = '10';
 process.env.FLM_MAX_TIMEOUT_PERIOD = '1440';
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
-let utils = {
-  common: {},
-  schedulerCommon: {},
-};
+// Scheduler
+const updateScheduler = require('../../controllers/update_scheduler');
+
+// Devices API
+const DevicesAPI = require('../../controllers/external-genieacs/devices-api');
+
+
 // Mock the mqtts (avoid aedes)
 jest.mock('../../mqtts', () => {
   return {
@@ -39,6 +48,43 @@ jest.mock('../../mqtts', () => {
     getConnectedClients: () => [],
   };
 });
+
+
+let utils = {
+  common: {},
+  schedulerCommon: {},
+  devicesAPICommon: {},
+};
+
+
+// Constants
+/**
+ * The development Flashman host string.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.FLASHMAN_HOST = 'http://localhost:8000';
+
+/**
+ * The development Flashman authentication username.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_USER = 'admin';
+
+/**
+ * The development Flashman authentication password.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @type {String}
+ */
+utils.common.BASIC_AUTH_PASS = 'flashman';
+
 
 /**
  * Array of test cases.
@@ -95,12 +141,62 @@ utils.common.TEST_PARAMETERS = [
  * @return {Response} The login response with the cookie to be setted.
  */
 utils.common.loginAsAdmin = async function() {
-  return (request('localhost:8000')
+  return (request(utils.common.FLASHMAN_HOST)
     .post('/login')
     .send({
-      name: 'admin',
-      password: 'landufrj123',
+      name: utils.common.BASIC_AUTH_USER,
+      password: utils.common.BASIC_AUTH_PASS,
     })
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Deletes the CPE passed to this function from Flashman.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} cpeID - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The login cookie.
+ *
+ * @return {Response} The delete response.
+ */
+utils.common.deleteCPE = async function(cpeID, cookie) {
+  return (request(utils.common.FLASHMAN_HOST)
+    .delete('/api/v2/device/delete/' + cpeID)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send()
+    .catch((error) => console.log(error))
+  );
+};
+
+
+/**
+ * Sends the request to the route specified to Flashman, with the data passed.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @async
+ *
+ * @param {String} type - The type of request(`put`, `delete`, `get`,
+ * `post`...).
+ * @param {String} route - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The cookie login.
+ * @param {Object} data - The data to be sent to the route.
+ *
+ * @return {Response} The response.
+ */
+utils.common.sendRequest = async function(type, route, cookie, data) {
+  let flashmanRequest = request(utils.common.FLASHMAN_HOST);
+
+  return (await flashmanRequest[type](route)
+    .set('Cookie', cookie)
+    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
+    .send(data)
     .catch((error) => console.log(error))
   );
 };
@@ -258,6 +354,18 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
 
 
 /**
+ * Mock a User.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The model parameters to be setted for the user.
+ * @param {String} func - The function to be intercepted.
+ */
+utils.common.mockUsers = function(data, func) {
+  utils.common.mockMongo(UserModel, data, func);
+};
+
+/**
  * Mock a Role.
  *
  * @memberOf test/common/utils.common
@@ -268,7 +376,6 @@ utils.common.mockAwaitConfigs = function(data, func, shouldError = false) {
 utils.common.mockRoles = function(data, func) {
   utils.common.mockMongo(RoleModel, data, func);
 };
-
 
 /**
  * Mock devices in `defaultMockDevices`. There is a case that this function will
@@ -367,8 +474,16 @@ utils.common.mockDefaultRoles = function() {
 utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 utils.common.mockConfigs(models.defaultMockConfigs[0], 'updateOne');
 
-// Scheduler
-const updateScheduler = require('../../controllers/update_scheduler');
+/**
+ * Mock users in `defaultMockUsers`.
+ *
+ * @memberOf test/common/utils.common
+ */
+utils.common.mockDefaultUsers = function() {
+  utils.common.mockUsers(models.defaultMockUsers, 'find');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findOne');
+  utils.common.mockUsers(models.defaultMockUsers[0], 'findById');
+};
 
 /**
  * Get all device models based on the query passed.
@@ -479,6 +594,8 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  * @param {Object} files - All files to be sent.
  * @param {Object} query - URL parameters to be passed.
  * @param {Object} user - An object containing user and role information.
+ * @param {Object} params - The object containing params of the request.
+ * @param {Object} sessionID - The session ID of the request.
  *
  * @return {Promise} A promise to wait for the response.
  *
@@ -488,7 +605,9 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
  *  {acs_id: '1234'},
  * );
  */
-utils.common.sendFakeRequest = async function(func, data, files, query, user) {
+utils.common.sendFakeRequest = async function(
+  func, data, files, query, user, params, sessionID,
+) {
   let promiseResolve;
 
   // Create a promise and store the resolve
@@ -507,6 +626,8 @@ utils.common.sendFakeRequest = async function(func, data, files, query, user) {
       },
       files: files,
       query: query,
+      params: params,
+      sessionID: sessionID,
     },
 
     // Pass the promise resolve
@@ -626,6 +747,100 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
     .send(data)
     .catch((error) => console.log(error))
   );
+};
+
+/** ************ Devices API ************ **/
+
+utils.devicesAPICommon.validateUpgradeableModels = function(data) {
+  Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
+    let device = DevicesAPI.__testTR069Models[modelName];
+    let permission = device.modelPermissions();
+
+    let vendor = device.identifier.vendor;
+    let model = device.identifier.model;
+    let fullID = vendor + ' ' + model;
+
+    if (!permission.features.firmwareUpgrade) {
+      expect(data.vendors[vendor])
+        .not.toContain(model);
+
+      return;
+    }
+
+    expect(data.vendors[vendor])
+      .toContain(model);
+
+    let allFirmwares = Object.keys(
+      permission.firmwareUpgrades,
+    );
+
+    allFirmwares.forEach((firmware) => {
+      expect(data.versions[fullID])
+        .toContain(firmware);
+    });
+  });
+};
+
+
+/**
+ * Mocks the function `instantiateCPEByModelFromDevice` and the return a `jest`
+ * spy.
+ *
+ * @memberOf test/common/utils.devicesAPICommon
+ *
+ * @param {Boolean} success - If should return success.
+ * @param {Object} permissions - The permissions object to be returned.
+ * @param {Object} fields - The fields object to be returned.
+ *
+ * @return {Spy} The `jest` spy of the function.
+ */
+utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
+  success, permissions, fields,
+) {
+  return jest.spyOn(
+    DevicesAPI,
+    'instantiateCPEByModelFromDevice',
+  ).mockImplementation(() => {
+    return {
+      success: success,
+      cpe: {
+        // Permissions
+        modelPermissions: () => {
+          return permissions;
+        },
+
+        // Fields
+        getModelFields: () => {
+          return fields;
+        },
+
+        // PPPoE Enable
+        convertPPPoEEnable: (enable) => {
+          return enable === 'true' || enable === 1 || enable === true;
+        },
+
+        // Get Serial
+        convertGenieSerial: (serial, mac) => {
+          return serial;
+        },
+
+        // Convert Band
+        convertWifiBandToFlashman: (band, isAC) => {
+          return band;
+        },
+
+        // Check Login
+        isAllowedWebadminUsername: (login) => {
+          return true;
+        },
+
+        // Convert WAN Rate
+        convertWanRate: (rate) => {
+          return rate;
+        },
+      },
+    };
+  });
 };
 
 
