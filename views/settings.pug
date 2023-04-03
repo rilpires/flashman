@@ -234,6 +234,9 @@ block content
                   label.custom-control-label.text-muted(for="specific-app-technician-web-login")
                     | #{t('enableSpecificAppTechnicianWebLogin')}
                   .invalid-feedback
+                  .alert.alert-info.mt-1
+                    .fas.fa-info-circle.fa-lg
+                    span &nbsp; #{t('explanationOfEnableSpecificAppTechnicianWebLogin')}
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(
