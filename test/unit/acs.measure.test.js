@@ -537,6 +537,7 @@ describe('Handlers/ACS/Measures Tests', () => {
   });
 
 
+  // fetchWanBytesFromGenie
   describe('fetchWanBytesFromGenie', () => {
     // Invalid acs ID - empty string
     test('Invalid acs ID - empty string', async () => {
@@ -740,6 +741,89 @@ describe('Handlers/ACS/Measures Tests', () => {
     });
 
 
+    // Fields with * - Memory usage field
+    test('Fields with * - Memory usage field', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        0: {
+          recv_bytes: {_value: '1234'},
+          sent_bytes: {_value: '1234'},
+        }, 1: {
+          recv_bytes: {_value: '5678'},
+          sent_bytes: {_value: '8765'},
+        },
+      }, diagnostics: {
+        0: {statistics: {
+          cpu_usage: {_value: '12'},
+          memory_usage: {_value: '34'},
+        }}, 1: {statistics: {
+          cpu_usage: {_value: '56'},
+          memory_usage: {_value: '78'},
+        }},
+      }}];
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.fields[0], '',
+      );
+      fields.wan.recv_bytes = 'wan.*.recv_bytes';
+      fields.wan.sent_bytes = 'wan.*.sent_bytes';
+
+      fields.diagnostics.statistics.cpu_usage =
+        'diagnostics.*.statistics.cpu_usage';
+      fields.diagnostics.statistics.memory_usage =
+        'diagnostics.*.statistics.memory_usage';
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan,wan,diagnostics,diagnostics',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            mem_usage: 78,
+          },
+        },
+      );
+    });
+
+
     // No permission
     test('No permission', async () => {
       let device = {...models.defaultMockDevices[0]};
@@ -748,6 +832,7 @@ describe('Handlers/ACS/Measures Tests', () => {
         sent_bytes: {_value: '5678'},
       }, diagnostics: {statistics: {
         cpu_usage: {_value: '56'},
+        memory_usage: {_value: '78'},
         memory_free: {_value: '5678'},
         memory_total: {_value: '9012'},
       }}}];
@@ -836,7 +921,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).not.toBeCalled();
@@ -895,7 +981,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -907,6 +994,73 @@ describe('Handlers/ACS/Measures Tests', () => {
             cpu_usage: 56,
             // Math.ceil((Free - Total) * 100 / Total)
             mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // All permissions - Memory usage
+    test('All permissions - Memory usage', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '56'},
+        memory_usage: {_value: '78'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            mem_usage: 78,
           },
         },
       );
@@ -961,7 +1115,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1026,7 +1181,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1091,7 +1247,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1102,6 +1259,199 @@ describe('Handlers/ACS/Measures Tests', () => {
           resources: {
             // Math.ceil((Free - Total) * 100 / Total)
             mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - -1
+    test('Invalid Memory usage - -1', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_usage: {_value: '-1'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - 101
+    test('Invalid Memory usage - 101', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_usage: {_value: '101'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - character
+    test('Invalid Memory usage - character', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '15'},
+        memory_usage: {_value: 'a'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            // Math.ceil((Free - Total) * 100 / Total)
+            cpu_usage: 15,
           },
         },
       );
@@ -1156,7 +1506,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1220,7 +1571,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1284,7 +1636,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1348,7 +1701,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1412,7 +1766,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1476,7 +1831,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
@@ -1535,7 +1891,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         'devices',
         {_id: device.acs_id},
         'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
-        'diagnostics.statistics.memory_free,diagnostics.statistics.' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
         'memory_total',
       );
       expect(saveSpy).toBeCalled();
