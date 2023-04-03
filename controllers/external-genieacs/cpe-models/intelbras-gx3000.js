@@ -102,8 +102,8 @@ intelbrasModel.getModelFields = function() {
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
   // This router does not have the fields referring to mtu and mtu_ppp
-  fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
+  fields.wan.recv_bytes = 'Device.IP.Interface.2.Stats.BytesReceived';
+  fields.wan.sent_bytes = 'Device.IP.Interface.2.Stats.BytesSent';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
