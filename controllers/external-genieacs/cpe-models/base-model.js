@@ -929,6 +929,8 @@ basicCPEModel.getModelFields = function() {
         cpu_usage: 'InternetGatewayDevice.DeviceInfo.ProcessStatus.CPUUsage',
         memory_free: 'InternetGatewayDevice.DeviceInfo.MemoryStatus.Free',
         memory_total: 'InternetGatewayDevice.DeviceInfo.MemoryStatus.Total',
+        memory_usage: '', // Some routers come with only the percentage in this
+        // field, instead of both free and total memory
       },
     },
   };

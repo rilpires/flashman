@@ -2688,6 +2688,11 @@ acsDeviceInfoController.requestStatistics = function(device) {
       field: fields.diagnostics.statistics.cpu_usage,
     },
 
+    memoryUsage: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_usage,
+    },
+
     memoryFree: {
       permission: permissions.features.hasMemoryUsage,
       field: fields.diagnostics.statistics.memory_free,

@@ -76,21 +76,33 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
+  let statistics = fields.diagnostics.statistics;
 
-  let cpuUsageField = hasCPUUsage ?
-    fields.diagnostics.statistics.cpu_usage : '';
-  let memoryFreeField = hasMemoryUsage ?
-    fields.diagnostics.statistics.memory_free : '';
-  let memoryTotalField = hasMemoryUsage ?
-    fields.diagnostics.statistics.memory_total : '';
+  let cpuUsageField = hasCPUUsage && statistics.cpu_usage ?
+    statistics.cpu_usage : '';
+  let memoryUsageField = hasMemoryUsage && statistics.memory_usage ?
+    statistics.memory_usage : '';
+  let memoryFreeField = hasMemoryUsage && statistics.memory_free ?
+    statistics.memory_free : '';
+  let memoryTotalField = hasMemoryUsage && statistics.memory_total ?
+    statistics.memory_total : '';
 
   let query = {_id: acsID};
   let projection =
     recvField.replace(/\.\*.*/g, '') + ',' +
     sentField.replace(/\.\*.*/g, '') +
-    (hasCPUUsage ? ',' + cpuUsageField.replace(/\.\*.*/g, '') : '') +
-    (hasMemoryUsage ? ',' + memoryFreeField.replace(/\.\*.*/g, '') : '') +
-    (hasMemoryUsage ? ',' + memoryTotalField.replace(/\.\*.*/g, '') : '');
+    (hasCPUUsage && cpuUsageField ?
+      ',' + cpuUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryUsageField ?
+      ',' + memoryUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryFreeField ?
+      ',' + memoryFreeField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryTotalField ?
+      ',' + memoryTotalField.replace(/\.\*.*/g, '') : ''
+    );
 
 
   let data = null;
@@ -132,6 +144,11 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     ) : false;
 
   // Check Memory usage
+  let checkMemoryUsage = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
   let checkMemoryFree = permissions.features.hasMemoryUsage ?
     utilHandlers.checkForNestedKey(
       data, memoryFreeField + '._value', useLastIndexOnWildcard,
@@ -207,9 +224,34 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   }
 
 
+  if (checkMemoryUsage) {
+    // Get the ṕercentage
+    let memoryPercentage = utilHandlers.getFromNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the valus
+    let memoryPercentageValue = parseInt(memoryPercentage);
+
+    // Assign the usage
+    if (
+      !isNaN(memoryPercentageValue) && memoryPercentageValue >= 0 &&
+      memoryPercentageValue <= 100
+    ) {
+      resources.mem_usage = Math.ceil(memoryPercentageValue);
+
+    // If the value is not valid, Memory usage does not pass in the check
+    } else {
+      checkMemoryUsage = false;
+    }
+  }
+
+
   // Only append resources if has CPU usage or has both Memory Free and
-  // Memory Total
-  if (checkCPUUsage || (checkMemoryFree && checkMemoryTotal)) {
+  // Memory Total or has Memory usage
+  if (
+    checkCPUUsage ||
+    (checkMemoryFree && checkMemoryTotal) || checkMemoryUsage) {
     responseData.resources = resources;
   }
 
