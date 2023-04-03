@@ -97,7 +97,7 @@ intelbrasModel.getModelFields = function() {
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
-  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
+  fields.wan.wan_ip = 'Device.IP.Interface.2.IPv4Address.1.IPAddress';
   fields.wan.wan_ip_ppp = fields.wan.wan_ip;
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
