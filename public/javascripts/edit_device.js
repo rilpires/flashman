@@ -396,6 +396,21 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString())
             .addClass('d-none');
         }
+        // Update DNS field
+        $.ajax({
+          type: 'GET',
+          url: '/devicelist/landnsserverslist/' + mac,
+          dataType: 'json',
+          success: function(res) {
+            if (res.success) {
+              if (res.lan_dns_servers_list) {
+                $('#edit_lan_dns-' + index).val(
+                  res.lan_dns_servers_list.join(','),
+                );
+              }
+            }
+          },
+        });
         switchSubmitButton(index);
       },
       error: function(xhr, status, error) {

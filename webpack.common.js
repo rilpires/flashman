@@ -79,6 +79,7 @@ module.exports = {
       './public/javascripts/update_device.js',
       './public/javascripts/table_anim.js',
       './public/javascripts/show_traceroute_test_action.js',
+      './public/javascripts/show_lan_dns_actions.js',
     ],
   },
   output: {
