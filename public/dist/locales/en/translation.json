@@ -902,7 +902,6 @@
 	"mandatoryWanVerification": "WAN verification required",
 	"mandatoryIpvxVerification": "IPv{{-x}} verification required",
 	"mandatoryDnsVerification": "Mandatory DNS Verification",
-	"enableSpecificAppTechnicianWebLogin": "Enable specific attempt of web interface login in technician app",
 	"mandatoryFlashmanRegisterVerification": "Flashman registration verification required",
 	"Enable": "Enable",
 	"Enabled": "Enable",
