@@ -10,6 +10,11 @@ module.exports = promBundle({
   includePath: true,
   includeStatusCode: true,
   metricsPath: metricsPath,
+  metricType: 'summary',
+  percentiles: [0.05, 0.5, 0.95],
+  ageBuckets: 10,
+  maxAgeSeconds: 3600,
+  pruneAgedBuckets: true,
 
   // This is a very important config. We want to unify metrics on a given
   // route if they are different just on device id, in example. So here
