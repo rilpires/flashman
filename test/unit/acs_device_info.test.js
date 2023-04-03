@@ -22,6 +22,10 @@ const updateSchedulerCommon = require(
 const DeviceModel = require('../../models/device');
 const t = require('../../controllers/language').i18next.t;
 
+const mockRequest = (app, body) => {
+  return {app: app, body: body};
+};
+
 let bodyField = (value, writable) => {
   return {value: value, writable: writable};
 };
@@ -85,7 +89,7 @@ let assembleBody = (device) => {
         lease_min_ip: bodyField('192.168.1.33', 1),
         lease_max_ip: bodyField('192.168.1.253', 1),
         ip_routers: bodyField('192.168.1.1', 1),
-        dns_servers: bodyField('192.168.1.1', 1),
+        dns_servers: bodyField(device.lan_dns_servers, 1),
       },
       wifi2: {
         ssid: bodyField(device.wifi_ssid, 1),
@@ -740,10 +744,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -803,10 +804,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -868,10 +866,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -937,10 +932,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -972,6 +964,180 @@ describe('ACS Device Info Tests', () => {
       },
     );
 
+    test(
+      'Receives valid value for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
+            model: 'WS5200-40', // Huawei  WS5200-40
+            version: '2.0.0.505(C947)',
+            hw_version: 'VER.A',
+            lan_dns_servers: '192.168.3.1,192.168.2.1', // Valid value
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // It is expected that: the field value of lan_dns_servers is accepted
+        // and strictly equal to the passed value
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: device.lan_dns_servers}),
+          ]),
+        );
+      },
+    );
+
+    test(
+      'Receives a list with repeated IP addresses for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
+            model: 'WS5200-40', // Huawei  WS5200-40
+            version: '2.0.0.505(C947)',
+            hw_version: 'VER.A',
+            lan_dns_servers: '192.168.3.1,192.168.3.1', // Duplicated value
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // Is expected lan_dns_servers field value to filter out duplicate
+        // addresses
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: '192.168.3.1'}),
+          ]),
+        );
+      },
+    );
+
+    test(
+      'Receives an empty field for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '1C61B4-IGD-22271K1007249',
+            model: 'EC220-G5', // Tp-Link EC220-G5
+            version: '3.16.0 0.9.1 v6055.0 Build 220706 Rel.79244n',
+            hw_version: 'EC220-G5 v2 00000003',
+            // Field is undefined because the router does not allow reading and
+            // writing of it
+            lan_dns_servers: undefined,
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // It is expected field lan_dns_servers to be undefined
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: undefined}),
+          ]),
+        );
+      },
+    );
 
     // Validate WAN and LAN information
     test('WAN & LAN information', async () => {
