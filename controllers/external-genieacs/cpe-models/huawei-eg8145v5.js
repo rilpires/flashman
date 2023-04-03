@@ -17,6 +17,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.hasIpv6Information = true;
 
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
