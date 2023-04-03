@@ -243,6 +243,7 @@ fieldsAndPermissions.fields.push({
     },
     statistics: {
       cpu_usage: 'diagnostics.statistics.cpu_usage',
+      memory_usage: 'diagnostics.statistics.memory_usage',
       memory_free: 'diagnostics.statistics.memory_free',
       memory_total: 'diagnostics.statistics.memory_total',
     },
