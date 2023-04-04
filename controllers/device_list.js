@@ -276,6 +276,11 @@ deviceListController.sendCustomSpeedTest = async function(
   ) {
     validationOk = false;
     invalidField = 'url';
+  } else if (reqBody.content.hasOwnProperty('send_error') &&
+          typeof reqBody.content.send_error != 'boolean'
+  ) {
+    validationOk = false;
+    invalidField = 'send_error';
   } else if ( reqBody.content.webhook) {
     validationOk = false;
     if (typeof reqBody.content.webhook != 'object') {
@@ -302,6 +307,11 @@ deviceListController.sendCustomSpeedTest = async function(
     };
   }
 
+  let sendError = false;
+  if (reqBody.content.hasOwnProperty('send_error')) {
+    sendError = reqBody.content.send_error;
+  }
+
   let now = new Date();
   device.current_diagnostic = {
     type: 'speedtest',
@@ -311,6 +321,7 @@ deviceListController.sendCustomSpeedTest = async function(
     started_at: now,
     last_modified_at: now,
     targets: [reqBody.content.url],
+    send_error: sendError,
     user: user.name,
     webhook_url: '',
     webhook_user: '',
