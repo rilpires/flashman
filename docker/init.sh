@@ -14,6 +14,7 @@ if [ "$FLM_DOCKER_USE_CRON_BACKUP" == "true" ]; then
   echo -n "$AIX_B2_BUCKET" > /tmp/AIX_B2_BUCKET
   echo -n "$AIX_B2_ACCOUNT" > /tmp/AIX_B2_ACCOUNT
   echo -n "$AIX_B2_SECRET" > /tmp/AIX_B2_SECRET
+  echo -n "$FLM_DOCKER_INSTANCE" > /tmp/FLM_DOCKER_INSTANCE
   echo "Starting cron service..."
   service cron start
   crontab -l | { cat; echo "0 4 * * * bash /app/scripts/backup-docker.sh $FLM_IMG_RELEASE_DIR"; } | crontab -

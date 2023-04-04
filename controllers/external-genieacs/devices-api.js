@@ -101,12 +101,10 @@ const tr069Models = {
 const getTR069CustomFactoryModels = function() {
   let ret = new Map();
   Object.values(tr069Models).forEach((cpe) => {
-    if (cpe.modelPermissions().features.customAppPassword) {
-      if (ret[cpe.identifier.vendor]) {
-        ret[cpe.identifier.vendor].push(cpe.identifier.model);
-      } else {
-        ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
-      }
+    if (ret[cpe.identifier.vendor]) {
+      ret[cpe.identifier.vendor].push(cpe.identifier.model);
+    } else {
+      ret[cpe.identifier.vendor] = Array.from([cpe.identifier.model]);
     }
   });
   return ret;

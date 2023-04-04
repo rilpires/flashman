@@ -6,7 +6,6 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'EX510'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
@@ -18,7 +17,7 @@ tplinkModel.modelPermissions = function() {
   permissions.traceroute.hopCountExceededState = 'Completed';
   permissions.features.upnp = false;
   permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.sendDnsOnLANChange = false;
+  permissions.lan.dnsServersWrite = false;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.wan.speedTestLimit = 900;
   permissions.wan.hasUptimeField = false;

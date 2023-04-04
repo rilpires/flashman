@@ -29,6 +29,9 @@ multilaserModel.modelPermissions = function() {
   permissions.wan.hasIpv4DefaultGatewayField = true;
   permissions.wan.hasDnsServerField = true;
 
+  // X_ZTE-COM_ISPDNSEnable must be disabled to use DNS on lan
+  permissions.lan.dnsServersWrite = false;
+
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasMaskField = true;
   permissions.ipv6.hasDefaultGatewayField = true;

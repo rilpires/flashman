@@ -6,7 +6,6 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'EC220-G5 v3'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.traceroute = true;
   permissions.features.siteSurvey = true;
   // permissions.features.speedTest = true;
@@ -14,7 +13,7 @@ tplinkModel.modelPermissions = function() {
   permissions.features.stun = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.sendDnsOnLANChange = false;
+  permissions.lan.dnsServersWrite = false;
   permissions.wan.hasUptimeField = false;
   // permissions.wan.speedTestLimit = 70; // Limit is too low
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];

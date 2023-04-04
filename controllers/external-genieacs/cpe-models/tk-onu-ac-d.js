@@ -6,7 +6,6 @@ tkOnuAcDModel.identifier = {vendor: 'Think', model: 'TK-ONU-AC-D'};
 
 tkOnuAcDModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
