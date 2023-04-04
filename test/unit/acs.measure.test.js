@@ -1904,6 +1904,7 @@ describe('Handlers/ACS/Measures Tests', () => {
   });
 
 
+  // fetchWanInformationFromGenie
   describe('fetchWanInformationFromGenie', () => {
     // Invalid acs ID - empty string
     test('Invalid acs ID - empty string', async () => {
@@ -1911,13 +1912,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchWanInformationFromGenie('');
@@ -1925,7 +1921,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -1935,13 +1930,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchWanInformationFromGenie(null);
@@ -1949,7 +1939,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -1959,13 +1948,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchWanInformationFromGenie('abc');
@@ -1973,7 +1957,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -1986,13 +1969,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchWanInformationFromGenie('abc');
@@ -2000,7 +1978,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2013,13 +1990,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchWanInformationFromGenie('abc');
@@ -2027,7 +1999,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2035,32 +2006,31 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Fields with *', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"wan": {' +
-        '"0": {' +
-          '"wan_ip": {"_value": "1234"},' +
-          '"mask_ipv4": {"_value": "1234"},' +
-          '"remote_address": {"_value": "1234"},' +
-          '"remote_mac": {"_value": "1234"},' +
-          '"default_gateway": {"_value": "1234"},' +
-          '"dns_servers": {"_value": "1234"}' +
-        '}, "1": {' +
-          '"wan_ip": {"_value": "5678"},' +
-          '"mask_ipv4": {"_value": "5678"},' +
-          '"remote_address": {"_value": "5678"},' +
-          '"remote_mac": {"_value": "5678"},' +
-          '"default_gateway": {"_value": "5678"},' +
-          '"dns_servers": {"_value": "5678"}' +
-      '}}, "ipv6": {' +
-        '"0": {' +
-          '"address": {"_value": "1234"},' +
-          '"mask": {"_value": "1234"},' +
-          '"default_gateway": {"_value": "1234"}' +
-        '}, "1": {' +
-          '"address": {"_value": "5678"},' +
-          '"mask": {"_value": "5678"},' +
-          '"default_gateway": {"_value": "5678"}' +
-      '}}}]';
+      let data = {wan: {
+        0: {
+          wan_ip: {_value: '1234'},
+          mask_ipv4: {_value: '1234'},
+          remote_address: {_value: '1234'},
+          remote_mac: {_value: '1234'},
+          default_gateway: {_value: '1234'},
+          dns_servers: {_value: '1234'},
+        }, 1: {
+          wan_ip: {'_value': '5678'},
+          mask_ipv4: {'_value': '5678'},
+          remote_address: {'_value': '5678'},
+          remote_mac: {'_value': '5678'},
+          default_gateway: {'_value': '5678'},
+          dns_servers: {'_value': '5678'},
+      }}, ipv6: {
+        0: {
+          address: {'_value': '1234'},
+          mask: {'_value': '1234'},
+          default_gateway: {'_value': '1234'},
+        }, 1: {
+          address: {_value: '5678'},
+          mask: {_value: '5678'},
+          default_gateway: {_value: '5678'},
+      }}};
       let permissions = {...fieldsAndPermissions.cpePermissions[0]};
       let fields = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.fields[0], '',
@@ -2083,26 +2053,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2118,13 +2070,11 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=' + 'wan,ipv6,wan,ipv6,wan,wan,wan,ipv6,wan',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan,ipv6,wan,ipv6,wan,wan,wan,ipv6,wan',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2147,8 +2097,7 @@ describe('Handlers/ACS/Measures Tests', () => {
     // No permission
     test('No permission', async () => {
       let device = {...models.defaultMockDevices[0]};
-      let requestOptions;
-      let data = '[{"wan": {"wan_ip_ppp": {"_value": "192.168.0.11"}}}]';
+      let data = {wan: {wan_ip_ppp: {_value: '192.168.0.11'}}};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], false,
       );
@@ -2160,26 +2109,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2195,13 +2126,11 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=' + 'wan.wan_ip_ppp',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip_ppp',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2221,11 +2150,27 @@ describe('Handlers/ACS/Measures Tests', () => {
     });
 
 
-    // All permissions with no data
-    test('All permissions with no data', async () => {
+    // No IPv6 permission
+    test('No IPv6 permission', async () => {
       let device = {...models.defaultMockDevices[0]};
-      let requestOptions;
-      let data = '[{"teste": "123"}]';
+      device.connection_type = 'pppoe';
+      let data = {wan: {
+          wan_ip_ppp: {_value: '1234'},
+          mask_ipv4_ppp: {_value: '5678'},
+          remote_address_ppp: {_value: '9012'},
+          remote_mac_ppp: {_value: '3456'},
+          default_gateway_ppp: {_value: '7890'},
+          dns_servers_ppp: {_value: '1234'}},
+        ipv6: {
+          address_ppp: {_value: '1234'},
+          mask_ppp: {_value: '5678'},
+          default_gateway_ppp: {_value: '9012'},
+        },
+      };
+      let permissions = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.cpePermissions[0], true,
+      );
+      permissions.features.hasIpv6Information = false;
 
 
       // Mocks
@@ -2234,26 +2179,62 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fieldsAndPermissions.fields[0],
+      );
 
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
 
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      // Execute
+      await measureController.fetchWanInformationFromGenie(device.acs_id);
+
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip_ppp,wan.mask_ipv4_ppp,wan.remote_address_ppp,' +
+        'wan.remote_mac_ppp,wan.default_gateway_ppp,wan.dns_servers_ppp',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          default_gateway_v4: '7890',
+          default_gateway_v6: '',
+          dns_server: '1234',
+          ipv4_address: '1234',
+          ipv4_mask: '5678',
+          ipv6_address: '',
+          ipv6_mask: '0',
+          pppoe_ip: '9012',
+          pppoe_mac: '3456',
+          wan_conn_type: device.connection_type,
+        },
+      );
+    });
+
+
+    // All permissions with no data
+    test('All permissions with no data', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = {teste: '123'};
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2269,15 +2250,13 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=' + 'wan.wan_ip_ppp,ipv6.address_ppp,wan.mask_ipv4_ppp,' +
-        'ipv6.mask_ppp,wan.remote_address_ppp,wan.remote_mac_ppp,' +
-        'wan.default_gateway_ppp,ipv6.default_gateway_ppp,wan.dns_servers_ppp',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip_ppp,ipv6.address_ppp,wan.mask_ipv4_ppp,ipv6.mask_ppp,' +
+        'wan.remote_address_ppp,wan.remote_mac_ppp,wan.default_gateway_ppp,' +
+        'ipv6.default_gateway_ppp,wan.dns_servers_ppp',
+      );
       expect(saveSpy).not.toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2301,19 +2280,19 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('All permissions - PPPoE', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'pppoe';
-      let requestOptions;
-      let data = '[{"wan": {' +
-          '"wan_ip_ppp": {"_value": "1234"}, ' +
-          '"mask_ipv4_ppp": {"_value": "5678"}, ' +
-          '"remote_address_ppp": {"_value": "9012"}, ' +
-          '"remote_mac_ppp": {"_value": "3456"}, ' +
-          '"default_gateway_ppp": {"_value": "7890"}, ' +
-          '"dns_servers_ppp": {"_value": "1234"}}, ' +
-        '"ipv6": {' +
-          '"address_ppp": {"_value": "1234"}, ' +
-          '"mask_ppp": {"_value": "5678"}, ' +
-          '"default_gateway_ppp": {"_value": "9012"}}' +
-      '}]';
+      let data = {wan: {
+          wan_ip_ppp: {_value: '1234'},
+          mask_ipv4_ppp: {_value: '5678'},
+          remote_address_ppp: {_value: '9012'},
+          remote_mac_ppp: {_value: '3456'},
+          default_gateway_ppp: {_value: '7890'},
+          dns_servers_ppp: {_value: '1234'}},
+        ipv6: {
+          address_ppp: {_value: '1234'},
+          mask_ppp: {_value: '5678'},
+          default_gateway_ppp: {_value: '9012'},
+        },
+      };
 
 
       // Mocks
@@ -2322,26 +2301,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2357,15 +2318,13 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=' + 'wan.wan_ip_ppp,ipv6.address_ppp,wan.mask_ipv4_ppp,' +
-        'ipv6.mask_ppp,wan.remote_address_ppp,wan.remote_mac_ppp,' +
-        'wan.default_gateway_ppp,ipv6.default_gateway_ppp,wan.dns_servers_ppp',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip_ppp,ipv6.address_ppp,wan.mask_ipv4_ppp,ipv6.mask_ppp,' +
+        'wan.remote_address_ppp,wan.remote_mac_ppp,wan.default_gateway_ppp,' +
+        'ipv6.default_gateway_ppp,wan.dns_servers_ppp',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2389,19 +2348,19 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('All permissions - DHCP', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"wan": {' +
-          '"wan_ip": {"_value": "1234"}, ' +
-          '"mask_ipv4": {"_value": "5678"}, ' +
-          '"remote_address": {"_value": "9012"}, ' +
-          '"remote_mac": {"_value": "3456"}, ' +
-          '"default_gateway": {"_value": "7890"}, ' +
-          '"dns_servers": {"_value": "1234"}}, ' +
-        '"ipv6": {' +
-          '"address": {"_value": "1234"}, ' +
-          '"mask": {"_value": "5678"}, ' +
-          '"default_gateway": {"_value": "9012"}}' +
-      '}]';
+      let data = {wan: {
+          wan_ip: {_value: '1234'},
+          mask_ipv4: {_value: '5678'},
+          remote_address: {_value: '9012'},
+          remote_mac: {_value: '3456'},
+          default_gateway: {_value: '7890'},
+          dns_servers: {_value: '1234'}},
+        ipv6: {
+          address: {_value: '1234'},
+          mask: {_value: '5678'},
+          default_gateway: {_value: '9012'},
+        },
+      };
 
 
       // Mocks
@@ -2410,26 +2369,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2445,15 +2386,13 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=' + 'wan.wan_ip,ipv6.address,wan.mask_ipv4,' +
-        'ipv6.mask,wan.remote_address,wan.remote_mac,' +
-        'wan.default_gateway,ipv6.default_gateway,wan.dns_servers',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip,ipv6.address,wan.mask_ipv4,ipv6.mask,' +
+        'wan.remote_address,wan.remote_mac,wan.default_gateway,' +
+        'ipv6.default_gateway,wan.dns_servers',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2477,19 +2416,18 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Mask from address field', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"wan": {' +
-        '"wan_ip": {"_value": "1234/24"}, ' +
-        '"mask_ipv4": {"_value": "56"}, ' +
-        '"remote_address": {"_value": "3456"},' +
-        '"remote_mac": {"_value": "7890"},' +
-        '"default_gateway": {"_value": "2341"},' +
-        '"dns_servers": {"_value": "9012"}' +
-      '}, "ipv6": {' +
-        '"address": {"_value": "1234/24"}, ' +
-        '"mask": {"_value": "56"}, ' +
-        '"default_gateway": {"_value": "9012"}}' +
-      '}]';
+      let data = {wan: {
+        wan_ip: {_value: '1234/24'},
+        mask_ipv4: {_value: '56'},
+        remote_address: {_value: '3456'},
+        remote_mac: {_value: '7890'},
+        default_gateway: {_value: '2341'},
+        dns_servers: {_value: '9012'},
+      }, ipv6: {
+        address: {_value: '1234/24'},
+        mask: {_value: '56'},
+        default_gateway: {_value: '9012'},
+      }};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], true,
       );
@@ -2501,26 +2439,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2536,15 +2456,13 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=wan.wan_ip,ipv6.address,wan.mask_ipv4,ipv6.mask,wan.' +
-        'remote_address,wan.remote_mac,wan.default_gateway,ipv6.' +
-        'default_gateway,wan.dns_servers',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip,ipv6.address,wan.mask_ipv4,ipv6.mask,' +
+        'wan.remote_address,wan.remote_mac,wan.default_gateway,' +
+        'ipv6.default_gateway,wan.dns_servers',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2569,19 +2487,18 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Mask from mask field', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"wan": {' +
-          '"wan_ip": {"_value": "1234/24"}, ' +
-          '"mask_ipv4": {"_value": "56"}, ' +
-          '"remote_address": {"_value": "3456"},' +
-          '"remote_mac": {"_value": "7890"},' +
-          '"default_gateway": {"_value": "2341"},' +
-          '"dns_servers": {"_value": "9012"}' +
-        '}, "ipv6": {' +
-          '"address": {"_value": "1234/24"}, ' +
-          '"mask": {"_value": "56"}, ' +
-          '"default_gateway": {"_value": "9012"}}' +
-      '}]';
+      let data = {wan: {
+          wan_ip: {_value: '1234/24'},
+          mask_ipv4: {_value: '56'},
+          remote_address: {_value: '3456'},
+          remote_mac: {_value: '7890'},
+          default_gateway: {_value: '2341'},
+          dns_servers: {_value: '9012'},
+        }, ipv6: {
+          address: {_value: '1234/24'},
+          mask: {_value: '56'},
+          default_gateway: {_value: '9012'},
+      }};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], true,
       );
@@ -2593,26 +2510,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2629,14 +2528,13 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=wan.wan_ip,ipv6.address,wan.mask_ipv4,ipv6.mask,wan.' +
-        'remote_address,wan.remote_mac,wan.default_gateway,ipv6.' +
-        'default_gateway,wan.dns_servers',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip,ipv6.address,wan.mask_ipv4,ipv6.mask,' +
+        'wan.remote_address,wan.remote_mac,wan.default_gateway,' +
+        'ipv6.default_gateway,wan.dns_servers',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2658,6 +2556,7 @@ describe('Handlers/ACS/Measures Tests', () => {
   });
 
 
+  // fetchLanInformationFromGenie
   describe('fetchLanInformationFromGenie', () => {
     // Invalid acs ID - empty string
     test('Invalid acs ID - empty string', async () => {
@@ -2665,13 +2564,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchLanInformationFromGenie('');
@@ -2679,7 +2573,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2689,13 +2582,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchLanInformationFromGenie('');
@@ -2703,7 +2591,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2713,13 +2600,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(null, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchLanInformationFromGenie('abc');
@@ -2727,7 +2609,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2740,13 +2621,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchLanInformationFromGenie('abc');
@@ -2754,7 +2630,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
@@ -2767,13 +2642,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation(() => {
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [{}]);
 
       // Execute
       await measureController.fetchLanInformationFromGenie('abc');
@@ -2781,14 +2651,13 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
     });
 
 
     // No IPv6 information
     test('No IPv6 information', async () => {
       let device = {...models.defaultMockDevices[0]};
-      let data = '[{"wan": {"wan_ip_ppp": {"_value": "192.168.0.11"}}}]';
+      let data = {wan: {wan_ip_ppp: {_value: '192.168.0.11'}}};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], false,
       );
@@ -2798,23 +2667,10 @@ describe('Handlers/ACS/Measures Tests', () => {
       utils.common.mockDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
+        .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true,
         permissions,
@@ -2829,7 +2685,14 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
-      expect(endRequestSpy).not.toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          prefix_delegation_addr: '',
+          prefix_delegation_local: '',
+          prefix_delegation_mask: '',
+        },
+      );
     });
 
 
@@ -2837,14 +2700,13 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Fields with *', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"wan": {"0": {' +
-        '"prefix_delegation_address": {"_value": "1234"},' +
-        '"prefix_delegation_local": {"_value": "9012"}' +
-      '},"1": {' +
-        '"prefix_delegation_address": {"_value": "5678"},' +
-        '"prefix_delegation_local": {"_value": "3456"}' +
-      '}}}]';
+      let data = {wan: {0: {
+        prefix_delegation_address: {_value: '1234'},
+        prefix_delegation_local: {_value: '9012'},
+      }, 1: {
+        prefix_delegation_address: {_value: '5678'},
+        prefix_delegation_local: {_value: '3456'},
+      }}};
       let permissions = {...fieldsAndPermissions.cpePermissions[0]};
       let fields = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.fields[0], '',
@@ -2861,26 +2723,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2896,13 +2740,11 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=wan,wan,wan',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan,wan,wan',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2918,8 +2760,7 @@ describe('Handlers/ACS/Measures Tests', () => {
     // No permission
     test('No permission', async () => {
       let device = {...models.defaultMockDevices[0]};
-      let requestOptions;
-      let data = '[{"wan": {"wan_ip_ppp": {"_value": "192.168.0.11"}}}]';
+      let data = {wan: {wan_ip_ppp: {_value: '192.168.0.11'}}};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], false,
       );
@@ -2932,26 +2773,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -2967,13 +2790,11 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        '',
+      );
       expect(saveSpy).not.toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -2986,11 +2807,19 @@ describe('Handlers/ACS/Measures Tests', () => {
     });
 
 
-    // All permissions with no data
-    test('All permissions with no data', async () => {
+    // No IPv6 permission
+    test('No IPv6 permission', async () => {
       let device = {...models.defaultMockDevices[0]};
-      let requestOptions;
-      let data = '[{"teste": "123"}]';
+      device.connection_type = 'pppoe';
+      let data = {ipv6: {
+        prefix_delegation_address_ppp: {_value: '1234'},
+        prefix_delegation_mask_ppp: {_value: '5678'},
+        prefix_delegation_local_address_ppp: {_value: '9012'},
+      }};
+      let permissions = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.cpePermissions[0], true,
+      );
+      permissions.features.hasIpv6Information = false;
 
 
       // Mocks
@@ -2999,26 +2828,50 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fieldsAndPermissions.fields[0],
+      );
 
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
 
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      // Execute
+      await measureController.fetchLanInformationFromGenie(device.acs_id);
+
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+      expect(saveSpy).not.toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
+        },
+      );
+    });
+
+
+    // All permissions with no data
+    test('All permissions with no data', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = {teste: '123'};
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -3034,14 +2887,12 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=ipv6.prefix_delegation_address_ppp,ipv6.' +
-        'prefix_delegation_mask_ppp,ipv6.prefix_delegation_local_address_ppp',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'ipv6.prefix_delegation_address_ppp,ipv6.prefix_delegation_mask_ppp,' +
+        'ipv6.prefix_delegation_local_address_ppp',
+      );
       expect(saveSpy).not.toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -3058,12 +2909,11 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('All permissions - PPPoE', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'pppoe';
-      let requestOptions;
-      let data = '[{"ipv6": {' +
-        '"prefix_delegation_address_ppp": {"_value": "1234"}, ' +
-        '"prefix_delegation_mask_ppp": {"_value": "5678"}, ' +
-        '"prefix_delegation_local_address_ppp": {"_value": "9012"}}' +
-      '}]';
+      let data = {ipv6: {
+        prefix_delegation_address_ppp: {_value: '1234'},
+        prefix_delegation_mask_ppp: {_value: '5678'},
+        prefix_delegation_local_address_ppp: {_value: '9012'},
+      }};
 
 
       // Mocks
@@ -3072,26 +2922,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -3107,14 +2939,12 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=ipv6.prefix_delegation_address_ppp,ipv6.' +
-        'prefix_delegation_mask_ppp,ipv6.prefix_delegation_local_address_ppp',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'ipv6.prefix_delegation_address_ppp,ipv6.prefix_delegation_mask_ppp,' +
+        'ipv6.prefix_delegation_local_address_ppp',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -3131,12 +2961,11 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('All permissions - DHCP', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"ipv6": {' +
-        '"prefix_delegation_address": {"_value": "1234"}, ' +
-        '"prefix_delegation_mask": {"_value": "5678"}, ' +
-        '"prefix_delegation_local_address": {"_value": "9012"}}' +
-      '}]';
+      let data = {ipv6: {
+        prefix_delegation_address: {_value: '1234'},
+        prefix_delegation_mask: {_value: '5678'},
+        prefix_delegation_local_address: {_value: '9012'},
+      }};
 
 
       // Mocks
@@ -3145,26 +2974,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -3180,14 +2991,12 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=ipv6.prefix_delegation_address,ipv6.' +
-        'prefix_delegation_mask,ipv6.prefix_delegation_local_address',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'ipv6.prefix_delegation_address,ipv6.prefix_delegation_mask,' +
+        'ipv6.prefix_delegation_local_address',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -3204,11 +3013,10 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Mask from address field', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"ipv6": {' +
-        '"prefix_delegation_address": {"_value": "1234/24"}, ' +
-        '"prefix_delegation_local_address": {"_value": "9012"}}' +
-      '}]';
+      let data = {ipv6: {
+        prefix_delegation_address: {_value: '1234/24'},
+        prefix_delegation_local_address: {_value: '9012'},
+      }};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], true,
       );
@@ -3220,26 +3028,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -3255,14 +3045,12 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=ipv6.prefix_delegation_address,ipv6.' +
-        'prefix_delegation_mask,ipv6.prefix_delegation_local_address',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'ipv6.prefix_delegation_address,ipv6.prefix_delegation_mask,' +
+        'ipv6.prefix_delegation_local_address',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
@@ -3279,12 +3067,11 @@ describe('Handlers/ACS/Measures Tests', () => {
     test('Mask from mask field', async () => {
       let device = {...models.defaultMockDevices[0]};
       device.connection_type = 'dhcp';
-      let requestOptions;
-      let data = '[{"ipv6": {' +
-        '"prefix_delegation_address": {"_value": "1234/24"}, ' +
-        '"prefix_delegation_mask": {"_value": "56"}, ' +
-        '"prefix_delegation_local_address": {"_value": "9012"}}' +
-      '}]';
+      let data = {ipv6: {
+        prefix_delegation_address: {_value: '1234/24'},
+        prefix_delegation_mask: {_value: '56'},
+        prefix_delegation_local_address: {_value: '9012'},
+      }};
       let permissions = fieldsAndPermissions.setAllObjectValues(
         fieldsAndPermissions.cpePermissions[0], true,
       );
@@ -3296,26 +3083,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
-      let endRequestSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          // Save the options to be tested
-          requestOptions = options;
-
-          // Call the callback
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          // Return the end request function
-          return {
-            end: endRequestSpy,
-          };
-        });
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
       let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
         .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
@@ -3331,14 +3100,12 @@ describe('Handlers/ACS/Measures Tests', () => {
 
       // Validate
       expect(errorSpy).not.toBeCalled();
-      expect(requestSpy).toBeCalled();
-      expect(endRequestSpy).toBeCalled();
-      expect(requestOptions.path).toBe(encodeURI(
-        '/devices/?query=' +
-        JSON.stringify({_id: device.acs_id}) +
-        '&projection=ipv6.prefix_delegation_address,ipv6.' +
-        'prefix_delegation_mask,ipv6.prefix_delegation_local_address',
-      ));
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'ipv6.prefix_delegation_address,ipv6.prefix_delegation_mask,' +
+        'ipv6.prefix_delegation_local_address',
+      );
       expect(saveSpy).toBeCalled();
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
