@@ -2647,21 +2647,90 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
+
+/**
+ * This functions sends a request to GenieACS to gather received and sent bytes,
+ * CPU usage, total memory and free memory from CPE.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The device model.
+ */
 acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestStatistics!');
+    return;
+  }
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
   let acsID = device.acs_id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let cpe = cpeInstance.cpe;
   let fields = cpe.getModelFields();
-  let recvField = fields.wan.recv_bytes;
-  let sentField = fields.wan.sent_bytes;
+  let permissions = cpe.modelPermissions();
+  let parameterNames = [];
+
+  // Fields
+  let parameterFields = {
+    receivedBytes: {
+      permission: true,
+      field: fields.wan.recv_bytes,
+    },
+
+    sentBytes: {
+      permission: true,
+      field: fields.wan.sent_bytes,
+    },
+
+    cpuUsage: {
+      permission: permissions.features.hasCPUUsage,
+      field: fields.diagnostics.statistics.cpu_usage,
+    },
+
+    memoryUsage: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_usage,
+    },
+
+    memoryFree: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_free,
+    },
+
+    memoryTotal: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_total,
+    },
+  };
+
+
+  // Run through every parameter and push to array of parameterNames
+  Object.keys(parameterFields).forEach((parameterKey) => {
+    let parameter = parameterFields[parameterKey];
+
+    // Continue if does not have permission or has an invalid field
+    if (!parameter.permission || !parameter.field) return;
+
+    // Push to array
+    parameterNames.push(parameter.field);
+  });
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
   let task = {
     name: 'getParameterValues',
-    parameterNames: [
-      recvField,
-      sentField,
-    ],
+    parameterNames: parameterNames,
   };
+
+  // Send the task
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
 };
 

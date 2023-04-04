@@ -13,6 +13,7 @@ const Config = require('../../../models/config');
 const utilHandlers = require('../util');
 const sio = require('../../../sio');
 const http = require('http');
+const TasksAPI = require('../../external-genieacs/tasks-api');
 const debug = require('debug')('ACS_DEVICES_MEASURES');
 const t = require('../../language').i18next.t;
 
@@ -20,86 +21,262 @@ let acsMeasuresHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
+/**
+ * Get WAN sent and received bytes, CPU usage, total memory, free memory from
+ * GenieACS of the CPE with the `acsID`informed.
+ *
+ * @memberof controllers/handlers/acs/measure
+ *
+ * @param {String} acsID - The ACS ID of the device to fetch statistics from.
+ */
 acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   let device;
+
+  // Check acs ID
+  if (!acsID) return;
+
   try {
-    device = await DeviceModel.findOne({acs_id: acsID}).lean();
-  } catch (e) {
+    device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        wan_bytes: true, use_tr069: true, acs_id: true, model: true,
+        version: true, hw_version: true, last_contact: true,
+      },
+    );
+  } catch (error) {
+    console.error(
+      'Could not get device in fetchWanBytesFromGenie: ' + error,
+    );
+
     return;
   }
+
+  // Check if is a TR-069 valid device
   if (!device || !device.use_tr069) {
+    console.error('Invalid device in fetchWanBytesFromGenie!');
     return;
   }
+
+
+  // Get the cpe instance
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    console.error('Invalid CPE in fetchWanInformationFromGenie!');
+    return;
+  }
+
   let mac = device._id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
+  let cpe = cpeInstance.cpe;
+  const permissions = cpe.modelPermissions();
+  const hasCPUUsage = permissions.features.hasCPUUsage;
+  const hasMemoryUsage = permissions.features.hasMemoryUsage;
+  let useLastIndexOnWildcard = permissions.useLastIndexOnWildcard;
+
   let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
+  let statistics = fields.diagnostics.statistics;
+
+  let cpuUsageField = hasCPUUsage && statistics.cpu_usage ?
+    statistics.cpu_usage : '';
+  let memoryUsageField = hasMemoryUsage && statistics.memory_usage ?
+    statistics.memory_usage : '';
+  let memoryFreeField = hasMemoryUsage && statistics.memory_free ?
+    statistics.memory_free : '';
+  let memoryTotalField = hasMemoryUsage && statistics.memory_total ?
+    statistics.memory_total : '';
+
   let query = {_id: acsID};
-  let projection = recvField.replace(/\.\*.*/g, '') + ','
-    + sentField.replace(/\.\*.*/g, '');
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let wanBytes = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async () => {
-      if (data.length > 0) {
-        try {
-          data = JSON.parse(data)[0];
-        } catch (err) {
-          debug(err);
-          data = '';
-        }
-      }
-      let success = false;
-      let checkRecv = utilHandlers.checkForNestedKey(
-        data,
-        recvField+'._value',
-        useLastIndexOnWildcard,
+  let projection =
+    recvField.replace(/\.\*.*/g, '') + ',' +
+    sentField.replace(/\.\*.*/g, '') +
+    (hasCPUUsage && cpuUsageField ?
+      ',' + cpuUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryUsageField ?
+      ',' + memoryUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryFreeField ?
+      ',' + memoryFreeField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryTotalField ?
+      ',' + memoryTotalField.replace(/\.\*.*/g, '') : ''
+    );
+
+
+  let data = null;
+
+  try {
+    data = (await TasksAPI.getFromCollection('devices', query, projection))[0];
+  } catch (error) {
+    console.error(
+      'Error getting statistics from GenieACS in fetchWanBytesFromGenie: ' +
+      error,
+    );
+
+    return;
+  }
+
+  // Exit if data is invalid
+  if (!data) return;
+
+
+  let responseData = {};
+  let wanBytes = {};
+  let resources = {};
+
+
+  // Check Received Bytes
+  let checkRecv = utilHandlers.checkForNestedKey(
+    data, recvField + '._value', useLastIndexOnWildcard,
+  );
+
+  // Check Sent Bytes
+  let checkSent = utilHandlers.checkForNestedKey(
+    data, sentField + '._value', useLastIndexOnWildcard,
+  );
+
+  // Check CPU usage
+  let checkCPUUsage = permissions.features.hasCPUUsage ?
+    utilHandlers.checkForNestedKey(
+      data, cpuUsageField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  // Check Memory usage
+  let checkMemoryUsage = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  let checkMemoryFree = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryFreeField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  let checkMemoryTotal = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryTotalField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+
+  // Get Received and Sent Bytes
+  if (checkRecv && checkSent) {
+    wanBytes = {
+      recv: utilHandlers.getFromNestedKey(
+        data, recvField + '._value', useLastIndexOnWildcard,
+      ),
+      sent: utilHandlers.getFromNestedKey(
+        data, sentField + '._value', useLastIndexOnWildcard,
+      ),
+    };
+  }
+
+  // Get CPU usage
+  if (checkCPUUsage) {
+    // Get the usage
+    let usage = utilHandlers.getFromNestedKey(
+      data, cpuUsageField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the usage
+    let usageValue = parseInt(usage);
+
+    // Assign the usage
+    if (!isNaN(usageValue) && usageValue >= 0 && usageValue <= 100) {
+      resources.cpu_usage = usageValue;
+
+    // If the value is not valid, CPU usage does not pass in the check
+    } else {
+      checkCPUUsage = false;
+    }
+  }
+
+  // Get Memory usage
+  if (checkMemoryFree && checkMemoryTotal) {
+    // Get the Total and Free
+    let memoryFree = utilHandlers.getFromNestedKey(
+      data, memoryFreeField + '._value', useLastIndexOnWildcard,
+    );
+    let memoryTotal = utilHandlers.getFromNestedKey(
+      data, memoryTotalField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the values
+    let memoryFreeValue = parseInt(memoryFree);
+    let memoryTotalValue = parseInt(memoryTotal);
+
+    // Assign the usage
+    if (
+      !isNaN(memoryFreeValue) && memoryFreeValue >= 0 &&
+      !isNaN(memoryTotalValue) && memoryTotalValue >= 0 &&
+      memoryFreeValue <= memoryTotalValue
+    ) {
+      resources.mem_usage = Math.ceil(
+        (memoryTotalValue - memoryFreeValue) * 100 / memoryTotalValue,
       );
-      let checkSent = utilHandlers.checkForNestedKey(
-        data,
-        sentField+'._value',
-        useLastIndexOnWildcard,
-      );
-      if (checkRecv && checkSent) {
-        success = true;
-        wanBytes = {
-          recv: utilHandlers.getFromNestedKey(
-            data, recvField+'._value', useLastIndexOnWildcard,
-          ),
-          sent: utilHandlers.getFromNestedKey(
-            data, sentField+'._value', useLastIndexOnWildcard,
-          ),
-        };
-      }
-      if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        if (!deviceEdit) return;
-        deviceEdit.last_contact = Date.now();
-        wanBytes = acsMeasuresHandler.appendBytesMeasure(
-          deviceEdit.wan_bytes,
-          wanBytes.recv,
-          wanBytes.sent,
-        );
-        deviceEdit.wan_bytes = wanBytes;
-        await deviceEdit.save().catch((err) => {
-          console.log('Error saving device wan bytes: ' + err);
-        });
-      }
-      sio.anlixSendStatisticsNotification(mac, {wanbytes: wanBytes});
+
+    // If the value is not valid, Memory usage does not pass in the check
+    } else {
+      checkMemoryFree = false;
+      checkMemoryTotal = false;
+    }
+  }
+
+
+  if (checkMemoryUsage) {
+    // Get the ṕercentage
+    let memoryPercentage = utilHandlers.getFromNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the valus
+    let memoryPercentageValue = parseInt(memoryPercentage);
+
+    // Assign the usage
+    if (
+      !isNaN(memoryPercentageValue) && memoryPercentageValue >= 0 &&
+      memoryPercentageValue <= 100
+    ) {
+      resources.mem_usage = Math.ceil(memoryPercentageValue);
+
+    // If the value is not valid, Memory usage does not pass in the check
+    } else {
+      checkMemoryUsage = false;
+    }
+  }
+
+
+  // Only append resources if has CPU usage or has both Memory Free and
+  // Memory Total or has Memory usage
+  if (
+    checkCPUUsage ||
+    (checkMemoryFree && checkMemoryTotal) || checkMemoryUsage) {
+    responseData.resources = resources;
+  }
+
+  if (checkRecv && checkSent) {
+    // Update information
+    device.last_contact = Date.now();
+    wanBytes = acsMeasuresHandler.appendBytesMeasure(
+      device.wan_bytes,
+      wanBytes.recv,
+      wanBytes.sent,
+    );
+    device.wan_bytes = wanBytes;
+
+    // Save the device
+    await device.save().catch((err) => {
+      console.log('Error saving device wan bytes: ' + err);
     });
-  });
-  req.end();
+
+    // Append to the final response
+    responseData.wanbytes = wanBytes;
+  }
+
+
+  // Report to frontend
+  sio.anlixSendStatisticsNotification(mac, responseData);
 };
 
 acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {

@@ -13,6 +13,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.portForward = true;
   permissions.features.wlanAccessControl = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.siteSurvey.requiresPolling = true;
   permissions.siteSurvey.requiresSeparateTasks = true;
@@ -116,6 +118,14 @@ multilaserModel.getModelFields = function() {
     'LANDevice.1.WIFI';
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
+  fields.diagnostics.statistics.cpu_usage = 'InternetGatewayDevice.' +
+    'DeviceInfo.X_ZTE-COM_CpuUsed';
+  fields.diagnostics.statistics.memory_usage = 'InternetGatewayDevice.' +
+    'DeviceInfo.X_ZTE-COM_MemUsed';
+  // Delete free and used memory as the usage already has the percentage
+  delete fields.diagnostics.statistics.memory_free;
+  delete fields.diagnostics.statistics.memory_total;
+
   return fields;
 };
 

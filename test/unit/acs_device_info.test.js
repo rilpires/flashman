@@ -3319,6 +3319,298 @@ describe('syncDeviceData - Update web admin login', () => {
   });
 
 
+  describe('requestStatistics', () => {
+    // Invalid device - Undefined
+    test('Invalid device - Undefined', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics(undefined);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Null
+    test('Invalid device - Null', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics(null);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Non TR-069
+    test('Invalid device - Not TR-069', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '1234',
+        use_tr069: false,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - No acs_id
+    test('Invalid device - No acs_id', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Unknown model
+    test('Unknown model', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X99999-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // No permission
+    test('No permission', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: false,
+            hasMemoryUsage: false,
+          },
+        },
+        {wan: {}, diagnostics: {statistics: {}}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions with no field
+    test('All permissions with no field', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: true,
+            hasMemoryUsage: true,
+          },
+        },
+        {wan: {}, diagnostics: {statistics: {}}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions
+    test('All permissions', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: true,
+            hasMemoryUsage: true,
+          },
+        },
+        {
+          wan: {
+            recv_bytes: 'wan.recv_bytes',
+            sent_bytes: 'wan.sent_bytes',
+          }, diagnostics: {statistics: {
+            cpu_usage: 'diagnostics.statistics.cpu_usage',
+            memory_free: 'diagnostics.statistics.memory_free',
+            memory_total: 'diagnostics.statistics.memory_total',
+          }}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: acsID,
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.recv_bytes',
+            'wan.sent_bytes',
+            'diagnostics.statistics.cpu_usage',
+            'diagnostics.statistics.memory_free',
+            'diagnostics.statistics.memory_total',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // Each permission
+    test.each([
+      ['hasCPUUsage', 'cpu_usage'],
+      ['hasMemoryUsage', 'memory_free'],
+      ['hasMemoryUsage', 'memory_total'],
+    ])('Each permissions: %s', (permission, field) => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+      let permissions = {
+        features: {
+          hasCPUUsage: false,
+          hasMemoryUsage: false,
+        },
+      };
+      let fields = {
+        wan: {
+          recv_bytes: 'wan.recv_bytes',
+          sent_bytes: 'wan.sent_bytes',
+        },
+        diagnostics: {statistics: {
+          cpu_usage: '',
+          memory_free: '',
+          memory_total: '',
+        }},
+      };
+
+
+      // Change the permission and field
+      permissions.features[permission] = true;
+      fields.diagnostics.statistics[field] = 'diagnostics.statistics.' + field;
+
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: acsID,
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.recv_bytes',
+            'wan.sent_bytes',
+            'diagnostics.statistics.' + field,
+          ],
+        },
+        expect.anything(),
+      );
+    });
+  });
+
+
   describe('requestLanInformation', () => {
     // Invalid device - Undefined
     test('Invalid device - Undefined', () => {

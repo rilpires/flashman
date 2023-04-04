@@ -60,6 +60,8 @@ basicCPEModel.modelPermissions = function() {
       macAccessControl: false,
       wlanAccessControl: false,
       hasIpv6Information: false, // Has any information about IPv6
+      hasCPUUsage: false, // Has any info about CPU Usage
+      hasMemoryUsage: false, // Has any info about Memory Usage
     },
     firmwareUpgrades: {
       'v0.0.0': [],
@@ -924,6 +926,13 @@ basicCPEModel.getModelFields = function() {
         signal: 'RSSI',
         band: 'BandWidth',
         mode: 'Standard',
+      },
+      statistics: {
+        cpu_usage: 'InternetGatewayDevice.DeviceInfo.ProcessStatus.CPUUsage',
+        memory_free: 'InternetGatewayDevice.DeviceInfo.MemoryStatus.Free',
+        memory_total: 'InternetGatewayDevice.DeviceInfo.MemoryStatus.Total',
+        memory_usage: '', // Some routers come with only the percentage in this
+        // field, instead of both free and total memory
       },
     },
   };

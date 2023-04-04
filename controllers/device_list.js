@@ -1951,17 +1951,31 @@ deviceListController.sendCommandMsg = async function(req, res) {
         Audit.cpe(req.user, device, 'trigger', {'cmd': 'upstatus'});
         break;
       case 'wanbytes':
+        // Check permission
+        if (!permissions.grantStatisticsSupport) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
+        // Set the wait notification
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForStatisticsNotification(
             req.sessionID,
             req.params.id.toUpperCase(),
           );
         }
+
+        // Execute for TR-069
         if (device && device.use_tr069) {
           acsDeviceInfo.requestStatistics(device);
+
+        // Execute for Flashbox
         } else {
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
         }
+
         break;
       case 'waninfo':
         // Check permission

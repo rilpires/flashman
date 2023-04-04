@@ -5,6 +5,7 @@ const models = require('../common/models');
 
 const measureController = require('../../controllers/handlers/acs/measures');
 const utilHandlers = require('../../controllers/handlers/util');
+const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const sio = require('../../sio');
 
 const DeviceModel = require('../../models/device');
@@ -536,6 +537,1373 @@ describe('Handlers/ACS/Measures Tests', () => {
   });
 
 
+  // fetchWanBytesFromGenie
+  describe('fetchWanBytesFromGenie', () => {
+    // Invalid acs ID - empty string
+    test('Invalid acs ID - empty string', async () => {
+      // Mocks
+      utils.common.mockDevices(null, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => true);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie('');
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+    });
+
+
+    // Invalid acs ID - null
+    test('Invalid acs ID - null', async () => {
+      // Mocks
+      utils.common.mockDevices(null, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => true);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(null);
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+    });
+
+
+    // Invalid device
+    test('Invalid device', async () => {
+      // Mocks
+      utils.common.mockDevices(null, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => true);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie('abc');
+
+      // Validate
+      expect(errorSpy).toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+    });
+
+
+    // Device not TR-069
+    test('Device not TR-069', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      device.use_tr069 = false;
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => true);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie('abc');
+
+      // Validate
+      expect(errorSpy).toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+    });
+
+
+    // Invalid cpe instance
+    test('Invalid cpe instance', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      device.acs_id = '';
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => true);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie('abc');
+
+      // Validate
+      expect(errorSpy).toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+    });
+
+
+    // Invalid data response
+    test('Invalid data response', async () => {
+      let device = {...models.defaultMockDevices[0]};
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => false);
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie('abc');
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toBeCalled();
+    });
+
+
+    // Fields with *
+    test('Fields with *', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        0: {
+          recv_bytes: {_value: '1234'},
+          sent_bytes: {_value: '1234'},
+        }, 1: {
+          recv_bytes: {_value: '5678'},
+          sent_bytes: {_value: '8765'},
+        },
+      }, diagnostics: {
+        0: {statistics: {
+          cpu_usage: {_value: '12'},
+          memory_free: {_value: '1234'},
+          memory_total: {_value: '5678'},
+        }}, 1: {statistics: {
+          cpu_usage: {_value: '56'},
+          memory_free: {_value: '5678'},
+          memory_total: {_value: '9012'},
+        }},
+      }}];
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.fields[0], '',
+      );
+      fields.wan.recv_bytes = 'wan.*.recv_bytes';
+      fields.wan.sent_bytes = 'wan.*.sent_bytes';
+
+      fields.diagnostics.statistics.cpu_usage =
+        'diagnostics.*.statistics.cpu_usage';
+      fields.diagnostics.statistics.memory_free =
+        'diagnostics.*.statistics.memory_free';
+      fields.diagnostics.statistics.memory_total =
+        'diagnostics.*.statistics.memory_total';
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan,wan,diagnostics,diagnostics,diagnostics',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            // Math.ceil((Free - Total) * 100 / Total)
+            mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // Fields with * - Memory usage field
+    test('Fields with * - Memory usage field', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        0: {
+          recv_bytes: {_value: '1234'},
+          sent_bytes: {_value: '1234'},
+        }, 1: {
+          recv_bytes: {_value: '5678'},
+          sent_bytes: {_value: '8765'},
+        },
+      }, diagnostics: {
+        0: {statistics: {
+          cpu_usage: {_value: '12'},
+          memory_usage: {_value: '34'},
+        }}, 1: {statistics: {
+          cpu_usage: {_value: '56'},
+          memory_usage: {_value: '78'},
+        }},
+      }}];
+      let permissions = {...fieldsAndPermissions.cpePermissions[0]};
+      let fields = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.fields[0], '',
+      );
+      fields.wan.recv_bytes = 'wan.*.recv_bytes';
+      fields.wan.sent_bytes = 'wan.*.sent_bytes';
+
+      fields.diagnostics.statistics.cpu_usage =
+        'diagnostics.*.statistics.cpu_usage';
+      fields.diagnostics.statistics.memory_usage =
+        'diagnostics.*.statistics.memory_usage';
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan,wan,diagnostics,diagnostics',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            mem_usage: 78,
+          },
+        },
+      );
+    });
+
+
+    // No permission
+    test('No permission', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '5678'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '56'},
+        memory_usage: {_value: '78'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+      let permissions = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.cpePermissions[0], false,
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '5678'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {wanbytes: wanBytes},
+      );
+    });
+
+
+    // All permissions with no data
+    test('All permissions with no data', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{teste: '123'}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).not.toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {},
+      );
+    });
+
+
+    // All permissions
+    test('All permissions', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '56'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            // Math.ceil((Free - Total) * 100 / Total)
+            mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // All permissions - Memory usage
+    test('All permissions - Memory usage', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '56'},
+        memory_usage: {_value: '78'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 56,
+            mem_usage: 78,
+          },
+        },
+      );
+    });
+
+
+    // Invalid CPU usage - -1
+    test('Invalid CPU usage - -1', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '-1'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            // Math.ceil((Free - Total) * 100 / Total)
+            mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // Invalid CPU usage - 101
+    test('Invalid CPU usage - 101', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '101'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            // Math.ceil((Free - Total) * 100 / Total)
+            mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // Invalid CPU usage - character
+    test('Invalid CPU usage - character', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: 'a'},
+        memory_free: {_value: '5678'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            // Math.ceil((Free - Total) * 100 / Total)
+            mem_usage: Math.ceil((9012 - 5678) * 100 / 9012),
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - -1
+    test('Invalid Memory usage - -1', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_usage: {_value: '-1'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - 101
+    test('Invalid Memory usage - 101', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_usage: {_value: '101'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory usage - character
+    test('Invalid Memory usage - character', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '15'},
+        memory_usage: {_value: 'a'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            // Math.ceil((Free - Total) * 100 / Total)
+            cpu_usage: 15,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Free - -1
+    test('Invalid Memory Free - -1', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_free: {_value: '-1'},
+        memory_total: {_value: '9012'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Free - Bigger than Memory Total
+    test('Invalid Memory Free - Bigger than Memory Total', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_free: {_value: '200'},
+        memory_total: {_value: '100'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Free - character
+    test('Invalid Memory Free - character', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_free: {_value: 'a'},
+        memory_total: {_value: '100'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Total - -1
+    test('Invalid Memory Total - -1', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_free: {_value: '200'},
+        memory_total: {_value: '-1'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Total - character
+    test('Invalid Memory Total - character', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: '50'},
+        memory_free: {_value: '200'},
+        memory_total: {_value: 'a'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          wanbytes: wanBytes,
+          resources: {
+            cpu_usage: 50,
+          },
+        },
+      );
+    });
+
+
+    // Invalid Memory Total and CPU usage
+    test('Invalid Memory Total and CPU usage', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: 'a'},
+        memory_free: {_value: '200'},
+        memory_total: {_value: 'a'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {wanbytes: wanBytes},
+      );
+    });
+
+
+    // Invalid Memory Free and CPU usage
+    test('Invalid Memory Free and CPU usage', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      let data = [{wan: {
+        recv_bytes: {_value: '5678'},
+        sent_bytes: {_value: '8765'},
+      }, diagnostics: {statistics: {
+        cpu_usage: {_value: 'a'},
+        memory_free: {_value: 'a'},
+        memory_total: {_value: '100'},
+      }}}];
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => {
+          return {catch: () => true};
+        });
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => data);
+      let sioSpy = jest.spyOn(sio, 'anlixSendStatisticsNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        fieldsAndPermissions.cpePermissions[0],
+        fieldsAndPermissions.fields[0],
+      );
+      jest.useFakeTimers().setSystemTime(Date.now());
+
+
+      // Execute
+      await measureController.fetchWanBytesFromGenie(device.acs_id);
+
+
+      // Validate
+      let wanBytes = {};
+      wanBytes[Object.keys(device.wan_bytes)[0]] =
+        device.wan_bytes[Object.keys(device.wan_bytes)[0]];
+      wanBytes[Date.now().toString().slice(0, -3)] = ['5678', '8765'];
+
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toHaveBeenCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.recv_bytes,wan.sent_bytes,diagnostics.statistics.cpu_usage,' +
+        'diagnostics.statistics.memory_usage,diagnostics.statistics.' +
+        'memory_free,diagnostics.statistics.' +
+        'memory_total',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {wanbytes: wanBytes},
+      );
+    });
+  });
+
+
   describe('fetchWanInformationFromGenie', () => {
     // Invalid acs ID - empty string
     test('Invalid acs ID - empty string', async () => {
@@ -576,7 +1944,7 @@ describe('Handlers/ACS/Measures Tests', () => {
         });
 
       // Execute
-      await measureController.fetchWanInformationFromGenie('');
+      await measureController.fetchWanInformationFromGenie(null);
 
       // Validate
       expect(errorSpy).not.toBeCalled();
