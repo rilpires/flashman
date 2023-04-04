@@ -771,10 +771,10 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
     // If does not have permission continue to the next field
     if (!fieldObject.permission) return;
 
-    // Set the field according
-    if (fieldObject.isIPv6) {
+    // Set the field according if has ipv6
+    if (fieldObject.isIPv6 && permissions.features.hasIpv6Information) {
       fieldObject.field = fields.ipv6[fieldObject.path + suffixPPPoE];
-    } else {
+    } else if (!fieldObject.isIPv6) {
       fieldObject.field = fields.wan[fieldObject.path + suffixPPPoE];
     }
 
@@ -995,7 +995,16 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
 
 
   // If does not have any IPv6 information, exit
-  if (!permissions.features.hasIpv6Information) return;
+  if (!permissions.features.hasIpv6Information) {
+    // Send an empty notification to not stall frontend
+    sio.anlixSendLanInfoNotification(device._id, {
+      prefix_delegation_addr: '',
+      prefix_delegation_mask: '',
+      prefix_delegation_local: '',
+    });
+
+    return;
+  }
 
 
   // Check PPPoE
