@@ -47,6 +47,65 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
+// Function explodes the keys according to the points and excludes the field
+// name in order to generate the parent tree from this node. Returns an array
+// with the name of the parent nodes plus '.*.*' at the end
+const parentNodeGenerator = function(fields) {
+  let nodes = [];
+  Object.keys(fields).forEach((key) => {
+    let node;
+    if (fields[key].includes('*')) {
+      node = fields[key]
+      .split('.').slice(0, -1)
+      .join('.') + '.*';
+    } else {
+      node = fields[key]
+      .split('.').slice(0, -2)
+      .join('.') + '.*.*';
+    }
+    if (!nodes.includes(node)) {
+      nodes.push(node);
+    }
+  });
+  return nodes;
+};
+
+const updateWanConfiguration = function(fields) {
+  let nodes = parentNodeGenerator(fields);
+  let result = {};
+  for (let node of nodes) {
+    let type = node.includes('PPP') ? 'ppp_' :
+               node.includes('IP') ? 'dhcp_' : 'common';
+    // Update node
+    let responses = declare(node, {value: now, writable: now});
+    if (responses.value) {
+      for (let resp of responses) {
+        if (resp.value) {
+          let field = {};
+          field.path = resp.path;
+          field.writable = resp.writable;
+          field.value = resp.value;
+          if (type !== 'common') {
+            // Extract last numeric index from path to differentiate WANs
+            let i = field.path.match(/\.(\d+)(?!.*\.\d+)/)[1];
+            let key = 'wan_' + type + i;
+            if (!result[key]) {
+              result[key] = [];
+            }
+            result[key].push(field);
+          } else {
+            // Adds common fields to all WANs
+            Object.keys(result).forEach((key) => {
+              result[key].push(field);
+            });
+          }
+        }
+      }
+    }
+  }
+  return result;
+}
+
 const fetchPortFoward = function(fields, data) {
   let base = '';
   let ret = [];
@@ -147,6 +206,7 @@ let data = {
   mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
+
 /*if the nature of sync is for create a device and the device already
   had previous port mapping entries, then we send back these entries
   on creation to avoid sync race condition after the creation of
