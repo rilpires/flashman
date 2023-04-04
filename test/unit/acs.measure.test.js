@@ -2150,6 +2150,77 @@ describe('Handlers/ACS/Measures Tests', () => {
     });
 
 
+    // No IPv6 permission
+    test('No IPv6 permission', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      device.connection_type = 'pppoe';
+      let data = {wan: {
+          wan_ip_ppp: {_value: '1234'},
+          mask_ipv4_ppp: {_value: '5678'},
+          remote_address_ppp: {_value: '9012'},
+          remote_mac_ppp: {_value: '3456'},
+          default_gateway_ppp: {_value: '7890'},
+          dns_servers_ppp: {_value: '1234'}},
+        ipv6: {
+          address_ppp: {_value: '1234'},
+          mask_ppp: {_value: '5678'},
+          default_gateway_ppp: {_value: '9012'},
+        },
+      };
+      let permissions = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.cpePermissions[0], true,
+      );
+      permissions.features.hasIpv6Information = false;
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendWanInfoNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fieldsAndPermissions.fields[0],
+      );
+
+
+      // Execute
+      await measureController.fetchWanInformationFromGenie(device.acs_id);
+
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).toBeCalledWith(
+        'devices',
+        {_id: device.acs_id},
+        'wan.wan_ip_ppp,wan.mask_ipv4_ppp,wan.remote_address_ppp,' +
+        'wan.remote_mac_ppp,wan.default_gateway_ppp,wan.dns_servers_ppp',
+      );
+      expect(saveSpy).toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          default_gateway_v4: '7890',
+          default_gateway_v6: '',
+          dns_server: '1234',
+          ipv4_address: '1234',
+          ipv4_mask: '5678',
+          ipv6_address: '',
+          ipv6_mask: '0',
+          pppoe_ip: '9012',
+          pppoe_mac: '3456',
+          wan_conn_type: device.connection_type,
+        },
+      );
+    });
+
+
     // All permissions with no data
     test('All permissions with no data', async () => {
       let device = {...models.defaultMockDevices[0]};
@@ -2598,6 +2669,8 @@ describe('Handlers/ACS/Measures Tests', () => {
         .mockImplementation(() => true);
       let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
         .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
+        .mockImplementation(() => true);
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true,
         permissions,
@@ -2612,6 +2685,14 @@ describe('Handlers/ACS/Measures Tests', () => {
       // Validate
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).not.toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          prefix_delegation_addr: '',
+          prefix_delegation_local: '',
+          prefix_delegation_mask: '',
+        },
+      );
     });
 
 
@@ -2721,6 +2802,57 @@ describe('Handlers/ACS/Measures Tests', () => {
           prefix_delegation_addr: '',
           prefix_delegation_local: '',
           prefix_delegation_mask: '',
+        },
+      );
+    });
+
+
+    // No IPv6 permission
+    test('No IPv6 permission', async () => {
+      let device = {...models.defaultMockDevices[0]};
+      device.connection_type = 'pppoe';
+      let data = {ipv6: {
+        prefix_delegation_address_ppp: {_value: '1234'},
+        prefix_delegation_mask_ppp: {_value: '5678'},
+        prefix_delegation_local_address_ppp: {_value: '9012'},
+      }};
+      let permissions = fieldsAndPermissions.setAllObjectValues(
+        fieldsAndPermissions.cpePermissions[0], true,
+      );
+      permissions.features.hasIpv6Information = false;
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+      let errorSpy = jest.spyOn(console, 'error')
+        .mockImplementation(() => true);
+      let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockImplementation(() => [data]);
+      let sioSpy = jest.spyOn(sio, 'anlixSendLanInfoNotification')
+        .mockImplementation(() => true);
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fieldsAndPermissions.fields[0],
+      );
+
+
+      // Execute
+      await measureController.fetchLanInformationFromGenie(device.acs_id);
+
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(requestSpy).not.toBeCalled();
+      expect(saveSpy).not.toBeCalled();
+      expect(sioSpy).toHaveBeenCalledWith(
+        device._id,
+        {
+          prefix_delegation_addr: '',
+          prefix_delegation_mask: '',
+          prefix_delegation_local: '',
         },
       );
     });
