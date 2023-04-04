@@ -300,6 +300,7 @@ let deviceSchema = new Schema({
     started_at: {type: Date},
     last_modified_at: {type: Date},
     targets: [String],
+    send_error: {type: Boolean},
     user: {type: String},
     webhook_url: {type: String, default: ''},
     webhook_user: {type: String, default: ''},
