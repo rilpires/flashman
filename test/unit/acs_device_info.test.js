@@ -1,14 +1,13 @@
 require('../../bin/globals');
 
-// Override process environment variable to avoid starting genie
-process.env.FLM_GENIE_IGNORED = 'TESTE!';
-
 const utils = require('../common/utils');
 const models = require('../common/models');
 const fieldsAndPermissions = require('../common/fieldsAndPermissions');
 
 // Mock the config (used in language.js)
 utils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
+const genutils = require('../utils');
 
 const acsDeviceInfoController = require('../../controllers/acs_device_info');
 const devicesAPI = require('../../controllers/external-genieacs/devices-api');
@@ -21,20 +20,11 @@ const updateSchedulerCommon = require(
   '../../controllers/update_scheduler_common',
 );
 const DeviceModel = require('../../models/device');
-
-const http = require('http');
-const DeviceVersion = require('../../models/device_version');
 const t = require('../../controllers/language').i18next.t;
 
-// Mock the mqtts (avoid aedes)
-jest.mock('../../mqtts', () => {
-  return {
-    __esModule: false,
-    unifiedClientsMap: {},
-    anlixMessageRouterUpdate: () => undefined,
-    getConnectedClients: () => [],
-  };
-});
+const mockRequest = (app, body) => {
+  return {app: app, body: body};
+};
 
 let bodyField = (value, writable) => {
   return {value: value, writable: writable};
@@ -99,7 +89,7 @@ let assembleBody = (device) => {
         lease_min_ip: bodyField('192.168.1.33', 1),
         lease_max_ip: bodyField('192.168.1.253', 1),
         ip_routers: bodyField('192.168.1.1', 1),
-        dns_servers: bodyField('192.168.1.1', 1),
+        dns_servers: bodyField(device.lan_dns_servers, 1),
       },
       wifi2: {
         ssid: bodyField(device.wifi_ssid, 1),
@@ -754,10 +744,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -817,10 +804,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -882,10 +866,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -951,10 +932,7 @@ describe('ACS Device Info Tests', () => {
         let body = assembleBody(device);
 
         // Mocks
-        const mockRequest = () => {
-          return {app: app, body: body};
-        };
-        let req = mockRequest();
+        let req = mockRequest(app, body);
 
         // Spies
         let reportOnuDevicesSpy =
@@ -986,6 +964,180 @@ describe('ACS Device Info Tests', () => {
       },
     );
 
+    test(
+      'Receives valid value for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
+            model: 'WS5200-40', // Huawei  WS5200-40
+            version: '2.0.0.505(C947)',
+            hw_version: 'VER.A',
+            lan_dns_servers: '192.168.3.1,192.168.2.1', // Valid value
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // It is expected that: the field value of lan_dns_servers is accepted
+        // and strictly equal to the passed value
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: device.lan_dns_servers}),
+          ]),
+        );
+      },
+    );
+
+    test(
+      'Receives a list with repeated IP addresses for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '00E0FC-WS5200%2D40-XQFQU21607004481',
+            model: 'WS5200-40', // Huawei  WS5200-40
+            version: '2.0.0.505(C947)',
+            hw_version: 'VER.A',
+            lan_dns_servers: '192.168.3.1,192.168.3.1', // Duplicated value
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // Is expected lan_dns_servers field value to filter out duplicate
+        // addresses
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: '192.168.3.1'}),
+          ]),
+        );
+      },
+    );
+
+    test(
+      'Receives an empty field for lan_dns_servers',
+      async () => {
+        const id = models.defaultMockDevices[0]._id;
+        const device = models.copyDeviceFrom(
+          id,
+          {
+            _id: '94:46:96:8c:23:61',
+            acs_id: '1C61B4-IGD-22271K1007249',
+            model: 'EC220-G5', // Tp-Link EC220-G5
+            version: '3.16.0 0.9.1 v6055.0 Build 220706 Rel.79244n',
+            hw_version: 'EC220-G5 v2 00000003',
+            // Field is undefined because the router does not allow reading and
+            // writing of it
+            lan_dns_servers: undefined,
+          },
+        );
+        let splitID = device.acs_id.split('-');
+        let model = splitID.slice(1, splitID.length-1).join('-');
+
+        const cpe = devicesAPI.instantiateCPEByModel(
+          model, device.model, device.version, device.hw_version,
+        ).cpe;
+
+        let permissions = deviceVersion.devicePermissions(device);
+
+        let app = {
+          locals: {
+            secret: '123',
+          },
+        };
+
+        let body = assembleBody(device);
+
+        // Mocks
+        let req = mockRequest(app, body);
+
+        // Spies
+        let reportOnuDevicesSpy =
+          jest.spyOn(acsDeviceInfoController, 'reportOnuDevices');
+
+        // Execute
+        let ret = await acsDeviceInfoController.__testCreateRegistry(
+          req, cpe, permissions,
+        );
+
+        // Verify
+        expect(ret).toStrictEqual(true);
+
+        // It is expected field lan_dns_servers to be undefined
+        expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
+          app,
+          expect.arrayContaining([
+            expect.objectContaining({lan_dns_servers: undefined}),
+          ]),
+        );
+      },
+    );
 
     // Validate WAN and LAN information
     test('WAN & LAN information', async () => {
@@ -4115,201 +4267,60 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-
+  // TODO: Extend those tests for others routers/changes
   describe('fetchSyncResult', () => {
-    // Invalid acs ID
-    test('Invalid acs ID', async () => {
-      const device = models.defaultMockDevices[0];
+    let genieDataZte;
+    let zteParamFields;
+    let zteFetchFields;
 
-      let parameterNames = fieldsAndPermissions.getAllObjectValues(
-        fieldsAndPermissions.fields[0],
-      );
-
-      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-
-
-      // Mocks
-      let requestEndSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
-        return {
-          end: requestEndSpy,
-        };
-      });
-
-
-      // Execute
-      await acsDeviceInfoController.__testFetchSyncResult(
-        '', [], parameterNames, cpe,
-      );
-
-      // Validate
-      expect(requestSpy).toBeCalled();
-      expect(requestEndSpy).toBeCalled();
+    beforeEach(() => {
+      // Reset variables
+      genieDataZte = utils.common.loadFile(
+        '../assets/flashman-test/genie-data/ZTE_TR069_DATA.json');
+      zteParamFields = utils.common.loadFile(
+        '../assets/flashman-test/genie-data/ZTE_param_names', false);
+      zteFetchFields = utils.common.loadFile(
+        '../assets/flashman-test/genie-data/ZTE_fetch_fields.json');
     });
 
+    // Genie will report new values for WAN and
+    // device must change the fields in save.
+    test('Check WAN change', async () => {
+      const id = models.defaultMockDevices[0]._id;
+      const device = models.copyDeviceFrom(
+        id,
+        {
+          _id: 'C0:B1:01:31:71:6E',
+          acs_id: 'C0B101-ZXHN%20H199A-ZTEYH86LCN10105',
+          model: 'ZXHN H199A',
+          version: 'V9.1.0P4N3_MUL',
+          hw_version: 'V9.1.1',
 
-    // Invalid parameter names
-    test('Invalid parameter names', async () => {
-      const device = models.defaultMockDevices[0];
-
-      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-
-
-      // Mocks
-      let requestEndSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
-        return {
-          end: requestEndSpy,
-        };
-      });
-
-
-      // Execute
-      await acsDeviceInfoController.__testFetchSyncResult(
-        device.acs_id, [], [], cpe,
-      );
-
-      // Validate
-      expect(requestSpy).toBeCalled();
-      expect(requestEndSpy).toBeCalled();
-    });
-
-
-    // Invalid cpe
-    test('Invalid cpe', async () => {
-      const device = {...models.defaultMockDevices[0]};
-      device.acs_id = '';
-
-      let parameterNames = fieldsAndPermissions.getAllObjectValues(
-        fieldsAndPermissions.fields[0],
+          ip: '172.27.0.20',
+          wan_ip: '172.27.0.10',
+        },
       );
 
       const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
 
-
       // Mocks
-      let requestEndSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request').mockImplementation(() => {
-        return {
-          end: requestEndSpy,
-        };
-      });
+      utils.common.mockAwaitDevices(device, 'findOne');
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockResolvedValue([genieDataZte]);
 
+      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey');
+      acsDeviceInfoController.updateInfo = genutils.waitableMock();
 
       // Execute
-      await acsDeviceInfoController.__testFetchSyncResult(
-        device.acs_id, [], parameterNames, cpe,
+      acsDeviceInfoController.__testFetchSyncResult(
+        device.acs_id, zteFetchFields, zteParamFields.split(','), cpe,
       );
+      await acsDeviceInfoController.updateInfo.waitToHaveBeenCalled(1);
 
       // Validate
-      expect(requestSpy).toBeCalled();
-      expect(requestEndSpy).toBeCalled();
-    });
-
-
-    // No data to fetch
-    test('No data to fetch', async () => {
-      const device = {...models.defaultMockDevices[0]};
-      device.acs_id = '';
-
-      let parameterNames = fieldsAndPermissions.getAllObjectValues(
-        fieldsAndPermissions.fields[0],
-      );
-
-      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-      let data = '';
-
-
-      // Mocks
-      utils.common.mockDevices(null, 'findOne');
-      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey')
-        .mockImplementation(() => undefined);
-      let permissionSpy = jest.spyOn(DeviceVersion, 'devicePermissions')
-        .mockImplementation(() => true);
-      let requestEndSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          return {
-            end: requestEndSpy,
-          };
-      });
-
-
-      // Execute
-      await acsDeviceInfoController.__testFetchSyncResult(
-        device.acs_id, [], parameterNames, cpe,
-      );
-
-      // Validate
-      expect(requestSpy).toBeCalled();
-      expect(requestEndSpy).toBeCalled();
-      expect(permissionSpy).not.toBeCalled();
-      expect(nestedSpy).not.toBeCalled();
-    });
-
-
-    // All data to fetch
-    test('All data to fetch', async () => {
-      const device = {...models.defaultMockDevices[0]};
-      device.acs_id = '';
-
-      let parameterNames = fieldsAndPermissions.getAllObjectValues(
-        fieldsAndPermissions.fields[0],
-      );
-
-      const cpe = devicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-      let data = '';
-      const dataToFetch = {
-        basic: true, alt_uid: true, web_admin_user: true, web_admin_pass: true,
-        wan: true, ipv6: true, vlan: true, vlan_ppp: true, bytes: true,
-        pon: true, lan: true, wifi2: true, wifiMode: true, wifiBand: true,
-        wifi5: true, mesh2: true, mesh5: true, port_forward: true, stun: true,
-        fields: fieldsAndPermissions.fields[0],
-      };
-
-
-      // Mocks
-      utils.common.mockDevices(null, 'findOne');
-      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey')
-        .mockImplementation(() => undefined);
-      let permissionSpy = jest.spyOn(DeviceVersion, 'devicePermissions')
-        .mockImplementation(() => true);
-      let requestEndSpy = jest.fn();
-      let requestSpy = jest.spyOn(http, 'request')
-        .mockImplementation((options, callback) => {
-          callback({
-            setEncoding: () => true,
-            on: async (type, callback2) => {
-              if (type === 'data') callback2(data);
-              if (type === 'end') await callback2();
-            },
-          });
-
-          return {
-            end: requestEndSpy,
-          };
-      });
-
-
-      // Execute
-      await acsDeviceInfoController.__testFetchSyncResult(
-        device.acs_id, dataToFetch, parameterNames, cpe,
-      );
-
-
-      // Validate
-      expect(requestSpy).toBeCalled();
-      expect(requestEndSpy).toBeCalled();
-      expect(permissionSpy).not.toBeCalled();
-      expect(nestedSpy).toBeCalledTimes(77);
+      expect(nestedSpy).toBeCalledTimes(59);
+      expect(device).toMatchObject({ip: '192.168.89.130'});
+      expect(device).toMatchObject({wan_ip: '192.168.89.227'});
     });
   });
 

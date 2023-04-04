@@ -24,6 +24,7 @@ huaweiModel.modelPermissions = function() {
     '10.0.5.9(C506)': [],
     '10.0.5.5(C947)': [],
   };
+  permissions.lan.dnsServersLimit = 2;
   return permissions;
 };
 
