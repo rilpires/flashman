@@ -11,7 +11,7 @@ module.exports = promBundle({
   includeStatusCode: true,
   metricsPath: metricsPath,
   metricType: 'summary',
-  percentiles: [0.05, 0.5, 0.95],
+  percentiles: [],
   ageBuckets: 10,
   maxAgeSeconds: 3600,
   pruneAgedBuckets: true,
