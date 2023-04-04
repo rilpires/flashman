@@ -1,0 +1,267 @@
+{
+  "basic": true,
+  "alt_uid": true,
+  "web_admin_user": true,
+  "web_admin_pass": true,
+  "wan": true,
+  "ipv6": true,
+  "vlan": true,
+  "bytes": true,
+  "pon": true,
+  "lan": true,
+  "wifi2": true,
+  "wifi5": true,
+  "wifiMode": true,
+  "wifiBand": true,
+  "mesh2": false,
+  "mesh5": false,
+  "port_forward": true,
+  "stun": false,
+  "fields": {
+    "common": {
+      "mac": "InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.MACAddress",
+      "model": "InternetGatewayDevice.DeviceInfo.ModelName",
+      "version": "InternetGatewayDevice.DeviceInfo.SoftwareVersion",
+      "hw_version": "InternetGatewayDevice.DeviceInfo.HardwareVersion",
+      "uptime": "InternetGatewayDevice.DeviceInfo.UpTime",
+      "ip": "InternetGatewayDevice.ManagementServer.ConnectionRequestURL",
+      "acs_url": "InternetGatewayDevice.ManagementServer.URL",
+      "interval": "InternetGatewayDevice.ManagementServer.PeriodicInformInterval",
+      "web_admin_username": "InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.UserName",
+      "web_admin_password": "InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password"
+    },
+    "wan": {
+      "pppoe_enable": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable",
+      "pppoe_user": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Username",
+      "pppoe_pass": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Password",
+      "rate": "InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.MaxBitRate",
+      "duplex": "InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.DuplexMode",
+      "wan_ip": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.ExternalIPAddress",
+      "wan_ip_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.ExternalIPAddress",
+      "wan_mac": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.MACAddress",
+      "wan_mac_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.MACAddress",
+      "remote_address_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.RemoteIPAddress",
+      "default_gateway": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.DefaultGateway",
+      "default_gateway_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.DefaultGateway",
+      "dns_servers": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.DNSServers",
+      "dns_servers_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.DNSServers",
+      "uptime": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.Uptime",
+      "uptime_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Uptime",
+      "mtu": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.MaxMTUSize",
+      "mtu_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.MaxMRUSize",
+      "recv_bytes": "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesReceived",
+      "sent_bytes": "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.BytesSent",
+      "port_mapping_entries_dhcp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries",
+      "port_mapping_entries_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries",
+      "pon_rxpower": "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower",
+      "pon_txpower": "InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower",
+      "vlan": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN",
+      "vlan_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN"
+    },
+    "port_mapping_dhcp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.PortMapping",
+    "port_mapping_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.PortMapping",
+    "port_mapping_fields": {
+      "external_port_start": [
+        "ExternalPort",
+        "external_port_start",
+        "xsd:unsignedInt"
+      ],
+      "internal_port_start": [
+        "InternalPort",
+        "internal_port_start",
+        "xsd:unsignedInt"
+      ],
+      "client": [
+        "InternalClient",
+        "ip",
+        "xsd:string"
+      ],
+      "internal_port_end": [
+        "X_HW_InternalEndPort",
+        "internal_port_end",
+        "xsd:unsignedInt"
+      ],
+      "external_port_end": [
+        "ExternalPortEndRange",
+        "external_port_end",
+        "xsd:unsignedInt"
+      ]
+    },
+    "port_mapping_values": {
+      "enable": [
+        "PortMappingEnabled",
+        true,
+        "xsd:boolean"
+      ],
+      "lease": [
+        "PortMappingLeaseDuration",
+        0,
+        "xsd:unsignedInt"
+      ],
+      "protocol": [
+        "PortMappingProtocol",
+        "TCP/UDP",
+        "xsd:string"
+      ],
+      "description": [
+        "PortMappingDescription",
+        "",
+        "xsd:string"
+      ]
+    },
+    "lan": {
+      "config_enable": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.Enable",
+      "router_ip": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceIPAddress",
+      "subnet_mask": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPInterface.1.IPInterfaceSubnetMask",
+      "lease_min_ip": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MinAddress",
+      "lease_max_ip": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.MaxAddress",
+      "ip_routers": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.IPRouters",
+      "dns_servers": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.DNSServers"
+    },
+    "ipv6": {
+      "address": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.IPAddress",
+      "address_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.IPAddress",
+      "default_gateway": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.DefaultGateway",
+      "default_gateway_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.DefaultGateway",
+      "prefix_delegation_address": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix",
+      "prefix_delegation_address_ppp": "InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix",
+      "prefix_delegation_local_address": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.Prefix",
+      "prefix_delegation_local_address_ppp": "InternetGatewayDevice.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.Prefix"
+    },
+    "wifi2": {
+      "ssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.SSID",
+      "bssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BSSID",
+      "password": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.PreSharedKey",
+      "channel": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Channel",
+      "auto": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AutoChannelEnable",
+      "mode": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Standard",
+      "enable": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.Enable",
+      "beacon_type": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.BeaconType",
+      "band": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HW_HT20"
+    },
+    "wifi5": {
+      "ssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.SSID",
+      "bssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BSSID",
+      "password": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.PreSharedKey",
+      "channel": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Channel",
+      "auto": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AutoChannelEnable",
+      "mode": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Standard",
+      "enable": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.Enable",
+      "beacon_type": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.BeaconType",
+      "band": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_HW_HT20"
+    },
+    "mesh2": {
+      "ssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSID",
+      "bssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BSSID",
+      "password": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.PreSharedKey.1.PreSharedKey",
+      "channel": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Channel",
+      "auto": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.AutoChannelEnable",
+      "mode": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Standard",
+      "enable": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.Enable",
+      "advertise": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.SSIDAdvertisementEnabled",
+      "encryption": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.WPAEncryptionModes",
+      "beacon_type": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BeaconType",
+      "rates": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.BasicDataTransmitRates",
+      "radio_info": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.2.LowerLayers"
+    },
+    "mesh5": {
+      "ssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSID",
+      "bssid": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BSSID",
+      "password": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.PreSharedKey.1.PreSharedKey",
+      "channel": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.Channel",
+      "auto": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.AutoChannelEnable",
+      "mode": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.Standard",
+      "enable": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.Enable",
+      "advertise": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.SSIDAdvertisementEnabled",
+      "encryption": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.WPAEncryptionModes",
+      "beacon_type": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BeaconType",
+      "rates": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.BasicDataTransmitRates",
+      "radio_info": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.3.LowerLayers"
+    },
+    "log": "InternetGatewayDevice.DeviceInfo.DeviceLog",
+    "stun": {
+      "address": "InternetGatewayDevice.ManagementServer.STUNServerAddress",
+      "port": "InternetGatewayDevice.ManagementServer.STUNServerPort"
+    },
+    "access_control": {
+      "mac": "InternetGatewayDevice.Firewall.MacFilterService",
+      "wifi2": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AccessControl",
+      "wifi5": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.AccessControl"
+    },
+    "devices": {
+      "hosts": "InternetGatewayDevice.LANDevice.1.Hosts",
+      "hosts_template": "InternetGatewayDevice.LANDevice.1.Hosts.Host",
+      "host_mac": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.MACAddress",
+      "host_name": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.HostName",
+      "host_ip": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.IPAddress",
+      "host_layer2": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Layer2Interface",
+      "host_active": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.Active",
+      "host_rssi": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI",
+      "host_snr": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR",
+      "host_cable_rate": "InternetGatewayDevice.LANDevice.1.Hosts.Host.*.X_HW_NegotiatedRate",
+      "host_rate": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.X_HW_TxRate",
+      "associated": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice",
+      "assoc_mac": "InternetGatewayDevice.LANDevice.1.WLANConfiguration.*.AssociatedDevice.*.AssociatedDeviceMACAddress"
+    },
+    "diagnostics": {
+      "ping": {
+        "root": "InternetGatewayDevice.IPPingDiagnostics",
+        "diag_state": "InternetGatewayDevice.IPPingDiagnostics.DiagnosticsState",
+        "failure_count": "InternetGatewayDevice.IPPingDiagnostics.FailureCount",
+        "success_count": "InternetGatewayDevice.IPPingDiagnostics.SuccessCount",
+        "host": "InternetGatewayDevice.IPPingDiagnostics.Host",
+        "interface": "InternetGatewayDevice.IPPingDiagnostics.Interface",
+        "num_of_rep": "InternetGatewayDevice.IPPingDiagnostics.NumberOfRepetitions",
+        "avg_resp_time": "InternetGatewayDevice.IPPingDiagnostics.AverageResponseTime",
+        "max_resp_time": "InternetGatewayDevice.IPPingDiagnostics.MaximumResponseTime",
+        "min_resp_time": "InternetGatewayDevice.IPPingDiagnostics.MinimumResponseTime",
+        "timeout": "InternetGatewayDevice.IPPingDiagnostics.Timeout"
+      },
+      "speedtest": {
+        "root": "InternetGatewayDevice.DownloadDiagnostics",
+        "diag_state": "InternetGatewayDevice.DownloadDiagnostics.DiagnosticsState",
+        "num_of_conn": "InternetGatewayDevice.DownloadDiagnostics.NumberOfConnections",
+        "download_url": "InternetGatewayDevice.DownloadDiagnostics.DownloadURL",
+        "bgn_time": "InternetGatewayDevice.DownloadDiagnostics.BOMTime",
+        "end_time": "InternetGatewayDevice.DownloadDiagnostics.EOMTime",
+        "test_bytes_rec": "InternetGatewayDevice.DownloadDiagnostics.TestBytesReceived",
+        "down_transports": "InternetGatewayDevice.DownloadDiagnostics.DownloadTransports",
+        "full_load_bytes_rec": "InternetGatewayDevice.DownloadDiagnostics.TestBytesReceivedUnderFullLoading",
+        "full_load_period": "InternetGatewayDevice.DownloadDiagnostics.PeriodOfFullLoading",
+        "interface": "InternetGatewayDevice.DownloadDiagnostics.Interface"
+      },
+      "traceroute": {
+        "root": "InternetGatewayDevice.TraceRouteDiagnostics",
+        "diag_state": "DiagnosticsState",
+        "interface": "Interface",
+        "target": "Host",
+        "tries_per_hop": "NumberOfTries",
+        "timeout": "Timeout",
+        "data_block_size": "DataBlockSize",
+        "diff_serv": "DSCP",
+        "max_hop_count": "MaxHopCount",
+        "response_time": "ResponseTime",
+        "number_of_hops": "RouteHopsNumberOfEntries",
+        "protocol": "",
+        "ip_version": "",
+        "hops_root": "RouteHops",
+        "hop_host": "HopHost",
+        "hop_ip_address": "HopHostAddress",
+        "hop_error_code": "HopErrorCode",
+        "hop_rtt_times": "HopRTTimes"
+      },
+      "sitesurvey": {
+        "root": "InternetGatewayDevice.LANDevice.1.WiFi.NeighboringWiFiDiagnostic",
+        "diag_state": "DiagnosticsState",
+        "result": "Result",
+        "mac": "BSSID",
+        "ssid": "SSID",
+        "channel": "Channel",
+        "signal": "SignalStrength",
+        "band": "OperatingChannelBandwidth",
+        "mode": "OperatingStandards"
+      }
+    }
+  },
+  "vlan_ppp": true
+}

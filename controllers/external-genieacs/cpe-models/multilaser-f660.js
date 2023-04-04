@@ -23,6 +23,7 @@ multilaserModel.modelPermissions = function() {
     'V7.1.10P1T2': ['V7.1.10P1N8'],
     'V7.1.10P1N8': [],
   };
+  permissions.lan.dnsServersLimit = 3;
   return permissions;
 };
 
