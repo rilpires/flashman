@@ -13,7 +13,6 @@ multilaserModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.portForward = true;
   permissions.features.wlanAccessControl = true;
-  permissions.features.wlanAccessControl = true;
   permissions.features.hasIpv6Information = true;
   permissions.features.hasCPUUsage = true;
   permissions.features.hasMemoryUsage = true;
