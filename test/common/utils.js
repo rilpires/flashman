@@ -19,6 +19,9 @@ const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
 
+const fs = require('fs');
+const path = require('path');
+
 process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
 // Models
@@ -258,7 +261,9 @@ utils.common.mockAwaitMongo = function(
   dataMock.save = () => {
     return dataMock;
   };
-
+  dataMock.exec = () => {
+    return dataMock;
+  };
 
   jest.spyOn(model, func).mockImplementation(() => {
     return dataMock;
@@ -843,6 +848,19 @@ utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
   });
 };
 
+utils.common.loadFile = function(file, isJson = true) {
+  const data = fs.readFileSync(
+    path.resolve(
+      __dirname, file,
+    ), 'utf8',
+  );
+
+  if (isJson) {
+    return JSON.parse(data);
+  } else {
+    return data;
+  }
+};
 
 /**
  * @exports test/common/utils

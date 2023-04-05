@@ -6,7 +6,6 @@ phyhomeModel.identifier = {vendor: 'PhyHome', model: 'P20'};
 
 phyhomeModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.ponSignal = true;
   permissions.lan.configWrite = false;
   permissions.wifi.dualBand = false;

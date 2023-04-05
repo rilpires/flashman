@@ -6,7 +6,6 @@ zteModel.identifier = {vendor: 'ZTE', model: 'F673AV9'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;

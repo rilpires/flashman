@@ -6,7 +6,6 @@ cianetModel.identifier = {vendor: 'Cianet', model: 'ONU GW24AC'};
 
 cianetModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
   permissions.features.traceroute = true;
   permissions.features.ponSignal = true;

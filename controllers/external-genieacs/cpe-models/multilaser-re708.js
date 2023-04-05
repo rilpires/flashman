@@ -6,14 +6,13 @@ multilaserModel.identifier = {vendor: 'Multilaser / ZTE', model: 'RE708'};
 
 multilaserModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.wan.speedTestLimit = 290;
   permissions.lan.configWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
-  permissions.lan.sendDnsOnLANChange = false;
   permissions.lan.sendRoutersOnLANChange = false;
+  permissions.lan.dnsServersWrite = false;
   permissions.wan.dhcpUptime = true;
   permissions.wan.hasUptimeField = true;
   permissions.wan.canTrustWanRate = false;
