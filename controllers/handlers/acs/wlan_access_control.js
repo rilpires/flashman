@@ -403,9 +403,12 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   // ===== Get blockedDevices and AC rules trees =====
   // Creates the structures related to WLAN subtrees
   // Make sure there are no more than 31 devices to block - limit of 64 rules
-  let blockedDevices = Object.values(device.lan_devices).filter(
-    (d)=>d.is_blocked,
-  );
+  let blockedDevices = [];
+  if (device.lan_devices) {
+    blockedDevices = Object.values(device.lan_devices).filter(
+      (d)=>d.is_blocked,
+    );
+  }
   let blockedDevicesCount = blockedDevices.length;
   if (blockedDevicesCount >= 32) {
     console.log('Number of rules has reached its limit for device ' + acsID);
