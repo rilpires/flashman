@@ -748,13 +748,12 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
     if (result.last_speedtest_error) {
       device.last_speedtest_error = result.last_speedtest_error;
     }
-    let errorAndSend = result.last_speedtest_error &&
-      device.current_diagnostic.send_error;
     let customizedAndValid = device.current_diagnostic.customized &&
       device.current_diagnostic.webhook_url;
-    if (errorAndSend || customizedAndValid) {
-      if (device.current_diagnostic.customized &&
-          device.current_diagnostic.webhook_url) {
+    if (customizedAndValid) {
+      let errorAndSend = result.last_speedtest_error &&
+        device.current_diagnostic.send_error;
+      if (!result.last_speedtest_error || errorAndSend) {
         sendSpeedtestResultToCustomTrap(device, result);
       }
     } else {
