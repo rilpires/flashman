@@ -1951,17 +1951,31 @@ deviceListController.sendCommandMsg = async function(req, res) {
         Audit.cpe(req.user, device, 'trigger', {'cmd': 'upstatus'});
         break;
       case 'wanbytes':
+        // Check permission
+        if (!permissions.grantStatisticsSupport) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
+        // Set the wait notification
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForStatisticsNotification(
             req.sessionID,
             req.params.id.toUpperCase(),
           );
         }
+
+        // Execute for TR-069
         if (device && device.use_tr069) {
           acsDeviceInfo.requestStatistics(device);
+
+        // Execute for Flashbox
         } else {
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
         }
+
         break;
       case 'waninfo':
         // Check permission
@@ -2866,6 +2880,35 @@ deviceListController.setDeviceReg = function(req, res) {
                   old: matchedDevice.lan_subnet,
                   new: lanSubnet,
                 };
+                // Before replacing the subnet field with the new value, it is
+                // checked whether it is necessary to change the value of the
+                // DNS field. This scenario happens if the old subnet value is
+                // contained in the DNS servers address list
+                if (matchedDevice.lan_dns_servers) {
+                  let lanDns = matchedDevice.lan_dns_servers.split(',');
+                  if (lanDns.includes(matchedDevice.lan_subnet)) {
+                    let newLanDns = [];
+                    for (let i=0; i<lanDns.length; i++) {
+                      // Replaces the address referring to the old subnet value
+                      // only if it is no longer contained in the DNS list
+                      if (
+                          lanDns[i] === matchedDevice.lan_subnet &&
+                          !lanDns.includes(lanSubnet) &&
+                          !newLanDns.includes(lanSubnet)
+                        ) {
+                        newLanDns.push(lanSubnet);
+                      } else if (
+                          lanDns[i] !== matchedDevice.lan_subnet &&
+                          !newLanDns.includes(lanDns[i])
+                        ) {
+                        // Otherwise, it keeps the addresses in the list, taking
+                        // care not to add duplicate addresses.
+                        newLanDns.push(lanDns[i]);
+                      }
+                    }
+                    matchedDevice.lan_dns_servers = newLanDns.join(',');
+                  }
+                }
                 matchedDevice.lan_subnet = lanSubnet;
                 updateParameters = true;
               } else {
@@ -4012,6 +4055,116 @@ deviceListController.getLanDevices = async function(req, res) {
       message: t('serverError', {errorline: __line}),
     });
   }
+};
+
+deviceListController.getLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    function(err, matchedDevice) {
+      let device;
+      let responseDNSServers = '';
+
+      if (err) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeFindError', {errorline: __line}),
+        });
+      }
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        device = matchedDevice[0];
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeNotFound', {errorline: __line}),
+        });
+      }
+      // Get LAN DNS servers data
+      if (typeof device.lan_dns_servers === 'undefined' ||
+          device.lan_dns_servers.length === 0) {
+        responseDNSServers = '';
+      } else {
+        responseDNSServers = device.lan_dns_servers;
+      }
+      // Get permissions to get max LAN DNS servers router accepts
+      let permissions = DeviceVersion.devicePermissions(device);
+      return res.status(200).json({
+        success: true,
+        lan_dns_servers_list: responseDNSServers === '' ? [] :
+                              responseDNSServers.split(','),
+        lan_subnet: device.lan_subnet,
+        max_dns: permissions.grantLanDnsLimit,
+    });
+  });
+};
+
+deviceListController.setLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    async function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+    if (!req.body.dns_servers_list) {
+      return res.status(200).json({
+        success: false,
+        message: t('bodyNotObject', {errorline: __line}),
+      });
+    }
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
+    if (!permissions.grantLanDnsEdit) {
+      return res.status(200).json({
+        success: false,
+        message: t('permissionDenied', {errorline: __line}),
+      });
+    }
+    let dnsServers = req.body.dns_servers_list;
+    let approvedDnsServersList = [];
+    dnsServers.forEach((dns) => {
+      if (dns.match(util.ipv4Regex)) {
+        approvedDnsServersList.push(dns);
+      }
+    });
+    let approvedDnsServers = approvedDnsServersList.join(',');
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+    let fields = cpe.getModelFields();
+    let task = {
+      name: 'setParameterValues',
+      parameterValues: [
+        [fields.lan.dns_servers, approvedDnsServers, 'xsd:string'],
+      ],
+    };
+    const result = await TasksAPI.addTask(matchedDevice.acs_id, task);
+    if (result.success) {
+      matchedDevice.lan_dns_servers = approvedDnsServers;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+          approved_dns_servers_list: approvedDnsServers,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('genieacsCommunicationError', {errorline: __line}),
+      });
+    }
+  });
 };
 
 deviceListController.getSiteSurvey = function(req, res) {

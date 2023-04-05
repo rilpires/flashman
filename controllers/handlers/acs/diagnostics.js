@@ -8,16 +8,12 @@ const DevicesAPI = require('../../external-genieacs/devices-api');
 const deviceHandlers = require('../devices');
 const utilHandlers = require('../util.js');
 const sio = require('../../../sio');
-const http = require('http');
 const debug = require('debug')('ACS_DIAGNOSTICS');
 const t = require('../../language').i18next.t;
 const request = require('request-promise-native');
 const metricsApi = require('../metrics/custom_metrics');
 
 let acsDiagnosticsHandler = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
-
 
 const saveCurrentDiagnostic = async function(device, msg, progress) {
   device.current_diagnostic.stage = msg;
@@ -921,56 +917,46 @@ const fetchDiagnosticsFromGenie = async function(acsID) {
   }
 
   let query = {_id: acsID};
-  let path = '/devices/?query=' + JSON.stringify(query) +
-    '&projection=' + parameters.join(',');
-  let options = {
-    protocol: 'http:',
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let request = http.request(options, (response) => {
-    let chunks = [];
-    response.on('error', (error) => console.log(error));
-    response.on('data', async (chunk) => chunks.push(chunk));
-    response.on('end', async (chunk) => {
-      let body = Buffer.concat(chunks);
-      try {
-        let data = JSON.parse(body)[0];
-        let permissions = DeviceVersion.devicePermissions(device);
-        if (!permissions) {
-          console.log('Failed: genie can\'t check device permissions');
-        } else {
-          metricsApi.newDiagnosticState(diagType, 'finished');
-          if (permissions.grantPingTest && diagType == 'ping') {
-            await calculatePingDiagnostic(
-              device, cpe, data,
-              diagNecessaryKeys.ping,
-              fields.diagnostics.ping,
-            );
-          } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
-            await calculateSpeedDiagnostic(
-              device, data, diagNecessaryKeys.speedtest,
-              fields.diagnostics.speedtest,
-            );
-          } else if (permissions.grantTraceroute && diagType == 'traceroute') {
-            await calculateTraceDiagnostic(
-              device, cpe, data, fields.diagnostics.traceroute,
-            );
-          } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
-            await calculateSiteSurveyDiagnostic(
-              device, cpe, data, fields.diagnostics.sitesurvey,
-            );
-          }
-        }
-      } catch (e) {
-        console.log('Failed: genie response was not valid');
-        console.log('Error:', e);
-      }
+  let projection = parameters.join(',');
+  let genieData = await TasksAPI
+    .getFromCollection('devices', query, projection).catch((err) => {
+      console.log(`ERROR IN fetchDevicesFromGenie TaskAPI: ${err}`);
+      return undefined;
     });
-  });
-  request.end();
+
+  if (!genieData) return;
+
+  try {
+    let data = genieData[0];
+    let permissions = DeviceVersion.devicePermissions(device);
+    if (!permissions) {
+      console.log('Failed: genie can\'t check device permissions');
+    } else {
+      metricsApi.newDiagnosticState(diagType, 'finished');
+      if (permissions.grantPingTest && diagType == 'ping') {
+        await calculatePingDiagnostic(
+          device, cpe, data,
+          diagNecessaryKeys.ping,
+          fields.diagnostics.ping,
+        );
+      } else if (permissions.grantSpeedTest && diagType == 'speedtest') {
+        await calculateSpeedDiagnostic(
+          device, data, diagNecessaryKeys.speedtest,
+          fields.diagnostics.speedtest,
+        );
+      } else if (permissions.grantTraceroute && diagType == 'traceroute') {
+        await calculateTraceDiagnostic(
+          device, cpe, data, fields.diagnostics.traceroute,
+        );
+      } else if (permissions.grantSiteSurvey && diagType == 'sitesurvey') {
+        await calculateSiteSurveyDiagnostic(
+          device, cpe, data, fields.diagnostics.sitesurvey,
+        );
+      }
+    }
+  } catch (e) {
+    console.log(`Failed fetchDevicesFromGenie: ${e}`);
+  }
 };
 
 acsDiagnosticsHandler.firePingDiagnose = async function(device) {

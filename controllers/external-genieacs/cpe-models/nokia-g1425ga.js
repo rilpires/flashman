@@ -12,13 +12,18 @@ nokiaModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
+
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noAsymRanges;
   permissions.wan.speedTestLimit = 750;
+
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
   permissions.wifi.list5ghzChannels = [

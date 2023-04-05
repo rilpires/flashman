@@ -1,0 +1,1009 @@
+{
+  "_id": "C0B101-ZXHN%20H199A-ZTEYH86LCN10105",
+  "InternetGatewayDevice": {
+    "DeviceInfo": {
+      "SoftwareVersion": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.487Z",
+        "_type": "xsd:string",
+        "_value": "V9.1.0P4N3_MUL",
+        "_writable": false
+      },
+      "UpTime": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.488Z",
+        "_type": "xsd:unsignedInt",
+        "_value": 172843,
+        "_writable": false
+      }
+    },
+    "LANDevice": {
+      "1": {
+        "LANHostConfigManagement": {
+          "IPInterface": {
+            "1": {
+              "IPInterfaceIPAddress": {
+                "_object": false,
+                "_timestamp": "2023-03-30T14:59:33.488Z",
+                "_type": "xsd:string",
+                "_value": "192.168.1.1",
+                "_writable": true
+              },
+              "IPInterfaceSubnetMask": {
+                "_object": false,
+                "_timestamp": "2023-03-30T14:59:33.488Z",
+                "_type": "xsd:string",
+                "_value": "255.255.255.0",
+                "_writable": true
+              }
+            }
+          }
+        },
+        "WLANConfiguration": {
+          "1": {
+            "AutoChannelEnable": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:boolean",
+              "_value": true,
+              "_writable": true
+            },
+            "BSSID": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "c0:b1:01:31:71:6e",
+              "_writable": false
+            },
+            "Channel": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 5,
+              "_writable": true
+            },
+            "Enable": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:boolean",
+              "_value": true,
+              "_writable": true
+            },
+            "PreSharedKey": {
+              "1": {
+                "KeyPassphrase": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "",
+                  "_writable": true
+                }
+              }
+            },
+            "SSID": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "Anlix-ZTE-H199",
+              "_writable": true
+            },
+            "X_ZTE-COM_BandWidth": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "Auto",
+              "_writable": true
+            },
+            "X_ZTE-COM_WlanStandard": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "b,g,n",
+              "_writable": true
+            }
+          },
+          "5": {
+            "AutoChannelEnable": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:boolean",
+              "_value": true,
+              "_writable": true
+            },
+            "BSSID": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "c0:b1:01:31:71:6f",
+              "_writable": false
+            },
+            "Channel": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 56,
+              "_writable": true
+            },
+            "Enable": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:boolean",
+              "_value": true,
+              "_writable": true
+            },
+            "PreSharedKey": {
+              "1": {
+                "KeyPassphrase": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "",
+                  "_writable": true
+                }
+              }
+            },
+            "SSID": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "Anlix-ZTE-H199-5G",
+              "_writable": true
+            },
+            "X_ZTE-COM_BandWidth": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "80MHz",
+              "_writable": true
+            },
+            "X_ZTE-COM_WlanStandard": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:string",
+              "_value": "a,n,ac",
+              "_writable": true
+            }
+          }
+        }
+      }
+    },
+    "Layer3Forwarding": {
+      "X_ZTE-COM_IPv6Forwarding": {
+        "2": {
+          "PrefixLen": {
+            "_object": false,
+            "_timestamp": "2023-03-30T14:59:33.488Z",
+            "_type": "xsd:unsignedInt",
+            "_value": 64,
+            "_writable": true
+          }
+        }
+      }
+    },
+    "ManagementServer": {
+      "ConnectionRequestURL": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.487Z",
+        "_type": "xsd:string",
+        "_value": "http://192.168.89.130:7547/445b33fdbcb56dc9bdfa0879bf04f39e",
+        "_writable": false
+      },
+      "PeriodicInformInterval": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.488Z",
+        "_type": "xsd:unsignedInt",
+        "_value": 58,
+        "_writable": true
+      },
+      "STUNEnable": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.488Z",
+        "_type": "xsd:boolean",
+        "_value": false,
+        "_writable": true
+      },
+      "UDPConnectionRequestAddress": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.488Z",
+        "_type": "xsd:string",
+        "_value": "192.168.89.227:26905",
+        "_writable": false
+      },
+      "URL": {
+        "_object": false,
+        "_timestamp": "2023-03-30T14:59:33.488Z",
+        "_type": "xsd:string",
+        "_value": "http://192.168.88.19:57547",
+        "_writable": true
+      }
+    },
+    "User": {
+      "1": {
+        "Password": {
+          "_object": false,
+          "_timestamp": "2023-03-30T14:59:33.488Z",
+          "_type": "xsd:string",
+          "_value": "",
+          "_writable": true
+        },
+        "Username": {
+          "_object": false,
+          "_timestamp": "2023-03-30T14:59:33.488Z",
+          "_type": "xsd:string",
+          "_value": "admin",
+          "_writable": true
+        }
+      }
+    },
+    "WANDevice": {
+      "1": {
+        "WANConnectionDevice": {
+          "1": {
+            "WANIPConnection": {
+              "_object": true,
+              "_timestamp": "2023-03-30T14:59:33.486Z",
+              "_writable": true
+            },
+            "WANIPConnectionNumberOfEntries": {
+              "_object": false,
+              "_writable": false,
+              "_timestamp": "2023-03-28T15:39:56.055Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 0
+            },
+            "WANPPPConnection": {
+              "2": {
+                "AutoDisconnectTime": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 0
+                },
+                "ConnectionStatus": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "Connected"
+                },
+                "ConnectionTrigger": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "AlwaysOn"
+                },
+                "ConnectionType": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "IP_Routed"
+                },
+                "CurrentMRUSize": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 1492
+                },
+                "DNSEnabled": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "DNSOverrideAllowed": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "DNSServers": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "192.168.88.1",
+                  "_writable": true
+                },
+                "DefaultGateway": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "192.168.89.1",
+                  "_writable": false
+                },
+                "Enable": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:boolean",
+                  "_value": true,
+                  "_writable": true
+                },
+                "ExternalIPAddress": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.487Z",
+                  "_type": "xsd:string",
+                  "_value": "192.168.89.227",
+                  "_writable": false
+                },
+                "IdleDisconnectTime": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 1200
+                },
+                "LastConnectionError": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "ERROR_NONE"
+                },
+                "MACAddress": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "c0:b1:01:31:71:6e",
+                  "_writable": true
+                },
+                "MaxMRUSize": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 1492,
+                  "_writable": true
+                },
+                "NATEnabled": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "Name": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "pppoe"
+                },
+                "PPPAuthenticationProtocol": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "PAP,CHAP,MS-CHAP"
+                },
+                "PPPCompressionProtocol": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "None"
+                },
+                "PPPEncryptionProtocol": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "None"
+                },
+                "PPPLCPEcho": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 30
+                },
+                "PPPLCPEchoRetry": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 5
+                },
+                "PPPoEACName": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": ""
+                },
+                "PPPoEServiceName": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": ""
+                },
+                "PPPoESessionID": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 21583
+                },
+                "Password": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "",
+                  "_writable": true
+                },
+                "PortMapping": {
+                  "_object": true,
+                  "_writable": true,
+                  "_timestamp": "2023-03-29T19:39:07.175Z"
+                },
+                "PortMappingNumberOfEntries": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 0,
+                  "_writable": false
+                },
+                "PossibleConnectionTypes": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "IP_Routed,PPPoE_Bridged"
+                },
+                "RSIPAvailable": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "RemoteIPAddress": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "192.168.89.1",
+                  "_writable": false
+                },
+                "Reset": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "RouteProtocolRx": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": ""
+                },
+                "Stats": {
+                  "_object": true,
+                  "_writable": false,
+                  "EthernetBroadcastPacketsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetBroadcastPacketsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetBytesReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 1828962,
+                    "_writable": false
+                  },
+                  "EthernetBytesSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 2365873,
+                    "_writable": false
+                  },
+                  "EthernetDiscardPacketsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetDiscardPacketsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetErrorsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetErrorsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetMulticastPacketsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetMulticastPacketsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 0,
+                    "_writable": false
+                  },
+                  "EthernetPacketsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 15670,
+                    "_writable": false
+                  },
+                  "EthernetPacketsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 18138,
+                    "_writable": false
+                  },
+                  "EthernetUnicastPacketsReceived": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 15670,
+                    "_writable": false
+                  },
+                  "EthernetUnicastPacketsSent": {
+                    "_object": false,
+                    "_timestamp": "2023-03-28T15:39:56.057Z",
+                    "_type": "xsd:unsignedInt",
+                    "_value": 18138,
+                    "_writable": false
+                  },
+                  "_timestamp": "2023-03-28T15:39:56.053Z"
+                },
+                "TransportType": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "PPPoE"
+                },
+                "Uptime": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 72427,
+                  "_writable": false
+                },
+                "Username": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "admin123",
+                  "_writable": true
+                },
+                "WarnDisconnectDelay": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 0
+                },
+                "X_ZTE-COM_8021P": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 0
+                },
+                "X_ZTE-COM_Dhcpv6IANAEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "X_ZTE-COM_Dhcpv6IAPDEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "X_ZTE-COM_ExternalIPv6Address": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "2804:3e0:0:4295:c2b1:1ff:fe31:716e/64",
+                  "_writable": true
+                },
+                "X_ZTE-COM_IGMPWanEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "X_ZTE-COM_IPMode": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "Both"
+                },
+                "X_ZTE-COM_IPv6AcquireMode": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "Auto"
+                },
+                "X_ZTE-COM_IPv6ConnStatus": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "Connected"
+                },
+                "X_ZTE-COM_IPv6DNSServers": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "2804:3e0:0:4200::1"
+                },
+                "X_ZTE-COM_LLA": {
+                  "_object": false,
+                  "_writable": false,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "fe80::c2b1:1ff:fe31:716e"
+                },
+                "X_ZTE-COM_LanInterface": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": ""
+                },
+                "X_ZTE-COM_PD": {
+                  "_object": false,
+                  "_timestamp": "2023-03-30T14:59:33.488Z",
+                  "_type": "xsd:string",
+                  "_value": "fc00:dead:c0de:2600::/56",
+                  "_writable": true
+                },
+                "X_ZTE-COM_PDGUAEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "X_ZTE-COM_Prefix": {
+                  "1": {
+                    "Autonomous": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Enable": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "OnLink": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Origin": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "WellKnown",
+                      "_writable": false
+                    },
+                    "ParentPrefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "PreferredLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "9999-12-31T23:59:59Z",
+                      "_writable": false
+                    },
+                    "Prefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "fe80::/64",
+                      "_writable": true
+                    },
+                    "StaticType": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "Inapplicable",
+                      "_writable": true
+                    },
+                    "ValidLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "9999-12-31T23:59:59Z",
+                      "_writable": false
+                    },
+                    "_object": true,
+                    "_timestamp": "2023-03-28T15:39:56.053Z",
+                    "_writable": true
+                  },
+                  "2": {
+                    "Autonomous": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Enable": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "OnLink": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Origin": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "RouterAdvertisement",
+                      "_writable": false
+                    },
+                    "ParentPrefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "PreferredLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "2023-04-04T12:35:20Z",
+                      "_writable": false
+                    },
+                    "Prefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "2804:3e0:0:426a::/64",
+                      "_writable": true
+                    },
+                    "StaticType": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "Inapplicable",
+                      "_writable": true
+                    },
+                    "ValidLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "2023-04-27T12:35:20Z",
+                      "_writable": false
+                    },
+                    "_object": true,
+                    "_timestamp": "2023-03-28T15:39:56.053Z",
+                    "_writable": true
+                  },
+                  "3": {
+                    "Autonomous": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Enable": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "OnLink": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:boolean",
+                      "_value": true,
+                      "_writable": true
+                    },
+                    "Origin": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "PrefixDelegation",
+                      "_writable": false
+                    },
+                    "ParentPrefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "",
+                      "_writable": true
+                    },
+                    "PreferredLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "2023-03-31T04:47:23Z",
+                      "_writable": false
+                    },
+                    "Prefix": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "fc00:dead:c0de:2600::/56",
+                      "_writable": true
+                    },
+                    "StaticType": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "Inapplicable",
+                      "_writable": true
+                    },
+                    "ValidLifetime": {
+                      "_object": false,
+                      "_timestamp": "2023-03-28T15:39:56.057Z",
+                      "_type": "xsd:string",
+                      "_value": "2023-03-31T11:59:23Z",
+                      "_writable": false
+                    },
+                    "_object": true,
+                    "_timestamp": "2023-03-28T15:39:56.053Z",
+                    "_writable": true
+                  },
+                  "_object": true,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.053Z"
+                },
+                "X_ZTE-COM_ServiceList": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:string",
+                  "_value": "INTERNET_TR069_IPTV"
+                },
+                "X_ZTE-COM_SlaacEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": true
+                },
+                "X_ZTE-COM_Unnumbered": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "X_ZTE-COM_VLANEnable": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:boolean",
+                  "_value": false
+                },
+                "X_ZTE-COM_VLANID": {
+                  "_object": false,
+                  "_writable": true,
+                  "_timestamp": "2023-03-28T15:39:56.055Z",
+                  "_type": "xsd:unsignedInt",
+                  "_value": 0
+                },
+                "_object": true,
+                "_timestamp": "2023-03-30T14:59:33.486Z",
+                "_writable": true
+              },
+              "_object": true,
+              "_timestamp": "2023-03-30T14:59:33.486Z",
+              "_writable": true
+            },
+            "WANPPPConnectionNumberOfEntries": {
+              "_object": false,
+              "_writable": false,
+              "_timestamp": "2023-03-28T15:39:56.055Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 1
+            },
+            "_object": true,
+            "_timestamp": "2023-03-28T15:39:56.053Z",
+            "_writable": true
+          },
+          "_object": true,
+          "_timestamp": "2023-03-30T14:59:33.486Z",
+          "_writable": true
+        },
+        "WANEthernetInterfaceConfig": {
+          "DuplexMode": {
+            "_object": false,
+            "_timestamp": "2023-03-30T14:59:33.488Z",
+            "_type": "xsd:string",
+            "_value": "Auto",
+            "_writable": true
+          },
+          "MaxBitRate": {
+            "_object": false,
+            "_timestamp": "2023-03-30T14:59:33.488Z",
+            "_type": "xsd:string",
+            "_value": "Auto",
+            "_writable": true
+          },
+          "Stats": {
+            "BytesReceived": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 1680481554,
+              "_writable": false
+            },
+            "BytesSent": {
+              "_object": false,
+              "_timestamp": "2023-03-30T14:59:33.488Z",
+              "_type": "xsd:unsignedInt",
+              "_value": 296440912,
+              "_writable": false
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -96,6 +96,18 @@ const deleteDefaultPingHostsList = function() {
   deleteCommonStorage('defaultPingHosts');
 };
 
+const getDNSServersList = function(key) {
+  return getCommonStorage('dnsServers', key);
+};
+
+const setDNSServersList = function(key, val) {
+  setCommonStorage('dnsServers', key, val);
+};
+
+const deleteDNSServersList = function() {
+  deleteCommonStorage('dnsServers');
+};
+
 export {setPortForwardStorage,
         setConfigStorage,
         setFirmwareStorage,
@@ -113,4 +125,7 @@ export {setPortForwardStorage,
         deleteFirmwareStorage,
         deleteFactoryCredentialsStorage,
         deletePingHostsList,
-        deleteDefaultPingHostsList};
+        deleteDefaultPingHostsList,
+        getDNSServersList,
+        setDNSServersList,
+        deleteDNSServersList};
