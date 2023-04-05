@@ -62,9 +62,9 @@ describe('api_v2', () => {
     // Creating a device
     simulator = createSimulator(genieCwmpHost, deviceModelH199, 1000, mac)
     .on('started', () => {
-      console.log('*** simulator started')
+      console.log('*** simulator started');
     }).on('ready', () => {
-      console.log('*** simulator ready')
+      console.log('*** simulator ready');
     }).on('requested', (request) => {
       console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
     }).on('response', (response) => {
