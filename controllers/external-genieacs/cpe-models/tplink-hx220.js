@@ -6,28 +6,42 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'HX220'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.portForward = true;
   permissions.features.traceroute = true;
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.pingTest = true;
   permissions.features.stun = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.lan.configWrite = false;
+
   permissions.wan.hasUptimeField = false;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 900;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100,
     104, 108, 112, 116, 120, 124, 128,
   ];
   permissions.wifi.allowDiacritics = true;
   permissions.wifi.axWiFiMode = true;
+
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.protocol = 'ICMP';
+
   permissions.needInterfaceInPortFoward = true;
   permissions.useLastIndexOnWildcard = true;
+
   permissions.firmwareUpgrades = {
     '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n': [],
   };
@@ -108,6 +122,13 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.remote_address_ppp = 'Device.PPP.Interface.*.IPCP.RemoteIPAddress';
+  fields.wan.default_gateway =
+    'Device.Routing.Router.1.IPv4Forwarding.*.GatewayIPAddress';
+  fields.wan.default_gateway_ppp =
+    'Device.Routing.Router.1.IPv4Forwarding.*.GatewayIPAddress';
+  fields.wan.dns_servers = 'Device.DHCPv4.Client.*.DNSServers';
+  fields.wan.dns_servers_ppp = 'Device.PPP.Interface.*.IPCP.DNSServers';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
@@ -132,6 +153,21 @@ tplinkModel.getModelFields = function() {
   fields.lan.lease_min_ip = 'Device.DHCPv4.Server.Pool.1.MinAddress';
   fields.lan.ip_routers = 'Device.DHCPv4.Server.Pool.1.IPRouters';
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
+
+  // IPv6
+  fields.ipv6.address = 'Device.IP.Interface.5.IPv6Address.*.IPAddress';
+  fields.ipv6.address_ppp = fields.ipv6.address;
+
+  fields.ipv6.prefix_delegation_address =
+    'Device.IP.Interface.5.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address_ppp =
+    fields.ipv6.prefix_delegation_address;
+
+  fields.ipv6.prefix_delegation_local_address =
+    'Device.IP.Interface.1.IPv6Address.*.IPAddress';
+  fields.ipv6.prefix_delegation_local_address_ppp =
+    fields.ipv6.prefix_delegation_local_address;
+
   // Wifi
   fields.wifi2.ssid = 'Device.WiFi.SSID.1.SSID';
   fields.wifi2.bssid = 'Device.WiFi.SSID.1.BSSID';
@@ -168,7 +204,7 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_rssi = 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
     'AssociatedDevice.*.SignalStrength';
   fields.devices.rate = 'Device.WiFi.AccessPoint.1.AssociatedDevice.*' +
-    '.LastDataUplinkRate'
+    '.LastDataUplinkRate';
   // Ping
   Object.keys(fields.diagnostics.ping).forEach((k) => {
     fields.diagnostics.ping[k] = fields.diagnostics.ping[k].replace(

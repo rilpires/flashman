@@ -7,7 +7,6 @@ mercusysModel.identifier = {vendor: 'MERCUSYS', model: 'MR30G'};
 mercusysModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.cableRxRate = false;
-  permissions.features.customAppPassword = false;
   // permissions.features.pingTest = true; // Never update AverageResponseTime
   permissions.features.traceroute = true;
   permissions.features.wanBytes = false;

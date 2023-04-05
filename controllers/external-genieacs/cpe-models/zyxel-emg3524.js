@@ -6,7 +6,6 @@ zyxelModel.identifier = {vendor: 'Zyxel', model: 'EMG3524-T10A'};
 
 zyxelModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.siteSurvey = true;
   permissions.features.stun = true;
   permissions.siteSurvey.requiresPolling = true;

@@ -13,6 +13,7 @@ const Config = require('../../../models/config');
 const utilHandlers = require('../util');
 const sio = require('../../../sio');
 const http = require('http');
+const TasksAPI = require('../../external-genieacs/tasks-api');
 const debug = require('debug')('ACS_DEVICES_MEASURES');
 const t = require('../../language').i18next.t;
 
@@ -20,86 +21,288 @@ let acsMeasuresHandler = {};
 let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
 let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
+/**
+ * Get WAN sent and received bytes, CPU usage, total memory, free memory from
+ * GenieACS of the CPE with the `acsID`informed.
+ *
+ * @memberof controllers/handlers/acs/measure
+ *
+ * @param {String} acsID - The ACS ID of the device to fetch statistics from.
+ */
 acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
   let device;
+
+  // Check acs ID
+  if (!acsID) return;
+
   try {
-    device = await DeviceModel.findOne({acs_id: acsID}).lean();
-  } catch (e) {
+    device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        use_tr069: true, acs_id: true, model: true,
+        version: true, hw_version: true,
+      },
+    ).lean();
+  } catch (error) {
+    console.error(
+      'Could not get device in fetchWanBytesFromGenie: ' + error,
+    );
+
     return;
   }
+
+  // Check if is a TR-069 valid device
   if (!device || !device.use_tr069) {
+    console.error('Invalid device in fetchWanBytesFromGenie!');
     return;
   }
+
+
+  // Get the cpe instance
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    console.error('Invalid CPE in fetchWanInformationFromGenie!');
+    return;
+  }
+
   let mac = device._id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let useLastIndexOnWildcard = cpe.modelPermissions().useLastIndexOnWildcard;
+  let cpe = cpeInstance.cpe;
+  const permissions = cpe.modelPermissions();
+  const hasCPUUsage = permissions.features.hasCPUUsage;
+  const hasMemoryUsage = permissions.features.hasMemoryUsage;
+  let useLastIndexOnWildcard = permissions.useLastIndexOnWildcard;
+
   let fields = cpe.getModelFields();
   let recvField = fields.wan.recv_bytes;
   let sentField = fields.wan.sent_bytes;
+  let statistics = fields.diagnostics.statistics;
+
+  let cpuUsageField = hasCPUUsage && statistics.cpu_usage ?
+    statistics.cpu_usage : '';
+  let memoryUsageField = hasMemoryUsage && statistics.memory_usage ?
+    statistics.memory_usage : '';
+  let memoryFreeField = hasMemoryUsage && statistics.memory_free ?
+    statistics.memory_free : '';
+  let memoryTotalField = hasMemoryUsage && statistics.memory_total ?
+    statistics.memory_total : '';
+
   let query = {_id: acsID};
-  let projection = recvField.replace(/\.\*.*/g, '') + ','
-    + sentField.replace(/\.\*.*/g, '');
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let wanBytes = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async () => {
-      if (data.length > 0) {
-        try {
-          data = JSON.parse(data)[0];
-        } catch (err) {
-          debug(err);
-          data = '';
-        }
-      }
-      let success = false;
-      let checkRecv = utilHandlers.checkForNestedKey(
-        data,
-        recvField+'._value',
-        useLastIndexOnWildcard,
+  let projection =
+    recvField.replace(/\.\*.*/g, '') + ',' +
+    sentField.replace(/\.\*.*/g, '') +
+    (hasCPUUsage && cpuUsageField ?
+      ',' + cpuUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryUsageField ?
+      ',' + memoryUsageField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryFreeField ?
+      ',' + memoryFreeField.replace(/\.\*.*/g, '') : ''
+    ) +
+    (hasMemoryUsage && memoryTotalField ?
+      ',' + memoryTotalField.replace(/\.\*.*/g, '') : ''
+    );
+
+
+  let data = null;
+
+  try {
+    data = (await TasksAPI.getFromCollection('devices', query, projection))[0];
+  } catch (error) {
+    console.error(
+      'Error getting statistics from GenieACS in fetchWanBytesFromGenie: ' +
+      error,
+    );
+
+    return;
+  }
+
+  // Exit if data is invalid
+  if (!data) return;
+
+
+  let responseData = {};
+  let wanBytes = {};
+  let resources = {};
+
+
+  // Check Received Bytes
+  let checkRecv = utilHandlers.checkForNestedKey(
+    data, recvField + '._value', useLastIndexOnWildcard,
+  );
+
+  // Check Sent Bytes
+  let checkSent = utilHandlers.checkForNestedKey(
+    data, sentField + '._value', useLastIndexOnWildcard,
+  );
+
+  // Check CPU usage
+  let checkCPUUsage = permissions.features.hasCPUUsage ?
+    utilHandlers.checkForNestedKey(
+      data, cpuUsageField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  // Check Memory usage
+  let checkMemoryUsage = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  let checkMemoryFree = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryFreeField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+  let checkMemoryTotal = permissions.features.hasMemoryUsage ?
+    utilHandlers.checkForNestedKey(
+      data, memoryTotalField + '._value', useLastIndexOnWildcard,
+    ) : false;
+
+
+  // Get Received and Sent Bytes
+  if (checkRecv && checkSent) {
+    wanBytes = {
+      recv: utilHandlers.getFromNestedKey(
+        data, recvField + '._value', useLastIndexOnWildcard,
+      ),
+      sent: utilHandlers.getFromNestedKey(
+        data, sentField + '._value', useLastIndexOnWildcard,
+      ),
+    };
+  }
+
+  // Get CPU usage
+  if (checkCPUUsage) {
+    // Get the usage
+    let usage = utilHandlers.getFromNestedKey(
+      data, cpuUsageField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the usage
+    let usageValue = parseInt(usage);
+
+    // Assign the usage
+    if (!isNaN(usageValue) && usageValue >= 0 && usageValue <= 100) {
+      resources.cpu_usage = usageValue;
+
+    // If the value is not valid, CPU usage does not pass in the check
+    } else {
+      checkCPUUsage = false;
+    }
+  }
+
+  // Get Memory usage
+  if (checkMemoryFree && checkMemoryTotal) {
+    // Get the Total and Free
+    let memoryFree = utilHandlers.getFromNestedKey(
+      data, memoryFreeField + '._value', useLastIndexOnWildcard,
+    );
+    let memoryTotal = utilHandlers.getFromNestedKey(
+      data, memoryTotalField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the values
+    let memoryFreeValue = parseInt(memoryFree);
+    let memoryTotalValue = parseInt(memoryTotal);
+
+    // Assign the usage
+    if (
+      !isNaN(memoryFreeValue) && memoryFreeValue >= 0 &&
+      !isNaN(memoryTotalValue) && memoryTotalValue >= 0 &&
+      memoryFreeValue <= memoryTotalValue
+    ) {
+      resources.mem_usage = Math.ceil(
+        (memoryTotalValue - memoryFreeValue) * 100 / memoryTotalValue,
       );
-      let checkSent = utilHandlers.checkForNestedKey(
-        data,
-        sentField+'._value',
-        useLastIndexOnWildcard,
+
+    // If the value is not valid, Memory usage does not pass in the check
+    } else {
+      checkMemoryFree = false;
+      checkMemoryTotal = false;
+    }
+  }
+
+
+  if (checkMemoryUsage) {
+    // Get the ṕercentage
+    let memoryPercentage = utilHandlers.getFromNestedKey(
+      data, memoryUsageField + '._value', useLastIndexOnWildcard,
+    );
+
+    // Parse the valus
+    let memoryPercentageValue = parseInt(memoryPercentage);
+
+    // Assign the usage
+    if (
+      !isNaN(memoryPercentageValue) && memoryPercentageValue >= 0 &&
+      memoryPercentageValue <= 100
+    ) {
+      resources.mem_usage = Math.ceil(memoryPercentageValue);
+
+    // If the value is not valid, Memory usage does not pass in the check
+    } else {
+      checkMemoryUsage = false;
+    }
+  }
+
+
+  // Only append resources if has CPU usage or has both Memory Free and
+  // Memory Total or has Memory usage
+  if (
+    checkCPUUsage ||
+    (checkMemoryFree && checkMemoryTotal) || checkMemoryUsage) {
+    responseData.resources = resources;
+  }
+
+
+  // Check if must save the wan data
+  let mustSave = false;
+  if (checkRecv && checkSent) {
+    // Update the device as it could have been changed during the request
+    // (an async call with await) and thus causing mongoose to throw an error
+    try {
+      device = await DeviceModel.findOne(
+        {acs_id: acsID}, {wan_bytes: true, last_contact: true},
       );
-      if (checkRecv && checkSent) {
-        success = true;
-        wanBytes = {
-          recv: utilHandlers.getFromNestedKey(
-            data, recvField+'._value', useLastIndexOnWildcard,
-          ),
-          sent: utilHandlers.getFromNestedKey(
-            data, sentField+'._value', useLastIndexOnWildcard,
-          ),
-        };
+
+      if (device) {
+        mustSave = true;
+      } else {
+        mustSave = false;
       }
-      if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        if (!deviceEdit) return;
-        deviceEdit.last_contact = Date.now();
-        wanBytes = acsMeasuresHandler.appendBytesMeasure(
-          deviceEdit.wan_bytes,
-          wanBytes.recv,
-          wanBytes.sent,
-        );
-        deviceEdit.wan_bytes = wanBytes;
-        await deviceEdit.save().catch((err) => {
-          console.log('Error saving device wan bytes: ' + err);
-        });
-      }
-      sio.anlixSendStatisticsNotification(mac, {wanbytes: wanBytes});
+    } catch (error) {
+      console.error(
+        'Could not get device in fetchWanBytesFromGenie: ' + error,
+      );
+
+      mustSave = false;
+    }
+  }
+
+
+  if (mustSave) {
+    // Update information
+    device.last_contact = Date.now();
+    wanBytes = acsMeasuresHandler.appendBytesMeasure(
+      device.wan_bytes,
+      wanBytes.recv,
+      wanBytes.sent,
+    );
+    device.wan_bytes = wanBytes;
+
+    // Save the device
+    await device.save().catch((err) => {
+      console.log('Error saving device wan bytes: ' + err);
     });
-  });
-  req.end();
+
+    // Append to the final response
+    responseData.wanbytes = wanBytes;
+  }
+
+
+  // Report to frontend
+  sio.anlixSendStatisticsNotification(mac, responseData);
 };
 
 acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
@@ -475,7 +678,13 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
   if (!acsID) return;
 
   try {
-    device = await DeviceModel.findOne({acs_id: acsID});
+    device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        use_tr069: true, acs_id: true, model: true, version: true,
+        hw_version: true, connection_type: true,
+      },
+    ).lean();
   } catch (error) {
     console.error(
       'Could not get device in fetchWanInformationFromGenie: ' + error,
@@ -562,10 +771,10 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
     // If does not have permission continue to the next field
     if (!fieldObject.permission) return;
 
-    // Set the field according
-    if (fieldObject.isIPv6) {
+    // Set the field according if has ipv6
+    if (fieldObject.isIPv6 && permissions.features.hasIpv6Information) {
       fieldObject.field = fields.ipv6[fieldObject.path + suffixPPPoE];
-    } else {
+    } else if (!fieldObject.isIPv6) {
       fieldObject.field = fields.wan[fieldObject.path + suffixPPPoE];
     }
 
@@ -583,146 +792,154 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
   });
 
 
-  // Build the request
-  let path = '/devices/?query=' + JSON.stringify(query) +
-    '&projection=' + projection;
-
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
+  let data = null;
+  let saveDevice = false;
 
 
   // Send the request
-  let request = http.request(options, (response) => {
-    response.setEncoding('utf8');
-    let receivedData = '';
+  try {
+    data = (await TasksAPI.getFromCollection('devices', query, projection))[0];
+  } catch (error) {
+    console.error(
+      'Error getting WAN information from GenieACS in' +
+      'fetchWanInformationFromGenie: ' +
+      error,
+    );
 
-    response.on('data', (chunk) => receivedData += chunk);
-    response.on('end', async () => {
-      let data = null;
-      let saveDevice = false;
+    return;
+  }
 
-      // If did not received any data
-      if (receivedData.length <= 0) {
-        return;
-      }
-
-      // Try parsing the data
-      try {
-        data = JSON.parse(receivedData)[0];
-      } catch (error) {
-        console.error(error);
-        return;
-      }
-
-      // Check data
-      if (!data) return;
+  // Check data
+  if (!data) return;
 
 
-      // Get all data
-      Object.keys(assignFields).forEach((fieldName) => {
-        let genieValue = null;
-        let fieldObject = assignFields[fieldName];
+  // Get all data
+  Object.keys(assignFields).forEach((fieldName) => {
+    let genieValue = null;
+    let fieldObject = assignFields[fieldName];
 
-        // Get the value from genie
-        genieValue = checkAndGetGenieField(
-          data,
-          fieldObject.field,
-          permissions.useLastIndexOnWildcard,
-        );
+    // Get the value from genie
+    genieValue = checkAndGetGenieField(
+      data,
+      fieldObject.field,
+      permissions.useLastIndexOnWildcard,
+    );
 
-        // Set the value and set to save the device
-        if (genieValue.success) {
-          fieldObject.value = genieValue.value;
-          saveDevice = true;
-        } else {
-          fieldObject.value = '';
-        }
-      });
-
-
-      // Try getting the mask
-      let maskV6 = utilHandlers
-        .getMaskFromAddress(assignFields.wanIPv6Field.value, true);
-
-      if (!maskV6) maskV6 = '0';
-
-
-      // Check if needs to save the device. Made this way to reduce unnecessary
-      // save calls
-      if (saveDevice) {
-        // Update last contact
-        device.last_contact = Date.now();
-
-        // Update fields
-        // Address
-        device.wan_ip = assignFields.wanIPv4Field.value;
-        // Remove the mask if came with it
-        device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
-
-        // Mask
-        let mask = parseInt(assignFields.maskIPv4Field.value);
-        device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
-
-        mask = parseInt(
-          assignFields.maskIPv6Field.value ?
-          assignFields.maskIPv6Field.value : maskV6,
-        );
-        device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
-
-        // PPPoE
-        if (hasPPPoE) {
-          device.pppoe_ip = assignFields.wanPPPoEAddressField.value;
-          device.pppoe_mac = assignFields.wanPPPoEMacField.value;
-        }
-
-        // Default Gateway
-        device.default_gateway_v4 = assignFields.gatewayIPv4Field.value;
-        device.default_gateway_v6 = assignFields.gatewayIPv6Field.value;
-
-        // DNS Server
-        device.dns_server = assignFields.dnsServerField.value;
-
-        try {
-          // Save the device
-          await device.save();
-        } catch (error) {
-          console.error(
-            'Error saving device in fetchWanInformationFromGenie: ' + error,
-          );
-
-          return;
-        }
-      }
-
-
-      // Always send the notification, even if there is no value
-      sio.anlixSendWanInfoNotification(device._id, {
-        ipv4_address: assignFields.wanIPv4Field.value,
-        ipv4_mask: assignFields.maskIPv4Field.value,
-
-        // Remove the mask if came with it
-        ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
-        ipv6_mask: (
-          assignFields.maskIPv6Field.value ?
-          assignFields.maskIPv6Field.value : maskV6
-        ),
-
-        default_gateway_v4: assignFields.gatewayIPv4Field.value,
-        default_gateway_v6: assignFields.gatewayIPv6Field.value,
-        dns_server: assignFields.dnsServerField.value,
-
-        wan_conn_type: hasPPPoE ? 'pppoe' : 'dhcp',
-        pppoe_mac: assignFields.wanPPPoEMacField.value,
-        pppoe_ip: assignFields.wanPPPoEAddressField.value,
-      });
-    });
+    // Set the value and set to save the device
+    if (genieValue.success) {
+      fieldObject.value = genieValue.value;
+      saveDevice = true;
+    } else {
+      fieldObject.value = '';
+    }
   });
 
-  request.end();
+
+  // Try getting the mask
+  let maskV6 = utilHandlers
+    .getMaskFromAddress(assignFields.wanIPv6Field.value, true);
+
+  if (!maskV6) maskV6 = '0';
+
+
+  // Check if needs to save the device. Made this way to reduce unnecessary
+  // save calls.
+  if (saveDevice) {
+    // Update the device as it could have been changed during the request
+    // (an async call with await) and thus causing mongoose to throw an
+    // error
+    try {
+      device = await DeviceModel.findOne(
+        {acs_id: acsID},
+        {
+          wan_ip: true, wan_ipv6: true, wan_ipv4_mask: true,
+          wan_ipv6_mask: true, pppoe_ip: true, pppoe_mac: true,
+          default_gateway_v4: true, default_gateway_v6: true,
+          dns_server: true, last_contact: true,
+        },
+      );
+
+      if (device) {
+        saveDevice = true;
+      } else {
+        saveDevice = false;
+      }
+    } catch (error) {
+      console.error(
+        'Could not get device in fetchWanInformationFromGenie: ' + error,
+      );
+
+      // If an error occurred, do not save
+      saveDevice = false;
+    }
+  }
+
+  if (saveDevice) {
+    // Update last contact
+    device.last_contact = Date.now();
+
+    // Update fields
+    // Address
+    device.wan_ip = assignFields.wanIPv4Field.value;
+    // Remove the mask if came with it
+    device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
+
+    // Mask
+    let mask = parseInt(assignFields.maskIPv4Field.value);
+    device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
+
+    mask = parseInt(
+      assignFields.maskIPv6Field.value ?
+      assignFields.maskIPv6Field.value : maskV6,
+    );
+    device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
+
+    // PPPoE
+    if (hasPPPoE) {
+      device.pppoe_ip = assignFields.wanPPPoEAddressField.value;
+      device.pppoe_mac = assignFields.wanPPPoEMacField.value;
+    }
+
+    // Default Gateway
+    device.default_gateway_v4 = assignFields.gatewayIPv4Field.value;
+    device.default_gateway_v6 = assignFields.gatewayIPv6Field.value;
+
+    // DNS Server
+    device.dns_server = assignFields.dnsServerField.value;
+
+    try {
+      // Save the device
+      await device.save();
+    } catch (error) {
+      console.error(
+        'Error saving device in fetchWanInformationFromGenie: ' + error,
+      );
+
+      return;
+    }
+  }
+
+
+    // Always send the notification, even if there is no value
+    sio.anlixSendWanInfoNotification(device._id, {
+      ipv4_address: assignFields.wanIPv4Field.value,
+      ipv4_mask: assignFields.maskIPv4Field.value,
+
+      // Remove the mask if came with it
+      ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
+      ipv6_mask: (
+        assignFields.maskIPv6Field.value ?
+        assignFields.maskIPv6Field.value : maskV6
+      ),
+
+      default_gateway_v4: assignFields.gatewayIPv4Field.value,
+      default_gateway_v6: assignFields.gatewayIPv6Field.value,
+      dns_server: assignFields.dnsServerField.value,
+
+      wan_conn_type: hasPPPoE ? 'pppoe' : 'dhcp',
+      pppoe_mac: assignFields.wanPPPoEMacField.value,
+      pppoe_ip: assignFields.wanPPPoEAddressField.value,
+    });
 };
 
 
@@ -740,7 +957,13 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
   if (!acsID) return;
 
   try {
-    device = await DeviceModel.findOne({acs_id: acsID});
+    device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        use_tr069: true, acs_id: true, model: true, version: true,
+        hw_version: true, connection_type: true,
+      },
+    ).lean();
   } catch (error) {
     console.error(
       'Could not get device in fetchLanInformationFromGenie: ' + error,
@@ -772,7 +995,16 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
 
 
   // If does not have any IPv6 information, exit
-  if (!permissions.features.hasIpv6Information) return;
+  if (!permissions.features.hasIpv6Information) {
+    // Send an empty notification to not stall frontend
+    sio.anlixSendLanInfoNotification(device._id, {
+      prefix_delegation_addr: '',
+      prefix_delegation_mask: '',
+      prefix_delegation_local: '',
+    });
+
+    return;
+  }
 
 
   // Check PPPoE
@@ -815,121 +1047,126 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
     projection += fieldRoot;
   });
 
-
-  // Build the request
-  let path = '/devices/?query=' + JSON.stringify(query) +
-    '&projection=' + projection;
-
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
+  let data = null;
+  let saveDevice = false;
 
 
   // Send the request
-  let request = http.request(options, (response) => {
-    response.setEncoding('utf8');
-    let receivedData = '';
+  try {
+    data = (await TasksAPI.getFromCollection('devices', query, projection))[0];
+  } catch (error) {
+    console.error(
+      'Error getting LAN information from GenieACS in' +
+      'fetchLanInformationFromGenie: ' +
+      error,
+    );
 
-    response.on('data', (chunk) => receivedData += chunk);
-    response.on('end', async () => {
-      let data = null;
-      let saveDevice = false;
+    return;
+  }
 
-      // If did not received any data
-      if (receivedData.length <= 0) {
-        return;
-      }
-
-      // Try parsing the data
-      try {
-        data = JSON.parse(receivedData)[0];
-      } catch (error) {
-        console.error(error);
-        return;
-      }
-
-      // Check data
-      if (!data) return;
+  // Check data
+  if (!data) return;
 
 
-      // Get all data
-      Object.keys(assignFields).forEach((fieldName) => {
-        let genieValue = null;
-        let fieldObject = assignFields[fieldName];
+  // Get all data
+  Object.keys(assignFields).forEach((fieldName) => {
+    let genieValue = null;
+    let fieldObject = assignFields[fieldName];
 
-        // Get the value from genie
-        genieValue = checkAndGetGenieField(
-          data,
-          fieldObject.field,
-          permissions.useLastIndexOnWildcard,
-        );
+    // Get the value from genie
+    genieValue = checkAndGetGenieField(
+      data,
+      fieldObject.field,
+      permissions.useLastIndexOnWildcard,
+    );
 
-        // Set the value and set to save the device
-        if (genieValue.success) {
-          fieldObject.value = genieValue.value;
-          saveDevice = true;
-        } else {
-          fieldObject.value = '';
-        }
-      });
-
-
-      // Try getting the mask
-      let mask = utilHandlers
-        .getMaskFromAddress(assignFields.prefixAddressField.value, true);
-
-      if (!mask) mask = '';
-
-
-      // Check if needs to save the device. Made this way to reduce unnecessary
-      // save calls
-      if (saveDevice) {
-        // Update last contact
-        device.last_contact = Date.now();
-
-        // If prefixAddressField has '/', remove it
-        assignFields.prefixAddressField.value =
-          assignFields.prefixAddressField.value.split('/')[0];
-        device.prefix_delegation_addr = assignFields.prefixAddressField.value;
-
-        // If the mask field came empty, try using the one from the address
-        device.prefix_delegation_mask = (
-          assignFields.prefixMaskField.value ?
-          assignFields.prefixMaskField.value : mask
-        );
-
-        device.prefix_delegation_local =
-          assignFields.prefixLocalAddressField.value;
-
-        try {
-          // Save the device
-          await device.save();
-        } catch (error) {
-          console.error(
-            'Error saving device in fetchLanInformationFromGenie: ' + error,
-          );
-
-          return;
-        }
-      }
-
-
-      // Always send the notification, even if it is empty
-      sio.anlixSendLanInfoNotification(device._id, {
-        prefix_delegation_addr: assignFields.prefixAddressField.value,
-        prefix_delegation_mask: (
-          assignFields.prefixMaskField.value ?
-          assignFields.prefixMaskField.value : mask
-        ),
-        prefix_delegation_local: assignFields.prefixLocalAddressField.value,
-      });
-    });
+    // Set the value and set to save the device
+    if (genieValue.success) {
+      fieldObject.value = genieValue.value;
+      saveDevice = true;
+    } else {
+      fieldObject.value = '';
+    }
   });
 
-  request.end();
+
+  // Try getting the mask
+  let mask = utilHandlers
+    .getMaskFromAddress(assignFields.prefixAddressField.value, true);
+
+  if (!mask) mask = '';
+
+
+  // Check if needs to save the device. Made this way to reduce unnecessary
+  // save calls.
+  if (saveDevice) {
+    // Update the device as it could have been changed during the request
+    // (an async call with await) and thus causing mongoose to throw an
+    // error
+    try {
+      device = await DeviceModel.findOne(
+        {acs_id: acsID},
+        {
+          prefix_delegation_addr: true, prefix_delegation_mask: true,
+          prefix_delegation_local: true, last_contact: true,
+        },
+      );
+
+      if (device) {
+        saveDevice = true;
+      } else {
+        saveDevice = false;
+      }
+    } catch (error) {
+      console.error(
+        'Could not get device in fetchLanInformationFromGenie: ' + error,
+      );
+
+      // If an error occurred, do not save
+      saveDevice = false;
+    }
+  }
+
+  if (saveDevice) {
+    // Update last contact
+    device.last_contact = Date.now();
+
+    // If prefixAddressField has '/', remove it
+    assignFields.prefixAddressField.value =
+      assignFields.prefixAddressField.value.split('/')[0];
+    device.prefix_delegation_addr = assignFields.prefixAddressField.value;
+
+    // If the mask field came empty, try using the one from the address
+    device.prefix_delegation_mask = (
+      assignFields.prefixMaskField.value ?
+      assignFields.prefixMaskField.value : mask
+    );
+
+    device.prefix_delegation_local =
+      assignFields.prefixLocalAddressField.value;
+
+    try {
+      // Save the device
+      await device.save();
+    } catch (error) {
+      console.error(
+        'Error saving device in fetchLanInformationFromGenie: ' + error,
+      );
+
+      return;
+    }
+  }
+
+
+  // Always send the notification, even if it is empty
+  sio.anlixSendLanInfoNotification(device._id, {
+    prefix_delegation_addr: assignFields.prefixAddressField.value,
+    prefix_delegation_mask: (
+      assignFields.prefixMaskField.value ?
+      assignFields.prefixMaskField.value : mask
+    ),
+    prefix_delegation_local: assignFields.prefixLocalAddressField.value,
+  });
 };
 
 

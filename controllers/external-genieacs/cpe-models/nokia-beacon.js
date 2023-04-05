@@ -26,6 +26,7 @@ nokiaModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     '3FE49127HJII42': [],
   };
+  permissions.lan.dnsServersLimit = 3;
   return permissions;
 };
 

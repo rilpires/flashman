@@ -6,7 +6,6 @@ tplinkModel.identifier = {vendor: 'TP-Link', model: 'HC220-G5'};
 
 tplinkModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
-  permissions.features.customAppPassword = false;
   permissions.features.pingTest = true;
   permissions.features.portForward = true;
   permissions.wan.portForwardPermissions =
@@ -29,6 +28,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.lan.dnsServersLimit = 2;
   return permissions;
 };
 

@@ -15,6 +15,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
 
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
@@ -28,6 +30,9 @@ multilaserModel.modelPermissions = function() {
   permissions.wan.hasIpv4RemoteAddressField = true;
   permissions.wan.hasIpv4DefaultGatewayField = true;
   permissions.wan.hasDnsServerField = true;
+
+  // X_ZTE-COM_ISPDNSEnable must be disabled to use DNS on lan
+  permissions.lan.dnsServersWrite = false;
 
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasMaskField = true;
