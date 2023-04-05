@@ -47,6 +47,8 @@ const tr069Models = {
   huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
+  intelbrasGX3000Model: require('./cpe-models/intelbras-gx3000'),
+  intelbrasIH3000Model: require('./cpe-models/intelbras-ih3000'),
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
@@ -251,6 +253,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     result = {success: true, cpe: tr069Models.hurakallST1001FLModel};
+  } else if (modelName === 'GX3000') {
+    // Intelbras GX3000
+    result = {success: true, cpe: tr069Models.intelbrasGX3000Model};
+  } else if (modelName === 'IH3000') {
+    // Intelbras IH3000
+    result = {success: true, cpe: tr069Models.intelbrasIH3000Model};
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};

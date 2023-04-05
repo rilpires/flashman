@@ -84,6 +84,7 @@ let deviceSchema = new Schema({
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
+  lan_dns_servers: String, // String which is a comma separated list of servers
   lan_devices: [{
     mac: String,
     dhcp_name: String,

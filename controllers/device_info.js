@@ -62,6 +62,7 @@ const createRegistry = async function(req, res) {
   let pppoePassword = util.returnObjOrEmptyStr(req.body.pppoe_password).trim();
   let lanSubnet = util.returnObjOrEmptyStr(req.body.lan_addr).trim();
   let lanNetmask = parseInt(util.returnObjOrNum(req.body.lan_netmask, 24));
+  let lanDnsServers = util.returnObjOrEmptyStr(req.body.lan_dns_servers).trim();
   let ssid = util.returnObjOrEmptyStr(req.body.wifi_ssid).trim();
   let password = util.returnObjOrEmptyStr(req.body.wifi_password).trim();
   let channel = util.returnObjOrEmptyStr(req.body.wifi_channel).trim();
@@ -290,6 +291,7 @@ const createRegistry = async function(req, res) {
       'pppoe_password': pppoePassword,
       'lan_subnet': lanSubnet,
       'lan_netmask': lanNetmask,
+      'lan_dns_servers': lanDnsServers,
       'wifi_ssid': ssid,
       'wifi_password': password,
       'wifi_channel': channel,
