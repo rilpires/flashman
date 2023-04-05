@@ -1378,7 +1378,7 @@ const fetchSyncResult = async function(
   data = data[0];
 
   let device = await DeviceModel.findOne({acs_id: acsID},
-    {ap_survey: 0, lan_devices: 0})
+    {ap_survey: 0})
     .exec().catch((err) => {
       console.log(`ERROR IN fetchSyncResult Device find: ${err}`);
       return undefined;
