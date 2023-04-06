@@ -50,28 +50,55 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
 // Function explodes the keys according to the points and excludes the field
 // name in order to generate the parent tree from this node. Returns an array
 // with the name of the parent nodes plus '.*.*' at the end
-const parentNodeGenerator = function(fields) {
+const getParentNode = function(fields) {
   let nodes = [];
+  const hasNumericKey = /\.\d+\./;
+  const hasWildcardKey = /\.\*\./;
   Object.keys(fields).forEach((key) => {
     let node;
-    if (fields[key].includes('*')) {
-      node = fields[key]
-      .split('.').slice(0, -1)
-      .join('.') + '.*';
+    if (!hasNumericKey.test(fields[key]) && !hasWildcardKey.test(fields[key])) {
+      // If the field does not have numeric keys or wildcards, it must not be
+      // changed
+      node = fields[key];
     } else {
-      node = fields[key]
-      .split('.').slice(0, -2)
-      .join('.') + '.*.*';
+      // Otherwise, the last substring is discarded and we add the string '.*.*'
+      // to update the entire parent node of the given field
+      let tmp = fields[key].split('.').slice(0, -1);
+      if (tmp[tmp.length - 1] === '*') {
+        // If the parent node already ends with the string '.*', just add '.*'
+        node = tmp.join('.') + '.*';
+      } else if (!isNaN(parseInt(tmp[tmp.length - 1]))) {
+        // If the parent node already ends with a numerical key, it is discarded
+        // and '.*.*' is added
+        node = tmp.slice(0, -1).join('.') + '.*.*';
+      } else {
+        // If none of the previous cases is true, it is only necessary to add
+        // the string '.*.*'
+        node = tmp.join('.') + '.*.*';
+      }
     }
     if (!nodes.includes(node)) {
       nodes.push(node);
     }
   });
   return nodes;
+}
+
+const getFieldProperty = function(fields, value) {
+  let property = '';
+  for (let key of Object.keys(fields)) {
+    let regex = new RegExp(`^${fields[key].replace('*', '\\d+')}$`);
+    if (regex.test(value)) {
+      property = key;
+      break;
+    }
+  }
+  return property;
 };
 
-const updateWanConfiguration = function(fields) {
-  let nodes = parentNodeGenerator(fields);
+const updateWanConfiguration = function(fields, useLastIndexOnWildcard) {
+  let nodes = getParentNode(fields);
+  log(JSON.stringify(nodes));
   let result = {};
   for (let node of nodes) {
     let type = node.includes('PPP') ? 'ppp_' :
@@ -81,20 +108,40 @@ const updateWanConfiguration = function(fields) {
     if (responses.value) {
       for (let resp of responses) {
         if (resp.value) {
+          // Collect field properties
           let field = {};
+          field.field = getFieldProperty(fields, resp.path);
+          if (field.field === '') continue;
           field.path = resp.path;
           field.writable = resp.writable;
           field.value = resp.value;
-          if (type !== 'common') {
-            // Extract last numeric index from path to differentiate WANs
-            let i = field.path.match(/\.(\d+)(?!.*\.\d+)/)[1];
-            let key = 'wan_' + type + i;
-            if (!result[key]) {
-              result[key] = [];
+          // Extract numeric index from path, if exists
+          let regex = useLastIndexOnWildcard ?
+                        /\b(\d+)./ :         // First index
+                        /\.(\d+)(?!.*\.\d+)/ // Last index
+          let match = field.path.match(regex);
+          let i = (match !== null) ? match[1] : null; // Variable is null if it
+                                                      // has no numeric keys
+          if (type !== 'common' && i !== null) {
+            // If the field is clearly WAN PPP or DHCP, add the element
+            // straightforward
+            let currentKey = 'wan_' + type + i;
+            if (!result[currentKey]) {
+              result[currentKey] = [];
             }
-            result[key].push(field);
-          } else {
-            // Adds common fields to all WANs
+            result[currentKey].push(field);
+          } else if (type === 'common' && i !== null) {
+            // If the field is common but has an index, add it to all WANs that
+            // match the path's index
+            Object.keys(result).forEach((key) => {
+              let keyLastIndex = key.split('_').slice(-1)[0];
+              if (keyLastIndex === i.toString()) {
+                result[key].push(field);
+              }
+            });
+          } else if (type === 'common' && i === null) {
+            // If there is no numerical key, it means that the field must be
+            // added on all WANs
             Object.keys(result).forEach((key) => {
               result[key].push(field);
             });
@@ -103,6 +150,7 @@ const updateWanConfiguration = function(fields) {
       }
     }
   }
+  log(JSON.stringify(result));
   return result;
 }
 
@@ -196,6 +244,7 @@ if (!result.measure) {
 // Expected to run on creation, fware upgrade and cpe reset recovery
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
+updateWanConfiguration(fields.wan, result.useLastIndexOnWildcard);
 let data = {
   common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
   wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
