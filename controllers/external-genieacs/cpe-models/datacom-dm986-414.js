@@ -35,6 +35,7 @@ datacomModel.modelPermissions = function() {
     'V4.6.0-210709': ['V5.4.0-220624'],
     'V5.4.0-220624': [],
   };
+  permissions.lan.dnsServersLimit = 3;
   return permissions;
 };
 
