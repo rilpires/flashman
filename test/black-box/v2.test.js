@@ -1,7 +1,7 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const request = require('supertest');
-const {runSimulation} = require('@anlix-io/genieacs-sim');
+const {createSimulator, formatXML} = require('./cpe-tr069-simulator');
 
 
 describe('api_v2', () => {
@@ -14,6 +14,18 @@ describe('api_v2', () => {
   let adminCookie = null;
 
   jest.setTimeout( 15*1000 );
+
+  const mac = 'FF:FF:FF:00:00:01';
+  let simulator;
+
+  // returns response from an http request, sent to flashman, with a user
+  // already logged in.
+  const flashman = (method, url, body) => {
+    return request(flashmanHost)[method](url || '')
+    .set('Cookie', adminCookie)
+    .auth(basicAuthUser, basicAuthPass)
+    .send(body);
+  };
 
   beforeAll(async () => {
     const adminLogin = await request(flashmanHost)
@@ -34,15 +46,10 @@ describe('api_v2', () => {
   });
 
   // Device search
-  test('/api/v2/device/search - Before and After creation',
-  async () => {
-    let res = await request(flashmanHost)
-      .put('/api/v2/device/search')
-      .set('Cookie', adminCookie)
-      .auth(basicAuthUser, basicAuthPass)
-      .send({
-        filter_list: 'online',
-      });
+  test('/api/v2/device/search - Before and After creation', async () => {
+    let res = await flashman('put', '/api/v2/device/search', {
+      filter_list: 'online',
+    });
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -53,18 +60,26 @@ describe('api_v2', () => {
     expect(res.body.status.totalnum).toEqual(0);
 
     // Creating a device
-    // runSimulation(acsUrl, dataModel, serialNumber, macAddr)
-    runSimulation(genieCwmpHost, deviceModelH199, 1000, 'FF:FF:FF:00:00:01'),
-    await new Promise((resolve, reject)=>setTimeout(resolve, 5000));
+    simulator = createSimulator(genieCwmpHost, deviceModelH199, 1000, mac)
+    .on('started', () => {
+      console.log('*** simulator started');
+    }).on('ready', () => {
+      console.log('*** simulator ready');
+    }).on('requested', (request) => {
+      console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
+    }).on('response', (response) => {
+      console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
+    }).on('sent', (request) => {
+      console.log(`- SENT BODY '${formatXML(request.body)}'.`);
+    }).on('task', (task) => {
+      console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
+    });
+    await simulator.start();
 
     // Checking new result
-    res = await request(flashmanHost)
-      .put('/api/v2/device/search')
-      .set('Cookie', adminCookie)
-      .auth(basicAuthUser, basicAuthPass)
-      .send({
-        filter_list: 'online',
-      });
+    res = await flashman('put', '/api/v2/device/search', {
+      filter_list: 'online',
+    });
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -74,8 +89,33 @@ describe('api_v2', () => {
     expect(res.body.status.offlinenum).toEqual(0);
   });
 
+  test('Changing CPE register', async () => {
+    let update = {
+      content: {
+        wifi_ssid: 'some ssid',
+        wifi_password: 'somepassword',
+      },
+    };
+    let res = await flashman('put', `/api/v2/device/update/${mac}`, update);
+    expect(res.statusCode).toBe(200);
+    // eslint-disable-next-line guard-for-in
+    for (let field in update.content) {
+      expect(res.body[field]).toBe(update.content[field]);
+    }
+
+    // Waiting for simulator to process the task, respond and receive answer.
+    await simulator.nextTask();
+
+    res = await flashman('get', `/api/v2/device/update/${mac}`);
+    expect(res.statusCode).toBe(200);
+    // eslint-disable-next-line guard-for-in
+    for (let field in update.content) {
+      expect(res.body[field]).toBe(update.content[field]);
+    }
+  });
 
   afterAll(async () => {
-    // Clean database? Close connections? Say goodbye?
+    await flashman('delete', `/api/v2/device/delete/${mac}`);
+    if (simulator) await simulator.shutDown();
   });
 });

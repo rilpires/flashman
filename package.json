@@ -94,6 +94,7 @@
     "unzipper": "~0.10.11"
   },
   "devDependencies": {
+    "@anlix-io/genieacs-sim": "^1.1.0",
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
     "babel-loader": "^8.2.2",
@@ -110,7 +111,6 @@
     "jsdoc": "^4.0.2",
     "jsdoc-to-markdown": "^8.0.0",
     "mockingoose": "https://github.com/anlix-io/mockingoose.git",
-    "@anlix-io/genieacs-sim": "1.0.0",
     "mqtt": "1.14.0",
     "nock": "^13.3.0",
     "nodemon": "^2.0.3",
