@@ -32,6 +32,7 @@ tendaModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     'v1.0.1': [],
   };
+  permissions.lan.dnsServersLimit = 3;
   return permissions;
 };
 
