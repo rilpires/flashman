@@ -10,12 +10,16 @@ tendaModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.hasIpv6Information = true;
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48];
   permissions.wifi.bandRead2 = false;
   permissions.wifi.bandRead5 = false;
@@ -74,6 +78,29 @@ tendaModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesSent';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_TDTC_IPv6Address';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_TDTC_IPv6Address';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_TDTC_IPv6GatewayAddress';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_TDTC_IPv6GatewayAddress';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANIPConnection'+
+    '.*.X_TDTC_IPv6PrefixDelegationAddress';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection'+
+    '.*.X_TDTC_IPv6PrefixDelegationAddress';
+
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
