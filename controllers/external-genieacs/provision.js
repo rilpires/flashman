@@ -85,74 +85,97 @@ const getParentNode = function(fields) {
 }
 
 const getFieldProperty = function(fields, value) {
-  let property = '';
+  let properties = [];
   for (let key of Object.keys(fields)) {
     let regex = new RegExp(`^${fields[key].replace('*', '\\d+')}$`);
     if (regex.test(value)) {
-      property = key;
-      break;
+      properties.push(key);
     }
   }
-  return property;
+  return properties;
+};
+
+const extractIndex = function(path, useLastIndexOnWildcard) {
+  // Extract numeric index from path, if exists
+  let regex = useLastIndexOnWildcard ?
+                /\b(\d+)./ :         // First index
+                /\.(\d+)(?!.*\.\d+)/ // Last index
+  let match = path.match(regex);
+  // Return null if it has no numeric keys
+  return (match !== null) ? match[1] : null;
+};
+
+const assembleTR069WAN = function(data, fields, useLastIndexOnWildcard) {
+  let result = {};
+  for (let obj of data) {
+    // Key creation: depending on the path type
+    let pathType = obj.path.includes('PPP') ? 'ppp_' :
+                   obj.path.includes('IP') ? 'dhcp_' : 'common';
+    let i = extractIndex(obj.path, useLastIndexOnWildcard);
+    let key = 'wan_' + pathType + i;
+    if (i !== null && pathType !== 'common' && !result[key]) {
+      result[key] = [];
+    }
+    // Addition of obj to WANs: depending on the property's match, since there
+    // may be PPP-type properties associated with IP-type paths
+    let properties = getFieldProperty(fields, obj.path);
+    if (properties.length === 0) continue;
+
+    // Looks for the correct WAN: This depends on the prop match type and the
+    // path index
+    for (let prop of properties) {
+      let field = {};
+      field[prop] = obj;
+      let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
+      Object.keys(result).forEach((k) => {
+        // currentKey[1] = type (ppp or dhcp)
+        // currentKey[2] = index
+        let currentKey = k.split('_');
+        if (i === null) {
+          // If the index is equal to null, it means that this path has no index,
+          // and this must be added to all WANs
+          result[k].push(field);
+        } else {
+          // Otherwise we have to look for the correct WAN
+          if (currentKey[1] === propType && currentKey[2] === i.toString()) {
+            result[k].push(field);
+          }
+        }
+      });
+    }
+  }
+  return result;
 };
 
 const updateWanConfiguration = function(fields, useLastIndexOnWildcard) {
   let nodes = getParentNode(fields);
-  log(JSON.stringify(nodes));
   let result = {};
+  let data = [];
+  let addedPaths = new Set();
   for (let node of nodes) {
-    let type = node.includes('PPP') ? 'ppp_' :
-               node.includes('IP') ? 'dhcp_' : 'common';
     // Update node
     let responses = declare(node, {value: now, writable: now});
     if (responses.value) {
       for (let resp of responses) {
         if (resp.value) {
           // Collect field properties
-          let field = {};
-          field.field = getFieldProperty(fields, resp.path);
-          if (field.field === '') continue;
-          field.path = resp.path;
-          field.writable = resp.writable;
-          field.value = resp.value;
-          // Extract numeric index from path, if exists
-          let regex = useLastIndexOnWildcard ?
-                        /\b(\d+)./ :         // First index
-                        /\.(\d+)(?!.*\.\d+)/ // Last index
-          let match = field.path.match(regex);
-          let i = (match !== null) ? match[1] : null; // Variable is null if it
-                                                      // has no numeric keys
-          if (type !== 'common' && i !== null) {
-            // If the field is clearly WAN PPP or DHCP, add the element
-            // straightforward
-            let currentKey = 'wan_' + type + i;
-            if (!result[currentKey]) {
-              result[currentKey] = [];
-            }
-            result[currentKey].push(field);
-          } else if (type === 'common' && i !== null) {
-            // If the field is common but has an index, add it to all WANs that
-            // match the path's index
-            Object.keys(result).forEach((key) => {
-              let keyLastIndex = key.split('_').slice(-1)[0];
-              if (keyLastIndex === i.toString()) {
-                result[key].push(field);
-              }
-            });
-          } else if (type === 'common' && i === null) {
-            // If there is no numerical key, it means that the field must be
-            // added on all WANs
-            Object.keys(result).forEach((key) => {
-              result[key].push(field);
-            });
+          let obj = {};
+          obj.path = resp.path;
+          obj.writable = resp.writable;
+          obj.value = resp.value;
+          if (!addedPaths.has(resp.path)) {
+            data.push(obj);
+            addedPaths.add(resp.path);
           }
         }
       }
     }
   }
+  log(JSON.stringify(data));
+  result = assembleTR069WAN(data, fields, useLastIndexOnWildcard);
   log(JSON.stringify(result));
   return result;
-}
+};
 
 const fetchPortFoward = function(fields, data) {
   let base = '';
