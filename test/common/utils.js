@@ -569,7 +569,7 @@ utils.schedulerCommon.getReleases = async function(cookie, data) {
 /**
  * Create a basic fake response.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {Promise} promiseResolve - The resolver of the promise to be called.
@@ -597,7 +597,7 @@ const fakeJson = function(errorCode, promiseResolve, header, data) {
 /**
  * Create a fake response status.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {PromiseResolver} promiseResolve - The resolver of the promise to be
