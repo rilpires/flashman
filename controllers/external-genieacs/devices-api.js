@@ -3,6 +3,12 @@ The scripts in this directory are loaded by genieacs along with the provision
 script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 "path/to/flashman/controllers/external-genieacs"
 */
+/**
+ * This file includes functions to handle the interact with GenieACS and
+ * Flashman. Be aware that those functions might be accessible for Flashman
+ * in a Docker environment.
+ * @namespace controllers/external-genieacs/devices-api
+ */
 
 // ***** WARNING!!! *****
 // DO NOT CHANGE THIS VARIABLE WITHOUT ALSO CHANGING THE COMMAND THAT ALTERS IT
