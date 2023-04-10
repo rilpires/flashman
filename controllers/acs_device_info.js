@@ -1731,8 +1731,8 @@ acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
  *
  * @memberof controllers/acsDeviceInfo
  *
- * @param {Request} req - The http request.
- * @param {Response} res - The http response.
+ * @param {Request} req - The HTTP request.
+ * @param {Response} res - The HTTP response.
  *
  * @return {Response} The body of the response might contains:
  *  - `success`: If could execute the function properly;
