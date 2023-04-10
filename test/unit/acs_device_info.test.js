@@ -131,7 +131,7 @@ describe('ACS Device Info Tests', () => {
   describe('updateInfo', () => {
     // mustExecute = true & executed
     test('mustExecute = true & executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -177,7 +177,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = true & not executed
     test('mustExecute = true & not executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -223,7 +223,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = false & executed
     test('mustExecute = false & executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -269,7 +269,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = true & not executed
     test('mustExecute = false & not executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -318,7 +318,7 @@ describe('ACS Device Info Tests', () => {
   describe('configTR069VirtualAP', () => {
     // To mode disabled
     test('To mode disabled', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -337,7 +337,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode cable
     test('To mode cable', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -356,7 +356,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi2
     test('To mode wifi2', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -375,7 +375,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi5
     test('To mode wifi5', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -394,7 +394,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi2/5
     test('To mode wifi2/5', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
 
       // Mocks
@@ -416,7 +416,7 @@ describe('ACS Device Info Tests', () => {
 
     // To unknown mode
     test('To unknown mode', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -1141,7 +1141,7 @@ describe('ACS Device Info Tests', () => {
 
     // Validate WAN and LAN information
     test('WAN & LAN information', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       const cpePermissions = {
         features: {hasIpv6Information: true},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1218,7 +1218,7 @@ describe('ACS Device Info Tests', () => {
 
     // WAN and LAN information without IPv6
     test('WAN & LAN information without IPv6', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = {
         features: {hasIpv6Information: false},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1302,7 +1302,7 @@ describe('ACS Device Info Tests', () => {
 
     // WAN and LAN information no grant
     test('WAN & LAN information no grant', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = {
         features: {hasIpv6Information: true},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1379,7 +1379,7 @@ describe('ACS Device Info Tests', () => {
 
     // Invalid config
     test('Invalid config', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       device.acs_id = '';
       let app = {
         locals: {
@@ -1419,7 +1419,7 @@ describe('ACS Device Info Tests', () => {
 
     // All permissions
     test('All permissions', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = fieldsAndPermissions.cpePermissions[0];
       let app = {
         locals: {
@@ -3995,7 +3995,7 @@ describe('syncDeviceData - Update web admin login', () => {
   describe('requestSync', () => {
     // All parameters and fields
     test('All parameters and fields', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
 
 
@@ -4060,7 +4060,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // All permissions with no fields
     test('All permissions with no fields', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
       let fields = {...fieldsAndPermissions.fields[0]};
 
@@ -4143,7 +4143,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // Without WAN and LAN information
     test('Without WAN and LAN information', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = {...fieldsAndPermissions.devicePermissions[0]};
       devicePermissions.grantWanLanInformation = false;
 
@@ -4200,7 +4200,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // WAN and LAN information with no IPv6
     test('WAN and LAN information with no IPv6', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
       let cpePermissions = {...fieldsAndPermissions.cpePermissions[0]};
       cpePermissions.features.hasIpv6Information = false;
