@@ -907,7 +907,9 @@ appDeviceAPIController.doSpeedtest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      sendGenericSpeedTest(matchedDevice, 'App_Cliente');
+      // Use the same structure as a normal user
+      let user = {name: 'App_Cliente'};
+      sendGenericSpeedTest(matchedDevice, user);
     }, 1.5*1000);
   });
 };
