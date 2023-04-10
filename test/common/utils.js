@@ -511,6 +511,36 @@ utils.common.getDevices = async function(query) {
 };
 
 
+/**
+ * Loads a file and returns it's content. If it is a text file, it will return a
+ * `String`. If it is a text file and the `isJson` flag is marked as `true`, it
+ * will return the parsed file in `Object` format.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @param {String} file - Relative path to the file.
+ * @param {Boolean} isJson - If the file shouldd be considered as a JSON file
+ * and needs to be converted to an `Object`.
+ *
+ * @return {String | Object} The content of the file.
+ */
+utils.common.loadFile = function(file, isJson = true) {
+  // Load the file
+  const data = fs.readFileSync(
+    path.resolve(
+      __dirname, file,
+    ), 'utf8',
+  );
+
+  // Convert to an object if needed
+  if (isJson) {
+    return JSON.parse(data);
+  } else {
+    return data;
+  }
+};
+
+
 /** ************ Update Scheduler ************ **/
 
 
@@ -848,19 +878,6 @@ utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
   });
 };
 
-utils.common.loadFile = function(file, isJson = true) {
-  const data = fs.readFileSync(
-    path.resolve(
-      __dirname, file,
-    ), 'utf8',
-  );
-
-  if (isJson) {
-    return JSON.parse(data);
-  } else {
-    return data;
-  }
-};
 
 /**
  * @exports test/common/utils
