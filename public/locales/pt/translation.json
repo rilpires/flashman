@@ -1082,7 +1082,7 @@
 	"duplicatedCredentials": "O modelo {{-model}} já tem credenciais configuradas",
 	"emptyHostError": "O campo de endereço não pode ser vazio!",
 	"duplicatedHost": "O endereço {{-host}} já está cadastrado!",
-	"defaultHostsConfig": "Configuração de destinos padrão para testes de latencia",
+	"defaultHostsConfig": "Configuração de destinos padrão para testes de latência",
 	"defaultHostsConfigWarning": "Cuidado! Este procedimento irá sobrescrever os destinos de teste de latência para todos os CPEs cadastrados na base.",
 	"defaultHosts": "Endereços padrão de destino",
 	"noDefaultHostsConfigured": "Nenhum endereço padrão configurado",
@@ -1107,5 +1107,6 @@
 	"noBack": "Não, voltar",
 	"updateTimeLimit": "Tempo limite de atualização de 1 CPE: {{period}} minutos",
 	"updateTimeLimitInputText": "Tempo limite de atualização para 1 CPE, em minutos (Padrão: {{default}} minutos)",
-	"updateTimeLimitInputErrorText": "Tempo limite de atualização para 1 CPE inválido! Escolha um valor entre {{min}} e {{max}} minutos."
+	"updateTimeLimitInputErrorText": "Tempo limite de atualização para 1 CPE inválido! Escolha um valor entre {{min}} e {{max}} minutos.",
+	"invalidAddress": "Endereço inválido"
 }
