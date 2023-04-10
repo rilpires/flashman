@@ -786,6 +786,19 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
 
 /** ************ Devices API ************ **/
 
+/**
+ * Validates if the data passed contains only the models that can be upgraded.
+ * This functions is useful to be used with
+ * {@linkcode DevicesAPI.getTR069UpgradeableModels}.
+ *
+ * @memberof test/common/utils.devicesAPICommon
+ *
+ * @param {Object} data - The `Object` containing the vendors and versions that
+ * can be upgraded.
+ *
+ * @see {@linkcode DevicesAPI.getTR069UpgradeableModels} in order to use this
+ * function.
+ */
 utils.devicesAPICommon.validateUpgradeableModels = function(data) {
   Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
     let device = DevicesAPI.__testTR069Models[modelName];
