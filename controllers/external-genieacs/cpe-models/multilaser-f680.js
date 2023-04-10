@@ -32,7 +32,6 @@ multilaserModel.modelPermissions = function() {
   permissions.wan.hasIpv4DefaultGatewayField = true;
   permissions.wan.hasDnsServerField = true;
 
-  permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasPrefixDelegationAddressField = true;
   permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
 
