@@ -1807,7 +1807,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     debug(err);
     return null;
   });
-  if (!config) return;
+  if (!config || !device) return;
 
   // Initialize structures
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
