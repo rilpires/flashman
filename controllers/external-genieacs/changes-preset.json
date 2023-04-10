@@ -1,0 +1,14 @@
+{
+  "_id": "change_event",
+  "channel": "Events",
+  "weight": 0,
+  "events": {
+    "4 VALUE CHANGE": true
+  },
+  "precondition": "",
+  "configurations": [{
+    "type": "provision",
+    "name": "changes",
+    "args": null
+  }]
+}
