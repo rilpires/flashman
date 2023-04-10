@@ -562,11 +562,54 @@ const syncDeviceDiagnostics = async function(args, callback) {
   callback(null, result);
 };
 
+
+/**
+ * Calls Flashman to save parameters that got a notification in
+ * GenieACS.
+ *
+ * @memberof controllers/external-genieacs/devices-api
+ *
+ * @param {String} args - The data and ACS ID as a JSON string.
+ * @param {Function} callback - The function to be called when an error or
+ * success occurs.
+ *
+ * @return {Any} The callback response.
+ */
+const syncDeviceChanges = async function(args, callback) {
+  let params = null;
+
+  // Try parsing the data received
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Invalid JSON',
+    });
+  }
+
+  // Check params
+  if (!params || !params.data || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
+  let result = await sendFlashmanRequest('device/syncchanges', params);
+  return callback(null, result);
+};
+
+
+/**
+ * @exports controllers/external-genieacs/devices-api
+ */
 exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
 exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+exports.syncDeviceChanges = syncDeviceChanges;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
 
