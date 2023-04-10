@@ -4324,7 +4324,7 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-describe('syncDeviceData', () => {
+  describe('syncDeviceData', () => {
     // Not updating
     test('Not updating', async () => {
       let device = models.copyDeviceFrom(
