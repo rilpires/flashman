@@ -143,6 +143,7 @@ let data = {
     wan_ip_ppp: getValue(fields.wan.wan_ip_ppp, lastIndex),
     pppoe_enable: getValue(fields.wan.pppoe_enable, lastIndex),
   },
+  ipv6: {},
 };
 
 // Append other parameters to data
