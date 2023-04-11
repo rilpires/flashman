@@ -167,6 +167,28 @@ let validateEditDevice = function(event) {
 
   // Initialize error structure
   let errors = {
+    external_reference: {
+      field: '#edit_external_reference-' + index.toString(),
+      name: t('About') + ': ' + t('personIdentificationSystem') + ' / ' +
+        t('enterpriseIdentificationSystem') + ' / ' +
+        t('Other'),
+    },
+    bridge_fixed_ip: {
+      field: '#edit_opmode_fixip-' + index.toString(),
+      name: t('mode') + ': ' + t('fixedIpForCpeInBridge'),
+    },
+    bridge_fixed_gateway: {
+      field: '#edit_opmode_fixip_gateway-' + index.toString(),
+      name: t('mode') + ': ' + t('gatewayIpForCpeInBridge'),
+    },
+    bridge_fixed_dns: {
+      field: '#edit_opmode_fixip_dns-' + index.toString(),
+      name: t('mode') + ': ' + t('dnsIpForCpeInBridge'),
+    },
+    mesh_mode: {
+      field: '#edit_meshMode-' + index.toString(),
+      name: t('mode') + ': ' + t('meshMode'),
+    },
     pppoe_user: {
       field: '#edit_pppoe_user-' + index.toString(),
       name: 'WAN: ' + t('pppoeUser'),
@@ -182,6 +204,14 @@ let validateEditDevice = function(event) {
     wan_vlan: {
       field: '#edit_wan_vlan-' + index.toString(),
       name: 'WAN: VLAN',
+    },
+    lan_subnet: {
+      field: '#edit_lan_subnet-' + index.toString(),
+      name: 'LAN: ' + t('cpeIp') + ' / ' + t('networkIp'),
+    },
+    lan_netmask: {
+      field: '#edit_lan_netmask-' + index.toString(),
+      name: 'LAN: ' + t('Mask'),
     },
     ssid: {
       field: '#edit_wifi_ssid-' + index.toString(),
@@ -230,36 +260,6 @@ let validateEditDevice = function(event) {
     power5ghz: {
       field: '#edit_wifi5_power-' + index.toString(),
       name: 'Wi-Fi 5GHz: ' + t('signalStrength'),
-    },
-    lan_subnet: {
-      field: '#edit_lan_subnet-' + index.toString(),
-      name: 'LAN: ' + t('cpeIp') + ' / ' + t('networkIp'),
-    },
-    lan_netmask: {
-      field: '#edit_lan_netmask-' + index.toString(),
-      name: 'LAN: ' + t('Mask'),
-    },
-    bridge_fixed_ip: {
-      field: '#edit_opmode_fixip-' + index.toString(),
-      name: t('mode') + ': ' + t('fixedIpForCpeInBridge'),
-    },
-    bridge_fixed_gateway: {
-      field: '#edit_opmode_fixip_gateway-' + index.toString(),
-      name: t('mode') + ': ' + t('gatewayIpForCpeInBridge'),
-    },
-    bridge_fixed_dns: {
-      field: '#edit_opmode_fixip_dns-' + index.toString(),
-      name: t('mode') + ': ' + t('dnsIpForCpeInBridge'),
-    },
-    mesh_mode: {
-      field: '#edit_meshMode-' + index.toString(),
-      name: t('mode') + ': ' + t('meshMode'),
-    },
-    external_reference: {
-      field: '#edit_external_reference-' + index.toString(),
-      name: t('About') + ': ' + t('personIdentificationSystem') + ' / ' +
-        t('enterpriseIdentificationSystem') + ' / ' +
-        t('Other'),
     },
   };
   for (let key in errors) {
