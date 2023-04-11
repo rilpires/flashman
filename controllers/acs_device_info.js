@@ -29,13 +29,9 @@ const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
 const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
-const http = require('http');
 const t = require('./language').i18next.t;
 
-
 let acsDeviceInfoController = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Max number of sync requests concorrent (0 = disable)
 const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);

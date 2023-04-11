@@ -155,11 +155,11 @@ tplinkModel.getModelFields = function() {
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
 
   // IPv6
-  fields.ipv6.address = 'Device.IP.Interface.5.IPv6Address.*.IPAddress';
+  fields.ipv6.address = 'Device.IP.Interface.*.IPv6Address.*.IPAddress';
   fields.ipv6.address_ppp = fields.ipv6.address;
 
   fields.ipv6.prefix_delegation_address =
-    'Device.IP.Interface.5.IPv6Prefix.*.Prefix';
+    'Device.IP.Interface.*.IPv6Prefix.*.Prefix';
   fields.ipv6.prefix_delegation_address_ppp =
     fields.ipv6.prefix_delegation_address;
 
