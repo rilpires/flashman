@@ -50,7 +50,7 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
 // Function explodes the keys according to the points and excludes the field
 // name in order to generate the parent tree from this node. Returns an array
 // with the name of the parent nodes plus '.*.*' at the end
-const getParentNode = function(fields) {
+const getParentNode = function(fields, useLastIndexOnWildcard) {
   let nodes = [];
   const hasNumericKey = /\.\d+\./;
   const hasWildcardKey = /\.\*\./;
@@ -81,6 +81,14 @@ const getParentNode = function(fields) {
       nodes.push(node);
     }
   });
+  if (useLastIndexOnWildcard) {
+    nodes.push('Device.Ethernet.VLANTermination.*.*');
+    nodes.push('Device.Ethernet.Link.*.*');
+    nodes.push('Device.NAT.PortMapping.*.*');
+    nodes.push('Device.NAT.*.*');
+    nodes.push('Device.IP.*.*');
+    nodes.push('Device.PPP.*.*');
+  }
   return nodes;
 }
 
@@ -96,6 +104,7 @@ const getFieldProperty = function(fields, value) {
 };
 
 const extractIndex = function(path, useLastIndexOnWildcard) {
+  if (!path) return null;
   // Extract numeric index from path, if exists
   let regex = useLastIndexOnWildcard ?
                 /\b(\d+)./ :         // First index
@@ -105,17 +114,51 @@ const extractIndex = function(path, useLastIndexOnWildcard) {
   return (match !== null) ? match[1] : null;
 };
 
-const assembleTR069WAN = function(data, fields, useLastIndexOnWildcard) {
-  let result = {};
-  for (let obj of data) {
-    // Key creation: depending on the path type
-    let pathType = obj.path.includes('PPP') ? 'ppp_' :
-                   obj.path.includes('IP') ? 'dhcp_' : 'common';
-    let i = extractIndex(obj.path, useLastIndexOnWildcard);
-    let key = 'wan_' + pathType + i;
-    if (i !== null && pathType !== 'common' && !result[key]) {
-      result[key] = [];
+function findInterfaceLink(data, path, i) {
+  // Device.IP.Interface.*.LowerLayers <- Device.PPP.Interface.*.
+  if (path === null) return null;
+  const regex = new RegExp(path.replace("*", i));
+  for (let j = 0; j < data.length; j++) {
+    if (regex.test(data[j].value)) {
+      return data[j].path;
     }
+  }
+  return null; // Object not found
+};
+
+function findEthernetLink(data, path, i) {
+   // Device.PPP.Interface.2.LowerLayers -> Device.Ethernet.VLANTermination.*.
+   // Device.Ethernet.VLANTermination.*.LowerLayers -> Device.Ethernet.Link.*.
+   // Device.Ethernet.Link.*.LowerLayers -> Device.Ethernet.Interface.*.
+   if (path === null) return null;
+   const pathRegex = new RegExp(path.replace("*", i));
+   const valueRegex = new RegExp(
+    `^${'Device.Ethernet.VLANTermination.*.'.replace('*', '\\d+')}$`);
+
+   let vlanTerminationLink = '';
+   let ethernetLink = '';
+   for (let j = 0; j < data.length; j++) {
+     if (pathRegex.test(data[j].path) && valueRegex.test(data[j].value[0])) {
+       vlanTerminationLink = data[j].value[0] + 'LowerLayers';
+     }
+   }
+   for (let j = 0; j < data.length; j++) {
+     if (data[j].path === vlanTerminationLink) {
+       ethernetLink = data[j].value[0] + 'LowerLayers';
+     }
+   }
+   for (let j = 0; j < data.length; j++) {
+     if (data[j].path === ethernetLink) {
+       return data[j].value[0];
+     }
+   }
+   return null;
+};
+
+const assembleWanObj = function(result, data, fields, useLastIndexOnWildcard) {
+  let tmp = result;
+  for (let obj of data) {
+    let i = extractIndex(obj.path, useLastIndexOnWildcard);
     // Addition of obj to WANs: depending on the property's match, since there
     // may be PPP-type properties associated with IP-type paths
     let properties = getFieldProperty(fields, obj.path);
@@ -124,35 +167,68 @@ const assembleTR069WAN = function(data, fields, useLastIndexOnWildcard) {
     // Looks for the correct WAN: This depends on the prop match type and the
     // path index
     for (let prop of properties) {
+      let pathType = obj.path.includes('PPP') ? 'ppp' :
+                     obj.path.includes('IP') ? 'dhcp' :
+                     obj.path.includes('Ethernet') ? 'ethernet' : 'common';
+      let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
+
       let field = {};
       field[prop] = obj;
-      let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
-      Object.keys(result).forEach((k) => {
-        // currentKey[1] = type (ppp or dhcp)
-        // currentKey[2] = index
+
+      for (let k of Object.keys(tmp)) {
         let currentKey = k.split('_');
+        let currPathType = currentKey[1]; // 'ppp' or 'dhcp'
+        let currIndex = currentKey[2];
+        if (currPathType !== propType) continue;
         if (i === null) {
-          // If the index is equal to null, it means that this path has no index,
-          // and this must be added to all WANs
-          result[k].push(field);
-        } else {
-          // Otherwise we have to look for the correct WAN
-          if (currentKey[1] === propType && currentKey[2] === i.toString()) {
-            result[k].push(field);
+          // If the variable is equal to null, it means that this path has no
+          // index, and this must be added to all WANs
+          tmp[k].push(field);
+        } else if (pathType !== propType && pathType !== 'common') {
+          // The TR-181 works with a stack of links to connect the trees.
+          // Whenever the type of the path is different from the type of the
+          // property, it means that we have to disregard the index i and look
+          // for the correct index. The field is added whenever there is a match
+          // of: the index path (i) and the correct path (j); the prop type and
+          // the path type
+          let nodeType = (currPathType === 'ppp') ? 'PPP' : 'IP';
+          let linkPath = 'Device.' + nodeType + '.Interface.*.';
+          let correctPath;
+          if (pathType === 'dhcp') {
+            correctPath = findInterfaceLink(data, linkPath, currIndex);
+          } else if (pathType === 'ethernet') {
+            correctPath = findEthernetLink(data, linkPath, currIndex);
           }
+          let j = extractIndex(correctPath, useLastIndexOnWildcard);
+          if (i === j) {
+            tmp[k].push(field);
+          }
+        } else if (currIndex === i.toString()) {
+          // Otherwise we have to look for the correct WAN
+          tmp[k].push(field);
         }
-      });
+      }
     }
   }
-  return result;
+  return tmp;
 };
 
 const updateWanConfiguration = function(fields, useLastIndexOnWildcard) {
-  let nodes = getParentNode(fields);
+  let nodes = getParentNode(fields, useLastIndexOnWildcard);
+  log(JSON.stringify(nodes));
   let result = {};
   let data = [];
   let addedPaths = new Set();
   for (let node of nodes) {
+    // Key creation: depending on the path type
+    let pathType = node.includes('PPP') ? 'ppp' :
+                   node.includes('IP') ? 'dhcp' : 'common';
+    let i = extractIndex(node, useLastIndexOnWildcard);
+    let key = 'wan_' + pathType + '_' + i;
+    if (i !== null && !result[key] && (pathType === 'ppp' ||
+        pathType === 'dhcp')) {
+      result[key] = [];
+    }
     // Update node
     let responses = declare(node, {value: now, writable: now});
     if (responses.value) {
@@ -163,6 +239,7 @@ const updateWanConfiguration = function(fields, useLastIndexOnWildcard) {
           obj.path = resp.path;
           obj.writable = resp.writable;
           obj.value = resp.value;
+          // Ensures that no duplicate paths will be added
           if (!addedPaths.has(resp.path)) {
             data.push(obj);
             addedPaths.add(resp.path);
@@ -172,8 +249,8 @@ const updateWanConfiguration = function(fields, useLastIndexOnWildcard) {
     }
   }
   log(JSON.stringify(data));
-  result = assembleTR069WAN(data, fields, useLastIndexOnWildcard);
-  log(JSON.stringify(result));
+  result = assembleWanObj(result, data, fields, useLastIndexOnWildcard);
+  // log(JSON.stringify(result));
   return result;
 };
 
