@@ -1474,7 +1474,7 @@ diagAppAPIController.sendDiagnosticSpeedTest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      sendGenericSpeedTest(matchedDevice, req.user.name);
+      sendGenericSpeedTest(matchedDevice, req.user);
     }, 1.5*1000);
   });
 };
