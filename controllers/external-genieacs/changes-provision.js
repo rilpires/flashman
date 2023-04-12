@@ -32,8 +32,13 @@ Command to update provision on genie:
  * @namespace controllers/external-genieacs/changes-provision
  */
 
-
 const now = Date.now();
+
+const getDeclare = function(field, updated = false) {
+  let lastTime = (updated ? now : 1);
+  // Request field updates from the CPE
+  return declare(field, {value: lastTime, writable: lastTime});
+}
 
 /**
  * Reads the field from GenieACS and returns an object telling the value of the
@@ -51,12 +56,8 @@ const now = Date.now();
  *  - `value`: The value that came from GenieACS or the CPE.
  *  - `writable`: If the field is writable or not.
  */
-const getValue = function(field, useLastIndexOnWildcard, updated = false) {
+const getValue = function(resp, useLastIndexOnWildcard) {
   let result = {};
-  let lastTime = (updated ? now : 1);
-
-  // Request field updates from the CPE
-  let resp = declare(field, {value: lastTime, writable: lastTime});
 
   // Check if the value came valid
   if (resp.value) {
@@ -76,30 +77,30 @@ const getValue = function(field, useLastIndexOnWildcard, updated = false) {
   return result;
 };
 
-
-// Get device informations
-let genieID = declare('DeviceID.ID', {value: 1}).value[0];
-let oui = declare('DeviceID.OUI', {value: 1}).value[0];
-let modelClass = declare('DeviceID.ProductClass', {value: 1}).value[0];
+// 1. Collect information
+// Collect basic CPE information from database
+let genieID = declare('DeviceID.ID', {value: 1});
+let oui = declare('DeviceID.OUI', {value: 1});
+let modelClass = declare('DeviceID.ProductClass', {value: 1});
 
 // Detect TR-098 or TR-181 data model based on database value
-let isIGDModel = declare(
-  'InternetGatewayDevice.ManagementServer.URL',
-  {value: 1}
-).value;
+let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
 let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
 
-// Get the rest of the fields
-let modelName = declare(
-  prefix + '.DeviceInfo.ModelName', {value: 1}
-).value[0];
-let firmwareVersion = declare(
-  prefix + '.DeviceInfo.SoftwareVersion', {value: 1}
-).value[0];
-let hardwareVersion = declare(
-  prefix + '.DeviceInfo.HardwareVersion', {value: 1}
-).value[0];
+let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
+let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
+let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1});
 
+// 2. Run the script
+genieID = genieID.value[0];
+log('Change Values for device ' + genieID + ' started at ' + now.toString());
+oui = oui.value[0];
+modelClass = modelClass.value[0];
+
+// Collect extra information for Flashman model detection
+modelName = modelName.value[0];
+firmwareVersion = firmwareVersion.value[0];
+hardwareVersion = hardwareVersion.value[0];
 
 let args = {
   oui: oui,
@@ -129,48 +130,65 @@ if (
   return;
 }
 
-
 let fields = result.fields;
 let lastIndex = result.useLastIndexOnWildcard;
+
+let mac = getDeclare(fields.common.mac);
+let wan_ip = getDeclare(fields.wan.wan_ip);
+let wan_ip_ppp = getDeclare(fields.wan.wan_ip_ppp);
+let pppoe_enable = getDeclare(fields.wan.pppoe_enable);
+let common_ip;
+if (fields.common.ip) {
+  let common_ip = getDeclare(fields.common.ip);
+}
+let ipv6_address;
+if (fields.ipv6.address) {
+  ipv6_address = getDeclare(fields.ipv6.address);
+}
+let ipv6_address_ppp;
+if (fields.ipv6.address_ppp) {
+  ipv6_address_ppp = getDeclare(fields.ipv6.address_ppp);
+}
+let stun_enable;
+let stun_udp_conn_req_addr;
+if (fields.common.stun_enable && fields.common.stun_udp_conn_req_addr) {
+  stun_enable = getDeclare(fields.common.stun_enable);
+  stun_udp_conn_req_addr = getDeclare(fields.common.stun_udp_conn_req_addr);
+}
 
 // Assign the values to data
 let data = {
   common: {
-    mac: getValue(fields.common.mac, lastIndex),
+    mac: getValue(mac, lastIndex),
   },
   wan: {
-    wan_ip: getValue(fields.wan.wan_ip, lastIndex),
-    wan_ip_ppp: getValue(fields.wan.wan_ip_ppp, lastIndex),
-    pppoe_enable: getValue(fields.wan.pppoe_enable, lastIndex),
+    wan_ip: getValue(wan_ip, lastIndex),
+    wan_ip_ppp: getValue(wan_ip_ppp, lastIndex),
+    pppoe_enable: getValue(pppoe_enable, lastIndex),
   },
   ipv6: {},
 };
 
 // Append other parameters to data
 // STUN
-if (
-  fields.common.stun_enable &&
-  fields.common.stun_udp_conn_req_addr
-) {
-  data.common.stun_enable = getValue(fields.common.stun_enable, lastIndex);
-  data.common.stun_udp_conn_req_addr = getValue(
-    fields.common.stun_udp_conn_req_addr, lastIndex,
-  );
+if (stun_enable && stun_udp_conn_req_addr) {
+  data.common.stun_enable = getValue(stun_enable, lastIndex);
+  data.common.stun_udp_conn_req_addr = getValue(stun_udp_conn_req_addr, lastIndex);
 }
 
 // IP
-if (fields.common.ip) {
-  data.common.ip = getValue(fields.common.ip, lastIndex);
+if (common_ip) {
+  data.common.ip = getValue(common_ip, lastIndex);
 }
 
 // IPv6
-if (fields.ipv6.address) {
-  data.ipv6.address = getValue(fields.ipv6.address, lastIndex);
-}
-if (fields.ipv6.address_ppp) {
-  data.ipv6.address_ppp = getValue(fields.ipv6.address_ppp, lastIndex);
+if (ipv6_address) {
+  data.ipv6.address = getValue(ipv6_address, lastIndex);
 }
 
+if (ipv6_address_ppp) {
+  data.ipv6.address_ppp = getValue(ipv6_address_ppp, lastIndex);
+}
 
 args = {acs_id: genieID, data: data};
 
