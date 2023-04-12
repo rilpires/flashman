@@ -1,0 +1,184 @@
+mixin single-list-modal-header(title, icon)
+  .modal-header
+    p.heading.lead
+
+      //- Icon
+      span.fas.fa-lg(class=icon)
+
+      //- Tittle
+      strong &nbsp; #{title}
+
+    //- Close button
+    button.close(type="button", data-dismiss="modal")
+      span.white-text &times;
+
+mixin single-list-input(id, inputLabel, invalidMsg, inputTooltip)
+  .row.mt-1.align-items-center.flexwrap
+    .col-8
+      .md-form.input-entry
+        label(
+          id=id+"-input-label"
+        ) #{inputLabel}
+
+        input.form-control(
+          id=id+"-input"
+          type="text",
+        )
+        .invalid-feedback= invalidMsg
+
+    .col-1.p-0.black-text
+      a.fas.fa-question-circle.mr-4(
+        data-toggle="tooltip",
+        title=inputTooltip,
+      )
+    .col-3.pl-0.text-right
+      //- Apply button
+      button.button.btn.btn-primary.mr-0(
+        id=id+"-add-button"
+        type="button",
+      )
+        .fas.fa-plus.fa-lg
+        span &nbsp; #{t('Add')}
+
+mixin single-list-table(id, columnTitle)
+  .table-responsive(
+    id=id+"-table-show"
+  )
+    table.table.mb-1
+      //- Table header
+      thead
+        tr
+          //- Column header
+          th.text-left #{columnTitle}
+
+          //- Delete all button
+          th.text-right
+            a.fas.fa-question-circle.mr-4(
+              data-toggle="tooltip",
+              title=t('removeAll'),
+            )
+            button.btn.btn-sm.btn-danger.m-0(
+              id=id+"-btn-remove-all"
+              type='button',
+            )
+              .fas.fa-trash.fa-lg
+              
+      //- Table body
+      tbody(
+        id=id+"-table-show-body"
+      )
+
+mixin single-list-empty-table(id, emptyMsg)
+  .row.my-3(
+    id=id+"-table-empty"
+  )
+    .col
+      h5.text-center
+        span= emptyMsg
+
+mixin single-list-modal-footer(id, warningMsg)
+  hr.mt-0
+  .row.justify-content-center.align-items-center.flexwrap
+    .col-md-9
+      //- Alert
+      .alert.alert-danger.mb-0
+        .fas.fa-exclamation-triangle.fa-lg
+        span &nbsp; #{warningMsg}
+    .col-md-3
+      //- Apply button
+      button.button.btn.btn-primary(
+        id=id+"-submit-button"
+        type="button",
+      )
+        .fas.fa-check.fa-lg
+        span &nbsp; #{t('Apply')}
+
+mixin single-list-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
+  .modal-body(
+    id=id+"-canvas"
+  )
+    //- Input row
+    +single-list-input(id, inputLabel, invalidMsg, inputTooltip)
+    //- Entries table
+    +single-list-table(id, columnTitle)
+    //- Empty table placeholder
+    +single-list-empty-table(id, emptyMsg)
+    //- Modal footer
+    +single-list-modal-footer(id, warningMsg)
+
+mixin tab-lists-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
+  .modal-body(
+    id=id+"-canvas"
+  )
+    ul.nav.nav-tabs(
+      id=id+"-tab"
+    )
+      each tab, index in tabs
+        if index == 0
+          li.nav-item
+            a.nav-link.active(
+              href="",
+              data-toggle="tab",
+              data-target="#"+id+"-tab-"+index,
+              role="tab") #{tab}
+        else
+          li.nav-item
+            a.nav-link(
+              href="",
+              data-toggle="tab",
+              data-target="#"+id+"-tab-"+index,
+              role="tab") #{tab}
+    .tab-content
+      each tab, index in tabs
+        if index == 0
+          .tab-pane.active(
+            id=id+"-tab-"+index
+          )
+            //- Input row
+            +single-list-input(id+"-tab-"+index, inputLabel, invalidMsg, inputTooltip)
+            //- Entries table
+            +single-list-table(id+"-tab-"+index, columnTitle)
+            //- Empty table placeholder
+            +single-list-empty-table(id+"-tab-"+index, emptyMsg)
+            //- Modal footer
+            +single-list-modal-footer(id+"-tab-"+index, warningMsg)
+        else
+          .tab-pane(
+            id=id+"-tab-"+index
+          )
+            //- Input row
+            +single-list-input(id+"-tab-"+index, inputLabel, invalidMsg, inputTooltip)
+            //- Entries table
+            +single-list-table(id+"-tab-"+index, columnTitle)
+            //- Empty table placeholder
+            +single-list-empty-table(id+"-tab-"+index, emptyMsg)
+            //- Modal footer
+            +single-list-modal-footer(id+"-tab-"+index, warningMsg)
+
+mixin single-list-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
+  .modal.fade(
+    id=id
+    tabindex="-1",
+    role="dialog"
+  )
+    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+      .modal-content
+        //- Header of the modal
+        +single-list-modal-header(title, icon)
+        //- Modal body
+        +single-list-modal-body(id, inputLabel, invalidMsg,
+                                inputTooltip, columnTitle, emptyMsg, warningMsg)
+
+mixin tab-lists-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
+  .modal.fade(
+    id=id
+    tabindex="-1",
+    role="dialog"
+  )
+    .modal-dialog.modal-notify.modal-teal.modal-lg(role="document")
+      .modal-content
+        //- Header of the modal
+        +single-list-modal-header(title, icon)
+        //- Modal body
+        +tab-lists-modal-body(id, inputLabel, invalidMsg,
+                              inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
