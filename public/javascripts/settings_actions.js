@@ -388,6 +388,10 @@ anlixDocumentReady.add(function() {
           resp.dnsStepRequired + ']')
         .attr('selected', 'selected');
       }
+      if (resp.specificAppTechnicianWebLogin) {
+        $('#specific-app-technician-web-login')
+          .prop('checked', true).change();
+      }
       if (typeof resp.flashStepRequired !== 'undefined') {
         $('select[name=flashman-step-required] option[value=' +
           resp.flashStepRequired + ']')
