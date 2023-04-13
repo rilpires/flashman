@@ -29,13 +29,9 @@ const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
 const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
-const http = require('http');
 const t = require('./language').i18next.t;
 
-
 let acsDeviceInfoController = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Max number of sync requests concorrent (0 = disable)
 const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
@@ -630,25 +626,30 @@ const createRegistry = async function(req, cpe, permissions) {
     wrongPortMapping = true;
   }
 
-  // Collect DNS servers info and does not allow repeated values
+  // Contains optionaly a list of DNS servers collected from the CPE
   let parsedDnsServers = [];
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    let dnsServers = data.lan.dns_servers.value.split(',');
-    for (let i=0; i<dnsServers.length; i++) {
-      if (!parsedDnsServers.includes(dnsServers[i])) {
-        parsedDnsServers.push(dnsServers[i]);
-      }
-    }
-  }
-
   // Contains optionaly a list of ipv4 and ipv6 DNS addresses
   const defaultDnsServersObj = matchedConfig.default_dns_servers;
+
+  // Logic that either sets a default list of DNS servers or get existing
+  // ones from the CPE
   if (defaultDnsServersObj.ipv4.length > 0) {
     // Set DNS ipv4 default list if possible
     if (cpePermissions.lan.dnsServersWrite) {
       const dnsLimit = cpePermissions.lan.dnsServersLimit;
       changes.lan.dns_servers =
         defaultDnsServersObj.ipv4.slice(0, dnsLimit).join(',');
+      doChanges = true;
+    } else {
+      // Collect DNS servers info and does not allow repeated values
+      if (data.lan.dns_servers && data.lan.dns_servers.value) {
+        let dnsServers = data.lan.dns_servers.value.split(',');
+        for (let i=0; i<dnsServers.length; i++) {
+          if (!parsedDnsServers.includes(dnsServers[i])) {
+            parsedDnsServers.push(dnsServers[i]);
+          }
+        }
+      }
     }
   }
 
