@@ -47,10 +47,7 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
-// Function explodes the keys according to the points and excludes the field
-// name in order to generate the parent tree from this node. Returns an array
-// with the name of the parent nodes plus '.*.*' at the end
-const getParentNode = function(fields) {
+const getParentNode = function(fields, isTR181) {
   let nodes = [];
   const hasNumericKey = /\.\d+\./;
   const hasWildcardKey = /\.\*\./;
@@ -81,14 +78,17 @@ const getParentNode = function(fields) {
       nodes.push(node);
     }
   });
-  // nodes.push('Device.Ethernet.VLANTermination.*.*');
-  // nodes.push('Device.Ethernet.Link.*.*');
-  // nodes.push('Device.NAT.PortMapping.*.*');
-  // nodes.push('Device.NAT.*.*');
-  // nodes.push('Device.IP.*.*');
-  // nodes.push('Device.PPP.*.*');
+  if (isTR181) {
+    // Additional information not required for TR-181 devices
+    nodes.push('Device.Ethernet.VLANTermination.*.*');
+    nodes.push('Device.Ethernet.Link.*.*');
+    nodes.push('Device.NAT.PortMapping.*.*');
+    nodes.push('Device.NAT.*.*');
+    nodes.push('Device.IP.*.*');
+    nodes.push('Device.PPP.*.*');
+  }
   return nodes;
-}
+};
 
 const getFieldProperty = function(fields, value) {
   let properties = [];
@@ -101,81 +101,91 @@ const getFieldProperty = function(fields, value) {
   return properties;
 };
 
-const extractIndexes = function(path) {
-  const keys = [];
-  const pathKeys = path.split('.');
-  pathKeys.forEach((key) => {
-    const i = parseInt(key);
-    if (!isNaN(i)) keys.push(i);
-  });
-  return keys;
+const extractIndexes = function(path, isTR181) {
+  // For TR-181 devices, only the first numeric key is used as a reference.
+  // For TR-098 devices, a maximum of the first three numeric keys are used as
+  // references. The surplus will be used to tag repeat properties later
+  const endIndex = isTR181 ? 1 : 3;
+  const keys = path.split('.').filter((key) => !isNaN(parseInt(key)))
+                .map((key) => parseInt(key, 10));
+  const indexes = keys.slice(0, endIndex);
+  const surplus = keys.slice(endIndex);
+  return [indexes, surplus];
 };
 
-const verifyKeyMatch = function(key, indexes, type) {
-  // Checks if the type and indexes are an exact match of the received params
-  const splitedKey = key.split('_');
-  // Verify type match
-  const keyType = splitedKey[1];
-  if (keyType !== type) return false;
-  // Get last n items from key, where n = length of indexes
-  const keyIndexes = splitedKey.slice(- indexes.length);
-  for (let i = 0; i < indexes.length; i++) {
-    if (parseInt(keyIndexes[i]) !== indexes[i]) {
-      // Compare each item of key with corresponding item of indexes maintaining
-      // the order and return false if any item doesn't match
-      return false;
+const extractInterfacePath = function(path, addLowerLayer = false) {
+  const parts = path.split('.');
+  let linkPath = '';
+  for (let i = 0; i < parts.length; i++) {
+    const curr = parts[i];
+    // If is a number, add and break the loop, so only the first index is added
+    if (!isNaN(parseInt(curr))) {
+      linkPath += curr + ((addLowerLayer) ? '.LowerLayers' : '.');
+      break;
+    }
+    linkPath += curr + '.';
+  }
+  return linkPath;
+};
+
+const verifyIndexesMatch = function(keyIndexes, indexes) {
+  return keyIndexes.every((k, i) => parseInt(k) === indexes[i]);
+};
+
+let findInterfaceLink = function(data, path, i) {
+  // Device.IP.Interface.*.LowerLayers -> Device.PPP.Interface.*.
+  let connectionPath = path.replace('*', i);
+  let interfPPP = 'Device.PPP.Interface.';
+  let interfIP = 'Device.IP.Interface.';
+  for (let j = 0; j < data.length; j++) {
+    if (connectionPath === data[j].path && (data[j].value[0].includes(interfPPP) || data[j].value[0].includes(interfIP))) {
+      return data[j].value[0];
     }
   }
-  // Return true if all items match
-  return true;
+  return null;
 };
 
-function findInterfaceLink(data, path, i) {
-  // Device.IP.Interface.*.LowerLayers <- Device.PPP.Interface.*.
-  if (path === null) return null;
-  const regex = new RegExp(path.replace("*", i));
+let findEthernetLink = function(data, path, i) {
+  // Device.Ethernet.Interface.*. -> Device.Ethernet.Link.*.LowerLayers
+  // Device.Ethernet.Link.*.LowerLayers -> Device.Ethernet.VLANTermination.*.LowerLayers
+  // Device.Ethernet.VLANTermination.*. -> Device.PPP.Interface.*.LowerLayers
+  let connectionPath = path.replace('*', i);
+  let ethernetLink;
+  let vlanLink;
   for (let j = 0; j < data.length; j++) {
-    if (regex.test(data[j].value)) {
+    if (connectionPath === data[j].value[0]) {
+      ethernetLink = extractInterfacePath(data[j].path, false);
+    }
+  }
+  for (let j = 0; j < data.length; j++) {
+    if (ethernetLink === data[j].value[0]) {
+      vlanLink = extractInterfacePath(data[j].path, false);
+    }
+  }
+  for (let j = 0; j < data.length; j++) {
+    if (vlanLink === data[j].value[0]) {
       return data[j].path;
     }
   }
-  return null; // Object not found
+  return null;
 };
 
-function findEthernetLink(data, path, i) {
-   // Device.PPP.Interface.*.LowerLayers -> Device.Ethernet.VLANTermination.*.
-   // Device.Ethernet.VLANTermination.*.LowerLayers -> Device.Ethernet.Link.*.
-   // Device.Ethernet.Link.*.LowerLayers -> Device.Ethernet.Interface.*.
-   if (path === null) return null;
-   const pathRegex = new RegExp(path.replace("*", i));
-   const valueRegex = new RegExp(
-    `^${'Device.Ethernet.VLANTermination.*.'.replace('*', '\\d+')}$`);
-
-   let vlanTerminationLink = '';
-   let ethernetLink = '';
-   for (let j = 0; j < data.length; j++) {
-     if (pathRegex.test(data[j].path) && valueRegex.test(data[j].value[0])) {
-       vlanTerminationLink = data[j].value[0] + 'LowerLayers';
-     }
-   }
-   for (let j = 0; j < data.length; j++) {
-     if (data[j].path === vlanTerminationLink) {
-       ethernetLink = data[j].value[0] + 'LowerLayers';
-     }
-   }
-   for (let j = 0; j < data.length; j++) {
-     if (data[j].path === ethernetLink) {
-       return data[j].value[0];
-     }
-   }
-   return null;
+let checkIfWanIsUp = function(data, path, suffix) {
+  let enablePath = path + suffix;
+  for (let j = 0; j < data.length; j++) {
+    if (enablePath === data[j].path) {
+      if (data[j].value[0] === 'Up' || data[j].value[0] ===  true ||
+          data[j].value[0] ===  'true')
+      return true;
+    }
+  }
+  return false;
 };
 
-const assembleWanObj = function(result, data, fields) {
+const assembleWanObj = function(result, data, fields, isTR181) {
   let tmp = result;
   for (let obj of data) {
-    let indexes = extractIndexes(obj.path);
-
+    let [indexes, surplus] = extractIndexes(obj.path, isTR181);
     // Addition of obj to WANs: depending on the property's match, since there
     // may be PPP-type properties associated with IP-type paths
     let properties = getFieldProperty(fields, obj.path);
@@ -190,16 +200,38 @@ const assembleWanObj = function(result, data, fields) {
       let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
 
       let field = {};
+      if (surplus.length > 0) prop += '_' + surplus.join('_');
       field[prop] = obj;
 
-      for (let k of Object.keys(tmp)) {
+      for (let key of Object.keys(tmp)) {
+        const keyType = key.split('_')[1];
+        const keyIndexes = key.split('_').filter(key => !isNaN(key));
+        let typeMatch = (keyType === propType);
+        if (!typeMatch) continue;
         if (indexes.length === 0) {
-          // If the variable is equal to null, it means that this path has no
-          // index, and this must be added to all WANs
-          tmp[k].push(field);
-        } else if (verifyKeyMatch(k, indexes, propType)) {
-          // Otherwise we have to look for the correct WAN
-          tmp[k].push(field);
+          tmp[key].push(field);
+          continue;
+        }
+        // The TR-181 works with a stack of links to connect the trees. Whenever
+        // the type of the path is different from the type of the property, it
+        // means that we must disregard the current indices and look for the
+        // correct ones to insert the field
+        if (propType !== pathType && isTR181) {
+          let linkPath;
+          let correctPath;
+          if (pathType === 'dhcp') {
+            linkPath = extractInterfacePath(obj.path, true);
+            correctPath = findInterfaceLink(data, linkPath, indexes[0]);
+          } else if (pathType === 'ethernet') {
+            linkPath = extractInterfacePath(obj.path, false);
+            correctPath = findEthernetLink(data, linkPath, indexes[0])
+          }
+          if (!correctPath) continue;
+          // Update indexes with correct path
+          indexes = extractIndexes(correctPath, isTR181)[0];
+        }
+        if (verifyIndexesMatch(keyIndexes, indexes)) {
+          tmp[key].push(field);
         }
       }
     }
@@ -207,14 +239,13 @@ const assembleWanObj = function(result, data, fields) {
   return tmp;
 };
 
-const updateWanConfiguration = function(fields) {
-  let nodes = getParentNode(fields);
+const updateWanConfiguration = function(fields, isTR181) {
+  let nodes = getParentNode(fields,  isTR181);
   let result = {};
   let data = [];
   let addedPaths = new Set();
   for (let node of nodes) {
     // Update node
-    // Ajeitar os .value!!
     let responses = declare(node, {value: now, writable: now});
     if (responses.value) {
       for (let resp of responses) {
@@ -224,15 +255,49 @@ const updateWanConfiguration = function(fields) {
           obj.path = resp.path;
           obj.writable = resp.writable;
           obj.value = resp.value;
+
           // Key creation: depending on the path type
           let pathType = obj.path.includes('PPP') ? 'ppp' :
                          obj.path.includes('IP') ? 'dhcp' : 'common';
-          let indexes = extractIndexes(obj.path);
+          let indexes = [];
+          if (isTR181) {
+            // TR-181 devices, it is necessary to filter the interfaces, because
+            // not all of them are WANs. To decide whether a path should
+            // generate a new key, is evaluated the AddressingType node, which
+            // receives the connection type. If the connection type is supported
+            // by Flashman, it evaluates whether the WAN is enabled by analyzing
+            // the Enable/Status field
+            if (obj.path.includes('AddressingType')) {
+              let correctPath;
+              if (obj.value[0] === 'DHCP') {
+                let linkPath = extractInterfacePath(obj.path, true);
+                correctPath = findInterfaceLink(data, linkPath, indexes[0]);
+                correctPath = extractInterfacePath(obj.path);
+              } else if (obj.value[0] === 'IPCP') {
+                let linkPath = extractInterfacePath(obj.path, true);
+                correctPath = findInterfaceLink(data, linkPath, indexes[0]);
+              }
+              if (correctPath) {
+                let enableField = fields.pppoe_enable.split('.').pop();
+                let isUp = checkIfWanIsUp(data, correctPath, enableField);
+                if (isUp) {
+                  // Update indexes and path type
+                  indexes = extractIndexes(correctPath, isTR181)[0];
+                  pathType = extractType(correctPath, true);
+                }
+              }
+            }
+          } else {
+            // For TR-098 devices, there is no need to be concerned about the
+            // object not representing a physical WAN
+            indexes = extractIndexes(obj.path, isTR181)[0];
+          }
           let key = 'wan_' + pathType + '_' + indexes.join('_');
           if (indexes.length > 0 && !result[key] && (pathType === 'ppp' ||
               pathType === 'dhcp')) {
             result[key] = [];
           }
+
           // Ensures that no duplicate paths will be added
           if (!addedPaths.has(resp.path)) {
             data.push(obj);
@@ -242,7 +307,7 @@ const updateWanConfiguration = function(fields) {
       }
     }
   }
-  result = assembleWanObj(result, data, fields);
+  result = assembleWanObj(result, data, fields, isTR181);
   return result;
 };
 
