@@ -637,8 +637,10 @@ const createRegistry = async function(req, cpe, permissions) {
     // Set DNS ipv4 default list if possible
     if (cpePermissions.lan.dnsServersWrite) {
       const dnsLimit = cpePermissions.lan.dnsServersLimit;
-      changes.lan.dns_servers =
-        defaultDnsServersObj.ipv4.slice(0, dnsLimit).join(',');
+      // Save the list at the CPE registry also
+      parsedDnsServers = defaultDnsServersObj.ipv4.slice(0, dnsLimit);
+      changes.lan.dns_servers = parsedDnsServers.join(',');
+
       doChanges = true;
     } else {
       // Collect DNS servers info and does not allow repeated values
