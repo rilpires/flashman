@@ -11,12 +11,17 @@ tendaModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSingleAttempt = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasDefaultGatewayField = true;
   permissions.ipv6.hasPrefixDelegationAddressField = true;

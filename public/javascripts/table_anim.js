@@ -971,8 +971,8 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 id="btn-edit-submit'+
-          meshClass+'" type="submit">'+
+        '<button class="btn btn-primary mx-0 '+
+          meshClass+'" id="btn-edit-submit" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
       '</div>'+

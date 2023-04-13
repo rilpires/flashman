@@ -126,6 +126,10 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';

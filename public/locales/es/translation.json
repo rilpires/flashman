@@ -923,6 +923,8 @@
 	"mandatoryWanVerification": "Se requiere verificación de WAN",
 	"mandatoryIpvxVerification": "IPv{{-x}} verificación requerida",
 	"mandatoryDnsVerification": "Verificación DNS Obligatoria",
+	"enableSpecificAppTechnicianWebLogin": "Permita que el técnico especifique las credenciales utilizadas para iniciar sesión en el CPE mientras usa la aplicación",
+	"explanationOfEnableSpecificAppTechnicianWebLogin": "Esta opción sirve para los casos en que la contraseña de la interfaz web del CPE no sea una de las registradas en Flashman",
 	"mandatoryFlashmanRegisterVerification": "Se requiere verificación de registro de Flashman",
 	"Enable": "Habilitar",
 	"Enabled": "Poder",

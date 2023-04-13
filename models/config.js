@@ -161,6 +161,7 @@ let configSchema = new mongoose.Schema({
   licenseApiSecret: {type: String, default: ''},
   company: {type: String, default: ''},
   mqtt_secret_bypass: {type: Boolean, default: false},
+  specificAppTechnicianWebLogin: {type: Boolean, default: false},
 });
 
 let config = mongoose.model('config', configSchema);
