@@ -90,11 +90,22 @@ const getParentNode = function(fields, isTR181) {
   return nodes;
 };
 
-const getFieldProperty = function(fields, value) {
+const convertIndexIntoWildcard = function(path) {
+  return path.split('.').map((part, i) => {
+    if (isNaN(parseInt(part))) {
+      return part;
+    } else {
+      return '*';
+    }
+  }).join('.');
+};
+
+const getFieldProperty = function(fields, path) {
   let properties = [];
+  let pattern = convertIndexIntoWildcard(path);
   for (let key of Object.keys(fields)) {
-    let regex = new RegExp(`^${fields[key].replace('*', '\\d+')}$`);
-    if (regex.test(value)) {
+    let prop = convertIndexIntoWildcard(fields[key]);
+    if (pattern === prop) {
       properties.push(key);
     }
   }
