@@ -641,6 +641,17 @@ const createRegistry = async function(req, cpe, permissions) {
     }
   }
 
+  // Contains optionaly a list of ipv4 and ipv6 DNS addresses
+  const defaultDnsServersObj = matchedConfig.default_dns_servers;
+  if (defaultDnsServersObj.ipv4.length > 0) {
+    // Set DNS ipv4 default list if possible
+    if (cpePermissions.lan.dnsServersWrite) {
+      const dnsLimit = cpePermissions.lan.dnsServersLimit;
+      changes.lan.dns_servers =
+        defaultDnsServersObj.ipv4.slice(0, dnsLimit).join(',');
+    }
+  }
+
   let newDevice = new DeviceModel({
     _id: macAddr,
     use_tr069: true,
