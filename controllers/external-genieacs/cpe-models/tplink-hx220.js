@@ -42,6 +42,8 @@ tplinkModel.modelPermissions = function() {
   permissions.needInterfaceInPortFoward = true;
   permissions.useLastIndexOnWildcard = true;
 
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.firmwareUpgrades = {
     '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n': [],
   };
