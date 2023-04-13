@@ -51,16 +51,17 @@ const getParentNode = function(fields, isTR181) {
   let nodes = [];
   const hasNumericKey = /\.\d+\./;
   const hasWildcardKey = /\.\*\./;
-  Object.keys(fields).forEach((key) => {
+  let wanFields = fields.wan;
+  Object.keys(wanFields).forEach((key) => {
     let node;
-    if (!hasNumericKey.test(fields[key]) && !hasWildcardKey.test(fields[key])) {
+    if (!hasNumericKey.test(wanFields[key]) && !hasWildcardKey.test(wanFields[key])) {
       // If the field does not have numeric keys or wildcards, it must not be
       // changed
-      node = fields[key];
+      node = wanFields[key];
     } else {
       // Otherwise, the last substring is discarded and we add the string '.*.*'
       // to update the entire parent node of the given field
-      let tmp = fields[key].split('.').slice(0, -1);
+      let tmp = wanFields[key].split('.').slice(0, -1);
       if (tmp[tmp.length - 1] === '*') {
         // If the parent node already ends with the string '.*', just add '.*'
         node = tmp.join('.') + '.*';
@@ -87,6 +88,8 @@ const getParentNode = function(fields, isTR181) {
     nodes.push('Device.IP.*.*');
     nodes.push('Device.PPP.*.*');
   }
+  nodes.push(fields.port_mapping_dhcp + '.*.*');
+  nodes.push(fields.port_mapping_ppp + '.*.*');
   return nodes;
 };
 
@@ -108,6 +111,9 @@ const getFieldProperty = function(fields, path) {
     if (pattern === prop) {
       properties.push(key);
     }
+  }
+  if (path.includes('PortMapping') && properties.length === 0) {
+    properties.push('port_mapping');
   }
   return properties;
 };
@@ -181,6 +187,30 @@ let findEthernetLink = function(data, path, i) {
   return null;
 };
 
+function findPortMappingLink(data, path) {
+  // If the connection is IP:
+  // Device.NAT.PortMapping.*.Interface -> Device.IP.Interface.*.
+  // If the connection is PPP:
+  // Device.NAT.PortMapping.*.Interface -> Device.IP.Interface.*.
+  // Device.IP.Interface.*.LowerLayers -> Device.PPP.Interface.*.
+  let ipLink = null;
+  for (let j = 0; j < data.length; j++) {
+    if (path === data[j].path) {
+      ipLink = extractLinkPath(data[j].value[0]);
+      break;
+    }
+  }
+  let pppLink = ipLink + 'LowerLayers';
+  for (let j = 0; j < data.length; j++) {
+    if (pppLink === data[j].path) {
+      if (data[j].value[0].includes('PPP')) {
+        return data[j].value[0];
+      }
+    }
+  }
+  return ipLink;
+};
+
 let checkIfWanIsUp = function(data, path, field) {
   let enablePath = path + field;
   for (let j = 0; j < data.length; j++) {
@@ -206,7 +236,9 @@ const assembleWanObj = function(result, data, fields, isTR181) {
     for (let prop of properties) {
       let pathType = obj.path.includes('PPP') ? 'ppp' :
                      obj.path.includes('IP') ? 'dhcp' :
-                     obj.path.includes('Ethernet') ? 'ethernet' : 'common';
+                     obj.path.includes('Ethernet') ? 'ethernet' :
+                     obj.path.includes('PortMapping') ? 'port_mapping' :
+                     'undefined';
       let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
 
       let field = {};
@@ -217,7 +249,7 @@ const assembleWanObj = function(result, data, fields, isTR181) {
         const keyType = key.split('_')[1];
         const keyIndexes = key.split('_').filter(key => !isNaN(key));
         let typeMatch = (keyType === propType);
-        if (!typeMatch) continue;
+        if (!typeMatch && !obj.path.includes('PortMapping')) continue;
         if (indexes.length === 0) {
           tmp[key].push(field);
           continue;
@@ -235,6 +267,9 @@ const assembleWanObj = function(result, data, fields, isTR181) {
           } else if (pathType === 'ethernet') {
             linkPath = extractLinkPath(obj.path, false);
             correctPath = findEthernetLink(data, linkPath, indexes[0])
+          } else if (pathType === 'port_mapping') {
+            linkPath = extractLinkPath(obj.path) + 'Interface';
+            correctPath = findPortMappingLink(data, linkPath)
           }
           if (!correctPath) continue;
           // Update indexes with correct path
@@ -318,12 +353,16 @@ const updateWanConfiguration = function(fields, isTR181) {
       }
     }
   }
-  let result = wanKeyCriation(data, fields, isTR181);
-  // log(JSON.stringify(data));
-  result = assembleWanObj(result, data, fields, isTR181);
-  log(JSON.stringify(result));
+  let result = wanKeyCriation(data, fields.wan, isTR181);
+  result = assembleWanObj(result, data, fields.wan, isTR181);
+  log(JSON.stringify(result))
   return result;
 };
+
+// const updatePortFowardConfiguration = function(fields, data) {
+//   log(JSON.stringify(data))
+//   return null;
+// };
 
 const fetchPortFoward = function(fields, data) {
   let base = '';
@@ -342,6 +381,7 @@ const fetchPortFoward = function(fields, data) {
     obj.value = st.value;
     ret.push(obj);
   }
+  // log(JSON.stringify(ret))
   return ret;
 };
 
@@ -354,6 +394,7 @@ let modelClass = declare('DeviceID.ProductClass', {value: 1});
 // Detect TR-098 or TR-181 data model based on database value
 let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
 let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
+let isTR181 = (prefix === 'Device') ? true : false;
 
 let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
@@ -415,10 +456,10 @@ if (!result.measure) {
 // Expected to run on creation, fware upgrade and cpe reset recovery
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
-updateWanConfiguration(fields.wan, result.useLastIndexOnWildcard);
+
 let data = {
   common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
-  wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
+  wan: updateWanConfiguration(fields, isTR181),
   lan: updateConfiguration(fields.lan, result.useLastIndexOnWildcard),
   ipv6: updateConfiguration(fields.ipv6, result.useLastIndexOnWildcard),
   wifi2: updateConfiguration(fields.wifi2, result.useLastIndexOnWildcard),
@@ -427,15 +468,6 @@ let data = {
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 
-/*if the nature of sync is for create a device and the device already
-  had previous port mapping entries, then we send back these entries
-  on creation to avoid sync race condition after the creation of
-  device in flashman database */
-if ((result.measure_type && result.measure_type === 'newDevice' &&
-  ((data.wan.port_mapping_entries_dhcp && data.wan.port_mapping_entries_dhcp.value > 0) ||
-  (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0)))) {
-  data.port_mapping = fetchPortFoward(fields, data.wan);
-}
 args = {acs_id: genieID, data: data};
 
 // Send data to Flashman via HTTP request
