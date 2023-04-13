@@ -511,6 +511,36 @@ utils.common.getDevices = async function(query) {
 };
 
 
+/**
+ * Loads a file and returns it's content. If it is a text file, it will return a
+ * `String`. If it is a text file and the `isJson` flag is marked as `true`, it
+ * will return the parsed file in `Object` format.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @param {String} file - Relative path to the file.
+ * @param {Boolean} isJson - If the file shouldd be considered as a JSON file
+ * and needs to be converted to an `Object`.
+ *
+ * @return {String | Object} The content of the file.
+ */
+utils.common.loadFile = function(file, isJson = true) {
+  // Load the file
+  const data = fs.readFileSync(
+    path.resolve(
+      __dirname, file,
+    ), 'utf8',
+  );
+
+  // Convert to an object if needed
+  if (isJson) {
+    return JSON.parse(data);
+  } else {
+    return data;
+  }
+};
+
+
 /** ************ Update Scheduler ************ **/
 
 
@@ -539,7 +569,7 @@ utils.schedulerCommon.getReleases = async function(cookie, data) {
 /**
  * Create a basic fake response.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {Promise} promiseResolve - The resolver of the promise to be called.
@@ -567,7 +597,7 @@ const fakeJson = function(errorCode, promiseResolve, header, data) {
 /**
  * Create a fake response status.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {PromiseResolver} promiseResolve - The resolver of the promise to be
@@ -756,6 +786,19 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
 
 /** ************ Devices API ************ **/
 
+/**
+ * Validates if the data passed contains only the models that can be upgraded.
+ * This functions is useful to be used with
+ * {@linkcode DevicesAPI.getTR069UpgradeableModels}.
+ *
+ * @memberof test/common/utils.devicesAPICommon
+ *
+ * @param {Object} data - The `Object` containing the vendors and versions that
+ * can be upgraded.
+ *
+ * @see {@linkcode DevicesAPI.getTR069UpgradeableModels} in order to use this
+ * function.
+ */
 utils.devicesAPICommon.validateUpgradeableModels = function(data) {
   Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
     let device = DevicesAPI.__testTR069Models[modelName];
@@ -848,19 +891,6 @@ utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
   });
 };
 
-utils.common.loadFile = function(file, isJson = true) {
-  const data = fs.readFileSync(
-    path.resolve(
-      __dirname, file,
-    ), 'utf8',
-  );
-
-  if (isJson) {
-    return JSON.parse(data);
-  } else {
-    return data;
-  }
-};
 
 /**
  * @exports test/common/utils
