@@ -633,23 +633,21 @@ const createRegistry = async function(req, cpe, permissions) {
 
   // Logic that either sets a default list of DNS servers or get existing
   // ones from the CPE
-  if (defaultDnsServersObj.ipv4.length > 0) {
-    // Set DNS ipv4 default list if possible
-    if (cpePermissions.lan.dnsServersWrite) {
-      const dnsLimit = cpePermissions.lan.dnsServersLimit;
-      // Save the list at the CPE registry also
-      parsedDnsServers = defaultDnsServersObj.ipv4.slice(0, dnsLimit);
-      changes.lan.dns_servers = parsedDnsServers.join(',');
-
-      doChanges = true;
-    } else {
-      // Collect DNS servers info and does not allow repeated values
-      if (data.lan.dns_servers && data.lan.dns_servers.value) {
-        let dnsServers = data.lan.dns_servers.value.split(',');
-        for (let i=0; i<dnsServers.length; i++) {
-          if (!parsedDnsServers.includes(dnsServers[i])) {
-            parsedDnsServers.push(dnsServers[i]);
-          }
+  if ((defaultDnsServersObj.ipv4.length > 0) &&
+      cpePermissions.lan.dnsServersWrite
+  ) {
+    const dnsLimit = cpePermissions.lan.dnsServersLimit;
+    // Save the list at the CPE registry also
+    parsedDnsServers = defaultDnsServersObj.ipv4.slice(0, dnsLimit);
+    changes.lan.dns_servers = parsedDnsServers.join(',');
+    doChanges = true;
+  } else {
+    // Collect DNS servers info and does not allow repeated values
+    if (data.lan.dns_servers && data.lan.dns_servers.value) {
+      let dnsServers = data.lan.dns_servers.value.split(',');
+      for (let i=0; i<dnsServers.length; i++) {
+        if (!parsedDnsServers.includes(dnsServers[i])) {
+          parsedDnsServers.push(dnsServers[i]);
         }
       }
     }
