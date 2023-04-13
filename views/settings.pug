@@ -1,8 +1,15 @@
 extends layout
 
 block content
+  include mixins/_modals.pug
   include includes/showfactorycredentials
   include includes/showdefaulthostsconfig
+  +tab-lists-modal("default-dns-servers-modal", t('defaultDnsServersConfig'),
+                     "fa-server", t('dnsServerAddress'),
+                     t('invalidAddress'), t('dnsServerAddressTooltip'),
+                     t('dnsServerAddresses'),
+                     t('noDnsServerConfigured'),
+                     t('defaultDnsServersConfigWarning'), "IPv4", "IPv6")
 
   form#config-flashman-form.needs-validation(
     method="post",
@@ -104,9 +111,15 @@ block content
                     .fas.fa-info-circle.fa-lg
                     span &nbsp; #{t('ponSignalConfigAlsoApplyToApp')}
                 .row
-                  #default-hosts-config-button.button.btn.btn-primary.mt-2.mx-auto
-                    .fas.fa-stethoscope.fa-lg
-                    span &nbsp; #{t('defaultHostsConfig')}
+                  .col
+                    #default-hosts-config-button.btn.btn-primary.btn-block
+                      .fas.fa-stethoscope.fa-lg
+                      span &nbsp; #{t('defaultHostsConfig')}
+                .row.mt-3
+                  .col
+                    #default-dns-servers-config-button.btn.btn-primary.btn-block
+                      .fas.fa-server.fa-lg
+                      span &nbsp; #{t('defaultDnsServersConfig')}
             #is-ssid-prefix-enabled-col.mt-3.mb-1.d-none
               .row.alert.alert-danger
                 .col-md-6.my-auto

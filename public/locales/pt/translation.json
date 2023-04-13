@@ -1088,6 +1088,8 @@
 	"noDefaultHostsConfigured": "Nenhum endereço padrão configurado",
 	"unableToRemoveADefaultHost": "Não é possível remover um endereço padrão",
 	"hostListMustContainDefaultHosts": "A lista de endereços deve conter os endereços padrão {{-hosts}}",
+	"defaultDnsServersConfig": "Configuração de servidores de DNS padrão",
+	"defaultDnsServersConfigWarning": "Atenção! Os servidores de DNS só serão aplicados para novos cadastros de CPE. Para alterar cadastros existentes, acesse diretamente o cadastro da CPE.",
 	"noFactoryCredentialConfigured": "Nenhuma credencial web personalizada configurada",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido",

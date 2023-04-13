@@ -111,49 +111,37 @@ mixin tab-lists-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle
     id=id+"-canvas"
   )
     ul.nav.nav-tabs(
-      id=id+"-tab"
+      id=id+"-tabs"
     )
       each tab, index in tabs
         if index == 0
           li.nav-item
             a.nav-link.active(
+              id=id+"-tab-"+index,
               href="",
               data-toggle="tab",
-              data-target="#"+id+"-tab-"+index,
+              data-target="#"+id+"-tab",
               role="tab") #{tab}
         else
           li.nav-item
             a.nav-link(
+              id=id+"-tab-"+index,
               href="",
               data-toggle="tab",
-              data-target="#"+id+"-tab-"+index,
+              data-target="#"+id+"-tab",
               role="tab") #{tab}
     .tab-content
-      each tab, index in tabs
-        if index == 0
-          .tab-pane.active(
-            id=id+"-tab-"+index
-          )
-            //- Input row
-            +single-list-input(id+"-tab-"+index, inputLabel, invalidMsg, inputTooltip)
-            //- Entries table
-            +single-list-table(id+"-tab-"+index, columnTitle)
-            //- Empty table placeholder
-            +single-list-empty-table(id+"-tab-"+index, emptyMsg)
-            //- Modal footer
-            +single-list-modal-footer(id+"-tab-"+index, warningMsg)
-        else
-          .tab-pane(
-            id=id+"-tab-"+index
-          )
-            //- Input row
-            +single-list-input(id+"-tab-"+index, inputLabel, invalidMsg, inputTooltip)
-            //- Entries table
-            +single-list-table(id+"-tab-"+index, columnTitle)
-            //- Empty table placeholder
-            +single-list-empty-table(id+"-tab-"+index, emptyMsg)
-            //- Modal footer
-            +single-list-modal-footer(id+"-tab-"+index, warningMsg)
+      .tab-pane.active(
+        id=id+"-tab-content"
+      )
+        //- Input row
+        +single-list-input(id+"-tab", inputLabel, invalidMsg, inputTooltip)
+        //- Entries table
+        +single-list-table(id+"-tab", columnTitle)
+        //- Empty table placeholder
+        +single-list-empty-table(id+"-tab", emptyMsg)
+        //- Modal footer
+        +single-list-modal-footer(id+"-tab", warningMsg)
 
 mixin single-list-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
   .modal.fade(
