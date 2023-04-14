@@ -3,7 +3,13 @@ extends layout
 block content
   include mixins/_modals.pug
   include includes/showfactorycredentials
-  include includes/showdefaulthostsconfig
+  +single-list-modal("default-hosts-config-modal", t('defaultHostsConfig'),
+                      "fa-stethoscope", t('pingAddress'),
+                      t('invalidAddress'), t('targetAddressesTooltip'),
+                      t('defaultHosts'),
+                      t('noDefaultHostsConfigured'),
+                      t('defaultHostsConfigWarning'))
+
   +tab-lists-modal("default-dns-servers-modal", t('defaultDnsServersConfig'),
                      "fa-server", t('dnsServerAddress'),
                      t('invalidAddress'), t('dnsServerAddressTooltip'),
@@ -211,9 +217,10 @@ block content
                   span &nbsp; #{t('disabledFlashmanRegisterStepWillBeMqttsConnectionTest')}
                 if (superuser || (role && role.grantMonitorManage))
                   .row
-                    #factory-credentials-button.button.btn.btn-primary.mt-2.mx-auto
-                      .fas.fa-key.fa-lg
-                      span &nbsp; #{t('factoryCredentialsPresetLabel')}
+                    .col
+                      #factory-credentials-button.btn.btn-primary.btn-block
+                        .fas.fa-key.fa-lg
+                        span &nbsp; #{t('factoryCredentialsPresetLabel')}
               .col-md-6.col-12.pl-0.pr-0
                 .md-form
                   .md-selectfield.form-control.my-0
@@ -247,9 +254,9 @@ block content
                   label.custom-control-label.text-muted(for="specific-app-technician-web-login")
                     | #{t('enableSpecificAppTechnicianWebLogin')}
                   .invalid-feedback
-                  .alert.alert-info.mt-1
-                    .fas.fa-info-circle.fa-lg
-                    span &nbsp; #{t('explanationOfEnableSpecificAppTechnicianWebLogin')}
+                .alert.alert-info.mt-2
+                  .fas.fa-info-circle.fa-lg
+                  span &nbsp; #{t('explanationOfEnableSpecificAppTechnicianWebLogin')}
 
           if (superuser || (role && role.grantMonitorManage))
             h5.card-header.primary-color.white-text.mt-2(

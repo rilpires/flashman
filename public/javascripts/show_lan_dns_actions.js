@@ -1,5 +1,4 @@
 /* eslint-disable no-prototype-builtins */
-/* global __line */
 
 import {anlixDocumentReady} from '../src/common.index.js';
 import {
@@ -7,6 +6,7 @@ import {
 } from './session_storage.js';
 
 const t = i18next.t;
+const modalIdPrefix = '#config-lan-dns-modal';
 
 let DEVICE_ID = null;
 let MAX_DNS_SERVERS = 1;
@@ -60,13 +60,12 @@ const dnsServersTableToggle = function(addingNewDNS = false) {
   if ((dnsServersInfo.length > 0 && dnsServersInfo.length <= MAX_DNS_SERVERS)
       || addingNewDNS) {
     // Non empty table
-    $('#config-lan-dns-table-none').hide();
-    $('#config-lan-dns-table').show();
-  } else if (dnsServersInfo.length === 0 ||
-             dnsServersInfo.length > MAX_DNS_SERVERS) {
+    $(modalIdPrefix+'-table-empty').hide();
+    $(modalIdPrefix+'-table-show').show();
+  } else {
     // Empty table
-    $('#config-lan-dns-table-none').show();
-    $('#config-lan-dns-table').hide();
+    $(modalIdPrefix+'-table-empty').show();
+    $(modalIdPrefix+'-table-show').hide();
   }
 };
 
@@ -74,42 +73,44 @@ const cannotAddNewDNSToggle = function() {
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
   if (dnsServersInfo.length >= MAX_DNS_SERVERS) {
     // Cannot add
-    $('#add-new-dns-section').hide();
-    $('#cannot-add-new-dns-section').show();
     // Update warning with correct max of dns servers
     let isPlural = (MAX_DNS_SERVERS !== 1) ?
       t('dnsLimitReachedMany', {max: MAX_DNS_SERVERS}) :
       t('dnsLimitReachedOne');
-    $('#max-dns-warning').text(isPlural);
-  } else if (dnsServersInfo.length < MAX_DNS_SERVERS) {
+    $(modalIdPrefix+'-input-warning-msg').text(isPlural);
+    $(modalIdPrefix+'-add-button').prop('disabled', true);
+    $(modalIdPrefix+'-input-warning').show();
+  } else {
     // Can add
-    $('#add-new-dns-section').show();
-    $('#cannot-add-new-dns-section').hide();
+    $(modalIdPrefix+'-add-button').prop('disabled', false);
+    $(modalIdPrefix+'-input-warning').hide();
   }
 };
 
 const cannotRemoveAllAlertToggle = function(hide) {
   if (hide) {
-    $('#cannot-remove-all-warning').hide();
+    $(modalIdPrefix+'-footer-warning').hide();
   } else {
-    $('#cannot-remove-all-warning').show();
+    $(modalIdPrefix+'-footer-warning').show();
   }
 };
 
-const loadingMessageToggle = function(hide) {
-  if (hide) {
-    $('#loading-message').hide();
-    $('#apply-message').show();
+const loadingMessageToggle = function(btnEnabled) {
+  if (btnEnabled) {
+    $(modalIdPrefix+'-submit-button-icon').addClass('fa-check fa-lg');
+    $(modalIdPrefix+'-submit-button-icon').removeClass('fa-spinner fa-pulse');
+    $(modalIdPrefix+'-submit-button').prop('disabled', false);
   } else {
-    $('#loading-message').show();
-    $('#apply-message').hide();
+    $(modalIdPrefix+'-submit-button-icon').removeClass('fa-check fa-lg');
+    $(modalIdPrefix+'-submit-button-icon').addClass('fa-spinner fa-pulse');
+    $(modalIdPrefix+'-submit-button').prop('disabled', true);
   }
 };
 
 const removeAllDNSFromTable = function() {
   // Clears DNS Servers list
   setDNSServersList('dnsServersInfo', []);
-  $('#config-lan-dns-table').empty();
+  $(modalIdPrefix+'-table-show-body').empty();
   // As the user cannot delete all DNS servers, it adds the LAN IP in the table
   addLanIpToDnsTable();
 };
@@ -125,7 +126,7 @@ const addLanIpToDnsTable = function() {
 };
 
 const buildDNSServersTable = function() {
-  $('#config-lan-dns-table').empty();
+  $(modalIdPrefix+'-table-show-body').empty();
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
   if (dnsServersInfo.length > 0) {
     for (let i = 0; i < dnsServersInfo.length; i++) {
@@ -135,7 +136,7 @@ const buildDNSServersTable = function() {
 };
 
 const buildTableLine = function(dns) {
-  let dnsServersTable = $('#config-lan-dns-table');
+  let dnsServersTable = $(modalIdPrefix+'-table-show-body');
   let tableIndex = dnsServersTable.children('tr').length;
   dnsServersTable.append(
     $('<tr>').append(
@@ -162,15 +163,13 @@ const buildTableLine = function(dns) {
             .attr('data-id', dns),
           ),
     )
-    .addClass('bounceIn')
     .attr('data-id', dns),
   );
 };
 
 const addNewDNSServer = function(event) {
-  dnsServersTableToggle(true);
   let dnsServersInfo = getDNSServersList('dnsServersInfo');
-  const newDNS = $('#config-lan-dns-input').val();
+  const newDNS = $(modalIdPrefix+'-input').val();
   // The program flow should prevent this scenario from happening, but, to
   // prevent javascript injection, it performs this check
   if (dnsServersInfo.length > MAX_DNS_SERVERS) {
@@ -182,7 +181,7 @@ const addNewDNSServer = function(event) {
       title: isPlural,
       confirmButtonColor: '#4db6ac',
     });
-    return;
+    return false;
   }
   // It also shouldn't be possible to receive an invalid value as new DNS, but
   // it also performs that check
@@ -192,7 +191,7 @@ const addNewDNSServer = function(event) {
       title: t('emptyDNSError'),
       confirmButtonColor: '#4db6ac',
     });
-    return;
+    return false;
   }
   // Does not accept duplicate entries
   if (dnsServersInfo.filter((i) => i === newDNS).length > 0) {
@@ -201,17 +200,19 @@ const addNewDNSServer = function(event) {
       title: t('duplicatedDNS', {dns: newDNS}),
       confirmButtonColor: '#4db6ac',
     });
-    return;
+    return false;
   } else {
     // Successful addition
+    dnsServersTableToggle(true);
     buildTableLine(newDNS);
     dnsServersInfo.push(newDNS);
     setDNSServersList('dnsServersInfo', dnsServersInfo);
   }
+  return true;
 };
 
 window.removeDNSFromTable = function(input) {
-  let dnsTable = $('#config-lan-dns-table');
+  let dnsTable = $(modalIdPrefix+'-table-show-body');
   let dns = input.dataset['id'];
   let newDNSInfo = getDNSServersList('dnsServersInfo').filter(
     (item) => (item != dns),
@@ -268,7 +269,7 @@ const setDNSServers = function(event) {
         // Clear storage
         deleteDNSServersList();
         // Close modal
-        $('#config-lan-dns-modal.modal').modal('hide');
+        $(modalIdPrefix).modal('hide');
         swal.fire({
           icon: 'success',
           title: res.message,
@@ -294,7 +295,7 @@ anlixDocumentReady.add(function() {
     getDNSServers(event);
   });
   // Remove all DNS servers from table
-  $(document).on('click', '#config-lan-dns-remove-all', (event) => {
+  $(document).on('click', modalIdPrefix+'-btn-remove-all', (event) => {
     // It is not possible for the DNS field to be empty. If the user wants to
     // delete all configured DNS servers, the DNS value will automatically be
     // equal to the LAN IP
@@ -303,15 +304,15 @@ anlixDocumentReady.add(function() {
     cannotAddNewDNSToggle();
   });
   // Add a new DNS server
-  $(document).on('click', '#config-lan-dns-add-button', (event) => {
-    cannotAddNewDNSToggle();
-    addNewDNSServer(event);
-    cannotRemoveAllAlertToggle(true);
-    cannotAddNewDNSToggle();
-    $('#config-lan-dns-input').val('');
+  $(document).on('click', modalIdPrefix+'-add-button', (event) => {
+    if (addNewDNSServer(event)) {
+      cannotRemoveAllAlertToggle(true);
+      cannotAddNewDNSToggle();
+    }
+    $(modalIdPrefix+'-input').val('');
   });
   // Submit button to apply changes
-  $(document).on('click', '#config-lan-dns-submit-button', (event) => {
+  $(document).on('click', modalIdPrefix+'-submit-button', (event) => {
     loadingMessageToggle(false);
     setDNSServers(event);
   });

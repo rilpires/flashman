@@ -39,6 +39,18 @@ mixin single-list-input(id, inputLabel, invalidMsg, inputTooltip)
       )
         .fas.fa-plus.fa-lg
         span &nbsp; #{t('Add')}
+  .row.mt-1.align-items-center.flexwrap(
+    id=id+"-input-warning",
+    style="display: none;"
+  )
+    .col
+      //- Alert
+      .alert.alert-danger.mb-0
+        .fas.fa-exclamation-triangle.fa-lg
+        span &nbsp;
+        span(
+          id=id+"-input-warning-msg"
+        )
 
 mixin single-list-table(id, columnTitle)
   .table-responsive(
@@ -81,16 +93,20 @@ mixin single-list-modal-footer(id, warningMsg)
   .row.justify-content-center.align-items-center.flexwrap
     .col-md-9
       //- Alert
-      .alert.alert-danger.mb-0
+      .alert.alert-danger.mb-0(
+        id=id+"-footer-warning"
+      )
         .fas.fa-exclamation-triangle.fa-lg
         span &nbsp; #{warningMsg}
     .col-md-3
       //- Apply button
-      button.button.btn.btn-primary(
+      button.button.btn.btn-primary.mr-0.float-right(
         id=id+"-submit-button"
         type="button",
       )
-        .fas.fa-check.fa-lg
+        .fas.fa-check.fa-lg(
+          id=id+"-submit-button-icon"
+        )
         span &nbsp; #{t('Apply')}
 
 mixin single-list-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
