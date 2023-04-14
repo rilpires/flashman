@@ -2179,7 +2179,7 @@ describe('Controllers - Device List', () => {
 
   // getDefaultDNSServers
   describe('getDefaultDNSServers', () => {
-    test('Happy path - return object', async () => {
+    test('Happy path', async () => {
       // Mocks
       let config = models.copyConfigFrom(
         models.defaultMockConfigs[0],
@@ -2201,6 +2201,105 @@ describe('Controllers - Device List', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.default_dns_servers)
         .toStrictEqual(config.default_dns_servers);
+    });
+
+    test('DB returns invalid Config', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+
+  // setDefaultDNSServers
+  describe('setDefaultDNSServers', () => {
+    test('Happy path', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockConfigs(config, 'findOne');
+
+      let saveSpy = jest.spyOn(ConfigModel.prototype, 'save')
+        .mockImplementationOnce(() => Promise.resolve());
+
+      // Request data
+      let reqData = {default_dns_servers: {ipv4: [], ipv6: []}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(saveSpy).toBeCalled();
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+    });
+
+
+    describe('Error on request format', () => {
+      test.each(testUtils.common.TEST_PARAMETERS)(
+        'Invalid field: %p', async (reqWrongData) => {
+        // Mocks
+        let config = models.copyConfigFrom(
+          models.defaultMockConfigs[0],
+          {
+            default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+          },
+        );
+        testUtils.common.mockConfigs(config, 'findOne');
+
+        let saveSpy = jest.spyOn(ConfigModel.prototype, 'save')
+          .mockImplementationOnce(() => Promise.resolve());
+
+        // Execute
+        let response = await testUtils.common.sendFakeRequest(
+          deviceListController.setDefaultDNSServers,
+          reqWrongData, null, null, null, {
+            id: '12345',
+          },
+        );
+
+        expect(saveSpy).not.toBeCalled();
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(false);
+      });
+    });
+
+
+    test('Error on IPv4 format', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
+      // Request data
+      let reqData =
+        {default_dns_servers: {ipv4: ['444.444.444.444'], ipv6: []}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
     });
   });
 });
