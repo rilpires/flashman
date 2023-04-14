@@ -40,6 +40,7 @@ const tr069Models = {
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
+  fiberhomesr120aModel: require('./cpe-models/fiberhome-sr120-a'),
   greatekGwr300Model: require('./cpe-models/greatek-gwr300'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
@@ -222,6 +223,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG6245D') {
     // Fiberhome HG6245D
     result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
+  } else if (modelName === 'SR120-A') {
+    // Fiberhome SR120-A
+    result = {success: true, cpe: tr069Models.fiberhomesr120aModel};
   } else if (modelSerial === 'IGD' && modelName === 'ModelName') {
     // Greatek GWR300
     result = {success: true, cpe: tr069Models.greatekGwr300Model};
