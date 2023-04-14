@@ -2175,4 +2175,32 @@ describe('Controllers - Device List', () => {
         .toBe(device.prefix_delegation_local);
     });
   });
+
+
+  // getDefaultDNSServers
+  describe('getDefaultDNSServers', () => {
+    test('Happy path - return object', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockConfigs(config, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_dns_servers)
+        .toStrictEqual(config.default_dns_servers);
+    });
+  });
 });
