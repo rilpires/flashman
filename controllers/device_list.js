@@ -3893,20 +3893,22 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
   let success = true;
   let type = 'success';
   let message = t('operationSuccessful', {errorline: __line});
-  Config.findOne({is_default: true}, {default_ping_hosts: true}).exec(
-    async function(err, matchedConfig) {
-      if (err) {
+
+  if (!util.isJSONObject(req.body)) {
+    success = false; type = 'error';
+    message = t('jsonError', {errorline: __line});
+  } else if (!req.body.default_ping_hosts_list) {
+    success = false; type = 'error';
+    message = t('configNotFound', {errorline: __line});
+  } else {
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true}).exec().catch(
+      (err) => {
         success = false; type = 'error';
         message = t('configFindError', {errorline: __line});
-      }
-      if (!util.isJSONObject(req.body)) {
-        success = false; type = 'error';
-        message = t('jsonError', {errorline: __line});
-      }
-      if (!req.body.default_ping_hosts_list) {
-        success = false; type = 'error';
-        message = t('configNotFound', {errorline: __line});
-      }
+      },
+    );
+    if (matchedConfig) {
       let hosts = req.body.default_ping_hosts_list;
       let approvedHosts = [];
       hosts.forEach((host) => {
@@ -3916,11 +3918,9 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
         }
       });
       matchedConfig.default_ping_hosts = approvedHosts;
-      matchedConfig.save(function(err) {
-        if (err) {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
-        }
+      await matchedConfig.save().catch((err) => {
+        success = false; type = 'error';
+        message = t('configSaveError', {errorline: __line});
       });
       if (approvedHosts.length) {
         const overwriteResult = await overwriteHostsOnDevices(approvedHosts);
@@ -3929,30 +3929,19 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
           message = t('cpeSaveError', {errorline: __line});
         }
       }
-    },
-  );
+    }
+  }
   return res.status(200).json({
     success: success, type: type, message: message,
   });
 };
 
 const overwriteHostsOnDevices = async function(approvedHosts) {
-  let devices = {};
-  try {
-    devices = await DeviceModel.find({}, {ping_hosts: true});
-  } catch (err) {
+  await DeviceModel.updateMany({}, {$set: {ping_hosts: approvedHosts}},
+  ).catch((e) => {
     return {success: false, type: 'error',
-      message: t('cpeFindError', {errorline: __line})};
-  }
-  for (let device of devices) {
-    device.ping_hosts = approvedHosts;
-    try {
-      device.save();
-    } catch (err) {
-      return {success: false, type: 'error',
-        message: t('cpeSaveError', {errorline: __line})};
-    }
-  }
+      message: t('cpeSaveError', {errorline: __line})};
+  });
   return {success: true};
 };
 
