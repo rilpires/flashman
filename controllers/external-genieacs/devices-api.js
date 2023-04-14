@@ -55,7 +55,9 @@ const tr069Models = {
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
   intelbrasGX3000Model: require('./cpe-models/intelbras-gx3000'),
   intelbrasIH3000Model: require('./cpe-models/intelbras-ih3000'),
+  intelbrasW52100GModel: require('./cpe-models/intelbras-w5-2100g'),
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
+  intelbrasW4300FModel: require('./cpe-models/intelbras-w4-300f'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
@@ -268,9 +270,15 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (['W5-2100G', 'W5%2D2100G'].includes(modelSerial)) {
+    // Intelbras W5-2100G
+    result = {success: true, cpe: tr069Models.intelbrasW52100GModel};
   } else if (['W5-1200G', 'W5%2D1200G'].includes(modelSerial)) {
     // Intelbras W5-1200G
     result = {success: true, cpe: tr069Models.intelbrasW51200GModel};
+  } else if (['W4-300F', 'W4%2D300F'].includes(modelSerial)) {
+    // Intelbras W4-300F
+    result = {success: true, cpe: tr069Models.intelbrasW4300FModel};
   } else if (modelName === '120AC') {
     // Intelbras WiFiber 120AC
     result = {success: true, cpe: tr069Models.intelbrasWiFiberModel120AC};
