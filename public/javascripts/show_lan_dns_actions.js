@@ -289,7 +289,7 @@ const setDNSServers = function(event) {
 
 anlixDocumentReady.add(function() {
   // Lists the DNS servers when the button that opens the modal is clicked
-  $(document).on('click', '#btn-config-lan-dns-modal', (event) => {
+  $(document).on('click', '.btn-config-lan-dns-modal', (event) => {
     // Retrieves the id of the form referring to the device being edited
     TARGET_INDEX = $(event.currentTarget).data('index');
     getDNSServers(event);
