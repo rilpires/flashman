@@ -49,7 +49,10 @@ router.route('/certificates/search').post(
   userController.certificateSearch);
 
 router.route('/get/all').get(
-  userController.getUsers);
+  userController.getUsersForDisplay);
+
+router.route('/get/certifications').get(
+  userController.getUsersCertifications);
 
 router.route('/get/one/:id').get(
   userController.getUserById);

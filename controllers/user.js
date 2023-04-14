@@ -296,9 +296,11 @@ userController.postRole = function(req, res) {
   });
 };
 
-userController.getUsers = async function(req, res) {
+userController.getUsersCertifications = async function(req, res) {
   try {
-    let users = await User.find({is_hidden: false}).lean().exec();
+    let usersProjection = {_id: true, name: true, deviceCertifications: true};
+    let users =
+      await User.find({is_hidden: false}, usersProjection).lean().exec();
     return res.json({success: true, type: 'success', users: users});
   } catch (err) {
     return res.json({success: false, type: 'danger', message: err});
