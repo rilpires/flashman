@@ -236,6 +236,7 @@ const createRegistry = async function(req, cpe, permissions) {
   if (wifi5Capable) {
     if (!data.wifi5.ssid || !data.wifi5.ssid.value) {
       console.log(`Error Creating entry in wifi5.ssid: ${req.body.acs_id}`);
+      return false;
     }
     ssid5ghz = data.wifi5.ssid.value.trim();
   }
