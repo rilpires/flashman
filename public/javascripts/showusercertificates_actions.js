@@ -24,7 +24,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const secondDate = getSecondDate();
 
   if (getAll) {
-    $.get('/user/get/all', function(res) {
+    $.get('/user/get/certifications', function(res) {
       isActiveSearchBtnState(true);
       usersTable.clear().draw();
       if (res.type == 'success') {
