@@ -1987,22 +1987,6 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       }
     }
 
-    if (matchedDevice.current_diagnostic.customized &&
-      matchedDevice.current_diagnostic.type == 'sitesurvey' &&
-      matchedDevice.current_diagnostic.in_progress
-    ) {
-      if (matchedDevice.current_diagnostic.webhook_url != '') {
-        deviceHandlers.sendSitesurveyResultToCustomTrap(
-          matchedDevice, outDataCustom,
-        );
-      }
-    } else {
-      // Not a customized sitesurvey call, send to generic trap
-      sio.anlixSendSiteSurveyNotifications(id, outDataGeneric);
-      console.log('Site Survey Receiving for device ' +
-        id + ' successfully.');
-    }
-
     metricsApi.newDiagnosticState('sitesurvey', 'finished');
     // Clearing out diagnostic fields
     matchedDevice.current_diagnostic.stage = 'done';
@@ -2014,6 +1998,20 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
       console.log('Error saving site survey to database');
       return res.status(500).json({processed: 0});
     });
+
+    if (matchedDevice.current_diagnostic.customized &&
+      matchedDevice.current_diagnostic.type == 'sitesurvey') {
+      if (matchedDevice.current_diagnostic.webhook_url != '') {
+        deviceHandlers.sendSitesurveyResultToCustomTrap(
+          matchedDevice, outDataCustom,
+        );
+      }
+    } else {
+      // Not a customized sitesurvey call, send to generic trap
+      sio.anlixSendSiteSurveyNotifications(id, outDataGeneric);
+      console.log('Site Survey Receiving for device ' +
+        id + ' successfully.');
+    }
 
     return res.status(200).json({processed: 1});
   });
