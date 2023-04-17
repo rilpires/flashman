@@ -756,7 +756,7 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
       if (!result.last_speedtest_error || errorAndSend) {
         sendSpeedtestResultToCustomTrap(device, result);
       }
-    } else {
+    } else if (!result.last_speedtest_error) {
       // We need to change some map keys
       let resultToStore = util.deepCopyObject(result);
       resultToStore.down_speed = resultToStore.downSpeed;
