@@ -74,6 +74,7 @@ const tr069Models = {
   multilaserRE708Model: require('./cpe-models/multilaser-re708'),
   nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
+  nokiaG120WFModel: require('./cpe-models/nokia-g120w-f'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
   nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
@@ -328,6 +329,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
     result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
+  } else if (modelName === 'G-120W-F') {
+    // Nokia G-120W-F
+    result = {success: true, cpe: tr069Models.nokiaG120WFModel};
   } else if (
     ['G-140W-C', 'G-140W-CS', 'G-140W-UD', 'G6-WIFI-001'].includes(modelName)
   ) {
