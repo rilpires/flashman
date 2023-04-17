@@ -1082,6 +1082,8 @@
 	"noDefaultHostsConfigured": "No default host configured",
 	"unableToRemoveADefaultHost": "Removing a default host is not allowed",
 	"hostListMustContainDefaultHosts": " The list of hosts must contain the default hosts {{-hosts}}",
+	"defaultLanDnsServersConfig": "Default DNS servers configuration at LAN",
+	"defaultLanDnsServersConfigWarning": "Warning! DNS servers will only apply at LAN to new CPE registrations. To change existing registrations, access the CPE registration directly.",
 	"noFactoryCredentialConfigured": "No custom web credentials configured",
 	"invalidModel": "Invalid model",
 	"invalidManufacturer": "Invalid manufacturer",
@@ -1101,5 +1103,6 @@
 	"noBack": "No, return",
 	"updateTimeLimit": "Time limit for updating 1 CPE: {{peiod}} minutes",
 	"updateTimeLimitInputText": "Time limit for updating 1 CPE, in minutes (Default: {{default}} minutes)",
-	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes."
+	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes.",
+	"invalidAddress": "Invalid address"
 }

@@ -626,13 +626,30 @@ const createRegistry = async function(req, cpe, permissions) {
     wrongPortMapping = true;
   }
 
-  // Collect DNS servers info and does not allow repeated values
+  // Contains optionaly a list of DNS servers collected from the CPE
   let parsedDnsServers = [];
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    let dnsServers = data.lan.dns_servers.value.split(',');
-    for (let i=0; i<dnsServers.length; i++) {
-      if (!parsedDnsServers.includes(dnsServers[i])) {
-        parsedDnsServers.push(dnsServers[i]);
+  // Contains optionaly a list of ipv4 and ipv6 DNS addresses
+  // to be applied at LAN
+  const defaultLanDnsServersObj = matchedConfig.default_dns_servers;
+
+  // Logic that either sets a default list of DNS servers at LAN or get existing
+  // ones from the CPE
+  if ((defaultLanDnsServersObj.ipv4.length > 0) &&
+      cpePermissions.lan.dnsServersWrite
+  ) {
+    const dnsLimit = cpePermissions.lan.dnsServersLimit;
+    // Save the list at the CPE registry also
+    parsedDnsServers = defaultLanDnsServersObj.ipv4.slice(0, dnsLimit);
+    changes.lan.dns_servers = parsedDnsServers.join(',');
+    doChanges = true;
+  } else {
+    // Collect DNS servers info and does not allow repeated values
+    if (data.lan.dns_servers && data.lan.dns_servers.value) {
+      let dnsServers = data.lan.dns_servers.value.split(',');
+      for (let i=0; i<dnsServers.length; i++) {
+        if (!parsedDnsServers.includes(dnsServers[i])) {
+          parsedDnsServers.push(dnsServers[i]);
+        }
       }
     }
   }
