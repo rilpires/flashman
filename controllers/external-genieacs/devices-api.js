@@ -3,6 +3,12 @@ The scripts in this directory are loaded by genieacs along with the provision
 script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
 "path/to/flashman/controllers/external-genieacs"
 */
+/**
+ * This file includes functions to handle the interact with GenieACS and
+ * Flashman. Be aware that those functions might be accessible for Flashman
+ * in a Docker environment.
+ * @namespace controllers/external-genieacs/devices-api
+ */
 
 // ***** WARNING!!! *****
 // DO NOT CHANGE THIS VARIABLE WITHOUT ALSO CHANGING THE COMMAND THAT ALTERS IT
@@ -34,6 +40,7 @@ const tr069Models = {
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
+  fiberhomesr120aModel: require('./cpe-models/fiberhome-sr120-a'),
   greatekGwr300Model: require('./cpe-models/greatek-gwr300'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
@@ -47,7 +54,11 @@ const tr069Models = {
   huaweiWS7000Model: require('./cpe-models/huawei-ws7000'),
   huaweiWS7100Model: require('./cpe-models/huawei-ws7100'),
   hurakallST1001FLModel: require('./cpe-models/hurakall-st1001fl'),
+  intelbrasGX3000Model: require('./cpe-models/intelbras-gx3000'),
+  intelbrasIH3000Model: require('./cpe-models/intelbras-ih3000'),
+  intelbrasW52100GModel: require('./cpe-models/intelbras-w5-2100g'),
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
+  intelbrasW4300FModel: require('./cpe-models/intelbras-w4-300f'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
@@ -63,6 +74,7 @@ const tr069Models = {
   multilaserRE708Model: require('./cpe-models/multilaser-re708'),
   nextFiberNXT425Model: require('./cpe-models/next-fiber-nxt-425ac'),
   nokiaBeaconOneModel: require('./cpe-models/nokia-beacon'),
+  nokiaG120WFModel: require('./cpe-models/nokia-g120w-f'),
   nokiaG140WCModel: require('./cpe-models/nokia-g140w'),
   nokiaG140WHModel: require('./cpe-models/nokia-g140wh'),
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
@@ -212,6 +224,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG6245D') {
     // Fiberhome HG6245D
     result = {success: true, cpe: tr069Models.fiberhomeHG6245DModel};
+  } else if (modelName === 'SR120-A') {
+    // Fiberhome SR120-A
+    result = {success: true, cpe: tr069Models.fiberhomesr120aModel};
   } else if (modelSerial === 'IGD' && modelName === 'ModelName') {
     // Greatek GWR300
     result = {success: true, cpe: tr069Models.greatekGwr300Model};
@@ -251,12 +266,24 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ST-1001-FL') {
     // Hurakall ST-1001-FL
     result = {success: true, cpe: tr069Models.hurakallST1001FLModel};
+  } else if (modelName === 'GX3000') {
+    // Intelbras GX3000
+    result = {success: true, cpe: tr069Models.intelbrasGX3000Model};
+  } else if (modelName === 'IH3000') {
+    // Intelbras IH3000
+    result = {success: true, cpe: tr069Models.intelbrasIH3000Model};
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (['W5-2100G', 'W5%2D2100G'].includes(modelSerial)) {
+    // Intelbras W5-2100G
+    result = {success: true, cpe: tr069Models.intelbrasW52100GModel};
   } else if (['W5-1200G', 'W5%2D1200G'].includes(modelSerial)) {
     // Intelbras W5-1200G
     result = {success: true, cpe: tr069Models.intelbrasW51200GModel};
+  } else if (['W4-300F', 'W4%2D300F'].includes(modelSerial)) {
+    // Intelbras W4-300F
+    result = {success: true, cpe: tr069Models.intelbrasW4300FModel};
   } else if (modelName === '120AC') {
     // Intelbras WiFiber 120AC
     result = {success: true, cpe: tr069Models.intelbrasWiFiberModel120AC};
@@ -302,6 +329,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'BEACON 1 HA-020W-B') {
     // Nokia Beacon ONE
     result = {success: true, cpe: tr069Models.nokiaBeaconOneModel};
+  } else if (modelName === 'G-120W-F') {
+    // Nokia G-120W-F
+    result = {success: true, cpe: tr069Models.nokiaG120WFModel};
   } else if (
     ['G-140W-C', 'G-140W-CS', 'G-140W-UD', 'G6-WIFI-001'].includes(modelName)
   ) {
@@ -554,11 +584,54 @@ const syncDeviceDiagnostics = async function(args, callback) {
   callback(null, result);
 };
 
+
+/**
+ * Calls Flashman to save parameters that got a notification in
+ * GenieACS.
+ *
+ * @memberof controllers/external-genieacs/devices-api
+ *
+ * @param {String} args - The data and ACS ID as a JSON string.
+ * @param {Function} callback - The function to be called when an error or
+ * success occurs.
+ *
+ * @return {Any} The callback response.
+ */
+const syncDeviceChanges = async function(args, callback) {
+  let params = null;
+
+  // Try parsing the data received
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Invalid JSON',
+    });
+  }
+
+  // Check params
+  if (!params || !params.data || !params.acs_id) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
+  let result = await sendFlashmanRequest('device/syncchanges', params);
+  return callback(null, result);
+};
+
+
+/**
+ * @exports controllers/external-genieacs/devices-api
+ */
 exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
 exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
+exports.syncDeviceChanges = syncDeviceChanges;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
 

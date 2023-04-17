@@ -131,7 +131,7 @@ describe('ACS Device Info Tests', () => {
   describe('updateInfo', () => {
     // mustExecute = true & executed
     test('mustExecute = true & executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -177,7 +177,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = true & not executed
     test('mustExecute = true & not executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -223,7 +223,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = false & executed
     test('mustExecute = false & executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -269,7 +269,7 @@ describe('ACS Device Info Tests', () => {
 
     // mustExecute = true & not executed
     test('mustExecute = false & not executed', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       let changes = {wifi2: {ssid: '12345678'}};
       let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
         .cpe.getModelFields();
@@ -318,7 +318,7 @@ describe('ACS Device Info Tests', () => {
   describe('configTR069VirtualAP', () => {
     // To mode disabled
     test('To mode disabled', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -337,7 +337,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode cable
     test('To mode cable', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -356,7 +356,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi2
     test('To mode wifi2', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -375,7 +375,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi5
     test('To mode wifi5', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -394,7 +394,7 @@ describe('ACS Device Info Tests', () => {
 
     // To mode wifi2/5
     test('To mode wifi2/5', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
 
       // Mocks
@@ -416,7 +416,7 @@ describe('ACS Device Info Tests', () => {
 
     // To unknown mode
     test('To unknown mode', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
 
       // Mocks
       jest.spyOn(acsMeshDeviceHandler, 'createVirtualAPObjects')
@@ -1141,7 +1141,7 @@ describe('ACS Device Info Tests', () => {
 
     // Validate WAN and LAN information
     test('WAN & LAN information', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       const cpePermissions = {
         features: {hasIpv6Information: true},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1218,7 +1218,7 @@ describe('ACS Device Info Tests', () => {
 
     // WAN and LAN information without IPv6
     test('WAN & LAN information without IPv6', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = {
         features: {hasIpv6Information: false},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1302,7 +1302,7 @@ describe('ACS Device Info Tests', () => {
 
     // WAN and LAN information no grant
     test('WAN & LAN information no grant', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = {
         features: {hasIpv6Information: true},
         lan: {}, wifi: {}, mesh: {}, stavixXMLConfig: {},
@@ -1379,7 +1379,7 @@ describe('ACS Device Info Tests', () => {
 
     // Invalid config
     test('Invalid config', async () => {
-      let device = models.defaultMockDevices[0];
+      let device = {...models.defaultMockDevices[0]};
       device.acs_id = '';
       let app = {
         locals: {
@@ -1419,7 +1419,7 @@ describe('ACS Device Info Tests', () => {
 
     // All permissions
     test('All permissions', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let cpePermissions = fieldsAndPermissions.cpePermissions[0];
       let app = {
         locals: {
@@ -3319,6 +3319,298 @@ describe('syncDeviceData - Update web admin login', () => {
   });
 
 
+  describe('requestStatistics', () => {
+    // Invalid device - Undefined
+    test('Invalid device - Undefined', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics(undefined);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Null
+    test('Invalid device - Null', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics(null);
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - Non TR-069
+    test('Invalid device - Not TR-069', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '1234',
+        use_tr069: false,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Invalid device - No acs_id
+    test('Invalid device - No acs_id', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).toBeCalled();
+    });
+
+
+    // Unknown model
+    test('Unknown model', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X99999-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // No permission
+    test('No permission', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: false,
+            hasMemoryUsage: false,
+          },
+        },
+        {wan: {}, diagnostics: {statistics: {}}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions with no field
+    test('All permissions with no field', () => {
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: true,
+            hasMemoryUsage: true,
+          },
+        },
+        {wan: {}, diagnostics: {statistics: {}}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: '000000-EG8145X6-0000000000000000',
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(taskSpy).not.toBeCalled();
+      expect(errorSpy).not.toBeCalled();
+    });
+
+
+    // All permissions
+    test('All permissions', () => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        {
+          features: {
+            hasCPUUsage: true,
+            hasMemoryUsage: true,
+          },
+        },
+        {
+          wan: {
+            recv_bytes: 'wan.recv_bytes',
+            sent_bytes: 'wan.sent_bytes',
+          }, diagnostics: {statistics: {
+            cpu_usage: 'diagnostics.statistics.cpu_usage',
+            memory_free: 'diagnostics.statistics.memory_free',
+            memory_total: 'diagnostics.statistics.memory_total',
+          }}},
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: acsID,
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.recv_bytes',
+            'wan.sent_bytes',
+            'diagnostics.statistics.cpu_usage',
+            'diagnostics.statistics.memory_free',
+            'diagnostics.statistics.memory_total',
+          ],
+        },
+        expect.anything(),
+      );
+    });
+
+
+    // Each permission
+    test.each([
+      ['hasCPUUsage', 'cpu_usage'],
+      ['hasMemoryUsage', 'memory_free'],
+      ['hasMemoryUsage', 'memory_total'],
+    ])('Each permissions: %s', (permission, field) => {
+      let acsID = '000000-EG8145X6-0000000000000000';
+      let permissions = {
+        features: {
+          hasCPUUsage: false,
+          hasMemoryUsage: false,
+        },
+      };
+      let fields = {
+        wan: {
+          recv_bytes: 'wan.recv_bytes',
+          sent_bytes: 'wan.sent_bytes',
+        },
+        diagnostics: {statistics: {
+          cpu_usage: '',
+          memory_free: '',
+          memory_total: '',
+        }},
+      };
+
+
+      // Change the permission and field
+      permissions.features[permission] = true;
+      fields.diagnostics.statistics[field] = 'diagnostics.statistics.' + field;
+
+
+      // Mocks
+      let taskSpy = jest.spyOn(tasksAPI, 'addTask').mockImplementation(
+        () => true,
+      );
+      let errorSpy = jest.spyOn(console, 'error').mockImplementation(
+        () => true,
+      );
+      utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true,
+        permissions,
+        fields,
+      );
+
+      // Execute
+      acsDeviceInfoController.requestStatistics({
+        acs_id: acsID,
+        use_tr069: true,
+      });
+
+      // Validate
+      expect(errorSpy).not.toBeCalled();
+      expect(taskSpy).toBeCalledWith(
+        acsID,
+        {
+          name: 'getParameterValues',
+          parameterNames: [
+            'wan.recv_bytes',
+            'wan.sent_bytes',
+            'diagnostics.statistics.' + field,
+          ],
+        },
+        expect.anything(),
+      );
+    });
+  });
+
+
   describe('requestLanInformation', () => {
     // Invalid device - Undefined
     test('Invalid device - Undefined', () => {
@@ -3703,7 +3995,7 @@ describe('syncDeviceData - Update web admin login', () => {
   describe('requestSync', () => {
     // All parameters and fields
     test('All parameters and fields', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
 
 
@@ -3768,7 +4060,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // All permissions with no fields
     test('All permissions with no fields', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
       let fields = {...fieldsAndPermissions.fields[0]};
 
@@ -3851,7 +4143,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // Without WAN and LAN information
     test('Without WAN and LAN information', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = {...fieldsAndPermissions.devicePermissions[0]};
       devicePermissions.grantWanLanInformation = false;
 
@@ -3908,7 +4200,7 @@ describe('syncDeviceData - Update web admin login', () => {
 
     // WAN and LAN information with no IPv6
     test('WAN and LAN information with no IPv6', async () => {
-      const device = models.defaultMockDevices[0];
+      const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
       let cpePermissions = {...fieldsAndPermissions.cpePermissions[0]};
       cpePermissions.features.hasIpv6Information = false;
@@ -4032,7 +4324,7 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-describe('syncDeviceData', () => {
+  describe('syncDeviceData', () => {
     // Not updating
     test('Not updating', async () => {
       let device = models.copyDeviceFrom(
@@ -4645,6 +4937,1686 @@ describe('syncDeviceData', () => {
       // Validate
       expect(successUpdateSpy).toBeCalled();
       expect(updateInfoSpy).not.toBeCalled();
+    });
+  });
+
+
+  // syncDeviceChangedValues
+  describe('syncDeviceChangedValues', () => {
+    // No data
+    test('No data', async () => {
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('fieldNameMissing', {name: 'MAC'}).replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No common
+    test('No common', async () => {
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('fieldNameMissing', {name: 'MAC'}).replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No MAC
+    test('No MAC', async () => {
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('fieldNameMissing', {name: 'MAC'}).replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No MAC value
+    test('No MAC value', async () => {
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {mac: {}}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('fieldNameMissing', {name: 'MAC'}).replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid device
+    test('Invalid device', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+
+      // Mocks
+      let deviceSpy = jest.spyOn(DeviceModel, 'findById')
+        .mockImplementation(() => null);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {mac: {value: mac}}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(deviceSpy).toHaveBeenCalledWith(
+        mac.toUpperCase(), expect.anything(),
+      );
+    });
+
+
+    // Mac with -
+    test('Mac with -', async () => {
+      const mac = 'aa-bb:cc:dd-ee:ff';
+      const mac2 = 'aa:bb:cc:dd:ee:ff';
+
+      // Mocks
+      let deviceSpy = jest.spyOn(DeviceModel, 'findById')
+        .mockImplementation(() => null);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {mac: {value: mac}}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(deviceSpy).toHaveBeenCalledWith(
+        mac2.toUpperCase(), expect.anything(),
+      );
+    });
+
+
+    // Invalid CPE instance
+    test('Invalid CPE instance', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let instanceSpy = jest
+        .spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({success: false}));
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {mac: {value: mac}}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(instanceSpy).toBeCalled();
+    });
+
+
+    // No data to change
+    test('No data to change', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {mac: {value: mac}}}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Invalid public IP
+    test('Invalid public IP', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          ip: undefined,
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Valid public IP
+    test('Valid public IP', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let ip = '192.168.0.6';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          ip: {value: ip + ':567'},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].ip).toBe(ip);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Invalid stun enable
+    test('Invalid stun enable', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Invalid stun enable value
+    test('Invalid stun enable value', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: undefined},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // False stun enable
+    test('False stun enable', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: 'false'},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Invalid stun address
+    test('Invalid stun address', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: true},
+          stun_udp_conn_req_addr: {},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Invalid stun address value
+    test('Invalid stun address value', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: true},
+          stun_udp_conn_req_addr: {value: undefined},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Empty stun address value
+    test('Empty stun address value', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: true},
+          stun_udp_conn_req_addr: {value: ''},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Valid stun
+    test('Valid stun', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip = '192.168.0.6';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+          stun_enable: {value: true},
+          stun_udp_conn_req_addr: {value: ip + ':567'},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].ip).toBe(ip);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Wan with no pppoe field
+    test('Wan with no pppoe field', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip = '192.168.0.6';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          wan_ip_ppp: {value: ip},
+          wan_ip: {value: ip},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].wan_ip).toBe(ip);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Wan with no ip field - pppoe
+    test('Wan with no ip field - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+          wan_ip_ppp: {},
+          wan_ip: {},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Wan with no ip field - dhcp
+    test('Wan with no ip field - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+          wan_ip_ppp: {},
+          wan_ip: {},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Wan with invalid ip field - pppoe
+    test('Wan with invalid ip field - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+          wan_ip_ppp: {value: undefined},
+          wan_ip: {value: undefined},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Wan with invalid ip field - dhcp
+    test('Wan with invalid ip field - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+          wan_ip_ppp: {value: undefined},
+          wan_ip: {value: undefined},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Wan with valid ip field - pppoe
+    test('Wan with valid ip field - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '192.168.0.6';
+      const ip2 = '192.168.0.7';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+          wan_ip_ppp: {value: ip1},
+          wan_ip: {value: ip2},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].wan_ip).toBe(ip1);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Wan with valid ip field - dhcp
+    test('Wan with valid ip field - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '192.168.0.6';
+      const ip2 = '192.168.0.7';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+          wan_ip_ppp: {value: ip1},
+          wan_ip: {value: ip2},
+        }}},
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].wan_ip).toBe(ip2);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Invalid wan with ipv6
+    test('Invalid wan with ipv6', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '192.168.0.6';
+      const ip2 = '192.168.0.7';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ip: '8.8.8.8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {modelPermissions: modelPermissionSpy},
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // Invalid pppoe with ipv6
+    test('Invalid pppoe with ipv6', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {modelPermissions: modelPermissionSpy},
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // Invalid pppoe value with ipv6
+    test('Invalid pppoe value with ipv6', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {modelPermissions: modelPermissionSpy},
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: undefined},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+      expect(saveSpy).toBeCalled();
+    });
+
+
+    // IPv6 with no grant
+    test('IPv6 with no grant', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: false}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with no feature
+    test('IPv6 with no feature', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: false},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with no address
+    test('IPv6 with no address', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: false},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with no pppoe field
+    test('IPv6 with no pppoe field', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+    });
+
+
+    // IPv6 with invalid pppoe field
+    test('IPv6 with invalid pppoe field', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: undefined,
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+    });
+
+
+    // IPv6 with empty pppoe field
+    test('IPv6 with empty pppoe field', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+    });
+
+
+    // IPv6 with undefined pppoe value
+    test('IPv6 with undefined pppoe value', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: undefined},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+    });
+
+
+    // IPv6 with invalid pppoe value
+    test('IPv6 with invalid pppoe value', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: 'abcdef'},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
+    });
+
+
+    // IPv6 with no ip field - pppoe
+    test('IPv6 with no ip field - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with no ip field - dhcp
+    test('IPv6 with no ip field - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+        }, ipv6: {
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with invalid ip field - pppoe
+    test('IPv6 with invalid ip field - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: undefined,
+          address: undefined,
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with invalid ip field - dhcp
+    test('IPv6 with invalid ip field - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+        }, ipv6: {
+          address_ppp: undefined,
+          address: undefined,
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with invalid ip value - pppoe
+    test('IPv6 with invalid ip value - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: {value: undefined},
+          address: {value: undefined},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 with invalid ip value - dhcp
+    test('IPv6 with invalid ip value - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+        }, ipv6: {
+          address_ppp: {value: undefined},
+          address: {value: undefined},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).not.toBeCalled();
+    });
+
+
+    // IPv6 - pppoe
+    test('IPv6 - pppoe', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: true},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip1);
+    });
+
+
+    // IPv6 - dhcp
+    test('IPv6 - dhcp', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const ip1 = '2804:1234:5678::2';
+      const ip2 = '2804:1234:5678::3';
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id, {wan_ipv6: 'fc00::8'},
+      );
+
+
+      // Mocks
+      utils.common.mockDevices(device, 'findOne');
+      let modelPermissionSpy = jest.fn().mockImplementation(
+        () => ({
+          features: {hasIpv6Information: true},
+          ipv6: {hasAddressField: true},
+        }),
+      );
+      jest.spyOn(devicesAPI, 'instantiateCPEByModelFromDevice')
+        .mockImplementation(() => ({
+          success: true,
+          cpe: {
+            modelPermissions: modelPermissionSpy,
+            convertPPPoEEnable: (value) => value,
+          },
+        }));
+      jest.spyOn(deviceVersion, 'devicePermissions')
+        .mockImplementation(() => ({grantWanLanInformation: true}));
+      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
+        .mockImplementation(() => true);
+
+
+      // Execute
+      let result = await utils.common.sendFakeRequest(
+        acsDeviceInfoController.syncDeviceChangedValues,
+        {data: {common: {
+          mac: {value: mac},
+        }, wan: {
+          pppoe_enable: {value: false},
+        }, ipv6: {
+          address_ppp: {value: ip1},
+          address: {value: ip2},
+        }}},
+      );
+
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(saveSpy.mock.instances[0].wan_ipv6).toBe(ip2);
     });
   });
 });
