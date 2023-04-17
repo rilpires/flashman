@@ -467,10 +467,9 @@ const calculateSiteSurveyDiagnostic = async function(
     outDataCustom.push(outDevCustom);
   });
   device.last_site_survey = Date.now();
+  await saveCurrentDiagnostic(device, 'done', false);
   if (device.current_diagnostic.type == 'sitesurvey' &&
-  device.current_diagnostic.customized &&
-  device.current_diagnostic.in_progress
-  ) {
+      device.current_diagnostic.customized) {
     if (device.current_diagnostic.webhook_url != '') {
       deviceHandlers.sendSitesurveyResultToCustomTrap(
         device, outDataCustom,
@@ -483,7 +482,6 @@ const calculateSiteSurveyDiagnostic = async function(
     );
     console.log('Site Survey for device ' + device.acs_id + ' received.');
   }
-  await saveCurrentDiagnostic(device, 'done', false);
 };
 
 
