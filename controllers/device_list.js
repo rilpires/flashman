@@ -3938,7 +3938,7 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
 
 const overwriteHostsOnDevices = async function(approvedHosts) {
   await DeviceModel.updateMany({}, {$set: {ping_hosts: approvedHosts}},
-  ).catch((e) => {
+  ).exec().catch((e) => {
     return {success: false, type: 'error',
       message: t('cpeSaveError', {errorline: __line})};
   });
