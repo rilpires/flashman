@@ -2,23 +2,23 @@
 
 import {anlixDocumentReady} from '../src/common.index.js';
 import {
-  setDefaultDnsServersList,
-  getDefaultDnsServersList,
+  setDefaultLanDnsServersList,
+  getDefaultLanDnsServersList,
 } from './session_storage.js';
 
 const t = i18next.t;
 const modalIdPrefix = '#default-dns-servers-modal';
 let selectedTabId = modalIdPrefix+'-tab-0';
 
-const getDefaultDnsServers = function(event) {
+const getDefaultLanDNSServers = function(event) {
   $.ajax({
     type: 'GET',
-    url: '/devicelist/defaultdnsservers',
+    url: '/devicelist/defaultlandnsservers',
     dataType: 'json',
     success: function(res) {
       if (res.success) {
         if (res.default_dns_servers) {
-          setDefaultDnsServersList(
+          setDefaultLanDnsServersList(
             'defaultDnsServersObj', res.default_dns_servers,
           );
         }
@@ -38,9 +38,9 @@ const getDefaultDnsServers = function(event) {
 const defaultDnsTableToggle = function(addingNewEntry = false) {
   let dnsServerList = [];
   if ($(selectedTabId).text().toLowerCase() === 'ipv4') {
-    dnsServerList = getDefaultDnsServersList('defaultDnsServersObj').ipv4;
+    dnsServerList = getDefaultLanDnsServersList('defaultDnsServersObj').ipv4;
   } else {
-    dnsServerList = getDefaultDnsServersList('defaultDnsServersObj').ipv6;
+    dnsServerList = getDefaultLanDnsServersList('defaultDnsServersObj').ipv6;
   }
   if (dnsServerList.length > 0 || addingNewEntry) {
     $(modalIdPrefix+'-tab-table-empty').hide();
@@ -54,10 +54,10 @@ const defaultDnsTableToggle = function(addingNewEntry = false) {
 const setDefaultDnsServers = function(event) {
   $.ajax({
     type: 'POST',
-    url: '/devicelist/defaultdnsservers',
+    url: '/devicelist/defaultlandnsservers',
     dataType: 'json',
     data: JSON.stringify({
-      default_dns_servers: getDefaultDnsServersList('defaultDnsServersObj'),
+      default_dns_servers: getDefaultLanDnsServersList('defaultDnsServersObj'),
     }),
     contentType: 'application/json',
     success: function(res) {
@@ -72,7 +72,8 @@ const setDefaultDnsServers = function(event) {
 
 let buildDnsServersTable = function() {
   $(modalIdPrefix+'-tab-table-show-body').empty();
-  let defaultDnsServersObj = getDefaultDnsServersList('defaultDnsServersObj');
+  let defaultDnsServersObj =
+    getDefaultLanDnsServersList('defaultDnsServersObj');
   let defaultDnsServersList = [];
   if ($(selectedTabId).text().toLowerCase() === 'ipv4') {
     defaultDnsServersList = defaultDnsServersObj.ipv4;
@@ -118,21 +119,23 @@ const buildTableLine = function(server) {
 window.removeDnsServersFromTable = function(input) {
   let serversTable = $(modalIdPrefix+'-tab-table-show-body');
   let server = input.dataset['id'];
-  let defaultDnsServersObj = getDefaultDnsServersList('defaultDnsServersObj');
+  let defaultDnsServersObj =
+    getDefaultLanDnsServersList('defaultDnsServersObj');
   defaultDnsServersObj.ipv4 = defaultDnsServersObj.ipv4.filter(
     (item) => (item != server),
   );
   defaultDnsServersObj.ipv6 = defaultDnsServersObj.ipv6.filter(
     (item) => (item != server),
   );
-  setDefaultDnsServersList('defaultDnsServersObj', defaultDnsServersObj);
+  setDefaultLanDnsServersList('defaultDnsServersObj', defaultDnsServersObj);
   serversTable.find('[data-id="' + server + '"]').remove();
   defaultDnsTableToggle();
 };
 
 const addNewDefaultDnsServer = function(event) {
   defaultDnsTableToggle(true);
-  let defaultDnsServersObj = getDefaultDnsServersList('defaultDnsServersObj');
+  let defaultDnsServersObj =
+    getDefaultLanDnsServersList('defaultDnsServersObj');
   const newServer = $(modalIdPrefix+'-tab-input').val();
   if (!newServer || newServer === '') {
     swal.fire({
@@ -160,7 +163,7 @@ const addNewDefaultDnsServer = function(event) {
       buildTableLine(newServer);
       defaultDnsServersObj.ipv6.push(newServer);
     }
-    setDefaultDnsServersList('defaultDnsServersObj', defaultDnsServersObj);
+    setDefaultLanDnsServersList('defaultDnsServersObj', defaultDnsServersObj);
   }
 };
 
@@ -169,7 +172,7 @@ anlixDocumentReady.add(function() {
   // when the button that opens the modal is clicked
   $(document).on('click', '#default-dns-servers-config-button', (event) => {
     $(modalIdPrefix).modal('show');
-    getDefaultDnsServers(event);
+    getDefaultLanDNSServers(event);
   });
   // Submit button to apply changes
   $(document).on('click', modalIdPrefix+'-tab-submit-button', (event) =>
@@ -177,7 +180,7 @@ anlixDocumentReady.add(function() {
   // // Remove all from table
   $(document).on('click', modalIdPrefix+'-tab-btn-remove-all',
     function(event) {
-      setDefaultDnsServersList('defaultDnsServersObj', {ipv4: [], ipv6: []});
+      setDefaultLanDnsServersList('defaultDnsServersObj', {ipv4: [], ipv6: []});
       defaultDnsTableToggle();
       $(modalIdPrefix+'-tab-table-show-body').empty();
     },

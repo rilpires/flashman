@@ -2177,8 +2177,8 @@ describe('Controllers - Device List', () => {
   });
 
 
-  // getDefaultDNSServers
-  describe('getDefaultDNSServers', () => {
+  // getDefaultLanDNSServers
+  describe('getDefaultLanDNSServers', () => {
     test('Happy path', async () => {
       // Mocks
       let config = models.copyConfigFrom(
@@ -2191,7 +2191,7 @@ describe('Controllers - Device List', () => {
 
       // Execute
       let response = await testUtils.common.sendFakeRequest(
-        deviceListController.getDefaultDNSServers,
+        deviceListController.getDefaultLanDNSServers,
         null, null, null, null, {
           id: '12345',
         },
@@ -2209,7 +2209,7 @@ describe('Controllers - Device List', () => {
 
       // Execute
       let response = await testUtils.common.sendFakeRequest(
-        deviceListController.getDefaultDNSServers,
+        deviceListController.getDefaultLanDNSServers,
         null, null, null, null, {
           id: '12345',
         },
@@ -2221,8 +2221,8 @@ describe('Controllers - Device List', () => {
   });
 
 
-  // setDefaultDNSServers
-  describe('setDefaultDNSServers', () => {
+  // setDefaultLanDNSServers
+  describe('setDefaultLanDNSServers', () => {
     test('Happy path', async () => {
       // Mocks
       let config = models.copyConfigFrom(
@@ -2241,7 +2241,7 @@ describe('Controllers - Device List', () => {
 
       // Execute
       let response = await testUtils.common.sendFakeRequest(
-        deviceListController.setDefaultDNSServers,
+        deviceListController.setDefaultLanDNSServers,
         reqData, null, null, null, {
           id: '12345',
         },
@@ -2270,7 +2270,7 @@ describe('Controllers - Device List', () => {
 
         // Execute
         let response = await testUtils.common.sendFakeRequest(
-          deviceListController.setDefaultDNSServers,
+          deviceListController.setDefaultLanDNSServers,
           reqWrongData, null, null, null, {
             id: '12345',
           },
@@ -2293,7 +2293,7 @@ describe('Controllers - Device List', () => {
 
       // Execute
       let response = await testUtils.common.sendFakeRequest(
-        deviceListController.setDefaultDNSServers,
+        deviceListController.setDefaultLanDNSServers,
         reqData, null, null, null, {
           id: '12345',
         },
