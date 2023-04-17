@@ -745,18 +745,26 @@ deviceHandlers.storeSpeedtestResult = async function(device, result) {
   if (device.current_diagnostic.type=='speedtest' &&
       device.current_diagnostic.in_progress
   ) {
+    // If error, update device
     if (result.last_speedtest_error) {
       device.last_speedtest_error = result.last_speedtest_error;
     }
-    let customizedAndValid = device.current_diagnostic.customized &&
-      device.current_diagnostic.webhook_url;
-    if (customizedAndValid) {
-      let errorAndSend = result.last_speedtest_error &&
-        device.current_diagnostic.send_error;
-      if (!result.last_speedtest_error || errorAndSend) {
-        sendSpeedtestResultToCustomTrap(device, result);
+
+    // If a custom trap, send error only if flag is true
+    // or if it is success in diagnostic
+    if (device.current_diagnostic.customized) {
+      if (device.current_diagnostic.webhook_url) {
+        if (!result.last_speedtest_error ||
+            device.current_diagnostic.send_error) {
+          sendSpeedtestResultToCustomTrap(device, result);
+        }
       }
-    } else if (!result.last_speedtest_error) {
+    }
+
+    // Just store the results if no error and
+    // not a custom trap
+    if (!result.last_speedtest_error &&
+        !device.current_diagnostic.customized) {
       // We need to change some map keys
       let resultToStore = util.deepCopyObject(result);
       resultToStore.down_speed = resultToStore.downSpeed;
