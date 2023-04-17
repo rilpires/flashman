@@ -2231,13 +2231,13 @@ describe('Controllers - Device List', () => {
           default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
         },
       );
-      testUtils.common.mockConfigs(config, 'findOne');
+      testUtils.common.mockAwaitConfigs(config, 'findOne');
 
-      let saveSpy = jest.spyOn(ConfigModel.prototype, 'save')
-        .mockImplementationOnce(() => Promise.resolve());
+      let saveSpy = jest.spyOn(config, 'save');
 
       // Request data
-      let reqData = {default_dns_servers: {ipv4: [], ipv6: []}};
+      let newDNS = {ipv4: [], ipv6: []};
+      let reqData = {default_dns_servers: newDNS};
 
       // Execute
       let response = await testUtils.common.sendFakeRequest(
@@ -2250,6 +2250,8 @@ describe('Controllers - Device List', () => {
       expect(saveSpy).toBeCalled();
       expect(response.statusCode).toBe(200);
       expect(response.body.success).toBe(true);
+      expect(config.default_dns_servers)
+        .toStrictEqual(newDNS);
     });
 
 
