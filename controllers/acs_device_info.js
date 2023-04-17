@@ -2081,26 +2081,30 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (hasPPPoE === true) {
     // Process PPPoE user field
     if (data.wan.pppoe_user && data.wan.pppoe_user.value) {
-      let localUser = device.pppoe_user.trim();
       let remoteUser = data.wan.pppoe_user.value.trim();
       if (!device.pppoe_user) {
         device.pppoe_user = remoteUser;
-      } else if (localUser !== remoteUser) {
-        changes.wan.pppoe_user = localUser;
-        hasChanges = true;
+      } else {
+        let localUser = device.pppoe_user.trim();
+        if (localUser !== remoteUser) {
+          changes.wan.pppoe_user = localUser;
+          hasChanges = true;
+        }
       }
     }
 
     // Process PPPoE password field
     if (data.wan.pppoe_pass && data.wan.pppoe_pass.value) {
-      let localPass = device.pppoe_password.trim();
       let remotePass = data.wan.pppoe_pass.value.trim();
       if (!device.pppoe_password) {
         device.pppoe_password = remotePass;
+      } else {
         // make sure this onu reports the password
-      } else if (localPass !== remotePass) {
-        changes.wan.pppoe_pass = localPass;
-        hasChanges = true;
+        let localPass = device.pppoe_password.trim();
+        if (localPass !== remotePass) {
+          changes.wan.pppoe_pass = localPass;
+          hasChanges = true;
+        }
       }
     }
 
