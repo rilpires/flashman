@@ -399,7 +399,7 @@ acsAccessControlHandler.changeAcRules = async function(device) {
   if (!permissions || !permissions.grantBlockDevices) return;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  if (!fields) return;
+  if (!fields || !device.lan_devices) return;
   // ===== Get blockedDevices and AC rules trees =====
   // Creates the structures related to WLAN subtrees
   // Make sure there are no more than 31 devices to block - limit of 64 rules

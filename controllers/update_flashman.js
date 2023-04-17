@@ -169,109 +169,121 @@ const updateGenieACS = function(upgrades) {
 };
 
 updateController.updateProvisionsPresets = async function() {
-  let waitForProvision;
-  try {
-    let provisionScript = fs.readFileSync(
-      './controllers/external-genieacs/provision.js', 'utf8',
-    );
-    console.log('Updating GenieACS provision...');
-    waitForProvision = tasksApi.putProvision(provisionScript, 'flashman');
-  } catch (e) {
-    waitForProvision = Promise.reject();
-  }
+  const presets = [
+    {type: 'provision', path: 'provision', name: 'flashman'},
+    {type: 'provision', path: 'diagnostic-provision', name: 'diagnostic'},
+    {type: 'provision', path: 'changes-provision', name: 'changes'},
+    {type: 'preset', path: 'bootstrap-preset'},
+    {type: 'preset', path: 'boot-preset'},
+    {type: 'preset', path: 'periodic-preset'},
+    {type: 'preset', path: 'diagnostic-preset'},
+    {type: 'preset', path: 'changes-preset'},
+    {type: 'delete', path: 'inform'},
+  ];
+  let promises = [];
 
-  let waitForDiagProvision;
-  try {
-    let provisionScript = fs.readFileSync(
-      './controllers/external-genieacs/diagnostic-provision.js', 'utf8',
-    );
-    console.log('Updating GenieACS diagnostic-provision...');
-    waitForDiagProvision = tasksApi.putProvision(provisionScript, 'diagnostic');
-  } catch (e) {
-    waitForDiagProvision = Promise.reject();
-  }
 
-  let waitForBootstrapPreset;
-  try {
-    let preset = JSON.parse(fs.readFileSync(
-      './controllers/external-genieacs/bootstrap-preset.json',
-    ));
-    console.log('Updating Genie bootstrap-preset...');
-    waitForBootstrapPreset = tasksApi.putPreset(preset);
-  } catch (e) {
-    waitForBootstrapPreset = Promise.reject();
-  }
+  // Set all presets
+  presets.forEach((presetObject) => {
+    let promise;
+    let presetType = presetObject.type;
+    let presetPath = presetObject.path;
+    let presetName = presetObject.name;
 
-  let waitForBootPreset;
-  try {
-    let preset = JSON.parse(fs.readFileSync(
-      './controllers/external-genieacs/boot-preset.json',
-    ));
-    console.log('Updating Genie boot-preset...');
-    waitForBootPreset = tasksApi.putPreset(preset);
-  } catch (e) {
-    waitForBootPreset = Promise.reject();
-  }
+    let loadFile = false;
+    let fileType = '';
+    let isJSON = false;
+    let func = null;
+    let logText = '';
 
-  let waitForPeriodicPreset;
-  try {
-    let preset = JSON.parse(fs.readFileSync(
-      './controllers/external-genieacs/periodic-preset.json',
-    ));
-    console.log('Updating Genie periodic-preset...');
-    waitForPeriodicPreset = tasksApi.putPreset(preset);
-  } catch (e) {
-    waitForPeriodicPreset = Promise.reject();
-  }
 
-  let waitForDiagPreset;
-  try {
-    let preset = JSON.parse(fs.readFileSync(
-      './controllers/external-genieacs/diagnostic-preset.json',
-    ));
-    console.log('Updating Genie diagnostic-preset...');
-    waitForDiagPreset = tasksApi.putPreset(preset);
-  } catch (e) {
-    waitForDiagPreset = Promise.reject();
-  }
+    // Provision
+    if (presetType === 'provision') {
+      loadFile = true;
+      fileType = '.js';
+      isJSON = false;
+      func = tasksApi.putProvision;
+      logText = 'Updating Genie provision: ' + presetPath + '...';
 
-  let waitForLegacyPresetDelete;
-  try {
-    console.log('Removing Genie legacy inform preset...');
-    waitForLegacyPresetDelete = tasksApi.deletePreset('inform');
-  } catch (e) {
-    waitForLegacyPresetDelete = Promise.reject();
-  }
+    // Preset
+    } else if (presetType === 'preset') {
+      loadFile = true;
+      fileType = '.json';
+      isJSON = true;
+      func = tasksApi.putPreset;
+      logText = 'Updating Genie preset: ' + presetPath + '...';
+
+    // Delete
+    } else if (presetType === 'delete') {
+      loadFile = false;
+      fileType = '';
+      isJSON = false;
+      func = tasksApi.deletePreset;
+      logText = 'Removing Genie preset: ' + presetPath + '...';
+    }
+
+
+    try {
+      let preset;
+
+      // If should read the file
+      if (loadFile) {
+        preset = fs.readFileSync(
+          './controllers/external-genieacs/' + presetPath + fileType,
+          'utf8',
+        );
+
+        // If should parse the file
+        if (isJSON) preset = JSON.parse(preset);
+      }
+
+      console.log(logText);
+      // Only call func if is valid, otherwise return reject
+      promise = (func ? func(
+        // If is delete type, use the presetName, otherwise use the
+        // preset/script
+        presetType === 'delete' ? presetName: preset,
+
+        // Only needed for provision
+        presetType === 'provision' ? presetName : undefined,
+      ) : Promise.reject());
+    } catch (error) {
+      promise = Promise.reject();
+    }
+
+    // Add the promise to array
+    promises.push(promise);
+  });
+
 
   // Wait for all promises and check results
-  let promises = [waitForProvision, waitForDiagProvision,
-                  waitForBootstrapPreset, waitForBootPreset,
-                  waitForPeriodicPreset, waitForDiagPreset,
-                  waitForLegacyPresetDelete];
   let values = await Promise.allSettled(promises);
-  if (values[0].status !== 'fulfilled') {
-    console.log('Error updating Genie provision script!');
-  }
-  if (values[1].status !== 'fulfilled') {
-    console.log('Error updating Genie diagnostic-provision script!');
-  }
-  if (values[2].status !== 'fulfilled') {
-    console.log('Error updating Genie bootstrap-preset json!');
-  }
-  if (values[3].status !== 'fulfilled') {
-    console.log('Error updating Genie boot-preset json!');
-  }
-  if (values[4].status !== 'fulfilled') {
-    console.log('Error updating Genie periodic-preset json!');
-  }
-  if (values[5].status !== 'fulfilled') {
-    console.log('Error updating Genie diagnostic-preset json!');
-  }
-  if (values[6].status !== 'fulfilled') {
-    console.log('Error deleting Genie legacy preset json!');
-  }
-  if (values.every((v) => v.status === 'fulfilled')) {
-    console.log('GenieACS presets and provisions updated successfully!');
+  let presetCount = 0;
+  let presetsDone = 0;
+
+  values.forEach((value) => {
+    let type = presets[presetCount].type;
+    let name = presets[presetCount].path;
+
+    // If status is not fullfilled, log the error
+    if (value.status !== 'fulfilled') {
+      console.error(
+        'Error ' + (type === 'delete' ? 'removing' : 'updating') +
+        ' Genie ' + name + '!',
+      );
+    } else {
+      // Save the quantity of fullfilled
+      presetsDone += 1;
+    }
+
+    presetCount += 1;
+  });
+
+  if (presetsDone === presetCount) {
+    console.log(
+      presetsDone +
+      ' GenieACS presets and provisions were updated successfully!',
+    );
   }
 };
 
@@ -590,6 +602,8 @@ updateController.getAutoConfig = function(req, res) {
           matchedConfig.certification.speedtest_step_required,
         ipv6StepRequired: matchedConfig.certification.ipv6_step_required,
         dnsStepRequired: matchedConfig.certification.dns_step_required,
+        specificAppTechnicianWebLogin: matchedConfig
+          .specificAppTechnicianWebLogin,
         flashStepRequired: matchedConfig.certification.flashman_step_required,
         language: matchedConfig.language,
       });
@@ -1023,6 +1037,9 @@ updateController.setAutoConfig = async function(req, res) {
     let speedTestStepRequired = req.body['speedtest-step-required'] === 'true';
     let ipv6StepRequired = req.body['ipv6-step-required'] === 'true';
     let dnsStepRequired = req.body['dns-step-required'] === 'true';
+    config.specificAppTechnicianWebLogin =
+      (req.body['specific-app-technician-web-login'] &&
+      req.body['specific-app-technician-web-login'] === 'on') ? true : false;
     let flashmanStepRequired = req.body['flashman-step-required'] === 'true';
     if (typeof wanStepRequired === 'boolean') {
       config.certification.wan_step_required = wanStepRequired;

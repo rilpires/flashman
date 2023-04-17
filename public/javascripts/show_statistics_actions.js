@@ -72,6 +72,18 @@ anlixDocumentReady.add(function() {
 
   // Important: include and initialize socket.io first using socket var
   socket.on('STATISTICS', function(macaddr, data) {
+    // If data is empty, let the none section already in place
+    $(STATISTICS_READY_SECTION).hide();
+    $(STATISTICS_PROGRESS_SECTION).hide();
+    $(STATISTICS_RESULTS_SECTION).hide();
+    $(STATISTICS_NONE_SECTION).show();
+
+    // Stop the refresh
+    $('#btn-statistics-modal-refresh').prop('disabled', false);
+    $('#btn-statistics-modal-refresh > i')
+      .removeClass('animated rotateOut infinite');
+
+
     // If resources object exists
     if (data.resources && macaddr === $('#statistics-modal-hlabel').text()) {
       // Check if cpu usage, mem usage exists and they are valid
@@ -96,6 +108,10 @@ anlixDocumentReady.add(function() {
         $(RESOURCE_PROGRESS_MEM_VALUE).text(data.resources.mem_usage + '%');
 
 
+        $(STATISTICS_READY_SECTION).hide();
+        $(STATISTICS_PROGRESS_SECTION).hide();
+        $(STATISTICS_NONE_SECTION).hide();
+        $(STATISTICS_RESULTS_SECTION).show();
         $(STATISTICS_RESOURCES_SECTION).show();
       } else {
         $(STATISTICS_RESOURCES_SECTION).hide();
@@ -166,9 +182,6 @@ anlixDocumentReady.add(function() {
         ApexCharts.exec(chartUpId, 'updateOptions', upOptions, false, true);
       }
       // Adjust modal content
-      $('#btn-statistics-modal-refresh').prop('disabled', false);
-      $('#btn-statistics-modal-refresh > i')
-        .removeClass('animated rotateOut infinite');
       $(STATISTICS_READY_SECTION).hide();
       $(STATISTICS_PROGRESS_SECTION).hide();
       $(STATISTICS_NONE_SECTION).hide();
