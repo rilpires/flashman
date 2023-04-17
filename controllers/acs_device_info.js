@@ -629,16 +629,17 @@ const createRegistry = async function(req, cpe, permissions) {
   // Contains optionaly a list of DNS servers collected from the CPE
   let parsedDnsServers = [];
   // Contains optionaly a list of ipv4 and ipv6 DNS addresses
-  const defaultDnsServersObj = matchedConfig.default_dns_servers;
+  // to be applied at LAN
+  const defaultLanDnsServersObj = matchedConfig.default_dns_servers;
 
-  // Logic that either sets a default list of DNS servers or get existing
+  // Logic that either sets a default list of DNS servers at LAN or get existing
   // ones from the CPE
-  if ((defaultDnsServersObj.ipv4.length > 0) &&
+  if ((defaultLanDnsServersObj.ipv4.length > 0) &&
       cpePermissions.lan.dnsServersWrite
   ) {
     const dnsLimit = cpePermissions.lan.dnsServersLimit;
     // Save the list at the CPE registry also
-    parsedDnsServers = defaultDnsServersObj.ipv4.slice(0, dnsLimit);
+    parsedDnsServers = defaultLanDnsServersObj.ipv4.slice(0, dnsLimit);
     changes.lan.dns_servers = parsedDnsServers.join(',');
     doChanges = true;
   } else {

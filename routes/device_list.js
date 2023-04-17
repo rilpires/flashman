@@ -119,14 +119,14 @@ router.route('/landnsserverslist/:id')
 );
 
 // Set/Get LAN Default DNS servers
-router.route('/defaultdnsservers')
+router.route('/defaultlandnsservers')
 .get(
   authController.ensurePermission('grantFlashmanManage'),
-  deviceListController.getDefaultDNSServers,
+  deviceListController.getDefaultLanDNSServers,
 )
 .post(
   authController.ensurePermission('grantFlashmanManage'),
-  deviceListController.setDefaultDNSServers,
+  deviceListController.setDefaultLanDNSServers,
 );
 
 // Set/Get Ping hosts list

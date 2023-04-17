@@ -4157,7 +4157,7 @@ deviceListController.setLanDNSServers = async function(req, res) {
   });
 };
 
-const getDefaultDNSServersAtConfig = async function() {
+const getDefaultLanDNSServersAtConfig = async function() {
   let message = t('configNotFound', {errorline: __line});
   let config = {};
   try {
@@ -4173,20 +4173,20 @@ const getDefaultDNSServersAtConfig = async function() {
   return {success: false, type: 'error', message: message};
 };
 
-deviceListController.getDefaultDNSServers = async function(req, res) {
-  const getDefaultDnsServers = await getDefaultDNSServersAtConfig();
-  if (getDefaultDnsServers.success) {
+deviceListController.getDefaultLanDNSServers = async function(req, res) {
+  const getDefaultLanDNSServers = await getDefaultLanDNSServersAtConfig();
+  if (getDefaultLanDNSServers.success) {
     return res.status(200).json({
       success: true,
-      default_dns_servers: getDefaultDnsServers.object,
+      default_dns_servers: getDefaultLanDNSServers.object,
     });
   }
   return res.status(200).json({
-    success: false, message: getDefaultDnsServers.message,
+    success: false, message: getDefaultLanDNSServers.message,
   });
 };
 
-deviceListController.setDefaultDNSServers = async function(req, res) {
+deviceListController.setDefaultLanDNSServers = async function(req, res) {
   let success = true;
   let type = 'success';
   let message = t('operationSuccessful', {errorline: __line});

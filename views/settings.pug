@@ -9,13 +9,13 @@ block content
                       t('defaultHosts'),
                       t('noDefaultHostsConfigured'),
                       t('defaultHostsConfigWarning'))
-
   +tab-lists-modal("default-dns-servers-modal", t('defaultDnsServersConfig'),
+  +tab-lists-modal("default-dns-servers-modal", t('defaultLanDnsServersConfig'),
                      "fa-server", t('dnsServerAddress'),
                      t('invalidAddress'), t('dnsServerAddressTooltip'),
                      t('dnsServerAddresses'),
                      t('noDnsServerConfigured'),
-                     t('defaultDnsServersConfigWarning'), "IPv4", "IPv6")
+                     t('defaultLanDnsServersConfigWarning'), "IPv4", "IPv6")
 
   form#config-flashman-form.needs-validation(
     method="post",
@@ -125,7 +125,7 @@ block content
                   .col
                     #default-dns-servers-config-button.btn.btn-primary.btn-block
                       .fas.fa-server.fa-lg
-                      span &nbsp; #{t('defaultDnsServersConfig')}
+                      span &nbsp; #{t('defaultLanDnsServersConfig')}
             #is-ssid-prefix-enabled-col.mt-3.mb-1.d-none
               .row.alert.alert-danger
                 .col-md-6.my-auto
