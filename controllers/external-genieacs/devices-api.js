@@ -108,6 +108,7 @@ const tr069Models = {
   zteF660Model: require('./cpe-models/zte-f660'),
   zteF673Model: require('./cpe-models/zte-f673'),
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
+  flashifyModel: require('./cpe-models/flashify-model'),
 };
 
 const getTR069CustomFactoryModels = function() {
@@ -430,6 +431,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     result = {success: true, cpe: tr069Models.zyxelEMG3524Model};
+  } else {
+    // Flashify Model
+    result = {success: true, cpe: tr069Models.flashifyModel};
   }
   if (result.success) {
     // Apply fware / hware version differences for extra permissions / fields

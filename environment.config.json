@@ -1,6 +1,6 @@
 {
   "apps": [{
-    "name": "flashman",
+    "name": "flashman_1",
     "script": "bin/www",
     "log_date_format": "YYYY-MM-DD HH:mm:ss Z",
     "autorestart": true,
@@ -12,7 +12,8 @@
       "FLM_CONCURRENT_UPDATES_LIMIT": 50,
       "FLM_MONGODB_HOST": "localhost",
       "FLM_ADM_USER": "admin",
-      "FLM_ADM_PASS": "flashman"
+      "FLM_ADM_PASS": "flashman",
+      "FLM_WEB_PORT": 8001
     },
     "exec_mode": "cluster"
   }]
