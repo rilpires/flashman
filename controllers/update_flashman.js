@@ -383,23 +383,9 @@ updateController.rebootGenie = function(instances) {
       // issues with CPEs connections since exceptions lead to buggy exp.backoff
       let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
       exec(pm2Command, async (err, stdout, stderr)=>{
-        // Replace genieacs instances config with what flashman gives us
-        let replace = 'const INSTANCES_COUNT = .*;';
-        let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-        let sedExpr = 's/' + replace + '/' + newText + '/';
-        let targetFile = 'controllers/external-genieacs/devices-api.js';
-        let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
-
         // Update genieACS provisions and presets
         console.log('Updating genieACS provisions and presets');
         await updateController.updateProvisionsPresets();
-
-        exec(sedCommand, (err, stdout, stderr)=>{
-          exec('pm2 start genieacs-cwmp');
-          if (config && config.tr069.insecure_enable) {
-            exec('pm2 start genieacs-cwmp-http');
-          }
-        });
       });
     });
   });

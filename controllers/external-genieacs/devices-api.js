@@ -10,17 +10,11 @@ script. Configure genieacs' cwmp server parameter EXT_DIR to the following:
  * @namespace controllers/external-genieacs/devices-api
  */
 
-// ***** WARNING!!! *****
-// DO NOT CHANGE THIS VARIABLE WITHOUT ALSO CHANGING THE COMMAND THAT ALTERS IT
-// IN CONTROLLERS/UPDATE_FLASHMAN.JS! THIS LINE IS ALTERED AUTOMATICALLY WHEN
-// FLASHMAN IS RESTARTED FOR ANY REASON
-const INSTANCES_COUNT = 1;
 /* This file is called by genieacs-cwmp, so need to set FLM_WEB_PORT in
  environment.genieacs.json or in shell environment with the same value
  that is in environment.config.json */
-const FLASHMAN_PORT = (process.env.FLM_WEB_PORT || 8000);
-const API_URL = 'http://'+(process.env.FLM_WEB_HOST || 'localhost')
-  +':$PORT/acs/';
+const FLASHIFY_SERVER_PORT = (process.env.FLASHIFY_SERVER_PORT || 19282);
+const FLASHIFY_SERVER_HOST = (process.env.FLM_WEB_HOST || 'localhost');
 
 const request = require('request');
 const basicCPEModel = require('./cpe-models/base-model');
@@ -502,28 +496,36 @@ const getDeviceFields = async function(args, callback) {
   });
 };
 
-const computeFlashmanUrl = function(shareLoad=true) {
-  let url = API_URL;
-  let numInstances = INSTANCES_COUNT;
-  // Only used at scenarios where Flashman was installed directly on a host
-  // without docker and with more than 1 vCPU
-  if (shareLoad && numInstances > 1) {
-    // More than 1 instance - share load between instances 1 and N-1
-    // We ignore instance 0 for the same reason we ignore it for router syn
-    // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
-    // FLASHMAN_PORT+i
-    let target = Math.floor(Math.random()*(numInstances-1)) + FLASHMAN_PORT + 1;
-    url = url.replace('$PORT', target.toString());
-  } else {
-    // Only 1 instance - force on instance 0
-    url = url.replace('$PORT', FLASHMAN_PORT.toString());
-  }
-  return url;
+const computeFlashmanUrl = async function(cpeId, shareLoad=true) {
+  return new Promise((resolve, reject)=>{
+    request({
+      url: `http://${FLASHIFY_SERVER_HOST}:${FLASHIFY_SERVER_PORT}/getflashmanreg/${cpeId}`,
+      method: 'GET',
+    },
+    function(error, response, body) {
+      if (error) {
+        return resolve('');
+      }
+      if (response.statusCode !== 200) {
+        return resolve('');
+      }
+      if (!('fqdn' in body) || !('port' in body)) {
+        return resolve('');
+      }
+      return resolve(`http://${body.fqdn}:${body.port}/acs/`);
+    });
+  });
 };
 
-const sendFlashmanRequest = function(route, params, shareLoad=true) {
+const sendFlashmanRequest = async function(route, params, shareLoad=true) {
+  let url = await computeFlashmanUrl(shareLoad, params.acs_id);
+  if (url === '') {
+    return {
+      success: false,
+      message: 'Error contacting Flashify Server',
+    };
+  }
   return new Promise((resolve, reject)=>{
-    let url = computeFlashmanUrl(shareLoad);
     request({
       url: url + route,
       method: 'POST',
