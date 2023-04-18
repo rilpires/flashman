@@ -500,6 +500,64 @@ describe('Validate functions used both in frontend and backend', () => {
       expect(result.valid).toBe(true);
     });
   });
+
+
+  // validateDeviceName
+  describe('validateDeviceName function(name)', () => {
+    // Invalid parameters
+    test.each(testUtils.common.TEST_PARAMETERS.slice(1))(
+      'Invalid field: %p', (name) => {
+      let validator = new Validator();
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    // Minimum length
+    test('Minimum length', () => {
+      let validator = new Validator();
+      let name = 'aa';
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    // Maximum length
+    test('Maximum length', () => {
+      let validator = new Validator();
+      let name = 'a'.repeat(129);
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    // Invalid characters
+    test('Invalid characters', () => {
+      let validator = new Validator();
+      let name = '1A3p5@78/*`\'^~]{!';
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(false);
+    });
+
+
+    // Valid characters
+    test('Valid characters', () => {
+      let validator = new Validator();
+      let name = 'ABmowe179 .,:;_-';
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(true);
+    });
+  });
   /*
     input:
       rules(9) - undefined,  null, int, float, string, Object,
