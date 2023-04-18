@@ -1112,5 +1112,7 @@
 	"updateTimeLimit": "Tempo limite de atualização de 1 CPE: {{period}} minutos",
 	"updateTimeLimitInputText": "Tempo limite de atualização para 1 CPE, em minutos (Padrão: {{default}} minutos)",
 	"updateTimeLimitInputErrorText": "Tempo limite de atualização para 1 CPE inválido! Escolha um valor entre {{min}} e {{max}} minutos.",
-	"invalidAddress": "Endereço inválido"
+	"invalidAddress": "Endereço inválido",
+	"specificUsername": "Usuário digitado pelo técnico",
+	"specificPassword": "Senha digitada pelo técnico"
 }

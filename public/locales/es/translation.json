@@ -1112,5 +1112,7 @@
 	"updateTimeLimit": "Tiempo de espera de actualización de 1 CPE: {{period}} minutos",
 	"updateTimeLimitInputText": "Tiempo de espera de actualización para 1 CPE, en minutos (Predeterminado: {{default}} minutos)",
 	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos.",
-	"invalidAddress": "Dirección inválida"
+	"invalidAddress": "Dirección inválida",
+	"specificUsername": "Usuario ingresado por el técnico",
+	"specificPassword": "Contraseña ingresada por el técnico"
 }
