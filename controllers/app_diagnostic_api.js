@@ -113,6 +113,8 @@ const pushCertification = (arr, c, finished) => {
   });
 };
 
+diagAppAPIController.__testPushCertification = pushCertification;
+
 const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
