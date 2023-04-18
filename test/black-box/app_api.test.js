@@ -8,27 +8,7 @@ describe('/Deviceinfo/app', () => {
   const basicAuthPass = 'flashman';
   const flashmanHost = 'http://localhost:8000';
 
-  let adminCookie = null;
-
   jest.setTimeout( 15*1000 );
-
-  beforeAll(async () => {
-    const adminLogin = await request(flashmanHost)
-      .post('/login')
-      .send({
-        name: basicAuthUser,
-        password: basicAuthPass,
-      });
-
-    adminCookie = adminLogin.header['set-cookie'];
-
-    if (adminCookie === undefined) {
-      throw new Error(`Failed to get admin cookie.\n`
-      + `Status code: ${adminLogin.statusCode}\n`,
-      + `HTTP error: ${adminLogin.error}\n`,
-      );
-    }
-  });
 
   describe('/deviceinfo/app/diagnostic/login', () => {
     test('Check if specificWebLogin exists', async () => {
