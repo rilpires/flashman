@@ -27,7 +27,6 @@ describe('Handlers/ACS/Measures Tests', () => {
     jest.useRealTimers();
   });
 
-
   // fetchPonSignalFromGenie
   describe('fetchPonSignalFromGenie', () => {
     // Invalid device id
@@ -125,12 +124,14 @@ describe('Handlers/ACS/Measures Tests', () => {
 
 
     // Wrong pon power
+    // TaskAPI must fail with wrong json
     test('Wrong pon power', async () => {
       let httpRequestOptions = {};
       let promiseResolve;
       let resultPromise = new Promise((resolve) => {
         promiseResolve = resolve;
       });
+      const origData = {'1671052379': [-14, 3]};
       const dataToPass = '1234,5678';
       const id = models.defaultMockDevices[0]._id;
 
@@ -141,27 +142,19 @@ describe('Handlers/ACS/Measures Tests', () => {
           model: 'G-140W-C',
           version: '3FE46343AFIA89',
           hw_version: '3FE46343AFIA89',
+          pon_signal_measure: origData,
         },
       );
 
-
       // Mocks
-      utils.common.mockDevices(device, 'findOne');
-
+      utils.common.mockAwaitDevices(device, 'findOne');
 
       // Spys
-      jest.spyOn(DeviceModel.prototype, 'save')
-        .mockImplementationOnce(() => Promise.resolve());
-
-      jest.spyOn(utilHandlers, 'checkForNestedKey')
-        .mockImplementation(() => true);
-      jest.spyOn(utilHandlers, 'getFromNestedKey')
-        .mockImplementationOnce(() => undefined)
-        .mockImplementationOnce(() => undefined);
-
       jest.spyOn(sio, 'anlixSendPonSignalNotification')
         .mockImplementationOnce(() => true);
 
+      // This request will run from TaskAPI
+      // The dataToPass is a invalid Json
       let httpRequestSpy = jest.spyOn(http, 'request')
         .mockImplementationOnce(
           (options, callback) => {
@@ -179,18 +172,14 @@ describe('Handlers/ACS/Measures Tests', () => {
                   expect(this.on).not.toHaveBeenCalled();
                 }
               },
-
               setEncoding: () => true,
             });
-
             return {end: () => true};
           },
         );
 
-
       // Execute
       await measureController.fetchPonSignalFromGenie(id);
-
 
       // Validate
       expect(httpRequestSpy).toHaveBeenCalledWith(
@@ -205,190 +194,12 @@ describe('Handlers/ACS/Measures Tests', () => {
         httpRequestOptions,
         expect.anything(),
       );
-      expect(await resultPromise).toEqual(device.pon_signal_measure);
-    });
-
-
-    // Wrong pon array
-    test('Wrong pon array', async () => {
-      let httpRequestOptions = {};
-      let promiseResolve;
-      let resultPromise = new Promise((resolve) => {
-        promiseResolve = resolve;
-      });
-      const dataToPass = '1234,5678';
-      const id = models.defaultMockDevices[0]._id;
-
-      // Copy the device and assign a new one with pon capability
-      let device = models.copyDeviceFrom(
-        id,
-        {
-          model: 'G-140W-C',
-          version: '3FE46343AFIA89',
-          hw_version: '3FE46343AFIA89',
-          pon_signal_measure: undefined,
-        },
-      );
-
-
-      // Mocks
-      utils.common.mockDevices(device, 'findOne');
-
-
-      // Spys
-      jest.spyOn(DeviceModel.prototype, 'save')
-        .mockImplementationOnce(() => Promise.resolve());
-
-      jest.spyOn(utilHandlers, 'checkForNestedKey')
-        .mockImplementation(() => true);
-      jest.spyOn(utilHandlers, 'getFromNestedKey')
-        .mockImplementationOnce(() => 30.5)
-        .mockImplementationOnce(() => 2.4);
-
-      jest.spyOn(sio, 'anlixSendPonSignalNotification')
-        .mockImplementationOnce(() => true);
-
-      let httpRequestSpy = jest.spyOn(http, 'request')
-        .mockImplementationOnce(
-          (options, callback) => {
-            httpRequestOptions = options;
-            // Call the callback immediately
-            callback({
-              on: async (event, callback2) => {
-                // Pass the data and call the second callback
-                if (event === 'data') {
-                  callback2(dataToPass);
-                } else if (event === 'end') {
-                  promiseResolve(await callback2());
-                // If it is an invalid parameter, give an error
-                } else {
-                  expect(this.on).not.toHaveBeenCalled();
-                }
-              },
-
-              setEncoding: () => true,
-            });
-
-            return {end: () => true};
-          },
-        );
-
-
-      // Execute
-      await measureController.fetchPonSignalFromGenie(id);
-
-
-      // Validate
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          hostname: GENIEHOST,
-          port: GENIEPORT,
-        }),
-        expect.anything(),
-      );
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        httpRequestOptions,
-        expect.anything(),
-      );
-
-      let result = await resultPromise;
-      let expected = {};
-      expected[Object.keys(result)[0]] = [-25.157, -36.198];
-      expect(result).toStrictEqual(expected);
-    });
-
-
-    // Wrong pon parameters
-    test('Wrong pon parameters', async () => {
-      let httpRequestOptions = {};
-      let promiseResolve;
-      let resultPromise = new Promise((resolve) => {
-        promiseResolve = resolve;
-      });
-      const dataToPass = '1234,5678';
-      const id = models.defaultMockDevices[0]._id;
-
-      // Copy the device and assign a new one with pon capability
-      let device = models.copyDeviceFrom(
-        id,
-        {
-          model: 'G-140W-C',
-          version: '3FE46343AFIA89',
-          hw_version: '3FE46343AFIA89',
-          pon_signal_measure: undefined,
-        },
-      );
-
-
-      // Mocks
-      utils.common.mockDevices(device, 'findOne');
-
-
-      // Spys
-      jest.spyOn(DeviceModel.prototype, 'save')
-        .mockImplementationOnce(() => Promise.resolve());
-
-      jest.spyOn(utilHandlers, 'checkForNestedKey')
-        .mockImplementation(() => true);
-      jest.spyOn(utilHandlers, 'getFromNestedKey')
-        .mockImplementationOnce(() => undefined)
-        .mockImplementationOnce(() => undefined);
-
-      jest.spyOn(sio, 'anlixSendPonSignalNotification')
-        .mockImplementationOnce(() => true);
-
-      let httpRequestSpy = jest.spyOn(http, 'request')
-        .mockImplementationOnce(
-          (options, callback) => {
-            httpRequestOptions = options;
-            // Call the callback immediately
-            callback({
-              on: async (event, callback2) => {
-                // Pass the data and call the second callback
-                if (event === 'data') {
-                  callback2(dataToPass);
-                } else if (event === 'end') {
-                  promiseResolve(await callback2());
-                // If it is an invalid parameter, give an error
-                } else {
-                  expect(this.on).not.toHaveBeenCalled();
-                }
-              },
-
-              setEncoding: () => true,
-            });
-
-            return {end: () => true};
-          },
-        );
-
-
-      // Execute
-      await measureController.fetchPonSignalFromGenie(id);
-
-
-      // Validate
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        expect.objectContaining({
-          method: 'GET',
-          hostname: GENIEHOST,
-          port: GENIEPORT,
-        }),
-        expect.anything(),
-      );
-      expect(httpRequestSpy).toHaveBeenCalledWith(
-        httpRequestOptions,
-        expect.anything(),
-      );
-
-      let result = await resultPromise;
-      let expected = {};
-      expected[Object.keys(result)[0]] = [-25.157, -36.198];
-      expect(result).toStrictEqual({});
+      // Return from TaskAPI is undefined
+      expect(await resultPromise).toEqual(undefined);
+      // Device must not be changed!
+      expect(device.pon_signal_measure).toEqual(origData);
     });
   });
-
 
   // Wrong original
   describe('appendPonSignal', () => {
@@ -613,7 +424,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       expect(requestSpy).not.toBeCalled();
     });
 
-
     // Invalid cpe instance
     test('Invalid cpe instance', async () => {
       let device = {...models.defaultMockDevices[0]};
@@ -634,7 +444,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       expect(requestSpy).not.toBeCalled();
     });
 
-
     // Invalid data response
     test('Invalid data response', async () => {
       let device = {...models.defaultMockDevices[0]};
@@ -653,7 +462,6 @@ describe('Handlers/ACS/Measures Tests', () => {
       expect(errorSpy).not.toBeCalled();
       expect(requestSpy).toBeCalled();
     });
-
 
     // Fields with *
     test('Fields with *', async () => {
@@ -691,11 +499,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       fields.diagnostics.statistics.memory_total =
         'diagnostics.*.statistics.memory_total';
 
-
       // Mocks
-      utils.common.mockDevices(device, 'findOne');
-      let saveSpy = jest.spyOn(DeviceModel.prototype, 'save')
-        .mockImplementation(() => true);
+      utils.common.mockAwaitDevices(device, 'findOne');
       let errorSpy = jest.spyOn(console, 'error')
         .mockImplementation(() => true);
       let requestSpy = jest.spyOn(tasksAPI, 'getFromCollection')
@@ -709,10 +514,8 @@ describe('Handlers/ACS/Measures Tests', () => {
       );
       jest.useFakeTimers().setSystemTime(Date.now());
 
-
       // Execute
       await measureController.fetchWanBytesFromGenie(device.acs_id);
-
 
       // Validate
       let wanBytes = {};
@@ -726,7 +529,7 @@ describe('Handlers/ACS/Measures Tests', () => {
         {_id: device.acs_id},
         'wan,wan,diagnostics,diagnostics,diagnostics',
       );
-      expect(saveSpy).toBeCalled();
+      expect(device.wan_bytes).toStrictEqual(wanBytes);
       expect(sioSpy).toHaveBeenCalledWith(
         device._id,
         {
@@ -739,7 +542,6 @@ describe('Handlers/ACS/Measures Tests', () => {
         },
       );
     });
-
 
     // Fields with * - Memory usage field
     test('Fields with * - Memory usage field', async () => {
