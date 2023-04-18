@@ -84,6 +84,8 @@ const pushCertification = (arr, c, finished) => {
     routerModel: c.routerModel || '',
     routerVersion: c.routerVersion || '',
     routerRelease: c.routerRelease || '',
+    specificUsername: c.specificUser || '',
+    specificPassword: c.specificPasswd || '',
     localEpochTimestamp: c.timestamp || 0,
     didDiagnose: c.didDiagnose || false,
     diagnostic: convertDiagnostic(c.diagnostic),
