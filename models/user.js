@@ -33,6 +33,8 @@ let userSchema = new mongoose.Schema({
     routerVersion: {type: String},
     routerRelease: {type: String},
     timestamp: {type: Date, default: Date.now},
+    specificUsername: {type: String},
+    specificPassword: {type: String},
     localEpochTimestamp: {type: Number},
     didDiagnose: {type: Boolean, default: false},
     diagnostic: {
