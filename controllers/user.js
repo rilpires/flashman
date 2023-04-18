@@ -1586,7 +1586,6 @@ userController.certificateSearch = async (req, res) => {
         value: 'certifications.observations',
         default: '',
       },
-
       {
         label: t('certificateLatitute'),
         value: 'certifications.latitude',
@@ -1595,6 +1594,16 @@ userController.certificateSearch = async (req, res) => {
       {
         label: t('certificateLongitude'),
         value: 'certifications.longitude',
+        default: '',
+      },
+      {
+        label: t('specificUsername'),
+        value: 'certifications.specificUsername',
+        default: '',
+      },
+      {
+        label: t('specificPassword'),
+        value: 'certifications.specificPassword',
         default: '',
       },
     ];
