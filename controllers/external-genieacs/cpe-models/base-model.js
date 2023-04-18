@@ -593,10 +593,18 @@ basicCPEModel.getModelFields = function() {
       // PPPoE
       pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Enable',
+      pppoe_status: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANPPPConnection.*.ConnectionStatus',
       pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Username',
       pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         'WANPPPConnection.*.Password',
+
+      // DHCP
+      dhcp_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.Enable',
+      dhcp_status: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.ConnectionStatus',
 
       // Mode
       rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+

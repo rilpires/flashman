@@ -98,15 +98,18 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
-  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress'
+  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
   fields.wan.wan_ip_ppp = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
   fields.wan.mtu_ppp = 'Device.IP.Interface.*.MaxMTUSize';
-  fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize'
+  fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   delete fields.wan.uptime;

@@ -105,6 +105,9 @@ tplinkModel.getModelFields = function() {
     'X_TP_GPON_Config.RXPower';
   fields.wan.pon_txpower = 'Device.Optical.Interface.1.' +
     'X_TP_GPON_Config.TXPower';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
