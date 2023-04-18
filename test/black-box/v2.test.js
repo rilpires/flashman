@@ -2,6 +2,7 @@
 require('../../bin/globals.js');
 const request = require('supertest');
 const {createSimulator} = require('./cpe-tr069-simulator');
+const {pulling} = require('./utils.js');
 
 
 describe('api_v2', () => {
@@ -62,8 +63,8 @@ describe('api_v2', () => {
   });
 
   afterAll(async () => {
-    await flashman('delete', `/api/v2/device/delete/${simulator.mac}`);
     if (simulator) await simulator.shutDown();
+    await flashman('delete', `/api/v2/device/delete/${simulator.mac}`);
   });
 
   test('/api/v2/device/search - After creation', async () => {
@@ -125,9 +126,15 @@ describe('api_v2', () => {
     // console.log('waiting Flashman to process the last diagnostic')
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
-    // console.log('res.body', res.body)
-    expect(res.statusCode).toBe(200);
+    // getting cpe until it has all ping diagnostic is not running anymore.
+    const ready = await pulling(async () => {
+      res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+      expect(res.statusCode).toBe(200);
+      return !res.body.current_diagnostic.in_progress; // success condition.
+    }, 200, 5000); // 200ms intervals between executions, fails after 500ms.
+
+    // 'ready' will be true if our function returns true withing the timeout.
+    expect(ready).toBe(true);
     expect(res.body.current_diagnostic.in_progress).toBe(false);
     for (const result of res.body.pingtest_results) {
       expect(result.completed).toBe(true);
