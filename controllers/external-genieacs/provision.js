@@ -238,10 +238,15 @@ const assembleWanObj = function(result, data, fields, isTR181) {
     for (let prop of properties) {
       let pathType = obj.path.includes('PPP') ? 'ppp' :
                      obj.path.includes('IP') ? 'dhcp' :
-                     obj.path.includes('Ethernet') ? 'ethernet' :
-                     obj.path.includes('PortMapping') ? 'port_mapping' :
-                     'undefined';
+                     obj.path.includes('Ethernet') ? 'ethernet' : 'undefined';
       let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
+
+      // The keys associated with port mapping must be treated differently
+      // because, in the TR-098, they will be classified as dhcp or ppp
+      let isPortMapping = (obj.path.includes('PortMapping') &&
+                           properties.length === 1 &&
+                           properties[0] === 'port_mapping');
+      if (isPortMapping) pathType = 'port_mapping';
 
       let field = {};
       if (surplus.length > 0) prop += '_' + surplus.join('_');
@@ -251,7 +256,7 @@ const assembleWanObj = function(result, data, fields, isTR181) {
         const keyType = key.split('_')[1];
         const keyIndexes = key.split('_').filter(key => !isNaN(key));
         let typeMatch = (keyType === propType);
-        if (!typeMatch && !obj.path.includes('PortMapping')) continue;
+        if (!typeMatch && !isPortMapping) continue;
         // If the path does not have indexes, the same must be added on all WANs
         if (indexes.length === 0) {
           Object.assign(result[key], field);
@@ -281,7 +286,7 @@ const assembleWanObj = function(result, data, fields, isTR181) {
         // If the flow reached this point, it means that we have a path with
         // indixes and these must be an exact match of the key
         if (verifyIndexesMatch(keyIndexes, indexes)) {
-          if (pathType === 'port_mapping') {
+          if (isPortMapping) {
             tmp[key]['port_mapping'].push(obj);
           } else {
             Object.assign(result[key], field);
