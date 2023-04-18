@@ -39,16 +39,29 @@ i18next
     }
     // to be used by other events so they know this has finished.
     i18nextResolved();
-    // console.log('--- i18next.default.languages:', i18next.default.languages)
-    // console.log('--- i18next.default.resolvedLanguage:', i18next.default.resolvedLanguage)
+    // console.log('--- i18next.default.languages:', i18next.default.languages);
+    // console.log(
+    //   '--- i18next.default.resolvedLanguage:',
+    //   i18next.default.resolvedLanguage,
+    // );
   });
 
-// Object that holds all DOMContentLoaded callbacks. Even though they are
-// defined in other files, webpack will put them together in the same bundle,
-// so they are in the same context.
+/**
+ * Object that holds all `DOMContentLoaded` callbacks. Even though they are
+ * defined in other files, webpack will put them together in the same bundle,
+ * so they are in the same context.
+ *
+ * @memberof public/src/common.index
+ */
 const anlixDocumentReady = new function() {
   // array that will hold all callbacks to run after DOMContentLoaded event.
   this.readyCallbacks = [];
+
+  // adds callbacks to array.
+  this.add = (f) => this.readyCallbacks.push(f);
+
+  // executes callbacks.
+  this.start = () => this.readyCallbacks.forEach((f) => f());
 };
 
 
@@ -114,7 +127,11 @@ const sendRequest = function(
   });
 };
 
-export {anlixDocumentReady};
+
+/**
+ * @exports public/src/common.index
+ */
+export {anlixDocumentReady, sendRequest};
 
 // Preloader
 $(window).on('load', function() { // makes sure the whole site is loaded

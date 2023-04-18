@@ -236,8 +236,9 @@
 
 
     /**
-     * Validates the string passed if is at least 1 character long and at most
-     * 16 characters long. The string must only contain numbers and characters.
+     * Validates the `String` passed if is at least 1 character long and at most
+     * 16 characters long. The `String` must only contain numbers and
+     * characters.
      *
      * @memberof public/javascripts/device_validator
      *
