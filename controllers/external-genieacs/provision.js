@@ -212,17 +212,6 @@ function findPortMappingLink(data, path) {
   return ipLink;
 };
 
-let checkIfWanIsUp = function(data, path, field) {
-  let enablePath = path + field;
-  for (let j = 0; j < data.length; j++) {
-    if (enablePath === data[j].path) {
-      if (data[j].value[0] === 'Up' || data[j].value[0] ===  true)
-      return true;
-    }
-  }
-  return false;
-};
-
 const assembleWanObj = function(result, data, fields, isTR181) {
   let tmp = result;
   let port = {};
@@ -319,14 +308,10 @@ let wanKeyCriation = function(data, fields, isTR181) {
           correctPath = findInterfaceLink(data, linkPath, indexes[0]);
         }
         if (correctPath) {
-          let enableField = fields.pppoe_enable.split('.').pop();
-          let isUp = checkIfWanIsUp(data, correctPath, enableField);
-          if (isUp) {
-            // Update indexes and path type
-            indexes = extractIndexes(correctPath, isTR181)[0];
-            pathType = correctPath.includes('PPP') ? 'ppp' :
-                       correctPath.includes('IP') ? 'dhcp' : 'common';
-          }
+          // Update indexes and path type
+          indexes = extractIndexes(correctPath, isTR181)[0];
+          pathType = correctPath.includes('PPP') ? 'ppp' :
+                     correctPath.includes('IP') ? 'dhcp' : 'common';
         }
       }
     } else {
@@ -370,6 +355,7 @@ const updateWanConfiguration = function(fields, isTR181) {
   }
   let result = wanKeyCriation(data, fields.wan, isTR181);
   result = assembleWanObj(result, data, fields.wan, isTR181);
+  log(JSON.stringify(result));
   return result;
 };
 
