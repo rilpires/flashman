@@ -80,7 +80,7 @@ const getParentNode = function(fields, isTR181) {
     }
   });
   if (isTR181) {
-    // Additional information not required for TR-181 devices
+    // Additional information required for TR-181 devices
     nodes.push('Device.Ethernet.VLANTermination.*.*');
     nodes.push('Device.Ethernet.Link.*.*');
     nodes.push('Device.NAT.PortMapping.*.*');
@@ -103,7 +103,7 @@ const convertIndexIntoWildcard = function(path) {
   }).join('.');
 };
 
-const getFieldProperty = function(fields, path) {
+const getFieldProperties = function(fields, path) {
   let properties = [];
   let pattern = convertIndexIntoWildcard(path);
   for (let key of Object.keys(fields)) {
@@ -155,7 +155,8 @@ let findInterfaceLink = function(data, path, i) {
   let interfPPP = 'Device.PPP.Interface.';
   let interfIP = 'Device.IP.Interface.';
   for (let j = 0; j < data.length; j++) {
-    if (connectionPath === data[j].path && (data[j].value[0].includes(interfPPP) || data[j].value[0].includes(interfIP))) {
+    if (connectionPath === data[j].path && (data[j].value[0].includes(interfPPP)
+        || data[j].value[0].includes(interfIP))) {
       return data[j].value[0];
     }
   }
@@ -171,12 +172,12 @@ let findEthernetLink = function(data, path, i) {
   let vlanLink;
   for (let j = 0; j < data.length; j++) {
     if (connectionPath === data[j].value[0]) {
-      ethernetLink = extractLinkPath(data[j].path, false);
+      ethernetLink = extractLinkPath(data[j].path);
     }
   }
   for (let j = 0; j < data.length; j++) {
     if (ethernetLink === data[j].value[0]) {
-      vlanLink = extractLinkPath(data[j].path, false);
+      vlanLink = extractLinkPath(data[j].path);
     }
   }
   for (let j = 0; j < data.length; j++) {
@@ -224,11 +225,12 @@ let checkIfWanIsUp = function(data, path, field) {
 
 const assembleWanObj = function(result, data, fields, isTR181) {
   let tmp = result;
+  let port = {};
   for (let obj of data) {
     let [indexes, surplus] = extractIndexes(obj.path, isTR181);
     // Addition of obj to WANs: depending on the property's match, since there
     // may be PPP-type properties associated with IP-type paths
-    let properties = getFieldProperty(fields, obj.path);
+    let properties = getFieldProperties(fields, obj.path);
     if (properties.length === 0) continue;
 
     // Looks for the correct WAN: This depends on the prop match type and the
@@ -250,8 +252,9 @@ const assembleWanObj = function(result, data, fields, isTR181) {
         const keyIndexes = key.split('_').filter(key => !isNaN(key));
         let typeMatch = (keyType === propType);
         if (!typeMatch && !obj.path.includes('PortMapping')) continue;
+        // If the path does not have indexes, the same must be added on all WANs
         if (indexes.length === 0) {
-          tmp[key].push(field);
+          Object.assign(result[key], field);
           continue;
         }
         // The TR-181 works with a stack of links to connect the trees. Whenever
@@ -265,7 +268,7 @@ const assembleWanObj = function(result, data, fields, isTR181) {
             linkPath = extractLinkPath(obj.path, true);
             correctPath = findInterfaceLink(data, linkPath, indexes[0]);
           } else if (pathType === 'ethernet') {
-            linkPath = extractLinkPath(obj.path, false);
+            linkPath = extractLinkPath(obj.path);
             correctPath = findEthernetLink(data, linkPath, indexes[0])
           } else if (pathType === 'port_mapping') {
             linkPath = extractLinkPath(obj.path) + 'Interface';
@@ -275,9 +278,14 @@ const assembleWanObj = function(result, data, fields, isTR181) {
           // Update indexes with correct path
           indexes = extractIndexes(correctPath, isTR181)[0];
         }
-
+        // If the flow reached this point, it means that we have a path with
+        // indixes and these must be an exact match of the key
         if (verifyIndexesMatch(keyIndexes, indexes)) {
-          tmp[key].push(field);
+          if (pathType === 'port_mapping') {
+            tmp[key]['port_mapping'].push(obj);
+          } else {
+            Object.assign(result[key], field);
+          }
         }
       }
     }
@@ -320,10 +328,12 @@ let wanKeyCriation = function(data, fields, isTR181) {
       // For TR-098 devices, key creation is straightforward
       indexes = extractIndexes(obj.path, isTR181)[0];
     }
+    // Once we have the correct indexes, a new key is created
     let key = 'wan_' + pathType + '_' + indexes.join('_');
     if (indexes.length > 0 && !result[key] && (pathType === 'ppp' ||
         pathType === 'dhcp')) {
-      result[key] = [];
+      result[key] = {};
+      result[key]['port_mapping'] = [];
     }
   }
   return result;
@@ -355,34 +365,7 @@ const updateWanConfiguration = function(fields, isTR181) {
   }
   let result = wanKeyCriation(data, fields.wan, isTR181);
   result = assembleWanObj(result, data, fields.wan, isTR181);
-  log(JSON.stringify(result))
   return result;
-};
-
-// const updatePortFowardConfiguration = function(fields, data) {
-//   log(JSON.stringify(data))
-//   return null;
-// };
-
-const fetchPortFoward = function(fields, data) {
-  let base = '';
-  let ret = [];
-  if (data.port_mapping_entries_dhcp &&
-      data.port_mapping_entries_dhcp.value) {
-    base = fields.port_mapping_dhcp;
-  } else if(data.port_mapping_entries_ppp &&
-    data.port_mapping_entries_ppp.value) {
-    base = fields.port_mapping_ppp;
-  }
-  let subtree = declare(base+'.*.*', {value: now});
-  for (let st of subtree) {
-    let obj = {};
-    obj.path = st.path;
-    obj.value = st.value;
-    ret.push(obj);
-  }
-  // log(JSON.stringify(ret))
-  return ret;
 };
 
 // 1. Collect information
