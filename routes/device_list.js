@@ -148,6 +148,12 @@ router.route('/landevice/block').post(
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
 
+// Update name of a LAN device
+router.route('/landevice/updatename').post(
+  authController.ensurePermission('grantLanDevices', 2),
+  deviceListController.setLanDeviceName,
+);
+
 router.route('/license').post(
   deviceListController.updateLicenseStatus);
 
