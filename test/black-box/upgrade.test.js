@@ -1,6 +1,11 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const request = require('supertest');
+
+// TODO: REMOVE ME, I'M DANGEROUS!!!!!!!!!!!!
+const testUtils = require('../common/utils');
+const models = require('../common/models');
+testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
 const utils = require('../utils.js');
 
 describe('/Upgrade', () => {
