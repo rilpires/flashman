@@ -499,7 +499,8 @@ const getDeviceFields = async function(args, callback) {
 const computeFlashmanUrl = async function(cpeId, shareLoad=true) {
   return new Promise((resolve, reject)=>{
     request({
-      url: `http://${FLASHIFY_SERVER_HOST}:${FLASHIFY_SERVER_PORT}/getflashmanreg/${cpeId}`,
+      url: `http://${FLASHIFY_SERVER_HOST}:${FLASHIFY_SERVER_PORT}`
+         + `/api/v1/flashmancourier/getflashmanreg/${cpeId}`,
       method: 'GET',
     },
     function(error, response, body) {
@@ -518,7 +519,7 @@ const computeFlashmanUrl = async function(cpeId, shareLoad=true) {
 };
 
 const sendFlashmanRequest = async function(route, params, shareLoad=true) {
-  let url = await computeFlashmanUrl(shareLoad, params.acs_id);
+  let url = await computeFlashmanUrl(params.acs_id, shareLoad);
   if (url === '') {
     return {
       success: false,
