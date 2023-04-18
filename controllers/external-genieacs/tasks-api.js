@@ -498,117 +498,94 @@ const checkTask = function(task) {
  has not been added yet, case that can be verified by checking that _id doesn't
  exist. Tasks that can't be joined won't be saved to be delete, will just be
  ignored but if it's a new task, it will be saved as task to be added. */
-const joinAllTasks = function(tasks) {
-  // console.log("tasks to join:", tasks)
-  // map of task types (names) to their respective parameters. all parameters
-  // including old and new tasks.
-  let types = {};
-  // map of task types to tasks ids of the same type, including old and new
-  // tasks.
-  let taskIdsForType = {};
-  // a set of task types that need to be added, or re-added, to genie.
-  let createNewTaskForType = {};
-  for (let i = 0; i < tasks.length; i++) {
-    let name = tasks[i].name; // task type is defined by its "name".
-    // the name of the attribute that goes along with this task name/type.
-    let parameterId = taskParameterIdFromType[name];
-    // each task type has its parameters under an attribute with different name.
+const joinAllTasks = function(tasks, deviceId) {
+  let idsToDelete = [];
+  let tasksToAdd = [];
+  let tasksFromType = {};
 
-    // if parameters can't be joined and task isn't new.
-    if (parameterId && tasks[i][parameterId].constructor !== Array
-        && tasks[i]._id !== undefined) continue; // move to next task.
-
-    // if we haven't seen this task type before. this is the first of its type.
-    if (!types[name]) {
-      // save this task's type and all its parameters.
-      if (parameterId) {
-        types[name] = tasks[i][parameterId];
-      }
-      // testing id existence. old tasks already have an id.
-      if (tasks[i]._id) {
-        // save this task's type and its id, because we may need to delete it
-        // if it needs to be joined.
-        taskIdsForType[name] = {};
-        taskIdsForType[name][tasks[i]._id] = true;
-      } else { // if a task is new, it doesn't have an id yet, because it has
-      // never been added to genie.
-        // a new task certainly needs to be added to genie.
-        createNewTaskForType[name] = true;
-      }
-      // first task of its type means nothing to join. move to next task.
-      continue;
+  tasks.map((task)=>{
+    if (!tasksFromType[task.name]) {
+      tasksFromType[task.name] = [];
     }
-
-    // this part is reached if current task is not the first one found for its
-    // type.
-    if (tasks[i]._id !== undefined) { // for any task except the last one.
-      taskIdsForType[name][tasks[i]._id] = true;
-    } // remembering current task id because it will be joined.
-    // joined tasks always result in creating a new task.
-    createNewTaskForType[name] = true;
-
-    // for each parameter of this task.
-    for (let j = 0; j < tasks[i][parameterId].length; j++) {
-      let parameter = tasks[i][parameterId][j];
-
-      // index at previous task. initializing with a value that means not
-      // found.
-      let foundAtIndex = -1;
-      // if a single parameter is also an array, that contains an Id and a
-      // value.
-      if (parameter.constructor === Array) {
-        // search for parameter existence "manually".
-        for (let k = 0; k < types[name].length; k++) {
-          // first value is the identifier.
-          if (types[name][k][0] === parameter[0]) {
-            foundAtIndex = k;
-          }
+    tasksFromType[task.name].push(task);
+  });
+  for (let taskType of Object.keys(tasksFromType)) {
+    let parameterId = taskParameterIdFromType[taskType];
+    let concatenateArguments = false;
+    if (parameterId
+      && Array.isArray(tasksFromType[taskType][0][parameterId])
+    ) {
+      concatenateArguments = true;
+    }
+    if (tasksFromType[taskType].length>1 ) {
+      if (taskType==='download') {
+        // Special case: when joining download tasks, keep only the
+        // latest one
+        let downloadTasks = tasksFromType[taskType];
+        let newDownloadTasks = downloadTasks.filter((task)=>!task._id);
+        if (newDownloadTasks.length>0) {
+          tasksToAdd.push(newDownloadTasks[newDownloadTasks.length-1]);
         }
-      } else { // if parameter is not a group of values. (probably a single
-      // string).
-        // use javascript built in array search.
-        foundAtIndex = types[name].indexOf(parameter);
+        idsToDelete.push(
+          ...downloadTasks
+          .filter((task)=>(task._id))
+          .map((task)=>task._id),
+        );
+      } else if (concatenateArguments) {
+        // We are concatenating parameters for this type
+        idsToDelete.push(
+          ...tasksFromType[taskType]
+          .filter((task)=>task._id)
+          .map((task)=>task._id),
+        );
+        let newTask = {name: taskType};
+        let allArguments = [];
+        tasksFromType[taskType].map((task)=>{
+          allArguments.push(...task[parameterId]);
+        });
+        newTask[parameterId] = deduplicateArguments(allArguments);
+        tasksToAdd.push(newTask);
+      } else {
+        // Not concatenating, just add the new tasks
+        tasksToAdd.push(...tasksFromType[taskType].filter((task)=>!task._id));
       }
-
-      if (foundAtIndex < 0) { // if parameter doesn't exist.
-        types[name].push(parameter);
-         // add it.
-      } else {// if it already exists in a previous task.
-        types[name][foundAtIndex] = parameter;
-      } // substitute if with current value.
+    } else if (tasksFromType[taskType].length==1) {
+      if (!tasksFromType[taskType][0]._id) {
+        tasksToAdd.push(tasksFromType[taskType][0]);
+      }
+    } else { // This should never happen!!!
     }
   }
+  return [tasksToAdd, idsToDelete];
+};
 
-  // map of task types to ids of tasks that have the same type.
-  let tasksToAdd = []; // array of new tasks, joined tasks or completely new.
-  // for each task type to be created, or recreated.
-  for (let name in createNewTaskForType) {
-    if (name === name) {
-      let newTask = {name: name}; // create a new task of current type.
-      // add the joined parameters for current task type.
-      if (taskParameterIdFromType[name]) {
-        newTask[taskParameterIdFromType[name]] = types[name];
+// 'args' can be an array of strings or array of arrays
+// the first type if easy to concatenate: just remove duplicates
+// the second is kinda tricky - we use the first argument as an identifier
+// and keep the latest one
+const deduplicateArguments = function(args) {
+  let ret = [];
+  const parameterIsArray = (args.length>0) && (Array.isArray(args[0]));
+  if (parameterIsArray) {
+    let insertedIds = new Set();
+    for (let arg of args.reverse()) {
+      if (!insertedIds.has(arg[0])) {
+        insertedIds.add(arg[0]);
+        ret.push(arg);
       }
-      tasksToAdd.push(newTask); // save to list of tasks to be added.
     }
+  } else {
+    // Simple deduplication
+    ret = Array.from(new Set(args));
   }
-  return [tasksToAdd, taskIdsForType];
+  return ret;
 };
 
 /* for each task id, send a request to GenieACS to delete that task. GenieACS
  doesn't have a call to delete more than one task at once. 'deviceid' is used
  to print error messages. */
-const deleteOldTasks = async function(tasksToDelete, deviceid) {
-  let promises = []; // array that will hold http request promises.
-  /* eslint-disable guard-for-in */
-  for (let name in tasksToDelete) { // for each task name/type.
-    // for each task._id in this task type/name.
-    /* eslint-disable guard-for-in*/
-    for (let id in tasksToDelete[name]) {
-      promises.push(deleteTask(id)); // delete task.
-    }
-  } // add a request to array of promises.
-  // wait for all promises to finish.
+const deleteOldTasks = async function(taskIdsToDelete, deviceid) {
+  let promises = taskIdsToDelete.map((taskId)=>deleteTask(taskId));
   let results = await Promise.allSettled(promises);
   for (let i = 0; i < results.length; i++) { // for each request result.
     // if there was a reason it was rejected. print error message.
@@ -645,6 +622,7 @@ const sendTasks = async function(
   for (let i = 0; i < results.length; i++) { // for each request result.
     // if there was a reason it was rejected. print error message.
     if (results[i].reason) {
+      console.error(results[i]);
       let msg = results[i].reason.code +
         ' when adding new task in genieacs rest api, for device ' +
         deviceid;
@@ -747,7 +725,8 @@ genie.addTask = async function(
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
-  let tasks = await genie.getFromCollection('tasks', query).catch((e) => {
+  let currentTasks 
+    = await genie.getFromCollection('tasks', query).catch((e) => {
   /* rejected value will be error object in case of connection errors.*/
     return {
       success: false,
@@ -755,50 +734,10 @@ genie.addTask = async function(
       `rest api, for device ${deviceid}.`,
     };
   });
-  // console.log("tasks found", tasks)
-  // adding the new task as one more older task to tasks array.
-  tasks.push(task);
-
-  // if there was at least one task plus the current task being added in tasks
-  // array.
-  if (tasks.length > 1) {
-    // declaring variable that will hold array of tasks to be
-    // delete/substituted.
-    let tasksToDelete;
-
-    // Caution with joinAllTasks, if the parameterId is not an Array, it can
-    // spam tasks to genie and pass task's parameters wrongly
-    // So, filter download to avoid passing to joinAllTasks
-    if (task.name === 'download') {
-      // Download tasks to be deleted
-      tasksToDelete = tasks.slice(0, -1).filter((taskToCheck) => {
-        // If the task is the download type and already got an id from genie,
-        // delete it from the tasks
-        if (taskToCheck.name === 'download' &&
-            taskToCheck._id !== undefined &&
-            taskToCheck.device === deviceid
-        ) {
-          return true;
-        }
-
-        return false;
-      });
-
-      // Now, only add the new download task
-      tasks = [task];
-
-      // Kill every other task
-      for (let index = 0; index < tasksToDelete.length; index++) {
-        deleteTask(tasksToDelete[index]._id);
-      }
-
-      return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
-    } else {
-      // substitutes tasks array with arrays of tasks to be added to genie.
-      [tasks, tasksToDelete] = joinAllTasks(tasks);
-      // console.log("joined tasks:", tasks, ", tasksToDelete:", tasksToDelete)
-    }
-
+  let tasksToAdd;
+  let taskIdsToDelete;
+  [tasksToAdd, taskIdsToDelete]
+    = joinAllTasks([...currentTasks, task]);
 
     /* we have to delete old tasks before adding the joined tasks because it
 could happen that an old task is executed while we add their joined
@@ -806,21 +745,17 @@ counterpart, in which case deleting it would make genie return 'task not found'.
 So we delete old tasks as fast as we can. Adding a task makes us wait at least
 a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
-    if (Object.keys(tasksToDelete).length > 0) {
-      // there will be tasks to be deleted.
-      try {
-        await deleteOldTasks(tasksToDelete, deviceid);
-      } catch (e) {
-        console.log('Warning (tasks-api): ' + e.message);
-      }
-    }
+  try {
+    await deleteOldTasks(taskIdsToDelete, deviceid);
+  } catch (e) {
+    console.log('Warning (tasks-api): ' + e.message);
   }
 
   /* console.log("sending tasks", tasks, ", timeout:", timeout,
    ", watchTimes:", watchTimes)
    sending the new task and the old tasks being substituted,
    then return result. */
-  return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
+  return sendTasks(deviceid, tasksToAdd, callback, legacyTimeout, requestConn);
 };
 
 // For metrics collecting
