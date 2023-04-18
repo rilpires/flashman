@@ -4414,6 +4414,142 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
   });
 };
 
+
+/**
+ * Changes the name of a LAN device.
+ *
+ * @memberof controllers/deviceList
+ *
+ * @param {Request} request - The HTTP request. Parameters:
+ *  - `device_id` - The MAC address of the CPE.
+ *  - `lan_device_id` - The MAC address of the LAN device.
+ *  - `name` - The name to be changed to.
+ * @param {Response} response - The HTTP response.
+ *
+ * @return {Response} The HTTP response.
+ */
+deviceListController.setLanDeviceName = async function(request, response) {
+  // Validate the request
+  if (!request || !request.body) {
+    return response.status(500).json({
+      success: false,
+      message: t('requestError', {errorline: __line}),
+    });
+  }
+
+
+  const data = request.body;
+
+  // Validate parameters
+  if (
+    !data.device_id || data.device_id.constructor !== String ||
+    !data.lan_device_id || data.lan_device_id.constructor !== String ||
+    !data.name || data.name.constructor !== String
+  ) {
+    return response.status(500).json({
+      success: false,
+      message: t('parametersError', {errorline: __line}),
+    });
+  }
+
+
+  // Validate if the name only contains valid characters and size
+  const validator = new Validator();
+  const nameValidation = validator.validateDeviceName(data.name);
+
+  if (!nameValidation.valid) {
+    let message = '';
+
+    // Build the message
+    nameValidation.err.forEach((error) => {
+      // Only add line break if it is not empty
+      message += (message ? '<br>' : '') + error;
+    });
+
+    return response.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+
+
+  // Validate Device's MAC address
+  const deviceMacValidation = validator.validateMac(data.device_id);
+  const lanDeviceMacValidation = validator.validateMac(data.lan_device_id);
+
+  if (!deviceMacValidation.valid || !lanDeviceMacValidation.valid) {
+    return response.status(500).json({
+      success: false,
+      message: t('macInvalid', {errorline: __line}),
+    });
+  }
+
+
+  // Find the device
+  let device = null;
+  try {
+    device = await DeviceModel.findById(data.device_id, {lan_devices: true});
+  } catch (error) {
+    return response.status(500).json({
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    });
+  }
+
+  // Check if device exists
+  if (!device) {
+    return response.status(500).json({
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    });
+  }
+
+
+  // Find the LAN device
+  let lanDeviceIndex = device.lan_devices.findIndex(
+    (device) => device.mac === data.lan_device_id,
+  );
+
+  if (lanDeviceIndex < 0 || lanDeviceIndex >= data.lan_device_id.length) {
+    return response.status(500).json({
+      success: false,
+      message: t('lanDeviceFindError', {errorline: __line}),
+    });
+  }
+
+
+  // Change the name and save
+  let lanDevice = device.lan_devices[lanDeviceIndex];
+  const lanDeviceMac = lanDevice.mac;
+  const oldName = lanDevice.name;
+  device.lan_devices[lanDeviceIndex].name = data.name;
+
+
+  // Save
+  try {
+    await device.save();
+  } catch (error) {
+    return response.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
+
+
+  // Send to audit
+  let auditLanDevices = {};
+  auditLanDevices[lanDeviceMac] = {
+    'name': {old: oldName, new: data.name},
+  };
+  let audit = {'lan_devices': auditLanDevices};
+
+  Audit.cpe(request.user, device, 'edit', audit);
+
+
+  return response.status(200).json({success: true});
+};
+
+
 deviceListController.updateLicenseStatus = async function(req, res) {
   if (!('id' in req.body)) {
     return res.status(500).json({success: false,
