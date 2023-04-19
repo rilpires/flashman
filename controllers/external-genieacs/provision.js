@@ -287,6 +287,40 @@ const assembleWanObj = function(result, data, fields, isTR181) {
   return tmp;
 };
 
+const wanKeySort = function(keys, isTR181) {
+  const result = [];
+
+  for (const [key, value] of Object.entries(keys)) {
+    const [wan, type, ...indices] = key.split("_");
+    result.push({key, value, indices});
+  }
+
+  const sortKeys = (a, b) => {
+    // Sort keys according to their type for TR-181 (dhcp first, ppp second)
+    if (isTR181) {
+      if (a.key.includes('dhcp') && b.key.includes('ppp')) {
+        return -1;
+      } else if (a.key.includes('ppp') && b.key.includes('dhcp')) {
+        return 1;
+      }
+    }
+
+    // Compare indexes based on hierarchy
+    for (let i = 0; i < a.indices.length; i++) {
+      const diff = a.indices[i] - b.indices[i];
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+
+    // Elements have the same order and should remain in their current positions
+    return 0;
+  };
+
+  result.sort(sortKeys);
+
+  return Object.fromEntries(result.map(({key, value}) => [key, value]));
+};
 let wanKeyCriation = function(data, fields, isTR181) {
   let result = {};
   for (let obj of data) {
@@ -326,7 +360,7 @@ let wanKeyCriation = function(data, fields, isTR181) {
       result[key]['port_mapping'] = [];
     }
   }
-  return result;
+  return wanKeySort(result, isTR181);
 };
 
 const updateWanConfiguration = function(fields, isTR181) {
@@ -355,7 +389,6 @@ const updateWanConfiguration = function(fields, isTR181) {
   }
   let result = wanKeyCriation(data, fields.wan, isTR181);
   result = assembleWanObj(result, data, fields.wan, isTR181);
-  log(JSON.stringify(result));
   return result;
 };
 
