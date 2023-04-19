@@ -27,7 +27,7 @@ describe('api_v2', () => {
   // Devicelist page rendered properly
   test('Devicelist page', async () => {
     let response = await blackbox
-      .sendRequest('get', '/devicelist', adminCookie);
+      .sendRequestAdmin('get', '/devicelist', adminCookie);
     expect(response.statusCode).toBe(200);
     expect(response.header['content-type']).toContain('text/html');
     expect(response.header['content-type']).toContain('charset=utf-8');

@@ -46,17 +46,17 @@ describe('api_v2', () => {
     simulator = createSimulator(
       constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
     ).on('started', () => {
-      console.log('*** simulator started');
+      // console.log('*** simulator started');
     }).on('ready', () => {
-      console.log('*** simulator ready');
+      // console.log('*** simulator ready');
     }).on('requested', (request) => {
-      console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
+      // console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
     }).on('response', (response) => {
-      console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
+      // console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
     }).on('sent', (request) => {
-      console.log(`- SENT BODY '${formatXML(request.body)}'.`);
+      // console.log(`- SENT BODY '${formatXML(request.body)}'.`);
     }).on('task', (task) => {
-      console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
+      // console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
     });
     await simulator.start();
 
