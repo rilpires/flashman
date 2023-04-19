@@ -69,17 +69,53 @@ blackbox.deleteCPE = async function(cpeID, cookie) {
  *
  * @return {Response} The response.
  */
-blackbox.sendRequest = async function(type, route, cookie, data) {
+blackbox.sendRequestAdmin = async function(type, route, cookie, data) {
   let flashmanRequest = request(constants.FLASHMAN_HOST);
 
-  return (await flashmanRequest[type](route)
-    .set('Cookie', cookie)
+  flashmanRequest = flashmanRequest[type](route);
+  if (cookie) {
+    flashmanRequest.set('Cookie', cookie);
+  }
+
+  return (await flashmanRequest
     .auth(constants.BASIC_AUTH_USER, constants.BASIC_AUTH_PASS)
     .send(data)
     .catch((error) => console.error(error))
   );
 };
 
+/**
+ * Sends the request to the route specified to Flashman, with the data passed.
+ *
+ * @memberOf test/common/blackbox
+ *
+ * @async
+ *
+ * @param {String} type - The type of request(`put`, `delete`, `get`,
+ * `post`...).
+ * @param {String} route - The cpeID to be deleted from Flahsman.
+ * @param {Cookie} cookie - The cookie login.
+ * @param {String} user - The user to login.
+ * @param {String} password - The password to login.
+ * @param {Object} data - The data to be sent to the route.
+ *
+ * @return {Response} The response.
+ */
+blackbox.sendRequestUser = async function(type, route, cookie,
+  user, password, data) {
+  let flashmanRequest = request(constants.FLASHMAN_HOST);
+
+  flashmanRequest = flashmanRequest[type](route);
+  if (cookie) {
+    flashmanRequest.set('Cookie', cookie);
+  }
+
+  return (await flashmanRequest
+    .auth(user, password)
+    .send(data)
+    .catch((error) => console.error(error))
+  );
+};
 
 /**
  * @exports test/common/blackbox

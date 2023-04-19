@@ -1114,6 +1114,8 @@
 	"updateTimeLimitInputText": "Tiempo de espera de actualización para 1 CPE, en minutos (Predeterminado: {{default}} minutos)",
 	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos.",
 	"invalidAddress": "Dirección inválida",
+	"specificUsername": "Usuario ingresado por el técnico",
+	"specificPassword": "Contraseña ingresada por el técnico",
 	"noLanDeviceName": "Sin nombre",
 	"editDeviceName": "Editar nombre del dispositivo",
 	"editDeviceNameError": "Error al editar el nombre del dispositivo."

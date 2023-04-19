@@ -1,5 +1,7 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
+
+// TODO: REMOVE ME, I'M DANGEROUS!!!!!!!!!!!!
 const testUtils = require('../common/utils.js');
 const blackbox = require('../common/blackbox.js');
 
@@ -55,7 +57,7 @@ describe('/Upgrade', () => {
   describe('/upgrade/config', () => {
     test('specificAppTechnicianWebLogin existence when get',
     async () => {
-      let res = await blackbox.sendRequest(
+      let res = await blackbox.sendRequestAdmin(
         'get', '/upgrade/config', adminCookie,
       );
       expect(res.statusCode).toBe(200);
@@ -67,10 +69,10 @@ describe('/Upgrade', () => {
     test('specificAppTechnicianWebLogin change to true',
     async () => {
       configValues['specific-app-technician-web-login'] = 'on';
-      let res1 = await blackbox.sendRequest(
+      let res1 = await blackbox.sendRequestAdmin(
         'post', '/upgrade/config', adminCookie, configValues,
       );
-      let res2 = await blackbox.sendRequest(
+      let res2 = await blackbox.sendRequestAdmin(
         'get', '/upgrade/config', adminCookie,
       );
       expect(res1.statusCode).toBe(200);
@@ -88,10 +90,10 @@ describe('/Upgrade', () => {
     test('specificAppTechnicianWebLogin change to false',
     async () => {
       configValues['specific-app-technician-web-login'] = '';
-      let res1 = await blackbox.sendRequest(
+      let res1 = await blackbox.sendRequestAdmin(
         'post', '/upgrade/config', adminCookie, configValues,
       );
-      let res2 = await blackbox.sendRequest(
+      let res2 = await blackbox.sendRequestAdmin(
         'get', '/upgrade/config', adminCookie,
       );
       expect(res1.statusCode).toBe(200);

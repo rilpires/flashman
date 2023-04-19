@@ -18,7 +18,7 @@ describe('api_v2', () => {
   /* Basic stuffs */
   test('Login page',
   async () => {
-    let res = await blackbox.sendRequest('get', '/login', null);
+    let res = await blackbox.sendRequestAdmin('get', '/login', null);
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('text/html');
     expect(res.header['content-type']).toContain('charset=utf-8');

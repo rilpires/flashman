@@ -27,7 +27,7 @@ describe('api_v2', () => {
   // Devicelist page rendered properly
   test('Devicelist page', async () => {
     let response = await blackbox
-      .sendRequest('get', '/devicelist', adminCookie);
+      .sendRequestAdmin('get', '/devicelist', adminCookie);
     expect(response.statusCode).toBe(200);
     expect(response.header['content-type']).toContain('text/html');
     expect(response.header['content-type']).toContain('charset=utf-8');
@@ -57,7 +57,7 @@ describe('api_v2', () => {
 
 
       // Request connected devices in CPE
-      let simulatorResponse = await blackbox.sendRequest(
+      let simulatorResponse = await blackbox.sendRequestAdmin(
         'post', '/devicelist/command/' + mac + '/onlinedevs', adminCookie,
       );
       await simulator.nextTask();
@@ -69,7 +69,7 @@ describe('api_v2', () => {
 
       // Execute
       let response = await blackbox
-        .sendRequest(
+        .sendRequestAdmin(
           'post', '/devicelist/landevice/updatename',
           adminCookie, data,
         );
@@ -80,7 +80,7 @@ describe('api_v2', () => {
 
       // Execute validation
       let validationResponse = await blackbox
-        .sendRequest('get', '/devicelist/landevices/' + mac, adminCookie);
+        .sendRequestAdmin('get', '/devicelist/landevices/' + mac, adminCookie);
 
       // Validate
       let lanDevice = validationResponse.body.lan_devices.find(

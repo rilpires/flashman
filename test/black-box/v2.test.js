@@ -30,7 +30,7 @@ describe('api_v2', () => {
 
   // Device search
   test('/api/v2/device/search - Before and After creation', async () => {
-    let res = await blackbox.sendRequest(
+    let res = await blackbox.sendRequestAdmin(
       'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
     );
     expect(res.statusCode).toBe(200);
@@ -46,22 +46,22 @@ describe('api_v2', () => {
     simulator = createSimulator(
       constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
     ).on('started', () => {
-      console.log('*** simulator started');
+      // console.log('*** simulator started');
     }).on('ready', () => {
-      console.log('*** simulator ready');
+      // console.log('*** simulator ready');
     }).on('requested', (request) => {
-      console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
+      // console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
     }).on('response', (response) => {
-      console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
+      // console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
     }).on('sent', (request) => {
-      console.log(`- SENT BODY '${formatXML(request.body)}'.`);
+      // console.log(`- SENT BODY '${formatXML(request.body)}'.`);
     }).on('task', (task) => {
-      console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
+      // console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
     });
     await simulator.start();
 
     // Checking new result
-    res = await blackbox.sendRequest(
+    res = await blackbox.sendRequestAdmin(
       'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
     );
     expect(res.statusCode).toBe(200);
@@ -80,7 +80,7 @@ describe('api_v2', () => {
         wifi_password: 'somepassword',
       },
     };
-    let res = await blackbox.sendRequest(
+    let res = await blackbox.sendRequestAdmin(
       'put', '/api/v2/device/update/' + mac, adminCookie, update,
     );
     expect(res.statusCode).toBe(200);
@@ -92,7 +92,7 @@ describe('api_v2', () => {
     // Waiting for simulator to process the task, respond and receive answer.
     await simulator.nextTask();
 
-    res = await blackbox.sendRequest(
+    res = await blackbox.sendRequestAdmin(
       'get', '/api/v2/device/update/' + mac, adminCookie,
     );
     expect(res.statusCode).toBe(200);
@@ -103,9 +103,7 @@ describe('api_v2', () => {
   });
 
   afterAll(async () => {
-    await blackbox.sendRequest(
-      'delete', '/api/v2/device/delete/' + mac, adminCookie,
-    );
+    await blackbox.deleteCPE(mac, adminCookie);
     if (simulator) await simulator.shutDown();
   });
 });

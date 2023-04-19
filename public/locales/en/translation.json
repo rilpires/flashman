@@ -1106,6 +1106,8 @@
 	"updateTimeLimitInputText": "Time limit for updating 1 CPE, in minutes (Default: {{default}} minutes)",
 	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes.",
 	"invalidAddress": "Invalid address",
+	"specificUsername": "Username entered by technician",
+	"specificPassword": "Password entered by technician",
 	"noLanDeviceName": "No name",
 	"editDeviceName": "Edit device name",
 	"editDeviceNameError": "Error editing device name."
