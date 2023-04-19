@@ -99,21 +99,20 @@ const createSimulator = (...args) => {
     const verboseDebug = () => {
       simulator.on('requested', (request) => {
         if (!debug.requested) return;
-        const xml = debug.xml ? '\n\''+formatXML(request.body)+'\'.' : '.';
-        console.log(`- RECEIVED REQUEST BODY${xml}`);
+        console.log(`- CPE RECEIVED REQUEST BODY.`);
       }).on('sent', (request) => {
         if (!debug.sent) return;
         const xml = debug.xml ? '\n\''+formatXML(request.body)+'\'.' : '.';
-        console.log(`- SENT BODY${xml}`);
+        console.log(`- CPE SENT BODY${xml}`);
       }).on('response', (response) => {
         if (!debug.response) return;
         const xml = debug.xml ? '\n\''+formatXML(response.body)+'\'.' : '.';
-        console.log(`- RECEIVED RESPONSE BODY${xml}`);
+        console.log(`- CPE RECEIVED RESPONSE BODY${xml}`);
       }).on('task', (task) => {
         if (!debug.task) return;
         const body = debug.xml ?
           `'${JSON.stringify(task, null, '  ')}'.` : task.localName;
-        console.log(`- PROCESSED task ${body}`);
+        console.log(`- CPE PROCESSED task ${body}`);
       });
     };
 
