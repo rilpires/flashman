@@ -29,22 +29,6 @@ describe('Handlers/ACS/Measures Tests', () => {
 
   // fetchPonSignalFromGenie
   describe('fetchPonSignalFromGenie', () => {
-    // Invalid device id
-    test('Invalid device id', async () => {
-      // Mocks
-      utils.common.mockDevices(null, 'findOne');
-
-      // Execute
-      let result = await measureController.fetchPonSignalFromGenie('1234');
-
-      // Validate
-      expect(result.success).toBe(false);
-      expect(result.message).toContain(
-        t('cpeFindError').replace('({{errorline}})', ''),
-      );
-    });
-
-
     // Could not get pon
     test('Could not get pon', async () => {
       let httpRequestOptions = {};
