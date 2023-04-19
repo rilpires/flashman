@@ -69,6 +69,10 @@ let configSchema = new mongoose.Schema({
     ping_and_wan: Boolean,
   },
   default_ping_hosts: {type: [String]},
+  default_dns_servers: {
+    ipv4: {type: [String]},
+    ipv6: {type: [String]},
+  },
   device_update_schedule: {
     is_active: {type: Boolean, default: false},
     is_aborted: {type: Boolean, default: false},
@@ -157,6 +161,7 @@ let configSchema = new mongoose.Schema({
   licenseApiSecret: {type: String, default: ''},
   company: {type: String, default: ''},
   mqtt_secret_bypass: {type: Boolean, default: false},
+  specificAppTechnicianWebLogin: {type: Boolean, default: false},
 });
 
 let config = mongoose.model('config', configSchema);

@@ -15,6 +15,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
   permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
 
   permissions.lan.LANDeviceHasSNR = true;
   permissions.lan.dnsServersLimit = 2;

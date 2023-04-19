@@ -10,6 +10,8 @@ const utils = require('../utils');
 const commonUtils = require('../common/utils');
 const models = require('../common/models');
 const t = require('../../controllers/language').i18next.t;
+const fs = require('fs');
+const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
 // Mock the mqtts (avoid aedes)
 jest.mock('../../mqtts', () => {
@@ -1219,6 +1221,182 @@ describe('Controllers - Update Flashman', () => {
         .toBe(config.certification.flashman_step_required);
       expect(data.language)
         .toBe(config.language);
+    });
+  });
+
+
+  // updateProvisionsPresets
+  describe('updateProvisionsPresets function', () => {
+    const presets = [
+      {type: 'provision', path: 'provision', name: 'flashman'},
+      {type: 'provision', path: 'diagnostic-provision', name: 'diagnostic'},
+      {type: 'provision', path: 'changes-provision', name: 'changes'},
+      {type: 'preset', path: 'bootstrap-preset'},
+      {type: 'preset', path: 'boot-preset'},
+      {type: 'preset', path: 'periodic-preset'},
+      {type: 'preset', path: 'diagnostic-preset'},
+      {type: 'preset', path: 'changes-preset'},
+      {type: 'delete', path: 'inform'},
+    ];
+
+
+    // Empty file
+    test('Empty file', async () => {
+      // Mocks
+      let fsSpy = jest.spyOn(fs, 'readFileSync')
+        .mockImplementation(() => '');
+      let putProvisionSpy = jest.spyOn(TasksAPI, 'putProvision')
+        .mockImplementation(() => Promise.resolve());
+      let putPresetSpy = jest.spyOn(TasksAPI, 'putPreset')
+        .mockImplementation(() => Promise.resolve());
+      let deletePresetSpy = jest.spyOn(TasksAPI, 'deletePreset')
+        .mockImplementation(() => Promise.resolve());
+
+
+      // Execute
+      await updateFlashmanController.updateProvisionsPresets();
+
+
+      // Validate
+      let provisionsArray = presets.filter((obj) => obj.type === 'provision');
+      let presetsArray = presets.filter((obj) => obj.type === 'preset');
+      let deletesArray = presets.filter((obj) => obj.type === 'delete');
+      let quantProvisions = provisionsArray.length;
+      let quantPresets = presetsArray.length;
+      let quantDeletes = deletesArray.length;
+
+      expect(fsSpy).toHaveBeenCalledTimes(quantProvisions + quantPresets);
+      expect(putProvisionSpy).toHaveBeenCalledTimes(quantProvisions);
+      expect(putPresetSpy).not.toHaveBeenCalled();
+      expect(deletePresetSpy).toHaveBeenCalledTimes(quantDeletes);
+
+      let call = 0;
+      provisionsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
+    });
+
+
+    // Empty JSON string
+    test('Empty JSON string', async () => {
+      // Mocks
+      let fsSpy = jest.spyOn(fs, 'readFileSync')
+        .mockImplementation(() => 'abcdef');
+      let putProvisionSpy = jest.spyOn(TasksAPI, 'putProvision')
+        .mockImplementation(() => Promise.resolve());
+      let putPresetSpy = jest.spyOn(TasksAPI, 'putPreset')
+        .mockImplementation(() => Promise.resolve());
+      let deletePresetSpy = jest.spyOn(TasksAPI, 'deletePreset')
+        .mockImplementation(() => Promise.resolve());
+
+
+      // Execute
+      await updateFlashmanController.updateProvisionsPresets();
+
+
+      // Validate
+      let provisionsArray = presets.filter((obj) => obj.type === 'provision');
+      let presetsArray = presets.filter((obj) => obj.type === 'preset');
+      let deletesArray = presets.filter((obj) => obj.type === 'delete');
+      let quantProvisions = provisionsArray.length;
+      let quantPresets = presetsArray.length;
+      let quantDeletes = deletesArray.length;
+
+      expect(fsSpy).toHaveBeenCalledTimes(quantProvisions + quantPresets);
+      expect(putProvisionSpy).toHaveBeenCalledTimes(quantProvisions);
+      expect(putPresetSpy).not.toHaveBeenCalled();
+      expect(deletePresetSpy).toHaveBeenCalledTimes(quantDeletes);
+
+      let call = 0;
+      provisionsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
+    });
+
+
+    // Normal operation
+    test('Normal operation', async () => {
+      // Mocks
+      let fsSpy = jest.spyOn(fs, 'readFileSync')
+        .mockImplementation(() => '{"data": "123"}');
+      let putProvisionSpy = jest.spyOn(TasksAPI, 'putProvision')
+        .mockImplementation(() => Promise.resolve());
+      let putPresetSpy = jest.spyOn(TasksAPI, 'putPreset')
+        .mockImplementation(() => Promise.resolve());
+      let deletePresetSpy = jest.spyOn(TasksAPI, 'deletePreset')
+        .mockImplementation(() => Promise.resolve());
+
+
+      // Execute
+      await updateFlashmanController.updateProvisionsPresets();
+
+
+      // Validate
+      let provisionsArray = presets.filter((obj) => obj.type === 'provision');
+      let presetsArray = presets.filter((obj) => obj.type === 'preset');
+      let deletesArray = presets.filter((obj) => obj.type === 'delete');
+      let quantProvisions = provisionsArray.length;
+      let quantPresets = presetsArray.length;
+      let quantDeletes = deletesArray.length;
+
+      expect(fsSpy).toHaveBeenCalledTimes(quantProvisions + quantPresets);
+      expect(putProvisionSpy).toHaveBeenCalledTimes(quantProvisions);
+      expect(putPresetSpy).toHaveBeenCalledTimes(quantPresets);
+      expect(deletePresetSpy).toHaveBeenCalledTimes(quantDeletes);
+
+      let call = 0;
+      provisionsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
+      presetsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
+    });
+
+
+    // Rejected
+    test('Rejected', async () => {
+      // Mocks
+      let fsSpy = jest.spyOn(fs, 'readFileSync')
+        .mockImplementation(() => '{"data": "123"}');
+      let putProvisionSpy = jest.spyOn(TasksAPI, 'putProvision')
+        .mockImplementation(() => Promise.reject());
+      let putPresetSpy = jest.spyOn(TasksAPI, 'putPreset')
+        .mockImplementation(() => Promise.reject());
+      let deletePresetSpy = jest.spyOn(TasksAPI, 'deletePreset')
+        .mockImplementation(() => Promise.reject());
+
+
+      // Execute
+      await updateFlashmanController.updateProvisionsPresets();
+
+
+      // Validate
+      let provisionsArray = presets.filter((obj) => obj.type === 'provision');
+      let presetsArray = presets.filter((obj) => obj.type === 'preset');
+      let deletesArray = presets.filter((obj) => obj.type === 'delete');
+      let quantProvisions = provisionsArray.length;
+      let quantPresets = presetsArray.length;
+      let quantDeletes = deletesArray.length;
+
+      expect(fsSpy).toHaveBeenCalledTimes(quantProvisions + quantPresets);
+      expect(putProvisionSpy).toHaveBeenCalledTimes(quantProvisions);
+      expect(putPresetSpy).toHaveBeenCalledTimes(quantPresets);
+      expect(deletePresetSpy).toHaveBeenCalledTimes(quantDeletes);
+
+      let call = 0;
+      provisionsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
+      presetsArray.forEach((obj) => {
+        expect(fsSpy.mock.calls[call][0]).toContain(obj.path);
+        call += 1;
+      });
     });
   });
 });

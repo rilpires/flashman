@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.69.0",
+	"latest_version": "2.71.0",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,60 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.71.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Consertamos a atualização de MTU das CPEs Nokia G1425G-A e G1425G-B"
+		],
+		"improvements": [
+			"Adicionamos uma informação na interface que apresenta quais campos falharam na validação ao enviar uma modificação para CPE",
+			"Agora o Flashman atualiza o IP de uma CPE TR-069 no momento em que a CPE troca seu IP (para CPEs compativeis)",
+			"Adicionamos superte a visualização IPv6, CPU e Memoria para CPEs Tenda HG9, Nokia G140-W, ZTE F670, TP-Link EC220-G5 v3"
+		],
+		"features": [
+			"Adicionamos uma opção que permite que o técnico especifique as credenciais usadas para login no CPE durante o uso do aplicativo do técnico"
+		]
+	},
+	"2.70.3": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug inserido na 2.64.0 que podia causar a falha na execução do teste de velocidade através dos aplicativos."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.70.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug inserido na 2.70.0 que podia fazer a interface não responder o comando de alteração quando uma CPE estiver em MESH."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.70.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug inserido na 2.70.0 que fazia com que dispositivos internos bloqueados em TR-069 pudessem voltar a funcionar."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.70.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [],
+		"improvements": [
+			"Melhoramos a coleta de metricas de monitoramento dos servidores"
+		],
+		"features": [
+			"Adicionamos a edição dos servidores DNS entregues aos dispositivos na LAN de uma CPE TR-069",
+			"Adicionamos a visualização das informações de CPU e Memoria de uma CPE TR-069"
+		]
 	},
 	"2.69.0": {
 		"custom_firmware_compatibilities": [],

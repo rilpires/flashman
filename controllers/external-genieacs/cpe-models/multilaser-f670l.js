@@ -13,6 +13,9 @@ multilaserModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.portForward = true;
   permissions.features.wlanAccessControl = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
   permissions.lan.LANDeviceHasSNR = true;
   permissions.siteSurvey.requiresPolling = true;
   permissions.siteSurvey.requiresSeparateTasks = true;
@@ -30,6 +33,13 @@ multilaserModel.modelPermissions = function() {
   ];
   permissions.wifi.modeWrite = false;
   permissions.mesh.objectExists = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+  permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
+
+  permissions.lan.dnsServersLimit = 3;
+
   permissions.firmwareUpgrades = {
     'V1.1.20P1T4': ['V1.1.20P1T18', 'V1.1.20P3N3'],
     'V1.1.20P1T18': ['V1.1.20P3N3'],
@@ -121,6 +131,33 @@ multilaserModel.getModelFields = function() {
     'LANDevice.1.WIFI';
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
+
+  fields.diagnostics.statistics.cpu_usage = 'InternetGatewayDevice.' +
+    'DeviceInfo.X_ZTE-COM_CpuUsed';
+  fields.diagnostics.statistics.memory_usage = 'InternetGatewayDevice.' +
+    'DeviceInfo.X_ZTE-COM_MemUsed';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_ExternalIPv6Address';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_ExternalIPv6Address';
+
+  // IPv6 Prefix Delegation
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice' +
+    '.1.WANConnectionDevice.*.WANIPConnection.*.' +
+    'X_ZTE-COM_IPv6PrefixDelegationAddress';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.' +
+    'WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.' +
+    'X_ZTE-COM_IPv6PrefixDelegationAddress';
+  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice' +
+    '.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.' +
+    'X_ZTE-COM_IPv6GUAFormPrefixAddress';
+  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice' +
+    '.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.' +
+    'X_ZTE-COM_IPv6GUAFormPrefixAddress';
+
   return fields;
 };
 

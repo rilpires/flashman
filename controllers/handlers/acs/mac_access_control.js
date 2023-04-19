@@ -3,12 +3,9 @@
 const TasksAPI = require('../../external-genieacs/tasks-api');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const utilHandlers = require('../util.js');
-const http = require('http');
 const t = require('../../language').i18next.t;
 
 let acsAccessControlHandler = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Auxiliary error constructor.
 const sendError = (code, line) => ({
@@ -150,36 +147,26 @@ const configureRules = async function(acsID, rootField, blockedDevices, rules) {
 
 const getAcRuleIds = async function(acsID, rootField, blockedDevices) {
   let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+rootField;
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    resp.on('data', (chunk) => data+=chunk);
-    resp.on('end', async () => {
-      if (data.length == 0) return;
-      try {
-        // Get data after the request ends.
-        data = JSON.parse(data)[0];
-        let rulesIDs = [];
-        if (utilHandlers.checkForNestedKey(data, rootField)) {
-          let acTree = utilHandlers.getFromNestedKey(data, rootField);
-          rulesIDs = utilHandlers.orderNumericGenieKeys(Object.keys(acTree));
-        }
-        rulesIDs = rulesIDs.map(Number);
-        configureRules(acsID, rootField, blockedDevices, rulesIDs);
-      } catch (e) {
-        console.log('Error for device:', acsID);
-        console.log('Exception caught retrieving AC rules IDs:', e);
-      }
+  let data = await TasksAPI.getFromCollection('devices', query, rootField)
+    .catch((err) => {
+      console.log(`ERROR IN fetchLog TaskAPI: ${err}`);
+      return;
     });
-  });
-  req.end();
+  if (!data || data.length == 0) return;
+  data = data[0];
+  try {
+    // Get data after the request ends.
+    let rulesIDs = [];
+    if (utilHandlers.checkForNestedKey(data, rootField)) {
+      let acTree = utilHandlers.getFromNestedKey(data, rootField);
+      rulesIDs = utilHandlers.orderNumericGenieKeys(Object.keys(acTree));
+    }
+    rulesIDs = rulesIDs.map(Number);
+    configureRules(acsID, rootField, blockedDevices, rulesIDs);
+  } catch (e) {
+    console.log('Error for device:', acsID);
+    console.log('Exception caught retrieving AC rules IDs:', e);
+  }
 };
 
 acsAccessControlHandler.changeAcRules = async function(device) {

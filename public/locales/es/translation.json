@@ -923,6 +923,8 @@
 	"mandatoryWanVerification": "Se requiere verificación de WAN",
 	"mandatoryIpvxVerification": "IPv{{-x}} verificación requerida",
 	"mandatoryDnsVerification": "Verificación DNS Obligatoria",
+	"enableSpecificAppTechnicianWebLogin": "Permita que el técnico especifique las credenciales utilizadas para iniciar sesión en el CPE mientras usa la aplicación",
+	"explanationOfEnableSpecificAppTechnicianWebLogin": "Esta opción sirve para los casos en que la contraseña de la interfaz web del CPE no sea una de las registradas en Flashman",
 	"mandatoryFlashmanRegisterVerification": "Se requiere verificación de registro de Flashman",
 	"Enable": "Habilitar",
 	"Enabled": "Poder",
@@ -1088,6 +1090,8 @@
 	"noDefaultHostsConfigured": "Ningún host predeterminado configurado",
 	"unableToRemoveADefaultHost": "No se permite eliminar un host predeterminado",
 	"hostListMustContainDefaultHosts": "La lista de hosts debe contener los hosts predeterminados {{-hosts}}",
+	"defaultLanDnsServersConfig": "Configuración de servidores DNS predeterminados en LAN",
+	"defaultLanDnsServersConfigWarning": "¡Advertencia! Los servidores DNS solo se aplicarán en LAN a los nuevos registros de CPE. Para cambiar los registros existentes, acceda directamente al registro de CPE.",
 	"noFactoryCredentialConfigured": "No hay credenciales web personalizadas configuradas",
 	"invalidModel": "Modelo no valido",
 	"invalidManufacturer": "Fabricante no valido",
@@ -1107,5 +1111,6 @@
 	"noBack": "No, regresa",
 	"updateTimeLimit": "Tiempo de espera de actualización de 1 CPE: {{period}} minutos",
 	"updateTimeLimitInputText": "Tiempo de espera de actualización para 1 CPE, en minutos (Predeterminado: {{default}} minutos)",
-	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos."
+	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos.",
+	"invalidAddress": "Dirección inválida"
 }

@@ -15,6 +15,8 @@ multilaserModel.modelPermissions = function() {
   permissions.features.wlanAccessControl = true;
   permissions.features.traceroute = true;
   permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
 
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';

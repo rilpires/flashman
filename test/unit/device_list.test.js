@@ -57,6 +57,7 @@ jest.mock('../../mqtts', () => ({
   anlixMessageRouterUpdate: jest.fn(() => undefined),
   anlixMessageRouterWanInfo: jest.fn(() => undefined),
   anlixMessageRouterLanInfo: jest.fn(() => undefined),
+  anlixMessageRouterUpStatus: jest.fn(() => undefined),
 }));
 
 const t = require('../../controllers/language').i18next.t;
@@ -1395,6 +1396,33 @@ describe('Controllers - Device List', () => {
     });
 
 
+    // No permission - wanbytes
+    test('No permission - wanbytes', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      testUtils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
+        true, {grantStatisticsSupport: false}, {},
+      );
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'wanbytes',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, {id: '12345'},
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeWithoutFunction').replace('({{errorline}})', ''),
+      );
+    });
+
+
     // No permission - waninfo
     test('No permission - waninfo', async () => {
       // Mocks
@@ -1446,6 +1474,40 @@ describe('Controllers - Device List', () => {
       expect(response.body.message).toContain(
         t('cpeWithoutFunction').replace('({{errorline}})', ''),
       );
+    });
+
+
+    // No sessionID - wanbytes
+    test('No sessionID - wanbytes', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantStatisticsSupport: true};
+        });
+      let waitForSpy = jest.spyOn(sio, 'anlixWaitForStatisticsNotification')
+        .mockImplementation(() => true);
+      let requestStatsTR069Spy = jest.spyOn(acsDeviceInfo, 'requestStatistics')
+        .mockImplementation(() => true);
+      let requestStatsFirmSpy = jest.spyOn(mqtt, 'anlixMessageRouterUpStatus')
+        .mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'wanbytes',
+          id: 'aa:bb:cc:dd:ee:ff',
+        },
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForSpy).not.toBeCalled();
+      expect(requestStatsTR069Spy).toBeCalled();
+      expect(requestStatsFirmSpy).not.toBeCalled();
     });
 
 
@@ -1520,6 +1582,42 @@ describe('Controllers - Device List', () => {
       expect(waitForLanSpy).not.toBeCalled();
       expect(requestWanSpy).not.toBeCalled();
       expect(requestLanSpy).toBeCalled();
+    });
+
+
+    // No sio connection - wanbytes
+    test('No sio connection - wanbytes', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantStatisticsSupport: true};
+        });
+      let waitForSpy = jest.spyOn(sio, 'anlixWaitForStatisticsNotification')
+        .mockImplementation(() => true);
+      let requestStatsTR069Spy = jest.spyOn(acsDeviceInfo, 'requestStatistics')
+        .mockImplementation(() => true);
+      let requestStatsFirmSpy = jest.spyOn(mqtt, 'anlixMessageRouterUpStatus')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = false;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'wanbytes',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForSpy).not.toBeCalled();
+      expect(requestStatsTR069Spy).toBeCalled();
+      expect(requestStatsFirmSpy).not.toBeCalled();
     });
 
 
@@ -1601,6 +1699,42 @@ describe('Controllers - Device List', () => {
     });
 
 
+    // TR069 - wanbytes
+    test('TR069 - wanbytes', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[0];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantStatisticsSupport: true};
+        });
+      let waitForSpy = jest.spyOn(sio, 'anlixWaitForStatisticsNotification')
+        .mockImplementation(() => true);
+      let requestStatsTR069Spy = jest.spyOn(acsDeviceInfo, 'requestStatistics')
+        .mockImplementation(() => true);
+      let requestStatsFirmSpy = jest.spyOn(mqtt, 'anlixMessageRouterUpStatus')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'wanbytes',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForSpy).toBeCalled();
+      expect(requestStatsTR069Spy).toBeCalled();
+      expect(requestStatsFirmSpy).not.toBeCalled();
+    });
+
+
     // TR-069 - waninfo
     test('TR-069 - waninfo', async () => {
       // Mocks
@@ -1676,6 +1810,43 @@ describe('Controllers - Device List', () => {
       expect(waitForLanSpy).toBeCalled();
       expect(requestWanSpy).not.toBeCalled();
       expect(requestLanSpy).toBeCalled();
+    });
+
+
+    // Flashbox - wanbytes
+    test('Flashbox - wanbytes', async () => {
+      // Mocks
+      let device = models.defaultMockDevices[1];
+      testUtils.common.mockDevices([device], 'find');
+      jest.spyOn(DeviceVersion, 'devicePermissions')
+        .mockImplementation(() => {
+          return {grantStatisticsSupport: true};
+        });
+      let waitForSpy = jest.spyOn(sio, 'anlixWaitForStatisticsNotification')
+        .mockImplementation(() => true);
+      let requestStatsTR069Spy = jest.spyOn(acsDeviceInfo, 'requestStatistics')
+        .mockImplementation(() => true);
+      let requestStatsFirmSpy = jest.spyOn(mqtt, 'anlixMessageRouterUpStatus')
+        .mockImplementation(() => true);
+      let sessionID = 'sessionID';
+      sio.anlixConnections[sessionID] = true;
+      mqtt.unifiedClientsMap = {client: {'AA:BB:CC:DD:EE:FF': true}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.sendCommandMsg,
+        null, null, null, null, {
+          msg: 'wanbytes',
+          id: 'aa:bb:cc:dd:ee:ff',
+        }, sessionID,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(waitForSpy).toBeCalled();
+      expect(requestStatsTR069Spy).not.toBeCalled();
+      expect(requestStatsFirmSpy).toBeCalled();
     });
 
 
@@ -2002,6 +2173,135 @@ describe('Controllers - Device List', () => {
         .toBe(device.prefix_delegation_mask);
       expect(response.body.prefix_delegation_local)
         .toBe(device.prefix_delegation_local);
+    });
+  });
+
+
+  // getDefaultLanDNSServers
+  describe('getDefaultLanDNSServers', () => {
+    test('Happy path', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockConfigs(config, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultLanDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_dns_servers)
+        .toStrictEqual(config.default_dns_servers);
+    });
+
+    test('DB returns invalid Config', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultLanDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+
+  // setDefaultLanDNSServers
+  describe('setDefaultLanDNSServers', () => {
+    test('Happy path', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockAwaitConfigs(config, 'findOne');
+
+      let saveSpy = jest.spyOn(config, 'save');
+
+      // Request data
+      let newDNS = {ipv4: [], ipv6: []};
+      let reqData = {default_dns_servers: newDNS};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultLanDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(saveSpy).toBeCalled();
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(config.default_dns_servers)
+        .toStrictEqual(newDNS);
+    });
+
+
+    describe('Error on request format', () => {
+      test.each(testUtils.common.TEST_PARAMETERS)(
+        'Invalid field: %p', async (reqWrongData) => {
+        // Mocks
+        let config = models.copyConfigFrom(
+          models.defaultMockConfigs[0],
+          {
+            default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+          },
+        );
+        testUtils.common.mockConfigs(config, 'findOne');
+
+        let saveSpy = jest.spyOn(ConfigModel.prototype, 'save')
+          .mockImplementationOnce(() => Promise.resolve());
+
+        // Execute
+        let response = await testUtils.common.sendFakeRequest(
+          deviceListController.setDefaultLanDNSServers,
+          reqWrongData, null, null, null, {
+            id: '12345',
+          },
+        );
+
+        expect(saveSpy).not.toBeCalled();
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(false);
+      });
+    });
+
+
+    test('Error on IPv4 format', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
+      // Request data
+      let reqData =
+        {default_dns_servers: {ipv4: ['444.444.444.444'], ipv6: []}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultLanDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
     });
   });
 });

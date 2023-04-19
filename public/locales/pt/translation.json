@@ -923,6 +923,8 @@
 	"mandatoryWanVerification": "Verificação da WAN obrigatória",
 	"mandatoryIpvxVerification": "Verificação de IPv{{-x}} obrigatória",
 	"mandatoryDnsVerification": "Verificação de DNS obrigatória",
+	"enableSpecificAppTechnicianWebLogin": "Permitir que o técnico especifique as credenciais usadas para login no CPE durante o uso do app",
+	"explanationOfEnableSpecificAppTechnicianWebLogin": "Essa opção serve para casos em que a senha da interface web do CPE não é uma das que estão cadastradas no Flashman",
 	"mandatoryFlashmanRegisterVerification": "Verificação de registro no Flashman obrigatória",
 	"Enable": "Habilitar",
 	"Enabled": "Habilitado",
@@ -1082,12 +1084,14 @@
 	"duplicatedCredentials": "O modelo {{-model}} já tem credenciais configuradas",
 	"emptyHostError": "O campo de endereço não pode ser vazio!",
 	"duplicatedHost": "O endereço {{-host}} já está cadastrado!",
-	"defaultHostsConfig": "Configuração de destinos padrão para testes de latencia",
+	"defaultHostsConfig": "Configuração de destinos padrão para testes de latência",
 	"defaultHostsConfigWarning": "Cuidado! Este procedimento irá sobrescrever os destinos de teste de latência para todos os CPEs cadastrados na base.",
 	"defaultHosts": "Endereços padrão de destino",
 	"noDefaultHostsConfigured": "Nenhum endereço padrão configurado",
 	"unableToRemoveADefaultHost": "Não é possível remover um endereço padrão",
 	"hostListMustContainDefaultHosts": "A lista de endereços deve conter os endereços padrão {{-hosts}}",
+	"defaultLanDnsServersConfig": "Configuração de servidores de DNS padrão na LAN",
+	"defaultLanDnsServersConfigWarning": "Atenção! Os servidores de DNS só serão aplicados na LAN para novos cadastros de CPE. Para alterar cadastros existentes, acesse diretamente o cadastro da CPE.",
 	"noFactoryCredentialConfigured": "Nenhuma credencial web personalizada configurada",
 	"invalidModel": "Modelo inválido",
 	"invalidManufacturer": "Fabricante inválido",
@@ -1107,5 +1111,6 @@
 	"noBack": "Não, voltar",
 	"updateTimeLimit": "Tempo limite de atualização de 1 CPE: {{period}} minutos",
 	"updateTimeLimitInputText": "Tempo limite de atualização para 1 CPE, em minutos (Padrão: {{default}} minutos)",
-	"updateTimeLimitInputErrorText": "Tempo limite de atualização para 1 CPE inválido! Escolha um valor entre {{min}} e {{max}} minutos."
+	"updateTimeLimitInputErrorText": "Tempo limite de atualização para 1 CPE inválido! Escolha um valor entre {{min}} e {{max}} minutos.",
+	"invalidAddress": "Endereço inválido"
 }

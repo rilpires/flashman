@@ -388,6 +388,10 @@ anlixDocumentReady.add(function() {
           resp.dnsStepRequired + ']')
         .attr('selected', 'selected');
       }
+      if (resp.specificAppTechnicianWebLogin) {
+        $('#specific-app-technician-web-login')
+          .prop('checked', true).change();
+      }
       if (typeof resp.flashStepRequired !== 'undefined') {
         $('select[name=flashman-step-required] option[value=' +
           resp.flashStepRequired + ']')
@@ -502,9 +506,5 @@ anlixDocumentReady.add(function() {
 
   $('#factory-credentials-button').on('click', function(event) {
     $('#factory-credentials-modal').modal('show');
-  });
-
-  $('#default-hosts-config-button').on('click', function(event) {
-    $('#default-hosts-config-modal').modal('show');
   });
 });

@@ -29,13 +29,9 @@ const acsXMLConfigHandler = require('./handlers/acs/xmlconfig.js');
 const macAccessControl = require('./handlers/acs/mac_access_control.js');
 const wlanAccessControl = require('./handlers/acs/wlan_access_control.js');
 const debug = require('debug')('ACS_DEVICE_INFO');
-const http = require('http');
 const t = require('./language').i18next.t;
 
-
 let acsDeviceInfoController = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
 
 // Max number of sync requests concorrent (0 = disable)
 const SYNCMAX = (process.env.FLM_SYNC_MAX || 0);
@@ -238,6 +234,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
+    if (!data.wifi5.ssid || !data.wifi5.ssid.value) {
+      console.log(`Error Creating entry in wifi5.ssid: ${req.body.acs_id}`);
+      return false;
+    }
     ssid5ghz = data.wifi5.ssid.value.trim();
   }
   let isSsidPrefixEnabled = false;
@@ -630,13 +630,30 @@ const createRegistry = async function(req, cpe, permissions) {
     wrongPortMapping = true;
   }
 
-  // Collect DNS servers info and does not allow repeated values
+  // Contains optionaly a list of DNS servers collected from the CPE
   let parsedDnsServers = [];
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    let dnsServers = data.lan.dns_servers.value.split(',');
-    for (let i=0; i<dnsServers.length; i++) {
-      if (!parsedDnsServers.includes(dnsServers[i])) {
-        parsedDnsServers.push(dnsServers[i]);
+  // Contains optionaly a list of ipv4 and ipv6 DNS addresses
+  // to be applied at LAN
+  const defaultLanDnsServersObj = matchedConfig.default_dns_servers;
+
+  // Logic that either sets a default list of DNS servers at LAN or get existing
+  // ones from the CPE
+  if ((defaultLanDnsServersObj.ipv4.length > 0) &&
+      cpePermissions.lan.dnsServersWrite
+  ) {
+    const dnsLimit = cpePermissions.lan.dnsServersLimit;
+    // Save the list at the CPE registry also
+    parsedDnsServers = defaultLanDnsServersObj.ipv4.slice(0, dnsLimit);
+    changes.lan.dns_servers = parsedDnsServers.join(',');
+    doChanges = true;
+  } else {
+    // Collect DNS servers info and does not allow repeated values
+    if (data.lan.dns_servers && data.lan.dns_servers.value) {
+      let dnsServers = data.lan.dns_servers.value.split(',');
+      for (let i=0; i<dnsServers.length; i++) {
+        if (!parsedDnsServers.includes(dnsServers[i])) {
+          parsedDnsServers.push(dnsServers[i]);
+        }
       }
     }
   }
@@ -1378,7 +1395,7 @@ const fetchSyncResult = async function(
   data = data[0];
 
   let device = await DeviceModel.findOne({acs_id: acsID},
-    {ap_survey: 0, lan_devices: 0})
+    {ap_survey: 0})
     .exec().catch((err) => {
       console.log(`ERROR IN fetchSyncResult Device find: ${err}`);
       return undefined;
@@ -1724,6 +1741,153 @@ acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
 
 
 /**
+ * A fast update for only values that changes easily and needs to be in constant
+ * sync with Flashman.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Request} request - The HTTP request.
+ * @param {Response} response - The HTTP response.
+ *
+ * @return {Response} The body of the response might contains:
+ *  - `success`: If could execute the function properly;
+ *  - `message`: The message of what happenned if `success` is false.
+ */
+acsDeviceInfoController.syncDeviceChangedValues = async function(
+  request, response,
+) {
+  // Validate data and MAC
+  if (
+      !request.body || !request.body.data || !request.body.data.common ||
+      !request.body.data.common.mac || !request.body.data.common.mac.value
+    ) {
+    return response.status(500).json({
+      success: false,
+      message: t('fieldNameMissing', {name: 'MAC', errorline: __line}),
+    });
+  }
+  const data = request.body.data;
+
+  // Get the ID of CPE and convert the MAC field from - to : if necessary
+  const mac = (data.common.mac.value.includes('-') ?
+    data.common.mac.value.replace(/-/g, ':') :
+    data.common.mac.value
+  );
+
+  // Get the device
+  let device = await DeviceModel.findById(
+    mac.toUpperCase(),
+    {
+      acs_id: true, model: true, version: true, hw_version: true, wan_ip: true,
+      ip: true,
+    },
+  );
+
+  // Check if device exists, This function should only be called by the device
+  // that already exists
+  if (!device) {
+    return response.status(500).json({
+      success: false,
+      message: t('noDevicesFound'),
+    });
+  }
+
+
+  // Get the instance
+  const cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    return response.status(500).json({
+      success: false,
+      message: t('noDevicesFound'),
+    });
+  }
+
+
+  // End the session and continue to speed up the process
+  response.status(200).json({success: true});
+
+  const permissions = DeviceVersion.devicePermissions(device);
+  const cpePermissions = cpeInstance.cpe.modelPermissions();
+
+  // Change each value
+  let shouldSaveDevice = false;
+
+
+  // IP
+  let cpeIP;
+  // Check STUN
+  if (
+    data.common.stun_enable &&
+    data.common.stun_enable.value &&
+    data.common.stun_enable.value.toString() === 'true' &&
+    data.common.stun_udp_conn_req_addr &&
+    data.common.stun_udp_conn_req_addr.value &&
+    typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
+    data.common.stun_udp_conn_req_addr.value !== ''
+  ) {
+    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
+
+  // Otherwise use the connection request URL to get the IP
+  } else if (data.common.ip && data.common.ip.value) {
+    cpeIP = processHostFromURL(data.common.ip.value);
+  }
+
+  if (cpeIP) {
+    device.ip = cpeIP;
+    shouldSaveDevice = true;
+  }
+
+  // WAN
+  if (data.wan) {
+    const wan = data.wan;
+    const hasPPPoE = getPPPoEenabled(cpeInstance.cpe, wan);
+
+    // WAN IP
+    // PPPoE first as it is more common to happen
+    if (hasPPPoE && wan.wan_ip_ppp && wan.wan_ip_ppp.value) {
+      device.wan_ip = wan.wan_ip_ppp.value;
+      shouldSaveDevice = true;
+    } else if (wan.wan_ip && wan.wan_ip.value) {
+      device.wan_ip = wan.wan_ip.value;
+      shouldSaveDevice = true;
+    }
+  }
+
+  // IPv6
+  if (
+    data.wan && data.ipv6 &&
+    permissions.grantWanLanInformation &&
+    cpePermissions.features.hasIpv6Information &&
+    cpePermissions.ipv6.hasAddressField
+  ) {
+    const wan = data.wan;
+    const hasPPPoE = getPPPoEenabled(cpeInstance.cpe, wan);
+
+    // Address
+    // PPPoE first as it is more common to happen
+    if (hasPPPoE && data.ipv6.address_ppp && data.ipv6.address_ppp.value) {
+      device.wan_ipv6 = data.ipv6.address_ppp.value;
+      shouldSaveDevice = true;
+    } else if (data.ipv6.address && data.ipv6.address.value) {
+      device.wan_ipv6 = data.ipv6.address.value;
+      shouldSaveDevice = true;
+    }
+  }
+
+
+  // Try saving the device
+  try {
+    if (shouldSaveDevice) await device.save();
+  } catch (error) {
+    console.error(
+      'Error saving device changed values to database: ' + error,
+    );
+  }
+};
+
+
+/**
  * Legacy GenieACS sync function that is still used for new devices and devices
  * that are recovering from hard reset or from a new firmware upgrade - should
  * only query the database and call `createRegistry`/`syncDeviceData`
@@ -1731,8 +1895,8 @@ acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
  *
  * @memberof controllers/acsDeviceInfo
  *
- * @param {Request} req - The http request.
- * @param {Response} res - The http response.
+ * @param {Request} req - The HTTP request.
+ * @param {Response} res - The HTTP response.
  *
  * @return {Response} The body of the response might contains:
  *  - `success`: If could execute the function properly;
@@ -1807,7 +1971,7 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     debug(err);
     return null;
   });
-  if (!config) return;
+  if (!config || !device) return;
 
   // Initialize structures
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
@@ -1921,26 +2085,30 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (hasPPPoE === true) {
     // Process PPPoE user field
     if (data.wan.pppoe_user && data.wan.pppoe_user.value) {
-      let localUser = device.pppoe_user.trim();
       let remoteUser = data.wan.pppoe_user.value.trim();
       if (!device.pppoe_user) {
         device.pppoe_user = remoteUser;
-      } else if (localUser !== remoteUser) {
-        changes.wan.pppoe_user = localUser;
-        hasChanges = true;
+      } else {
+        let localUser = device.pppoe_user.trim();
+        if (localUser !== remoteUser) {
+          changes.wan.pppoe_user = localUser;
+          hasChanges = true;
+        }
       }
     }
 
     // Process PPPoE password field
     if (data.wan.pppoe_pass && data.wan.pppoe_pass.value) {
-      let localPass = device.pppoe_password.trim();
       let remotePass = data.wan.pppoe_pass.value.trim();
       if (!device.pppoe_password) {
         device.pppoe_password = remotePass;
+      } else {
         // make sure this onu reports the password
-      } else if (localPass !== remotePass) {
-        changes.wan.pppoe_pass = localPass;
-        hasChanges = true;
+        let localPass = device.pppoe_password.trim();
+        if (localPass !== remotePass) {
+          changes.wan.pppoe_pass = localPass;
+          hasChanges = true;
+        }
       }
     }
 
@@ -2647,21 +2815,90 @@ acsDeviceInfoController.requestLogs = function(device) {
   TasksAPI.addTask(acsID, task, acsDeviceLogsHandler.fetchLogFromGenie);
 };
 
+
+/**
+ * This functions sends a request to GenieACS to gather received and sent bytes,
+ * CPU usage, total memory and free memory from CPE.
+ *
+ * @memberof controllers/acsDeviceInfo
+ *
+ * @param {Model} device - The device model.
+ */
 acsDeviceInfoController.requestStatistics = function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
-  if (!device || !device.use_tr069 || !device.acs_id) return;
+  if (!device || !device.use_tr069 || !device.acs_id) {
+    console.error('Invalid device received in requestStatistics!');
+    return;
+  }
+
+  // Create the instance of the cpe
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  // If it is not a valid cpe, return
+  if (!cpeInstance.success) return;
+
   let acsID = device.acs_id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let cpe = cpeInstance.cpe;
   let fields = cpe.getModelFields();
-  let recvField = fields.wan.recv_bytes;
-  let sentField = fields.wan.sent_bytes;
+  let permissions = cpe.modelPermissions();
+  let parameterNames = [];
+
+  // Fields
+  let parameterFields = {
+    receivedBytes: {
+      permission: true,
+      field: fields.wan.recv_bytes,
+    },
+
+    sentBytes: {
+      permission: true,
+      field: fields.wan.sent_bytes,
+    },
+
+    cpuUsage: {
+      permission: permissions.features.hasCPUUsage,
+      field: fields.diagnostics.statistics.cpu_usage,
+    },
+
+    memoryUsage: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_usage,
+    },
+
+    memoryFree: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_free,
+    },
+
+    memoryTotal: {
+      permission: permissions.features.hasMemoryUsage,
+      field: fields.diagnostics.statistics.memory_total,
+    },
+  };
+
+
+  // Run through every parameter and push to array of parameterNames
+  Object.keys(parameterFields).forEach((parameterKey) => {
+    let parameter = parameterFields[parameterKey];
+
+    // Continue if does not have permission or has an invalid field
+    if (!parameter.permission || !parameter.field) return;
+
+    // Push to array
+    parameterNames.push(parameter.field);
+  });
+
+
+  // Return if the router does not have any of these features
+  if (parameterNames.length <= 0) return;
+
+
   let task = {
     name: 'getParameterValues',
-    parameterNames: [
-      recvField,
-      sentField,
-    ],
+    parameterNames: parameterNames,
   };
+
+  // Send the task
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchWanBytesFromGenie);
 };
 
