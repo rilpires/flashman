@@ -1,15 +1,12 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
-const request = require('supertest');
 const {createSimulator, formatXML} = require('./cpe-tr069-simulator');
+const blackbox = require('../common/blackbox.js');
+const constants = require('../common/constants.js');
 
 
 describe('api_v2', () => {
-  const basicAuthUser = 'admin';
-  const basicAuthPass = 'flashman';
   const deviceModelH199 = './test/assets/data_models/H199.csv';
-  const flashmanHost = 'http://localhost:8000';
-  const genieCwmpHost = 'http://localhost:57547';
 
   let adminCookie = null;
 
@@ -18,23 +15,9 @@ describe('api_v2', () => {
   const mac = 'FF:FF:FF:00:00:01';
   let simulator;
 
-  // returns response from an http request, sent to flashman, with a user
-  // already logged in.
-  const flashman = (method, url, body) => {
-    return request(flashmanHost)[method](url || '')
-    .set('Cookie', adminCookie)
-    .auth(basicAuthUser, basicAuthPass)
-    .send(body);
-  };
 
   beforeAll(async () => {
-    const adminLogin = await request(flashmanHost)
-      .post('/login')
-      .send({
-        name: basicAuthUser,
-        password: basicAuthPass,
-      });
-
+    const adminLogin = await blackbox.loginAsAdmin();
     adminCookie = adminLogin.header['set-cookie'];
 
     if (adminCookie === undefined) {
@@ -47,9 +30,9 @@ describe('api_v2', () => {
 
   // Device search
   test('/api/v2/device/search - Before and After creation', async () => {
-    let res = await flashman('put', '/api/v2/device/search', {
-      filter_list: 'online',
-    });
+    let res = await blackbox.sendRequest(
+      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
+    );
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -60,8 +43,9 @@ describe('api_v2', () => {
     expect(res.body.status.totalnum).toEqual(0);
 
     // Creating a device
-    simulator = createSimulator(genieCwmpHost, deviceModelH199, 1000, mac)
-    .on('started', () => {
+    simulator = createSimulator(
+      constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
+    ).on('started', () => {
       console.log('*** simulator started');
     }).on('ready', () => {
       console.log('*** simulator ready');
@@ -77,9 +61,9 @@ describe('api_v2', () => {
     await simulator.start();
 
     // Checking new result
-    res = await flashman('put', '/api/v2/device/search', {
-      filter_list: 'online',
-    });
+    res = await blackbox.sendRequest(
+      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
+    );
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -96,7 +80,9 @@ describe('api_v2', () => {
         wifi_password: 'somepassword',
       },
     };
-    let res = await flashman('put', `/api/v2/device/update/${mac}`, update);
+    let res = await blackbox.sendRequest(
+      'put', '/api/v2/device/update/' + mac, adminCookie, update,
+    );
     expect(res.statusCode).toBe(200);
     // eslint-disable-next-line guard-for-in
     for (let field in update.content) {
@@ -106,7 +92,9 @@ describe('api_v2', () => {
     // Waiting for simulator to process the task, respond and receive answer.
     await simulator.nextTask();
 
-    res = await flashman('get', `/api/v2/device/update/${mac}`);
+    res = await blackbox.sendRequest(
+      'get', '/api/v2/device/update/' + mac, adminCookie,
+    );
     expect(res.statusCode).toBe(200);
     // eslint-disable-next-line guard-for-in
     for (let field in update.content) {
@@ -115,7 +103,9 @@ describe('api_v2', () => {
   });
 
   afterAll(async () => {
-    await flashman('delete', `/api/v2/device/delete/${mac}`);
+    await blackbox.sendRequest(
+      'delete', '/api/v2/device/delete/' + mac, adminCookie,
+    );
     if (simulator) await simulator.shutDown();
   });
 });

@@ -31,6 +31,7 @@ const createSimulator = (...args) => {
   let taskResolve;
   // can be awaited. Example: let task = await simulator.nextTask();
   simulator.nextTask = () => new Promise((resolve) => taskResolve = resolve);
+
   let errorResolve;
   let errorReject;
   // catch will return the response, then will return the error.
