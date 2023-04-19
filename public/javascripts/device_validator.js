@@ -236,8 +236,9 @@
 
 
     /**
-     * Validates the string passed if is at least 1 character long and at most
-     * 16 characters long. The string must only contain numbers and characters.
+     * Validates the `String` passed if is at least 1 character long and at most
+     * 16 characters long. The `String` must only contain numbers and
+     * characters.
      *
      * @memberof public/javascripts/device_validator
      *
@@ -284,6 +285,37 @@
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
     };
+
+
+    /**
+     * Validates the `name` passed to check if it is:
+     *  - Bigger than 3 characters;
+     *  - Smaller than 128 characters;
+     *  - Only contain those characters: `a-z, A-Z, 0-9, space, -, _, period,
+     * comma, colon and semi-colon`.
+     *
+     * @memberof public/javascripts/device_validator
+     *
+     * @param {String} name - The name to be validated.
+     *
+     * @return {Object} An `Object` containing:
+     *  - `valid` - A `Boolean` if the name is valid or not;
+     *  - `err` - An `Array` with all errors in `name`.
+     */
+    Validator.prototype.validateDeviceName = function(name) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 3}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 128}),
+        t('acceptableCharsAre0-9a-zA-Z .-_,:;'),
+        t('mustBeAString'),
+      ];
+
+      let ret = validateRegex(name, 3, 128, /^[a-zA-Z0-9 \-_.,:;]+$/);
+
+      ret.err = ret.err.map((ind) => messages[ind]);
+      return ret;
+    };
+
 
     Validator.prototype.validateIP = function(ip) {
       const messages = [

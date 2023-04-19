@@ -898,6 +898,7 @@
 	"acceptableCharsAre0-9a-zA-Z .-#": "Se aceptan caracteres alfanuméricos, espacios, punto, -, y #",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "Se aceptan caracteres alfanuméricos, espacios, punto, -, _ y #",
 	"endingSeparatorMustHaveAtLeastOne.-ul#": "Debe tener al menos un punto, -, _ o # como separador al final",
+	"acceptableCharsAre0-9a-zA-Z .-_,:;": "solo Se aceptan caracteres alfanuméricos, espacios, punto, -, _, coma, dos puntos y punto y coma",
 	"ssidPrefixInvalidFeedback": "$t(thisFieldIsMandatory). $t(thisFieldCannotHaveMoreThanMaxChars, {\"max\": 16}). $t(acceptableCharsAre0-9a-zA-Z .-#). $t(endingSeparatorMustHaveAtLeastOne.-ul#)",
 	"enableSsidPrefixInCpesWifi": "Habilite el prefijo SSID para los CPE recién registrados cuando se conectan a Flashman",
 	"FlashmanLanguage": "Lenguaje Flashman",
@@ -1114,5 +1115,8 @@
 	"updateTimeLimitInputErrorText": "Tiempo de espera de actualización para 1 CPE no válido. Elija un valor entre {{min}} y {{max}} minutos.",
 	"invalidAddress": "Dirección inválida",
 	"specificUsername": "Usuario ingresado por el técnico",
-	"specificPassword": "Contraseña ingresada por el técnico"
+	"specificPassword": "Contraseña ingresada por el técnico",
+	"noLanDeviceName": "Sin nombre",
+	"editDeviceName": "Editar nombre del dispositivo",
+	"editDeviceNameError": "Error al editar el nombre del dispositivo."
 }

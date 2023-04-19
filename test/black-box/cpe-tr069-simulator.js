@@ -16,14 +16,14 @@ const createSimulator = (...args) => {
     errorReject = null;
   }).on('response', (response) => {
     if (!errorReject) return;
-    // rejecting error if 'response' event has been emitted. 
+    // rejecting error if 'response' event has been emitted.
     errorReject(response);
     errorResolve = null;
     errorReject = null;
   }).on('task', (task) => {
     if (!errorReject) return;
-    // rejecting error if 'task' event has been emitted. 
-    errorReject(response);
+    // rejecting error if 'task' event has been emitted.
+    errorReject(task);
     errorResolve = null;
     errorReject = null;
   });
@@ -31,12 +31,13 @@ const createSimulator = (...args) => {
   let taskResolve;
   // can be awaited. Example: let task = await simulator.nextTask();
   simulator.nextTask = () => new Promise((resolve) => taskResolve = resolve);
+
   let errorResolve;
   let errorReject;
   // catch will return the response, then will return the error.
   simulator.nextError = () => new Promise((resolve, reject) => {
     errorResolve = resolve;
-    errorReject = rejectl
+    errorReject = reject;
   });
 
   return simulator;
