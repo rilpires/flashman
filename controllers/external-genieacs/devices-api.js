@@ -510,7 +510,8 @@ const computeFlashmanUrl = async function(cpeId, shareLoad=true) {
       if (response.statusCode !== 200) {
         return resolve('');
       }
-      if (!('fqdn' in body) || !('port' in body)) {
+      if (!Object.prototype.hasOwnProperty.call(body, 'fqdn') ||
+          !Object.prototype.hasOwnProperty.call(body, 'port')) {
         return resolve('');
       }
       return resolve(`http://${body.fqdn}:${body.port}/acs/`);
