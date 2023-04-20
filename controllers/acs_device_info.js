@@ -234,6 +234,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let ssid = data.wifi2.ssid.value.trim();
   let ssid5ghz = '';
   if (wifi5Capable) {
+    if (!data.wifi5.ssid || !data.wifi5.ssid.value) {
+      console.log(`Error Creating entry in wifi5.ssid: ${req.body.acs_id}`);
+      return false;
+    }
     ssid5ghz = data.wifi5.ssid.value.trim();
   }
   let isSsidPrefixEnabled = false;
@@ -626,13 +630,30 @@ const createRegistry = async function(req, cpe, permissions) {
     wrongPortMapping = true;
   }
 
-  // Collect DNS servers info and does not allow repeated values
+  // Contains optionaly a list of DNS servers collected from the CPE
   let parsedDnsServers = [];
-  if (data.lan.dns_servers && data.lan.dns_servers.value) {
-    let dnsServers = data.lan.dns_servers.value.split(',');
-    for (let i=0; i<dnsServers.length; i++) {
-      if (!parsedDnsServers.includes(dnsServers[i])) {
-        parsedDnsServers.push(dnsServers[i]);
+  // Contains optionaly a list of ipv4 and ipv6 DNS addresses
+  // to be applied at LAN
+  const defaultLanDnsServersObj = matchedConfig.default_dns_servers;
+
+  // Logic that either sets a default list of DNS servers at LAN or get existing
+  // ones from the CPE
+  if ((defaultLanDnsServersObj.ipv4.length > 0) &&
+      cpePermissions.lan.dnsServersWrite
+  ) {
+    const dnsLimit = cpePermissions.lan.dnsServersLimit;
+    // Save the list at the CPE registry also
+    parsedDnsServers = defaultLanDnsServersObj.ipv4.slice(0, dnsLimit);
+    changes.lan.dns_servers = parsedDnsServers.join(',');
+    doChanges = true;
+  } else {
+    // Collect DNS servers info and does not allow repeated values
+    if (data.lan.dns_servers && data.lan.dns_servers.value) {
+      let dnsServers = data.lan.dns_servers.value.split(',');
+      for (let i=0; i<dnsServers.length; i++) {
+        if (!parsedDnsServers.includes(dnsServers[i])) {
+          parsedDnsServers.push(dnsServers[i]);
+        }
       }
     }
   }
@@ -2064,26 +2085,30 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   if (hasPPPoE === true) {
     // Process PPPoE user field
     if (data.wan.pppoe_user && data.wan.pppoe_user.value) {
-      let localUser = device.pppoe_user.trim();
       let remoteUser = data.wan.pppoe_user.value.trim();
       if (!device.pppoe_user) {
         device.pppoe_user = remoteUser;
-      } else if (localUser !== remoteUser) {
-        changes.wan.pppoe_user = localUser;
-        hasChanges = true;
+      } else {
+        let localUser = device.pppoe_user.trim();
+        if (localUser !== remoteUser) {
+          changes.wan.pppoe_user = localUser;
+          hasChanges = true;
+        }
       }
     }
 
     // Process PPPoE password field
     if (data.wan.pppoe_pass && data.wan.pppoe_pass.value) {
-      let localPass = device.pppoe_password.trim();
       let remotePass = data.wan.pppoe_pass.value.trim();
       if (!device.pppoe_password) {
         device.pppoe_password = remotePass;
+      } else {
         // make sure this onu reports the password
-      } else if (localPass !== remotePass) {
-        changes.wan.pppoe_pass = localPass;
-        hasChanges = true;
+        let localPass = device.pppoe_password.trim();
+        if (localPass !== remotePass) {
+          changes.wan.pppoe_pass = localPass;
+          hasChanges = true;
+        }
       }
     }
 
