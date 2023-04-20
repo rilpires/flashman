@@ -304,13 +304,13 @@
      */
     Validator.prototype.validateDeviceName = function(name) {
       const messages = [
-        t('thisFieldMustHaveAtLeastMinChars', {min: 3}),
+        t('thisFieldMustHaveAtLeastMinChars', {min: 0}),
         t('thisFieldCannotHaveMoreThanMaxChars', {max: 128}),
         t('acceptableCharsAre0-9a-zA-Z .-_,:;'),
         t('mustBeAString'),
       ];
 
-      let ret = validateRegex(name, 3, 128, /^[a-zA-Z0-9 \-_.,:;]+$/);
+      let ret = validateRegex(name, 0, 128, /^[a-zA-Z0-9 \-_.,:;]+$/);
 
       ret.err = ret.err.map((ind) => messages[ind]);
       return ret;
