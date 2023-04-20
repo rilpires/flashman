@@ -1737,6 +1737,8 @@ acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
  */
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
+  // Choose ideal WAN
+  data.wan = utilHandlers.chooseWan(data.wan).value;
   if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
     return res.status(500).json({
       success: false,

@@ -85,6 +85,94 @@ utilHandlers.traverseNestedKey = function(
   };
 };
 
+utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
+  data = utilHandlers.convertWanToFlashmanFormat(data);
+  let idealCandidates = [];
+  let possibleCandidates = [];
+
+  // Checks if there are WANs that meet the ideal conditions, that is:
+  // Status = Connected and Enable = true
+  for (const key of Object.keys(data)) {
+    const wan = data[key];
+
+    let enable = (key.includes('ppp')) ? wan.pppoe_enable : wan.dhcp_enable;
+    let status = (key.includes('ppp')) ? wan.pppoe_status : wan.dhcp_status;
+
+    if (enable === true && status === 'Connected') {
+      // Ideal conditions: Status = Connected and Enable = true
+      idealCandidates.push(key);
+    } else if (enable === true || status === 'Dormant') {
+      // In the absence of WANs in ideal conditions, we map those that have at
+      // least one of the conditions met
+      possibleCandidates.push(key);
+    }
+  }
+
+  // No WANs meet any of the conditions. Keeps legacy case of returning the
+  // first or last WAN without criteria (remembering that the keys in data are
+  // already sorted!)
+  if (idealCandidates.length === 0 && possibleCandidates.length === 0) {
+    const keys = Object.keys(data);
+    const firstKey = keys[0];
+    const lastKey = keys[keys.length - 1];
+    const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+    return {key: correctKey, value: data[correctKey]};
+  }
+
+  if (idealCandidates.length === 1) {
+    // There is only one WAN that has the ideal conditions
+    return {key: idealCandidates[0], value: data[idealCandidates[0]]};
+  } else if (idealCandidates.length > 1) {
+    // There are multiple candidates. Verifies ideal candidates, giving
+    // preference to ppp-type WANs
+    let pppWans = idealCandidates.filter((key) => key.includes('ppp'));
+    if (pppWans.length > 0) {
+      if (pppWans.length === 1) {
+        // There is only one ppp-type WAN that meets the ideal conditions
+        return {key: pppWans[0], value: data[pppWans[0]]};
+      } else {
+        // There are multiple ppp-type WANs with ideal conditions and it is not
+        // possible to make a decision
+        const firstKey = pppWans[0];
+        const lastKey = pppWans[pppWans.length - 1];
+        const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+        return {key: correctKey, value: data[correctKey]};
+      }
+    } else {
+      // There are multiple DHCP-type WANs that meet the ideal conditions
+      const firstKey = idealCandidates[0];
+      const lastKey = idealCandidates[idealCandidates.length - 1];
+      const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+      return {key: correctKey, value: data[correctKey]};
+    }
+  }
+
+  // In case there is no WAN that meets the ideal conditions, we have to choose
+  // one that partially meets it. In this case, to preserve the legacy behavior,
+  // we select the first or the last
+  const firstKey = possibleCandidates[0];
+  const lastKey = possibleCandidates[possibleCandidates.length - 1];
+  const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+  return {key: correctKey, value: data[correctKey]};
+};
+
+utilHandlers.convertWanToFlashmanFormat = function(data) {
+  const result = {};
+  for (const key in data) {
+    if (!data.hasOwnProperty(key)) continue;
+    const obj = data[key];
+    const temp = {};
+    for (const prop in obj) {
+      if (!obj.hasOwnProperty(prop)) continue;
+      if (obj[prop].hasOwnProperty('value')) {
+        temp[prop] = {writable: obj[prop].writable, value: obj[prop].value[0]};
+      }
+    }
+    result[key] = temp;
+  }
+  return result;
+};
+
 /*
  * The purpose of this function is to find out what the correct WAN index is. To
  * do this check, we look for the Enable key. If the wildcardFlag is false, the
