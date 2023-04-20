@@ -17,6 +17,8 @@ const utilHandlers = require('./controllers/handlers/util');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
 const TasksAPI = require('./controllers/external-genieacs/tasks-api');
+const swaggerJsdoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 let updater = require('./controllers/update_flashman');
 let acsDeviceController = require('./controllers/acs_device_info');
@@ -25,6 +27,7 @@ let deviceUpdater = require('./controllers/update_scheduler');
 let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
+let swaggerConfig = require('./swagger-config.json');
 const runMigrations = require('./migrations');
 const audit = require('./controllers/audit');
 const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
@@ -36,8 +39,16 @@ let app = express();
 // Specify some variables available to all views
 app.locals.appVersion = packageJson.version;
 
+
+// Constants
+// Mongo configuration
 const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
 const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
+
+// Swagger configuration
+const ENABLE_SWAGGER = (process.env.FLM_ENABLE_SWAGGER || false);
+const SWAGGER_PATH = (process.env.FLM_SWAGGER_PATH || '/api-docs');
+
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
                               process.env.FLM_DOCKER_INSTANCE || 0);
@@ -145,6 +156,19 @@ if (instanceNumber === 0) {
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
 app.use(bodyParser.raw({type: 'application/octet-stream'}));
+
+
+// Configure Swagger
+if (ENABLE_SWAGGER) {
+  const configuration = swaggerJsdoc(swaggerConfig);
+
+  app.use(
+    SWAGGER_PATH,
+    swaggerUi.serve,
+    swaggerUi.setup(configuration, {explorer: true}),
+  );
+}
+
 
 // adding translation function to app scope in express.
 // this allows the Pug engine to have access to it.

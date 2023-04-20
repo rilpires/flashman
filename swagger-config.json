@@ -1,0 +1,12 @@
+{
+  "definition": {
+    "info": {
+      "title": "Flashman API V3",
+      "version": "0.1.0",
+      "description": "Documentation for Flashman API V3"
+    },
+    
+    "swagger": "2.0.0"
+  },
+  "apis": ["./routes/*.js"]
+}
