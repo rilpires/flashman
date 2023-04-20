@@ -515,14 +515,25 @@ describe('Validate functions used both in frontend and backend', () => {
     });
 
 
-    // Minimum length
-    test('Minimum length', () => {
+    // Empty string
+    test('Empty string', () => {
       let validator = new Validator();
-      let name = 'aa';
+      let name = '';
       let result = validator.validateDeviceName(name);
 
       expect(result).toHaveProperty('valid');
       expect(result.valid).toBe(false);
+    });
+
+
+    // Minimum length
+    test('Minimum length', () => {
+      let validator = new Validator();
+      let name = 'a';
+      let result = validator.validateDeviceName(name);
+
+      expect(result).toHaveProperty('valid');
+      expect(result.valid).toBe(true);
     });
 
 

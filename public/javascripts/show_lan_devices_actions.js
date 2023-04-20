@@ -30,20 +30,10 @@ window.openLanDevEditName = function(deviceIndex) {
   let nameEditRowInput = $(
     '#' + LAN_DEVICE_EDIT_NAME_INPUT_ENTRY + deviceIndex,
   );
-  let nameEditRowSave = $(
-    '#' + LAN_DEVICE_EDIT_NAME_SAVE_BUTTON + deviceIndex,
-  );
-
-  // Change to save icon
-  nameEditRowSave.removeClass('fa-spinner fa-pulse');
-  nameEditRowSave.addClass('fa-save');
-
-  // Enable input
-  nameEditRowInput.prop('disabled', false);
 
   // Set the name
-  const name = nameRowText.text();
-  nameEditRowInput.val(name ? name : t('noLanDeviceName'));
+  const name = nameRowText.val();
+  nameEditRowInput.val(name);
 
   // Show the field to edit
   nameRow.hide();
@@ -76,12 +66,16 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
   );
 
   // Get the name and update
-  const oldName = nameRowText.text();
+  const oldName = nameRowText.val();
   const name = nameEditRowInput.val();
+
+  // If it is not a string, return
+  if (typeof name !== 'string') return;
+
   const validation = validator.validateDeviceName(name);
 
   // Check if name is valid
-  if (name && name.constructor === String && validation.valid) {
+  if (name === '' || validation.valid) {
     // Change to loading icon
     nameEditRowSave.removeClass('fa-save');
     nameEditRowSave.addClass('fa-spinner fa-pulse');
@@ -101,6 +95,7 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
             title: t('Error'),
             text: t('editDeviceNameError') + response.message ?
               ' ' + t('Error') + ': ' + response.message : '',
+            confirmButtonColor: '#4db6ac',
           });
 
           // Change to save icon
@@ -113,7 +108,22 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
           return;
         }
 
-        nameRowText.text(name);
+        if (name) {
+          nameRowText.attr('placeholder', '');
+          nameRowText.css('color', '#616161');
+          nameRowText.val(name);
+        } else {
+          nameRowText.attr('placeholder', t('noLanDeviceName'));
+          nameRowText.css('color', '#adadad');
+          nameRowText.val('');
+        }
+
+        // Change to save icon
+        nameEditRowSave.removeClass('fa-spinner fa-pulse');
+        nameEditRowSave.addClass('fa-save');
+
+        // Enable input
+        nameEditRowInput.prop('disabled', false);
 
         // Show the current name
         nameRow.show();
@@ -125,6 +135,7 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
           icon: 'error',
           title: t('Error'),
           text: t('editDeviceNameError'),
+          confirmButtonColor: '#4db6ac',
         });
 
         // Change to save icon
@@ -133,8 +144,6 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
 
         // Enable input
         nameEditRowInput.prop('disabled', false);
-
-        return;
       },
       JSON.stringify({device_id: devId, lan_device_id: lanDevId, name: name}),
     );
@@ -154,15 +163,14 @@ window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
       icon: 'error',
       title: t('Error'),
       html: message,
+      confirmButtonColor: '#4db6ac',
     });
 
   // Return to default if the old name is invalid too
   } else if (!oldName || oldName.constructor !== String) {
-    nameRowText.text(t('noLanDeviceName'));
+    nameRowText.attr('placeholder', t('noLanDeviceName'));
+    nameRowText.val('');
   }
-
-  // Enable input
-  nameEditRowInput.prop('disabled', false);
 };
 
 
@@ -586,14 +594,22 @@ anlixDocumentReady.add(function() {
               $('<div>')
                 .attr('id', LAN_DEVICE_NAME_ENTRY + idx)
                 .addClass('row align-items-center mb-2')
+                .addClass('md-form input-entry mt-0 mb-2')
                 .append(
                   // Name
-                  $('<h6>')
-                    .attr('id', LAN_DEVICE_NAME_TEXT_ENTRY + idx)
-                    .addClass('col-10 mb-0')
-                    // Add a warning color if there is no name
-                    .css('color', (isNameEmpty ? '#adadad' : '#616161'))
-                    .text(device.name ? device.name : t('noLanDeviceName')),
+                  $('<div>').addClass('col-10').append(
+                    $('<input>')
+                      .attr('id', LAN_DEVICE_NAME_TEXT_ENTRY + idx)
+                      .addClass('col-10 mb-0 form-control py-0')
+                      .attr('type', 'text')
+                      .attr('disabled', 'true')
+                      // Add a warning color if there is no name
+                      .css('color', (isNameEmpty ? '#adadad' : '#616161'))
+                      .attr('placeholder', isNameEmpty ?
+                        t('noLanDeviceName') : '',
+                      )
+                      .val(isNameEmpty ? '': device.name),
+                  ),
 
                   // Edit button
                   $('<i>').addClass(

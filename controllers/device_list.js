@@ -4526,9 +4526,9 @@ deviceListController.setLanDeviceName = async function(request, response) {
 
   // Validate parameters
   if (
-    !data.device_id || data.device_id.constructor !== String ||
-    !data.lan_device_id || data.lan_device_id.constructor !== String ||
-    !data.name || data.name.constructor !== String
+    !data.device_id || typeof data.device_id !== 'string' ||
+    !data.lan_device_id || typeof data.lan_device_id !== 'string' ||
+    !data.hasOwnProperty('name') || typeof data.name !== 'string'
   ) {
     return response.status(500).json({
       success: false,
@@ -4541,7 +4541,7 @@ deviceListController.setLanDeviceName = async function(request, response) {
   const validator = new Validator();
   const nameValidation = validator.validateDeviceName(data.name);
 
-  if (!nameValidation.valid) {
+  if (!nameValidation.valid && data.name !== '') {
     let message = '';
 
     // Build the message
