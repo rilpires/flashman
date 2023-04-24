@@ -110,11 +110,11 @@ router.route('/speedtest/:id').get(
 // Get LAN DNS Servers list
 router.route('/landnsserverslist/:id')
 .get(
-  authController.ensurePermission('grantFlashmanManage'),
+  authController.ensurePermission('grantLanEdit'),
   deviceListController.getLanDNSServers,
 )
 .post(
-  authController.ensurePermission('grantFlashmanManage'),
+  authController.ensurePermission('grantLanEdit'),
   deviceListController.setLanDNSServers,
 );
 

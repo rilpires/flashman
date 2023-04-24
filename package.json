@@ -1,10 +1,10 @@
 {
   "name": "flashman",
-  "version": "2.72.1",
+  "version": "2.72.2",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
-    "test": "jest --forceExit --silent=true test/unit/*",
+    "test": "jest --silent=true test/unit/*",
     "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
     "bb-test": "jest --runInBand test/black-box/*",
     "build": "webpack --config webpack.prod.js",
