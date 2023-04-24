@@ -223,6 +223,18 @@ const fetchCertification = function(id, name, timestamp) {
       } else {
         $('#user-contract').html(`&nbsp;${t('notSpecified')}`);
       }
+      if (cert.specificUsername) {
+        $('#specific-user-container').show();
+        $('#specific-user').html('&nbsp;' + cert.specificUsername);
+      } else {
+        $('#specific-user-container').hide();
+      }
+      if (cert.specificPassword) {
+        $('#specific-passwd-container').show();
+        $('#specific-passwd').html('&nbsp;' + cert.specificPassword);
+      } else {
+        $('#specific-passwd-container').hide();
+      }
       // Change router info
       if (cert.isOnu) {
         $('#router-data').hide();
