@@ -173,6 +173,29 @@ utilHandlers.convertWanToFlashmanFormat = function(data) {
   return result;
 };
 
+utilHandlers.convertToProvisionFormat = function(data) {
+  const result = [];
+  const traverse = (node, path) => {
+    for (let key in node) {
+      if (!node.hasOwnProperty(key)) continue;
+      let field = node[key];
+      if (field.hasOwnProperty('_writable') &&
+          field.hasOwnProperty('_value') &&
+          !field._object) {
+        result.push({
+          path: path.concat(key).join('.'),
+          writable: field._writable,
+          value: field._value,
+        });
+      } else if (typeof field === 'object') {
+        traverse(field, path.concat(key));
+      }
+    }
+  };
+  traverse(data, []);
+  return result;
+};
+
 /*
  * The purpose of this function is to find out what the correct WAN index is. To
  * do this check, we look for the Enable key. If the wildcardFlag is false, the

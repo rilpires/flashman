@@ -648,6 +648,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
+    wan_chosen: data.wan.chosenWan,
     wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
     wan_bssid: wanMacAddr,
@@ -1738,7 +1739,9 @@ acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
   // Choose ideal WAN
-  data.wan = utilHandlers.chooseWan(data.wan).value;
+  let chosenWan = utilHandlers.chooseWan(data.wan);
+  data.wan = chosenWan.value;
+  data.wan.chosenWan = chosenWan.key;
   if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
@@ -2950,7 +2953,7 @@ const getSsidPrefixCheck = async function(device) {
 };
 
 const replaceWanFieldsWildcards = async function(
-  acsID, wildcardFlag, fields, changes, task,
+  acsID, isTR181, wildcardFlag, fields, changes, task,
 ) {
   // WAN fields cannot have wildcards. So we query the genie database to get
   // access to the index from which the wildcard should be replaced. The
@@ -2958,34 +2961,67 @@ const replaceWanFieldsWildcards = async function(
   // separated by a comma
   let data;
   let query = {_id: acsID};
-  let projection = Object.keys(changes.wan).map((k)=>{
-    if (!fields.wan[k]) return;
-    return fields.wan[k].split('.*')[0];
-  }).join(',');
+  let projection = (!isTR181) ? 'InternetGatewayDevice.WANDevice' :
+    'Device.IP.Interface,Device.PPP.Interface,Device.NAT,Device.Ethernet';
   // Fetch Genie database and retrieve data
   try {
     data = await TasksAPI.getFromCollection('devices', query, projection);
-    data = data[0];
+    data = utilHandlers.convertToProvisionFormat(data[0]);
   } catch (e) {
     console.log('Exception fetching Genie database: ' + e);
     return {'success': false};
   }
+  let args = {
+    update: true,
+    data: data,
+    fields: fields,
+    isTR181: isTR181,
+  };
+  let cb = (err, result) => {
+    return result;
+  };
+  let result = DevicesAPI.assembleWanObj(args, cb);
+  let chosenWan = utilHandlers.chooseWan(result, wildcardFlag);
+  let chosenWanKey = chosenWan.key;
+  const [, type, ...indexes] = chosenWanKey.split('_');
   // Iterates through changes to WAN fields and replaces the corresponding value
   // in task
   let fieldName = '';
   let success = false;
   Object.keys(changes.wan).forEach((key)=>{
-    if (!fields.wan[key]) return;
-    if (utilHandlers.checkForNestedKey(data, fields.wan[key], wildcardFlag)) {
-      fieldName = utilHandlers.replaceNestedKeyWildcards(
-        data, fields.wan[key], wildcardFlag, true,
-      );
+    let path = fields.wan[key];
+    if (!path) return;
+    // Find the properties that match the path and choose the correct
+    let properties = DevicesAPI.getFieldProperties(fields.wan, path);
+    let prop;
+    if (properties.length === 1) {
+      prop = properties[0];
     } else {
-      return;
+      prop = (type === 'ppp' ? properties.find((prop) => prop.includes('ppp')) :
+        properties.find((prop) => !prop.includes('ppp')));
     }
+    // Checks if the property has additional indexes to replace the path
+    let extraIndexes = prop.split('_').filter((e) => !isNaN(parseInt(e, 10)));
+    indexes.concat(extraIndexes);
+    if (!isTR181) {
+      // For TR098 devices, the first index of the path is always 1. The first
+      // element of indexes represents this key. We discard it, but if we want
+      // to keep all numeric key indices as wildcards in the future, we must
+      // discard the following code
+      indexes.shift();
+    }
+    // Replace wildcards
+    let parts = path.split('.');
+    fieldName = parts.map((c) => {
+      if (c === '*') {
+        return indexes.shift();
+      } else {
+        return c;
+      }
+    }).join('.');
     // Find matching field in task and replace it
     for (let i = 0; i < task.parameterValues.length; i++) {
-      if (task.parameterValues[i][0] === fields.wan[key]) {
+      if (task.parameterValues[i][0] === path) {
         task.parameterValues[i][0] = fieldName;
         success = true;
         break;
@@ -3013,8 +3049,9 @@ acsDeviceInfoController.updateInfo = async function(
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let wildcardFlag = cpe.modelPermissions().useLastIndexOnWildcard;
-
+  let permissions = cpe.modelPermissions();
+  let wildcardFlag = permissions.useLastIndexOnWildcard;
+  let isTR181 = permissions.isTR181;
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let rebootAfterUpdate = false;
@@ -3107,7 +3144,7 @@ acsDeviceInfoController.updateInfo = async function(
   if (changes.wan && Object.keys(changes.wan).length > 0) {
     try {
       let ret = await replaceWanFieldsWildcards(
-        acsID, wildcardFlag, fields, changes, task,
+        acsID, isTR181, wildcardFlag, fields, changes, task,
       );
       if (ret.success) {
         task = ret.task;
