@@ -507,8 +507,4 @@ anlixDocumentReady.add(function() {
   $('#factory-credentials-button').on('click', function(event) {
     $('#factory-credentials-modal').modal('show');
   });
-
-  $('#default-hosts-config-button').on('click', function(event) {
-    $('#default-hosts-config-modal').modal('show');
-  });
 });

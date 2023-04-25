@@ -449,6 +449,10 @@ models.defaultMockConfigs = [
     measureServerIP: '192.168.88.218',
     blockLicenseAtDeviceRemoval: false,
     default_ping_hosts: [],
+    default_dns_servers: {
+      ipv4: [],
+      ipv6: [],
+    },
   },
 ];
 

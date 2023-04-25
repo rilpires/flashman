@@ -1,5 +1,4 @@
 /* eslint-disable no-prototype-builtins */
-/* global __line */
 
 import {anlixDocumentReady} from '../src/common.index.js';
 import {
@@ -8,6 +7,7 @@ import {
 } from './session_storage.js';
 
 const t = i18next.t;
+const modalIdPrefix = '#default-hosts-config-modal';
 
 const getDefaultPingHosts = function(event) {
   $.ajax({
@@ -37,15 +37,16 @@ const getDefaultPingHosts = function(event) {
 const defaultHostsTableToggle = function(addingNewDevice = false) {
   if (getDefaultPingHostsList('defaultPingHostsInfo').length > 0 ||
       addingNewDevice) {
-    $('#default-hosts-config-table-none').hide();
-    $('#default-hosts-config-table').show();
-  } else if (getDefaultPingHostsList('defaultPingHostsInfo').length == 0) {
-    $('#default-hosts-config-table-none').show();
-    $('#default-hosts-config-table').hide();
+    $(modalIdPrefix+'-table-empty').hide();
+    $(modalIdPrefix+'-table-show').show();
+  } else {
+    $(modalIdPrefix+'-table-empty').show();
+    $(modalIdPrefix+'-table-show').hide();
   }
 };
 
 const setDefaultPingHosts = function(event) {
+  $(modalIdPrefix+'-submit-button').prop('disabled', true);
   $.ajax({
     type: 'POST',
     url: '/devicelist/defaultpinghostslist',
@@ -55,6 +56,7 @@ const setDefaultPingHosts = function(event) {
     }),
     contentType: 'application/json',
     success: function(res) {
+      $(modalIdPrefix+'-submit-button').prop('disabled', false);
       swal.fire({
         icon: res.type,
         title: res.message,
@@ -65,7 +67,7 @@ const setDefaultPingHosts = function(event) {
 };
 
 let buildHostsTable = function() {
-  $('#default-hosts-config-table').empty();
+  $(modalIdPrefix+'-table-show-body').empty();
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
   for (let i = 0; i < defaultPingHostsInfo.length; i++) {
     buildTableLine(defaultPingHostsInfo[i]);
@@ -73,7 +75,7 @@ let buildHostsTable = function() {
 };
 
 const buildTableLine = function(host) {
-  let hostsTable = $('#default-hosts-config-table');
+  let hostsTable = $(modalIdPrefix+'-table-show-body');
   hostsTable.append(
     $('<tr>').append(
       // Host column
@@ -99,13 +101,12 @@ const buildTableLine = function(host) {
             .attr('data-id', host),
           ),
     )
-    .addClass('bounceIn')
     .attr('data-id', host),
   );
 };
 
 window.removeHostFromTable = function(input) {
-  let hostsTable = $('#default-hosts-config-table');
+  let hostsTable = $(modalIdPrefix+'-table-show-body');
   let host = input.dataset['id'];
   let newDefaultPingHostsInfo =
     getDefaultPingHostsList('defaultPingHostsInfo')
@@ -120,7 +121,7 @@ window.removeHostFromTable = function(input) {
 const addNewDefaultHost = function(event) {
   defaultHostsTableToggle(true);
   let defaultPingHostsInfo = getDefaultPingHostsList('defaultPingHostsInfo');
-  const newHost = $('#default-hosts-config-input').val();
+  const newHost = $(modalIdPrefix+'-input').val();
   if (!newHost || newHost === '') {
     swal.fire({
       icon: 'error',
@@ -145,20 +146,22 @@ const addNewDefaultHost = function(event) {
 
 anlixDocumentReady.add(function() {
   // Lists the default hosts when the button that opens the modal is clicked
-  $(document).on('click', '#default-hosts-config-button', (event) =>
-    getDefaultPingHosts(event));
+  $(document).on('click', '#default-hosts-config-button', (event) => {
+    $(modalIdPrefix).modal('show');
+    getDefaultPingHosts(event);
+  });
   // Submit button to apply changes
-  $(document).on('click', '#default-hosts-config-submit-button', (event) =>
+  $(document).on('click', modalIdPrefix+'-submit-button', (event) =>
     setDefaultPingHosts(event));
   // Remove all hosts from table
-  $(document).on('click', '#default-hosts-config-remove-all', function(event) {
+  $(document).on('click', modalIdPrefix+'-btn-remove-all', function(event) {
     setDefaultPingHostsList('defaultPingHostsInfo', []);
     defaultHostsTableToggle();
-    $('#default-hosts-config-table').empty();
+    $(modalIdPrefix+'-table-show-body').empty();
   });
   // Add a new default host
-  $(document).on('click', '#default-hosts-config-add-button', function(event) {
+  $(document).on('click', modalIdPrefix+'-add-button', function(event) {
     addNewDefaultHost(event);
-    $('#default-hosts-config-input').val('');
+    $(modalIdPrefix+'-input').val('');
   });
 });

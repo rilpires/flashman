@@ -24,7 +24,7 @@ const fetchUsers = function(usersTable, hasTrash, getAll, csv = false) {
   const secondDate = getSecondDate();
 
   if (getAll) {
-    $.get('/user/get/all', function(res) {
+    $.get('/user/get/certifications', function(res) {
       isActiveSearchBtnState(true);
       usersTable.clear().draw();
       if (res.type == 'success') {
@@ -222,6 +222,18 @@ const fetchCertification = function(id, name, timestamp) {
         $('#user-contract').html('&nbsp;'+cert.contract);
       } else {
         $('#user-contract').html(`&nbsp;${t('notSpecified')}`);
+      }
+      if (cert.specificUsername) {
+        $('#specific-user-container').show();
+        $('#specific-user').html('&nbsp;' + cert.specificUsername);
+      } else {
+        $('#specific-user-container').hide();
+      }
+      if (cert.specificPassword) {
+        $('#specific-passwd-container').show();
+        $('#specific-passwd').html('&nbsp;' + cert.specificPassword);
+      } else {
+        $('#specific-passwd-container').hide();
       }
       // Change router info
       if (cert.isOnu) {

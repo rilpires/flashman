@@ -158,6 +158,16 @@ router.route('/user/get/all').get(
   authController.ensurePermission('grantAPIAccess'),
   userController.getUsersForDisplay);
 
+router.route('/user/certifications')
+.get(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.getUsersCertifications,
+)
+.delete(
+  authController.ensurePermission('grantAPIAccess'),
+  userController.deleteCertificates,
+);
+
 router.route('/user/edit/:id').put(
   authController.ensurePermission('grantAPIAccess'),
   userController.editUser);

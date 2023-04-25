@@ -1,25 +1,64 @@
-/* global __line */
-
 
 /**
  * Interface functions with the ACS.
  * @namespace controllers/handlers/acs/measure
  */
 
-
 const DeviceModel = require('../../../models/device');
 const DevicesAPI = require('../../external-genieacs/devices-api');
 const Config = require('../../../models/config');
 const utilHandlers = require('../util');
 const sio = require('../../../sio');
-const http = require('http');
 const TasksAPI = require('../../external-genieacs/tasks-api');
 const debug = require('debug')('ACS_DEVICES_MEASURES');
-const t = require('../../language').i18next.t;
 
 let acsMeasuresHandler = {};
-let GENIEHOST = (process.env.FLM_NBI_ADDR || 'localhost');
-let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
+
+const getCPEInstance = async function(acsID) {
+  let device;
+
+  // Check acs ID
+  if (!acsID) return undefined;
+  try {
+    device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        use_tr069: true, acs_id: true, model: true,
+        version: true, hw_version: true, connection_type: true,
+      },
+    ).lean();
+  } catch (error) {
+    console.error(
+      'Could not get device in getCPEInstance: ' + error,
+    );
+    return undefined;
+  }
+
+  // Check if is a TR-069 valid device
+  if (!device || !device.use_tr069) {
+    console.error('Invalid device in getCPEInstance!');
+    return undefined;
+  }
+
+  // Get the cpe instance
+  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
+
+  if (!cpeInstance.success) {
+    console.error('Invalid CPE in getCPEInstance!');
+    return undefined;
+  }
+
+  return {
+    mac: device._id,
+    cpe: cpeInstance.cpe,
+    conn_type: device.connection_type,
+  };
+};
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+acsMeasuresHandler.__testGetCPEInstance = getCPEInstance;
 
 /**
  * Get WAN sent and received bytes, CPU usage, total memory, free memory from
@@ -30,44 +69,11 @@ let GENIEPORT = (process.env.FLM_NBI_PORT || 7557);
  * @param {String} acsID - The ACS ID of the device to fetch statistics from.
  */
 acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
-  let device;
+  let CPEinfo = await getCPEInstance(acsID);
+  if (!CPEinfo) return;
+  let cpe = CPEinfo.cpe;
+  let mac = CPEinfo.mac;
 
-  // Check acs ID
-  if (!acsID) return;
-
-  try {
-    device = await DeviceModel.findOne(
-      {acs_id: acsID},
-      {
-        use_tr069: true, acs_id: true, model: true,
-        version: true, hw_version: true,
-      },
-    ).lean();
-  } catch (error) {
-    console.error(
-      'Could not get device in fetchWanBytesFromGenie: ' + error,
-    );
-
-    return;
-  }
-
-  // Check if is a TR-069 valid device
-  if (!device || !device.use_tr069) {
-    console.error('Invalid device in fetchWanBytesFromGenie!');
-    return;
-  }
-
-
-  // Get the cpe instance
-  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
-
-  if (!cpeInstance.success) {
-    console.error('Invalid CPE in fetchWanInformationFromGenie!');
-    return;
-  }
-
-  let mac = device._id;
-  let cpe = cpeInstance.cpe;
   const permissions = cpe.modelPermissions();
   const hasCPUUsage = permissions.features.hasCPUUsage;
   const hasMemoryUsage = permissions.features.hasMemoryUsage;
@@ -246,7 +252,6 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     }
   }
 
-
   // Only append resources if has CPU usage or has both Memory Free and
   // Memory Total or has Memory usage
   if (
@@ -255,74 +260,47 @@ acsMeasuresHandler.fetchWanBytesFromGenie = async function(acsID) {
     responseData.resources = resources;
   }
 
-
   // Check if must save the wan data
-  let mustSave = false;
   if (checkRecv && checkSent) {
     // Update the device as it could have been changed during the request
     // (an async call with await) and thus causing mongoose to throw an error
-    try {
-      device = await DeviceModel.findOne(
-        {acs_id: acsID}, {wan_bytes: true, last_contact: true},
-      );
-
-      if (device) {
-        mustSave = true;
-      } else {
-        mustSave = false;
-      }
-    } catch (error) {
+    const device = await DeviceModel.findOne(
+      {acs_id: acsID}, {wan_bytes: true, last_contact: true},
+    ).exec().catch((e) => {
       console.error(
-        'Could not get device in fetchWanBytesFromGenie: ' + error,
+        'Could not get device in fetchWanBytesFromGenie: ' + e,
       );
+    });
+    if (device) {
+      // Update information
+      device.last_contact = Date.now();
+      wanBytes = acsMeasuresHandler.appendBytesMeasure(
+        device.wan_bytes,
+        wanBytes.recv,
+        wanBytes.sent,
+      );
+      device.wan_bytes = wanBytes;
 
-      mustSave = false;
+      // Save the device
+      await device.save().catch((err) => {
+        console.log('Error saving device wan bytes: ' + err);
+      });
+
+      // Append to the final response
+      responseData.wanbytes = wanBytes;
     }
   }
-
-
-  if (mustSave) {
-    // Update information
-    device.last_contact = Date.now();
-    wanBytes = acsMeasuresHandler.appendBytesMeasure(
-      device.wan_bytes,
-      wanBytes.recv,
-      wanBytes.sent,
-    );
-    device.wan_bytes = wanBytes;
-
-    // Save the device
-    await device.save().catch((err) => {
-      console.log('Error saving device wan bytes: ' + err);
-    });
-
-    // Append to the final response
-    responseData.wanbytes = wanBytes;
-  }
-
 
   // Report to frontend
   sio.anlixSendStatisticsNotification(mac, responseData);
 };
 
 acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
-  let device;
-  try {
-    device = await DeviceModel.findOne({acs_id: acsID}).lean();
+  let CPEinfo = await getCPEInstance(acsID);
+  if (!CPEinfo) return;
+  let cpe = CPEinfo.cpe;
+  let mac = CPEinfo.mac;
 
-    if (!device) {
-      return {
-        success: false,
-        message: t('cpeFindError', {errorline: __line}),
-      };
-    }
-  } catch (e) {
-    console.log('Error:', e);
-    return {success: false,
-            message: t('cpeFindError', {errorline: __line})};
-  }
-  let mac = device._id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
   let rxPowerField = fields.wan.pon_rxpower;
   let txPowerField = fields.wan.pon_txpower;
@@ -337,140 +315,127 @@ acsMeasuresHandler.fetchPonSignalFromGenie = async function(acsID) {
   }
 
   let query = {_id: acsID};
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let ponSignal = {};
-    let ponArrayMeasures = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async () => {
-      if (data.length > 0) {
-        try {
-          data = JSON.parse(data)[0];
-        } catch (err) {
-          debug(err);
-          data = '';
-        }
-      }
-      let success = false;
-      if (utilHandlers.checkForNestedKey(data, rxPowerField + '._value') &&
-          utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
-        success = true;
-        ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(
-            data,
-            rxPowerField + '._value',
-          ),
-
-          txpower: utilHandlers.getFromNestedKey(
-            data,
-            txPowerField + '._value',
-          ),
-        };
-      } else if (
-        utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
-        utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')
-      ) {
-        success = true;
-        ponSignal = {
-          rxpower: utilHandlers.getFromNestedKey(
-            data,
-            rxPowerFieldEpon + '._value',
-          ),
-
-          txpower: utilHandlers.getFromNestedKey(
-            data,
-            txPowerFieldEpon + '._value',
-          ),
-        };
-      }
-
-      if (success) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        let deviceModified = false;
-
-        if (!deviceEdit) return;
-        deviceEdit.last_contact = Date.now();
-
-        // Pon Rx Power
-        if (ponSignal.rxpower) {
-          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
-
-          // Do not modify if rxpower is invalid
-          if (ponSignal.rxpower) {
-            deviceEdit.pon_rxpower = ponSignal.rxpower;
-            deviceModified = true;
-          }
-        }
-
-        // Pon Tx Power
-        if (ponSignal.txpower) {
-          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
-
-          // Do not modify if txpower is invalid
-          if (ponSignal.txpower) {
-            deviceEdit.pon_txpower = ponSignal.txpower;
-            deviceModified = true;
-          }
-        }
-
-
-        ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
-          deviceEdit.pon_signal_measure,
-          ponSignal.rxpower,
-          ponSignal.txpower,
-        );
-
-        if (Object.keys(ponArrayMeasures).length) {
-          deviceEdit.pon_signal_measure = ponArrayMeasures;
-          deviceModified = true;
-        }
-
-
-        // Only save the device if modified the device, reducing the quantity
-        // of unneeded await and save calls
-        if (deviceModified === true) {
-          await deviceEdit.save().catch((err) => {
-            console.log('Error saving pon signal: ' + err);
-          });
-        }
-      }
-
-      // Send notification for app if had at least one entry in
-      // ponArrayMeasures
-      if (Object.keys(ponArrayMeasures).length) {
-        sio.anlixSendPonSignalNotification(
-          mac,
-          {ponsignalmeasure: ponArrayMeasures},
-        );
-      }
-
-
-      return ponArrayMeasures;
+  let data = await TasksAPI.getFromCollection('devices', query, projection)
+    .catch((err) => {
+      console.log(`ERROR IN fetchPonSignalFromGenie TaskAPI: ${err}`);
+      return;
     });
-  });
-  req.end();
+  if (!data || data.length == 0) return;
+  data = data[0];
+  let ponSignal = {};
+  let ponArrayMeasures = {};
+
+  let success = false;
+  if (utilHandlers.checkForNestedKey(data, rxPowerField + '._value') &&
+      utilHandlers.checkForNestedKey(data, txPowerField + '._value')) {
+    success = true;
+    ponSignal = {
+      rxpower: utilHandlers.getFromNestedKey(
+        data,
+        rxPowerField + '._value',
+      ),
+
+      txpower: utilHandlers.getFromNestedKey(
+        data,
+        txPowerField + '._value',
+      ),
+    };
+  } else if (
+    utilHandlers.checkForNestedKey(data, rxPowerFieldEpon + '._value') &&
+    utilHandlers.checkForNestedKey(data, txPowerFieldEpon + '._value')
+  ) {
+    success = true;
+    ponSignal = {
+      rxpower: utilHandlers.getFromNestedKey(
+        data,
+        rxPowerFieldEpon + '._value',
+      ),
+
+      txpower: utilHandlers.getFromNestedKey(
+        data,
+        txPowerFieldEpon + '._value',
+      ),
+    };
+  }
+
+  if (success) {
+    let deviceEdit = await DeviceModel.findOne(
+        {_id: mac},
+        {
+          pon_rxpower: true, pon_txpower: true,
+          pon_signal_measure: true, last_contact: true,
+        },
+      ).exec().catch((e) => {
+        console.error(
+          'Could not get device in fetchPonSignalFromGenie: ' + e,
+        );
+      });
+
+    let deviceModified = false;
+
+    if (!deviceEdit) return;
+    deviceEdit.last_contact = Date.now();
+
+    // Pon Rx Power
+    if (ponSignal.rxpower) {
+      ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+
+      // Do not modify if rxpower is invalid
+      if (ponSignal.rxpower) {
+        deviceEdit.pon_rxpower = ponSignal.rxpower;
+        deviceModified = true;
+      }
+    }
+
+    // Pon Tx Power
+    if (ponSignal.txpower) {
+      ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
+
+      // Do not modify if txpower is invalid
+      if (ponSignal.txpower) {
+        deviceEdit.pon_txpower = ponSignal.txpower;
+        deviceModified = true;
+      }
+    }
+
+    ponArrayMeasures = acsMeasuresHandler.appendPonSignal(
+      deviceEdit.pon_signal_measure,
+      ponSignal.rxpower,
+      ponSignal.txpower,
+    );
+
+    if (Object.keys(ponArrayMeasures).length) {
+      deviceEdit.pon_signal_measure = ponArrayMeasures;
+      deviceModified = true;
+    }
+
+    // Only save the device if modified the device, reducing the quantity
+    // of unneeded await and save calls
+    if (deviceModified === true) {
+      await deviceEdit.save().catch((err) => {
+        console.log('Error saving pon signal: ' + err);
+      });
+    }
+  }
+
+  // Send notification for app if had at least one entry in
+  // ponArrayMeasures
+  if (Object.keys(ponArrayMeasures).length) {
+    sio.anlixSendPonSignalNotification(
+      mac,
+      {ponsignalmeasure: ponArrayMeasures},
+    );
+  }
+
+  return ponArrayMeasures;
 };
 
 acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
-  let device;
-  try {
-    device = await DeviceModel.findOne({acs_id: acsID}).lean();
-  } catch (e) {
-    return;
-  }
-  if (!device || !device.use_tr069) {
-    return;
-  }
-  let mac = device._id;
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let CPEinfo = await getCPEInstance(acsID);
+  if (!CPEinfo) return;
+  let cpe = CPEinfo.cpe;
+  let mac = CPEinfo.mac;
+
   let fields = cpe.getModelFields();
   let PPPoEUser = fields.wan.pppoe_user.replace(/\.\*.*/g, '');
   let upTimeField;
@@ -499,121 +464,119 @@ acsMeasuresHandler.fetchUpStatusFromGenie = async function(acsID) {
     txPowerFieldEpon = fields.wan.pon_txpower_epon;
     projection += ',' + rxPowerFieldEpon + ',' + txPowerFieldEpon;
   }
-  let path = '/devices/?query='+JSON.stringify(query)+'&projection='+projection;
-  let options = {
-    method: 'GET',
-    hostname: GENIEHOST,
-    port: GENIEPORT,
-    path: encodeURI(path),
-  };
-  let req = http.request(options, (resp)=>{
-    resp.setEncoding('utf8');
-    let data = '';
-    let sysUpTime = 0;
-    let wanUpTime = 0;
-    let signalState = {};
-    let ponSignal = {};
-    resp.on('data', (chunk)=>data+=chunk);
-    resp.on('end', async () => {
-      if (data.length > 0) {
-        try {
-          data = JSON.parse(data)[0];
-        } catch (err) {
-          debug(err);
-          return;
-        }
-      }
-      let successSys = false;
-      let successWan = false;
-      let successRxPower = false;
-      let checkFunction = utilHandlers.checkForNestedKey;
-      let getFunction = utilHandlers.getFromNestedKey;
 
-      if (checkFunction(data, fields.common.uptime + '._value')) {
-        successSys = true;
-        sysUpTime = getFunction(data, fields.common.uptime + '._value');
-      }
-      if (checkFunction(data, fields.wan.pppoe_user + '._value')) {
-        successWan = true;
-        let hasPPPoE = getFunction(data, fields.wan.pppoe_user + '._value');
-        if (
-          hasPPPoE && checkFunction(data, fields.wan.uptime_ppp + '._value')
-        ) {
-          wanUpTime = getFunction(data, fields.wan.uptime_ppp + '._value');
-        }
-      } else if (checkFunction(data, fields.wan.uptime + '._value')) {
-        successWan = true;
-        wanUpTime = getFunction(data, fields.wan.uptime + '._value');
-      }
-      if (checkFunction(data, rxPowerField + '._value') &&
-          checkFunction(data, txPowerField + '._value')) {
-        successRxPower = true;
-        ponSignal = {
-          rxpower: getFunction(data, rxPowerField + '._value'),
-          txpower: getFunction(data, txPowerField + '._value'),
-        };
-      } else if (checkFunction(data, rxPowerFieldEpon + '._value') &&
-                 checkFunction(data, txPowerFieldEpon + '._value')) {
-        successRxPower = true;
-        ponSignal = {
-          rxpower: getFunction(data, rxPowerFieldEpon + '._value'),
-          txpower: getFunction(data, txPowerFieldEpon + '._value'),
-        };
-      }
-      if (successSys || successWan || successRxPower) {
-        let deviceEdit = await DeviceModel.findById(mac);
-        if (successRxPower) {
-          // covert rx and tx signal
-          ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
-          ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
-          // send then
-          let config = await Config.findOne(
-            {is_default: true}, {tr069: true},
-          ).lean();
-          signalState = {
-            rxpower: ponSignal.rxpower,
-            threshold:
-              config.tr069.pon_signal_threshold,
-            thresholdCritical:
-              config.tr069.pon_signal_threshold_critical,
-            thresholdCriticalHigh:
-              config.tr069.pon_signal_threshold_critical_high,
-          };
-          deviceEdit.pon_rxpower = ponSignal.rxpower;
-          deviceEdit.pon_txpower = ponSignal.txpower;
-          // append to device data structure
-          ponSignal = acsMeasuresHandler.appendPonSignal(
-            deviceEdit.pon_signal_measure,
-            ponSignal.rxpower,
-            ponSignal.txpower,
-          );
-          deviceEdit.pon_signal_measure = ponSignal;
-        }
-        if (successSys && deviceEdit.sys_up_time
-            && deviceEdit.sys_up_time != sysUpTime) {
-          /* only update last contact when sys up time from projection
-           is different from the database, to avoid the bug of trigger
-           this function, by mass trigger fetch up status, that entails
-           bogus last contact refer */
-          deviceEdit.last_contact = Date.now();
-          sio.anlixSendUpStatusNotification(mac, {
-            sysuptime: sysUpTime,
-            wanuptime: wanUpTime,
-            ponsignal: signalState,
-          });
-        }
-        /* if sys up status is the same, so probably this functions
-        was triggered by deleted task prompted by another fetch up
-        status, then does not send data to front end */
-        deviceEdit.sys_up_time = sysUpTime;
-        deviceEdit.wan_up_time = wanUpTime;
-        await deviceEdit.save().catch((err) => {
-          console.log('Error saving device up status: ' + err);
-        });
-      }
+  let data = await TasksAPI.getFromCollection('devices', query, projection)
+    .catch((err) => {
+      console.log(`ERROR IN fetchUpStatusFromGenie TaskAPI: ${err}`);
+      return;
     });
-  });
-  req.end();
+  if (!data || data.length == 0) return;
+  data = data[0];
+
+  let sysUpTime = 0;
+  let wanUpTime = 0;
+  let signalState = {};
+  let ponSignal = {};
+
+  let successSys = false;
+  let successWan = false;
+  let successRxPower = false;
+  let checkFunction = utilHandlers.checkForNestedKey;
+  let getFunction = utilHandlers.getFromNestedKey;
+
+  if (checkFunction(data, fields.common.uptime + '._value')) {
+    successSys = true;
+    sysUpTime = getFunction(data, fields.common.uptime + '._value');
+  }
+  if (checkFunction(data, fields.wan.pppoe_user + '._value')) {
+    successWan = true;
+    let hasPPPoE = getFunction(data, fields.wan.pppoe_user + '._value');
+    if (
+      hasPPPoE && checkFunction(data, fields.wan.uptime_ppp + '._value')
+    ) {
+      wanUpTime = getFunction(data, fields.wan.uptime_ppp + '._value');
+    }
+  } else if (checkFunction(data, fields.wan.uptime + '._value')) {
+    successWan = true;
+    wanUpTime = getFunction(data, fields.wan.uptime + '._value');
+  }
+  if (checkFunction(data, rxPowerField + '._value') &&
+      checkFunction(data, txPowerField + '._value')) {
+    successRxPower = true;
+    ponSignal = {
+      rxpower: getFunction(data, rxPowerField + '._value'),
+      txpower: getFunction(data, txPowerField + '._value'),
+    };
+  } else if (checkFunction(data, rxPowerFieldEpon + '._value') &&
+             checkFunction(data, txPowerFieldEpon + '._value')) {
+    successRxPower = true;
+    ponSignal = {
+      rxpower: getFunction(data, rxPowerFieldEpon + '._value'),
+      txpower: getFunction(data, txPowerFieldEpon + '._value'),
+    };
+  }
+  if (successSys || successWan || successRxPower) {
+    let deviceEdit = await DeviceModel.findOne(
+      {_id: mac},
+      {
+        pon_rxpower: true, pon_txpower: true,
+        pon_signal_measure: true, last_contact: true,
+        sys_up_time: true, wan_up_time: true,
+      },
+    ).exec().catch((e) => {
+      console.error(
+        'Could not get device in fetchUpStatusFromGenie: ' + e,
+      );
+    });
+    if (successRxPower) {
+      // covert rx and tx signal
+      ponSignal.rxpower = cpe.convertToDbm(ponSignal.rxpower);
+      ponSignal.txpower = cpe.convertToDbm(ponSignal.txpower);
+      // send then
+      let config = await Config.findOne(
+        {is_default: true}, {tr069: true},
+      ).lean();
+      signalState = {
+        rxpower: ponSignal.rxpower,
+        threshold:
+          config.tr069.pon_signal_threshold,
+        thresholdCritical:
+          config.tr069.pon_signal_threshold_critical,
+        thresholdCriticalHigh:
+          config.tr069.pon_signal_threshold_critical_high,
+      };
+      deviceEdit.pon_rxpower = ponSignal.rxpower;
+      deviceEdit.pon_txpower = ponSignal.txpower;
+      // append to device data structure
+      ponSignal = acsMeasuresHandler.appendPonSignal(
+        deviceEdit.pon_signal_measure,
+        ponSignal.rxpower,
+        ponSignal.txpower,
+      );
+      deviceEdit.pon_signal_measure = ponSignal;
+    }
+    if (successSys && deviceEdit.sys_up_time
+        && deviceEdit.sys_up_time != sysUpTime) {
+      /* only update last contact when sys up time from projection
+       is different from the database, to avoid the bug of trigger
+       this function, by mass trigger fetch up status, that entails
+       bogus last contact refer */
+      deviceEdit.last_contact = Date.now();
+      sio.anlixSendUpStatusNotification(mac, {
+        sysuptime: sysUpTime,
+        wanuptime: wanUpTime,
+        ponsignal: signalState,
+      });
+    }
+    /* if sys up status is the same, so probably this functions
+    was triggered by deleted task prompted by another fetch up
+    status, then does not send data to front end */
+    deviceEdit.sys_up_time = sysUpTime;
+    deviceEdit.wan_up_time = wanUpTime;
+    await deviceEdit.save().catch((err) => {
+      console.log('Error saving device up status: ' + err);
+    });
+  }
 };
 
 
@@ -672,53 +635,20 @@ acsMeasuresHandler.__testCheckAndGetGenieField = checkAndGetGenieField;
  * @param {String} acsID - The ACS ID of the device.
  */
 acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
-  let device;
+  let CPEinfo = await getCPEInstance(acsID);
+  if (!CPEinfo) return;
+  let cpe = CPEinfo.cpe;
+  let mac = CPEinfo.mac;
+  let conntype = CPEinfo.conn_type;
 
-  // Check acs ID
-  if (!acsID) return;
-
-  try {
-    device = await DeviceModel.findOne(
-      {acs_id: acsID},
-      {
-        use_tr069: true, acs_id: true, model: true, version: true,
-        hw_version: true, connection_type: true,
-      },
-    ).lean();
-  } catch (error) {
-    console.error(
-      'Could not get device in fetchWanInformationFromGenie: ' + error,
-    );
-
-    return;
-  }
-
-  // Check if is a TR-069 valid device
-  if (!device || !device.use_tr069) {
-    console.error('Invalid device in fetchWanInformationFromGenie!');
-    return;
-  }
-
-
-  // Get the cpe instance
-  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
-
-  if (!cpeInstance.success) {
-    console.error('Invalid CPE in fetchWanInformationFromGenie!');
-    return;
-  }
-
-
-  let cpe = cpeInstance.cpe;
   let permissions = cpe.modelPermissions();
   let fields = cpe.getModelFields();
   let query = {_id: acsID};
   let projection = '';
 
   // Check PPPoE
-  let hasPPPoE = device.connection_type === 'pppoe' ? true : false;
+  let hasPPPoE = conntype === 'pppoe' ? true : false;
   let suffixPPPoE = hasPPPoE ? '_ppp' : '';
-
 
   // Assign fields
   let assignFields = {
@@ -848,98 +778,86 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
     // Update the device as it could have been changed during the request
     // (an async call with await) and thus causing mongoose to throw an
     // error
-    try {
-      device = await DeviceModel.findOne(
-        {acs_id: acsID},
-        {
-          wan_ip: true, wan_ipv6: true, wan_ipv4_mask: true,
-          wan_ipv6_mask: true, pppoe_ip: true, pppoe_mac: true,
-          default_gateway_v4: true, default_gateway_v6: true,
-          dns_server: true, last_contact: true,
-        },
-      );
-
-      if (device) {
-        saveDevice = true;
-      } else {
-        saveDevice = false;
-      }
-    } catch (error) {
+    let device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        wan_ip: true, wan_ipv6: true, wan_ipv4_mask: true,
+        wan_ipv6_mask: true, pppoe_ip: true, pppoe_mac: true,
+        default_gateway_v4: true, default_gateway_v6: true,
+        dns_server: true, last_contact: true,
+      },
+    ).exec().catch((e) => {
       console.error(
-        'Could not get device in fetchWanInformationFromGenie: ' + error,
+        'Could not get device in fetchWanInformationFromGenie: ' + e,
       );
-
-      // If an error occurred, do not save
-      saveDevice = false;
-    }
-  }
-
-  if (saveDevice) {
-    // Update last contact
-    device.last_contact = Date.now();
-
-    // Update fields
-    // Address
-    device.wan_ip = assignFields.wanIPv4Field.value;
-    // Remove the mask if came with it
-    device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
-
-    // Mask
-    let mask = parseInt(assignFields.maskIPv4Field.value);
-    device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
-
-    mask = parseInt(
-      assignFields.maskIPv6Field.value ?
-      assignFields.maskIPv6Field.value : maskV6,
-    );
-    device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
-
-    // PPPoE
-    if (hasPPPoE) {
-      device.pppoe_ip = assignFields.wanPPPoEAddressField.value;
-      device.pppoe_mac = assignFields.wanPPPoEMacField.value;
-    }
-
-    // Default Gateway
-    device.default_gateway_v4 = assignFields.gatewayIPv4Field.value;
-    device.default_gateway_v6 = assignFields.gatewayIPv6Field.value;
-
-    // DNS Server
-    device.dns_server = assignFields.dnsServerField.value;
-
-    try {
-      // Save the device
-      await device.save();
-    } catch (error) {
-      console.error(
-        'Error saving device in fetchWanInformationFromGenie: ' + error,
-      );
-
-      return;
-    }
-  }
-
-
-    // Always send the notification, even if there is no value
-    sio.anlixSendWanInfoNotification(device._id, {
-      ipv4_address: assignFields.wanIPv4Field.value,
-      ipv4_mask: assignFields.maskIPv4Field.value,
-
-      // Remove the mask if came with it
-      ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
-      ipv6_mask: (
-        assignFields.maskIPv6Field.value ?
-        assignFields.maskIPv6Field.value : maskV6
-      ),
-
-      default_gateway_v4: assignFields.gatewayIPv4Field.value,
-      default_gateway_v6: assignFields.gatewayIPv6Field.value,
-      dns_server: assignFields.dnsServerField.value,
-
-      wan_conn_type: hasPPPoE ? 'pppoe' : 'dhcp',
-      pppoe_mac: assignFields.wanPPPoEMacField.value,
-      pppoe_ip: assignFields.wanPPPoEAddressField.value,
     });
+
+    if (device) {
+      // Update last contact
+      device.last_contact = Date.now();
+
+      // Update fields
+      // Address
+      device.wan_ip = assignFields.wanIPv4Field.value;
+      // Remove the mask if came with it
+      device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
+
+      // Mask
+      let mask = parseInt(assignFields.maskIPv4Field.value);
+      device.wan_ipv4_mask = (mask && mask > 0 && mask <= 32 ? mask : 0);
+
+      mask = parseInt(
+        assignFields.maskIPv6Field.value ?
+        assignFields.maskIPv6Field.value : maskV6,
+      );
+      device.wan_ipv6_mask = (mask && mask > 0 && mask <= 128 ? mask : 0);
+
+      // PPPoE
+      if (hasPPPoE) {
+        device.pppoe_ip = assignFields.wanPPPoEAddressField.value;
+        device.pppoe_mac = assignFields.wanPPPoEMacField.value;
+      }
+
+      // Default Gateway
+      device.default_gateway_v4 = assignFields.gatewayIPv4Field.value;
+      device.default_gateway_v6 = assignFields.gatewayIPv6Field.value;
+
+      // DNS Server
+      device.dns_server = assignFields.dnsServerField.value;
+
+      try {
+        // Save the device
+        await device.save();
+      } catch (error) {
+        console.error(
+          'Error saving device in fetchWanInformationFromGenie: ' + error,
+        );
+
+        return;
+      }
+    }
+  }
+
+  // Always send the notification, even if there is no value
+  sio.anlixSendWanInfoNotification(mac, {
+    ipv4_address: assignFields.wanIPv4Field.value,
+    ipv4_mask: assignFields.maskIPv4Field.value,
+
+    // Remove the mask if came with it
+    ipv6_address: assignFields.wanIPv6Field.value.split('/')[0],
+    ipv6_mask: (
+      assignFields.maskIPv6Field.value ?
+      assignFields.maskIPv6Field.value : maskV6
+    ),
+
+    default_gateway_v4: assignFields.gatewayIPv4Field.value,
+    default_gateway_v6: assignFields.gatewayIPv6Field.value,
+    dns_server: assignFields.dnsServerField.value,
+
+    wan_conn_type: hasPPPoE ? 'pppoe' : 'dhcp',
+    pppoe_mac: assignFields.wanPPPoEMacField.value,
+    pppoe_ip: assignFields.wanPPPoEAddressField.value,
+  });
 };
 
 
@@ -951,43 +869,12 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
  * @param {String} acsID - The ACS ID of the device.
  */
 acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
-  let device;
+  let CPEinfo = await getCPEInstance(acsID);
+  if (!CPEinfo) return;
+  let cpe = CPEinfo.cpe;
+  let mac = CPEinfo.mac;
+  let conntype = CPEinfo.conn_type;
 
-  // Check acs ID
-  if (!acsID) return;
-
-  try {
-    device = await DeviceModel.findOne(
-      {acs_id: acsID},
-      {
-        use_tr069: true, acs_id: true, model: true, version: true,
-        hw_version: true, connection_type: true,
-      },
-    ).lean();
-  } catch (error) {
-    console.error(
-      'Could not get device in fetchLanInformationFromGenie: ' + error,
-    );
-
-    return;
-  }
-
-  // Check if is a TR-069 valid device
-  if (!device || !device.use_tr069) {
-    console.error('Invalid device in fetchLanInformationFromGenie!');
-    return;
-  }
-
-
-  // Get the cpe instance
-  let cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
-
-  if (!cpeInstance.success) {
-    console.error('Invalid CPE in fetchLanInformationFromGenie!');
-    return;
-  }
-
-  let cpe = cpeInstance.cpe;
   let permissions = cpe.modelPermissions();
   let fields = cpe.getModelFields();
   let query = {_id: acsID};
@@ -997,7 +884,7 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
   // If does not have any IPv6 information, exit
   if (!permissions.features.hasIpv6Information) {
     // Send an empty notification to not stall frontend
-    sio.anlixSendLanInfoNotification(device._id, {
+    sio.anlixSendLanInfoNotification(mac, {
       prefix_delegation_addr: '',
       prefix_delegation_mask: '',
       prefix_delegation_local: '',
@@ -1008,7 +895,7 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
 
 
   // Check PPPoE
-  let suffixPPPoE = device.connection_type === 'pppoe' ? '_ppp' : '';
+  let suffixPPPoE = conntype === 'pppoe' ? '_ppp' : '';
 
 
   // Assign fields
@@ -1103,63 +990,51 @@ acsMeasuresHandler.fetchLanInformationFromGenie = async function(acsID) {
     // Update the device as it could have been changed during the request
     // (an async call with await) and thus causing mongoose to throw an
     // error
-    try {
-      device = await DeviceModel.findOne(
-        {acs_id: acsID},
-        {
-          prefix_delegation_addr: true, prefix_delegation_mask: true,
-          prefix_delegation_local: true, last_contact: true,
-        },
+    let device = await DeviceModel.findOne(
+      {acs_id: acsID},
+      {
+        prefix_delegation_addr: true, prefix_delegation_mask: true,
+        prefix_delegation_local: true, last_contact: true,
+      },
+    ).exec().catch((e) => {
+      console.error(
+        'Could not get device in fetchLanInformationFromGenie: ' + e,
+      );
+    });
+
+    if (device) {
+      // Update last contact
+      device.last_contact = Date.now();
+
+      // If prefixAddressField has '/', remove it
+      assignFields.prefixAddressField.value =
+        assignFields.prefixAddressField.value.split('/')[0];
+      device.prefix_delegation_addr = assignFields.prefixAddressField.value;
+
+      // If the mask field came empty, try using the one from the address
+      device.prefix_delegation_mask = (
+        assignFields.prefixMaskField.value ?
+        assignFields.prefixMaskField.value : mask
       );
 
-      if (device) {
-        saveDevice = true;
-      } else {
-        saveDevice = false;
+      device.prefix_delegation_local =
+        assignFields.prefixLocalAddressField.value;
+
+      try {
+        // Save the device
+        await device.save();
+      } catch (error) {
+        console.error(
+          'Error saving device in fetchLanInformationFromGenie: ' + error,
+        );
+
+        return;
       }
-    } catch (error) {
-      console.error(
-        'Could not get device in fetchLanInformationFromGenie: ' + error,
-      );
-
-      // If an error occurred, do not save
-      saveDevice = false;
     }
   }
-
-  if (saveDevice) {
-    // Update last contact
-    device.last_contact = Date.now();
-
-    // If prefixAddressField has '/', remove it
-    assignFields.prefixAddressField.value =
-      assignFields.prefixAddressField.value.split('/')[0];
-    device.prefix_delegation_addr = assignFields.prefixAddressField.value;
-
-    // If the mask field came empty, try using the one from the address
-    device.prefix_delegation_mask = (
-      assignFields.prefixMaskField.value ?
-      assignFields.prefixMaskField.value : mask
-    );
-
-    device.prefix_delegation_local =
-      assignFields.prefixLocalAddressField.value;
-
-    try {
-      // Save the device
-      await device.save();
-    } catch (error) {
-      console.error(
-        'Error saving device in fetchLanInformationFromGenie: ' + error,
-      );
-
-      return;
-    }
-  }
-
 
   // Always send the notification, even if it is empty
-  sio.anlixSendLanInfoNotification(device._id, {
+  sio.anlixSendLanInfoNotification(mac, {
     prefix_delegation_addr: assignFields.prefixAddressField.value,
     prefix_delegation_mask: (
       assignFields.prefixMaskField.value ?

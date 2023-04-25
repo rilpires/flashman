@@ -1,3 +1,7 @@
+/**
+ * @namespace public/src/common.index
+ */
+
 import 'bootstrap/js/src/index'; // Bootstrap animations
 import 'mdbootstrap/js/mdb'; // MDB animations
 
@@ -35,21 +39,99 @@ i18next
     }
     // to be used by other events so they know this has finished.
     i18nextResolved();
-    // console.log('--- i18next.default.languages:', i18next.default.languages)
-    // console.log('--- i18next.default.resolvedLanguage:', i18next.default.resolvedLanguage)
+    // console.log('--- i18next.default.languages:', i18next.default.languages);
+    // console.log(
+    //   '--- i18next.default.resolvedLanguage:',
+    //   i18next.default.resolvedLanguage,
+    // );
   });
 
-// Object that holds all DOMContentLoaded callbacks. Even though they are
-// defined in other files, webpack will put them together in the same bundle,
-// so they are in the same context.
+/**
+ * Object that holds all `DOMContentLoaded` callbacks. Even though they are
+ * defined in other files, webpack will put them together in the same bundle,
+ * so they are in the same context.
+ *
+ * @memberof public/src/common.index
+ */
 const anlixDocumentReady = new function() {
   // array that will hold all callbacks to run after DOMContentLoaded event.
   this.readyCallbacks = [];
-  this.add = (f) => this.readyCallbacks.push(f); // adds callbacks to array.
-  this.start = () => this.readyCallbacks.forEach((f) => f()); // executes callbacks.
+
+  // adds callbacks to array.
+  this.add = (f) => this.readyCallbacks.push(f);
+
+  // executes callbacks.
+  this.start = () => this.readyCallbacks.forEach((f) => f());
 };
 
-export {anlixDocumentReady};
+
+/**
+ * Send requests to the specified endpoint.
+ *
+ * @memberof public/src/common.index
+ *
+ * @param {String} endpoint - Endpoint to send request to.
+ * @param {String} type - `GET` or `POST`. The default is to call `GET` if the
+ * parameter is invalid.
+ * @param {String} deviceId - The `deviceId` to get the info from.
+ * @param {Function} successFunc - Callback function to be called when success.
+ * Arguments of the function:
+ * `successFunc(deviceId, response)`
+ *  - `deviceId` - The `deviceId` to get/set the info from.
+ *  - `response` - The response of the endpoint.
+ * @param {Function} errorFunc - Callback function to be called when an error
+ * happens. Arguments of the function:
+ * `errorFunc(deviceId, xhr, status, error)`
+ *  - `deviceId` - The `deviceId` to get/set the info from.
+ *  - `xhr`, `status`, `error` - See
+ * {@link https://api.jquery.com/jquery.ajax/|JQuery's API}
+ * @param {Object} data - The object to send to the endpoint.
+ *
+ * @see {@link https://api.jquery.com/jquery.ajax/|JQuery's API}
+ */
+const sendRequest = function(
+  endpoint,
+  type,
+  deviceId,
+  successFunc=null,
+  errorFunc=null,
+  data=null,
+) {
+  type = type.toUpperCase();
+
+  $.ajax({
+    url: endpoint,
+
+    method: (type === 'GET' || type === 'POST' ? type : 'GET'),
+
+    dataType: 'json',
+
+    data: (data !== null && data !== undefined ? data : ''),
+
+    contentType: (data !== null && data !== undefined ?
+      'application/json' : ''
+    ),
+
+    success: function(response) {
+      if (successFunc !== null && successFunc !== undefined) {
+        successFunc(deviceId, response);
+      }
+    },
+
+    error: function(xhr, status, error) {
+      if (errorFunc !== null && errorFunc !== undefined) {
+        errorFunc(deviceId, xhr, status, error);
+      }
+    },
+
+  });
+};
+
+
+/**
+ * @exports public/src/common.index
+ */
+export {anlixDocumentReady, sendRequest};
 
 // Preloader
 $(window).on('load', function() { // makes sure the whole site is loaded
