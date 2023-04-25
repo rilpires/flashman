@@ -678,8 +678,8 @@ const wanKeySort = function(keys, isTR181) {
   const result = [];
 
   for (const [key, value] of Object.entries(keys)) {
-    const [wan, type, ...indices] = key.split('_');
-    result.push({key, value, indices});
+    const [, , ...indexes] = key.split('_');
+    result.push({key, value, indexes});
   }
 
   const sortKeys = (a, b) => {
@@ -693,8 +693,8 @@ const wanKeySort = function(keys, isTR181) {
     }
 
     // Compare indexes based on hierarchy
-    for (let i = 0; i < a.indices.length; i++) {
-      const diff = a.indices[i] - b.indices[i];
+    for (let i = 0; i < a.indexes.length; i++) {
+      const diff = a.indexes[i] - b.indexes[i];
       if (diff !== 0) {
         return diff;
       }
@@ -709,7 +709,7 @@ const wanKeySort = function(keys, isTR181) {
   return Object.fromEntries(result.map(({key, value}) => [key, value]));
 };
 
-const wanKeyCriation = function(data, fields, isTR181) {
+const wanKeyCriation = function(data, isTR181) {
   let result = {};
   for (let obj of data) {
     let pathType = obj.path.includes('PPP') ? 'ppp' :
@@ -721,11 +721,12 @@ const wanKeyCriation = function(data, fields, isTR181) {
       // key, we evaluate the AddressingType node, which receives the conn type
       if (obj.path.includes('AddressingType')) {
         let correctPath;
-        if (obj.value[0] === 'DHCP') {
+        let value = Array.isArray(obj.value) ? obj.value[0] : obj.value;
+        if (value === 'DHCP') {
           // If the connection is DHCP, the path index already represents a
           // physical connection
           correctPath = extractLinkPath(obj.path);
-        } else if (obj.value[0] === 'IPCP') {
+        } else if (value === 'IPCP') {
           let linkPath = extractLinkPath(obj.path, true);
           correctPath = findInterfaceLink(data, linkPath, indexes[0]);
         }
@@ -752,11 +753,16 @@ const wanKeyCriation = function(data, fields, isTR181) {
 };
 
 const assembleWanObj = function(args, callback) {
-  let params = JSON.parse(args[0]);
+  let params;
+  if (args.update) {
+    params = args;
+  } else {
+    params = JSON.parse(args[0]);
+  }
   let data = params.data;
   let fields = params.fields.wan;
   let isTR181 = params.isTR181;
-  let result = wanKeyCriation(data, fields.wan, isTR181);
+  let result = wanKeyCriation(data, isTR181);
   for (let obj of data) {
     let [indexes, surplus] = extractIndexes(obj.path, isTR181);
     // Addition of obj to WANs: depending on the property's match, since there
@@ -837,6 +843,7 @@ exports.assembleWanObj = assembleWanObj;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
+exports.getFieldProperties = getFieldProperties;
 
 /*
  * This function is being exported in order to test it.
