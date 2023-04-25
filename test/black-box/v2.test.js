@@ -32,11 +32,11 @@ describe('api_v2', () => {
       );
     }
 
-    // Creating a device
+    // Creating a device.
     let mac = 'FF:FF:FF:00:00:01';
     const genieAddress = constants.GENIEACS_HOST;
     simulator = createSimulator(genieAddress, deviceDataModel, 1000, mac)
-    .debug({
+    .debug({ // enabling/disabling prints for device events.
       beforeReady: false,
       error: true,
       xml: false,
@@ -46,7 +46,7 @@ describe('api_v2', () => {
       task: false,
       diagnostic: false,
     });
-    await simulator.start();
+    await simulator.start(); // starting device.
   });
 
   afterAll(async () => {
@@ -98,7 +98,7 @@ describe('api_v2', () => {
   });
 
   test('Firing ping diagnostic', async () => {
-    // starting ping diagnostic.
+    // issuing a ping diagnostic.
     let res =
       await flashman('put', `/api/v2/device/command/${simulator.mac}/ping`);
     // console.log('res.body', res.body)
@@ -112,18 +112,17 @@ describe('api_v2', () => {
     await simulator.nextDiagnostic(); // ping 4.
     // waiting for Flashman to ask for final diagnostic result values.
     await simulator.nextTask('GetParameterValues');
-    // console.log('waiting Flashman to process the last diagnostic')
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
-    // getting cpe until it has all ping diagnostic is not running anymore.
-    const ready = await pulling(async () => {
+    // getting cpe until ping diagnostic is not running anymore.
+    const success = await pulling(async () => {
       res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
       expect(res.statusCode).toBe(200);
-      return !res.body.current_diagnostic.in_progress; // success condition.
-    }, 200, 5000); // 200ms intervals between executions, fails after 500ms.
+      // returning success condition.
+      return !res.body.current_diagnostic.in_progress;
+    }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
 
-    // 'ready' will be true if our function returns true withing the timeout.
-    expect(ready).toBe(true);
+    // 'success' will be true if our function returns true withing the timeout.
+    expect(success).toBe(true);
     expect(res.body.current_diagnostic.in_progress).toBe(false);
     for (const result of res.body.pingtest_results) {
       expect(result.completed).toBe(true);
