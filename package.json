@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
     "test": "jest --silent=true test/unit/*",
+    "test-one": "jest",
     "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
     "bb-test": "jest --runInBand test/black-box/*",
     "build": "webpack --config webpack.prod.js",
