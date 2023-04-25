@@ -390,7 +390,7 @@ anlixDocumentReady.add(function() {
     $('#upgrade-scheduler').modal('show');
   });
 
-  $(document).on('click', '#btn-config-lan-dns-modal', function(event) {
+  $(document).on('click', '.btn-config-lan-dns-modal', function(event) {
     $('#config-lan-dns-modal.modal').modal('show');
   });
 
@@ -398,7 +398,7 @@ anlixDocumentReady.add(function() {
     deleteDNSServersList();
   });
 
-  $(document).on('click', '#btn-edit-submit', function(event) {
+  $(document).on('click', '.btn-edit-submit', function(event) {
     deleteDNSServersList();
   });
 
@@ -971,8 +971,8 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+
-          meshClass+'" id="btn-edit-submit" type="submit">'+
+        '<button class="btn btn-primary mx-0 btn-edit-submit '+
+          meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
       '</div>'+
@@ -2122,13 +2122,17 @@ anlixDocumentReady.add(function() {
                         device.lan_dns_servers : '')+ // treat undefined case
                       '" $REPLACE_LAN_EN disabled>'+
                     '</input>'+
+                    ((isSuperuser || grantLanEditAccess) ?
                     '<div class="input-group-append">'+
-                      '<button class="btn btn-primary btn-sm px-3"' +
-                          'type="button" id="btn-config-lan-dns-modal" '+
+                      '<button class="btn btn-primary btn-sm px-3 '+
+                                       'btn-config-lan-dns-modal"' +
+                          'type="button" '+
                           'data-index='+index+'>'+
                         '<i class="fas fa-pen fa-lg"></i>'+
                       '</button>'+
-                    '</div>'+
+                    '</div>' :
+                    ''
+                    )+
                     '<div class="invalid-feedback"></div>'+
                   '</div>' :
                   ''

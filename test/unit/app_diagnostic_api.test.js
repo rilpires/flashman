@@ -154,4 +154,61 @@ describe('Technician App API', () => {
     expect(res2.json).toHaveBeenCalledWith(
       expect.objectContaining({certification: certification}));
   });
+
+  test('Certifications without specific credentials', () => {
+    let result = [];
+    let certification = {
+      mac: 'Serial123456789',
+      onuMac: 'AA:AA:AA:AA:AA:AA',
+      routerModel: 'Modelo A',
+      routerVersion: '1.2.3',
+      routerRelease: '1.1.1',
+      timestamp: 1,
+    };
+    diagAppAPIController.__testPushCertification(result, certification, true);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty('specificUsername', '');
+    expect(result[0]).toHaveProperty('specificPassword', '');
+  });
+
+  test('Certifications with specific credentials', () => {
+    let result = [];
+    let certification = {
+      mac: 'Serial123456789',
+      onuMac: 'AA:AA:AA:AA:AA:AA',
+      routerModel: 'Modelo A',
+      routerVersion: '1.2.3',
+      routerRelease: '1.1.1',
+      specificUser: 'user',
+      specificPasswd: 'pass',
+      timestamp: 1,
+    };
+    diagAppAPIController.__testPushCertification(result, certification, true);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty(
+      'specificUsername', certification.specificUser,
+    );
+    expect(result[0]).toHaveProperty(
+      'specificPassword', certification.specificPasswd,
+    );
+  });
+
+  test('Certifications with specific credentials, but only password', () => {
+    let result = [];
+    let certification = {
+      mac: 'Serial123456789',
+      onuMac: 'AA:AA:AA:AA:AA:AA',
+      routerModel: 'Modelo A',
+      routerVersion: '1.2.3',
+      routerRelease: '1.1.1',
+      specificPasswd: 'password',
+      timestamp: 1,
+    };
+    diagAppAPIController.__testPushCertification(result, certification, true);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toHaveProperty('specificUsername', '');
+    expect(result[0]).toHaveProperty(
+      'specificPassword', certification.specificPasswd,
+    );
+  });
 });

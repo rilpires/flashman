@@ -19,6 +19,8 @@ const devicesAPI = require('../../controllers/external-genieacs/devices-api');
 const deviceVersion = require('../../models/device_version');
 const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
+const DeviceModel = require('../../models/device');
+
 const fs = require('fs');
 const path = require('path');
 
@@ -723,6 +725,8 @@ describe('Update Tests - Functions', () => {
         const res = testUtils.mockResponse();
 
         // Spies
+        jest.spyOn(DeviceModel.prototype, 'save')
+          .mockImplementation((func) => func());
         let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
@@ -872,6 +876,8 @@ describe('Update Tests - Functions', () => {
         const res = testUtils.mockResponse();
 
         // Spies
+        jest.spyOn(DeviceModel.prototype, 'save')
+          .mockImplementation((func) => func());
         let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
@@ -1004,6 +1010,8 @@ describe('Update Tests - Functions', () => {
         let res = testUtils.mockResponse();
 
         // Spies
+        jest.spyOn(DeviceModel.prototype, 'save')
+          .mockImplementation((func) => func());
         let addTaskSpy = testUtils.waitableSpy(tasksAPI, 'addTask');
         let updateInfoSpy = jest.spyOn(acsDeviceInfo, 'updateInfo');
 
