@@ -19,7 +19,7 @@ describe('api_v2', () => {
   // returns response from an http request, sent to flashman, with a user
   // already logged in.
   const flashman = (method, url, body) =>
-    blackbox.sendRequestAdmin(method, url || '', adminCookie, body)
+    blackbox.sendRequestAdmin(method, url || '', adminCookie, body);
 
   beforeAll(async () => {
     const adminLogin = await blackbox.loginAsAdmin();
@@ -34,7 +34,8 @@ describe('api_v2', () => {
 
     // Creating a device
     let mac = 'FF:FF:FF:00:00:01';
-    simulator = createSimulator(constants.GENIEACS_HOST, deviceDataModel, 1000, mac)
+    const genieAddress = constants.GENIEACS_HOST;
+    simulator = createSimulator(genieAddress, deviceDataModel, 1000, mac)
     .debug({
       beforeReady: false,
       error: true,
