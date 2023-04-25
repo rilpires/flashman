@@ -2175,4 +2175,725 @@ describe('Controllers - Device List', () => {
         .toBe(device.prefix_delegation_local);
     });
   });
+
+
+  // getDefaultLanDNSServers
+  describe('getDefaultLanDNSServers', () => {
+    test('Happy path', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockConfigs(config, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultLanDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.default_dns_servers)
+        .toStrictEqual(config.default_dns_servers);
+    });
+
+    test('DB returns invalid Config', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.getDefaultLanDNSServers,
+        null, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+
+  // setDefaultLanDNSServers
+  describe('setDefaultLanDNSServers', () => {
+    test('Happy path', async () => {
+      // Mocks
+      let config = models.copyConfigFrom(
+        models.defaultMockConfigs[0],
+        {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        },
+      );
+      testUtils.common.mockAwaitConfigs(config, 'findOne');
+
+      let saveSpy = jest.spyOn(config, 'save');
+
+      // Request data
+      let newDNS = {ipv4: [], ipv6: []};
+      let reqData = {default_dns_servers: newDNS};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultLanDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+
+      expect(saveSpy).toBeCalled();
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(config.default_dns_servers)
+        .toStrictEqual(newDNS);
+    });
+
+
+    describe('Error on request format', () => {
+      test.each(testUtils.common.TEST_PARAMETERS)(
+        'Invalid field: %p', async (reqWrongData) => {
+        // Mocks
+        let config = models.copyConfigFrom(
+          models.defaultMockConfigs[0],
+          {
+            default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+          },
+        );
+        testUtils.common.mockConfigs(config, 'findOne');
+
+        let saveSpy = jest.spyOn(ConfigModel.prototype, 'save')
+          .mockImplementationOnce(() => Promise.resolve());
+
+        // Execute
+        let response = await testUtils.common.sendFakeRequest(
+          deviceListController.setDefaultLanDNSServers,
+          reqWrongData, null, null, null, {
+            id: '12345',
+          },
+        );
+
+        expect(saveSpy).not.toBeCalled();
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(false);
+      });
+    });
+
+
+    test('Error on IPv4 format', async () => {
+      // Mocks
+      testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+
+      // Request data
+      let reqData =
+        {default_dns_servers: {ipv4: ['444.444.444.444'], ipv6: []}};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setDefaultLanDNSServers,
+        reqData, null, null, null, {
+          id: '12345',
+        },
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(false);
+    });
+  });
+
+
+  // setLanDeviceName
+  describe('setLanDeviceName', () => {
+    // Invalid request
+    test('Invalid request', async () => {
+      // Mocks
+      let jsonSpy = jest.fn();
+      let responseMock = {status: () => ({
+        json: jsonSpy,
+      })};
+
+
+      // Execute
+      await deviceListController.setLanDeviceName(
+        undefined, responseMock,
+      );
+
+      // Validate
+      expect(jsonSpy).toHaveBeenCalledWith({
+        success: false,
+        message: expect.stringContaining(
+          t('requestError').replace('({{errorline}})', ''),
+        ),
+      });
+    });
+
+
+    // Invalid body
+    test('Invalid body', async () => {
+      // Mocks
+      let jsonSpy = jest.fn();
+      let responseMock = {status: () => ({
+        json: jsonSpy,
+      })};
+
+
+      // Execute
+      await deviceListController.setLanDeviceName(
+        {}, responseMock,
+      );
+
+      // Validate
+      expect(jsonSpy).toHaveBeenCalledWith({
+        success: false,
+        message: expect.stringContaining(
+          t('requestError').replace('({{errorline}})', ''),
+        ),
+      });
+    });
+
+
+    // Invalid device_id: invalid
+    test('Invalid device_id: invalid', async () => {
+      let data = {lan_device_id: '5678', name: 'teste123'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid device_id: undefined
+    test('Invalid device_id: undefined', async () => {
+      let data = {
+        device_id: undefined, lan_device_id: '5678', name: 'teste123',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid device_id: not a string
+    test('Invalid device_id: not a string', async () => {
+      let data = {device_id: 867, lan_device_id: '5678', name: 'teste123'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid lan_device_id: invalid
+    test('Invalid lan_device_id: invalid', async () => {
+      let data = {device_id: '5678', name: 'teste123'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid lan_device_id: undefined
+    test('Invalid lan_device_id: undefined', async () => {
+      let data = {
+        lan_device_id: undefined, device_id: '5678', name: 'teste123',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid lan_device_id: not a string
+    test('Invalid lan_device_id: not a string', async () => {
+      let data = {lan_device_id: 867, device_id: '5678', name: 'teste123'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid name: invalid
+    test('Invalid name: invalid', async () => {
+      let data = {device_id: '1234', lan_device_id: '5678'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid name: undefined
+    test('Invalid name: undefined', async () => {
+      let data = {
+        name: undefined, device_id: '1234', lan_device_id: '5678',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid name: not a string
+    test('Invalid name: not a string', async () => {
+      let data = {name: 867, device_id: '1234', lan_device_id: '5678'};
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('parametersError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid name: Maximun length
+    test('Invalid name: Maximun length', async () => {
+      let data = {
+        name: 'a'.repeat(129), device_id: '1234', lan_device_id: '5678',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 128}),
+      );
+    });
+
+
+    // Invalid name: Not accepted chars
+    test.each([
+      '"', '\'', '!', '@', '#', '$', '%', '&', '*', '(', ')',
+      '+', '=', '`', '\'', '[', '{', '}', ']', '^', '~', 'ç',
+      'Ç', '?', '/', '\\', '|', '<', '>',
+    ])('Invalid name: Not accepted chars: %s', async (char) => {
+      let data = {
+        name: 'aaaa' + char, device_id: '1234', lan_device_id: '5678',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('acceptableCharsAre0-9a-zA-Z .-_,:;'),
+      );
+    });
+
+
+    // Invalid device_id MAC
+    test('Invalid device_id MAC', async () => {
+      let data = {
+        name: 'aaaaa', device_id: '1234', lan_device_id: '56:78:90:12:34:56',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('macInvalid').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Invalid lan_device_id MAC
+    test('Invalid lan_device_id MAC', async () => {
+      let data = {
+        name: 'aaaaa', device_id: '12:34:56:78:90:12', lan_device_id: '5678',
+      };
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('macInvalid').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // No device found
+    test('No device found', async () => {
+      let data = {
+        name: 'aaaaa',
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: '56:78:90:12:34:56',
+      };
+
+      // Mocks
+      testUtils.common.mockDevices(null, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('cpeFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Device with no LAN device
+    test('Device with no LAN device', async () => {
+      let data = {
+        name: 'aaaaa',
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: '56:78:90:12:34:56',
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: []},
+      );
+
+      // Mocks
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('lanDeviceFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // LAN device with invalid id
+    test('LAN device with invalid id', async () => {
+      let data = {
+        name: 'aaaaa',
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: '56:78:90:12:34:56',
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [{name: 'teste1'}]},
+      );
+
+      // Mocks
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('lanDeviceFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // LAN device with undefined id
+    test('LAN device with undefined id', async () => {
+      let data = {
+        name: 'aaaaa',
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: '56:78:90:12:34:56',
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [{mac: undefined, name: 'teste1'}]},
+      );
+
+      // Mocks
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('lanDeviceFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // LAN devices without wanted MAC
+    test('LAN devices without wanted MAC', async () => {
+      let data = {
+        name: 'aaaaa',
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: '56:78:90:12:34:56',
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [
+          {mac: '12:34:56:78:90:12', name: 'teste1'},
+          {mac: '12:34:56:78:90:13', name: 'teste2'},
+          {mac: '12:34:56:78:90:14', name: 'teste3'},
+        ]},
+      );
+
+      // Mocks
+      testUtils.common.mockDevices(device, 'findOne');
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      expect(response.statusCode).toBe(500);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain(
+        t('lanDeviceFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+
+    // Normal operation
+    test('Normal operation', async () => {
+      const mac = '56:78:90:12:34:56';
+      const oldName = 'teste2';
+      const newName = 'aaaaa';
+
+      let data = {
+        name: newName,
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: mac,
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [
+          {mac: '12:34:56:78:90:12', name: 'teste1'},
+          {mac: mac, name: oldName},
+          {mac: '12:34:56:78:90:14', name: 'teste3'},
+        ]},
+      );
+
+      // Mocks
+      let saveSpy = jest.fn();
+      device.save = saveSpy;
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => device);
+      let auditSpy = jest.spyOn(audit, 'cpe').mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      let auditDevices = {lan_devices: {}};
+      auditDevices.lan_devices[mac] = {name: {new: newName, old: oldName}};
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(device.lan_devices[1].name).toBe(data.name);
+      expect(auditSpy).toHaveBeenCalledWith(
+        {is_superuser: true, role: undefined},
+        expect.anything(),
+        'edit',
+        auditDevices,
+      );
+    });
+
+
+    // Name: Empty string
+    test('Name: Empty string', async () => {
+      const mac = '56:78:90:12:34:56';
+      const oldName = 'teste2';
+      const newName = '';
+
+      let data = {
+        name: newName,
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: mac,
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [
+          {mac: '12:34:56:78:90:12', name: 'teste1'},
+          {mac: mac, name: oldName},
+          {mac: '12:34:56:78:90:14', name: 'teste3'},
+        ]},
+      );
+
+      // Mocks
+      let saveSpy = jest.fn();
+      device.save = saveSpy;
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => device);
+      let auditSpy = jest.spyOn(audit, 'cpe').mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      let auditDevices = {lan_devices: {}};
+      auditDevices.lan_devices[mac] = {name: {new: newName, old: oldName}};
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(device.lan_devices[1].name).toBe(data.name);
+      expect(auditSpy).toHaveBeenCalledWith(
+        {is_superuser: true, role: undefined},
+        expect.anything(),
+        'edit',
+        auditDevices,
+      );
+    });
+
+
+    // Name: Minimum length
+    test('Name: Minimum length', async () => {
+      const mac = '56:78:90:12:34:56';
+      const oldName = 'teste2';
+      const newName = 'a';
+
+      let data = {
+        name: newName,
+        device_id: '12:34:56:78:90:12',
+        lan_device_id: mac,
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [
+          {mac: '12:34:56:78:90:12', name: 'teste1'},
+          {mac: mac, name: oldName},
+          {mac: '12:34:56:78:90:14', name: 'teste3'},
+        ]},
+      );
+
+      // Mocks
+      let saveSpy = jest.fn();
+      device.save = saveSpy;
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => device);
+      let auditSpy = jest.spyOn(audit, 'cpe').mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      let auditDevices = {lan_devices: {}};
+      auditDevices.lan_devices[mac] = {name: {new: newName, old: oldName}};
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(device.lan_devices[1].name).toBe(data.name);
+      expect(auditSpy).toHaveBeenCalledWith(
+        {is_superuser: true, role: undefined},
+        expect.anything(),
+        'edit',
+        auditDevices,
+      );
+    });
+  });
 });

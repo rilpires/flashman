@@ -23,6 +23,8 @@ tplinkModel.modelPermissions = function() {
     '3.16.0 0.9.1 v600c.0 Build 200427 Rel.33156n': [],
   };
   permissions.lan.LANDeviceHasAssocTree = false;
+  permissions.lan.dnsServersLimit = 3;
+
   return permissions;
 };
 

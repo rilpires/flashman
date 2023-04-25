@@ -1,12 +1,13 @@
 {
   "name": "flashman",
-  "version": "2.70.1",
+  "version": "2.72.2",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
-    "test": "jest --forceExit --silent=true test/unit/*",
+    "test": "jest --silent=true test/unit/*",
+    "test-one": "jest",
     "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
-    "bb-test": "jest --forceExit --runInBand --detectOpenHandles test/black-box/*",
+    "bb-test": "jest --runInBand test/black-box/*",
     "build": "webpack --config webpack.prod.js",
     "gen-doc": "jsdoc --configure jsdoc.config.json --verbose",
     "gen-test-doc": "jsdoc --configure jsdoc.test.config.json --verbose"

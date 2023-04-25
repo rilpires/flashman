@@ -42,6 +42,8 @@ tplinkModel.modelPermissions = function() {
   permissions.needInterfaceInPortFoward = true;
   permissions.useLastIndexOnWildcard = true;
 
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.firmwareUpgrades = {
     '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n': [],
   };
@@ -155,11 +157,11 @@ tplinkModel.getModelFields = function() {
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
 
   // IPv6
-  fields.ipv6.address = 'Device.IP.Interface.5.IPv6Address.*.IPAddress';
+  fields.ipv6.address = 'Device.IP.Interface.*.IPv6Address.*.IPAddress';
   fields.ipv6.address_ppp = fields.ipv6.address;
 
   fields.ipv6.prefix_delegation_address =
-    'Device.IP.Interface.5.IPv6Prefix.*.Prefix';
+    'Device.IP.Interface.*.IPv6Prefix.*.Prefix';
   fields.ipv6.prefix_delegation_address_ppp =
     fields.ipv6.prefix_delegation_address;
 

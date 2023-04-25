@@ -1,18 +1,14 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
-const request = require('supertest');
 const {createSimulator} = require('./cpe-tr069-simulator');
 const {pulling} = require('./utils.js');
+const blackbox = require('../common/blackbox.js');
+const constants = require('../common/constants.js');
 
 
 describe('api_v2', () => {
-  const basicAuthUser = 'admin';
-  const basicAuthPass = 'flashman';
-  // const deviceDataModel = './test/assets/data_models/H199.csv';
   const deviceDataModel =
     'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z';
-  const flashmanHost = 'http://localhost:8000';
-  const genieCwmpHost = 'http://localhost:57547';
 
   let adminCookie = null;
 
@@ -22,21 +18,11 @@ describe('api_v2', () => {
 
   // returns response from an http request, sent to flashman, with a user
   // already logged in.
-  const flashman = (method, url, body) => {
-    return request(flashmanHost)[method](url || '')
-    .set('Cookie', adminCookie)
-    .auth(basicAuthUser, basicAuthPass)
-    .send(body);
-  };
+  const flashman = (method, url, body) =>
+    blackbox.sendRequestAdmin(method, url || '', adminCookie, body)
 
   beforeAll(async () => {
-    const adminLogin = await request(flashmanHost)
-      .post('/login')
-      .send({
-        name: basicAuthUser,
-        password: basicAuthPass,
-      });
-
+    const adminLogin = await blackbox.loginAsAdmin();
     adminCookie = adminLogin.header['set-cookie'];
 
     if (adminCookie === undefined) {
@@ -48,7 +34,7 @@ describe('api_v2', () => {
 
     // Creating a device
     let mac = 'FF:FF:FF:00:00:01';
-    simulator = createSimulator(genieCwmpHost, deviceDataModel, 1000, mac)
+    simulator = createSimulator(constants.GENIEACS_HOST, deviceDataModel, 1000, mac)
     .debug({
       beforeReady: false,
       error: true,
@@ -64,9 +50,10 @@ describe('api_v2', () => {
 
   afterAll(async () => {
     if (simulator) await simulator.shutDown();
-    await flashman('delete', `/api/v2/device/delete/${simulator.mac}`);
+    await blackbox.deleteCPE(simulator.mac, adminCookie);
   });
 
+  // Device search
   test('/api/v2/device/search - After creation', async () => {
     let res = await flashman('put', '/api/v2/device/search', {
       filter_list: 'online',
@@ -75,9 +62,10 @@ describe('api_v2', () => {
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
     expect(res.body.success).toBe(true);
-    expect(res.body.status.totalnum).toBeGreaterThan(0);
     expect(res.body.status.onlinenum).toBeGreaterThan(0);
+    expect(res.body.status.recoverynum).toEqual(0);
     expect(res.body.status.offlinenum).toEqual(0);
+    expect(res.body.status.totalnum).toBeGreaterThan(0);
   });
 
   test('Changing CPE register', async () => {

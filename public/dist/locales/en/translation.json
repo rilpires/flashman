@@ -890,6 +890,7 @@
 	"acceptableCharsAre0-9a-zA-Z .-#": "Alphanumeric characters, spaces, period, -, and # are accepted",
 	"acceptableCharsAre0-9a-zA-Z .-ul#": "Alphanumeric characters, spaces, period, -, _ and # are accepted",
 	"endingSeparatorMustHaveAtLeastOne.-ul#": "Must have at least one period, -, _ or # as separator at the end",
+	"acceptableCharsAre0-9a-zA-Z .-_,:;": "Just alphanumeric characters, spaces, period, -, _, comma, colon and semi-colon are accepted",
 	"ssidPrefixInvalidFeedback": "$t(thisFieldIsMandatory). $t(thisFieldCannotHaveMoreThanMaxChars, {\"max\": 16}). $t(acceptableCharsAre0-9a-zA-Z .-#). $t(endingSeparatorMustHaveAtLeastOne.-ul#)",
 	"enableSsidPrefixInCpesWifi": "Enable SSID prefix for newly registered CPEs as they connect to Flashman",
 	"FlashmanLanguage": "Flashman Language",
@@ -915,6 +916,8 @@
 	"mandatoryWanVerification": "WAN verification required",
 	"mandatoryIpvxVerification": "IPv{{-x}} verification required",
 	"mandatoryDnsVerification": "Mandatory DNS Verification",
+	"enableSpecificAppTechnicianWebLogin": "Allow that technician specify credentials used to login in the CPE while using the app",
+	"explanationOfEnableSpecificAppTechnicianWebLogin": "That option fits for cases in wich the password of CPE web interface is not one of those registred in Flashman",
 	"mandatoryFlashmanRegisterVerification": "Flashman registration verification required",
 	"Enable": "Enable",
 	"Enabled": "Enable",
@@ -1080,6 +1083,8 @@
 	"noDefaultHostsConfigured": "No default host configured",
 	"unableToRemoveADefaultHost": "Removing a default host is not allowed",
 	"hostListMustContainDefaultHosts": " The list of hosts must contain the default hosts {{-hosts}}",
+	"defaultLanDnsServersConfig": "Default DNS servers configuration at LAN",
+	"defaultLanDnsServersConfigWarning": "Warning! DNS servers will only apply at LAN to new CPE registrations. To change existing registrations, access the CPE registration directly.",
 	"noFactoryCredentialConfigured": "No custom web credentials configured",
 	"invalidModel": "Invalid model",
 	"invalidManufacturer": "Invalid manufacturer",
@@ -1099,5 +1104,11 @@
 	"noBack": "No, return",
 	"updateTimeLimit": "Time limit for updating 1 CPE: {{peiod}} minutes",
 	"updateTimeLimitInputText": "Time limit for updating 1 CPE, in minutes (Default: {{default}} minutes)",
-	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes."
+	"updateTimeLimitInputErrorText": "Invalid update timeout for 1 CPE! Choose a value between {{min}} and {{max}} minutes.",
+	"invalidAddress": "Invalid address",
+	"specificUsername": "Username entered by technician",
+	"specificPassword": "Password entered by technician",
+	"noLanDeviceName": "No name",
+	"editDeviceName": "Edit device name",
+	"editDeviceNameError": "Error editing device name."
 }

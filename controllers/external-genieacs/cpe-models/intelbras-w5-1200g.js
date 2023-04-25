@@ -11,7 +11,10 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.stun = true;
   permissions.features.upnp = false;
   permissions.features.wps = false;
+
   permissions.lan.configWrite = false;
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.bandRead2 = false;
   permissions.wifi.bandRead5 = false;
