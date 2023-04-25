@@ -6,7 +6,8 @@ const constants = require('../common/constants.js');
 
 describe('api_v2', () => {
   const mac = 'FF:FF:FF:00:00:01';
-  const deviceModelH199 = './test/assets/data_models/H199.csv';
+  const deviceModelH199 = 
+    'device-C0B101-ZXHN%20H199A-ZTEYH86LCN10105-2023-03-28T154022233Z';
 
   let adminCookie = null;
   let simulator;
