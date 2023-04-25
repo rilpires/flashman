@@ -22,6 +22,7 @@ tplinkModel.modelPermissions = function() {
   permissions.siteSurvey.survey5Index = '3';
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '1.11.0 Build 220724 Rel.58300n(4252)': [],
   };

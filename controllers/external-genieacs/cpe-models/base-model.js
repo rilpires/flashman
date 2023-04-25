@@ -181,6 +181,7 @@ basicCPEModel.modelPermissions = function() {
       portForward: false, // uses xml for port forward editing
       webCredentials: false, // uses xml for web credentials editing
     },
+    isTR181: false, // flag for devices that uses last index,
   };
 };
 

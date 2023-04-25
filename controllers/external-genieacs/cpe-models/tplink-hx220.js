@@ -27,6 +27,7 @@ tplinkModel.modelPermissions = function() {
   permissions.traceroute.protocol = 'ICMP';
   permissions.needInterfaceInPortFoward = true;
   permissions.useLastIndexOnWildcard = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n': [],
   };

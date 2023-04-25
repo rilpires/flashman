@@ -27,6 +27,7 @@ tpLinkModel.modelPermissions = function() {
   permissions.wifi.axWiFiMode = true;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.13.0 2.0.0 v605f.0 Build 220618 Rel.77647n': [],
   };

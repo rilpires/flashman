@@ -28,6 +28,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   return permissions;
 };
 
