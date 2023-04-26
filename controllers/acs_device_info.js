@@ -410,7 +410,11 @@ const createRegistry = async function(req, cpe, permissions) {
       data.ipv6['address' + suffixPPPoE] &&
       data.ipv6['address' + suffixPPPoE].value
     ) {
-      wanIPv6 = data.ipv6['address' + suffixPPPoE].value;
+      let ip6addr = data.ipv6['address' + suffixPPPoE].value;
+      // some devices (fiberhome) bring null sometimes
+      if (ip6addr != 'null') {
+        wanIPv6 = data.ipv6['address' + suffixPPPoE].value;
+      }
     }
 
     // Mask
@@ -2227,7 +2231,11 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       data.ipv6['address' + suffixPPPoE] &&
       data.ipv6['address' + suffixPPPoE].value
     ) {
-      device.wan_ipv6 = data.ipv6['address' + suffixPPPoE].value;
+      let ip6addr = data.ipv6['address' + suffixPPPoE].value;
+      // some devices (fiberhome) bring null sometimes
+      if (ip6addr != 'null') {
+        device.wan_ipv6 = data.ipv6['address' + suffixPPPoE].value;
+      }
     }
 
     // Mask
