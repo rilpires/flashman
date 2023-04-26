@@ -1,9 +1,178 @@
-import {anlixDocumentReady} from '../src/common.index.js';
+import Swal from 'sweetalert2';
+import {anlixDocumentReady, sendRequest} from '../src/common.index.js';
 import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
+import Validator from './device_validator.js';
 
 const t = i18next.t;
+
+
+const LAN_DEVICE_NAME_ENTRY = 'lan-device-name-';
+const LAN_DEVICE_NAME_TEXT_ENTRY = 'lan-device-name-text-';
+const LAN_DEVICE_EDIT_NAME_ENTRY = 'lan-device-edit-name-';
+const LAN_DEVICE_EDIT_NAME_INPUT_ENTRY = 'lan-device-edit-name-input-';
+const LAN_DEVICE_EDIT_NAME_SAVE_BUTTON = 'lan-device-edit-name-save-btn-';
+
+
+/**
+ * Hides the name and edit button and shows an input to be edited and a save
+ * button.
+ *
+ * @memberof window
+ *
+ * @param {Number} deviceIndex - The index number of the LAN device in frontend.
+ */
+window.openLanDevEditName = function(deviceIndex) {
+  let nameRow = $('#' + LAN_DEVICE_NAME_ENTRY + deviceIndex);
+  let nameRowText = $('#' + LAN_DEVICE_NAME_TEXT_ENTRY + deviceIndex);
+  let nameEditRow = $('#' + LAN_DEVICE_EDIT_NAME_ENTRY + deviceIndex);
+  let nameEditRowInput = $(
+    '#' + LAN_DEVICE_EDIT_NAME_INPUT_ENTRY + deviceIndex,
+  );
+
+  // Set the name
+  const name = nameRowText.val();
+  nameEditRowInput.val(name);
+
+  // Show the field to edit
+  nameRow.hide();
+  nameEditRow.show();
+};
+
+
+/**
+ * Send a request to Flashman to save the new name if it is valid, hides the
+ * edit and the save button and shows the text and edit button.
+ *
+ * @memberof window
+ *
+ * @param {Number} deviceIndex - The index number of the LAN device in frontend.
+ * @param {String} devId - The MAC address of the CPE.
+ * @param {String} lanDevId - The MAC address of the LAN device to change the
+ * name.
+ */
+window.saveLanDevEditName = function(deviceIndex, devId, lanDevId) {
+  let validator = new Validator();
+
+  let nameRow = $('#' + LAN_DEVICE_NAME_ENTRY + deviceIndex);
+  let nameRowText = $('#' + LAN_DEVICE_NAME_TEXT_ENTRY + deviceIndex);
+  let nameEditRow = $('#' + LAN_DEVICE_EDIT_NAME_ENTRY + deviceIndex);
+  let nameEditRowInput = $(
+    '#' + LAN_DEVICE_EDIT_NAME_INPUT_ENTRY + deviceIndex,
+  );
+  let nameEditRowSave = $(
+    '#' + LAN_DEVICE_EDIT_NAME_SAVE_BUTTON + deviceIndex,
+  );
+
+  // Get the name and update
+  const oldName = nameRowText.val();
+  const name = nameEditRowInput.val();
+
+  // If it is not a string, return
+  if (typeof name !== 'string') return;
+
+  const validation = validator.validateDeviceName(name);
+
+  // Check if name is valid
+  if (name === '' || validation.valid) {
+    // Change to loading icon
+    nameEditRowSave.removeClass('fa-save');
+    nameEditRowSave.addClass('fa-spinner fa-pulse');
+
+    // Disable input while saving
+    nameEditRowInput.prop('disabled', true);
+
+    sendRequest(
+      '/devicelist/landevice/updatename',
+      'POST',
+      devId,
+      (_deviceId, response) => {
+        if (!response.success) {
+          // Fire an alert
+          Swal.fire({
+            icon: 'error',
+            title: t('Error'),
+            text: t('editDeviceNameError') + response.message ?
+              ' ' + t('Error') + ': ' + response.message : '',
+            confirmButtonColor: '#4db6ac',
+          });
+
+          // Change to save icon
+          nameEditRowSave.removeClass('fa-spinner fa-pulse');
+          nameEditRowSave.addClass('fa-save');
+
+          // Enable input
+          nameEditRowInput.prop('disabled', false);
+
+          return;
+        }
+
+        if (name) {
+          nameRowText.attr('placeholder', '');
+          nameRowText.css('color', '#616161');
+          nameRowText.val(name);
+        } else {
+          nameRowText.attr('placeholder', t('noLanDeviceName'));
+          nameRowText.css('color', '#adadad');
+          nameRowText.val('');
+        }
+
+        // Change to save icon
+        nameEditRowSave.removeClass('fa-spinner fa-pulse');
+        nameEditRowSave.addClass('fa-save');
+
+        // Enable input
+        nameEditRowInput.prop('disabled', false);
+
+        // Show the current name
+        nameRow.show();
+        nameEditRow.hide();
+      },
+      (_deviceId) => {
+        // Fire an alert
+        Swal.fire({
+          icon: 'error',
+          title: t('Error'),
+          text: t('editDeviceNameError'),
+          confirmButtonColor: '#4db6ac',
+        });
+
+        // Change to save icon
+        nameEditRowSave.removeClass('fa-spinner fa-pulse');
+        nameEditRowSave.addClass('fa-save');
+
+        // Enable input
+        nameEditRowInput.prop('disabled', false);
+      },
+      JSON.stringify({device_id: devId, lan_device_id: lanDevId, name: name}),
+    );
+
+  // Return to default if the old name is invalid too
+  } else if (!validation.valid) {
+    let message = '';
+
+    // Build the message
+    validation.err.forEach((error) => {
+      // Only add line break if it is not empty
+      message += (message ? '<br>' : '') + error;
+    });
+
+    // Fire an alert
+    Swal.fire({
+      icon: 'error',
+      title: t('Error'),
+      html: message,
+      confirmButtonColor: '#4db6ac',
+    });
+
+  // Return to default if the old name is invalid too
+  } else if (!oldName || oldName.constructor !== String) {
+    nameRowText.attr('placeholder', t('noLanDeviceName'));
+    nameRowText.val('');
+  }
+};
+
 
 anlixDocumentReady.add(function() {
   let lanDevicesGlobalTimer;
@@ -221,7 +390,7 @@ anlixDocumentReady.add(function() {
             // sort so lan devices of same gateway CPE are shown together
             lanDevices.sort((a, b) => (a.gateway_mac > b.gateway_mac) ? 1 :
               ((b.gateway_mac > a.gateway_mac) ? -1 : 0));
-            renderDevices(lanDevices, lanRouters, upnpSupport,
+            renderDevices(deviceId, lanDevices, lanRouters, upnpSupport,
                           isBridge, hasSlaves);
           } else {
             $('#lan-devices-placeholder-counter').text(t('xOfY',
@@ -232,7 +401,7 @@ anlixDocumentReady.add(function() {
                 // sort so lan devices of same gateway CPE are shown together
                 lanDevices.sort((a, b) => (a.gateway_mac > b.gateway_mac) ? 1 :
                   ((b.gateway_mac > a.gateway_mac) ? -1 : 0));
-                renderDevices(lanDevices, lanRouters, upnpSupport,
+                renderDevices(deviceId, lanDevices, lanRouters, upnpSupport,
                             isBridge, hasSlaves);
               }
             }, 25000);
@@ -247,8 +416,8 @@ anlixDocumentReady.add(function() {
     });
   };
 
-  const renderDevices = function(lanDevices, lanRouters, upnpSupport,
-                                 isBridge, hasSlaves=false,
+  const renderDevices = function(
+    deviceId, lanDevices, lanRouters, upnpSupport, isBridge, hasSlaves=false,
   ) {
     let isSuperuser = false;
     let grantLanDevices = 0;
@@ -288,6 +457,15 @@ anlixDocumentReady.add(function() {
       if (device.is_old) {
         return true;
       }
+
+
+      // Device name is empty
+      let isNameEmpty = false;
+      if (!device.name) {
+        isNameEmpty = true;
+      }
+
+
       lanDevsRow.append(
         $('<div>')
         .addClass('col-lg m-1 grey lighten-4').append(
@@ -406,12 +584,73 @@ anlixDocumentReady.add(function() {
               ),
             ),
           ),
+
+          // Information section
           $('<div>').addClass('row pt-3 mb-2').append(
+            // Name, DHCP name and MAC address column
             $('<div>').addClass('col').append(
-              $('<h6>').text(device.name),
+
+              // Name row
+              $('<div>')
+                .attr('id', LAN_DEVICE_NAME_ENTRY + idx)
+                .addClass('row align-items-center mb-2')
+                .addClass('md-form input-entry mt-0 mb-2')
+                .append(
+                  // Name
+                  $('<div>').addClass('col-10').append(
+                    $('<input>')
+                      .attr('id', LAN_DEVICE_NAME_TEXT_ENTRY + idx)
+                      .addClass('col-10 mb-0 form-control py-0')
+                      .attr('type', 'text')
+                      .attr('disabled', 'true')
+                      // Add a warning color if there is no name
+                      .css('color', (isNameEmpty ? '#adadad' : '#616161'))
+                      .attr('placeholder', isNameEmpty ?
+                        t('noLanDeviceName') : '',
+                      )
+                      .val(isNameEmpty ? '': device.name),
+                  ),
+
+                  // Edit button
+                  $('<i>').addClass(
+                    'col-2 fas fa-pen px-0 d-flex ' +
+                    'align-items-center justify-content-center',
+                  ).attr('onclick', 'openLanDevEditName(' + idx + ')'),
+                ).show(),
+
+              // Name edit row
+              $('<div>')
+                .attr('id', LAN_DEVICE_EDIT_NAME_ENTRY + idx)
+                .addClass('row align-items-center')
+                .addClass('md-form input-entry mt-0 mb-2')
+                .append(
+                  // Name edit
+                  $('<div>').addClass('col-10').append(
+                    $('<input>')
+                      .attr('id', LAN_DEVICE_EDIT_NAME_INPUT_ENTRY + idx)
+                      .addClass('mb-0 form-control py-0')
+                      .attr('type', 'text')
+                      .attr('maxlength', '128')
+                      .attr('value', device.name ? device.name : ''),
+                  ),
+
+                  // Save button
+                  $('<i>')
+                    .attr('id', LAN_DEVICE_EDIT_NAME_SAVE_BUTTON + idx)
+                    .addClass('col-2 fas fa-save px-0 d-flex')
+                    .addClass('align-items-center justify-content-center')
+                    .attr('onclick', 'saveLanDevEditName(' +
+                      idx + ', \'' + deviceId + '\', \'' + device.mac + '\'' +
+                    ')'),
+                ).hide(),
+
+              // DHCP name
               $('<h6>').text(device.dhcp_name),
+
+              // MAC address
               $('<h6>').text(device.mac),
             ),
+
             ((device.conn_type == 1 && device.is_online) ?
             $('<div>').addClass('col').append(
               $('<h6>').text(((device.wifi_freq) ?

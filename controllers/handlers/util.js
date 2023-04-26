@@ -434,7 +434,7 @@ utilHandlers.flashboxFirmFileRegex = /^([A-Z\-0-9]+)_([A-Z\-0-9]+)_([A-Z0-9]+)_(
 // eslint-disable-next-line max-len
 utilHandlers.dateRegex = /^((\d{2})|(\d{1}))\/((\d{2})|(\d{1}))\/(\d{4}) (\d{2}):(\d{2})$/;
 
-const testIPv6 = function(ipv6) {
+utilHandlers.testIPv6 = function(ipv6) {
   if (ipv6 !== undefined && ipv6.constructor !== String) return false;
   let parts = ipv6.split(':');
   // has an ipv4 at the end or not.
@@ -459,7 +459,7 @@ const testIPv6 = function(ipv6) {
 // returns true of false if given fully qualified dominion name is valid.
 utilHandlers.isFqdnValid = (fqdn) => fqdn !== undefined &&
   fqdn.constructor === String && (domainNameRegex.test(fqdn) ||
-  utilHandlers.ipv4Regex.test(fqdn) || testIPv6(fqdn));
+  utilHandlers.ipv4Regex.test(fqdn) || utilHandlers.testIPv6(fqdn));
 
 // returns true if given mac address is valid.
 utilHandlers.isMacValid = (mac) => mac !== undefined &&

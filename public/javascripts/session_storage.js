@@ -48,6 +48,10 @@ const setDefaultPingHostsList = function(key, val) {
   setCommonStorage('defaultPingHosts', key, val);
 };
 
+const setDefaultLanDnsServersList = function(key, val) {
+  setCommonStorage('defaultDnsServers', key, val);
+};
+
 const getPortForwardStorage = function(key) {
   return getCommonStorage('portForwardTr069', key);
 };
@@ -70,6 +74,10 @@ const getPingHostsList = function(key) {
 
 const getDefaultPingHostsList = function(key) {
   return getCommonStorage('defaultPingHosts', key);
+};
+
+const getDefaultLanDnsServersList = function(key) {
+  return getCommonStorage('defaultDnsServers', key);
 };
 
 const deletePortForwardStorage = function() {
@@ -96,11 +104,24 @@ const deleteDefaultPingHostsList = function() {
   deleteCommonStorage('defaultPingHosts');
 };
 
+const getDNSServersList = function(key) {
+  return getCommonStorage('dnsServers', key);
+};
+
+const setDNSServersList = function(key, val) {
+  setCommonStorage('dnsServers', key, val);
+};
+
+const deleteDNSServersList = function() {
+  deleteCommonStorage('dnsServers');
+};
+
 export {setPortForwardStorage,
         setConfigStorage,
         setFirmwareStorage,
         setPingHostsList,
         setDefaultPingHostsList,
+        setDefaultLanDnsServersList,
         setFactoryCredentialsStorage,
         getPortForwardStorage,
         getConfigStorage,
@@ -108,9 +129,13 @@ export {setPortForwardStorage,
         getFactoryCredentialsStorage,
         getPingHostsList,
         getDefaultPingHostsList,
+        getDefaultLanDnsServersList,
         deletePortForwardStorage,
         deleteConfigStorage,
         deleteFirmwareStorage,
         deleteFactoryCredentialsStorage,
         deletePingHostsList,
-        deleteDefaultPingHostsList};
+        deleteDefaultPingHostsList,
+        getDNSServersList,
+        setDNSServersList,
+        deleteDNSServersList};

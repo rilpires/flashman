@@ -154,6 +154,7 @@ models.defaultMockDevices = [
     wifi_band_5ghz: 'VHT80',
     lan_subnet: '192.168.1.1',
     lan_netmask: 24,
+    lan_dns_servers: '192.168.1.1',
     ip: '192.168.89.59',
     wan_ip: '192.168.89.59',
     wan_ipv6: '2804:1234:5678::0059',
@@ -275,6 +276,7 @@ models.defaultMockDevices = [
     pppoe_password: '',
     lan_subnet: '10.0.0.1',
     lan_netmask: 24,
+    lan_dns_servers: '192.168.1.1',
     wifi_ssid: 'INTELBRAS',
     wifi_password: 'teste123',
     wifi_channel: 'auto',
@@ -447,6 +449,10 @@ models.defaultMockConfigs = [
     measureServerIP: '192.168.88.218',
     blockLicenseAtDeviceRemoval: false,
     default_ping_hosts: [],
+    default_dns_servers: {
+      ipv4: [],
+      ipv6: [],
+    },
   },
 ];
 

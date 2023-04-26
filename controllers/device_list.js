@@ -276,6 +276,11 @@ deviceListController.sendCustomSpeedTest = async function(
   ) {
     validationOk = false;
     invalidField = 'url';
+  } else if (reqBody.content.hasOwnProperty('send_error') &&
+          typeof reqBody.content.send_error != 'boolean'
+  ) {
+    validationOk = false;
+    invalidField = 'send_error';
   } else if ( reqBody.content.webhook) {
     validationOk = false;
     if (typeof reqBody.content.webhook != 'object') {
@@ -302,6 +307,11 @@ deviceListController.sendCustomSpeedTest = async function(
     };
   }
 
+  let sendError = false;
+  if (reqBody.content.hasOwnProperty('send_error')) {
+    sendError = reqBody.content.send_error;
+  }
+
   let now = new Date();
   device.current_diagnostic = {
     type: 'speedtest',
@@ -311,6 +321,7 @@ deviceListController.sendCustomSpeedTest = async function(
     started_at: now,
     last_modified_at: now,
     targets: [reqBody.content.url],
+    send_error: sendError,
     user: user.name,
     webhook_url: '',
     webhook_user: '',
@@ -1951,17 +1962,31 @@ deviceListController.sendCommandMsg = async function(req, res) {
         Audit.cpe(req.user, device, 'trigger', {'cmd': 'upstatus'});
         break;
       case 'wanbytes':
+        // Check permission
+        if (!permissions.grantStatisticsSupport) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeWithoutFunction', {errorline: __line}),
+          });
+        }
+
+        // Set the wait notification
         if (req.sessionID && sio.anlixConnections[req.sessionID]) {
           sio.anlixWaitForStatisticsNotification(
             req.sessionID,
             req.params.id.toUpperCase(),
           );
         }
+
+        // Execute for TR-069
         if (device && device.use_tr069) {
           acsDeviceInfo.requestStatistics(device);
+
+        // Execute for Flashbox
         } else {
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
         }
+
         break;
       case 'waninfo':
         // Check permission
@@ -2866,6 +2891,35 @@ deviceListController.setDeviceReg = function(req, res) {
                   old: matchedDevice.lan_subnet,
                   new: lanSubnet,
                 };
+                // Before replacing the subnet field with the new value, it is
+                // checked whether it is necessary to change the value of the
+                // DNS field. This scenario happens if the old subnet value is
+                // contained in the DNS servers address list
+                if (matchedDevice.lan_dns_servers) {
+                  let lanDns = matchedDevice.lan_dns_servers.split(',');
+                  if (lanDns.includes(matchedDevice.lan_subnet)) {
+                    let newLanDns = [];
+                    for (let i=0; i<lanDns.length; i++) {
+                      // Replaces the address referring to the old subnet value
+                      // only if it is no longer contained in the DNS list
+                      if (
+                          lanDns[i] === matchedDevice.lan_subnet &&
+                          !lanDns.includes(lanSubnet) &&
+                          !newLanDns.includes(lanSubnet)
+                        ) {
+                        newLanDns.push(lanSubnet);
+                      } else if (
+                          lanDns[i] !== matchedDevice.lan_subnet &&
+                          !newLanDns.includes(lanDns[i])
+                        ) {
+                        // Otherwise, it keeps the addresses in the list, taking
+                        // care not to add duplicate addresses.
+                        newLanDns.push(lanDns[i]);
+                      }
+                    }
+                    matchedDevice.lan_dns_servers = newLanDns.join(',');
+                  }
+                }
                 matchedDevice.lan_subnet = lanSubnet;
                 updateParameters = true;
               } else {
@@ -3850,20 +3904,22 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
   let success = true;
   let type = 'success';
   let message = t('operationSuccessful', {errorline: __line});
-  Config.findOne({is_default: true}, {default_ping_hosts: true}).exec(
-    async function(err, matchedConfig) {
-      if (err) {
+
+  if (!util.isJSONObject(req.body)) {
+    success = false; type = 'error';
+    message = t('jsonError', {errorline: __line});
+  } else if (!req.body.default_ping_hosts_list) {
+    success = false; type = 'error';
+    message = t('configNotFound', {errorline: __line});
+  } else {
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {default_ping_hosts: true}).exec().catch(
+      (err) => {
         success = false; type = 'error';
         message = t('configFindError', {errorline: __line});
-      }
-      if (!util.isJSONObject(req.body)) {
-        success = false; type = 'error';
-        message = t('jsonError', {errorline: __line});
-      }
-      if (!req.body.default_ping_hosts_list) {
-        success = false; type = 'error';
-        message = t('configNotFound', {errorline: __line});
-      }
+      },
+    );
+    if (matchedConfig) {
       let hosts = req.body.default_ping_hosts_list;
       let approvedHosts = [];
       hosts.forEach((host) => {
@@ -3873,11 +3929,9 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
         }
       });
       matchedConfig.default_ping_hosts = approvedHosts;
-      matchedConfig.save(function(err) {
-        if (err) {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
-        }
+      await matchedConfig.save().catch((err) => {
+        success = false; type = 'error';
+        message = t('configSaveError', {errorline: __line});
       });
       if (approvedHosts.length) {
         const overwriteResult = await overwriteHostsOnDevices(approvedHosts);
@@ -3886,29 +3940,19 @@ deviceListController.setDefaultPingHosts = async function(req, res) {
           message = t('cpeSaveError', {errorline: __line});
         }
       }
-    });
-    return res.status(200).json({
-      success: success, type: type, message: message,
-    });
+    }
+  }
+  return res.status(200).json({
+    success: success, type: type, message: message,
+  });
 };
 
 const overwriteHostsOnDevices = async function(approvedHosts) {
-  let devices = {};
-  try {
-    devices = await DeviceModel.find({}, {ping_hosts: true});
-  } catch (err) {
+  await DeviceModel.updateMany({}, {$set: {ping_hosts: approvedHosts}},
+  ).exec().catch((e) => {
     return {success: false, type: 'error',
-      message: t('cpeFindError', {errorline: __line})};
-  }
-  for (let device of devices) {
-    device.ping_hosts = approvedHosts;
-    try {
-      device.save();
-    } catch (err) {
-      return {success: false, type: 'error',
-        message: t('cpeSaveError', {errorline: __line})};
-    }
-  }
+      message: t('cpeSaveError', {errorline: __line})};
+  });
   return {success: true};
 };
 
@@ -4012,6 +4056,199 @@ deviceListController.getLanDevices = async function(req, res) {
       message: t('serverError', {errorline: __line}),
     });
   }
+};
+
+deviceListController.getLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    function(err, matchedDevice) {
+      let device;
+      let responseDNSServers = '';
+
+      if (err) {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeFindError', {errorline: __line}),
+        });
+      }
+      if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+        device = matchedDevice[0];
+      } else {
+        return res.status(200).json({
+          success: false,
+          message: t('cpeNotFound', {errorline: __line}),
+        });
+      }
+      // Get LAN DNS servers data
+      if (typeof device.lan_dns_servers === 'undefined' ||
+          device.lan_dns_servers.length === 0) {
+        responseDNSServers = '';
+      } else {
+        responseDNSServers = device.lan_dns_servers;
+      }
+      // Get permissions to get max LAN DNS servers router accepts
+      let permissions = DeviceVersion.devicePermissions(device);
+      return res.status(200).json({
+        success: true,
+        lan_dns_servers_list: responseDNSServers === '' ? [] :
+                              responseDNSServers.split(','),
+        lan_subnet: device.lan_subnet,
+        max_dns: permissions.grantLanDnsLimit,
+    });
+  });
+};
+
+deviceListController.setLanDNSServers = async function(req, res) {
+  DeviceModel.findByMacOrSerial(req.params.id.toUpperCase()).exec(
+    async function(err, matchedDevice) {
+    if (err) {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeFindError', {errorline: __line}),
+      });
+    }
+    if (Array.isArray(matchedDevice) && matchedDevice.length > 0) {
+      matchedDevice = matchedDevice[0];
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('cpeNotFound', {errorline: __line}),
+      });
+    }
+    if (!req.body.dns_servers_list) {
+      return res.status(200).json({
+        success: false,
+        message: t('bodyNotObject', {errorline: __line}),
+      });
+    }
+    let permissions = DeviceVersion.devicePermissions(matchedDevice);
+    if (!permissions.grantLanDnsEdit) {
+      return res.status(200).json({
+        success: false,
+        message: t('permissionDenied', {errorline: __line}),
+      });
+    }
+    let dnsServers = req.body.dns_servers_list;
+    let approvedDnsServersList = [];
+    dnsServers.forEach((dns) => {
+      if (dns.match(util.ipv4Regex)) {
+        approvedDnsServersList.push(dns);
+      }
+    });
+    let approvedDnsServers = approvedDnsServersList.join(',');
+    let cpe = DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
+    let fields = cpe.getModelFields();
+    let task = {
+      name: 'setParameterValues',
+      parameterValues: [
+        [fields.lan.dns_servers, approvedDnsServers, 'xsd:string'],
+      ],
+    };
+    const result = await TasksAPI.addTask(matchedDevice.acs_id, task);
+    if (result.success) {
+      matchedDevice.lan_dns_servers = approvedDnsServers;
+      matchedDevice.save(function(err) {
+        if (err) {
+          return res.status(200).json({
+            success: false,
+            message: t('cpeSaveError', {errorline: __line}),
+          });
+        }
+        return res.status(200).json({
+          success: true,
+          message: t('operationSuccessful'),
+          approved_dns_servers_list: approvedDnsServers,
+        });
+      });
+    } else {
+      return res.status(200).json({
+        success: false,
+        message: t('genieacsCommunicationError', {errorline: __line}),
+      });
+    }
+  });
+};
+
+const getDefaultLanDNSServersAtConfig = async function() {
+  let message = t('configNotFound', {errorline: __line});
+  let config = {};
+  try {
+    config = await Config.findOne(
+      {is_default: true}, {default_dns_servers: true},
+    ).lean();
+  } catch (err) {
+    message = t('configFindError', {errorline: __line});
+  }
+  if (config && config.default_dns_servers) {
+    return {success: true, object: config.default_dns_servers};
+  }
+  return {success: false, type: 'error', message: message};
+};
+
+deviceListController.getDefaultLanDNSServers = async function(req, res) {
+  const getDefaultLanDNSServers = await getDefaultLanDNSServersAtConfig();
+  if (getDefaultLanDNSServers.success) {
+    return res.status(200).json({
+      success: true,
+      default_dns_servers: getDefaultLanDNSServers.object,
+    });
+  }
+  return res.status(200).json({
+    success: false, message: getDefaultLanDNSServers.message,
+  });
+};
+
+deviceListController.setDefaultLanDNSServers = async function(req, res) {
+  let success = true;
+  let type = 'success';
+  let message = t('operationSuccessful', {errorline: __line});
+
+  if (!util.isJSONObject(req.body)) {
+    success = false; type = 'error';
+    message = t('jsonError', {errorline: __line});
+  } else if (!req.body.default_dns_servers) {
+    success = false; type = 'error';
+    message = t('configNotFound', {errorline: __line});
+  } else {
+    let matchedConfig = await Config.findOne(
+      {is_default: true}, {default_dns_servers: true}).exec().catch(
+      (err) => {
+        success = false; type = 'error';
+        message = t('configFindError', {errorline: __line});
+      },
+    );
+    if (matchedConfig) {
+      let servers = req.body.default_dns_servers;
+      let approvedHostsIpv4 = [];
+      let approvedHostsIpv6 = [];
+      servers.ipv4.forEach((server) => {
+        server = server.toLowerCase();
+        if (server.match(util.ipv4Regex)) {
+          approvedHostsIpv4.push(server);
+        } else {
+          success = false; type = 'error';
+          message = t('configSaveError', {errorline: __line});
+        }
+      });
+      servers.ipv6.forEach((server) => {
+        server = server.toLowerCase();
+        if (util.testIPv6(server)) {
+          approvedHostsIpv6.push(server);
+        } else {
+          success = false; type = 'error';
+          message = t('configSaveError', {errorline: __line});
+        }
+      });
+      matchedConfig.default_dns_servers.ipv4 = approvedHostsIpv4;
+      matchedConfig.default_dns_servers.ipv6 = approvedHostsIpv6;
+      await matchedConfig.save().catch((err) => {
+        success = false; type = 'error';
+        message = t('configSaveError', {errorline: __line});
+      });
+    }
+  }
+  return res.status(200).json({
+    success: success, type: type, message: message,
+  });
 };
 
 deviceListController.getSiteSurvey = function(req, res) {
@@ -4260,6 +4497,142 @@ deviceListController.setLanDeviceBlockState = function(req, res) {
     }
   });
 };
+
+
+/**
+ * Changes the name of a LAN device.
+ *
+ * @memberof controllers/deviceList
+ *
+ * @param {Request} request - The HTTP request. Parameters:
+ *  - `device_id` - The MAC address of the CPE.
+ *  - `lan_device_id` - The MAC address of the LAN device.
+ *  - `name` - The name to be changed to.
+ * @param {Response} response - The HTTP response.
+ *
+ * @return {Response} The HTTP response.
+ */
+deviceListController.setLanDeviceName = async function(request, response) {
+  // Validate the request
+  if (!request || !request.body) {
+    return response.status(500).json({
+      success: false,
+      message: t('requestError', {errorline: __line}),
+    });
+  }
+
+
+  const data = request.body;
+
+  // Validate parameters
+  if (
+    !data.device_id || typeof data.device_id !== 'string' ||
+    !data.lan_device_id || typeof data.lan_device_id !== 'string' ||
+    !data.hasOwnProperty('name') || typeof data.name !== 'string'
+  ) {
+    return response.status(500).json({
+      success: false,
+      message: t('parametersError', {errorline: __line}),
+    });
+  }
+
+
+  // Validate if the name only contains valid characters and size
+  const validator = new Validator();
+  const nameValidation = validator.validateDeviceName(data.name);
+
+  if (!nameValidation.valid && data.name !== '') {
+    let message = '';
+
+    // Build the message
+    nameValidation.err.forEach((error) => {
+      // Only add line break if it is not empty
+      message += (message ? '<br>' : '') + error;
+    });
+
+    return response.status(500).json({
+      success: false,
+      message: message,
+    });
+  }
+
+
+  // Validate Device's MAC address
+  const deviceMacValidation = validator.validateMac(data.device_id);
+  const lanDeviceMacValidation = validator.validateMac(data.lan_device_id);
+
+  if (!deviceMacValidation.valid || !lanDeviceMacValidation.valid) {
+    return response.status(500).json({
+      success: false,
+      message: t('macInvalid', {errorline: __line}),
+    });
+  }
+
+
+  // Find the device
+  let device = null;
+  try {
+    device = await DeviceModel.findById(data.device_id, {lan_devices: true});
+  } catch (error) {
+    return response.status(500).json({
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    });
+  }
+
+  // Check if device exists
+  if (!device) {
+    return response.status(500).json({
+      success: false,
+      message: t('cpeFindError', {errorline: __line}),
+    });
+  }
+
+
+  // Find the LAN device
+  let lanDeviceIndex = device.lan_devices.findIndex(
+    (device) => device.mac === data.lan_device_id,
+  );
+
+  if (lanDeviceIndex < 0 || lanDeviceIndex >= data.lan_device_id.length) {
+    return response.status(500).json({
+      success: false,
+      message: t('lanDeviceFindError', {errorline: __line}),
+    });
+  }
+
+
+  // Change the name and save
+  let lanDevice = device.lan_devices[lanDeviceIndex];
+  const lanDeviceMac = lanDevice.mac;
+  const oldName = lanDevice.name;
+  device.lan_devices[lanDeviceIndex].name = data.name;
+
+
+  // Save
+  try {
+    await device.save();
+  } catch (error) {
+    return response.status(500).json({
+      success: false,
+      message: t('saveError', {errorline: __line}),
+    });
+  }
+
+
+  // Send to audit
+  let auditLanDevices = {};
+  auditLanDevices[lanDeviceMac] = {
+    'name': {old: oldName, new: data.name},
+  };
+  let audit = {'lan_devices': auditLanDevices};
+
+  Audit.cpe(request.user, device, 'edit', audit);
+
+
+  return response.status(200).json({success: true});
+};
+
 
 deviceListController.updateLicenseStatus = async function(req, res) {
   if (!('id' in req.body)) {

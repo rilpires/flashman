@@ -85,6 +85,7 @@ let deviceSchema = new Schema({
   app_password: String,
   lan_subnet: String,
   lan_netmask: Number,
+  lan_dns_servers: String, // String which is a comma separated list of servers
   lan_devices: [{
     mac: String,
     dhcp_name: String,
@@ -300,6 +301,7 @@ let deviceSchema = new Schema({
     started_at: {type: Date},
     last_modified_at: {type: Date},
     targets: [String],
+    send_error: {type: Boolean},
     user: {type: String},
     webhook_url: {type: String, default: ''},
     webhook_user: {type: String, default: ''},

@@ -35,7 +35,7 @@ const openErrorSwal = function(message) {
   swal.fire({
     title: t('Error'),
     icon: 'error',
-    text: message,
+    html: message,
     confirmButtonColor: '#4db6ac',
     confirmButtonText: 'OK',
   });
@@ -167,30 +167,100 @@ let validateEditDevice = function(event) {
 
   // Initialize error structure
   let errors = {
-    pppoe_user: {field: '#edit_pppoe_user-' + index.toString()},
-    pppoe_password: {field: '#edit_pppoe_pass-' + index.toString()},
-    ssid: {field: '#edit_wifi_ssid-' + index.toString()},
-    password: {field: '#edit_wifi_pass-' + index.toString()},
-    channel: {field: '#edit_wifi_channel-' + index.toString()},
-    band: {field: '#edit_wifi_band-' + index.toString()},
-    mode: {field: '#edit_wifi_mode-' + index.toString()},
-    power: {field: '#edit_wifi_power-' + index.toString()},
-    ssid5ghz: {field: '#edit_wifi5_ssid-' + index.toString()},
-    password5ghz: {field: '#edit_wifi5_pass-' + index.toString()},
-    channel5ghz: {field: '#edit_wifi5_channel-' + index.toString()},
-    band5ghz: {field: '#edit_wifi5_band-' + index.toString()},
-    mode5ghz: {field: '#edit_wifi5_mode-' + index.toString()},
-    power5ghz: {field: '#edit_wifi5_power-' + index.toString()},
-    lan_subnet: {field: '#edit_lan_subnet-' + index.toString()},
-    lan_netmask: {field: '#edit_lan_netmask-' + index.toString()},
-    bridge_fixed_ip: {field: '#edit_opmode_fixip-' + index.toString()},
+    external_reference: {
+      field: '#edit_external_reference-' + index.toString(),
+      name: t('About') + ': ' + t('personIdentificationSystem') + ' / ' +
+        t('enterpriseIdentificationSystem') + ' / ' +
+        t('Other'),
+    },
+    bridge_fixed_ip: {
+      field: '#edit_opmode_fixip-' + index.toString(),
+      name: t('mode') + ': ' + t('fixedIpForCpeInBridge'),
+    },
     bridge_fixed_gateway: {
-      field: '#edit_opmode_fixip_gateway-' + index.toString()},
-    bridge_fixed_dns: {field: '#edit_opmode_fixip_dns-' + index.toString()},
-    mesh_mode: {field: '#edit_meshMode-' + index.toString()},
-    external_reference: {field: '#edit_external_reference-' + index.toString()},
-    wan_mtu: {field: '#edit_wan_mtu-' + index.toString()},
-    wan_vlan: {field: '#edit_wan_vlan-' + index.toString()},
+      field: '#edit_opmode_fixip_gateway-' + index.toString(),
+      name: t('mode') + ': ' + t('gatewayIpForCpeInBridge'),
+    },
+    bridge_fixed_dns: {
+      field: '#edit_opmode_fixip_dns-' + index.toString(),
+      name: t('mode') + ': ' + t('dnsIpForCpeInBridge'),
+    },
+    mesh_mode: {
+      field: '#edit_meshMode-' + index.toString(),
+      name: t('mode') + ': ' + t('meshMode'),
+    },
+    pppoe_user: {
+      field: '#edit_pppoe_user-' + index.toString(),
+      name: 'WAN: ' + t('pppoeUser'),
+    },
+    pppoe_password: {
+      field: '#edit_pppoe_pass-' + index.toString(),
+      name: 'WAN: ' + t('pppoePassword'),
+    },
+    wan_mtu: {
+      field: '#edit_wan_mtu-' + index.toString(),
+      name: 'WAN: MTU',
+    },
+    wan_vlan: {
+      field: '#edit_wan_vlan-' + index.toString(),
+      name: 'WAN: VLAN',
+    },
+    lan_subnet: {
+      field: '#edit_lan_subnet-' + index.toString(),
+      name: 'LAN: ' + t('cpeIp') + ' / ' + t('networkIp'),
+    },
+    lan_netmask: {
+      field: '#edit_lan_netmask-' + index.toString(),
+      name: 'LAN: ' + t('Mask'),
+    },
+    ssid: {
+      field: '#edit_wifi_ssid-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('wifiSsid'),
+    },
+    password: {
+      field: '#edit_wifi_pass-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('wifiPassword'),
+    },
+    channel: {
+      field: '#edit_wifi_channel-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('wifiChannel'),
+    },
+    band: {
+      field: '#edit_wifi_band-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('wifiBandwidth'),
+    },
+    mode: {
+      field: '#edit_wifi_mode-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('wifiOperationMode'),
+    },
+    power: {
+      field: '#edit_wifi_power-' + index.toString(),
+      name: 'Wi-Fi 2.4GHz: ' + t('signalStrength'),
+    },
+    ssid5ghz: {
+      field: '#edit_wifi5_ssid-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('wifiSsid'),
+    },
+    password5ghz: {
+      field: '#edit_wifi5_pass-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('wifiPassword'),
+    },
+    channel5ghz: {
+      field: '#edit_wifi5_channel-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('wifiChannel'),
+    },
+    band5ghz: {
+      field: '#edit_wifi5_band-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('wifiBandwidth'),
+    },
+    mode5ghz: {
+      field: '#edit_wifi5_mode-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('wifiOperationMode'),
+    },
+    power5ghz: {
+      field: '#edit_wifi5_power-' + index.toString(),
+      name: 'Wi-Fi 5GHz: ' + t('signalStrength'),
+    },
   };
   for (let key in errors) {
     if (Object.prototype.hasOwnProperty.call(errors, key)) {
@@ -396,6 +466,21 @@ let validateEditDevice = function(event) {
           $('#ssid_prefix_checkbox-' + index.toString())
             .addClass('d-none');
         }
+        // Update DNS field
+        $.ajax({
+          type: 'GET',
+          url: '/devicelist/landnsserverslist/' + mac,
+          dataType: 'json',
+          success: function(res) {
+            if (res.success) {
+              if (res.lan_dns_servers_list) {
+                $('#edit_lan_dns-' + index).val(
+                  res.lan_dns_servers_list.join(','),
+                );
+              }
+            }
+          },
+        });
         switchSubmitButton(index);
       },
       error: function(xhr, status, error) {
@@ -439,7 +524,19 @@ let validateEditDevice = function(event) {
   } else {
     // Else, render errors on form
     renderEditErrors(errors);
-    openErrorSwal(t('someCpeFormFieldAreInvalid'));
+
+    // Build the error message
+    let message = t('someCpeFormFieldAreInvalid');
+    message += '<br><br>';
+
+    for (let key in errors) {
+      if (!hasNoErrors(key)) message += errors[key].name + '<br>';
+    }
+
+    // Open the modal
+    openErrorSwal(message);
+
+    // Allow the button to be clicked again
     switchSubmitButton(index);
   }
   editFormObj.addClass('was-validated');

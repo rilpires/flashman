@@ -1,6 +1,7 @@
 extends layout
 
 block content
+  include mixins/_modals.pug
   include includes/showsearchterms
   include includes/showdevicelogs
   include includes/configdevicefirewall
@@ -18,6 +19,12 @@ block content
   include includes/showwaninfo
   include includes/showlaninfo
   include includes/showtraceroutetest
+  +single-list-modal("config-lan-dns-modal", t('dnsServerInfoTitle'),
+                      "fa-server", t('dnsServerAddress'),
+                      t('invalidAddress'), t('dnsServerAddressTooltip'),
+                      t('dnsServerAddresses'),
+                      t('noDnsServerConfigured'),
+                      t('dnsCannotBeEmpty'))
 
   if (superuser || (role.grantSearchLevel >= 1))
     if (superuser || (role.grantSearchLevel == 2))

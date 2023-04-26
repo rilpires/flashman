@@ -54,6 +54,7 @@ module.exports = {
       './public/javascripts/settings_actions.js',
       './public/javascripts/factory_credentials.js',
       './public/javascripts/default_ping_hosts_config.js',
+      './public/javascripts/default_dns_servers_config.js',
     ],
     index: [
       './public/src/common.index.js',
@@ -79,6 +80,7 @@ module.exports = {
       './public/javascripts/update_device.js',
       './public/javascripts/table_anim.js',
       './public/javascripts/show_traceroute_test_action.js',
+      './public/javascripts/show_lan_dns_actions.js',
     ],
   },
   output: {

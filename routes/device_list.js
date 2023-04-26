@@ -107,6 +107,28 @@ router.route('/speedtest/:id').get(
   authController.ensurePermission('grantMeasureDevices', 2),
   deviceListController.sendGenericSpeedTestAPI);
 
+// Get LAN DNS Servers list
+router.route('/landnsserverslist/:id')
+.get(
+  authController.ensurePermission('grantLanEdit'),
+  deviceListController.getLanDNSServers,
+)
+.post(
+  authController.ensurePermission('grantLanEdit'),
+  deviceListController.setLanDNSServers,
+);
+
+// Set/Get LAN Default DNS servers
+router.route('/defaultlandnsservers')
+.get(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.getDefaultLanDNSServers,
+)
+.post(
+  authController.ensurePermission('grantFlashmanManage'),
+  deviceListController.setDefaultLanDNSServers,
+);
+
 // Set/Get Ping hosts list
 router.route('/pinghostslist/:id').get(
   deviceListController.getPingHostsList)
@@ -136,6 +158,12 @@ router.route('/uiupdate/:id').get(
 router.route('/landevice/block').post(
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
+
+// Update name of a LAN device
+router.route('/landevice/updatename').post(
+  authController.ensurePermission('grantLanDevices', 2),
+  deviceListController.setLanDeviceName,
+);
 
 router.route('/license').post(
   deviceListController.updateLicenseStatus);

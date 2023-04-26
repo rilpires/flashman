@@ -84,6 +84,8 @@ const pushCertification = (arr, c, finished) => {
     routerModel: c.routerModel || '',
     routerVersion: c.routerVersion || '',
     routerRelease: c.routerRelease || '',
+    specificUsername: c.specificUser || '',
+    specificPassword: c.specificPasswd || '',
     localEpochTimestamp: c.timestamp || 0,
     didDiagnose: c.didDiagnose || false,
     diagnostic: convertDiagnostic(c.diagnostic),
@@ -111,10 +113,13 @@ const pushCertification = (arr, c, finished) => {
   });
 };
 
+diagAppAPIController.__testPushCertification = pushCertification;
+
 const generateSessionCredential = async (user) => {
   let config = await ConfigModel.findOne(
     {is_default: true},
-    {tr069: true, pppoePassLength: true, licenseApiSecret: true, company: true},
+    {tr069: true, pppoePassLength: true, licenseApiSecret: true,
+      company: true, specificAppTechnicianWebLogin: true},
   ).lean().exec().catch((err) => err);
   let sessionExpirationDate = new Date().getTime();
   sessionExpirationDate += (7*24*60*60); // 7 days
@@ -147,6 +152,7 @@ const generateSessionCredential = async (user) => {
     session.onuPonThresholdCritical = trConf.pon_signal_threshold_critical;
     session.onuPonThresholdCriticalHigh =
       trConf.pon_signal_threshold_critical_high;
+    session.specificWebLogin = config.specificAppTechnicianWebLogin;
   }
   return session;
 };
@@ -671,6 +677,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
             measureServerIP: true,
             licenseApiSecret: true,
             company: true,
+            specificAppTechnicianWebLogin: true,
           },
         ).lean().exec().catch((err) => err)
       );
@@ -715,6 +722,7 @@ diagAppAPIController.verifyFlashman = async (req, res) => {
       if (factoryCredentials.success) {
         onuConfig.onuFactoryCredentials = factoryCredentials.credentials;
       }
+      onuConfig.specificWebLogin = config.specificAppTechnicianWebLogin;
       if (!device) {
         return res.status(200).json({
           'success': true,
@@ -1470,7 +1478,7 @@ diagAppAPIController.sendDiagnosticSpeedTest = function(req, res) {
     // Wait for a few seconds so the app can receive the reply
     // We need to do this because the measurement blocks all traffic
     setTimeout(async () => {
-      sendGenericSpeedTest(matchedDevice, req.user.name);
+      sendGenericSpeedTest(matchedDevice, req.user);
     }, 1.5*1000);
   });
 };

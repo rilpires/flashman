@@ -9,12 +9,26 @@ nokiaModel.modelPermissions = function() {
   permissions.features.traceroute = true;
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasDnsServerField = true;
+
   permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161,
   ];
   permissions.wifi.modeWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.firmwareUpgrades = {
     '3FE46343AFIA57': [],
     '3FE46343AFIA89': [],
@@ -125,6 +139,30 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
   fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
+
+  fields.diagnostics.statistics.cpu_usage = 'InternetGatewayDevice.' +
+    'DeviceInfo.X_ALU-COM_CPUMEMMonitor.cpu';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_IPv6IPAddress';
+
+  // Default Gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_DefaultIPv6Gateway';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_IPv6Prefix';
+
   return fields;
 };
 

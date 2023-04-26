@@ -11,10 +11,18 @@ tplinkModel.modelPermissions = function() {
   // permissions.features.speedTest = true;
   permissions.features.pingTest = true;
   permissions.features.stun = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendRoutersOnLANChange = false;
-  permissions.lan.sendDnsOnLANChange = false;
+  permissions.lan.dnsServersWrite = false;
   permissions.wan.hasUptimeField = false;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   // permissions.wan.speedTestLimit = 70; // Limit is too low
   permissions.wifi.list5ghzChannels = [36, 40, 44, 48, 149, 153, 157, 161, 165];
   permissions.wifi.allowDiacritics = true;
@@ -116,7 +124,7 @@ tplinkModel.getModelFields = function() {
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   // This router does not have the fields referring to wan_mac and wan_mac_ppp.
   // They were mapped to this value so that the field is not undefined
-  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress'; 
+  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
   fields.wan.wan_mac_ppp = fields.wan.wan_mac;
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
@@ -124,6 +132,21 @@ tplinkModel.getModelFields = function() {
   fields.lan.lease_min_ip = 'Device.DHCPv4.Server.Pool.1.MinAddress';
   fields.lan.router_ip = 'Device.IP.Interface.1.IPv4Address.1.IPAddress';
   fields.lan.subnet_mask = 'Device.DHCPv4.Server.Pool.1.SubnetMask';
+
+  // IPv6
+  fields.ipv6.address = 'Device.IP.Interface.*.IPv6Address.*.IPAddress';
+  fields.ipv6.address_ppp = fields.ipv6.address;
+
+  fields.ipv6.prefix_delegation_address =
+    'Device.IP.Interface.*.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address_ppp =
+    fields.ipv6.prefix_delegation_address;
+
+  fields.ipv6.prefix_delegation_local_address =
+    'Device.IP.Interface.1.IPv6Address.*.IPAddress';
+  fields.ipv6.prefix_delegation_local_address_ppp =
+    fields.ipv6.prefix_delegation_local_address;
+
   // Wifi
   fields.wifi2.ssid = 'Device.WiFi.SSID.1.SSID';
   fields.wifi2.bssid = 'Device.WiFi.SSID.1.BSSID';
@@ -150,11 +173,17 @@ tplinkModel.getModelFields = function() {
   fields.devices.host_name = 'Device.Hosts.Host.*.HostName';
   fields.devices.host_ip = 'Device.Hosts.Host.*.IPAddress';
   fields.devices.associated = 'Device.WiFi.AccessPoint.*.AssociatedDevice';
-  fields.devices.assoc_mac = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.MACAddress';
-  fields.devices.host_rssi = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrength';
-  fields.devices.host_mode = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Standard';
-  fields.devices.host_band = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Bandwidth';
-  fields.devices.rate = 'Device.WiFi.AccessPoint.*.AssociatedDevice.*.LastDataDownlinkRate';
+  fields.devices.assoc_mac =
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.MACAddress';
+  fields.devices.host_rssi =
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.SignalStrength';
+  fields.devices.host_mode =
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Standard';
+  fields.devices.host_band =
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.Bandwidth';
+  fields.devices.rate =
+    'Device.WiFi.AccessPoint.*.AssociatedDevice.*.LastDataDownlinkRate';
+
   // Mesh
   fields.mesh2 = {};
   fields.mesh5 = {};

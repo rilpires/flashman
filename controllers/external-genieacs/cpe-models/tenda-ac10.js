@@ -11,6 +11,9 @@ tendaModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.stun = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.lan.needEnableConfig = true;
   permissions.siteSurvey.survey2Index = '1';
   permissions.siteSurvey.survey5Index = '2';
@@ -23,6 +26,7 @@ tendaModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     'V16.03.06.05_multi_BR01': [],
   };
+  permissions.lan.dnsServersLimit = 2;
   return permissions;
 };
 

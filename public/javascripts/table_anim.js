@@ -6,7 +6,9 @@ import {fillTotalDevicesFromSearch} from './show_data_collecting_actions.js';
 import {displayAlertMsg,
         secondsTimeSpanToHMS,
         socket} from './common_actions.js';
-import {setConfigStorage, getConfigStorage} from './session_storage.js';
+import {
+  setConfigStorage, getConfigStorage, deleteDNSServersList,
+} from './session_storage.js';
 import Stepper from 'bs-stepper';
 
 const t = i18next.t;
@@ -274,6 +276,9 @@ anlixDocumentReady.add(function() {
       let formId = '#form-' + index.toString();
       $(formId).removeClass('d-none');
       $('.slave-'+index).removeClass('d-none');
+      // Clears the storage to prevent the case that the user refreshes the page
+      // without closing the modal and opens the modal again
+      deleteDNSServersList();
     }
     $(event.target).removeClass('fa-chevron-down')
                    .addClass('fa-chevron-up text-primary');
@@ -383,6 +388,18 @@ anlixDocumentReady.add(function() {
 
   $(document).on('click', '#btn-upgrade-scheduler', function(event) {
     $('#upgrade-scheduler').modal('show');
+  });
+
+  $(document).on('click', '.btn-config-lan-dns-modal', function(event) {
+    $('#config-lan-dns-modal.modal').modal('show');
+  });
+
+  $('#config-lan-dns-modal').on('hidden.bs.modal', function(event) {
+    deleteDNSServersList();
+  });
+
+  $(document).on('click', '.btn-edit-submit', function(event) {
+    deleteDNSServersList();
   });
 
   // Refresh table content
@@ -954,7 +971,7 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 '+
+        '<button class="btn btn-primary mx-0 btn-edit-submit '+
           meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
@@ -1445,6 +1462,7 @@ anlixDocumentReady.add(function() {
           let grantPingTest = device.permissions.grantPingTest;
           let grantTraceroute = device.permissions.grantTraceroute;
           let grantLanDevices = device.permissions.grantLanDevices;
+          let grantLanDnsEdit = device.permissions.grantLanDnsEdit;
           let grantSiteSurvey = device.permissions.grantSiteSurvey;
           let grantUpnpSupport = device.permissions.grantUpnp;
           let grantDeviceSpeedTest = device.permissions.grantSpeedTest;
@@ -1553,6 +1571,7 @@ anlixDocumentReady.add(function() {
           }
           formAttr += ' data-lan-subnet="'+device.lan_subnet+'"';
           formAttr += ' data-lan-submask="'+device.lan_netmask+'"';
+          formAttr += ' data-lan-dns="'+device.lan_dns_servers+'"';
           formAttr += ' data-is-tr069="'+device.use_tr069+'"';
           formAttr += ' data-slave-count="'+
             ((device.mesh_slaves) ? device.mesh_slaves.length : 0)+'"';
@@ -2052,19 +2071,31 @@ anlixDocumentReady.add(function() {
             '</div>'+
             '<div class="row">'+
               '<div class="col-6">'+
-                '<div class="md-form input-entry">'+
+                '<div class="md-form input-entry input-group">'+
                   '<label class="active">'+
                     (grantLanGwEdit ? t('cpeIp') : t('networkIp'))+
                   '</label>'+
-                  '<input class="form-control ip-mask-field" type="text" '+
-                    'id="edit_lan_subnet-'+index+'" '+
+                  '<input class="form-control my-2 ip-mask-field" ' +
+                    'type="text" id="edit_lan_subnet-'+index+'" '+
                     'maxlength="15" value="'+device.lan_subnet+
                     '" $REPLACE_LAN_EN>'+
                   '</input>'+
                   '<div class="invalid-feedback"></div>'+
                 '</div>'+
+                '<div class="md-form input-group">'+
+                  '<div class="md-selectfield form-control my-0">'+
+                    '<label class="active">'+t('Mask')+'</label>'+
+                    '<select class="browser-default md-select my-0" ' +
+                      'type="text"  id="edit_lan_netmask-'+index+'" '+
+                      'maxlength="15" $REPLACE_LAN_EN>'+
+                      '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
+                      '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
+                      '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
+                    '</select>'+
+                  '</div>'+
+                '</div>'+
                 (grantLanGwEdit ?
-                  '<div class="alert alert-info">'+
+                  '<div class="alert alert-info my-2">'+
                     '<div class="fas fa-info-circle fa-lg mr-2"></div>'+
                     '<span>'+t('networkIpCalculationDescription')+'</span>'+
                   '</div>' :
@@ -2072,27 +2103,40 @@ anlixDocumentReady.add(function() {
                 )+
               '</div>'+
               '<div class="col-6">'+
-                '<div class="md-form input-group">'+
-                  '<div class="md-selectfield form-control my-0">'+
-                    '<label class="active">'+t('Mask')+'</label>'+
-                    '<select class="browser-default md-select" type="text" '+
-                      'id="edit_lan_netmask-'+index+'" '+
-                      'maxlength="15" $REPLACE_LAN_EN>'+
-                        '<option value="24" $REPLACE_SELECTED_24$>24</option>'+
-                        '<option value="25" $REPLACE_SELECTED_25$>25</option>'+
-                        '<option value="26" $REPLACE_SELECTED_26$>26</option>'+
-                    '</select>'+
-                  '</div>'+
-                '</div>'+
-
                 // LAN MAC address section
                 // Always show this section as it will always have an valid _id
-                '<div class="md-form input-entry pt-1">' +
-                  '<label class="active">' + t('lanMacAddress') + '</label>' +
-                  '<input class="form-control" type="text" disabled=""' +
-                    'value="' + device._id + '">' +
-                '</div>' +
-
+                '<div class="md-form input-entry input-group">'+
+                  '<label class="active">' + t('lanMacAddress') + '</label>'+
+                    '<input class="form-control my-2 mr-2" type="text" ' +
+                      'disabled="" value="' + device._id + '">' +
+                '</div>'+
+                (grantLanDnsEdit ?
+                  '<div class="md-form input-entry input-group">'+
+                    '<label class="active">' +
+                      t('dnsServerInfoTitle') +
+                    '</label>'+
+                    '<input class="form-control lan-dns-field my-2 mr-2" ' +
+                      'type="text" id="edit_lan_dns-'+index+'" '+
+                      'maxlength="48" value="'+
+                      ((device.lan_dns_servers) ?
+                        device.lan_dns_servers : '')+ // treat undefined case
+                      '" $REPLACE_LAN_EN disabled>'+
+                    '</input>'+
+                    ((isSuperuser || grantLanEditAccess) ?
+                    '<div class="input-group-append">'+
+                      '<button class="btn btn-primary btn-sm px-3 '+
+                                       'btn-config-lan-dns-modal"' +
+                          'type="button" '+
+                          'data-index='+index+'>'+
+                        '<i class="fas fa-pen fa-lg"></i>'+
+                      '</button>'+
+                    '</div>' :
+                    ''
+                    )+
+                    '<div class="invalid-feedback"></div>'+
+                  '</div>' :
+                  ''
+                )+
               '</div>'+
             '</div>'+
             '$REPLACE_LAN_INFO'+

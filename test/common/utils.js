@@ -19,6 +19,9 @@ const request = require('supertest');
 const mockingoose = require('mockingoose');
 const models = require('./models');
 
+const fs = require('fs');
+const path = require('path');
+
 process.env.FLM_GENIE_IGNORED = 'TESTE!';
 
 // Models
@@ -55,35 +58,6 @@ let utils = {
   schedulerCommon: {},
   devicesAPICommon: {},
 };
-
-
-// Constants
-/**
- * The development Flashman host string.
- *
- * @memberof test/common/utils.common
- *
- * @type {String}
- */
-utils.common.FLASHMAN_HOST = 'http://localhost:8000';
-
-/**
- * The development Flashman authentication username.
- *
- * @memberof test/common/utils.common
- *
- * @type {String}
- */
-utils.common.BASIC_AUTH_USER = 'admin';
-
-/**
- * The development Flashman authentication password.
- *
- * @memberof test/common/utils.common
- *
- * @type {String}
- */
-utils.common.BASIC_AUTH_PASS = 'flashman';
 
 
 /**
@@ -128,78 +102,6 @@ utils.common.TEST_PARAMETERS = [
   '[]',
   '[0]',
 ];
-
-
-/**
- * Login as admin in flashman and return the response that can be used to
- * access the api.
- *
- * @memberOf test/common/utils.common
- *
- * @async
- *
- * @return {Response} The login response with the cookie to be setted.
- */
-utils.common.loginAsAdmin = async function() {
-  return (request(utils.common.FLASHMAN_HOST)
-    .post('/login')
-    .send({
-      name: utils.common.BASIC_AUTH_USER,
-      password: utils.common.BASIC_AUTH_PASS,
-    })
-    .catch((error) => console.log(error))
-  );
-};
-
-
-/**
- * Deletes the CPE passed to this function from Flashman.
- *
- * @memberOf test/common/utils.common
- *
- * @async
- *
- * @param {String} cpeID - The cpeID to be deleted from Flahsman.
- * @param {Cookie} cookie - The login cookie.
- *
- * @return {Response} The delete response.
- */
-utils.common.deleteCPE = async function(cpeID, cookie) {
-  return (request(utils.common.FLASHMAN_HOST)
-    .delete('/api/v2/device/delete/' + cpeID)
-    .set('Cookie', cookie)
-    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
-    .send()
-    .catch((error) => console.log(error))
-  );
-};
-
-
-/**
- * Sends the request to the route specified to Flashman, with the data passed.
- *
- * @memberOf test/common/utils.common
- *
- * @async
- *
- * @param {String} type - The type of request(`put`, `delete`, `get`,
- * `post`...).
- * @param {String} route - The cpeID to be deleted from Flahsman.
- * @param {Cookie} cookie - The cookie login.
- * @param {Object} data - The data to be sent to the route.
- *
- * @return {Response} The response.
- */
-utils.common.sendRequest = async function(type, route, cookie, data) {
-  let flashmanRequest = request(utils.common.FLASHMAN_HOST);
-
-  return (await flashmanRequest[type](route)
-    .set('Cookie', cookie)
-    .auth(utils.common.BASIC_AUTH_USER, utils.common.BASIC_AUTH_PASS)
-    .send(data)
-    .catch((error) => console.log(error))
-  );
-};
 
 
 /**
@@ -258,7 +160,9 @@ utils.common.mockAwaitMongo = function(
   dataMock.save = () => {
     return dataMock;
   };
-
+  dataMock.exec = () => {
+    return dataMock;
+  };
 
   jest.spyOn(model, func).mockImplementation(() => {
     return dataMock;
@@ -506,6 +410,36 @@ utils.common.getDevices = async function(query) {
 };
 
 
+/**
+ * Loads a file and returns it's content. If it is a text file, it will return a
+ * `String`. If it is a text file and the `isJson` flag is marked as `true`, it
+ * will return the parsed file in `Object` format.
+ *
+ * @memberof test/common/utils.common
+ *
+ * @param {String} file - Relative path to the file.
+ * @param {Boolean} isJson - If the file shouldd be considered as a JSON file
+ * and needs to be converted to an `Object`.
+ *
+ * @return {String | Object} The content of the file.
+ */
+utils.common.loadFile = function(file, isJson = true) {
+  // Load the file
+  const data = fs.readFileSync(
+    path.resolve(
+      __dirname, file,
+    ), 'utf8',
+  );
+
+  // Convert to an object if needed
+  if (isJson) {
+    return JSON.parse(data);
+  } else {
+    return data;
+  }
+};
+
+
 /** ************ Update Scheduler ************ **/
 
 
@@ -534,7 +468,7 @@ utils.schedulerCommon.getReleases = async function(cookie, data) {
 /**
  * Create a basic fake response.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {Promise} promiseResolve - The resolver of the promise to be called.
@@ -562,7 +496,7 @@ const fakeJson = function(errorCode, promiseResolve, header, data) {
 /**
  * Create a fake response status.
  *
- * @memberof test/common/utils
+ * @memberof test/common/utils.common
  *
  * @param {Integer} errorCode - The error code of the response.
  * @param {PromiseResolver} promiseResolve - The resolver of the promise to be
@@ -751,6 +685,19 @@ utils.schedulerCommon.sendStartSchedule = async function(cookie, data) {
 
 /** ************ Devices API ************ **/
 
+/**
+ * Validates if the data passed contains only the models that can be upgraded.
+ * This functions is useful to be used with
+ * {@linkcode DevicesAPI.getTR069UpgradeableModels}.
+ *
+ * @memberof test/common/utils.devicesAPICommon
+ *
+ * @param {Object} data - The `Object` containing the vendors and versions that
+ * can be upgraded.
+ *
+ * @see {@linkcode DevicesAPI.getTR069UpgradeableModels} in order to use this
+ * function.
+ */
 utils.devicesAPICommon.validateUpgradeableModels = function(data) {
   Object.keys(DevicesAPI.__testTR069Models).forEach((modelName) => {
     let device = DevicesAPI.__testTR069Models[modelName];

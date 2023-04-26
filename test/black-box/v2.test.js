@@ -1,28 +1,23 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
-const request = require('supertest');
-const {runSimulation} = require('@anlix-io/genieacs-sim');
+const {createSimulator, formatXML} = require('./cpe-tr069-simulator');
+const blackbox = require('../common/blackbox.js');
+const constants = require('../common/constants.js');
 
 
 describe('api_v2', () => {
-  const basicAuthUser = 'admin';
-  const basicAuthPass = 'flashman';
   const deviceModelH199 = './test/assets/data_models/H199.csv';
-  const flashmanHost = 'http://localhost:8000';
-  const genieCwmpHost = 'http://localhost:57547';
 
   let adminCookie = null;
 
   jest.setTimeout( 15*1000 );
 
-  beforeAll(async () => {
-    const adminLogin = await request(flashmanHost)
-      .post('/login')
-      .send({
-        name: basicAuthUser,
-        password: basicAuthPass,
-      });
+  const mac = 'FF:FF:FF:00:00:01';
+  let simulator;
 
+
+  beforeAll(async () => {
+    const adminLogin = await blackbox.loginAsAdmin();
     adminCookie = adminLogin.header['set-cookie'];
 
     if (adminCookie === undefined) {
@@ -34,15 +29,10 @@ describe('api_v2', () => {
   });
 
   // Device search
-  test('/api/v2/device/search - Before and After creation',
-  async () => {
-    let res = await request(flashmanHost)
-      .put('/api/v2/device/search')
-      .set('Cookie', adminCookie)
-      .auth(basicAuthUser, basicAuthPass)
-      .send({
-        filter_list: 'online',
-      });
+  test('/api/v2/device/search - Before and After creation', async () => {
+    let res = await blackbox.sendRequestAdmin(
+      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
+    );
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -53,18 +43,27 @@ describe('api_v2', () => {
     expect(res.body.status.totalnum).toEqual(0);
 
     // Creating a device
-    // runSimulation(acsUrl, dataModel, serialNumber, macAddr)
-    runSimulation(genieCwmpHost, deviceModelH199, 1000, 'FF:FF:FF:00:00:01'),
-    await new Promise((resolve, reject)=>setTimeout(resolve, 5000));
+    simulator = createSimulator(
+      constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
+    ).on('started', () => {
+      // console.log('*** simulator started');
+    }).on('ready', () => {
+      // console.log('*** simulator ready');
+    }).on('requested', (request) => {
+      // console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
+    }).on('response', (response) => {
+      // console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
+    }).on('sent', (request) => {
+      // console.log(`- SENT BODY '${formatXML(request.body)}'.`);
+    }).on('task', (task) => {
+      // console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
+    });
+    await simulator.start();
 
     // Checking new result
-    res = await request(flashmanHost)
-      .put('/api/v2/device/search')
-      .set('Cookie', adminCookie)
-      .auth(basicAuthUser, basicAuthPass)
-      .send({
-        filter_list: 'online',
-      });
+    res = await blackbox.sendRequestAdmin(
+      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
+    );
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
@@ -74,8 +73,37 @@ describe('api_v2', () => {
     expect(res.body.status.offlinenum).toEqual(0);
   });
 
+  test('Changing CPE register', async () => {
+    let update = {
+      content: {
+        wifi_ssid: 'some ssid',
+        wifi_password: 'somepassword',
+      },
+    };
+    let res = await blackbox.sendRequestAdmin(
+      'put', '/api/v2/device/update/' + mac, adminCookie, update,
+    );
+    expect(res.statusCode).toBe(200);
+    // eslint-disable-next-line guard-for-in
+    for (let field in update.content) {
+      expect(res.body[field]).toBe(update.content[field]);
+    }
+
+    // Waiting for simulator to process the task, respond and receive answer.
+    await simulator.nextTask();
+
+    res = await blackbox.sendRequestAdmin(
+      'get', '/api/v2/device/update/' + mac, adminCookie,
+    );
+    expect(res.statusCode).toBe(200);
+    // eslint-disable-next-line guard-for-in
+    for (let field in update.content) {
+      expect(res.body[field]).toBe(update.content[field]);
+    }
+  });
 
   afterAll(async () => {
-    // Clean database? Close connections? Say goodbye?
+    await blackbox.deleteCPE(mac, adminCookie);
+    if (simulator) await simulator.shutDown();
   });
 });
