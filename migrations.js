@@ -306,6 +306,14 @@ module.exports = async (app) => {
         console.log('Creating devices indexes');
         await Device.syncIndexes();
       }
-    }).catch(console.error);
+    }).catch(
+      (err)=> {
+        if (err.codeName=='NamespaceNotFound') {
+          // Thats okay, please don't console.error okay stuffs!
+        } else {
+          console.error(err);
+        }
+      },
+    );
   }
 };
