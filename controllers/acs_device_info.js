@@ -2955,31 +2955,30 @@ const getSsidPrefixCheck = async function(device) {
 const replaceWanFieldsWildcards = async function(
   acsID, isTR181, wildcardFlag, fields, changes, task,
 ) {
+  const cb = (err, res) => {
+    return res;
+  };
+  let args = {
+    update: true,
+    fields: fields,
+    isTR181: isTR181,
+  };
   // WAN fields cannot have wildcards. So we query the genie database to get
   // access to the index from which the wildcard should be replaced. The
   // projection will be a concatenation of the fields requested for editing,
   // separated by a comma
   let data;
   let query = {_id: acsID};
-  let projection = (!isTR181) ? 'InternetGatewayDevice.WANDevice' :
-    'Device.IP.Interface,Device.PPP.Interface,Device.NAT,Device.Ethernet';
+  let projection = DevicesAPI.getParentNode(args, cb);
   // Fetch Genie database and retrieve data
   try {
     data = await TasksAPI.getFromCollection('devices', query, projection);
     data = utilHandlers.convertToProvisionFormat(data[0]);
+    args.data = data;
   } catch (e) {
     console.log('Exception fetching Genie database: ' + e);
     return {'success': false};
   }
-  let args = {
-    update: true,
-    data: data,
-    fields: fields,
-    isTR181: isTR181,
-  };
-  let cb = (err, result) => {
-    return result;
-  };
   let result = DevicesAPI.assembleWanObj(args, cb);
   let chosenWan = utilHandlers.chooseWan(result, wildcardFlag);
   let chosenWanKey = chosenWan.key;

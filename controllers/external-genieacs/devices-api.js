@@ -835,14 +835,90 @@ const assembleWanObj = function(args, callback) {
   return callback(null, result);
 };
 
+const getParentNode = function(args, callback) {
+  let params;
+  let update = false;
+  if (args.update) {
+    params = args;
+    update = true;
+  } else {
+    params = JSON.parse(args[0]);
+  }
+  let fields = params.fields;
+  let isTR181 = params.isTR181;
+  let nodes = [];
+  const hasNumericKey = (str) => str.split('.').some((s) => !isNaN(s));
+  const hasWildcardKey = (str) => str.includes('*');
+  let wanFields = fields.wan;
+  Object.keys(wanFields).forEach((key) => {
+    let node;
+    if (!hasNumericKey(wanFields[key]) && !hasWildcardKey(wanFields[key])) {
+      // If the field does not have numeric keys or wildcards, it must not be
+      // changed
+      node = wanFields[key];
+    } else {
+      // Otherwise, the last substring is discarded and we add the string '.*.*'
+      // to update the entire parent node of the given field
+      let tmp = wanFields[key].split('.').slice(0, -1);
+      if (tmp[tmp.length - 1] === '*') {
+        // If the parent node already ends with the string '.*', just add '.*'
+        node = tmp.join('.');
+      } else if (!isNaN(parseInt(tmp[tmp.length - 1]))) {
+        // If the parent node already ends with a numerical key, it is discarded
+        // and '.*.*' is added
+        node = tmp.slice(0, -1).join('.');
+      } else {
+        // If none of the previous cases is true, it is only necessary to add
+        // the string '.*.*'
+        node = tmp.join('.');
+      }
+    }
+    if (!nodes.includes(node)) {
+      nodes.push(node);
+    }
+  });
+  if (isTR181 && !update) {
+    // Additional information required for TR-181 devices
+    nodes.push('Device.Ethernet.VLANTermination');
+    nodes.push('Device.Ethernet.Link');
+    nodes.push('Device.NAT.PortMapping');
+    nodes.push('Device.NAT');
+    nodes.push('Device.IP');
+    nodes.push('Device.PPP');
+  }
+  nodes.push(fields.port_mapping_dhcp);
+  nodes.push(fields.port_mapping_ppp);
+  let result;
+  if (update) {
+    result = nodes.map((node) => {
+      const wildcardIndex = node.indexOf('*');
+      if (wildcardIndex !== -1) {
+        return node.substring(0, wildcardIndex - 1);
+      } else {
+        return node;
+      }
+    }).filter((node, i, arr) => arr.indexOf(node) === i).join(',');
+  } else {
+    result = nodes.map((node) => {
+      if (node.endsWith('.*')) {
+        return node + '.*';
+      } else {
+        return node + '.*.*';
+      }
+    });
+  }
+  return callback(null, result);
+};
+
 exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
 exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
-exports.assembleWanObj = assembleWanObj;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
+exports.assembleWanObj = assembleWanObj;
+exports.getParentNode = getParentNode;
 exports.getFieldProperties = getFieldProperties;
 
 /*

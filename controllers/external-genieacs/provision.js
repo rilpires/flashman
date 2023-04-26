@@ -47,54 +47,12 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
-const getParentNode = function(fields, isTR181) {
-  let nodes = [];
-  const hasNumericKey = /\.\d+\./;
-  const hasWildcardKey = /\.\*\./;
-  let wanFields = fields.wan;
-  Object.keys(wanFields).forEach((key) => {
-    let node;
-    if (!hasNumericKey.test(wanFields[key]) && !hasWildcardKey.test(wanFields[key])) {
-      // If the field does not have numeric keys or wildcards, it must not be
-      // changed
-      node = wanFields[key];
-    } else {
-      // Otherwise, the last substring is discarded and we add the string '.*.*'
-      // to update the entire parent node of the given field
-      let tmp = wanFields[key].split('.').slice(0, -1);
-      if (tmp[tmp.length - 1] === '*') {
-        // If the parent node already ends with the string '.*', just add '.*'
-        node = tmp.join('.') + '.*';
-      } else if (!isNaN(parseInt(tmp[tmp.length - 1]))) {
-        // If the parent node already ends with a numerical key, it is discarded
-        // and '.*.*' is added
-        node = tmp.slice(0, -1).join('.') + '.*.*';
-      } else {
-        // If none of the previous cases is true, it is only necessary to add
-        // the string '.*.*'
-        node = tmp.join('.') + '.*.*';
-      }
-    }
-    if (!nodes.includes(node)) {
-      nodes.push(node);
-    }
-  });
-  if (isTR181) {
-    // Additional information required for TR-181 devices
-    nodes.push('Device.Ethernet.VLANTermination.*.*');
-    nodes.push('Device.Ethernet.Link.*.*');
-    nodes.push('Device.NAT.PortMapping.*.*');
-    nodes.push('Device.NAT.*.*');
-    nodes.push('Device.IP.*.*');
-    nodes.push('Device.PPP.*.*');
-  }
-  nodes.push(fields.port_mapping_dhcp + '.*.*');
-  nodes.push(fields.port_mapping_ppp + '.*.*');
-  return nodes;
-};
-
 const updateWanConfiguration = function(fields, isTR181) {
-  let nodes = getParentNode(fields,  isTR181);
+  let args = {
+    fields: fields,
+    isTR181: isTR181,
+  };
+  let nodes = ext('devices-api', 'getParentNode', JSON.stringify(args));
   let data = [];
   let addedPaths = new Set();
   for (let node of nodes) {
@@ -117,11 +75,7 @@ const updateWanConfiguration = function(fields, isTR181) {
       }
     }
   }
-  let args = {
-    data: data,
-    fields: fields,
-    isTR181: isTR181,
-  };
+  args.data = data;
   let result = ext('devices-api', 'assembleWanObj', JSON.stringify(args));
   return result;
 };
