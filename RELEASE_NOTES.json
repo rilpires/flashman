@@ -13,7 +13,7 @@
 		"tr069_compatibilities": [
 			"Adicionamos suporte ao modelo Datacom DM955-5GT por TR-069",
 			"Adicionamos suporte ao modelo TP-Link XX230v por TR-069",
-			"Adicionamos suporte ao modelo Multilaser/ZTE F6600P por TR-069",
+			"Adicionamos suporte ao modelo Multilaser/ZTE F6600P por TR-069"
 		],
 		"fixes": [
 		],
