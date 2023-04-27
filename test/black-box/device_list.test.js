@@ -102,7 +102,7 @@ describe('api_v2', () => {
           (device) => lanDeviceID === device.mac,
         );
       }, 400, 4000); // 400ms intervals between executions, fails after 4000ms.
-     
+
       // 'success' will be true if our pulling returns true withing the timeout.
       expect(success).toBe(true);
 
