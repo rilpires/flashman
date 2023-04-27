@@ -101,6 +101,7 @@ const tr069Models = {
   tplinkHX220Model: require('./cpe-models/tplink-hx220'),
   tplinkWR840NModel: require('./cpe-models/tplink-wr840n'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
+  tplinkXX230vModel: require('./cpe-models/tplink-xx230v'),
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
@@ -412,6 +413,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'XC220-G3v') {
     // TP-Link XC220-G3v
     result = {success: true, cpe: tr069Models.tplinkXC220G3vModel};
+  } else if (modelName === 'XX230v') {
+    // TP-Link XX230V
+    result = {success: true, cpe: tr069Models.tplinkXX230vModel};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     result = {success: true, cpe: tr069Models.uneeMPG421R};
