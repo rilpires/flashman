@@ -352,6 +352,35 @@ let deviceSchema = new Schema({
   }],
 });
 
+// These fields are all included when we search with {$text:{$search:'keyword'}}
+const textSearchFields = [
+  'wifi_ssid', 'wifi_bssid', 'wifi_password', 'wifi_channel',
+  'wifi_last_channel', 'wifi_band', 'wifi_last_band', 'wifi_mode',
+  'wifi_ssid_5ghz', 'wifi_bssid_5ghz', 'wifi_password_5ghz',
+  'wifi_channel_5ghz', 'wifi_last_channel_5ghz', 'wifi_band_5ghz',
+  'wifi_last_band_5ghz', 'wifi_mode_5ghz', 'app_password',
+  'lan_subnet', 'lan_dns_servers', 'mesh_master', 'mesh_id',
+  'mesh_key', 'bssid_mesh2', 'bssid_mesh5', 'mesh_father', 'bridge_mode_ip',
+  'bridge_mode_gateway', 'bridge_mode_dns', 'wan_ip', 'wan_ipv6',
+  'wan_negociated_speed', 'wan_negociated_duplex', 'ip', 'ntp_status',
+  'mesh_next_to_update', 'mqtt_secret', 'pending_app_secret', 'forward_index',
+  'blocked_devices_index', 'upnp_devices_index', 'default_gateway_v4',
+  'default_gateway_v6', 'dns_server', 'pppoe_mac', 'pppoe_ip', 'pppoe_user',
+  'prefix_delegation_addr', 'prefix_delegation_mask', 'prefix_delegation_local',
+  'last_speedtest_error.unique_id', 'last_speedtest_error.error',
+  'current_diagnostic.type', 'current_diagnostic.stage',
+  'current_diagnostic.user', 'current_diagnostic.webhook_url',
+  'current_diagnostic.webhook_user',
+  'current_diagnostic.webhook_secret', 'wps_last_connected_mac',
+  'web_admin_username', 'web_admin_password',
+  'custom_tr069_fields.intelbras_omci_mode', 'custom_tr069_fields.ipv6_mode',
+];
+let textIndexes = {};
+textSearchFields.map((val)=>textIndexes[val]='text');
+deviceSchema.index( textIndexes, {
+  'name': 'search_texts',
+});
+
 deviceSchema.set('autoIndex', false);
 
 deviceSchema.plugin(mongoosePaginate);

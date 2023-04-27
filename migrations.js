@@ -293,7 +293,8 @@ module.exports = async (app) => {
     Device.collection.getIndexes({full: true}).then(async (idxs) => {
       let neededIndexes = ['_id_', 'serial_tr069_1',
                            'alt_uid_tr069_1', 'acs_id_1',
-                           'pppoe_user_1', 'external_reference.data_1'];
+                           'pppoe_user_1', 'external_reference.data_1',
+                           'search_texts'];
       let idxNames = idxs.map((idx) => idx.name);
       let reloadIndexes = false;
       for (let neededIdx of neededIndexes) {
