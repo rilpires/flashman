@@ -1141,11 +1141,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (tag === 'tr069') { // CPE TR-069 routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
-      let queryArray = [];
-      let contentCondition = '$or';
-      // Check negation condition
+      // If excluding term...
       let excludeTag = t('/exclude');
       if (queryContents[idx].startsWith(excludeTag)) {
+        let queryArray = [];
         const filterContent = queryContents[idx].split(excludeTag)[1].trim();
         let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
         for (let property in DeviceModel.schema.paths) {
@@ -1156,19 +1155,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
             queryArray.push(field);
           }
         }
-        contentCondition = '$and';
+        query['$and'] = queryArray;
       } else {
-        let queryInput = new RegExp(escapeRegExp(queryContents[idx]), 'i');
-        for (let property in DeviceModel.schema.paths) {
-          if (DeviceModel.schema.paths.hasOwnProperty(property) &&
-              DeviceModel.schema.paths[property].instance === 'String') {
-            let field = {};
-            field[property] = queryInput;
-            queryArray.push(field);
-          }
-        }
+        query = {'$text': {'$search': tag}};
       }
-      query[contentCondition] = queryArray;
     }
     finalQueryArray.push(query); // appending query to array of queries.
   }
