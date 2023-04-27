@@ -640,15 +640,20 @@ const extractLinkPath = function(path, addLowerLayer = false) {
   return linkPath;
 };
 
+const getObjValue = function(obj) {
+  return Array.isArray(obj.value) ? obj.value[0] : obj.value;
+};
+
 const findInterfaceLink = function(data, path, i) {
   // Device.IP.Interface.*.LowerLayers -> Device.PPP.Interface.*.
   let connectionPath = path.replace('*', i);
   let interfPPP = 'Device.PPP.Interface.';
   let interfIP = 'Device.IP.Interface.';
   for (let j = 0; j < data.length; j++) {
-    if (connectionPath === data[j].path && (data[j].value[0].includes(interfPPP)
-        || data[j].value[0].includes(interfIP))) {
-      return data[j].value[0];
+    let value = getObjValue(data[j]);
+    if (connectionPath === data[j].path && (value.includes(interfPPP)
+        || value.includes(interfIP))) {
+      return value;
     }
   }
   return null;
@@ -663,17 +668,20 @@ const findEthernetLink = function(data, path, i) {
   let ethernetLink;
   let vlanLink;
   for (let j = 0; j < data.length; j++) {
-    if (connectionPath === data[j].value[0]) {
+    let value = getObjValue(data[j]);
+    if (connectionPath === value) {
       ethernetLink = extractLinkPath(data[j].path);
     }
   }
   for (let j = 0; j < data.length; j++) {
-    if (ethernetLink === data[j].value[0]) {
+    let value = getObjValue(data[j]);
+    if (ethernetLink === value) {
       vlanLink = extractLinkPath(data[j].path);
     }
   }
   for (let j = 0; j < data.length; j++) {
-    if (vlanLink === data[j].value[0]) {
+    let value = getObjValue(data[j]);
+    if (vlanLink === value) {
       return data[j].path;
     }
   }
@@ -689,15 +697,17 @@ const findPortMappingLink = function(data, path) {
   let ipLink = null;
   for (let j = 0; j < data.length; j++) {
     if (path === data[j].path) {
-      ipLink = extractLinkPath(data[j].value[0]);
+    let value = getObjValue(data[j]);
+      ipLink = extractLinkPath(value);
       break;
     }
   }
   let pppLink = ipLink + 'LowerLayers';
   for (let j = 0; j < data.length; j++) {
     if (pppLink === data[j].path) {
-      if (data[j].value[0].includes('PPP')) {
-        return data[j].value[0];
+      let value = getObjValue(data[j]);
+      if (value.includes('PPP')) {
+        return value;
       }
     }
   }
@@ -751,7 +761,7 @@ const wanKeyCriation = function(data, isTR181) {
       // key, we evaluate the AddressingType node, which receives the conn type
       if (obj.path.includes('AddressingType')) {
         let correctPath;
-        let value = Array.isArray(obj.value) ? obj.value[0] : obj.value;
+        let value = getObjValue(obj);
         if (value === 'DHCP') {
           // If the connection is DHCP, the path index already represents a
           // physical connection
@@ -920,14 +930,30 @@ const getParentNode = function(args, callback) {
   nodes.push(fields.port_mapping_ppp);
   let result;
   if (update) {
-    result = nodes.map((node) => {
-      const wildcardIndex = node.indexOf('*');
-      if (wildcardIndex !== -1) {
-        return node.substring(0, wildcardIndex - 1);
+    let nodesWithNoWildcards = nodes
+      .map((node) => {
+        const wildcardIndex = node.indexOf('*');
+        if (wildcardIndex !== -1) {
+          return node.substring(0, wildcardIndex - 1);
+        } else {
+          return node;
+        }
+      });
+    let projection = [];
+    nodesWithNoWildcards.map((node, i) => {
+      let j = projection.findIndex((e) => {
+        return e === node || e.includes(node) || node.includes(e);
+      });
+      if (j === -1) {
+        projection.push(node);
       } else {
-        return node;
+        let pNode = projection[j];
+        if (node.length < pNode.length) {
+          projection[j] = node;
+        }
       }
-    }).filter((node, i, arr) => arr.indexOf(node) === i).join(',');
+    });
+    result = projection.join(',');
   } else {
     result = nodes.map((node) => {
       if (node.endsWith('.*')) {
@@ -990,6 +1016,7 @@ exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.syncDeviceChanges = syncDeviceChanges;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
+exports.wanKeyCriation = wanKeyCriation;
 exports.assembleWanObj = assembleWanObj;
 exports.getParentNode = getParentNode;
 exports.getFieldProperties = getFieldProperties;
