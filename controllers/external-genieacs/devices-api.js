@@ -622,6 +622,11 @@ const extractIndexes = function(path, isTR181) {
 };
 
 const verifyIndexesMatch = function(keyIndexes, indexes) {
+  if (keyIndexes.length > indexes.length) {
+    keyIndexes = keyIndexes.slice(0, (indexes.length));
+  } else if (keyIndexes.length < indexes.length) {
+    return false;
+  }
   return keyIndexes.every((k, i) => parseInt(k) === indexes[i]);
 };
 
@@ -783,8 +788,11 @@ const wanKeyCriation = function(data, isTR181) {
     }
     // Once we have the correct indexes, a new key is created
     let key = 'wan_' + pathType + '_' + indexes.join('_');
-    if (indexes.length > 0 && !result[key] && (pathType === 'ppp' ||
-        pathType === 'dhcp')) {
+    let indexesHasCorrectSize = ((indexes.length === 3 && !isTR181) ||
+      (indexes.length === 1 && isTR181));
+    let pathHasCorrectType = (pathType === 'ppp' || pathType === 'dhcp');
+    if (indexes.length > 0 && !result[key] &&
+        indexesHasCorrectSize && pathHasCorrectType) {
       result[key] = {};
       result[key]['port_mapping'] = [];
     }
@@ -966,7 +974,6 @@ const getParentNode = function(args, callback) {
   return callback(null, result);
 };
 
-
 /**
  * Calls Flashman to save parameters that got a notification in
  * GenieACS.
@@ -1020,6 +1027,7 @@ exports.wanKeyCriation = wanKeyCriation;
 exports.assembleWanObj = assembleWanObj;
 exports.getParentNode = getParentNode;
 exports.getFieldProperties = getFieldProperties;
+exports.verifyIndexesMatch = verifyIndexesMatch;
 
 /*
  * This function is being exported in order to test it.

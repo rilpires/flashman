@@ -3222,7 +3222,7 @@ const replaceWanFieldsWildcards = async function(
   // Fetch Genie database and retrieve data
   try {
     data = await TasksAPI.getFromCollection('devices', query, projection);
-    data = utilHandlers.convertToProvisionFormat(data[0]);
+    data = utilHandlers.convertWanToProvisionFormat(data[0]);
     args.data = data;
   } catch (e) {
     console.log('Exception fetching Genie database: ' + e);
