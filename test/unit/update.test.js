@@ -26,7 +26,7 @@ const path = require('path');
 
 let wanDataSuccess = fs.readFileSync(
   path.resolve(
-    __dirname, '../assets/flashman-test/genie-data/wan/huawei-eg8145v5.json',
+    __dirname, '../assets/flashman-test/multi-wan/huawei-eg8145v5.json',
   ), 'utf8',
 );
 
