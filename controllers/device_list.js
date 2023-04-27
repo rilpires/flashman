@@ -1158,7 +1158,14 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         }
         query['$and'] = queryArray;
       } else {
-        searchEngineText += `"${tag}"`;
+        if (searchEngineText) {
+          searchEngineText += ' ';
+        }
+        if (tag.startsWith('-')) {
+          searchEngineText += tag;
+        } else {
+          searchEngineText += `"${tag}"`;
+        }
       }
     }
     if (Object.keys(query).length>0) {
