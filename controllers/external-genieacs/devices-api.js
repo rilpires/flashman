@@ -970,6 +970,12 @@ const getParentNode = function(args, callback) {
         return node + '.*.*';
       }
     });
+    Object.keys(wanFields).forEach((key) => {
+      let node = convertIndexIntoWildcard(wanFields[key]);
+      if (!result.includes(node)) {
+        result.push(node);
+      }
+    });
   }
   return callback(null, result);
 };
