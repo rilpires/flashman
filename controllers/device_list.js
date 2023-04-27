@@ -999,6 +999,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   let matchedConfig; // will be assigned a value if it reaches a place where
   // it's being used.
 
+  let searchEngineText = '';
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
@@ -1157,12 +1158,16 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         }
         query['$and'] = queryArray;
       } else {
-        query = {'$text': {'$search': tag}};
+        searchEngineText += `"${tag}"`;
       }
     }
-    finalQueryArray.push(query); // appending query to array of queries.
+    if (Object.keys(query).length>0) {
+      finalQueryArray.push(query); // appending query to array of queries.
+    }
   }
-
+  if (searchEngineText.length>0) {
+    finalQueryArray.push({'$text': {'$search': searchEngineText}});
+  }
   // only return 'finalQuery' if 'finalQueryArray' isn't empty.
   if (finalQueryArray.length > 0) return finalQuery;
   else return {};
