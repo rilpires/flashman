@@ -999,7 +999,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   let matchedConfig; // will be assigned a value if it reaches a place where
   // it's being used.
 
-  let searchEngineText = '';
+  let searchEngineObject = null;
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
@@ -1158,22 +1158,35 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
         }
         query['$and'] = queryArray;
       } else {
-        if (searchEngineText) {
-          searchEngineText += ' ';
-        }
+        // our regex based search, only used on most used fields
+        query['$or'] = [
+          '_id', 'pppoe_user', 'serial_tr069', 'external_reference.data',
+          'alt_uid_tr069', 'acs_id',
+        ].map(
+          (fieldName)=>{
+            let ret = {};
+            ret[fieldName] = new RegExp(escapeRegExp(tag), 'i');
+            return ret;
+          },
+        );
+        // Since we can only have ONE search object on a query,
+        // we add all the previous search terms on the first generic
+        // search object
+        let appendedText;
         if (tag.startsWith('-')) {
-          searchEngineText += tag;
+          appendedText = tag;
         } else {
-          searchEngineText += `"${tag}"`;
+          appendedText = `"${tag}"`;
+        }
+        if (!searchEngineObject) {
+          searchEngineObject = {'$text': {'$search': appendedText}};
+          query['$or'].push(searchEngineObject);
+        } else {
+          searchEngineObject['$text']['$search'] += appendedText;
         }
       }
     }
-    if (Object.keys(query).length>0) {
-      finalQueryArray.push(query); // appending query to array of queries.
-    }
-  }
-  if (searchEngineText.length>0) {
-    finalQueryArray.push({'$text': {'$search': searchEngineText}});
+    finalQueryArray.push(query);
   }
   // only return 'finalQuery' if 'finalQueryArray' isn't empty.
   if (finalQueryArray.length > 0) return finalQuery;
