@@ -3,10 +3,12 @@ require('../../bin/globals.js');
 const {createSimulator} = require('./cpe-tr069-simulator');
 const blackbox = require('../common/blackbox.js');
 const constants = require('../common/constants.js');
+const {pulling} = require('./utils.js');
 
 describe('api_v2', () => {
   const mac = 'FF:FF:FF:00:00:01';
-  const deviceModelH199 = './test/assets/data_models/H199.csv';
+  const deviceModelH199 =
+    'device-C0B101-ZXHN%20H199A-ZTEYH86LCN10105-2023-03-28T154022233Z';
 
   let adminCookie = null;
   let simulator;
@@ -52,7 +54,26 @@ describe('api_v2', () => {
       // Start CPE
       simulator = createSimulator(
         constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
-      );
+      ).debug({ // enabling/disabling prints for device events.
+        beforeReady: false,
+        error: false,
+        xml: false,
+        requested: false,
+        response: false,
+        sent: false,
+        task: false,
+        diagnostic: false,
+      });
+      simulator.addLanDevice({
+        Active: true,
+        HostName: 'test-device',
+        IPAddress: '192.168.1.38',
+        InterfaceType: 'Ethernet',
+        Layer2Interface:
+          'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.2',
+        LeaseTimeRemaining: 3000,
+        MACAddress: 'AA:BB:CC:DD:EE:FF',
+      });
       await simulator.start();
 
 
@@ -60,11 +81,30 @@ describe('api_v2', () => {
       let simulatorResponse = await blackbox.sendRequestAdmin(
         'post', '/devicelist/command/' + mac + '/onlinedevs', adminCookie,
       );
-      await simulator.nextTask();
-      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // Validate
       expect(simulatorResponse.body.success).toBe(true);
+
+      // waiting values to be called for in CPE and responded to ACS.
+      await simulator.nextTask('GetParameterValues');
+
+
+      // pulling CPE from flashman and checking if lan device appears.
+      const success = await pulling(async () => {
+        // getting the CPE.
+        let validationResponse = await blackbox.sendRequestAdmin(
+          'get', '/devicelist/landevices/' + mac, adminCookie,
+        );
+
+        // checking CPE has the lan device and returning result as the success
+        // condition for the pulling attempt.
+        return validationResponse.body.lan_devices.find(
+          (device) => lanDeviceID === device.mac,
+        );
+      }, 400, 4000); // 400ms intervals between executions, fails after 4000ms.
+
+      // 'success' will be true if our pulling returns true withing the timeout.
+      expect(success).toBe(true);
 
 
       // Execute
@@ -92,7 +132,7 @@ describe('api_v2', () => {
 
 
   afterAll(async () => {
-    await blackbox.deleteCPE(mac, adminCookie);
     if (simulator) await simulator.shutDown();
+    await blackbox.deleteCPE(mac, adminCookie);
   });
 });
