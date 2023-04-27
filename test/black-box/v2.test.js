@@ -121,7 +121,7 @@ describe('api_v2', () => {
       return !res.body.current_diagnostic.in_progress;
     }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
 
-    // 'success' will be true if our function returns true withing the timeout.
+    // 'success' will be true if our pulling returns true withing the timeout.
     expect(success).toBe(true);
     expect(res.body.current_diagnostic.in_progress).toBe(false);
     for (const result of res.body.pingtest_results) {

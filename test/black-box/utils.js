@@ -12,7 +12,7 @@ const pulling = async function(repeatFunc, sleeptime, maxTimeout) {
   let ready = false;
   while ( !(ready = !!(await repeatFunc())) ) {
     if (new Date() - start >= maxTimeout - sleeptime) break;
-    sleep(sleeptime);
+    await sleep(sleeptime);
   }
   return ready;
 };
