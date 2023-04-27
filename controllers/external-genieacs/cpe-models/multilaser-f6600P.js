@@ -35,6 +35,9 @@ zteModel.modelPermissions = function() {
   permissions.ipv6.hasAddressField = true;
   permissions.ipv6.hasPrefixDelegationAddressField = true;
 
+  // X_ZTE-COM_IspDNS must be disabled to use DNS on lan
+  permissions.lan.dnsServersWrite = false;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64,
     100, 104, 108, 112, 116, 120, 124, 128, 149, 153, 157, 161,
@@ -92,6 +95,16 @@ zteModel.getModelFields = function() {
   fields.wan.wan_ip_ppp = fields.wan.wan_ip_ppp.replace(
     /1.ExternalIPAddress/, '*.ExternalIPAddress',
   );
+  fields.wan.recv_bytes = fields.wan.recv_bytes.replace(
+    /WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig',
+  );
+  fields.wan.sent_bytes = fields.wan.sent_bytes.replace(
+    /WANEthernetInterfaceConfig/g, 'X_ZTE-COM_WANPONInterfaceConfig',
+  );
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_ZTE-COM_WANPONInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_ZTE-COM_WANPONInterfaceConfig.TXPower';
   fields.wifi2.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1'+
     '.X_ZTE-COM_WlanStandard';
   fields.wifi5.mode = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5'+
