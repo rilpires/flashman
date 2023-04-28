@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-const mongoosePaginate = require('mongoose-paginate');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const request = require('request-promise-native');
 
 const Config = require('./config');
@@ -49,7 +49,7 @@ let deviceSchema = new Schema({
   pon_signal_measure: Object,
   wan_vlan_id: Number,
   wan_mtu: Number,
-  wan_bssid: String,
+  wan_bssid: {type: String, sparse: true},
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,
@@ -377,6 +377,42 @@ let textIndexes = {};
 textSearchFields.map((val)=>textIndexes[val]='text');
 deviceSchema.index( textIndexes, {
   'name': 'search_texts',
+});
+
+// For some reason, mongodb doesn't allow creation of another
+// index that uses _id, unless it is compound
+const collationIndexes = ['acs_id', 'alt_uid_tr069',
+  'external_reference.data', 'pppoe_user', 'serial_tr069', 'wan_bssid',
+];
+collationIndexes.map(function(collationIndex) {
+  let indexObject = {};
+  let indexOptions = {
+    name: `${collationIndex}_collation`,
+    collation: {
+      locale: 'en_US', strength: 1,
+    },
+  };
+  if (collationIndex) {
+    indexOptions.sparse = true;
+  }
+  indexObject[collationIndex] = 1;
+  deviceSchema.index(indexObject, indexOptions);
+});
+// The compound index that includes _id that we need in order
+// to simpleSearch very efficiently
+deviceSchema.index({
+  '_id': 1,
+  'acs_id': 1,
+  'alt_uid_tr069': 1,
+  'external_reference.data': 1,
+  'pppoe_user': 1,
+  'serial_tr069': 1,
+  'wan_bssid': 1,
+}, {
+  name: 'simple_search_index',
+  collation: {
+    locale: 'en_US', strength: 1,
+  },
 });
 
 deviceSchema.set('autoIndex', false);
