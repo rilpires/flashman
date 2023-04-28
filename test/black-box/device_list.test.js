@@ -6,15 +6,10 @@ const constants = require('../common/constants.js');
 const {pulling} = require('./utils.js');
 
 describe('api_v2', () => {
-  const mac = 'FF:FF:FF:00:00:01';
   const deviceModelH199 =
     'device-C0B101-ZXHN%20H199A-ZTEYH86LCN10105-2023-03-28T154022233Z';
-
   let adminCookie = null;
-  let simulator;
-
   jest.setTimeout( 30*1000 );
-
 
   beforeAll(async () => {
     const adminLogin = await blackbox.loginAsAdmin();
@@ -24,7 +19,6 @@ describe('api_v2', () => {
       throw new Error('Failed to get admin cookie');
     }
   });
-
 
   // Devicelist page rendered properly
   test('Devicelist page', async () => {
@@ -36,9 +30,11 @@ describe('api_v2', () => {
     expect(parseInt(response.header['content-length'])).toBeGreaterThan(50000);
   });
 
-
   // setLanDeviceName
   describe('setLanDeviceName', () => {
+    const mac = 'FF:FF:FF:00:00:01';
+    let simulator;
+
     // Normal operation
     test('Normal operation', async () => {
       const lanDeviceID = 'AA:BB:CC:DD:EE:FF';
@@ -83,6 +79,7 @@ describe('api_v2', () => {
       );
 
       // Validate
+      expect(simulatorResponse.statusCode).toBe(200);
       expect(simulatorResponse.body.success).toBe(true);
 
       // waiting values to be called for in CPE and responded to ACS.
@@ -130,9 +127,100 @@ describe('api_v2', () => {
     });
   });
 
+  // setLanDeviceName
+  describe('Testing Search Engine', () => {
+    test( 'Removing devices', async ()=>{
+      await blackbox.deleteAllDevices(adminCookie);
+    });
 
-  afterAll(async () => {
-    if (simulator) await simulator.shutDown();
-    await blackbox.deleteCPE(mac, adminCookie);
+    test('Search operations when empty', async () => {
+      let response;
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: ''},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(0);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: 'AA'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(0);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: 'bb:cc'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(0);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: '00:05'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(0);
+    });
+    test('Search operations when devices present', async () => {
+      let macs = [
+        'AA:BB:CC:DD:00:00',
+        'AA:BB:CC:DD:00:01',
+        'AA:BB:CC:DD:00:02',
+        'AA:BB:CC:DD:00:03',
+        'AA:BB:CC:DD:00:04',
+        'AA:BB:CC:DD:00:05',
+      ];
+      await Promise.all(
+        macs.map(
+          (mac) => createSimulator(
+            constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
+          ).start(),
+        ),
+      );
+
+      let response;
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: ''},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(6);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: 'AA'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(6);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: 'bb:cc'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(6);
+
+      response = await blackbox
+      .sendRequestAdmin('put', '/api/v2/device/search', adminCookie,
+        {filter_list: '00:05'},
+      );
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.status.totalnum).toBe(1);
+    });
+
+    test('Removing all devices', async ()=>{
+      await blackbox.deleteAllDevices(adminCookie);
+    });
   });
 });
