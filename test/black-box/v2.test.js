@@ -1,20 +1,25 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
-const {createSimulator, formatXML} = require('./cpe-tr069-simulator');
+const {createSimulator} = require('./cpe-tr069-simulator');
+const {pulling} = require('./utils.js');
 const blackbox = require('../common/blackbox.js');
 const constants = require('../common/constants.js');
 
 
 describe('api_v2', () => {
-  const deviceModelH199 = './test/assets/data_models/H199.csv';
+  const deviceDataModel =
+    'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z';
 
   let adminCookie = null;
 
   jest.setTimeout( 15*1000 );
 
-  const mac = 'FF:FF:FF:00:00:01';
   let simulator;
 
+  // returns response from an http request, sent to flashman, with a user
+  // already logged in.
+  const flashman = (method, url, body) =>
+    blackbox.sendRequestAdmin(method, url || '', adminCookie, body);
 
   beforeAll(async () => {
     const adminLogin = await blackbox.loginAsAdmin();
@@ -26,51 +31,42 @@ describe('api_v2', () => {
       + `HTTP error: ${adminLogin.error}\n`,
       );
     }
+
+    // Creating a device.
+    let mac = 'FF:FF:FF:00:00:01';
+    const genieAddress = constants.GENIEACS_HOST;
+    simulator = createSimulator(genieAddress, deviceDataModel, 1000, mac)
+    .debug({ // enabling/disabling prints for device events.
+      beforeReady: false,
+      error: true,
+      xml: false,
+      requested: false,
+      response: false,
+      sent: false,
+      task: false,
+      diagnostic: false,
+    });
+    await simulator.start(); // starting device.
+  });
+
+  afterAll(async () => {
+    if (simulator) await simulator.shutDown();
+    await blackbox.deleteCPE(simulator.mac, adminCookie);
   });
 
   // Device search
-  test('/api/v2/device/search - Before and After creation', async () => {
-    let res = await blackbox.sendRequestAdmin(
-      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
-    );
+  test('/api/v2/device/search - After creation', async () => {
+    let res = await flashman('put', '/api/v2/device/search', {
+      filter_list: 'online',
+    });
     expect(res.statusCode).toBe(200);
     expect(res.header['content-type']).toContain('application/json');
     expect(res.header['content-type']).toContain('charset=utf-8');
     expect(res.body.success).toBe(true);
-    expect(res.body.status.onlinenum).toEqual(0);
+    expect(res.body.status.onlinenum).toBeGreaterThan(0);
     expect(res.body.status.recoverynum).toEqual(0);
     expect(res.body.status.offlinenum).toEqual(0);
-    expect(res.body.status.totalnum).toEqual(0);
-
-    // Creating a device
-    simulator = createSimulator(
-      constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
-    ).on('started', () => {
-      // console.log('*** simulator started');
-    }).on('ready', () => {
-      // console.log('*** simulator ready');
-    }).on('requested', (request) => {
-      // console.log(`- RECEIVED REQUEST BODY '${formatXML(request.body)}'.`);
-    }).on('response', (response) => {
-      // console.log(`- RECEIVED RESPONSE BODY '${formatXML(response.body)}'.`);
-    }).on('sent', (request) => {
-      // console.log(`- SENT BODY '${formatXML(request.body)}'.`);
-    }).on('task', (task) => {
-      // console.log('- PROCESSED task', JSON.stringify(task, null, '  '));
-    });
-    await simulator.start();
-
-    // Checking new result
-    res = await blackbox.sendRequestAdmin(
-      'put', '/api/v2/device/search', adminCookie, {filter_list: 'online'},
-    );
-    expect(res.statusCode).toBe(200);
-    expect(res.header['content-type']).toContain('application/json');
-    expect(res.header['content-type']).toContain('charset=utf-8');
-    expect(res.body.success).toBe(true);
     expect(res.body.status.totalnum).toBeGreaterThan(0);
-    expect(res.body.status.onlinenum).toBeGreaterThan(0);
-    expect(res.body.status.offlinenum).toEqual(0);
   });
 
   test('Changing CPE register', async () => {
@@ -80,30 +76,56 @@ describe('api_v2', () => {
         wifi_password: 'somepassword',
       },
     };
-    let res = await blackbox.sendRequestAdmin(
-      'put', '/api/v2/device/update/' + mac, adminCookie, update,
-    );
+    let res =
+      await flashman('put', `/api/v2/device/update/${simulator.mac}`, update);
+    // console.log('res.body', res.body)
     expect(res.statusCode).toBe(200);
     // eslint-disable-next-line guard-for-in
-    for (let field in update.content) {
+    for (const field in update.content) {
       expect(res.body[field]).toBe(update.content[field]);
     }
 
     // Waiting for simulator to process the task, respond and receive answer.
     await simulator.nextTask();
 
-    res = await blackbox.sendRequestAdmin(
-      'get', '/api/v2/device/update/' + mac, adminCookie,
-    );
+    res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+    // console.log('res.body', res.body)
     expect(res.statusCode).toBe(200);
     // eslint-disable-next-line guard-for-in
-    for (let field in update.content) {
+    for (const field in update.content) {
       expect(res.body[field]).toBe(update.content[field]);
     }
   });
 
-  afterAll(async () => {
-    await blackbox.deleteCPE(mac, adminCookie);
-    if (simulator) await simulator.shutDown();
+  test('Firing ping diagnostic', async () => {
+    // issuing a ping diagnostic.
+    let res =
+      await flashman('put', `/api/v2/device/command/${simulator.mac}/ping`);
+    // console.log('res.body', res.body)
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // awaiting cpe to receive 4 diagnostics. it's always 4.
+    await simulator.nextDiagnostic(); // ping 1.
+    await simulator.nextDiagnostic(); // ping 2.
+    await simulator.nextDiagnostic(); // ping 3.
+    await simulator.nextDiagnostic(); // ping 4.
+    // waiting for Flashman to ask for final diagnostic result values.
+    await simulator.nextTask('GetParameterValues');
+
+    // getting cpe until ping diagnostic is not running anymore.
+    const success = await pulling(async () => {
+      res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+      expect(res.statusCode).toBe(200);
+      // returning success condition.
+      return !res.body.current_diagnostic.in_progress;
+    }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
+
+    // 'success' will be true if our pulling returns true withing the timeout.
+    expect(success).toBe(true);
+    expect(res.body.current_diagnostic.in_progress).toBe(false);
+    for (const result of res.body.pingtest_results) {
+      expect(result.completed).toBe(true);
+    }
   });
 });
