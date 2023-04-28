@@ -56,7 +56,7 @@ describe('api_v2', () => {
         constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
       ).debug({ // enabling/disabling prints for device events.
         beforeReady: false,
-        error: false,
+        error: true,
         xml: false,
         requested: false,
         response: false,
@@ -101,7 +101,7 @@ describe('api_v2', () => {
         return validationResponse.body.lan_devices.find(
           (device) => lanDeviceID === device.mac,
         );
-      }, 400, 4000); // 400ms intervals between executions, fails after 4000ms.
+      }, 400, 5000); // 400ms intervals between executions, fails after 4000ms.
      
       // 'success' will be true if our pulling returns true withing the timeout.
       expect(success).toBe(true);

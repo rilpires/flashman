@@ -105,26 +105,56 @@ describe('api_v2', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
-    // awaiting cpe to receive 4 diagnostics. it's always 4.
-    await simulator.nextDiagnostic(); // ping 1.
-    await simulator.nextDiagnostic(); // ping 2.
-    await simulator.nextDiagnostic(); // ping 3.
-    await simulator.nextDiagnostic(); // ping 4.
+    // waiting CPE to receive 4 diagnostics. it's always 4.
+    await simulator.nextDiagnostic('ping'); // ping target host 1.
+    await simulator.nextDiagnostic('ping'); // ping target host 2.
+    await simulator.nextDiagnostic('ping'); // ping target host 3.
+    await simulator.nextDiagnostic('ping'); // ping target host 4.
     // waiting for Flashman to ask for final diagnostic result values.
     await simulator.nextTask('GetParameterValues');
 
-    // getting cpe until ping diagnostic is not running anymore.
+    // getting CPE until ping diagnostic is not running anymore.
     const success = await pulling(async () => {
       res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
       expect(res.statusCode).toBe(200);
-      // returning success condition.
-      return !res.body.current_diagnostic.in_progress;
+      return !res.body.current_diagnostic.in_progress; // success condition.
     }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
 
     // 'success' will be true if our pulling returns true withing the timeout.
     expect(success).toBe(true);
     expect(res.body.current_diagnostic.in_progress).toBe(false);
     for (const result of res.body.pingtest_results) {
+      expect(result.completed).toBe(true);
+    }
+  });
+
+  test('Firing traceroute diagnostic', async () => {
+    // issuing a traceroute diagnostic.
+    const url = `/api/v2/device/command/${simulator.mac}/traceroute`;
+    let res = await flashman('put', url);
+    // console.log('res.body', res.body)
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // waiting CPE to receive 4 diagnostics. it's always 4.
+    await simulator.nextDiagnostic('traceroute'); // traceroute target host 1.
+    await simulator.nextDiagnostic('traceroute'); // traceroute target host 2.
+    await simulator.nextDiagnostic('traceroute'); // traceroute target host 3.
+    await simulator.nextDiagnostic('traceroute'); // traceroute target host 4.
+    // waiting for Flashman to ask for final diagnostic result values.
+    await simulator.nextTask('GetParameterValues');
+
+    // getting CPE until traceroute diagnostic is not running anymore.
+    const success = await pulling(async () => {
+      res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+      expect(res.statusCode).toBe(200);
+      return !res.body.current_diagnostic.in_progress; // success condition.
+    }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
+
+    // 'success' will be true if our pulling returns true withing the timeout.
+    expect(success).toBe(true);
+    expect(res.body.current_diagnostic.in_progress).toBe(false);
+    for (const result of res.body.traceroute_results) {
       expect(result.completed).toBe(true);
     }
   });
