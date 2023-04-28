@@ -67,6 +67,7 @@ const tr069Models = {
   mercusysMR30GModel: require('./cpe-models/mercusys-mr30g'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
+  multilaserF6600PModel: require('./cpe-models/multilaser-f6600P'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -310,6 +311,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F6600') {
     // Multilaser ZTE F6600
     result = {success: true, cpe: tr069Models.multilaserF6600Model};
+  } else if (modelName === 'F6600P') {
+    // Multilaser ZTE F6600P
+    result = {success: true, cpe: tr069Models.multilaserF6600PModel};
   } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
     // Multilaser ZTE F670L V9.0
     result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
