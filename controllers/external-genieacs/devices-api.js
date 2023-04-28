@@ -64,6 +64,7 @@ const tr069Models = {
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
+  intelbrasTwibiModel: require('./cpe-models/intelbras-twibi'),
   mercusysMR30GModel: require('./cpe-models/mercusys-mr30g'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
@@ -299,6 +300,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === '1200R') {
     // Intelbras WiFiber 1200R InMesh
     result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
+  } else if (modelName === 'Twibi') {
+    // Intelbras Twibi
+    result = {success: true, cpe: tr069Models.intelbrasTwibiModel};
   } else if (modelName === 'MR30G') {
     // Mercusys MR30G
     result = {success: true, cpe: tr069Models.mercusysMR30GModel};
