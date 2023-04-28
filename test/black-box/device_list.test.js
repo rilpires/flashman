@@ -101,7 +101,7 @@ describe('api_v2', () => {
         return validationResponse.body.lan_devices.find(
           (device) => lanDeviceID === device.mac,
         );
-      }, 400, 5000); // 400ms intervals between executions, fails after 4000ms.
+      }, 400, 5000); // 400ms intervals between executions, fails after 5000ms.
      
       // 'success' will be true if our pulling returns true withing the timeout.
       expect(success).toBe(true);
