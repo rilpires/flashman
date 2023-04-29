@@ -3230,6 +3230,9 @@ const replaceWanFieldsWildcards = async function(
   }
   let result = DevicesAPI.assembleWanObj(args, cb);
   let chosenWan = utilHandlers.chooseWan(result, wildcardFlag);
+  if (chosenWan.key === undefined && chosenWan.value === undefined) {
+    return {'success': false, 'task': undefined};
+  }
   let chosenWanKey = chosenWan.key;
   const [, type, ...indexes] = chosenWanKey.split('_');
   // Iterates through changes to WAN fields and replaces the corresponding value
