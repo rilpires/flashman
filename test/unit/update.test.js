@@ -341,7 +341,7 @@ describe('Update Tests - Functions', () => {
 
         // Execute function
         let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
-          id, false, deviceFields, changes, task,
+          id, false, false, deviceFields, changes, task,
         );
 
         // Validate
@@ -384,7 +384,7 @@ describe('Update Tests - Functions', () => {
 
         // Execute
         let ret = await acsDeviceInfo.__testReplaceWanFieldsWildcards(
-          id, false, deviceFields, changes, task,
+          id, false, false, deviceFields, changes, task,
         );
 
         // Validate
@@ -429,10 +429,15 @@ describe('Update Tests - Functions', () => {
           mesh5: {},
         };
 
-        let projection = Object.keys(changes.wan).map((k)=>{
-          if (!deviceFields.wan[k]) return;
-          return deviceFields.wan[k].split('.*')[0];
-        }).join(',');
+        let args = {
+          update: true,
+          fields: deviceFields,
+          isTR181: false,
+        };
+        const cb = (err, res) => {
+          return res;
+        };
+        let projection = devicesAPI.getParentNode(args, cb);
 
         let expectedTask = {
           name: 'setParameterValues',
