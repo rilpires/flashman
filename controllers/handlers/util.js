@@ -92,7 +92,14 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     let enable = (key.includes('ppp')) ? wan.pppoe_enable : wan.dhcp_enable;
     let status = (key.includes('ppp')) ? wan.pppoe_status : wan.dhcp_status;
 
-    if (enable === true && status === 'Connected') {
+    if (enable.hasOwnProperty('value')) {
+      enable = enable.value;
+    }
+    if (status.hasOwnProperty('value')) {
+      status = status.value;
+    }
+
+    if (enable === true && (status === 'Connected' || status === 'Up')) {
       // Ideal conditions: Status = Connected and Enable = true
       idealCandidates.push(key);
     } else if (enable === true || status === 'Dormant') {
@@ -159,7 +166,12 @@ utilHandlers.convertWanToFlashmanFormat = function(data) {
     for (const prop in obj) {
       if (!obj.hasOwnProperty(prop)) continue;
       if (obj[prop].hasOwnProperty('value')) {
-        temp[prop] = {writable: obj[prop].writable, value: obj[prop].value[0]};
+        let value = Array.isArray(obj[prop].value) ?
+          obj[prop].value[0] : obj[prop].value;
+        temp[prop] = {
+          writable: obj[prop].writable,
+          value: value,
+        };
       }
     }
     result[key] = temp;
