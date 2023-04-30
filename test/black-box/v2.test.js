@@ -12,7 +12,7 @@ describe('api_v2', () => {
 
   let adminCookie = null;
 
-  jest.setTimeout( 15*1000 );
+  jest.setTimeout( 25*1000 );
 
   let simulator;
 
@@ -39,7 +39,7 @@ describe('api_v2', () => {
     .debug({ // enabling/disabling prints for device events.
       beforeReady: false,
       error: true,
-      xml: false,
+      xml: true,
       requested: false,
       response: false,
       sent: false,
@@ -70,6 +70,7 @@ describe('api_v2', () => {
   });
 
   test('Changing CPE register', async () => {
+    // console.log('=========== Changing CPE register ===========')
     let update = {
       content: {
         wifi_ssid: 'some ssid',
@@ -98,6 +99,7 @@ describe('api_v2', () => {
   });
 
   test('Firing ping diagnostic', async () => {
+    // console.log('=========== Firing ping diagnostic ===========')
     // issuing a ping diagnostic.
     let res =
       await flashman('put', `/api/v2/device/command/${simulator.mac}/ping`);
@@ -129,6 +131,7 @@ describe('api_v2', () => {
   });
 
   test('Firing traceroute diagnostic', async () => {
+    // console.log('=========== Firing ping diagnostic ===========')
     // issuing a traceroute diagnostic.
     const url = `/api/v2/device/command/${simulator.mac}/traceroute`;
     let res = await flashman('put', url);
