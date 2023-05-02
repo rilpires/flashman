@@ -21,14 +21,8 @@ const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
 const DeviceModel = require('../../models/device');
 
-const fs = require('fs');
-const path = require('path');
-
-let wanDataSuccess = fs.readFileSync(
-  path.resolve(
-    __dirname, '../assets/flashman-test/multi-wan/huawei-eg8145v5.json',
-  ), 'utf8',
-);
+const path = '../assets/flashman-test/multi-wan/';
+const eg8145v5 = require(path + 'huawei-eg8145v5/wanData.json');
 
 const mockRequest = (params, user, body) => {
   return {params: params, user: user, body: body};
@@ -346,7 +340,9 @@ describe('Update Tests - Functions', () => {
           .mockReturnValue(undefined);
 
         let getFromCollectionSpy = jest.spyOn(tasksAPI, 'getFromCollection')
-          .mockImplementation(() => JSON.parse('[' + wanDataSuccess + ']'));
+          .mockImplementation(
+            () => JSON.parse('[' + JSON.stringify(eg8145v5) + ']'),
+          );
 
         // Execute
         await acsDeviceInfo.__testUpdateInfo(device, changes);
