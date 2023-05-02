@@ -80,6 +80,7 @@ utilHandlers.traverseNestedKey = function(
 };
 
 utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
+  console.log(data);
   data = utilHandlers.convertWanToFlashmanFormat(data);
   let idealCandidates = [];
   let possibleCandidates = [];
@@ -117,6 +118,7 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     const firstKey = keys[0];
     const lastKey = keys[keys.length - 1];
     const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+    console.log('1')
     return {key: correctKey, value: data[correctKey]};
   }
 
