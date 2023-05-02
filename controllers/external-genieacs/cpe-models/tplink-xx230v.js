@@ -56,7 +56,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
-
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.6.0 3.0.0 v6066.0 Build 220630 Rel.56119n': [],
   };
@@ -130,7 +130,10 @@ tplinkModel.getModelFields = function() {
     'Device.Optical.Interface.*.X_TP_GPON_Config.RXPower';
   fields.wan.pon_txpower =
     'Device.Optical.Interface.*.X_TP_GPON_Config.TXPower';
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
