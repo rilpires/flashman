@@ -9,7 +9,7 @@ const ACSDeviceInfo = require('../../controllers/acs_device_info');
 const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const utilHandlers = require('../../controllers/handlers/util');
 
-let path = '../assets/flashman-test/multi-wan/';
+const path = '../assets/flashman-test/multi-wan/';
 
 // Huaewi EG8145V5
 const eg8145v5 = require(path + 'huawei-eg8145v5/wanData.json');
