@@ -95,7 +95,7 @@
     "unzipper": "~0.10.11"
   },
   "devDependencies": {
-    "@anlix-io/genieacs-sim": "^1.2.1",
+    "@anlix-io/genieacs-sim": "1.2.4",
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
     "babel-loader": "^8.2.2",
