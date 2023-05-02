@@ -23,21 +23,24 @@ describe('APP Device API Tests', () => {
   describe('getQueryForBackupFetch', () => {
     test('Test alt uid', () => {
       // Execute
-      const result = appDeviceAPIController.getQueryForBackupFetch(altUid);
+      const result =
+        appDeviceAPIController.__testGetQueryForBackupFetch(altUid);
       // validate
       expect(result.alt_uid_tr069).toBe('1111');
     });
 
     test('Test mac as serial', () => {
       // Execute
-      const result = appDeviceAPIController.getQueryForBackupFetch(macAsSerial);
+      const result =
+        appDeviceAPIController.__testGetQueryForBackupFetch(macAsSerial);
       // validate
       expect(result._id).toBe('2222');
     });
 
     test('Test serial tr069', () => {
       // Execute
-      const result = appDeviceAPIController.getQueryForBackupFetch(serial);
+      const result =
+        appDeviceAPIController.__testGetQueryForBackupFetch(serial);
       // validate
       expect(result.serial_tr069).toBe('3333');
     });
@@ -45,14 +48,15 @@ describe('APP Device API Tests', () => {
     test('Test abnormal body.content', () => {
       // Execute
       const result =
-        appDeviceAPIController.getQueryForBackupFetch(abnormalContent);
+        appDeviceAPIController.__testGetQueryForBackupFetch(abnormalContent);
       // validate
       expect(result).toBe(null);
     });
 
     test('Test null body.content', () => {
       // Execute
-      const result = appDeviceAPIController.getQueryForBackupFetch(nullContent);
+      const result =
+        appDeviceAPIController.__testGetQueryForBackupFetch(nullContent);
       // validate
       expect(result).toBe(null);
     });
@@ -60,7 +64,7 @@ describe('APP Device API Tests', () => {
     test('Test undefined body.content', () => {
       // Execute
       const result =
-        appDeviceAPIController.getQueryForBackupFetch(undefinedContent);
+        appDeviceAPIController.__testGetQueryForBackupFetch(undefinedContent);
       // validate
       expect(result).toBe(null);
     });

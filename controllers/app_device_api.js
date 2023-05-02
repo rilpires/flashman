@@ -1693,7 +1693,7 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
   });
 };
 
-appDeviceAPIController.getQueryForBackupFetch = function(content) {
+const getQueryForBackupFetch = function(content) {
   let query = null;
   if (!content) return query;
   if (content.alt_uid) {
@@ -1705,6 +1705,9 @@ appDeviceAPIController.getQueryForBackupFetch = function(content) {
   }
   return query;
 };
+
+// To be called at app_device_api.test.js
+appDeviceAPIController.__testGetQueryForBackupFetch = getQueryForBackupFetch;
 
 appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
