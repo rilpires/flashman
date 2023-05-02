@@ -80,7 +80,6 @@ utilHandlers.traverseNestedKey = function(
 };
 
 utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
-  console.log(data);
   data = utilHandlers.convertWanToFlashmanFormat(data);
   let idealCandidates = [];
   let possibleCandidates = [];
@@ -103,7 +102,8 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     if (enable === true && (status === 'Connected' || status === 'Up')) {
       // Ideal conditions: Status = Connected and Enable = true
       idealCandidates.push(key);
-    } else if (enable === true || status === 'Dormant') {
+    } else if (enable === true || (status === 'Dormant' ||
+        status === 'Connected' || status === 'Up')) {
       // In the absence of WANs in ideal conditions, we map those that have at
       // least one of the conditions met
       possibleCandidates.push(key);
@@ -118,7 +118,6 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     const firstKey = keys[0];
     const lastKey = keys[keys.length - 1];
     const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
-    console.log('1')
     return {key: correctKey, value: data[correctKey]};
   }
 
