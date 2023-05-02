@@ -1,3 +1,4 @@
+const util = require('util');
 const geanieacsSim = require('@anlix-io/genieacs-sim');
 
 const formatXML = geanieacsSim.formatXML;
@@ -83,8 +84,7 @@ const createSimulator = (...args) => {
 
   let debug = {
     beforeReady: false,
-    error: false,
-    xml: false,
+    error: true,
     requested: false,
     response: false,
     sent: false,
@@ -98,19 +98,20 @@ const createSimulator = (...args) => {
     const debugVerbosity = () => {
       simulator.on('requested', (request) => {
         if (!debug.requested) return;
-        console.log(`- RECEIVED REQUEST BODY FROM ACS.`);
+        console.log(`- RECEIVED REQUEST FROM ACS.`);
       }).on('sent', (request) => {
         if (!debug.sent) return;
-        const xml = debug.xml ? '\n\''+formatXML(request.body)+'\'.' : '.';
-        console.log(`- CPE SENT BODY:${xml}`);
+        const xml = formatXML(request.body, '  ');
+        console.log(`- CPE SENT BODY: '${xml}'.`);
       }).on('response', (response) => {
         if (!debug.response) return;
-        const xml = debug.xml ? '\n\''+formatXML(response.body)+'\'.' : '.';
-        console.log(`- RECEIVED RESPONSE BODY FROM ACS:${xml}`);
+        const xml = formatXML(response.body, '  ');
+        console.log(`- RECEIVED RESPONSE BODY FROM ACS: '${xml}'.`);
       }).on('task', (task) => {
         if (!debug.task) return;
         const body = debug.task === 'name' ?
-          task.localName : JSON.stringify(task, null, '  ');
+          task.name :
+          util.inspect(task, {depth: Infinity, colors: true, breakLength: 100});
         console.log(`- CPE EXECUTED task ${body}.`);
       }).on('diagnostic', (diagnostic) => {
         if (!debug.diagnostic) return;
