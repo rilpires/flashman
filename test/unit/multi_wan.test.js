@@ -10,17 +10,35 @@ const TasksAPI = require('../../controllers/external-genieacs/tasks-api');
 const utilHandlers = require('../../controllers/handlers/util');
 
 let path = '../assets/flashman-test/multi-wan/';
-let eg8145v5 = require(path + 'huawei-eg8145v5.json');
-let hx220 = require(path + 'tplink-hx220.json');
-let hg9 = require(path + 'tenda-hg9.json');
 
-const eg8WanKeys = require(path + 'eg8145v5WanKeys.js');
-const hg9WanKeys = require(path + 'hg9WanKeys.js');
-const hxWanKeys = require(path + 'hx220WanKeys.js');
+// Huaewi EG8145V5
+const eg8145v5 = require(path + 'huawei-eg8145v5/wanData.json');
+const eg8WanKeys = require(path + 'huawei-eg8145v5/wanKeys.js');
+const eg8WanList = require(path + 'huawei-eg8145v5/wanList.js');
 
-const eg8WanList = require(path + 'eg8145v5WanList.js');
-const hg9WanList = require(path + 'hg9WanList.js');
-const hxWanList = require(path + 'hx220WanList.js');
+// TP Link HX220
+const hx220 = require(path + 'tplink-hx220/wanData.json');
+const hxWanKeys = require(path + 'tplink-hx220/wanKeys.js');
+const hxWanList = require(path + 'tplink-hx220/wanList.js');
+
+// Tenda HG9
+const hg9 = require(path + 'tenda-hg9/wanData.json');
+const hg9WanKeys = require(path + 'tenda-hg9/wanKeys.js');
+const hg9WanList = require(path + 'tenda-hg9/wanList.js');
+
+// Choose WAN
+const case1TR098 = require(path + 'choose-wan/case1-TR098.js');
+const case1TR181 = require(path + 'choose-wan/case1-TR181.js');
+const case2TR098 = require(path + 'choose-wan/case2-TR098.js');
+const case2TR181 = require(path + 'choose-wan/case2-TR181.js');
+const case3TR098 = require(path + 'choose-wan/case3-TR098.js');
+const case3TR181 = require(path + 'choose-wan/case3-TR181.js');
+const case4TR098 = require(path + 'choose-wan/case4-TR098.js');
+const case4TR181 = require(path + 'choose-wan/case4-TR181.js');
+const case5TR098 = require(path + 'choose-wan/case5-TR098.js');
+const case5TR181 = require(path + 'choose-wan/case5-TR181.js');
+const case6TR098 = require(path + 'choose-wan/case6-TR098.js');
+const case6TR181 = require(path + 'choose-wan/case6-TR181.js');
 
 const cb = (err, res) => {
   return res;
@@ -154,13 +172,77 @@ describe('Multi WAN Tests', () => {
     });
   });
 
-  // describe('Handler Utils', () => {
-  //   describe('chooseWan Tests - Best WAN choice heuristic', () => {
-  //     test('TR-098', () => {
+  describe('Handler Utils', () => {
+    describe('chooseWan Tests - Best WAN choice heuristic', () => {
+      test('Case 1 TR-098: Empty obj', () => {
+        let result = utilHandlers.chooseWan(case1TR098, false);
+        expect(result.key).toStrictEqual('wan_ppp_1_1_1');
+      });
 
-  //     });
-  //   });
-  // });
+      test('Case 1 TR-181: Empty obj', () => {
+        let result = utilHandlers.chooseWan(case1TR181, true);
+        expect(result.key).toStrictEqual('wan_ppp_4');
+      });
+
+      test('Case 2 TR-098: Only one WAN with ideal conditions', () => {
+        let result = utilHandlers.chooseWan(case2TR098, false);
+        expect(result.key).toStrictEqual('wan_dhcp_1_2_1');
+      });
+
+      test('Case 2 TR-181: Only one WAN with ideal conditions', () => {
+        let result = utilHandlers.chooseWan(case2TR181, true);
+        expect(result.key).toStrictEqual('wan_dhcp_2');
+      });
+
+      test('Case 3 TR-098: Multiples options but only one ppp-type with ideal' +
+          'conditions', () => {
+        let result = utilHandlers.chooseWan(case3TR098, false);
+        expect(result.key).toStrictEqual('wan_ppp_1_1_1');
+      });
+
+      test('Case 3 TR-181: Multiples options but only one ppp-type with ideal' +
+          'conditions', () => {
+        let result = utilHandlers.chooseWan(case3TR181, true);
+        expect(result.key).toStrictEqual('wan_ppp_3');
+      });
+
+      test('Case 4 TR-098: Multiple ppp-type with ideal conditions', () => {
+        // The first ppp-type WAN with ideal conditions should be chosen
+        let result = utilHandlers.chooseWan(case4TR098, false);
+        expect(result.key).toStrictEqual('wan_ppp_1_3_1');
+      });
+
+      test('Case 4 TR-181: Multiple ppp-type with ideal conditions', () => {
+        // The last ppp-type WAN with ideal conditions should be chosen
+        let result = utilHandlers.chooseWan(case4TR181, true);
+        expect(result.key).toStrictEqual('wan_ppp_4');
+      });
+
+      test('Case 5 TR-098: Multiple dhcp-type with ideal conditions', () => {
+        // The first dhcp-type WAN with ideal conditions should be chosen
+        let result = utilHandlers.chooseWan(case5TR098, false);
+        expect(result.key).toStrictEqual('wan_dhcp_1_2_1');
+      });
+
+      test('Case 5 TR-181: Multiple dhcp-type with ideal conditions', () => {
+        // The last dhcp-type WAN with ideal conditions should be chosen
+        let result = utilHandlers.chooseWan(case5TR181, true);
+        expect(result.key).toStrictEqual('wan_dhcp_5');
+      });
+
+      test('Case 6 TR-098: No WANs with ideal conditions', () => {
+        // The first WAN with partial conditions should be chosen
+        let result = utilHandlers.chooseWan(case6TR098, false);
+        expect(result.key).toStrictEqual('wan_ppp_1_1_1');
+      });
+
+      test('Case 6 TR-181: No WANs with ideal conditions', () => {
+        // The last WAN with partial conditions should be chosen
+        let result = utilHandlers.chooseWan(case6TR181, true);
+        expect(result.key).toStrictEqual('wan_ppp_4');
+      });
+    });
+  });
 
   describe('ACS Device Info', () => {
     describe('replaceWanFieldsWildcards Tests', () => {
