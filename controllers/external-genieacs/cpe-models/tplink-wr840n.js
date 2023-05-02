@@ -11,6 +11,9 @@ tplinkModel.modelPermissions = function() {
   // permissions.features.speedTest = true; // Doesnt update properly?
   // permissions.features.pingTest = true; // Needs polling
   permissions.features.stun = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+  
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.lan.LANDeviceCanTrustActive = false;

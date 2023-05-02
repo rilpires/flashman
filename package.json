@@ -1,12 +1,13 @@
 {
   "name": "flashman",
-  "version": "2.71.0",
+  "version": "2.73.1",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
-    "test": "jest --forceExit --silent=true test/unit/*",
+    "test": "jest --silent=true test/unit/*",
+    "test-one": "jest",
     "e2e": "jest --runInBand --detectOpenHandles test/legacy-black-box/*",
-    "bb-test": "jest --forceExit --runInBand --detectOpenHandles test/black-box/*",
+    "bb-test": "jest --runInBand test/black-box/*",
     "build": "webpack --config webpack.prod.js",
     "gen-doc": "jsdoc --configure jsdoc.config.json --verbose",
     "gen-test-doc": "jsdoc --configure jsdoc.test.config.json --verbose"
@@ -94,7 +95,7 @@
     "unzipper": "~0.10.11"
   },
   "devDependencies": {
-    "@anlix-io/genieacs-sim": "^1.1.0",
+    "@anlix-io/genieacs-sim": "1.2.4",
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
     "babel-loader": "^8.2.2",

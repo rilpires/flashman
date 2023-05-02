@@ -971,7 +971,7 @@ anlixDocumentReady.add(function() {
     let meshClass = (mesh) ? 'edit-form-mesh' : '';
     return '<div class="row edit-button-'+index+'">'+
       '<div class="col text-right">'+
-        '<button class="btn btn-primary mx-0 btn-edit-submit'+
+        '<button class="btn btn-primary mx-0 btn-edit-submit '+
           meshClass+'" type="submit">'+
           '<i class="fas fa-check fa-lg"></i><span>&nbsp; '+t('Edit')+'</span>'+
         '</button>'+
@@ -2122,6 +2122,7 @@ anlixDocumentReady.add(function() {
                         device.lan_dns_servers : '')+ // treat undefined case
                       '" $REPLACE_LAN_EN disabled>'+
                     '</input>'+
+                    ((isSuperuser || grantLanEditAccess) ?
                     '<div class="input-group-append">'+
                       '<button class="btn btn-primary btn-sm px-3 '+
                                        'btn-config-lan-dns-modal"' +
@@ -2129,7 +2130,9 @@ anlixDocumentReady.add(function() {
                           'data-index='+index+'>'+
                         '<i class="fas fa-pen fa-lg"></i>'+
                       '</button>'+
-                    '</div>'+
+                    '</div>' :
+                    ''
+                    )+
                     '<div class="invalid-feedback"></div>'+
                   '</div>' :
                   ''

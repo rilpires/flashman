@@ -110,11 +110,11 @@ router.route('/speedtest/:id').get(
 // Get LAN DNS Servers list
 router.route('/landnsserverslist/:id')
 .get(
-  authController.ensurePermission('grantFlashmanManage'),
+  authController.ensurePermission('grantLanEdit'),
   deviceListController.getLanDNSServers,
 )
 .post(
-  authController.ensurePermission('grantFlashmanManage'),
+  authController.ensurePermission('grantLanEdit'),
   deviceListController.setLanDNSServers,
 );
 
@@ -158,6 +158,12 @@ router.route('/uiupdate/:id').get(
 router.route('/landevice/block').post(
   authController.ensurePermission('grantLanDevicesBlock'),
   deviceListController.setLanDeviceBlockState);
+
+// Update name of a LAN device
+router.route('/landevice/updatename').post(
+  authController.ensurePermission('grantLanDevices', 2),
+  deviceListController.setLanDeviceName,
+);
 
 router.route('/license').post(
   deviceListController.updateLicenseStatus);

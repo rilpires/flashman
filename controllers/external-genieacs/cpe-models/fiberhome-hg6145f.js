@@ -11,9 +11,16 @@ fiberhomeModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.traceroute.maxProbesPerHop = 1;
   permissions.traceroute.hopCountExceededState = 'Error_CannotResolveHostName';
   permissions.traceroute.protocol = 'ICMP';
+
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasDnsServerField = true;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.pingTestSetInterface = true;
@@ -34,6 +41,13 @@ fiberhomeModel.modelPermissions = function() {
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeRead = true;
   permissions.wifi.modeWrite = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
+  permissions.lan.dnsServersLimit = 2;
+
   permissions.firmwareUpgrades = {
     'RP2930': [],
   };
@@ -81,12 +95,18 @@ fiberhomeModel.convertWifiRate = function(rate) {
   return parseInt(rate) / 1000;
 };
 
+fiberhomeModel.convertWanRate = function(rate) {
+  return rate/1000000;
+};
+
 fiberhomeModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
     'X_FH_Account.X_FH_WebUserInfo.WebSuperUsername';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
     'X_FH_Account.X_FH_WebUserInfo.WebSuperPassword';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.recv_bytes = fields.wan.recv_bytes.replace(
     /WANEthernetInterfaceConfig/g, 'X_FH_GponInterfaceConfig',
   );
@@ -121,6 +141,26 @@ fiberhomeModel.getModelFields = function() {
   fields.mesh5.password = fields.mesh5.password.replace(
     /KeyPassphrase/g, 'PreSharedKey.1.KeyPassphrase',
   );
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_FH_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_FH_IPv6IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_FH_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_FH_DefaultIPv6Gateway';
+
+  // IPv6 Prefix Delegation
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice' +
+    '.1.WANConnectionDevice.*.WANIPConnection.*.X_FH_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.' +
+    'WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_FH_IPv6Prefix';
+
   return fields;
 };
 

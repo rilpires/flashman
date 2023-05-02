@@ -1,26 +1,21 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
-const request = require('supertest');
+
+// TODO: REMOVE ME, I'M DANGEROUS!!!!!!!!!!!!
+const testUtils = require('../common/utils.js');
+const blackbox = require('../common/blackbox.js');
+
+testUtils.common.mockConfigs(null, 'findOne');
 const utils = require('../utils.js');
 
 describe('/Upgrade', () => {
-  const basicAuthUser = 'admin';
-  const basicAuthPass = 'flashman';
-  const flashmanHost = 'http://localhost:8000';
-
   let configValues;
   let adminCookie = null;
 
   jest.setTimeout( 15*1000 );
 
   beforeAll(async () => {
-    const adminLogin = await request(flashmanHost)
-      .post('/login')
-      .send({
-        name: basicAuthUser,
-        password: basicAuthPass,
-      });
-
+    const adminLogin = await blackbox.loginAsAdmin();
     adminCookie = adminLogin.header['set-cookie'];
 
     if (adminCookie === undefined) {
@@ -62,10 +57,9 @@ describe('/Upgrade', () => {
   describe('/upgrade/config', () => {
     test('specificAppTechnicianWebLogin existence when get',
     async () => {
-      let res = await request(flashmanHost)
-        .get('/upgrade/config')
-        .set('Cookie', adminCookie)
-        .auth(basicAuthUser, basicAuthPass);
+      let res = await blackbox.sendRequestAdmin(
+        'get', '/upgrade/config', adminCookie,
+      );
       expect(res.statusCode).toBe(200);
       expect(res.header['content-type']).toContain('application/json');
       expect(res.header['content-type']).toContain('charset=utf-8');
@@ -75,15 +69,12 @@ describe('/Upgrade', () => {
     test('specificAppTechnicianWebLogin change to true',
     async () => {
       configValues['specific-app-technician-web-login'] = 'on';
-      let res1 = await request(flashmanHost)
-        .post('/upgrade/config')
-        .set('Cookie', adminCookie)
-        .auth(basicAuthUser, basicAuthPass)
-        .send(configValues);
-      let res2 = await request(flashmanHost)
-        .get('/upgrade/config')
-        .set('Cookie', adminCookie)
-        .auth(basicAuthUser, basicAuthPass);
+      let res1 = await blackbox.sendRequestAdmin(
+        'post', '/upgrade/config', adminCookie, configValues,
+      );
+      let res2 = await blackbox.sendRequestAdmin(
+        'get', '/upgrade/config', adminCookie,
+      );
       expect(res1.statusCode).toBe(200);
       expect(res1.header['content-type']).toContain('application/json');
       expect(res1.header['content-type']).toContain('charset=utf-8');
@@ -99,14 +90,12 @@ describe('/Upgrade', () => {
     test('specificAppTechnicianWebLogin change to false',
     async () => {
       configValues['specific-app-technician-web-login'] = '';
-      let res1 = await request(flashmanHost)
-        .post('/upgrade/config')
-        .set('Cookie', adminCookie)
-        .auth(basicAuthUser, basicAuthPass)
-        .send(configValues);
-      let res2 = await request(flashmanHost)
-        .get('/upgrade/config')
-        .set('Cookie', adminCookie);
+      let res1 = await blackbox.sendRequestAdmin(
+        'post', '/upgrade/config', adminCookie, configValues,
+      );
+      let res2 = await blackbox.sendRequestAdmin(
+        'get', '/upgrade/config', adminCookie,
+      );
       expect(res1.statusCode).toBe(200);
       expect(res1.header['content-type']).toContain('application/json');
       expect(res1.header['content-type']).toContain('charset=utf-8');
