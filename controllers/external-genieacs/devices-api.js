@@ -481,7 +481,7 @@ const getDeviceFields = async function(args, callback) {
     return callback(null, flashRes);
   }
   flashRes = await sendFlashmanRequest('device/instantiatecpe', {
-    acs_id: params.model,
+    acs_id: params.acs_id,
     modelSerial: params.model,
     modelName: params.modelName,
     fwVersion: params.firmwareVersion,
