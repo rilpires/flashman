@@ -510,6 +510,9 @@ const computeFlashmanUrl = async function(cpeId, shareLoad=true) {
       if (response.statusCode !== 200) {
         return resolve('');
       }
+      if (typeof body === 'string') {
+        body = JSON.parse(body);
+      }
       if (!Object.prototype.hasOwnProperty.call(body, 'fqdn') ||
           !Object.prototype.hasOwnProperty.call(body, 'port')) {
         return resolve('');
