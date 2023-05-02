@@ -17,4 +17,6 @@ router.route('/forceOfflineReconnect').post(
   authController.ensurePermission('grantFlashmanManage'),
   genieDeviceInfoController.forcePingOfflineDevices,
 );
+router.route('/device/instantiatecpe')
+  .post(genieDeviceInfoController.instantiateCPE);
 module.exports = router;
