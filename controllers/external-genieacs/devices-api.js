@@ -480,23 +480,16 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  flashRes = await sendFlashmanRequest('device/instantiatecpe', {
+  let fieldsResult = await sendFlashmanRequest('device/getcperesult', {
     acs_id: params.acs_id,
     modelSerial: params.model,
     modelName: params.modelName,
     fwVersion: params.firmwareVersion,
     hwVersion: params.hardwareVersion,
   });
-  if (!flashRes['success']) {
-    return callback(null, flashRes);
+  if (!fieldsResult['success']) {
+    return callback(null, fieldsResult);
   }
-  let fieldsResult = {
-    success: flashRes.success,
-    message: flashRes.success,
-    fields: flashRes.cpeResult.getModelFields(),
-    useLastIndexOnWildcard:
-    flashRes.cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
-  };
   return callback(null, {
     success: true,
     fields: fieldsResult.fields,
