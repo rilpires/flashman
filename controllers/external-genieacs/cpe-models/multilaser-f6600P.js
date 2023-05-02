@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let zteModel = Object.assign({}, basicCPEModel);
 
-zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600'};
+zteModel.identifier = {vendor: 'Multilaser / ZTE', model: 'F6600P'};
 
 zteModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
@@ -44,7 +44,7 @@ zteModel.modelPermissions = function() {
   ];
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
-    'V9.0.10P1N7B': [],
+    'V9.0.10P6N5': [],
   };
   return permissions;
 };
@@ -165,11 +165,6 @@ zteModel.getModelFields = function() {
   fields.diagnostics.sitesurvey.diag_state = 'Radio.*.DiagnosticsState';
   fields.diagnostics.sitesurvey.result = 'Radio.*.X_ZTE-COM_NeighborAP';
   fields.diagnostics.sitesurvey.band = 'Bandwidth';
-
-  fields.diagnostics.statistics.cpu_usage = 'InternetGatewayDevice.' +
-    'DeviceInfo.X_ZTE-COM_CpuUsed';
-  fields.diagnostics.statistics.memory_usage = 'InternetGatewayDevice.' +
-    'DeviceInfo.X_ZTE-COM_MemUsed';
 
   fields.diagnostics.traceroute.root =
     'InternetGatewayDevice.TraceRouteDiagnostics';

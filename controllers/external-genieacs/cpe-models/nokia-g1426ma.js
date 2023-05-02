@@ -122,9 +122,12 @@ nokiaModel.convertField = function(
 };
 
 nokiaModel.convertGenieSerial = function(serial, mac) {
-  // Serial starts with 4E42454C which is "NBEL" in hex. This change matches
-  // vendor label's serial information
-  return 'NBEL' + serial.slice(8);
+  // If serial starts with 4E42454C which is "NBEL" in hex, we change it so
+  // that the serial in Flashman matches the one in the vendor's label
+  if (serial.slice(0, 8) === '4E42454C') {
+    return 'NBEL' + serial.slice(8);
+  }
+  return serial;
 };
 
 nokiaModel.getBeaconType = function() {

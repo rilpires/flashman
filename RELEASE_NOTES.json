@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.72.2",
+	"latest_version": "2.73.1",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,29 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.73.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug da versão 2.73.0 que evitava a detecção correta da CPE ZTE F6600P."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.73.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Datacom DM955-5GT por TR-069",
+			"Adicionamos suporte ao modelo TP-Link XX230v por TR-069",
+			"Adicionamos suporte ao modelo Multilaser/ZTE F6600P por TR-069"
+		],
+		"fixes": [
+		],
+		"improvements": [
+			"Adicionamos suporte a coleta de informação IPv6 para roteadores Fiberhome HG6245G, HG8145F, Intelbras AC120/121."
+		],
+		"features": []
 	},
 	"2.72.2": {
 		"custom_firmware_compatibilities": [],

@@ -32,6 +32,7 @@ const tr069Models = {
   datacomDM985Model: require('./cpe-models/datacom-dm985-424'),
   datacomDM986204Model: require('./cpe-models/datacom-dm986-204'),
   datacomDM986414Model: require('./cpe-models/datacom-dm986-414'),
+  datacomDM955Model: require('./cpe-models/datacom-dm955-5GT'),
   dlinkDir615Model: require('./cpe-models/dlink-dir-615'),
   dlinkDir841Model: require('./cpe-models/dlink-dir-841'),
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
@@ -63,9 +64,11 @@ const tr069Models = {
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
+  intelbrasTwibiModel: require('./cpe-models/intelbras-twibi'),
   mercusysMR30GModel: require('./cpe-models/mercusys-mr30g'),
   multilaserF660Model: require('./cpe-models/multilaser-f660'),
   multilaserF6600Model: require('./cpe-models/multilaser-f6600'),
+  multilaserF6600PModel: require('./cpe-models/multilaser-f6600P'),
   multilaserF670LModel: require('./cpe-models/multilaser-f670l'),
   multilaserF670LV9Model: require('./cpe-models/multilaser-f670l-v9'),
   multilaserF680Model: require('./cpe-models/multilaser-f680'),
@@ -101,6 +104,7 @@ const tr069Models = {
   tplinkHX220Model: require('./cpe-models/tplink-hx220'),
   tplinkWR840NModel: require('./cpe-models/tplink-wr840n'),
   tplinkXC220G3vModel: require('./cpe-models/tplink-xc220g3v'),
+  tplinkXX230vModel: require('./cpe-models/tplink-xx230v'),
   uneeMPG421R: require('./cpe-models/unee_mp-g421r'),
   uneeMPX421RQF: require('./cpe-models/unee_mp-x421rq-f'),
   zteZT199Model: require('./cpe-models/zte-zt199'),
@@ -199,6 +203,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'DM986-414') {
     // Datacom DM986-414
     result = {success: true, cpe: tr069Models.datacomDM986414Model};
+  } else if (modelName === 'DM955') {
+    // Datacom DM955-5GT
+    result = {success: true, cpe: tr069Models.datacomDM955Model};
   } else if (modelName === 'DIR-615') {
     // D-Link DIR-615
     result = {success: true, cpe: tr069Models.dlinkDir615Model};
@@ -294,6 +301,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === '1200R') {
     // Intelbras WiFiber 1200R InMesh
     result = {success: true, cpe: tr069Models.intelbrasWiFiber1200RModel};
+  } else if (modelName === 'Twibi') {
+    // Intelbras Twibi
+    result = {success: true, cpe: tr069Models.intelbrasTwibiModel};
   } else if (modelName === 'MR30G') {
     // Mercusys MR30G
     result = {success: true, cpe: tr069Models.mercusysMR30GModel};
@@ -306,6 +316,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'F6600') {
     // Multilaser ZTE F6600
     result = {success: true, cpe: tr069Models.multilaserF6600Model};
+  } else if (modelName === 'F6600P') {
+    // Multilaser ZTE F6600P
+    result = {success: true, cpe: tr069Models.multilaserF6600PModel};
   } else if (modelName === 'F670L' && hwVersion.includes('V9')) {
     // Multilaser ZTE F670L V9.0
     result = {success: true, cpe: tr069Models.multilaserF670LV9Model};
@@ -413,6 +426,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'XC220-G3v') {
     // TP-Link XC220-G3v
     result = {success: true, cpe: tr069Models.tplinkXC220G3vModel};
+  } else if (modelName === 'XX230v') {
+    // TP-Link XX230V
+    result = {success: true, cpe: tr069Models.tplinkXX230vModel};
   } else if (['MP-G421R', 'MP-G421RQ'].includes(modelName)) {
     // UNEE Stavix
     result = {success: true, cpe: tr069Models.uneeMPG421R};
