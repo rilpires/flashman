@@ -433,21 +433,6 @@ const instantiateCPEByModel = function(
   return result;
 };
 
-const getModelFields = function(
-  oui, model, modelName, firmwareVersion, hardwareVersion,
-) {
-  let cpeResult = instantiateCPEByModel(
-    model, modelName, firmwareVersion, hardwareVersion,
-  );
-  return {
-    success: cpeResult.success,
-    message: (cpeResult.success) ? '' : 'Unknown Model',
-    fields: cpeResult.cpe.getModelFields(),
-    useLastIndexOnWildcard:
-      cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
-  };
-};
-
 const getDeviceFields = async function(args, callback) {
   let params = null;
 
@@ -479,13 +464,22 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  let fieldsResult = getModelFields(
-    params.oui, params.model, params.modelName,
-    params.firmwareVersion, params.hardwareVersion,
-  );
-  if (!fieldsResult['success']) {
-    return callback(null, fieldsResult);
+  flashRes = await sendFlashmanRequest('device/instantiatecpe', {
+    modelSerial: params.model,
+    modelName: params.modelName,
+    fwVersion: params.firmwareVersion,
+    hwVersion: params.hardwareVersion,
+  });
+  if (!flashRes['success']) {
+    return callback(null, flashRes);
   }
+  let fieldsResult = {
+    success: flashRes.success,
+    message: flashRes.success,
+    fields: flashRes.cpeResult.getModelFields(),
+    useLastIndexOnWildcard:
+    flashRes.cpeResult.cpe.modelPermissions().useLastIndexOnWildcard,
+  };
   return callback(null, {
     success: true,
     fields: fieldsResult.fields,
