@@ -93,9 +93,9 @@ const wanList = {
       'value': '',
     },
     'pppoe_enable': {
-      'path': 'Device.PPP.Interface.6.Status',
-      'writable': false,
-      'value': 'Dormant',
+      'path': 'Device.PPP.Interface.6.Enable',
+      'writable': true,
+      'value': true,
     },
     'pppoe_status': {
       'path': 'Device.PPP.Interface.6.Status',

@@ -630,7 +630,7 @@ const createRegistry = async function(req, cpe, permissions) {
   let wrongPortMapping = false;
   let portMapping = [];
   if (cpePermissions.features.portForward &&
-    data.port_mapping.length > 0 && data.port_mapping.length > 0) {
+    data.port_mapping && data.port_mapping.length > 0) {
     wrongPortMapping = true;
   }
 
@@ -680,7 +680,7 @@ const createRegistry = async function(req, cpe, permissions) {
     pppoe_password: (hasPPPoE) ? data.wan.pppoe_pass.value : undefined,
     pon_rxpower: rxPowerPon,
     pon_txpower: txPowerPon,
-    wan_chosen: data.wan.chosenWan,
+    wan_chosen: data.wan.chosen_wan,
     wan_vlan_id: wanVlan,
     wan_mtu: wanMtu,
     wan_bssid: wanMacAddr,
@@ -1416,6 +1416,18 @@ const fetchSyncResult = async function(
    common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {},
    ipv6: {},
   };
+  // Choose ideal WAN
+  let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
+  if (chosenWan.key !== undefined) {
+    if (!device.wan_chosen) {
+      console.log('Chosen WAN was set to ' + chosenWan.key);
+    } else {
+      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+                  chosenWan.key);
+    }
+    acsData.wan = chosenWan.value;
+    acsData.wan.chosen_wan = chosenWan.key;
+  }
   if (dataToFetch.basic) {
     let common = fields.common;
     acsData.common.ip = getFieldFromGenieData(
@@ -1734,7 +1746,6 @@ const fetchSyncResult = async function(
       data, fields.common.stun_udp_conn_req_addr, useLastIndexOnWildcard,
     );
   }
-
   let permissions = DeviceVersion.devicePermissions(device);
   syncDeviceData(acsID, device, acsData, permissions);
 };
@@ -1909,10 +1920,6 @@ acsDeviceInfoController.syncDeviceChangedValues = async function(
  */
 acsDeviceInfoController.syncDevice = async function(req, res) {
   let data = req.body.data;
-  // Choose ideal WAN
-  let chosenWan = utilHandlers.chooseWan(data.wan);
-  data.wan = chosenWan.value;
-  data.wan.chosenWan = chosenWan.key;
   if (!data || !data.common || !data.common.mac || !data.common.mac.value) {
     return res.status(500).json({
       success: false,
@@ -1936,6 +1943,18 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     );
   } else {
     permissions = DeviceVersion.devicePermissions(device);
+  }
+  // Choose ideal WAN
+  let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
+  if (chosenWan.key !== undefined) {
+    if (!device.wan_chosen) {
+      console.log('Chosen WAN was set to ' + chosenWan.key);
+    } else {
+      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+                  chosenWan.key);
+    }
+    data.wan = chosenWan.value;
+    data.wan.chosen_wan = chosenWan.key;
   }
   if (!permissions) {
     return res.status(500).json({
@@ -2082,6 +2101,22 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
       changes.common.interval = device.custom_inform_interval;
       hasChanges = true;
     }
+  }
+
+  // Process chosen WAN (this information should always be sent)
+  if (!data.wan.chosen_wan && !device.wan_chosen) {
+    return;
+  }
+  if (data.wan.chosen_wan) {
+    if (!device.wan_chosen) {
+      console.log('Chosen WAN was set to ' + data.wan.chosen_wan);
+      hasChanges = true;
+    } else if (device.wan_chosen !== data.wan.chosen_wan) {
+      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+                  data.wan.chosen_wan);
+      hasChanges = true;
+    }
+    device.wan_chosen = data.wan.chosen_wan;
   }
 
   // Process wan connection type, but only if data sent
@@ -3201,9 +3236,12 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-const replaceWanFieldsWildcards = async function(
-  acsID, isTR181, wildcardFlag, fields, changes, task,
-) {
+acsDeviceInfoController.updateChosenWan = async function(device) {
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let permissions = cpe.modelPermissions();
+  let isTR181 = permissions.isTR181;
+  let wildcardFlag = permissions.useLastIndexOnWildcard;
   const cb = (err, res) => {
     return res;
   };
@@ -3212,12 +3250,8 @@ const replaceWanFieldsWildcards = async function(
     fields: fields,
     isTR181: isTR181,
   };
-  // WAN fields cannot have wildcards. So we query the genie database to get
-  // access to the index from which the wildcard should be replaced. The
-  // projection will be a concatenation of the fields requested for editing,
-  // separated by a comma
   let data;
-  let query = {_id: acsID};
+  let query = {_id: device.acs_id};
   let projection = DevicesAPI.getParentNode(args, cb);
   // Fetch Genie database and retrieve data
   try {
@@ -3229,11 +3263,18 @@ const replaceWanFieldsWildcards = async function(
     return {'success': false};
   }
   let result = DevicesAPI.assembleWanObj(args, cb);
-  let chosenWan = utilHandlers.chooseWan(result, wildcardFlag);
-  if (chosenWan.key === undefined && chosenWan.value === undefined) {
+  return utilHandlers.chooseWan(result, wildcardFlag);
+};
+
+const replaceWanFieldsWildcards = async function(device, changes, task) {
+  let chosenWanKey = device.wan_chosen;
+  if (chosenWanKey === undefined) {
     return {'success': false, 'task': undefined};
   }
-  let chosenWanKey = chosenWan.key;
+  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+  let fields = cpe.getModelFields();
+  let permissions = cpe.modelPermissions();
+  let isTR181 = permissions.isTR181;
   const [, type, ...indexes] = chosenWanKey.split('_');
   // Iterates through changes to WAN fields and replaces the corresponding value
   // in task
@@ -3300,9 +3341,6 @@ acsDeviceInfoController.updateInfo = async function(
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let permissions = cpe.modelPermissions();
-  let wildcardFlag = permissions.useLastIndexOnWildcard;
-  let isTR181 = permissions.isTR181;
   let hasChanges = false;
   let hasUpdatedDHCPRanges = false;
   let rebootAfterUpdate = false;
@@ -3394,9 +3432,7 @@ acsDeviceInfoController.updateInfo = async function(
   // WAN are changed
   if (changes.wan && Object.keys(changes.wan).length > 0) {
     try {
-      let ret = await replaceWanFieldsWildcards(
-        acsID, isTR181, wildcardFlag, fields, changes, task,
-      );
+      let ret = await replaceWanFieldsWildcards(device, changes, task);
       if (ret.success) {
         task = ret.task;
       } else {
@@ -3599,6 +3635,17 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   // If the task must be executed, only if it is not going to disable or cable
   const mustExecute = (targetMode !== 0 && targetMode !== 1);
+
+  if (!device.wan_chosen) {
+    let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
+    if (chosenWan.key !== undefined) {
+      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+                  chosenWan.key);
+      device.wan_chosen = chosenWan.key;
+    } else {
+      return {success: false, msg: t('wanInformationCannotBeEmpty')};
+    }
+  }
 
   const updated = await acsDeviceInfoController.updateInfo(
     device,

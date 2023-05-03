@@ -90,6 +90,15 @@ let appSet = function(req, res, processFunction) {
       let tr069Changes = {
         wan: {}, lan: {}, wifi2: {}, wifi5: {}, changeBlockedDevices: false};
 
+      // Update chosen WAN if necessary
+      if (!matchedDevice.wan_chosen) {
+        let chosenWan = await acsController.updateChosenWan(matchedDevice);
+        if (chosenWan.key !== undefined) {
+          console.log('Chosen WAN was set to ' + chosenWan.key);
+          matchedDevice.wan_chosen = chosenWan.key;
+        }
+      }
+
       // Update location data if present
       if (
         content.latitude && content.longitude &&

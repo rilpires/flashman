@@ -21,9 +21,6 @@ const tasksAPI = require('../../controllers/external-genieacs/tasks-api');
 
 const DeviceModel = require('../../models/device');
 
-const path = '../assets/flashman-test/multi-wan/';
-const eg8145v5 = require(path + 'huawei-eg8145v5/wanData.json');
-
 const mockRequest = (params, user, body) => {
   return {params: params, user: user, body: body};
 };
@@ -99,7 +96,6 @@ describe('Update Tests - Functions', () => {
           resolve();
         });
       };
-
 
       // Execute the request
       await acsDeviceInfo.__testSyncDeviceData(
@@ -301,16 +297,6 @@ describe('Update Tests - Functions', () => {
           mesh5: {},
         };
 
-        let args = {
-          update: true,
-          fields: deviceFields,
-          isTR181: false,
-        };
-        const cb = (err, res) => {
-          return res;
-        };
-        let projection = devicesAPI.getParentNode(args, cb);
-
         let expectedTask = {
           name: 'setParameterValues',
           parameterValues: [
@@ -339,20 +325,10 @@ describe('Update Tests - Functions', () => {
         let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
           .mockReturnValue(undefined);
 
-        let getFromCollectionSpy = jest.spyOn(tasksAPI, 'getFromCollection')
-          .mockImplementation(
-            () => JSON.parse('[' + JSON.stringify(eg8145v5) + ']'),
-          );
-
         // Execute
         await acsDeviceInfo.__testUpdateInfo(device, changes);
 
         // Verify
-        expect(getFromCollectionSpy).toHaveBeenCalledTimes(1);
-        expect(getFromCollectionSpy).toHaveBeenCalledWith(
-          'devices', {_id: device.acs_id}, projection,
-        );
-
         expect(addTaskSpy).toHaveBeenCalledTimes(1);
         expect(addTaskSpy).toHaveBeenCalledWith(
           device.acs_id, expectedTask, expect.anything(),
@@ -375,6 +351,8 @@ describe('Update Tests - Functions', () => {
             version: 'V5R020C00S280',
           },
         );
+
+        device.wan_chosen = undefined;
 
         const config = models.copyConfigFrom(
           models.defaultMockConfigs[0]._id,

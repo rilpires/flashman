@@ -27,6 +27,7 @@
 	"tr069LicencesLeft": "A su cuenta solo le quedan {{n}} licencias CPE TR-069. Comuníquese con su representante de ventas ({{errorline}})",
 	"firmwareVersionNotFound": "No hay firmware con esta versión ({{errorline}})",
 	"firmwareInsertError": "Error al agregar firmware ({{errorline}})",
+	"wanInformationCannotBeEmpty": "La información de WAN no puede estar vacía",
 	"errorSendingMeshParamtersToCpe": "Error al enviar parámetros de red mesh a CPE",
 	"appNotFound": "Aplicación no encontrada ({{errorline}})",
 	"appUnauthorized": "Aplicación no autorizada ({{errorline}})",

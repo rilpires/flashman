@@ -255,6 +255,7 @@ describe('Multi WAN Tests', () => {
             acs_id: '00259E-EG8145V5-48575443A94196A5',
             model: 'EG8145V5',
             version: 'V5R020C00S280',
+            wan_chosen: 'wan_ppp_1_1_1',
           },
         );
         let deviceFields = DevicesAPI.instantiateCPEByModelFromDevice(device)
@@ -316,7 +317,7 @@ describe('Multi WAN Tests', () => {
 
         // Execute function
         let ret = await ACSDeviceInfo.__testReplaceWanFieldsWildcards(
-          id, false, false, deviceFields, changes, task,
+          device, changes, task,
         );
 
         expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
@@ -331,6 +332,7 @@ describe('Multi WAN Tests', () => {
             acs_id: 'B0A7B9-Device2-32180H5000090',
             model: 'HX220',
             version: '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n',
+            wan_chosen: 'wan_dhcp_14',
           },
         );
         let deviceFields = DevicesAPI.instantiateCPEByModelFromDevice(device)
@@ -391,7 +393,7 @@ describe('Multi WAN Tests', () => {
 
         // Execute function
         let ret = await ACSDeviceInfo.__testReplaceWanFieldsWildcards(
-          id, true, true, deviceFields, changes, task,
+          device, changes, task,
         );
 
         expect(ret).toStrictEqual({'success': true, 'task': expectedTask});
@@ -406,10 +408,9 @@ describe('Multi WAN Tests', () => {
             acs_id: '00259E-EG8145V5-48575443A94196A5',
             model: 'EG8145V5',
             version: 'V5R020C00S280',
+            wan_chosen: undefined,
           },
         );
-        let deviceFields = DevicesAPI.instantiateCPEByModelFromDevice(device)
-          .cpe.getModelFields();
 
         let changes = {
           wan: {mtu_ppp: 1487},
@@ -428,7 +429,7 @@ describe('Multi WAN Tests', () => {
 
         // Execute
         let ret = await ACSDeviceInfo.__testReplaceWanFieldsWildcards(
-          id, false, false, deviceFields, changes, task,
+          device, changes, task,
         );
 
         // Validate

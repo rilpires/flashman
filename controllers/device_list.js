@@ -2519,6 +2519,16 @@ deviceListController.setDeviceReg = function(req, res) {
                            wifi5: {}, mesh2: {}, mesh5: {}};
             let audit = {};
 
+            // Update chosen WAN information
+            if (!matchedDevice.wan_chosen) {
+              let chosenWan = await acsDeviceInfo.updateChosenWan(
+                matchedDevice,
+              );
+              console.log('Chosen WAN was set to ' + chosenWan.key);
+              matchedDevice.wan_chosen = chosenWan.key;
+              updateParameters = true;
+            }
+
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
