@@ -3417,7 +3417,7 @@ acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   });
 };
 
-acsDeviceInfoController.getCPEResult = async function(req, res) {
+acsDeviceInfoController.getCPEFields = async function(req, res) {
   let modelSerial = req.body.modelSerial;
   let modelName = req.body.modelName;
   let fwVersion = req.body.fwVersion;
