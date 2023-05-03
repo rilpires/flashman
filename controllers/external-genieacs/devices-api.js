@@ -480,23 +480,23 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  let fieldsResult = await sendFlashmanRequest('device/getcperesult', {
+  let fieldsRes = await sendFlashmanRequest('device/getcpefields', {
     acs_id: params.acs_id,
     modelSerial: params.model,
     modelName: params.modelName,
     fwVersion: params.firmwareVersion,
     hwVersion: params.hardwareVersion,
   });
-  if (!fieldsResult['success']) {
-    return callback(null, fieldsResult);
+  if (!fieldsRes['success']) {
+    return callback(null, fieldsRes);
   }
   return callback(null, {
     success: true,
-    fields: fieldsResult.fields,
+    fields: fieldsRes.data.fields,
     measure: flashRes.data.measure,
     measure_type: flashRes.data.measure_type,
     connection: flashRes.data.connection,
-    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
+    useLastIndexOnWildcard: fieldsRes.data.useLastIndexOnWildcard,
   });
 };
 
