@@ -5137,8 +5137,62 @@ deviceListController.editCoordinates = async function(req, res) {
 
 // API V3 functions
 /**
- * Queries and returns the first device that matches the PPPoE username passed
- * as a URL parameter. Route: /api/v3/getByPPPoEUser/{PPPoEUsername}.
+ * Returns a device with reduced fields and without mongo functions. The
+ * internal fields used by Flashman are removed alongside big fields like
+ * `traceroute_results` and `current_diagnostic` among others. This function is
+ * <b>NOT SAFE</b> to be used without a try and catch block due to the use of
+ * the `find_one` function that can throw an error.
+ *
+ * @memberof controllers/deviceList
+ *
+ * @param {Object} filter - The query to be sent to mongo to return the
+ * specified device. It will only return one device and will return the
+ * first device it encounters with the filters passed.
+ *
+ * @return {Object} The lean device.
+ *
+ * @throws {Error} The mongo error associated when trying to query the device.
+ */
+deviceListController.getLeanDevice = function(filter) {
+  let device = null;
+
+  device = DeviceModel.findOne(
+    // Filter the query
+    filter,
+
+    // Reduce fields
+    {
+      use_tr069: false, secure_tr069: false, alt_uid_tr069: false,
+      acs_sync_loops: false, recovering_tr069_reset: false,
+      data_collecting: false, pppoe_password: false, pon_signal_measure: false,
+      app_password: false, lan_devices: false, wrong_port_mapping: false,
+      port_mapping: false, ap_survey: false, upnp_requests: false,
+      mesh_slaves: false, mesh_id: false, mesh_key: false, bssid_mesh2: false,
+      bssid_mesh5: false, mesh_routers: false, mesh_father: false,
+      last_site_survey: false, do_update: false, do_update_parameters: false,
+      do_update_status: false, mesh_next_to_update: false,
+      mesh_onlinedevs_remaining: false, mesh_update_remaining: false,
+      mqtt_secret: false, mqtt_secret_bypass: false, firstboot_log: false,
+      lastboot_log: false, apps: false, pending_app_secret: false,
+      forward_index: false, blocked_devices_index: false,
+      upnp_devices_index: false, ping_hosts: false, pingtest_results: false,
+      wan_bytes: false, speedtest_results: false, last_speedtest_error: false,
+      current_diagnostic: false, stop_coordinates_update: false,
+      web_admin_password: false, do_tr069_update_connection_login: false,
+      custom_tr069_fields: false, traceroute_max_hops: false,
+      traceroute_number_probes: false, traceroute_max_wait: false,
+      traceroute_results: false,
+      // Extra fields
+      temp_command_trap: false, current_speedtest: false, __v: false,
+      traceroute_numberProbes: false, traceroute_route: false,
+    },
+  ).lean();
+
+
+  return device;
+};
+
+
  *
  * @memberof controllers/deviceList
  *
