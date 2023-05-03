@@ -124,12 +124,14 @@ describe('api_v2', () => {
         (device) => lanDeviceID === device.mac,
       );
       expect(lanDevice.name).toBe(newLanDeviceName);
+
+      await simulator.shutDown();
     });
   });
 
   // setLanDeviceName
   describe('Testing Search Engine', () => {
-    test( 'Removing devices', async ()=>{
+    beforeAll(async ()=>{
       await blackbox.deleteAllDevices(adminCookie);
     });
 
@@ -167,6 +169,7 @@ describe('api_v2', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.status.totalnum).toBe(0);
     });
+
     test('Search operations when devices present', async () => {
       let macs = [
         'AA:BB:CC:DD:00:00',
@@ -176,12 +179,24 @@ describe('api_v2', () => {
         'AA:BB:CC:DD:00:04',
         'AA:BB:CC:DD:00:05',
       ];
+      let simulators = macs.map(
+        (mac, index) => {
+          return createSimulator(
+          constants.GENIEACS_HOST, deviceModelH199, index, mac,
+          ).debug({ // enabling/disabling prints for device events.
+            beforeReady: false,
+            error: true,
+            xml: true,
+            requested: false,
+            response: false,
+            sent: false,
+            task: false,
+            diagnostic: false,
+          });
+        },
+      );
       await Promise.all(
-        macs.map(
-          (mac) => createSimulator(
-            constants.GENIEACS_HOST, deviceModelH199, 1000, mac,
-          ).start(),
-        ),
+        simulators.map( (simulator) => simulator.start() ),
       );
 
       let response;
@@ -217,9 +232,13 @@ describe('api_v2', () => {
       expect(response.statusCode).toBe(200);
       expect(response.body.success).toBe(true);
       expect(response.body.status.totalnum).toBe(1);
+
+      await Promise.all(
+        simulators.map( (simulator) => simulator.shutDown() ),
+      );
     });
 
-    test('Removing all devices', async ()=>{
+    afterAll(async ()=>{
       await blackbox.deleteAllDevices(adminCookie);
     });
   });
