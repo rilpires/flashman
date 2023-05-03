@@ -92,10 +92,10 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     let enable = (key.includes('ppp')) ? wan.pppoe_enable : wan.dhcp_enable;
     let status = (key.includes('ppp')) ? wan.pppoe_status : wan.dhcp_status;
 
-    if (enable.hasOwnProperty('value')) {
+    if (enable && enable.hasOwnProperty('value')) {
       enable = enable.value;
     }
-    if (status.hasOwnProperty('value')) {
+    if (status && status.hasOwnProperty('value')) {
       status = status.value;
     }
 
