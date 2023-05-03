@@ -5134,6 +5134,99 @@ deviceListController.editCoordinates = async function(req, res) {
   });
 };
 
+
+// API V3 functions
+/**
+ * Queries and returns the first device that matches the PPPoE username passed
+ * as a URL parameter. Route: /api/v3/getByPPPoEUser/{PPPoEUsername}.
+ *
+ * @memberof controllers/deviceList
+ *
+ * @param {HTTPRequest} request - The HTTP request.
+ * @param {HTTPResponse} response - The HTTP response.
+ *
+ * @return {Object} The object containing:
+ *  - `success` - If could found the device or not.
+ *  - `message` - The error message if any occurred.
+ *  - `device`  - The device if found.
+ */
+deviceListController.getByPPPoEUser = async function(request, response) {
+  // Validate missing information
+  if (!request || !request.params || !request.params.PPPoEUsername) {
+    let responseMessage = {
+      success: false,
+      message: t('fieldNotFound', {errorline: __line}),
+      device: {},
+    };
+
+    return response.status(500).json(responseMessage);
+  }
+
+
+  // Get the device
+  let device = null;
+  try {
+    device = await DeviceModel.findOne(
+      // Search by PPPoE usernam
+      {pppoe_user: request.params.PPPoEUsername},
+
+      // Reduce fields
+      {
+        alt_uid_tr069: false, acs_sync_loops: false, data_collecting: false,
+        pppoe_password: false, pon_signal_measure: false, app_password: false,
+        lan_devices: false, wrong_port_mapping: false, ap_survey: false,
+        upnp_requests: false, mesh_slaves: false, mesh_id: false,
+        mesh_key: false, bssid_mesh2: false, bssid_mesh5: false,
+        mesh_routers: false, do_update: false, do_update_parameters: false,
+        do_update_status: false, mesh_next_to_update: false,
+        mesh_onlinedevs_remaining: false, mesh_update_remaining: false,
+        mqtt_secret: false, mqtt_secret_bypass: false, firstboot_log: false,
+        lastboot_log: false, apps: false, pending_app_secret: false,
+        forward_index: false, blocked_devices_index: false,
+        upnp_devices_index: false, ping_hosts: false, pingtest_results: false,
+        wan_bytes: false, speedtest_results: false, last_speedtest_error: false,
+        current_diagnostic: false, stop_coordinates_update: false,
+        web_admin_password: false, do_tr069_update_connection_login: false,
+        traceroute_max_hops: false, traceroute_number_probes: false,
+        traceroute_max_wait: false, traceroute_results: false,
+        // Extra fields
+        temp_command_trap: false, current_speedtest: false, __v: false,
+      },
+    ).lean();
+
+  // Error from mongo
+  } catch (error) {
+    let responseMessage = {
+      success: false,
+      message: t('databaseFindError', {errorline: __line}),
+      device: {},
+    };
+
+    return response.status(500).json(responseMessage);
+  }
+
+  // if could not find the device
+  if (!device) {
+    let responseMessage = {
+      success: false,
+      message: t('noDevicesFound'),
+      device: {},
+    };
+
+    return response.status(200).json(responseMessage);
+  }
+
+  // Found the device
+  let responseMessage = {
+    success: true,
+    message: t('OK'),
+    device: device,
+  };
+
+  return response.status(200).json(responseMessage);
+};
+
+
 /**
  * @exports controllers/deviceList
  */
