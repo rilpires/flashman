@@ -182,8 +182,6 @@ const processHostFromURL = function(url) {
 const getPPPoEenabled = function(cpe, wan) {
   let hasPPPoE = false;
   if (wan.pppoe_enable && wan.pppoe_enable.value) {
-    wan.pppoe_enable.value =
-      cpe.convertPPPoEEnable(wan.pppoe_enable.value);
     if (typeof wan.pppoe_enable.value === 'string') {
       hasPPPoE = (utilHandlers.isTrueValueString(wan.pppoe_enable.value));
     } else if (typeof wan.pppoe_enable.value === 'number') {

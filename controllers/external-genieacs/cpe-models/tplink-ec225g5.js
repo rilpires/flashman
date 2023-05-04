@@ -79,10 +79,6 @@ tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   );
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.convertSpeedValueFullLoad = function(period, bytesRec) {
   // 8 => byte to bit
   // 1024**2 => bit to megabit

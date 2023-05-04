@@ -78,10 +78,6 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /Radio\.[0-9*]+\./g,

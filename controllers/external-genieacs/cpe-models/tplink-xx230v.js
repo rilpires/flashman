@@ -101,10 +101,6 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };

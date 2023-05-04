@@ -513,10 +513,6 @@ basicCPEModel.isDeviceConnectedViaWifi = function(
   return 'cable';
 };
 
-basicCPEModel.convertPPPoEEnable = function(value) {
-  return value;
-};
-
 basicCPEModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /WLANConfiguration\.[0-9*]+\./g,

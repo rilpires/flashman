@@ -5789,7 +5789,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -5843,7 +5842,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -5897,7 +5895,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -5951,7 +5948,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6005,7 +6001,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6060,7 +6055,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6115,7 +6109,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6170,7 +6163,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6223,7 +6215,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6273,7 +6264,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6323,7 +6313,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6375,7 +6364,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6427,7 +6415,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6479,7 +6466,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6533,7 +6519,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -6588,7 +6573,6 @@ describe('syncDeviceData - Update web admin login', () => {
           success: true,
           cpe: {
             modelPermissions: modelPermissionSpy,
-            convertPPPoEEnable: (value) => value,
           },
         }));
       jest.spyOn(deviceVersion, 'devicePermissions')
