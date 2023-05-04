@@ -357,7 +357,8 @@ describe('Controllers - Device List', () => {
       expect(res.status).toHaveBeenCalledWith(500);
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].message)
-        .toMatch(utils.tt('wanInformationCannotBeEmpty'));
+        .toMatch(utils.tt('errorSendingMeshParamtersToCpe',
+        {errorline: __line}));
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('Ensure bssid collect error', async () => {
@@ -436,7 +437,7 @@ describe('Controllers - Device List', () => {
       expect(res.json.mock.lastCall[0].success).toBe(false);
       expect(res.json.mock.lastCall[0].type).toBe('danger');
       expect(res.json.mock.lastCall[0].message)
-        .toMatch(utils.tt('wanInformationCannotBeEmpty'));
+        .toMatch('task error');
       expect(audit.cpe).toHaveBeenCalledTimes(0);
     });
     test('CPE save error', async () => {
