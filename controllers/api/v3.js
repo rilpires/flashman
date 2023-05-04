@@ -161,9 +161,9 @@ apiController.getDeviceByField = async function(request, response) {
   // Validate missing information
   if (!request || !request.params) {
     let responseMessage = {
-    success: false,
-    message: t('requestError', {errorline: __line}),
-    device: {},
+      success: false,
+      message: t('requestError', {errorline: __line}),
+      device: {},
     };
 
     return response.status(500).json(responseMessage);
@@ -179,9 +179,9 @@ apiController.getDeviceByField = async function(request, response) {
     typeof request.params[allFields[paramIndex]] !== 'string'
   ) {
     let responseMessage = {
-    success: false,
-    message: t('fieldNotFound', {errorline: __line}),
-    device: {},
+      success: false,
+      message: t('fieldNotFound', {errorline: __line}),
+      device: {},
     };
 
     return response.status(500).json(responseMessage);
@@ -197,9 +197,9 @@ apiController.getDeviceByField = async function(request, response) {
   let valid = checkFunc(param);
   if (!valid.valid) {
     let responseMessage = {
-    success: false,
-    message: valid.err,
-    device: {},
+      success: false,
+      message: valid.err,
+      device: {},
     };
 
     return response.status(500).json(responseMessage);
@@ -214,19 +214,19 @@ apiController.getDeviceByField = async function(request, response) {
   // Get the device
   let device = null;
   try {
-    // Search by PPPoE username and get the slim version of the device
+    // Search by the URL param and get the slim version of the device
     device = await apiController.getLeanDevice(query);
 
   // Error from mongo
   } catch (error) {
     console.log(
-    'Failed to find device in getDeviceByField with error: ' + error,
+      'Failed to find device in getDeviceByField with error: ' + error,
     );
 
     let responseMessage = {
-    success: false,
-    message: t('databaseFindError', {errorline: __line}),
-    device: {},
+      success: false,
+      message: t('databaseFindError', {errorline: __line}),
+      device: {},
     };
 
     return response.status(500).json(responseMessage);
@@ -236,9 +236,9 @@ apiController.getDeviceByField = async function(request, response) {
   // if could not find the device
   if (!device) {
     let responseMessage = {
-    success: false,
-    message: t('noDevicesFound'),
-    device: {},
+      success: false,
+      message: t('noDevicesFound'),
+      device: {},
     };
 
     return response.status(200).json(responseMessage);
