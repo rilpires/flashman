@@ -2539,8 +2539,15 @@ deviceListController.setDeviceReg = function(req, res) {
             // Update chosen WAN information only if field is undefined
             if (!matchedDevice.wan_chosen) {
               let chosenWan = await acsDeviceInfo.updateChosenWan(
-                 req.params.id, cpe,
+                 matchedDevice.acs_id, cpe,
               );
+              if (chosenWan.key === undefined) {
+                return res.status(500).json({
+                  success: false,
+                  message: t('wanInformationCannotBeEmpty',
+                    {errorline: __line}),
+                });
+              }
               console.log('Chosen WAN was set to ' + chosenWan.key);
               matchedDevice.wan_chosen = chosenWan.key;
               updateParameters = true;
