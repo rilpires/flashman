@@ -1,6 +1,6 @@
 
 const mongoose = require('mongoose');
-const mongoosePaginate = require('mongoose-paginate');
+const mongoosePaginate = require('mongoose-paginate-v2');
 const request = require('request-promise-native');
 
 const Config = require('./config');
@@ -50,7 +50,7 @@ let deviceSchema = new Schema({
   wan_chosen: String,
   wan_vlan_id: Number,
   wan_mtu: Number,
-  wan_bssid: String,
+  wan_bssid: {type: String, sparse: true},
   wifi_ssid: String,
   wifi_bssid: String,
   wifi_password: String,
@@ -351,6 +351,69 @@ let deviceSchema = new Schema({
     }],
     completed: {type: Boolean, default: false},
   }],
+});
+
+// These fields are all included when we search with {$text:{$search:'keyword'}}
+const textSearchFields = [
+  '_id', 'serial_tr069', 'alt_uid_tr069', 'acs_id', 'external_reference.kind',
+  'external_reference.data', 'model', 'version', 'hw_version',
+  'installed_release', 'release', 'data_collecting.ping_fqdn',
+  'connection_type', 'pppoe_user', 'pppoe_password', 'wan_bssid', 'wifi_ssid',
+  'wifi_bssid', 'wifi_password', 'wifi_ssid_5ghz', 'wifi_bssid_5ghz',
+  'wifi_password_5ghz', 'app_password', 'lan_subnet', 'lan_dns_servers',
+  'mesh_master', 'mesh_id', 'mesh_key', 'bssid_mesh2', 'bssid_mesh5',
+  'mesh_father', 'bridge_mode_ip', 'bridge_mode_gateway', 'bridge_mode_dns',
+  'wan_ip', 'wan_ipv6', 'ip', 'ntp_status', 'mesh_next_to_update',
+  'mqtt_secret', 'pending_app_secret', 'forward_index',
+  'blocked_devices_index', 'upnp_devices_index', 'default_gateway_v4',
+  'default_gateway_v6', 'dns_server', 'pppoe_mac', 'pppoe_ip',
+  'prefix_delegation_addr', 'prefix_delegation_mask',
+  'prefix_delegation_local', 'last_speedtest_error.unique_id',
+  'last_speedtest_error.error', 'current_diagnostic.type',
+  'current_diagnostic.stage', 'current_diagnostic.user',
+  'wps_last_connected_mac', 'custom_tr069_fields.intelbras_omci_mode',
+  'custom_tr069_fields.ipv6_mode',
+];
+let textIndexes = {};
+textSearchFields.map((val)=>textIndexes[val]='text');
+deviceSchema.index( textIndexes, {
+  'name': 'search_texts',
+});
+
+// For some reason, mongodb doesn't allow creation of another
+// index that uses _id, unless it is compound
+const collationIndexes = ['acs_id', 'alt_uid_tr069',
+  'external_reference.data', 'pppoe_user', 'serial_tr069', 'wan_bssid',
+];
+collationIndexes.map(function(collationIndex) {
+  let indexObject = {};
+  let indexOptions = {
+    name: `${collationIndex}_collation`,
+    collation: {
+      locale: 'en_US', strength: 1,
+    },
+  };
+  if (collationIndex) {
+    indexOptions.sparse = true;
+  }
+  indexObject[collationIndex] = 1;
+  deviceSchema.index(indexObject, indexOptions);
+});
+// The compound index that includes _id that we need in order
+// to simpleSearch very efficiently
+deviceSchema.index({
+  '_id': 1,
+  'acs_id': 1,
+  'alt_uid_tr069': 1,
+  'external_reference.data': 1,
+  'pppoe_user': 1,
+  'serial_tr069': 1,
+  'wan_bssid': 1,
+}, {
+  name: 'simple_search_index',
+  collation: {
+    locale: 'en_US', strength: 1,
+  },
 });
 
 deviceSchema.set('autoIndex', false);

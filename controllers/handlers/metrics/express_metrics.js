@@ -41,6 +41,8 @@ module.exports = promBundle({
     ['^/devicelist/uiportforward/.*', '/devicelist/uiportforward/<CPE_ID>'],
     ['^/devicelist/speedtest/.*', '/devicelist/speedtest/<CPE_ID>'],
     ['^/devicelist/pinghostslist/.*', '/devicelist/pinghostslist/<CPE_ID>'],
+    ['^/devicelist/landnsserverslist/.*',
+      '/devicelist/landnsserverslist/<CPE_ID>'],
     ['^/devicelist/landevices/.*', '/devicelist/landevices/<CPE_ID>'],
     ['^/devicelist/sitesurvey/.*', '/devicelist/sitesurvey/<CPE_ID>'],
     ['^/devicelist/uiupdate/.*', '/devicelist/uiupdate/<CPE_ID>'],
