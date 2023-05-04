@@ -47,13 +47,13 @@ router.use(
  *
  * @memberof routes/api/v3
  *
- * @param {String} PPPoEUsername - The PPPoE username of the device to be
+ * @param {String} pppoeUsername - The PPPoE username of the device to be
  * returned.
  *
- * @return {Model} The first device that matched the `PPPoEUsername`.
+ * @return {Model} The first device that matched the `pppoeUsername`.
  *
  * @openapi
- *  /api/v3/device/getByPPPoEUser/{PPPoEUsername}:
+ *  /api/v3/device/pppoe-username/{pppoeUsername}:
  *    get:
  *      summary: Get a device by it's PPPoE username.
  *
@@ -64,7 +64,7 @@ router.use(
  *
  *      parameters:
  *        - in: path
- *          name: PPPoEUsername
+ *          name: pppoeUsername
  *          schema:
  *            type: string
  *          required: true
@@ -198,7 +198,7 @@ router.use(
  *                    example: {}
  */
 router.get(
-  '/device/getByPPPoEUser/:PPPoEUsername',
+  '/device/pppoe-username/:pppoeUsername',
   apiController.getDeviceByField,
 );
 
@@ -209,12 +209,12 @@ router.get(
  *
  * @memberof routes/api/v3
  *
- * @param {String} MAC - The MAC address of the device to be returned.
+ * @param {String} mac - The MAC address of the device to be returned.
  *
- * @return {Model} The first device that matched the `MAC`.
+ * @return {Model} The first device that matched the `mac`.
  *
  * @openapi
- *  /api/v3/device/getByMAC/{MAC}:
+ *  /api/v3/device/mac/{mac}:
  *    get:
  *      summary: Get a device by it's MAC address.
  *
@@ -225,7 +225,7 @@ router.get(
  *
  *      parameters:
  *        - in: path
- *          name: MAC
+ *          name: mac
  *          schema:
  *            type: string
  *          required: true
@@ -284,7 +284,7 @@ router.get(
  *                    example: {}
  */
 router.get(
-  '/device/getByMAC/:MAC',
+  '/device/mac/:mac',
   apiController.getDeviceByField,
 );
 
@@ -295,12 +295,12 @@ router.get(
  *
  * @memberof routes/api/v3
  *
- * @param {String} SerialTR069 - The TR069 Serial of the device to be returned.
+ * @param {String} serialTR069 - The TR069 Serial of the device to be returned.
  *
- * @return {Model} The first device that matched the `SerialTR069`.
+ * @return {Model} The first device that matched the `serialTR069`.
  *
  * @openapi
- *  /api/v3/device/getBySerialTR069/{SerialTR069}:
+ *  /api/v3/device/serial-tr069/{serialTR069}:
  *    get:
  *      summary: Get a device by it's TR069 Serial.
  *
@@ -311,7 +311,7 @@ router.get(
  *
  *      parameters:
  *        - in: path
- *          name: SerialTR069
+ *          name: serialTR069
  *          schema:
  *            type: string
  *          required: true
@@ -370,7 +370,7 @@ router.get(
  *                    example: {}
  */
 router.get(
-  '/device/getBySerialTR069/:SerialTR069',
+  '/device/serial-tr069/:serialTR069',
   apiController.getDeviceByField,
 );
 
@@ -381,13 +381,13 @@ router.get(
  *
  * @memberof routes/api/v3
  *
- * @param {String} ExternalReferenceData - The External Reference of the device
- * to be returned.
+ * @param {String} externalReferenceData - The External Reference of the
+ * device to be returned.
  *
- * @return {Model} The first device that matched the `ExternalReferenceData`.
+ * @return {Model} The first device that matched the `externalReferenceData`.
  *
  * @openapi
- *  /api/v3/device/getByExternalReferenceData/{ExternalReferenceData}:
+ *  /api/v3/device/external-reference-data/{externalReferenceData}:
  *    get:
  *      summary: Get a device by it's External Reference.
  *
@@ -398,7 +398,7 @@ router.get(
  *
  *      parameters:
  *        - in: path
- *          name: ExternalReferenceData
+ *          name: externalReferenceData
  *          schema:
  *            type: string
  *          required: true
@@ -458,7 +458,7 @@ router.get(
  *                    example: {}
  */
 router.get(
-  '/device/getByExternalReferenceData/:ExternalReferenceData',
+  '/device/external-reference-data/:externalReferenceData',
   apiController.getDeviceByField,
 );
 
@@ -469,12 +469,12 @@ router.get(
  *
  * @memberof routes/api/v3
  *
- * @param {String} WANMAC - The WAN MAC address of the device to be returned.
+ * @param {String} wanMac - The WAN MAC address of the device to be returned.
  *
- * @return {Model} The first device that matched the `WANMAC`.
+ * @return {Model} The first device that matched the `wanMac`.
  *
  * @openapi
- *  /api/v3/device/getByWANMAC/{WANMAC}:
+ *  /api/v3/device/wan-mac/{wanMac}:
  *    get:
  *      summary: Get a device by it's WAN MAC address.
  *
@@ -485,7 +485,7 @@ router.get(
  *
  *      parameters:
  *        - in: path
- *          name: WANMAC
+ *          name: wanMac
  *          schema:
  *            type: string
  *          required: true
@@ -544,7 +544,7 @@ router.get(
  *                    example: {}
  */
 router.get(
-  '/device/getByWANMAC/:WANMAC',
+  '/device/wan-mac/:wanMac',
   apiController.getDeviceByField,
 );
 
