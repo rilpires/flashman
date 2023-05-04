@@ -90,15 +90,6 @@ let appSet = function(req, res, processFunction) {
       let tr069Changes = {
         wan: {}, lan: {}, wifi2: {}, wifi5: {}, changeBlockedDevices: false};
 
-      // Update chosen WAN if necessary
-      if (!matchedDevice.wan_chosen) {
-        let chosenWan = await acsController.updateChosenWan(matchedDevice);
-        if (chosenWan.key !== undefined) {
-          console.log('Chosen WAN was set to ' + chosenWan.key);
-          matchedDevice.wan_chosen = chosenWan.key;
-        }
-      }
-
       // Update location data if present
       if (
         content.latitude && content.longitude &&
@@ -151,6 +142,17 @@ let appSet = function(req, res, processFunction) {
       });
 
       if (matchedDevice.use_tr069) {
+        // Update chosen WAN if necessary
+        if (!matchedDevice.wan_chosen) {
+          let chosenWan = await acsController.updateChosenWan(matchedDevice);
+          if (chosenWan.key !== undefined) {
+            console.log('Chosen WAN was set to ' + chosenWan.key);
+            matchedDevice.wan_chosen = chosenWan.key;
+          } else {
+            console.error(t('wanInformationCannotBeEmpty'));
+            return res.status(500).json({is_set: 0});
+          }
+        }
         acsController.updateInfo(matchedDevice, tr069Changes);
         meshHandlers.syncSlaves(matchedDevice);
         return res.status(200).json({is_set: 1});

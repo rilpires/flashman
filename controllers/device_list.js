@@ -2536,10 +2536,10 @@ deviceListController.setDeviceReg = function(req, res) {
                            wifi5: {}, mesh2: {}, mesh5: {}};
             let audit = {};
 
-            // Update chosen WAN information
+            // Update chosen WAN information only if field is undefined
             if (!matchedDevice.wan_chosen) {
               let chosenWan = await acsDeviceInfo.updateChosenWan(
-                matchedDevice,
+                 req.params.id, cpe,
               );
               console.log('Chosen WAN was set to ' + chosenWan.key);
               matchedDevice.wan_chosen = chosenWan.key;

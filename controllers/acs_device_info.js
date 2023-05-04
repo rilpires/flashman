@@ -195,6 +195,18 @@ const getPPPoEenabled = function(cpe, wan) {
 
 const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
+  // Define WAN information before device creation
+  let chosenWan = await acsDeviceInfoController.updateChosenWan(
+    data.acs_id, cpe,
+  );
+  if (chosenWan.key !== undefined) {
+    console.log('Chosen WAN was set to ' + chosenWan.key + ' at registry');
+    data.wan = chosenWan.value;
+    data.wan.chosen_wan = chosenWan.key;
+  } else {
+    console.error(t('wanInformationCannotBeEmpty'));
+    return false;
+  }
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
   let doChanges = false;
   const hasPPPoE = getPPPoEenabled(cpe, data.wan);
@@ -1414,18 +1426,6 @@ const fetchSyncResult = async function(
    common: {}, wan: {}, lan: {}, wifi2: {}, wifi5: {}, mesh2: {}, mesh5: {},
    ipv6: {},
   };
-  // Choose ideal WAN
-  let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
-  if (chosenWan.key !== undefined) {
-    if (!device.wan_chosen) {
-      console.log('Chosen WAN was set to ' + chosenWan.key);
-    } else {
-      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
-                  chosenWan.key);
-    }
-    acsData.wan = chosenWan.value;
-    acsData.wan.chosen_wan = chosenWan.key;
-  }
   if (dataToFetch.basic) {
     let common = fields.common;
     acsData.common.ip = getFieldFromGenieData(
@@ -1943,17 +1943,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     permissions = DeviceVersion.devicePermissions(device);
   }
   // Choose ideal WAN
-  let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
-  if (chosenWan.key !== undefined) {
-    if (!device.wan_chosen) {
-      console.log('Chosen WAN was set to ' + chosenWan.key);
-    } else {
-      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
-                  chosenWan.key);
-    }
-    data.wan = chosenWan.value;
-    data.wan.chosen_wan = chosenWan.key;
-  }
   if (!permissions) {
     return res.status(500).json({
       success: false,
@@ -1968,6 +1957,7 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
     } else {
+      console.error(t('wanInformationCannotBeEmpty'));
       return res.status(500).json({
         success: false,
         message: t('acsCreateCpeRegistryError', {errorline: __line}),
@@ -2005,6 +1995,24 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   let splitID = acsID.split('-');
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let cpePermissions = cpe.modelPermissions();
+
+  // Always update WAN data before sync
+  let chosenWan = await acsDeviceInfoController.updateChosenWan(acsID, cpe);
+  if (chosenWan.key !== undefined) {
+    if (!device.wan_chosen) {
+      console.log('Chosen WAN was set to ' + chosenWan.key);
+      data.wan = chosenWan.value;
+      device.wan_chosen = chosenWan.key;
+    } else if (device.wan_chosen !== chosenWan.key) {
+      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+                  chosenWan.key);
+      data.wan = chosenWan.value;
+      device.wan_chosen = chosenWan.key;
+    }
+  } else {
+    console.error(t('wanInformationCannotBeEmpty'));
+    return;
+  }
 
   // Always update ACS ID and serial info, based on ID
   device.acs_id = acsID;
@@ -3234,8 +3242,7 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-acsDeviceInfoController.updateChosenWan = async function(device) {
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
+acsDeviceInfoController.updateChosenWan = async function(acsId, cpe) {
   let fields = cpe.getModelFields();
   let permissions = cpe.modelPermissions();
   let isTR181 = permissions.isTR181;
@@ -3249,7 +3256,7 @@ acsDeviceInfoController.updateChosenWan = async function(device) {
     isTR181: isTR181,
   };
   let data;
-  let query = {_id: device.acs_id};
+  let query = {_id: acsId};
   let projection = DevicesAPI.getParentNode(args, cb);
   // Fetch Genie database and retrieve data
   try {
@@ -3633,17 +3640,6 @@ acsDeviceInfoController.configTR069VirtualAP = async function(
 
   // If the task must be executed, only if it is not going to disable or cable
   const mustExecute = (targetMode !== 0 && targetMode !== 1);
-
-  if (!device.wan_chosen) {
-    let chosenWan = await acsDeviceInfoController.updateChosenWan(device);
-    if (chosenWan.key !== undefined) {
-      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
-                  chosenWan.key);
-      device.wan_chosen = chosenWan.key;
-    } else {
-      return {success: false, msg: t('wanInformationCannotBeEmpty')};
-    }
-  }
 
   const updated = await acsDeviceInfoController.updateInfo(
     device,
