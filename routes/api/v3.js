@@ -174,10 +174,21 @@ router.use(
  *
  *              bridge_mode_enabled:
  *                type: boolean
- *                description: If the router's switch is enable or not.
- *                  A ```false``` value means that the router cannot
- *                  send or receive packets in LAN.
- *                example: true
+ *                description: |
+ *                  If the router's switch is in bridge as following:
+ *                    + ```false``` - the router is not in bridge mode;
+ *                    + ```true``` - the router is in bridge mode.
+ *                example: false
+ *
+ *              bridge_mode_switch_disable:
+ *                type: boolean
+ *                description: |
+ *                  If the router's switch is enable or not as following:
+ *                    + ```false``` - the router cannot send or receive packets
+ *                      in LAN;
+ *                    + ```true``` - the router can send or receive packets in
+ *                      LAN.
+ *                example: false
  *
  *              wan_ipv4_mask:
  *                type: integer
@@ -365,8 +376,8 @@ router.use(
  *              ip:
  *                type: string
  *                description: |
- *                  The IP address that the Flashman uses to connect to the
- *                  device.
+ *                  The IPv4 or IPv6 address that the Flashman uses to connect
+ *                  to the device.
  *                example: '203.100.72.123'
  *
  *              created_at:
@@ -435,13 +446,18 @@ router.use(
  *                  description: The vlan mapping entry that tells which ports
  *                    are using which vlan ID's.
  *                  properties:
+ *                    _id:
+ *                      type: string
+ *                      description: The identification of this mapping.
+ *                      example: '62c88a9422d8372b34e88537'
+ *
  *                    port:
  *                      type: integer
  *                      description: The router port that is mapped to a vlan
  *                        ID.
  *                      example: 2
  *
- *                    vlan:
+ *                    vlan_id:
  *                      type: integer
  *                      description: The vlan ID that the port is mapped to.
  *                      example: 10
@@ -511,8 +527,14 @@ router.use(
  *              wan_ip:
  *                type: string
  *                description: |
- *                  The WAN IP address of the device.
+ *                  The WAN IPv4 address of the device.
  *                example: '203.100.72.124'
+ *
+ *              wan_ipv6:
+ *                type: string
+ *                description: |
+ *                  The WAN IPv6 address of the device.
+ *                example: '2804:3e0:0:52ca::1029'
  *
  *              is_license_active:
  *                type: boolean
@@ -533,6 +555,135 @@ router.use(
  *                description: |
  *                  The password of the 5GHz wireless network.
  *                example: 'SuperSecretPassword321'
+ *
+ *              wifi_band:
+ *                type: string
+ *                description: |
+ *                  The bandwidth of the 2.4GHz wireless network. The following
+ *                  values are valid:
+ *                    + HT20 - High Throughput 20 MHz;
+ *                    + HT40 - High Throughput 40 MHz;
+ *                    + auto - automatic bandwidth selection.
+ *                example: 'HT20'
+ *
+ *              wifi_last_band:
+ *                type: string
+ *                description: |
+ *                  The last know bandwidth, in MHz, of the 2.4GHz wireless
+ *                  network. This value will only differ from `wifi_band` if
+ *                  `wifi_band` is `auto`.
+ *                example: '20'
+ *
+ *              wifi_band_5ghz:
+ *                type: string
+ *                description: |
+ *                  The bandwidth of the 5GHz wireless network. The following
+ *                  values are valid:
+ *                    + VHT20 - Very High Throughput 20 MHz;
+ *                    + VHT40 - Very High Throughput 40 MHz;
+ *                    + VHT80 - Very High Throughput 80 MHz;
+ *                    + auto - automatic bandwidth selection.
+ *                example: 'VHT80'
+ *
+ *              wifi_last_band_5ghz:
+ *                type: string
+ *                description: |
+ *                  The last know bandwidth, in MHz, of the 5GHz wireless
+ *                  network. This value will only differ from `wifi_band` if
+ *                  `wifi_band` is `auto`.
+ *                example: '80'
+ *
+ *              wan_negociated_speed:
+ *                type: string
+ *                description: |
+ *                  The speed negotiated in WAN. It can be one of those values:
+ *                    + 100 - 100 Mbps;
+ *                    + 1000 - 1000 Mbps.
+ *                example: '100'
+ *
+ *              wan_negociated_duplex:
+ *                type: string
+ *                description: |
+ *                  The duplex negotiated in WAN. It can be one of those values:
+ *                    + half - half duplex;
+ *                    + full - full duplex.
+ *                example: '100'
+ *
+ *              bridge_mode_ip:
+ *                type: string
+ *                description: |
+ *                  The fixed WAN IP address used when in bridge mode, if it was
+ *                  configured by the user.
+ *                example: '192.168.3.103'
+ *
+ *              bridge_mode_gateway:
+ *                type: string
+ *                description: |
+ *                  The fixed default gateway used when in bridge mode, if it
+ *                  was configured by the user.
+ *                example: '192.168.3.1'
+ *
+ *              bridge_mode_dns:
+ *                type: string
+ *                description: |
+ *                  The fixed DNS server address used when in bridge mode, if it
+ *                  was configured by the user.
+ *                example: '8.8.8.8'
+ *
+ *              default_gateway_v4:
+ *                type: string
+ *                description: |
+ *                  The default gateway used by the router in IPv4.
+ *                example: '192.168.3.1'
+ *
+ *              default_gateway_v6:
+ *                type: string
+ *                description: |
+ *                  The default gateway used by the router in IPv6.
+ *                example: 'fe80::f0:1e8'
+ *
+ *              dns_server:
+ *                type: string
+ *                description: |
+ *                  The DNS server that the device is using to communicate with
+ *                  the internet.
+ *                example: '8.8.8.8'
+ *
+ *              pppoe_ip:
+ *                type: string
+ *                description: |
+ *                  The IP address of the PPPoE server.
+ *                example: '208.100.74.1'
+ *
+ *              pppoe_mac:
+ *                type: string
+ *                description: |
+ *                  The MAC address of the PPPoE server.
+ *                example: 'BB:CC:DD:EE:FF:AA'
+ *
+ *              prefix_delegation_addr:
+ *                type: string
+ *                description: |
+ *                  The prefix delegation address delivered to the router.
+ *                example: 'fc00:dead:c0de:a00::'
+ *
+ *              prefix_delegation_mask:
+ *                type: string
+ *                description: |
+ *                  The prefix delegation mask delivered to the router.
+ *                example: '64'
+ *
+ *              prefix_delegation_local:
+ *                type: string
+ *                description: |
+ *                  The prefix delegation address that the router got for it.
+ *                example: 'fc00:dead:c0de:a00::1'
+ *
+ *              ntp_status:
+ *                type: string
+ *                description: |
+ *                  The NTP time status.
+ *                example: '0.000105'
  *
  *
  *      'Get Device - 200 Response - Device Not Found':
