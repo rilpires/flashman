@@ -72,7 +72,9 @@ deviceHandlers.makeCustomInformInterval = function(device, inform) {
   if (!device.use_tr069) return 0;
   let hashedID = util.simpleStringHash(device.acs_id);
   let margin = parseInt(0.1 * inform); // 10% of interval time in variance
-  return inform - (hashedID%margin);
+  let newInform = inform - (hashedID%margin);
+  if (newInform < 60) newInform = 60;
+  return newInform;
 };
 
 deviceHandlers.syncUpdateScheduler = async function(mac) {

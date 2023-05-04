@@ -55,6 +55,29 @@ blackbox.deleteCPE = async function(cpeID, cookie) {
 
 
 /**
+ * Delete ALL devices on Flashman's "devices" collection
+ * directly from MongoDB
+ *
+ * @memberOf test/common/blackbox
+ *
+ * @async
+ * @param {Cookie} cookie - The login cookie.
+ *
+ * @return {Response} The deleteMany response from Mongoose.
+ */
+blackbox.deleteAllDevices = async function(cookie) {
+  let response = await request(constants.FLASHMAN_HOST)
+    .post('/api/v2/device/get')
+    .set('Cookie', cookie)
+    .auth(constants.BASIC_AUTH_USER, constants.BASIC_AUTH_PASS)
+    .send()
+    .catch((error) => console.error(error));
+  for (let device of response.body) {
+    await blackbox.deleteCPE(device._id, cookie);
+  }
+};
+
+/**
  * Sends the request to the route specified to Flashman, with the data passed.
  *
  * @memberOf test/common/blackbox
@@ -77,11 +100,10 @@ blackbox.sendRequestAdmin = async function(type, route, cookie, data) {
     flashmanRequest.set('Cookie', cookie);
   }
 
-  return (await flashmanRequest
+  return await flashmanRequest
     .auth(constants.BASIC_AUTH_USER, constants.BASIC_AUTH_PASS)
     .send(data)
-    .catch((error) => console.error(error))
-  );
+    .catch((error) => console.error(error));
 };
 
 /**

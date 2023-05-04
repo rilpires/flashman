@@ -799,8 +799,11 @@ acsMeasuresHandler.fetchWanInformationFromGenie = async function(acsID) {
       // Update fields
       // Address
       device.wan_ip = assignFields.wanIPv4Field.value;
-      // Remove the mask if came with it
-      device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
+
+      if (assignFields.wanIPv6Field.value != 'null') {
+        // Remove the mask if came with it
+        device.wan_ipv6 = assignFields.wanIPv6Field.value.split('/')[0];
+      }
 
       // Mask
       let mask = parseInt(assignFields.maskIPv4Field.value);

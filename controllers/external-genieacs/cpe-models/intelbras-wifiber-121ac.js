@@ -12,12 +12,20 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.traceroute.protocol = 'ICMP';
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.fullSupport;
   permissions.wan.speedTestLimit = 350;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
@@ -26,6 +34,12 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.modeRead = false;
   permissions.wifi.modeWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.dnsServersLimit = 3;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.stavixXMLConfig = {
     portForward: true,
     webCredentials: false,
@@ -105,6 +119,28 @@ intelbrasModel.getModelFields = function() {
     fields.mesh2[k] = fields.mesh5[k].replace(/6/g, '7');
     fields.mesh5[k] = fields.mesh5[k].replace(/6/g, '2');
   });
+
+// IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ITBS_IPv6ExternalAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ITBS_IPv6ExternalAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ITBS_IPv6GatewayAddress';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ITBS_IPv6GatewayAddress';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.'+
+    'X_ITBS_IPv6PrefixDelegationAddress';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.'+
+    'X_ITBS_IPv6PrefixDelegationAddress';
 
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.X_ITBS_WiFi'+
     '.NeighboringWiFiDiagnostic';

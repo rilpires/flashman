@@ -952,15 +952,14 @@ deviceListController.retryMeshUpdate = function(req, res) {
 
 deviceListController.simpleSearchDeviceQuery = function(queryContents) {
   let finalQuery = {};
-  let queryContentNoCase = new RegExp('^' + escapeRegExp(queryContents[0]) +
-                                      '$', 'i');
   if (queryContents[0].length > 0) {
     finalQuery.$or = [
-      {pppoe_user: queryContentNoCase},
-      {_id: queryContentNoCase},
-      {serial_tr069: queryContentNoCase},
-      {alt_uid_tr069: queryContentNoCase},
-      {'external_reference.data': queryContentNoCase},
+      {pppoe_user: queryContents[0]},
+      {_id: queryContents[0]},
+      {serial_tr069: queryContents[0]},
+      {alt_uid_tr069: queryContents[0]},
+      {'external_reference.data': queryContents[0]},
+      {wan_bssid: queryContents[0]},
     ];
   } else {
     finalQuery = {_id: ''};
@@ -999,6 +998,7 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
   let matchedConfig; // will be assigned a value if it reaches a place where
   // it's being used.
 
+  let usedTextSearch = false;
   for (let idx=0; idx < queryContents.length; idx++) {
     let tag = queryContents[idx].toLowerCase(); // assigning tag to variable.
     let query = {}; // to be appended to array of queries used in pagination.
@@ -1141,11 +1141,10 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
     } else if (tag === 'tr069') { // CPE TR-069 routers.
       query.use_tr069 = true;
     } else if (queryContents[idx] !== '') { // all other non empty filters.
-      let queryArray = [];
-      let contentCondition = '$or';
-      // Check negation condition
+      // If excluding term...
       let excludeTag = t('/exclude');
       if (queryContents[idx].startsWith(excludeTag)) {
+        let queryArray = [];
         const filterContent = queryContents[idx].split(excludeTag)[1].trim();
         let queryInput = new RegExp(escapeRegExp(filterContent), 'i');
         for (let property in DeviceModel.schema.paths) {
@@ -1156,23 +1155,35 @@ deviceListController.complexSearchDeviceQuery = async function(queryContents,
             queryArray.push(field);
           }
         }
-        contentCondition = '$and';
+        query['$and'] = queryArray;
       } else {
-        let queryInput = new RegExp(escapeRegExp(queryContents[idx]), 'i');
-        for (let property in DeviceModel.schema.paths) {
-          if (DeviceModel.schema.paths.hasOwnProperty(property) &&
-              DeviceModel.schema.paths[property].instance === 'String') {
-            let field = {};
-            field[property] = queryInput;
-            queryArray.push(field);
+        // our regex based search, only used on most used fields
+        query['$or'] = [
+          '_id', 'pppoe_user', 'serial_tr069', 'external_reference.data',
+          'alt_uid_tr069', 'acs_id', 'wan_bssid',
+        ].map(
+          (fieldName)=>{
+            let ret = {};
+            ret[fieldName] = new RegExp(escapeRegExp(tag), 'i');
+            return ret;
+          },
+        );
+        // Since we can only have ONE search object on a query,
+        // we make sure it is used only on the first generic term
+        if (!usedTextSearch) {
+          usedTextSearch = true;
+          let searchText;
+          if (tag.startsWith('-')) {
+            searchText = tag;
+          } else {
+            searchText = `"${tag}"`;
           }
+          query['$or'].push({'$text': {'$search': searchText}});
         }
       }
-      query[contentCondition] = queryArray;
     }
-    finalQueryArray.push(query); // appending query to array of queries.
+    finalQueryArray.push(query);
   }
-
   // only return 'finalQuery' if 'finalQueryArray' isn't empty.
   if (finalQueryArray.length > 0) return finalQuery;
   else return {};
@@ -1207,15 +1218,16 @@ deviceListController.getDevices = async function(req, res) {
     });
   }
   let finalQuery;
+  let queryOptions = undefined;
   if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
       queryContents);
   } else {
     finalQuery = deviceListController.simpleSearchDeviceQuery(queryContents);
+    queryOptions = {collation: {locale: 'en_US', strength: 1}};
   }
-
   // querying devices.
-  DeviceModel.find(finalQuery, projectedFields).lean().exec()
+  DeviceModel.find(finalQuery, projectedFields, queryOptions).lean().exec()
   .then((devices) => res.json(devices)) // responding with array as json.
   .catch((err) => res.status(500).json({ // in case of error, returns message.
     success: false,
@@ -1295,7 +1307,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
     name: util.returnObjOrEmptyStr(req.user.role),
   });
   let finalQuery;
-  if (req.user.is_superuser || userRole.grantSearchLevel >= 2) {
+  let isComplexSearch = req.user.is_superuser || userRole.grantSearchLevel >= 2;
+  if (isComplexSearch) {
     finalQuery = await deviceListController.complexSearchDeviceQuery(
       queryContents, mqttClientsArray, currentTimestamp, tr069Times);
   } else {
@@ -1320,7 +1333,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     projection: {
       lan_devices: false, port_mapping: false, ap_survey: false,
       mesh_routers: false, pingtest_results: false, speedtest_results: false,
-      firstboot_log: false, lastboot_log: false,
+      firstboot_log: false, lastboot_log: false, wan_bytes: false,
     },
   };
   // Keys to optionally filter returned results
@@ -1330,7 +1343,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
       paginateOpts.select = queryResFilter;
     }
   }
-
+  if (!isComplexSearch) {
+    paginateOpts.collation = {
+      locale: 'en_US', strength: 1,
+    };
+  }
   DeviceModel.paginate(finalQuery, paginateOpts, function(err, matchedDevices) {
     if (err) {
       return res.json({
