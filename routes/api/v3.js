@@ -38,6 +38,11 @@ router.options('/*', function(_request, response) {
 router.use(
   authController.ensureAPIAccess,
 );
+router.use(
+  authController.ensurePermission('grantAPIAccess'),
+);
+
+
 
 
 // Routes
