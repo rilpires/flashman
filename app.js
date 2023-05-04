@@ -162,6 +162,8 @@ app.use(bodyParser.raw({type: 'application/octet-stream'}));
 if (ENABLE_SWAGGER) {
   const configuration = swaggerJsdoc(swaggerConfig);
 
+  console.log('Enabling swagger at: ' + SWAGGER_PATH);
+
   app.use(
     SWAGGER_PATH,
     swaggerUi.serve,
