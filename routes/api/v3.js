@@ -9,7 +9,7 @@ const express = require('express');
 const router = express.Router();
 
 const authController = require('../../controllers/auth');
-const deviceListController = require('../../controllers/device_list');
+const apiController = require('../../controllers/api/v3');
 
 
 // Enable CORS to all V3 routes as it is necessary for Swagger to send commands.
@@ -199,7 +199,7 @@ router.use(
  */
 router.get(
   '/device/getByPPPoEUser/:PPPoEUsername',
-  deviceListController.getDeviceByField,
+  apiController.getDeviceByField,
 );
 
 
@@ -285,7 +285,7 @@ router.get(
  */
 router.get(
   '/device/getByMAC/:MAC',
-  deviceListController.getDeviceByField,
+  apiController.getDeviceByField,
 );
 
 
@@ -371,7 +371,7 @@ router.get(
  */
 router.get(
   '/device/getBySerialTR069/:SerialTR069',
-  deviceListController.getDeviceByField,
+  apiController.getDeviceByField,
 );
 
 
@@ -459,7 +459,7 @@ router.get(
  */
 router.get(
   '/device/getByExternalReferenceData/:ExternalReferenceData',
-  deviceListController.getDeviceByField,
+  apiController.getDeviceByField,
 );
 
 
@@ -545,7 +545,7 @@ router.get(
  */
 router.get(
   '/device/getByWANMAC/:WANMAC',
-  deviceListController.getDeviceByField,
+  apiController.getDeviceByField,
 );
 
 
