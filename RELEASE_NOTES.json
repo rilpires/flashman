@@ -8,6 +8,15 @@
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
 	},
+	"2.74.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug da versão 2.74.0 que não mostrava a paginação da listagem de CPEs na página principal."
+		],
+		"improvements": [],
+		"features": []
+	},
 	"2.74.0": {
 		"custom_firmware_compatibilities": [],
 		"tr069_compatibilities": [
