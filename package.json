@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.74.0",
+  "version": "2.74.1",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
