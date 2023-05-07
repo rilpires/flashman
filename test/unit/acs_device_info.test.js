@@ -696,6 +696,10 @@ describe('ACS Device Info Tests', () => {
 
       jest.spyOn(tasksAPI, 'getFromCollection')
         .mockImplementation(() => [{_id: '94:46:96:8c:23:61'}]);
+      // jest.spyOn(tasksAPI, 'getFromCollection')
+      //   .mockImplementation(() => JSON.parse(
+      //     '[' + JSON.stringify(eg8145v5) + ']'),
+      //   );
 
       jest.spyOn(tasksAPI, 'addTask')
         .mockImplementation(() => {
@@ -745,6 +749,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -802,6 +810,10 @@ describe('ACS Device Info Tests', () => {
         };
 
         let body = assembleBody(device);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Mocks
         let req = mockRequest(app, body);
@@ -867,6 +879,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -933,6 +949,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -998,6 +1018,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1056,6 +1080,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1116,6 +1144,10 @@ describe('ACS Device Info Tests', () => {
 
         // Mocks
         let req = mockRequest(app, body);
+        jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+          .mockImplementation(() => {
+            return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+        });
 
         // Spies
         let reportOnuDevicesSpy =
@@ -1167,8 +1199,14 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
+      let body = assembleBody(device);
+
       // Mocks
-      let request = {app: app, body: assembleBody(device)};
+      let request = {app: app, body: body};
+      jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+        .mockImplementation(() => {
+          return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+      });
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true, cpePermissions, null,
       );
@@ -1244,8 +1282,14 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
+      let body = assembleBody(device);
+
       // Mocks
-      let request = {app: app, body: assembleBody(device)};
+      let request = {app: app, body: body};
+      jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+        .mockImplementation(() => {
+          return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+      });
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true, cpePermissions, null,
       );
@@ -1328,8 +1372,14 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
+      let body = assembleBody(device);
+
       // Mocks
-      let request = {app: app, body: assembleBody(device)};
+      let request = {app: app, body: body};
+      jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+        .mockImplementation(() => {
+          return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+      });
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true, cpePermissions, null,
       );
@@ -1427,8 +1477,14 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
+      let body = assembleBody(device);
+
       // Mocks
-      let request = {app: app, body: assembleBody(device)};
+      let request = {app: app, body: body};
+      jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+        .mockImplementation(() => {
+          return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+      });
       utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice(
         true, cpePermissions, null,
       );
