@@ -450,6 +450,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
