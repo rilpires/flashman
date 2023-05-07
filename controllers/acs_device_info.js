@@ -197,7 +197,7 @@ const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   // Define WAN information before device creation
   let chosenWan = await acsDeviceInfoController.updateChosenWan(
-    data.acs_id, cpe,
+    req.body.acs_id, cpe,
   );
   if (chosenWan.key !== undefined) {
     console.log('Chosen WAN was set to ' + chosenWan.key + ' at registry');
