@@ -166,6 +166,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -201,6 +202,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -249,6 +251,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -517,6 +520,7 @@ describe('Controllers - Device List', () => {
         wifi_ssid_5ghz: 'old-wifi-test-5g',
         wifi_state: 0,
         wifi_state_5ghz: 1,
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -598,6 +602,7 @@ describe('Controllers - Device List', () => {
         pppoe_password: 'dummypass',
         wan_vlan_id: 1,
         wan_mtu: 1500,
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -748,6 +753,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 2,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -818,6 +824,7 @@ describe('Controllers - Device List', () => {
         wan_vlan_id: 10,
         wan_mtu: 1480,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -887,6 +894,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -954,6 +962,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
