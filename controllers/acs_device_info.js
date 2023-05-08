@@ -1744,6 +1744,7 @@ const fetchSyncResult = async function(
       data, fields.common.stun_udp_conn_req_addr, useLastIndexOnWildcard,
     );
   }
+
   let permissions = DeviceVersion.devicePermissions(device);
   syncDeviceData(acsID, device, acsData, permissions);
 };
