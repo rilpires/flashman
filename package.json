@@ -28,7 +28,7 @@
     "@anlix-io/flashaudit-node-client": "^0.1.0",
     "@fortawesome/fontawesome-free": "~5.10.2",
     "@socket.io/redis-adapter": "~7.1.0",
-    "aedes": "~0.46.1",
+    "aedes": "https://github.com/rilpires/aedes.git",
     "aedes-persistence-redis": "~8.0.1",
     "apexcharts": "~3.24.0",
     "async-mutex": "~0.1.3",
