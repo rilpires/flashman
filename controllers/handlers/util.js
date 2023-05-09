@@ -166,6 +166,7 @@ utilHandlers.convertWanToFlashmanFormat = function(data) {
     const temp = {};
     for (const prop in obj) {
       if (!obj.hasOwnProperty(prop)) continue;
+      if (obj[prop] === undefined) continue;
       if (obj[prop].hasOwnProperty('value')) {
         let value = Array.isArray(obj[prop].value) ?
           obj[prop].value[0] : obj[prop].value;
