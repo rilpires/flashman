@@ -136,23 +136,24 @@ let appSet = function(req, res, processFunction) {
       }
       delete tr069Changes.changeBlockedDevices;
 
+      // Update chosen WAN if necessary
+      if (!matchedDevice.wan_chosen) {
+        let chosenWan = await acsController.updateChosenWan(matchedDevice);
+        if (chosenWan.key !== undefined) {
+          console.log('Chosen WAN was set to ' + chosenWan.key);
+          matchedDevice.wan_chosen = chosenWan.key;
+        } else {
+          console.error(t('wanInformationCannotBeEmpty'));
+          return res.status(500).json({is_set: 0});
+        }
+      }
+
       await matchedDevice.save().catch((err) => {
         console.log('Error setting app sent data: ' + err);
         return res.status(500).json({is_set: 0});
       });
 
       if (matchedDevice.use_tr069) {
-        // Update chosen WAN if necessary
-        if (!matchedDevice.wan_chosen) {
-          let chosenWan = await acsController.updateChosenWan(matchedDevice);
-          if (chosenWan.key !== undefined) {
-            console.log('Chosen WAN was set to ' + chosenWan.key);
-            matchedDevice.wan_chosen = chosenWan.key;
-          } else {
-            console.error(t('wanInformationCannotBeEmpty'));
-            return res.status(500).json({is_set: 0});
-          }
-        }
         acsController.updateInfo(matchedDevice, tr069Changes);
         meshHandlers.syncSlaves(matchedDevice);
         return res.status(200).json({is_set: 1});
