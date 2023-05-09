@@ -34,7 +34,7 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
     // Do not store messages to deliver when device is offline
     maxSessionDelivery: 0,
   });
-  mqtts = aedes({mq: mq, persistance: persistence, queueLimit: 2,
+  mqtts = aedes({mq: mq, persistence: persistence, queueLimit: 2,
                  concurrency: 500});
   // Fix broker id in case of instance restart
   mqtts.id = instanceName + instanceNumber;
