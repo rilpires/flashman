@@ -1437,8 +1437,14 @@ describe('ACS Device Info Tests', () => {
         },
       };
 
+      let body = assembleBody(device);
+
       // Mocks
-      let request = {app: app, body: assembleBody(device)};
+      let request = {app: app, body: body};
+      jest.spyOn(acsDeviceInfoController, 'updateChosenWan')
+        .mockImplementation(() => {
+          return {key: 'wan_ppp_1_1_1', value: body.data.wan};
+      });
       utils.common.mockConfigs(null, 'findOne');
 
       // Get the cpe and permissions
