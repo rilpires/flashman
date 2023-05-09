@@ -583,6 +583,26 @@ const syncDeviceData = async function(args, callback) {
   callback(null, result);
 };
 
+const sendDiagnosticComplete = async function(params) {
+  return new Promise((resolve, reject)=>{
+    request({
+      url: `http://${FLASHIFY_SERVER_HOST}:${FLASHIFY_SERVER_PORT}`
+         + `/api/v1/flashmancourier/diagnosticcomplete`,
+      method: 'POST',
+      json: params,
+    },
+    function(error, response) {
+      if (error) {
+        return resolve(false);
+      }
+      if (response.statusCode !== 200) {
+        return resolve(false);
+      }
+      return resolve(true);
+    });
+  });
+};
+
 const syncDeviceDiagnostics = async function(args, callback) {
   let params = JSON.parse(args[0]);
   if (!params || !params.acs_id) {
@@ -592,6 +612,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
     });
   }
   let result = await sendFlashmanRequest('receive/diagnostic', params, false);
+  result.success = await sendDiagnosticComplete(params);
   callback(null, result);
 };
 
