@@ -197,14 +197,13 @@ const createRegistry = async function(req, cpe, permissions) {
   let data = req.body.data;
   // Define WAN information before device creation
   let chosenWan = await acsDeviceInfoController.updateChosenWan(
-    req.body.acs_id, cpe,
+    req.body.acs_id, cpe, data.wan,
   );
   if (chosenWan.key !== undefined) {
     console.log('Chosen WAN was set to ' + chosenWan.key + ' at registry');
     data.wan = chosenWan.value;
     data.wan.chosen_wan = chosenWan.key;
   } else {
-    console.error(t('wanInformationCannotBeEmpty'));
     return false;
   }
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
@@ -3230,7 +3229,9 @@ const getSsidPrefixCheck = async function(device) {
     device.isSsidPrefixEnabled);
 };
 
-acsDeviceInfoController.updateChosenWan = async function(acsId, cpe) {
+acsDeviceInfoController.updateChosenWan = async function(
+  acsId, cpe, data = {},
+) {
   let fields = cpe.getModelFields();
   let permissions = cpe.modelPermissions();
   let isTR181 = permissions.isTR181;
@@ -3243,22 +3244,24 @@ acsDeviceInfoController.updateChosenWan = async function(acsId, cpe) {
     fields: fields,
     isTR181: isTR181,
   };
-  let data;
-  let query = {_id: acsId};
-  let projection = DevicesAPI.getParentNode(args, cb);
-  if (projection === null) {
-    return {key: undefined, value: undefined};
-  }
-  // Fetch Genie database and retrieve data
-  try {
-    data = await TasksAPI.getFromCollection('devices', query, projection);
-    data = utilHandlers.convertWanToProvisionFormat(data[0]);
+  let result = data;
+  if (data === {}) {
+    let query = {_id: acsId};
+    let projection = DevicesAPI.getParentNode(args, cb);
+    if (projection === null) {
+      return {key: undefined, value: undefined};
+    }
+    // Fetch Genie database and retrieve data
+    try {
+      data = await TasksAPI.getFromCollection('devices', query, projection);
+      data = utilHandlers.convertWanToProvisionFormat(data[0]);
+    } catch (e) {
+      console.log('Exception fetching Genie database: ' + e);
+      return {'success': false};
+    }
     args.data = data;
-  } catch (e) {
-    console.log('Exception fetching Genie database: ' + e);
-    return {'success': false};
+    result = DevicesAPI.assembleWanObj(args, cb);
   }
-  let result = DevicesAPI.assembleWanObj(args, cb);
   return utilHandlers.chooseWan(result, wildcardFlag);
 };
 
