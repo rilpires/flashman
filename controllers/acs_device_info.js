@@ -2624,6 +2624,33 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     );
   }
 
+  // If has STUN Support in the model and
+  // STUN Enable flag is different from actual configuration
+  if (permissions.grantSTUN &&
+      data.common.stun_enable && data.common.stun_enable.value &&
+      data.common.stun_enable.value.toString() !==
+      config.tr069.stun_enable.toString()) {
+    hasChanges = true;
+    changes.common.stun_enable = config.tr069.stun_enable;
+    changes.stun.address = config.tr069.server_url;
+    changes.stun.port = 3478;
+  }
+
+  // If device contacted Flashman, then it is no longer in hard reset state
+  let wasRecoveringHardReset = device.recovering_tr069_reset;
+  device.recovering_tr069_reset = false;
+
+  // Update last contact and sync dates
+  let now = Date.now();
+  device.last_contact = now;
+  device.last_tr069_sync = now;
+  let previousDaily = device.last_contact_daily;
+  let doDailySync = false;
+  if (!previousDaily || (now - previousDaily) > 24*60*60*1000) {
+    device.last_contact_daily = now;
+    doDailySync = true;
+  }
+
   // Collect admin web credentials, if available
   if (data.common.web_admin_username && data.common.web_admin_username.value) {
     // Save the current web admin username
@@ -2665,7 +2692,13 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
     ( cpeDidUpdate ||
       device.recovering_tr069_reset ||
-      config.tr069.web_password !== device.web_admin_password )
+      config.tr069.web_password !== device.web_admin_password ||
+
+      // On daily sync, Send web admin password correct setup for
+      // those CPEs that always retrieve blank on this field
+      (doDailySync && !cpe.modelPermissions().stavixXMLConfig.webCredentials &&
+        data.common.web_admin_password.value === '')
+    )
 
   ) {
     // Update the current web admin password in database
@@ -2674,33 +2707,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     // Update in cpe
     changes.common.web_admin_password = config.tr069.web_password;
     hasChanges = true;
-  }
-
-  // If has STUN Support in the model and
-  // STUN Enable flag is different from actual configuration
-  if (permissions.grantSTUN &&
-      data.common.stun_enable && data.common.stun_enable.value &&
-      data.common.stun_enable.value.toString() !==
-      config.tr069.stun_enable.toString()) {
-    hasChanges = true;
-    changes.common.stun_enable = config.tr069.stun_enable;
-    changes.stun.address = config.tr069.server_url;
-    changes.stun.port = 3478;
-  }
-
-  // If device contacted Flashman, then it is no longer in hard reset state
-  let wasRecoveringHardReset = device.recovering_tr069_reset;
-  device.recovering_tr069_reset = false;
-
-  // Update last contact and sync dates
-  let now = Date.now();
-  device.last_contact = now;
-  device.last_tr069_sync = now;
-  let previousDaily = device.last_contact_daily;
-  let doDailySync = false;
-  if (!previousDaily || (now - previousDaily) > 24*60*60*1000) {
-    device.last_contact_daily = now;
-    doDailySync = true;
   }
 
   await device.save().catch((err) => {
@@ -2716,8 +2722,13 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
     }
   }
 
-  // daily data fetching
+  // Aditional Tasks for daily update
   if (doDailySync) {
+    // Update Blocked Devices
+    if (permissions.grantBlockDevices) {
+      await acsDeviceInfoController.changeAcRules(device);
+    }
+
     /* Every day fetch device port forward entries, except in the case
       which device is registred with upcoming port mapping values */
     if (permissions.grantPortForward && !device.wrong_port_mapping) {
@@ -2742,23 +2753,6 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
           acsPortForwardHandler.checkPortForwardRules(device);
         }
       }
-    }
-    // Stavix XML devices should not sync web credentials daily
-    if (!cpe.modelPermissions().stavixXMLConfig.webCredentials) {
-      // Send web admin password correct setup for those CPEs that always
-      // retrieve blank on this field
-      if (typeof config.tr069.web_password !== 'undefined' &&
-          data.common.web_admin_password &&
-          data.common.web_admin_password.writable &&
-          data.common.web_admin_password.value === '') {
-        let passChange = {common: {}};
-        passChange.common.web_admin_password = config.tr069.web_password;
-        device.web_admin_password = config.tr069.web_password;
-        await acsDeviceInfoController.updateInfo(device, passChange);
-      }
-    }
-    if (permissions.grantBlockDevices) {
-      await acsDeviceInfoController.changeAcRules(device);
     }
   }
 };
@@ -3271,6 +3265,7 @@ acsDeviceInfoController.updateInfo = async function(
   // on the local flag and what the saved SSID values are. We use the prefix to
   // then prepend it to the saved SSID, so we send the full SSID in the task
   let ssidPrefix = ssidPrefixObj.prefixToUse;
+
   if (
     changes.common && changes.common.web_admin_username &&
     !cpe.isAllowedWebadminUsername(changes.common.web_admin_username)

@@ -131,7 +131,7 @@ fiberhomeModel.isDeviceConnectedViaWifi = function(
   return 'cable';
 };
 
-basicCPEModel.isAllowedWebadminUsername = function(name) {
+fiberhomeModel.isAllowedWebadminUsername = function(name) {
   // The router uses admin as normal user.
   if (name === 'admin') {
     return false;
