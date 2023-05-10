@@ -3230,7 +3230,7 @@ const getSsidPrefixCheck = async function(device) {
 };
 
 acsDeviceInfoController.updateChosenWan = async function(
-  acsId, cpe, data = {},
+  acsId, cpe, data = null,
 ) {
   let fields = cpe.getModelFields();
   let permissions = cpe.modelPermissions();
@@ -3245,7 +3245,7 @@ acsDeviceInfoController.updateChosenWan = async function(
     isTR181: isTR181,
   };
   let result = data;
-  if (data === {}) {
+  if (data === null) {
     let query = {_id: acsId};
     let projection = DevicesAPI.getParentNode(args, cb);
     if (projection === null) {
@@ -3260,8 +3260,10 @@ acsDeviceInfoController.updateChosenWan = async function(
       return {'success': false};
     }
     args.data = data;
+    console.log(data)
     result = DevicesAPI.assembleWanObj(args, cb);
   }
+  console.log(result)
   return utilHandlers.chooseWan(result, wildcardFlag);
 };
 
