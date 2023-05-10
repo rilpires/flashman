@@ -3260,10 +3260,8 @@ acsDeviceInfoController.updateChosenWan = async function(
       return {'success': false};
     }
     args.data = data;
-    console.log(data)
     result = DevicesAPI.assembleWanObj(args, cb);
   }
-  console.log(result)
   return utilHandlers.chooseWan(result, wildcardFlag);
 };
 
