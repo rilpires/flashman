@@ -1128,8 +1128,11 @@ acsDeviceInfoController.requestSync = async function(device) {
   // WAN configuration fields
   dataToFetch.wan = true;
   parameterNames.push(fields.wan.pppoe_enable);
+  parameterNames.push(fields.wan.pppoe_status);
   parameterNames.push(fields.wan.pppoe_user);
   parameterNames.push(fields.wan.pppoe_pass);
+  parameterNames.push(fields.wan.dhcp_enable);
+  parameterNames.push(fields.wan.dhcp_status);
   parameterNames.push(fields.wan.rate);
   parameterNames.push(fields.wan.duplex);
   parameterNames.push(fields.wan.wan_ip);
@@ -2168,12 +2171,12 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
   }
   if (!device.wan_chosen) {
     console.log('Chosen WAN was set to ' + chosenWan.key);
+    device = syncWanData(device, chosenWan, hasPPPoE, cpe);
   } else if (device.wan_chosen !== chosenWan.key) {
     console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
                 chosenWan.key);
+    device = syncWanData(device, chosenWan, hasPPPoE, cpe);
   }
-  device = syncWanData(device, chosenWan, hasPPPoE, cpe);
-  // data.wan = chosenWan.value;
 
   // Process wan connection type, but only if data sent
   const suffixPPPoE = hasPPPoE ? '_ppp' : '';
