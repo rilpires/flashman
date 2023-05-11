@@ -12,19 +12,31 @@ nokiaModel.modelPermissions = function() {
   permissions.features.siteSurvey = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.lan.sendRoutersOnLANChange = false;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
   permissions.wan.speedTestLimit = 850;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 149, 153, 157, 161,
   ];
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
+
+  permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
+  permissions.lan.dnsServersLimit = 2;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.firmwareUpgrades = {
     '3FE49025IJHK03': [],
   };
@@ -70,6 +82,14 @@ nokiaModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
+nokiaModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000000;
+};
+
+nokiaModel.convertToDbm = function(power) {
+  return parseFloat(power).toFixed(3);
+};
+
 nokiaModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wifi2.password = fields.wifi2.password.replace(
@@ -102,6 +122,8 @@ nokiaModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
     'RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.X_ALU_OntOpticalParam.' +
@@ -110,11 +132,35 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.mtu = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.InterfaceMtu';
+  fields.wan.mtu_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.InterfaceMtu';
   fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
     'X_ALU-COM_NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
   fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ALU-COM_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ALU-COM_IPv6IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ALU-COM_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ALU-COM_DefaultIPv6Gateway';
+
+  // IPv6 Prefix Delegation
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice' +
+    '.1.WANConnectionDevice.*.WANIPConnection.*.X_ALU-COM_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.' +
+    'WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_ALU-COM_IPv6Prefix';
+
   return fields;
 };
 

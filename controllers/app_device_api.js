@@ -1514,6 +1514,7 @@ appDeviceAPIController.validateDeviceSerial = function(req, res) {
     '$or': [
       {serial_tr069: serial},
       {alt_uid_tr069: serial},
+      {_id: serial},
     ],
   };
   let altSerial = req.body.content.alt_serial;
@@ -1692,16 +1693,32 @@ appDeviceAPIController.appSetPortForward = function(req, res) {
   });
 };
 
+const getQueryForBackupFetch = function(content) {
+  let query = null;
+  if (!content) return query;
+  if (content.alt_uid) {
+    query = { alt_uid_tr069: content.serial };
+  } else if (content.use_mac_as_serial) {
+    query = { _id: content.serial };
+  } else if (content.serial) {
+    query = { serial_tr069: content.serial };
+  }
+  return query;
+};
+
+// To be called at app_device_api.test.js
+appDeviceAPIController.__testGetQueryForBackupFetch = getQueryForBackupFetch;
+
 appDeviceAPIController.fetchBackupForAppReset = async function(req, res) {
   if (!util.isJSONObject(req.body.content)) {
     return res.status(500).json({message:
       t('jsonError', {errorline: __line})});
   }
-  let query;
-  if (req.body.content.alt_uid) {
-    query = {alt_uid_tr069: req.body.content.serial};
-  } else {
-    query = {serial_tr069: req.body.content.serial};
+  let query = getQueryForBackupFetch(req.body.content);
+  if (query == null) {
+    return res.status(500).json({
+      message: t('internalError', { errorline: __line })
+    });
   }
   try {
     let device = await DeviceModel.findOne(query).lean();
