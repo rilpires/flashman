@@ -1,0 +1,76 @@
+components:
+  responses:
+    '200':
+      description: The first device found that matches the field passed as
+        URL parameter or an empty device with success false as it could
+        not find the device.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Get Device - 200 Response -
+                  Success'
+              - $ref: '#/components/schemas/Get Device - 200 Response -
+                  Success - Single field'
+
+    '200 - LAN Devices':
+      description: The first device found's LAN Devices that matches the
+        field passed as URL parameter.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Get Device - 200 Response -
+              Success - LAN Devices'
+
+    '200 - Site Survey':
+      description: The first device found's Site Survey that matches the
+        field passed as URL parameter.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Get Device - 200 Response -
+              Success - Site Survey'
+
+    '400':
+      description: The request is malformed. It can be caused by the missing URL
+        parameter, an invalid parameter or an invalid request.
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/Get Device - 400 Response -
+                  Request Error'
+              - $ref: '#/components/schemas/Get Device - 400 Response -
+                  Field Error'
+              - $ref: '#/components/schemas/Get Device - 400 Response -
+                  Field Validity Error'
+
+    '401':
+      description: Authentication information is missing or invalid. Send
+        the correct user and password as basic auth.
+
+    '403':
+      description: The user authentication used in this request does not
+        access to API routes.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Get Device - 403 Response -
+              Forbidden'
+
+    '404':
+      description: This errors occurs if could not find a device.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Get Device - 404 Response -
+              Device Not Found'
+
+    '500':
+      description: An internal error happenned. It can be caused by an invalid
+        request to database and thus not reading it.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Get Device - 500 Response -
+              Database Error'
