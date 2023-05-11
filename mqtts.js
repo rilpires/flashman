@@ -8,7 +8,7 @@ const debug = require('debug')('MQTT');
 
 const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
 const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
-const SYNC_INTERVAL_MS = 1000;
+const REDIS_MQTT_SYNC_MS = parseInt(process.env.FLM_REDIS_MQTT_SYNC_MS) || 1000;
 
 /**
  * Instance number will help identifying broker instance
@@ -49,22 +49,19 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
 mqtts.unifiedClientsMap = {};
 
 let hasSyncToDo = false;
-const _syncCurrentClients = function() {
-  const rawMqttClients = mqtts.unifiedClientsMap[mqtts.id];
-  mqtts.publish({
-    cmd: 'publish',
-    qos: 2,
-    retain: true,
-    topic: '$SYS/' + mqtts.id + '/current/clients',
-    payload: Buffer.from(JSON.stringify(rawMqttClients)),
-  });
-};
 setInterval(function() {
   if (hasSyncToDo) {
     hasSyncToDo = false;
-    _syncCurrentClients();
+    const rawMqttClients = mqtts.unifiedClientsMap[mqtts.id];
+    mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: true,
+      topic: '$SYS/' + mqtts.id + '/current/clients',
+      payload: Buffer.from(JSON.stringify(rawMqttClients)),
+    });
   }
-}, SYNC_INTERVAL_MS);
+}, REDIS_MQTT_SYNC_MS);
 
 const findServerId = function(id) {
   let correctServerId = null;
