@@ -942,6 +942,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
 
   let doFullSync = false;
   let doSync = false;
+  let incorrectLogin = false;
 
   if (device) {
     // Why is a non tr069 device calling this function? Just a sanity check
@@ -956,12 +957,27 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     doFullSync = ((device.do_update && device.do_update_status === 0) ||
     device.recovering_tr069_reset);
 
+    // Check if this is a bootstrap event
+    // Bootstrap events happens when CPE is Factory Reset
+    if (req.body.events && req.body.events.bootstrap) {
+      // Do a full sync
+      doFullSync = true;
+    }
+
+    // Check if connection password is empty
+    // this can happen when update information of TR069
+    // from CPE
+    if (req.body.connection && req.body.connection.password === '') {
+      incorrectLogin = true;
+    }
+
     // Return fast if we do not need to do a Sync
     // And we do not need to update connection login.
     //
     // Registered devices should always collect information through
     // flashman, never using genieacs provision
-    if (!doFullSync && !device.do_tr069_update_connection_login) {
+    if (!doFullSync && !device.do_tr069_update_connection_login
+      && !incorrectLogin) {
       res.status(200).json({success: true, measure: false});
     }
   }
@@ -1029,10 +1045,10 @@ acsDeviceInfoController.informDevice = async function(req, res) {
         }
       }
 
-      if (device.do_tr069_update_connection_login) {
+      if (device.do_tr069_update_connection_login || incorrectLogin) {
         // Need to update connection request login
-        // Do the update only at sync
-        if (doSync) {
+        // If its a mass change in CR, do the update only at sync
+        if (doSync || incorrectLogin) {
           device.do_tr069_update_connection_login = false;
         } else {
           connection = undefined;
