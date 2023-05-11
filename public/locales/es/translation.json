@@ -1118,5 +1118,6 @@
 	"specificPassword": "Contraseña ingresada por el técnico",
 	"noLanDeviceName": "Sin nombre",
 	"editDeviceName": "Editar nombre del dispositivo",
-	"editDeviceNameError": "Error al editar el nombre del dispositivo."
+	"editDeviceNameError": "Error al editar el nombre del dispositivo.",
+	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Solo se aceptan caracteres, números, guiones bajos, puntos y puntos y comas."
 }

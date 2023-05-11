@@ -1110,5 +1110,6 @@
 	"specificPassword": "Password entered by technician",
 	"noLanDeviceName": "No name",
 	"editDeviceName": "Edit device name",
-	"editDeviceNameError": "Error editing device name."
+	"editDeviceNameError": "Error editing device name.",
+	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Only characters, numbers, underscores, dots and semicolons are accepted."
 }
