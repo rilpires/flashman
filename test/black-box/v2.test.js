@@ -8,11 +8,12 @@ const constants = require('../common/constants.js');
 
 describe('api_v2', () => {
   const deviceDataModel =
-    'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z';
+    'device-1C61B4-XX230v-22275A7000395-2023-04-27T154050686Z'; // tr-181.
+  // 'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z'; // tr-069.
 
   let adminCookie = null;
 
-  jest.setTimeout( 25*1000 );
+  jest.setTimeout( 30*1000 );
 
   let simulator;
 
@@ -160,5 +161,34 @@ describe('api_v2', () => {
     for (const result of res.body.traceroute_results) {
       expect(result.completed).toBe(true);
     }
+  });
+
+  test('Firing site survey diagnostic', async () => {
+    // console.log('=========== Firing site survey diagnostic ===========')
+    // issuing a traceroute diagnostic.
+    const url = `/api/v2/device/command/${simulator.mac}/sitesurvey`;
+    let res = await flashman('put', url);
+    // console.log('res.body', res.body)
+    expect(res.statusCode).toBe(200);
+    expect(res.body.success).toBe(true);
+
+    // waiting CPE to receive 4 diagnostics. it's always 4.
+    await simulator.nextDiagnostic('sitesurvey'); // sitesurvey target host 1.
+    // waiting for Flashman to ask for final diagnostic result values.
+    await simulator.nextTask('GetParameterValues');
+
+
+    // getting CPE until traceroute diagnostic is not running anymore.
+    const success = await pulling(async () => {
+      res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+      // console.log('res.body', res.body)
+      expect(res.statusCode).toBe(200);
+      return !res.body.current_diagnostic.in_progress; // success condition.
+    }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
+
+    // 'success' will be true if our pulling returns true withing the timeout.
+    expect(success).toBe(true);
+    expect(res.body.current_diagnostic.in_progress).toBe(false);
+    expect(res.body.current_diagnostic.stage).toBe('done');
   });
 });
