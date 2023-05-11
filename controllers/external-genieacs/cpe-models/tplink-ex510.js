@@ -111,6 +111,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

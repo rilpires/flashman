@@ -131,6 +131,12 @@ tplinkModel.getModelFields = function() {
     'Device.Routing.Router.1.IPv4Forwarding.*.GatewayIPAddress';
   fields.wan.dns_servers = 'Device.DHCPv4.Client.*.DNSServers';
   fields.wan.dns_servers_ppp = 'Device.PPP.Interface.*.IPCP.DNSServers';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

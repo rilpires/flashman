@@ -686,6 +686,14 @@ basicCPEModel.getModelFields = function() {
         //   'EponInterfaceConfig.RXPower',
         // pon_txpower_epon: 'InternetGatewayDevice.WANDevice.1.'+
         //   'EponInterfaceConfig.TXPower',
+
+      // These should only be added for TR-181
+        // pppoe_root: '',
+        // dhcp_root: '',
+        // nat_root: '',
+        // port_mapping: '',
+        // link_root: '',
+        // vlan_termination_root: '',
     },
     port_mapping_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.'+
       '*.WANIPConnection.*.PortMapping',

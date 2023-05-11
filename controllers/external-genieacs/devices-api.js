@@ -941,15 +941,6 @@ const getParentNode = function(args, callback) {
       nodes.push(node);
     }
   });
-  if (isTR181 && !update) {
-    // Additional information required for TR-181 devices
-    nodes.push('Device.Ethernet.VLANTermination');
-    nodes.push('Device.Ethernet.Link');
-    nodes.push('Device.NAT.PortMapping');
-    nodes.push('Device.NAT');
-    nodes.push('Device.IP');
-    nodes.push('Device.PPP');
-  }
   nodes.push(fields.port_mapping_dhcp);
   nodes.push(fields.port_mapping_ppp);
   let result;

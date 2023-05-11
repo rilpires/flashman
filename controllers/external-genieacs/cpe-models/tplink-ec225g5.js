@@ -112,6 +112,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = fields.wan.mtu;
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';

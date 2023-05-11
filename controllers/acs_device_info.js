@@ -1084,6 +1084,7 @@ acsDeviceInfoController.requestSync = async function(device) {
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
   let cpePermissions = cpe.modelPermissions();
+  let isTR181 = permissions.isTR181;
   let dataToFetch = {
     basic: false,
     alt_uid: false,
@@ -1139,6 +1140,14 @@ acsDeviceInfoController.requestSync = async function(device) {
   parameterNames.push(fields.wan.wan_ip_ppp);
   parameterNames.push(fields.wan.wan_mac);
   parameterNames.push(fields.wan.wan_mac_ppp);
+  if (isTR181) {
+    parameterNames.push(fields.wan.pppoe_root);
+    parameterNames.push(fields.wan.dhcp_root);
+    parameterNames.push(fields.wan.nat_root);
+    parameterNames.push(fields.wan.port_mapping);
+    parameterNames.push(fields.wan.link_root);
+    parameterNames.push(fields.wan.vlan_termination_root);
+  }
 
   // WAN and LAN information
   if (permissions.grantWanLanInformation) {

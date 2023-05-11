@@ -105,6 +105,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.PPP.Interface.*.MaxMRUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';
