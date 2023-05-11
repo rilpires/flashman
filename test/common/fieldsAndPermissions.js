@@ -39,6 +39,9 @@ fieldsAndPermissions.fields.push({
   },
   wan: {
     pppoe_enable: 'wan.pppoe_enable',
+    pppoe_status: 'wan.pppoe_status',
+    dhcp_enable: 'wan.dhcp_enable',
+    dhcp_status: 'wan.dhcp_status',
     pppoe_user: 'wan.pppoe_user',
     pppoe_pass: 'wan.pppoe_pass',
     rate: 'wan.rate',

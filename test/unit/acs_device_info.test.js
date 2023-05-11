@@ -1480,7 +1480,6 @@ describe('ACS Device Info Tests', () => {
     });
   });
 
-
   describe('informDevice function', () => {
     beforeEach(() => {
       jest.resetModules();
@@ -1708,7 +1707,17 @@ describe('ACS Device Info Tests', () => {
 */
   });
 
-describe('syncDeviceData - Update web admin login', () => {
+  describe('syncDeviceData - Update web admin login', () => {
+    let genieDataZte;
+
+    beforeEach(() => {
+      // Reset variables
+      genieDataZte = utils.common.loadFile(
+        '../assets/flashman-test/genie-data/ZTE_TR069_DATA.json');
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockResolvedValue([genieDataZte]);
+    });
+
     // New config
     test('New config', async () => {
       let oldLogin = 'teste123';
@@ -2908,7 +2917,6 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-
   describe('requestWanInformation', () => {
     // Invalid device - Undefined
     test('Invalid device - Undefined', () => {
@@ -3333,7 +3341,6 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-
   describe('requestStatistics', () => {
     // Invalid device - Undefined
     test('Invalid device - Undefined', () => {
@@ -3624,7 +3631,6 @@ describe('syncDeviceData - Update web admin login', () => {
       );
     });
   });
-
 
   describe('requestLanInformation', () => {
     // Invalid device - Undefined
@@ -4006,7 +4012,6 @@ describe('syncDeviceData - Update web admin login', () => {
     });
   });
 
-
   describe('requestSync', () => {
     // All parameters and fields
     test('All parameters and fields', async () => {
@@ -4065,7 +4070,6 @@ describe('syncDeviceData - Update web admin login', () => {
         if (removeFields.includes(field)) return false;
         return true;
       });
-
       expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
       expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
       expect(taskSpy.mock.calls[0][1].parameterNames.sort())
@@ -4340,6 +4344,16 @@ describe('syncDeviceData - Update web admin login', () => {
   });
 
   describe('syncDeviceData', () => {
+    let genieDataZte;
+
+    beforeEach(() => {
+      // Reset variables
+      genieDataZte = utils.common.loadFile(
+        '../assets/flashman-test/genie-data/ZTE_TR069_DATA.json');
+      jest.spyOn(tasksAPI, 'getFromCollection')
+        .mockResolvedValue([genieDataZte]);
+    });
+
     // Not updating
     test('Not updating', async () => {
       let device = models.copyDeviceFrom(
@@ -4954,7 +4968,6 @@ describe('syncDeviceData - Update web admin login', () => {
       expect(updateInfoSpy).not.toBeCalled();
     });
   });
-
 
   // syncDeviceChangedValues
   describe('syncDeviceChangedValues', () => {
