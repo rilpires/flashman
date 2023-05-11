@@ -1976,6 +1976,74 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
   syncDeviceData(req.body.acs_id, device, data, permissions);
 };
 
+const syncWanData = function(device, chosenWan, hasPPPoE, cpe) {
+  device.wan_chosen = chosenWan.key;
+  let data = chosenWan.value;
+  if (hasPPPoE) {
+    if (data.pppoe_user) {
+      device.pppoe_user = data.pppoe_user.value;
+    }
+    if (data.pppoe_pass) {
+      device.pppoe_password = data.pppoe_pass.value;
+    }
+    if (data.wan_ip_ppp) {
+      device.wan_ip = data.wan_ip_ppp.value;
+    }
+    if (data.wan_mac_ppp) {
+      device.wan_bssid = data.wan_mac_ppp.value;
+    }
+    if (data.uptime_ppp) {
+      device.wan_up_time = data.uptime_ppp.value;
+    }
+    if (data.mtu_ppp) {
+      device.wan_mtu = data.mtu_ppp.value;
+    }
+    if (data.vlan_ppp) {
+      device.wan_vlan_id = data.vlan_ppp.value;
+    }
+  } else {
+    if (data.wan_mac) {
+      device.wan_bssid = data.wan_mac.value;
+    }
+    if (data.uptime) {
+      device.wan_up_time = data.uptime.value;
+    }
+    if (data.mtu) {
+      device.wan_mtu = data.mtu.value;
+    }
+    if (data.vlan) {
+      device.wan_vlan_id = data.vlan.value;
+    }
+  }
+  if (data.rate) {
+    device.wan_negociated_speed = cpe.convertWanRate(data.rate);
+  }
+  if (data.duplex) {
+    device.wan_negociated_duplex = data.duplex.value.value;
+  }
+  if (data.wan_ip) {
+    device.wan_ip = data.wan_ip.value;
+  }
+  if (data.recv_bytes && data.sent_bytes) {
+    device.wan_bytes = acsMeasuresHandler.appendBytesMeasure(
+      device.wan_bytes,
+      data.recv_bytes.value,
+      data.sent_bytes.value,
+    );
+  }
+  if (data.pon_rxpower) {
+    device.pon_rxpower = cpe.convertToDbm(data.pon_rxpower.value);
+  } else if (data.pon_rxpower_epon) {
+    device.pon_rxpower = cpe.convertToDbm(data.pon_rxpower_epon.value);
+  }
+  if (data.pon_txpower) {
+    device.pon_txpower = cpe.convertToDbm(data.pon_txpower.value);
+  } else if (data.pon_txpower_epon) {
+    device.pon_txpower = cpe.convertToDbm(data.pon_txpower_epon.value);
+  }
+  return device;
+};
+
 // Complete CPE information synchronization gets done here - compare cpe data
 // with registered device data and sync fields accordingly
 const syncDeviceData = async function(acsID, device, data, permissions) {
@@ -2093,27 +2161,21 @@ const syncDeviceData = async function(acsID, device, data, permissions) {
 
   // Always update WAN data before sync
   let chosenWan = await acsDeviceInfoController.updateChosenWan(acsID, cpe);
-  if (!device.wan_chosen && chosenWan.key === undefined) {
+  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
+  if (chosenWan.key === undefined) {
     console.error(t('wanInformationCannotBeEmpty'));
     return;
   }
-  if (chosenWan.key !== undefined) {
-    if (!device.wan_chosen) {
-      console.log('Chosen WAN was set to ' + chosenWan.key);
-      data.wan = chosenWan.value;
-      device.wan_chosen = chosenWan.key;
-      hasChanges = true;
-    } else if (device.wan_chosen !== chosenWan.key) {
-      console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
+  if (!device.wan_chosen) {
+    console.log('Chosen WAN was set to ' + chosenWan.key);
+  } else if (device.wan_chosen !== chosenWan.key) {
+    console.log('Chosen WAN changed from ' + device.wan_chosen + ' to ' +
                 chosenWan.key);
-      data.wan = chosenWan.value;
-      device.wan_chosen = chosenWan.key;
-      hasChanges = true;
-    }
   }
+  device = syncWanData(device, chosenWan, hasPPPoE, cpe);
+  // data.wan = chosenWan.value;
 
   // Process wan connection type, but only if data sent
-  const hasPPPoE = getPPPoEenabled(cpe, data.wan);
   const suffixPPPoE = hasPPPoE ? '_ppp' : '';
   device.connection_type = (hasPPPoE) ? 'pppoe' : 'dhcp';
 
