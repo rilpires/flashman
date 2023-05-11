@@ -76,5 +76,25 @@ module.exports = promBundle({
     ['^/vlan/profile/check/.*', '/vlan/profile/check/<PROFILE_ID>'],
     ['^/vlan/fetch/.*', '/vlan/fetch/<DEVICE_ID>'],
     ['^/vlan/update/.*', '/vlan/update/<DEVICE_ID>'],
+
+    // API - v3
+    [
+      '^/api/v3/device/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>',
+    ],
+    [
+      '^/api/v3/device/.*/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>',
+    ],
+    [
+      '^/api/v3/device/.*/.*/.*/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/<SUB_COMMAND>' +
+        '/<SUB_COMMAND_VALUE>',
+    ],
+    [
+      '^/api/v3/device/.*/.*/.*/.*/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/<SUB_COMMAND>' +
+        '/<SUB_COMMAND_VALUE>/<SUB_FIELD>',
+    ],
   ],
 });
