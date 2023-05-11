@@ -26,5 +26,5 @@
     }]
   },
 
-  "apis": ["./routes/api/*.js"]
+  "apis": ["./docs/api/**/*.yaml", "./routes/api/*.js"]
 }
