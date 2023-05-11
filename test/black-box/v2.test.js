@@ -40,7 +40,6 @@ describe('api_v2', () => {
     .debug({ // enabling/disabling prints for device events.
       beforeReady: false,
       error: true,
-      xml: true,
       requested: false,
       response: false,
       sent: false,
