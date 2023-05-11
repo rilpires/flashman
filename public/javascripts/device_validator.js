@@ -269,6 +269,42 @@
     };
 
 
+    /**
+     * Validates the `String` passed if is at least 2 character long and at most
+     * 128 characters long. The `String` must only contain numbers and
+     * characters. It is used for some validations for API V3.
+     *
+     * @memberof public/javascripts/device_validator
+     *
+     * @param {string} field - A string to be validated.
+     *
+     * @return {{valid: boolean, err: string[]}}
+     */
+    Validator.prototype.validateProjection = function(field) {
+      const messages = [
+        t('thisFieldMustHaveAtLeastMinChars', {min: 2}),
+        t('thisFieldCannotHaveMoreThanMaxChars', {max: 128}),
+        t('mustOnlyContainCharsNumbersUnderscoresDotsSemicolon'),
+        t('mustBeAString'),
+      ];
+
+      const regexExpression = new RegExp(/^[a-zA-Z0-9_.;]+$/);
+      let validRegex = validateRegex(
+        field, 2, 128, regexExpression,
+      );
+
+      let errorSet = new Set();
+      validRegex.err.forEach(
+        (error) => errorSet.add(error),
+      );
+
+      return {
+        valid: validRegex.valid,
+        err: Array.from(errorSet).map((ind) => messages[ind]),
+      };
+    };
+
+
     Validator.prototype.validateWifiPassword = function(pass, accentedChars) {
       const messages = [
         t('thisFieldMustHaveAtLeastMinChars', {min: 8}),
