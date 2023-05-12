@@ -85,81 +85,131 @@ deviceListController.getReleases = async function(role,
 
 const getOnlineCount = async function(query, mqttClients, lastHour,
  tr069Times) {
-  let status = {};
-  status.onlinenum = 0;
-  status.recoverynum = 0;
-  status.offlinenum = 0;
+  let timeThresholds = [
+    tr069Times.recovery,
+    tr069Times.offline,
+    lastHour,
+    new Date(0),
+  ];
 
-  // the queries for each status count. they each countain a query to select
-  // each router type, flashbox or onu/tr069, inside the $or array.
-  let onlineQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$in: mqttClients}},
-      {last_contact: {$gte: tr069Times.recovery}},
-    ],
-  };
-  let recoveryQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$nin: mqttClients}, last_contact: {$gte: lastHour.getTime()}},
-      {last_contact: {$lt: tr069Times.recovery, $gte: tr069Times.offline}},
-    ],
-  };
-  let offlineQuery = {
-    $or: [ // 1st: flashbox devices; 2nd: tr069 devices.
-      {_id: {$nin: mqttClients}, last_contact: {$lt: lastHour.getTime()}},
-      {last_contact: {$lt: tr069Times.offline}},
-    ],
-  };
-  let queries = [onlineQuery, recoveryQuery, offlineQuery];
-  // adding the parameter that will defined the router type for each count.
-  for (let i = 0; i < queries.length; i++) {
-    // a selector for flashbox devices.
-    queries[i].$or[0].use_tr069 = {$ne: true};
-    queries[i].$or[1].use_tr069 = true; // a selector for tr069 devices.
-  }
+  // It is very important that 'timeThresholds' stay sorted in desc
+  // due to switch case statements below on aggregation query
+  timeThresholds = timeThresholds.sort((a, b)=>b-a);
 
-  // issue the count for each status and the mesh count in parallel.
-  let counts = await Promise.all([
-    DeviceModel.countDocuments({$and: [onlineQuery, query]}).exec(),
-    DeviceModel.countDocuments({$and: [recoveryQuery, query]}).exec(),
-    DeviceModel.countDocuments({$and: [offlineQuery, query]}).exec(),
-    getOnlineCountMesh(query, lastHour),
-  ]);
-  // adding each count to their respective status.
-  status.onlinenum += counts[0]+counts[3].onlinenum;
-  status.recoverynum += counts[1]+counts[3].recoverynum;
-  status.offlinenum += counts[2]+counts[3].offlinenum;
+  let now = Date.now();
+  let aggregationQueryResult = await DeviceModel.aggregate([
+    // Filtering
+    {$match: query},
 
-  // add total
-  status.totalnum = status.offlinenum+status.recoverynum+status.onlinenum;
-  return status; // resolve with the counts.
+    // Grouping
+    {
+      $group: {
+        _id: {
+          use_tr069: '$use_tr069',
+          mqtt_on: {$in: ['$_id', mqttClients]},
+          mesh_mode: '$mesh_mode',
+          last_contact_floor: {
+            $switch: {
+              branches:
+                timeThresholds.map(function(date) {
+                  return {
+                    case: {$gt: ['$last_contact', date]},
+                    then: date,
+                  };
+                }),
+            },
+          },
+        },
+        count: {$count: {}},
+        _ids: {$push: '$_id'},
+      },
+    },
+  ]).exec();
+  console.log(`ret1 - ${Date.now() - now}`);
+
+  //let meshOnlineCount = await getOnlineCountMesh(query, lastHour);
+
+  let status = {
+    offlinenum: 0,
+    recoverynum: 0,
+    onlinenum: 0,
+  };
+
+  aggregationQueryResult.map(function(group) {
+    if (group._id.mqtt_on) {
+      status.onlinenum += group.count;
+    } else if (group._id.use_tr069) {
+      if (group._id.last_contact_floor >= tr069Times.recovery ) {
+        status.onlinenum += group.count;
+      } else if (group._id.last_contact_floor >= tr069Times.offline ) {
+        status.recoverynum += group.count;
+      } else {
+        status.offlinenum += group.count;
+      }
+    } else {
+      if (group._id.last_contact_floor >= lastHour ) {
+        status.recoverynum += group.count;
+      } else {
+        status.offlinenum += group.count;
+      }
+    }
+  });
+  status.totalnum = status.offlinenum +status.recoverynum + status.onlinenum;
+
+  return status;
 };
 
 const getOnlineCountMesh = function(query, lastHour) {
-  return new Promise((resolve, reject)=> {
-    let meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
-    let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
-    lastHour = lastHour.getTime();
-    let options = {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1};
+  return new Promise(async (resolve, reject)=> {
+    let queryKeys = Object.keys(query);
+    let meshQuery;
+    if (queryKeys.length==1 && queryKeys.includes('$and') ) {
+      meshQuery = {
+        '$and': Array.from(query['$and']),
+      };
+      meshQuery['$and'].push({mesh_mode: {$gt: 0}});
+    } else {
+      meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
+    }
 
+    let now = Date.now();
+    let err = undefined;
+    let devices = await DeviceModel.aggregate([
+      // Stage 1
+      {$match: query},
+
+      // Stage 2
+      {
+        $group: {mesh_mode: {$gt: 0}},
+      },
+
+      // Stage 3
+      {
+        $project: {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1},
+      },
+    ]).exec().catch((_err)=>{
+      err = _err;
+    });
+    if (err) {
+      return reject(err);
+    }
+
+    console.log(`rrret0 - ${Date.now() - now}`);
+
+    let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
     const mqttClients = Object.values(mqtt.unifiedClientsMap)
     .reduce((acc, curr) => {
       return acc.concat(Object.keys(curr));
     }, []);
 
-    DeviceModel.find(meshQuery, options, function(err, devices) {
-      if (!err) {
-        meshHandlers.enhanceSearchResult(devices).then((extra)=>{
-          extra.forEach((e)=>{
-            if (mqttClients.includes(e._id)) status.onlinenum += 1;
-            else if (e.last_contact >= lastHour) status.recoverynum += 1;
-            else status.offlinenum += 1;
-          });
-          return resolve(status);
-        });
-      } else {
-        return reject(err);
-      }
+    meshHandlers.enhanceSearchResult(devices).then((extra)=>{
+      console.log(`rrret1 - ${Date.now() - now}`);
+      extra.forEach((e)=>{
+        if (mqttClients.includes(e._id)) status.onlinenum += 1;
+        else if (e.last_contact >= lastHour.getTime()) status.recoverynum += 1;
+        else status.offlinenum += 1;
+      });
+      return resolve(status);
     });
   });
 };
@@ -1303,6 +1353,11 @@ deviceListController.searchDeviceReg = async function(req, res) {
   // time threshold for tr069 status (status color).
   let tr069Times = await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
+  // MOCKING THRESHOLDS
+  lastHour = new Date('2023-04-15T06:38:38.957+00:00');
+  tr069Times.offline = new Date('2023-04-20T06:58:38.957+00:00');
+  tr069Times.recovery = new Date('2023-04-25T06:48:38.957+00:00');
+
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
   });
@@ -1330,6 +1385,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
+    collation: {locale: 'en_US', strength: isComplexSearch?undefined:1},
     projection: {
       lan_devices: false, port_mapping: false, ap_survey: false,
       mesh_routers: false, pingtest_results: false, speedtest_results: false,
@@ -1343,11 +1399,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
       paginateOpts.select = queryResFilter;
     }
   }
-  if (!isComplexSearch) {
-    paginateOpts.collation = {
-      locale: 'en_US', strength: 1,
-    };
-  }
+  let now = Date.now();
+
   DeviceModel.paginate(finalQuery, paginateOpts, function(err, matchedDevices) {
     if (err) {
       return res.json({
@@ -1356,6 +1409,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
+    console.log(`0 - ${Date.now() - now}`);
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
@@ -1399,7 +1453,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
         device.releases = devReleases;
 
         device.status_color = deviceHandlers
-          .buildStatusColor(device, tr069Times, isDevOn)+'-text';
+          .buildStatusColor(device, tr069Times, isDevOn, lastHour)+'-text';
 
         // Device permissions
         device.permissions = DeviceVersion.devicePermissions(device);
@@ -1425,15 +1479,19 @@ deviceListController.searchDeviceReg = async function(req, res) {
         }
         return device;
       };
-
+      console.log(`1 - ${Date.now() - now}`);
       meshHandlers.enhanceSearchResult(matchedDevices.docs)
       .then(function(extra) {
+        console.log(`2 - ${Date.now() - now}`);
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
+          console.log(`3 - ${Date.now() - now}`);
           Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
+            console.log(`4 - ${Date.now() - now}`);
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
+              console.log(`5 - ${Date.now() - now}`);
               // Counters
               let status = {};
               status = Object.assign(status, onlineStatus);
@@ -1441,6 +1499,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
               deviceListController.getReleases(userRole,
                                                req.user.is_superuser, true)
               .then(function(singleReleases) {
+                console.log(`6 - ${Date.now() - now}`);
                 /* validate if is to show ssid prefix checkbox
                     for each device */
                 let ssidPrefix = matchedConfig.ssidPrefix;
@@ -1462,10 +1521,12 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   );
                 });
 
+                console.log(`7 - ${Date.now() - now}`);
                 let mustBlockLicenseAtRemoval = (
                   matchedConfig.blockLicenseAtDeviceRemoval === true
                 ) ? true : false;
 
+                console.log(`8 - ${Date.now() - now}`);
                 return res.json({
                 success: true,
                   type: 'success',
