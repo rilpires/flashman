@@ -81,6 +81,14 @@ let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
 let hardwareVersion = declare(prefix + '.DeviceInfo.HardwareVersion', {value: 1});
 
+let bootstrapEvent = declare('Events.0_BOOTSTRAP', {value: 1});
+let bootEvent = declare('Events.1_BOOT', {value: 1});
+
+let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
+let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
+let connUserName = declare(usernameField, {value: 1});
+let connPassword = declare(passwordField, {value: 1});
+
 // 2. Run the script
 genieID = genieID.value[0];
 log('Provision for device ' + genieID + ' started at ' + now.toString());
@@ -94,6 +102,24 @@ modelName = modelName.value[0];
 firmwareVersion = firmwareVersion.value[0];
 hardwareVersion = hardwareVersion.value[0];
 
+// Pass event type to flashman
+let event = {boot: false, bootstrap: false};
+if(bootstrapEvent && bootstrapEvent.value && bootstrapEvent.value[0] >= now)
+  event.bootstrap = true;
+if(bootEvent && bootEvent.value && bootEvent.value[0] >= now)
+  event.boot = true;
+
+// Pass connection request credentials to flashman
+let connection = {
+  login: '',
+  password: '',
+};
+
+if(connUserName && connUserName.value && connUserName.value[0] != '')
+  connection.login = connUserName.value[0];
+if(connPassword && connPassword.value && connPassword.value[0] != '')
+  connection.password = connPassword.value[0];
+
 let args = {
   oui: oui,
   model: modelClass,
@@ -101,6 +127,8 @@ let args = {
   firmwareVersion: firmwareVersion,
   hardwareVersion: hardwareVersion,
   acs_id: genieID,
+  events: event,
+  connection: connection,
 };
 
 // Get configs and model fields from Flashman via HTTP request
@@ -116,9 +144,6 @@ if (!result.success || !result.fields) {
 
 // Apply connection request credentials preset configuration
 if (result.connection) {
-  let usernameField = prefix + '.ManagementServer.ConnectionRequestUsername';
-  let passwordField = prefix + '.ManagementServer.ConnectionRequestPassword';
-
   let targetLogin = (result.connection.login) ?
     result.connection.login : 'anlix';
   declare(usernameField, null, {value: targetLogin});
