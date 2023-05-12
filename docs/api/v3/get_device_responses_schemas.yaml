@@ -956,13 +956,13 @@ components:
                     type: date
                     description: |
                       The last time that this Neighbor AP was seen by Flashman.
-                    example: ISODate("2022-07-11T13:30:26.779Z")
+                    example: "2022-07-11T13:30:26.779Z"
 
                   first_seen:
                     type: date
                     description: |
                       The first time that this Neighbor AP was seen by Flashman.
-                    example: ISODate("2022-07-11T13:30:26.779Z")
+                    example: "2022-07-11T13:30:26.779Z"
 
 
     'Get Device - 400 Response - Request Error':
