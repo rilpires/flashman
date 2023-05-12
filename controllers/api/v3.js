@@ -14,6 +14,11 @@ const t = require('../language').i18next.t;
 
 
 // Variables
+let apiController = {};
+
+
+const MAX_PAGE_SIZE = 50;
+
 const validator = new Validator();
 
 const reducedDeviceFields = {
@@ -140,6 +145,13 @@ const translationObject = {
   field: {
     field: '', validation: validator.validateProjection,
   },
+  // Those fields are used for pagination
+  page: {
+    field: '', validation: (page) => apiController.validatePage(page),
+  },
+  pageLimit: {
+    field: '', validation: (page) => apiController.validatePageLimit(page),
+  },
 };
 
 const reducedFieldsByRelativePath = {
@@ -147,8 +159,6 @@ const reducedFieldsByRelativePath = {
   lan_devices: reducedLanDevicesField,
   ap_survey: reducedApSurveyField,
 };
-
-let apiController = {};
 
 
 // Functions
@@ -248,7 +258,7 @@ apiController.validateField = function(params, field) {
 
 
   // Valid field
-  return {valid: true};
+  return valid;
 };
 
 
@@ -301,7 +311,82 @@ apiController.validateDeviceProjection = function(projection) {
 
 
   // Passed checks
-  return {valid: true};
+  return {valid: true, value: projection};
+};
+
+
+/**
+ * Validates a page to check if the page passed is a `String` that can be
+ * converted to an integer bigger than 0.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {String} page - The page number as `String`.
+ *
+ * @return {Object} The object containing:
+ *  - `valid` - `Boolean`: If the `projection` is valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case of the
+ *    `projection` is not valid;
+ *  - `message` - `Object`: The object of the response to be returned in case of
+ *    an error.
+ *  - `value` - `Integer`: Included only if valid. This is the validated page as
+ *    `Integer`.
+ */
+apiController.validatePage = function(page) {
+  // Check if page is a string and has at least 1 character
+  if (!page || typeof page !== 'string' || page.length < 1) {
+    return {valid: false, err: t('mustBeAString')};
+  }
+
+  // Parse the number
+  const pageNumber = parseInt(page);
+
+  // Check if the number is valid
+  if (!pageNumber || pageNumber < 1) {
+    return {valid: false, err: t('invalidPageError', {errorline: __line})};
+  }
+
+  return {valid: true, value: pageNumber};
+};
+
+
+/**
+ * Validates a page limit to check if the value passed is a `String` that can be
+ * converted to an integer bigger than 0 and smaller than `MAX_PAGE_SIZE`.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {String} page - The page limit number as `String`.
+ *
+ * @return {Object} The object containing:
+ *  - `valid` - `Boolean`: If the `projection` is valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case of the
+ *    `projection` is not valid;
+ *  - `message` - `Object`: The object of the response to be returned in case of
+ *    an error.
+ *  - `value` - `Integer`: Included only if valid. This is the validated page as
+ *    `Integer`.
+ */
+apiController.validatePageLimit = function(page) {
+  // Check if the page is valid
+  let validation = apiController.validatePage(page);
+  if (!validation.valid) return validation;
+
+  // Get the number
+  let pageNumber = validation.value;
+
+  // Check if the upper limit is valid
+  if (pageNumber > MAX_PAGE_SIZE) {
+    return {
+      valid: false,
+      err: t('invalidPageLimitError', {
+        upperLimit: MAX_PAGE_SIZE,
+        errorline: __line,
+      }),
+    };
+  }
+
+  return {valid: true, value: pageNumber};
 };
 
 
@@ -336,6 +421,12 @@ apiController.translateField = function(field) {
  * first device it encounters with the filters passed.
  * @param {String} relativePath - The relative to search on. It narrows down the
  * query to that specific path.
+ * @param {Integer} page - The page number, starting from 1. This number
+ * indicates how many entries in document to skip. It will be calculated
+ * alonside with `pageLimit`.
+ * @param {Integer} pageLimit - This value indicates how many entries per page
+ * will be delivered. Indicates which entries will be shown alongside with
+ * `page`.
  * @param {Object} projection - The projection fields to get the information
  * from. If null the whole device will be returned instead.
  * @param {String} backupProjection - The projection used as default when
@@ -348,6 +439,8 @@ apiController.translateField = function(field) {
 apiController.getLeanDevice = function(
   filter,
   relativePath = null,
+  page = null,
+  pageLimit = null,
   projection = null,
   backupProjection = null,
 ) {
@@ -358,6 +451,11 @@ apiController.getLeanDevice = function(
 
   // Use the `defaultProjection` if projection is not valid.
   let useProjection = defaultProjection;
+
+
+  // If page or pageLimit is null, set the default
+  if (!page) page = 1;
+  if (!pageLimit) pageLimit = MAX_PAGE_SIZE;
 
 
   // Only use projection if available
@@ -379,6 +477,10 @@ apiController.getLeanDevice = function(
   // Re-apply query to make sure that is selecting the correct one, only if
   // splitted the array
   relativePath ? pipeline.push({'$match': filter}) : null;
+
+  // Paginate
+  pipeline.push({'$skip': (page - 1) * pageLimit});
+  pipeline.push({'$limit': pageLimit});
 
   // Group then together
   if (relativePath) {
@@ -417,6 +519,12 @@ apiController.getLeanDevice = function(
  * only be returned. This option might override `defaultProjection` settings. It
  * can be `null`, using it as so will not reduce the returned fields to what the
  * user specified and will use the `defaultProjection`.
+ * @param {Integer} page - The page number, starting from 1. This number
+ * indicates how many entries in document to skip. It will be calculated
+ * alonside with `pageLimit`.
+ * @param {Integer} pageLimit - This value indicates how many entries per page
+ * will be delivered. Indicates which entries will be shown alongside with
+ * `page`.
  * @param {Object} params - The object containing the keys setted by what was
  * defined in the route and what the user passed, with their respective values.
  * @param {String} relativePath - The relative to search on. It narrows down the
@@ -434,6 +542,8 @@ apiController.getLeanDevice = function(
 apiController.getDeviceByFields = async function(
   defaultProjection,
   projections = null,
+  page = null,
+  pageLimit = null,
   params,
   relativePath = null,
   routeParameters,
@@ -486,7 +596,7 @@ apiController.getDeviceByFields = async function(
     // Search by the URL params and get the slim version of the device. Although
     // It only returns one device, it returns as an array
     device = (await apiController.getLeanDevice(
-      query, relativePath, useProjection, defaultProjection,
+      query, relativePath, page, pageLimit, useProjection, defaultProjection,
     ))[0];
 
   // Error from mongo
@@ -558,6 +668,8 @@ apiController.defaultGetRoute = async function(
     reducedFieldsByRelativePath[relativePath] : reducedDeviceFields;
   let params = request.params;
   let fields = null;
+  let page = null;
+  let pageLimit = null;
 
 
   // Validate the field
@@ -581,9 +693,35 @@ apiController.defaultGetRoute = async function(
   }
 
 
+  // Validate page
+  validation = apiController.validateField(params, 'page');
+  if (validation.valid) {
+    page = parseInt(params.page);
+
+  // If is invalid and not undefined or null return the error
+  } else if (params.page !== null && params.page !== undefined) {
+    return response
+      .status(validation.statusCode)
+      .json(validation.message);
+  }
+
+  // Validate page limit
+  validation = apiController.validateField(params, 'pageLimit');
+  if (validation.valid) {
+    pageLimit = parseInt(params.pageLimit);
+
+  // If is invalid and not undefined or null return the error
+  } else if (params.pageLimit !== null && params.pageLimit !== undefined) {
+    return response
+      .status(validation.statusCode)
+      .json(validation.message);
+  }
+
+
   // Try finding the device
   validation = await apiController.getDeviceByFields(
-    defaultProjection, fields, params, relativePath, routeParameters,
+    defaultProjection, fields, page, pageLimit,
+    params, relativePath, routeParameters,
   );
 
 
