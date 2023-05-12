@@ -482,7 +482,7 @@ router.get(
 
 /**
  * @openapi
- *  /api/v3/device/mac/{mac}/site-survey/:
+ *  /api/v3/device/mac/{mac}/site-survey/page/{page}/page-limit/{pageLimit}/:
  *    get:
  *      summary: Gets the last executed site survey.
  *
@@ -499,6 +499,23 @@ router.get(
  *          required: true
  *          description: The MAC address of the device' to the return the site
  *            survey.
+ *
+ *        - in: path
+ *          name: page
+ *          schema:
+ *            type: integer
+ *            minimum: 1
+ *          required: true
+ *          description: The page number to paginate.
+ *
+ *        - in: path
+ *          name: pageLimit
+ *          schema:
+ *            type: integer
+ *            minimum: 1
+ *            maximum: 50
+ *          required: true
+ *          description: The amount of entries per page.
  *
  *      security:
  *        - basicAuth: []
@@ -524,7 +541,7 @@ router.get(
  */
 /**
  * @openapi
- *  /api/v3/device/mac/{mac}/site-survey/{field}:
+ *  /api/v3/device/mac/{mac}/site-survey/page/{page}/page-limit/{pageLimit}/{field}:
  *    get:
  *      summary: Gets the last executed site survey.
  *
@@ -541,6 +558,23 @@ router.get(
  *          required: true
  *          description: The MAC address of the device' to the return the site
  *            survey.
+ *
+ *        - in: path
+ *          name: page
+ *          schema:
+ *            type: integer
+ *            minimum: 1
+ *          required: true
+ *          description: The page number to paginate.
+ *
+ *        - in: path
+ *          name: pageLimit
+ *          schema:
+ *            type: integer
+ *            minimum: 1
+ *            maximum: 50
+ *          required: true
+ *          description: The amount of entries per page.
  *
  *        - in: path
  *          name: field
@@ -576,7 +610,7 @@ router.get(
  *          $ref: '#/components/responses/500'
  */
 router.get(
-  '/device/mac/:mac/site-survey/:field?',
+  '/device/mac/:mac/site-survey/page/:page/page-limit/:pageLimit/:field?',
   (request, response) => apiController.defaultGetRoute(
     request, response, 'ap_survey', 'mac',
   ),
