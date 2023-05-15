@@ -36,7 +36,7 @@ const createSimulator = (...args) => {
       diganosticName = undefined; // clearing name to await for.
     }
   }).on('error', (e) => {
-    if (debug.error) console.log(`- Simulator error`, e);
+    if (debug.error) console.log('- Simulator error.', e);
     // error can be either communication error or wrong task name.
     if (!errorResolve) return;
     errorResolve(e);
