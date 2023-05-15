@@ -210,9 +210,9 @@ apiController.buildDeviceResponse = function(valid, statusCode, extra) {
  * @param {HTTPRequest} request - The HTTP request.
  *
  * @return {Object} The object containing:
- *  - `valid` - `bool`: If the request is valid or not;
- *  - `statusCode` - `int`: The status response code in case of the request is
- *    not valid;
+ *  - `valid` - `Boolean`: If the request is valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case of the request
+ *    is not valid;
  *  - `message` - `Object`: The object of the response to be returned in case of
  *    an error.
  */
@@ -237,9 +237,9 @@ apiController.validateRequest = function(request) {
  * `field`.
  *
  * @return {Object} The object containing:
- *  - `valid` - `bool`: If the `field` is valid or not;
- *  - `statusCode` - `int`: The status response code in case of the `field` is
- *    not valid;
+ *  - `valid` - `Boolean`: If the `field` is valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case of the `field`
+ *    is not valid;
  *  - `message` - `Object`: The object of the response to be returned in case of
  *    an error.
  */
