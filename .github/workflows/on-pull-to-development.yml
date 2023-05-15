@@ -44,6 +44,7 @@ jobs:
           cd ..
           git clone https://github.com/anlix-io/genieacs.git
           cd genieacs
+          git checkout alpha
           npm install
           npm run build
           node ./dist/bin/genieacs-nbi &
