@@ -1,0 +1,365 @@
+# Get device by MAC with Greater-than Condition without Field
+/api/v3/device/mac/{mac}/condition/{conditionField}/greater-than/{greaterValue}/:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+      - in: path
+        name: conditionField
+        schema:
+          type: string
+        required: true
+        description: |
+          A field from device to set a condition and only a
+          device or entries that matches this condition will be returned.
+          The field must be either a Date, a Number or a Boolean.
+
+      - in: path
+        name: greaterValue
+        schema:
+          type: string
+        required: true
+        description: |
+          The field defined by `conditionField` should be greater
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by MAC with Greater-than Condition with Field
+/api/v3/device/mac/{mac}/condition/{conditionField}/greater-than/{greaterValue}/{field}:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter and return the field specified.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+      - in: path
+        name: conditionField
+        schema:
+          type: string
+        required: true
+        description: |
+          A field from device to set a condition and only a
+          device or entries that matches this condition will be returned.
+          The field must be either a Date, a Number or a Boolean.
+
+      - in: path
+        name: greaterValue
+        schema:
+          type: string
+        required: true
+        description: |
+          The field defined by `conditionField` should be greater
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+        description: The specific field to be returned from the device
+          instead of the whole information. If the field is not one of
+          the device's, it will return the error explaining what happenned.
+          Multiple fields can be passed and must be separated by semicolons
+          (';'). Do not add a semicolon at the end.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by MAC with Lower-than Condition without Field
+/api/v3/device/mac/{mac}/condition/{conditionField}/lower-than/{lowerValue}/:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+      - in: path
+        name: conditionField
+        schema:
+          type: string
+        required: true
+        description: |
+          A field from device to set a condition and only a
+          device or entries that matches this condition will be returned.
+          The field must be either a Date, a Number or a Boolean.
+
+      - in: path
+        name: lowerValue
+        schema:
+          type: string
+        required: true
+        description: |
+          The field defined by `conditionField` should be lower
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by MAC with Lower-than Condition with Field
+/api/v3/device/mac/{mac}/condition/{conditionField}/lower-than/{lowerValue}/{field}:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter and return the field specified.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+      - in: path
+        name: conditionField
+        schema:
+          type: string
+        required: true
+        description: |
+          A field from device to set a condition and only a
+          device or entries that matches this condition will be returned.
+          The field must be either a Date, a Number or a Boolean.
+
+      - in: path
+        name: lowerValue
+        schema:
+          type: string
+        required: true
+        description: |
+          The field defined by `conditionField` should be lower
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+        description: The specific field to be returned from the device
+          instead of the whole information. If the field is not one of
+          the device's, it will return the error explaining what happenned.
+          Multiple fields can be passed and must be separated by semicolons
+          (';'). Do not add a semicolon at the end.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by MAC without Field
+/api/v3/device/mac/{mac}/:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by MAC with Field
+/api/v3/device/mac/{mac}/{field}:
+  get:
+    summary: Get a device by it's MAC address.
+
+    description: Query the first device that has the same MAC address
+      passed as a URL parameter and return the field specified.
+
+    tags: ['Get Device | MAC']
+
+    parameters:
+      - in: path
+        name: mac
+        schema:
+          type: string
+        required: true
+        description: The MAC address of the device to be returned.
+
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+        description: The specific field to be returned from the device
+          instead of the whole information. If the field is not one of
+          the device's, it will return the error explaining what happenned.
+          Multiple fields can be passed and must be separated by semicolons
+          (';'). Do not add a semicolon at the end.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'

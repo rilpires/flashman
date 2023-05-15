@@ -1,0 +1,91 @@
+# Get device by WAN MAC address without Field
+/api/v3/device/wan-mac/{wanMac}/:
+  get:
+    summary: Get a device by it's WAN MAC address.
+
+    description: Query the first device that has the same WAN MAC address
+      passed as a URL parameter.
+
+    tags: ['Get Device | WAN MAC']
+
+    parameters:
+      - in: path
+        name: wanMac
+        schema:
+          type: string
+        required: true
+        description: The WAN MAC address of the device to be returned.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
+
+
+# Get device by WAN MAC address with Field
+/api/v3/device/wan-mac/{wanMac}/{field}:
+  get:
+    summary: Get a device by it's WAN MAC address.
+
+    description: Query the first device that has the same WAN MAC address
+      passed as a URL parameter and return the field specified.
+
+    tags: ['Get Device | WAN MAC']
+
+    parameters:
+      - in: path
+        name: wanMac
+        schema:
+          type: string
+        required: true
+        description: The WAN MAC address of the device to be returned.
+
+      - in: path
+        name: field
+        schema:
+          type: string
+        required: true
+        description: The specific field to be returned from the device
+          instead of the whole information. If the field is not one of
+          the device's, it will return the error explaining what happenned.
+          Multiple fields can be passed and must be separated by semicolons
+          (';'). Do not add a semicolon at the end.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200'
+
+      400:
+        $ref: '#/components/responses/400'
+
+      401:
+        $ref: '#/components/responses/401'
+
+      403:
+        $ref: '#/components/responses/403'
+
+      404:
+        $ref: '#/components/responses/404'
+
+      500:
+        $ref: '#/components/responses/500'
