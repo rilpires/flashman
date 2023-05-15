@@ -1119,5 +1119,7 @@
 	"noLanDeviceName": "Sin nombre",
 	"editDeviceName": "Editar nombre del dispositivo",
 	"editDeviceNameError": "Error al editar el nombre del dispositivo.",
-	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Solo se aceptan caracteres, números, guiones bajos, puntos y puntos y comas."
+	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Solo se aceptan caracteres, números, guiones bajos, puntos y puntos y comas.",
+	"invalidPageError": "Página no válida. Escribe un número válido que sea igual o mayor que 1. ({{errorline}})",
+	"invalidPageLimitError": "Recuento de límite de páginas no válido. Escriba un número válido que sea igual o mayor que 1 y sea igual o menor que {{upperLimit}}. ({{errorline}})"
 }
