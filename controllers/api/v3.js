@@ -141,7 +141,8 @@ const translationObject = {
     field: 'lan_devices.name', validation: validator.validateDeviceName,
   },
 
-  // This field should not be used for anything despite the projection
+  // Those fields should not be used as parameter for finding
+  // This field is used to specify a projection
   field: {
     field: '', validation: validator.validateProjection,
   },
@@ -151,6 +152,11 @@ const translationObject = {
   },
   pageLimit: {
     field: '', validation: (page) => apiController.validatePageLimit(page),
+  },
+  // This field is used for conditions like: last_seen > xyz
+  conditionField: {
+    field: '',
+    validation: (field) => apiController.validateDeviceProjection(field),
   },
 };
 
@@ -251,8 +257,11 @@ apiController.validateField = function(params, field) {
   let valid = validationFunction(params[field]);
 
   if (!valid.valid) {
+    // Error from device_validator or from buildDeviceResponse
+    let message = valid.err ? valid.err : valid.message.message;
+
     return apiController.buildDeviceResponse(
-      false, 400, field + ': ' + valid.err,
+      false, 400, field + ': ' + message,
     );
   }
 
@@ -453,9 +462,11 @@ apiController.getLeanDevice = function(
   let useProjection = defaultProjection;
 
 
-  // If page or pageLimit is null, set the default
-  if (!page) page = 1;
-  if (!pageLimit) pageLimit = MAX_PAGE_SIZE;
+  // If page or pageLimit is invalid, set the default
+  if (!page || page <= 0) page = 1;
+  if (!pageLimit || pageLimit <= 0 || pageLimit > MAX_PAGE_SIZE) {
+    pageLimit = MAX_PAGE_SIZE;
+  }
 
 
   // Only use projection if available
@@ -513,20 +524,22 @@ apiController.getLeanDevice = function(
  *
  * @memberof controllers/api/v3
  *
+ * @param {Object} params - The object containing the keys setted by what was
+ * defined in the route and what the user passed, with their respective values.
  * @param {Object} defaultProjection - An object containing all the fields that
  * should not be returned to the user. But can be overrided by the `projection`.
  * @param {Array<String>} projections - Fields in the `device` model that will
  * only be returned. This option might override `defaultProjection` settings. It
  * can be `null`, using it as so will not reduce the returned fields to what the
  * user specified and will use the `defaultProjection`.
+ * @param {Object} additionalQueries - An object containing addional queries to
+ * be passed.
  * @param {Integer} page - The page number, starting from 1. This number
  * indicates how many entries in document to skip. It will be calculated
  * alonside with `pageLimit`.
  * @param {Integer} pageLimit - This value indicates how many entries per page
  * will be delivered. Indicates which entries will be shown alongside with
  * `page`.
- * @param {Object} params - The object containing the keys setted by what was
- * defined in the route and what the user passed, with their respective values.
  * @param {String} relativePath - The relative to search on. It narrows down the
  * query to that specific path.
  * @param {Array<String>} routeParameters - All the keys that `params` should
@@ -540,11 +553,12 @@ apiController.getLeanDevice = function(
  *    an error.
  */
 apiController.getDeviceByFields = async function(
+  params,
   defaultProjection,
   projections = null,
+  additionalQueries = null,
   page = null,
   pageLimit = null,
-  params,
   relativePath = null,
   routeParameters,
 ) {
@@ -554,7 +568,7 @@ apiController.getDeviceByFields = async function(
   // Get all extra arguments and append to the query
   for (let index = 0; index < routeParameters.length; index++) {
     // `paramName` is the name of the parameter that came from the route
-    // specification
+    // specification. Example: mac, pppoeUsername...
     let paramName = routeParameters[index];
 
     // Validate the parameter
@@ -562,8 +576,16 @@ apiController.getDeviceByFields = async function(
     if (!validation.valid) return validation;
 
     // Add to the query. `fieldName` is the field name of the device model
+    // Example: _id, pppoe_user...
     let fieldName = apiController.translateField(paramName);
     query[fieldName] = params[paramName];
+  }
+
+  // Append `additionalQueries`
+  if (additionalQueries) {
+    Object.keys(additionalQueries).forEach(
+      (entryKey) => query[entryKey] = additionalQueries[entryKey],
+    );
   }
 
 
@@ -626,6 +648,235 @@ apiController.getDeviceByFields = async function(
 
 
 /**
+ * Parses an integer and returns an `Object` explaning if could or could not
+ * parse the field.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {Object} params - The `params` object that comes with the route.
+ * @param {String} field - The parameter name to be searched and parsed inside
+ * `param`.
+ *
+ * @return {Object} The object containing the following items:
+ *  - `valid` - `Boolean`: If the parser was valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case the
+ *    parser errored;
+ *  - `message` - `String`: The String of the response to be returned in case of
+ *    an error;
+ *  - `value` - `Integer`: The value parsed.
+ */
+apiController.parseRouteIntParameter = function(params, field) {
+  const value = parseInt(params[field]);
+  const isValid = !isNaN(value);
+
+  let returnValue = apiController.buildDeviceResponse(
+    isValid,
+    isValid ? 200 : 400,
+    isValid ? t('OK') : field + ': ' + t('valueInvalid'),
+    {},
+  );
+
+  // Set the value to return
+  returnValue['value'] = value;
+  return returnValue;
+};
+
+
+/**
+ * Parses an `Array` of `Strings` and split then by ';'. If `relativePath` is
+ * passed, it will concatenate, at the beginning, each string with it.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {Object} params - The `params` object that comes with the route.
+ * @param {String} field - The parameter name to be searched and parsed inside
+ * `param`.
+ * @param {String} relativePath - The relative path in `device` to be added if
+ * needed.
+ *
+ * @return {Object} The object containing the following items:
+ *  - `valid` - `Boolean`: If the parser was valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case the
+ *    parser errored;
+ *  - `message` - `String`: The String of the response to be returned in case of
+ *    an error;
+ *  - `value` - `Integer`: The value parsed.
+ */
+apiController.parseRouteStringArrayParameter = function(
+  params, field, relativePath = null,
+) {
+  let fields = [];
+
+  // Split by ;
+  if (params[field] && typeof params[field] === 'string') {
+    fields = params[field].split(';');
+  }
+  let isValid = fields.length > 0;
+
+  // If has the `relativePath`, append each element with it
+  if (relativePath && isValid) {
+    fields.forEach((element, index, array) => {
+      array[index] = relativePath + '.' + element;
+    });
+  }
+
+  return {
+    valid: isValid,
+    statusCode: isValid ? 200 : 400,
+    message: isValid ? t('OK') : field + ': ' + t('emptyField'),
+    value: fields,
+  };
+};
+
+
+/**
+ * Parses a route condition passed as argument in URL. It builds a query to be
+ * added when querying the device.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {Object} params - The `params` object that comes with the route.
+ * @param {String} field - The parameter name to be searched and parsed inside
+ * `param`.
+ * @param {String} relativePath - The relative path in `device` to be added if
+ * needed.
+ *
+ * @return {Object} The object containing the following items:
+ *  - `valid` - `Boolean`: If the parser was valid or not;
+ *  - `statusCode` - `Integer`: The status response code in case the
+ *    parser errored;
+ *  - `message` - `String`: The String of the response to be returned in case of
+ *    an error;
+ *  - `value` - `Object`: The queries to be added when searching the device.
+ */
+apiController.parseRouteConditionParameter = function(
+  params, field, relativePath = null,
+) {
+  // Get the condition field and add the relative path if necessary
+  let conditionField = (relativePath ? relativePath + '.' : '' ) +
+    params[field];
+  let type = null;
+
+
+  // Get the type
+  const paths = DeviceModel.schema.paths;
+  const subpaths = DeviceModel.schema.subpaths;
+
+  // Paths of `device` model
+  if (paths[conditionField]) {
+    type = paths[conditionField].instance;
+
+  // Subpaths of `device` model
+  } else if (subpaths[conditionField]) {
+    type = subpaths[conditionField].instance;
+
+  // If the field is invalid and does not exists
+  } else {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: t('fieldWrongType', {dataType: 'Date/Number/Boolean'}),
+      value: {},
+    };
+  }
+
+
+  const conditions = [
+    {name: 'greaterValue', operation: '$gt'},
+    {name: 'equalValue', operation: '$eq'},
+    {name: 'lowerValue', operation: '$lt'},
+  ];
+
+  // Loop condition parameters
+  let queries = {};
+
+  for (let index = 0; index < conditions.length; index++) {
+    const cond = conditions[index];
+
+    // Push the query operation and the value to an array
+    if (params[cond.name]) {
+      let value = null;
+      let isValid = true;
+
+      // If the `device`'s field is Date type
+      if (type === 'Date') {
+        value = new Date(params[cond.name]);
+
+        // If it is not a valid date
+        if (!value.getTime()) isValid = false;
+
+      // If the `device`'s field is Number type
+      } else if (type === 'Number') {
+        value = parseInt(params[cond.name]);
+
+        // If is not a valid integer
+        if (isNaN(value)) isValid = false;
+
+      // If the `device`'s field is Boolean type
+      } else if (type === 'Boolean') {
+        // If it is not 'true', 'false', '0' or '1' return error
+        if (
+          params[cond.name] !== 'true' && params[cond.name] !== 'false' &&
+          params[cond.name] !== '0' && params[cond.name] !== '1'
+        ) isValid = false;
+
+        value = (
+          params[cond.name] === 'true' ||
+          params[cond.name] === '1' ?
+          true : false
+        );
+
+      // If any other type
+      } else {
+        return {
+          valid: false,
+          statusCode: 400,
+          message: t('fieldWrongType', {dataType: type}),
+          value: {},
+        };
+      }
+
+
+      // If invalid
+      if (!isValid) {
+        return {
+          valid: false,
+          statusCode: 400,
+          message: t('fieldNameWrongType', {
+            name: 'greaterValue/equalValue/lowerValue',
+            dataType: type,
+          }),
+          value: {},
+        };
+      }
+
+      // If valid, append to queries
+      queries[conditionField] = {};
+      queries[conditionField][cond.operation] = value;
+    }
+  }
+
+  // Return if there is no condition to parse
+  if (Object.keys(queries).length <= 0) {
+    return {
+      valid: false,
+      statusCode: 400,
+      message: field + ': ' + t('emptyField'),
+      value: {},
+    };
+  }
+
+
+  return {
+    valid: true,
+    statusCode: 200,
+    message: t('OK'),
+    value: queries,
+  };
+};
+
+
+/**
  * Default entry point for `GET` requests for device. It tries to find one
  * device that matches all `routeParameters` and return the device if could find
  * it or an error with the message associated to it.
@@ -667,61 +918,72 @@ apiController.defaultGetRoute = async function(
   let defaultProjection = relativePath ?
     reducedFieldsByRelativePath[relativePath] : reducedDeviceFields;
   let params = request.params;
-  let fields = null;
-  let page = null;
-  let pageLimit = null;
+  let mergedParams = {
+    conditionField: null,
+    page: null,
+    pageLimit: null,
+    field: null,
+  };
 
 
-  // Validate the field
-  validation = apiController.validateField(params, 'field');
-  if (validation.valid) {
-    // If field is not null, concatenate
-    fields = params.field.split(';');
+  const paramNames = [{
+    name: 'conditionField',
+    execute: apiController.parseRouteConditionParameter,
+  }, {
+    name: 'page',
+    execute: apiController.parseRouteIntParameter,
+  }, {
+    name: 'pageLimit',
+    execute: apiController.parseRouteIntParameter,
+  }, {
+    name: 'field',
+    execute: apiController.parseRouteStringArrayParameter,
+  }];
 
-    // If has the `relativePath`, append each element with it
-    if (relativePath) {
-      fields.forEach((element, index, array) => {
-        array[index] = relativePath + '.' + element;
-      });
+
+  // Validate each parameter
+  for (let index = 0; index < paramNames.length; index++) {
+    let paramEntry = paramNames[index];
+
+    // Validate the field
+    validation = apiController.validateField(params, paramEntry.name);
+    if (validation.valid) {
+      // Execute
+      let returnValue = paramEntry.execute(
+        params, paramEntry.name, relativePath,
+      );
+
+      // If invalid
+      if (!returnValue.valid) {
+        return response
+          .status(returnValue.statusCode)
+          .json({
+            success: false,
+            message: returnValue.message,
+            device: {},
+          });
+      }
+
+      // If valid, add to the `mergedParams`
+      mergedParams[paramEntry.name] = returnValue.value;
+
+    // If is invalid and not undefined or null return the error
+    } else if (
+      params[paramEntry.name] !== null &&
+      params[paramEntry.name] !== undefined
+    ) {
+      return response
+        .status(validation.statusCode)
+        .json(validation.message);
     }
-
-  // If is invalid and not undefined or null return the error
-  } else if (params.field !== null && params.field !== undefined) {
-    return response
-      .status(validation.statusCode)
-      .json(validation.message);
-  }
-
-
-  // Validate page
-  validation = apiController.validateField(params, 'page');
-  if (validation.valid) {
-    page = parseInt(params.page);
-
-  // If is invalid and not undefined or null return the error
-  } else if (params.page !== null && params.page !== undefined) {
-    return response
-      .status(validation.statusCode)
-      .json(validation.message);
-  }
-
-  // Validate page limit
-  validation = apiController.validateField(params, 'pageLimit');
-  if (validation.valid) {
-    pageLimit = parseInt(params.pageLimit);
-
-  // If is invalid and not undefined or null return the error
-  } else if (params.pageLimit !== null && params.pageLimit !== undefined) {
-    return response
-      .status(validation.statusCode)
-      .json(validation.message);
   }
 
 
   // Try finding the device
   validation = await apiController.getDeviceByFields(
-    defaultProjection, fields, page, pageLimit,
-    params, relativePath, routeParameters,
+    params, defaultProjection, mergedParams['field'],
+    mergedParams['conditionField'], mergedParams['page'],
+    mergedParams['pageLimit'], relativePath, routeParameters,
   );
 
 
