@@ -1,5 +1,5 @@
-# Device Site Survey by MAC with Pagination without Field
-/api/v3/device/mac/{mac}/site-survey/page/{page}/page-limit/{pageLimit}/:
+# Device Site Survey by MAC
+/api/v3/device/mac/{mac}/site-survey/:
   get:
     summary: Gets the last executed site survey.
 
@@ -17,87 +17,58 @@
         description: The MAC address of the device' to the return the site
           survey.
 
-      - in: path
-        name: page
-        schema:
-          type: integer
-          minimum: 1
-        required: true
-        description: The page number to paginate.
-
-      - in: path
-        name: pageLimit
-        schema:
-          type: integer
-          minimum: 1
-          maximum: 50
-        required: true
-        description: The amount of entries per page.
-
-    security:
-      - basicAuth: []
-
-    responses:
-      200:
-        $ref: '#/components/responses/200 - Site Survey'
-
-      400:
-        $ref: '#/components/responses/400'
-
-      401:
-        $ref: '#/components/responses/401'
-
-      403:
-        $ref: '#/components/responses/403'
-
-      404:
-        $ref: '#/components/responses/404'
-
-      500:
-        $ref: '#/components/responses/500'
-
-
-# Device Site Survey by MAC with Pagination with Field
-/api/v3/device/mac/{mac}/site-survey/page/{page}/page-limit/{pageLimit}/{field}:
-  get:
-    summary: Gets the last executed site survey.
-
-    description: Query the first device that has the same MAC address
-      passed as a URL parameter and get it's site survey.
-
-    tags: ['Get Device | MAC', 'Get Device | MAC | Site Survey']
-
-    parameters:
-      - in: path
-        name: mac
+      - in: query
+        name: conditionField
         schema:
           type: string
-        required: true
-        description: The MAC address of the device' to the return the site
-          survey.
+        required: false
+        description: |
+          A field from device to set a condition and only a device or entries
+          that matches this condition will be returned. The field must be either
+          a Date, a Number or a Boolean. `greaterValue` or `equalValue` or
+          `lowerValue` must be setted.
 
-      - in: path
-        name: page
+      - in: query
+        name: greaterValue
         schema:
-          type: integer
-          minimum: 1
-        required: true
-        description: The page number to paginate.
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be greater
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
 
-      - in: path
-        name: pageLimit
+      - in: query
+        name: equalValue
         schema:
-          type: integer
-          minimum: 1
-          maximum: 50
-        required: true
-        description: The amount of entries per page.
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be equal
+          to the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
 
-      - in: path
+      - in: query
+        name: lowerValue
+        schema:
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be lower
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: query
         name: field
         schema:
           type: string
-        required: true
+        required: false
         description: The specific field to be returned from the device
           instead of the whole information. If the field is not one of
           the device's, it will return the error explaining what happenned.

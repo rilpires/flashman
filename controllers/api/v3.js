@@ -217,7 +217,7 @@ apiController.buildDeviceResponse = function(valid, statusCode, extra) {
  *    an error.
  */
 apiController.validateRequest = function(request) {
-  if (!request || !request.params) {
+  if (!request || !request.params || !request.query) {
     return apiController.buildDeviceResponse(
       false, 400, t('requestError', {errorline: __line}),
     );
@@ -918,6 +918,7 @@ apiController.defaultGetRoute = async function(
   let defaultProjection = relativePath ?
     reducedFieldsByRelativePath[relativePath] : reducedDeviceFields;
   let params = request.params;
+  let queryParams = request.query;
   let mergedParams = {
     conditionField: null,
     page: null,
@@ -926,7 +927,7 @@ apiController.defaultGetRoute = async function(
   };
 
 
-  const paramNames = [{
+  const queryParamNames = [{
     name: 'conditionField',
     execute: apiController.parseRouteConditionParameter,
   }, {
@@ -941,16 +942,16 @@ apiController.defaultGetRoute = async function(
   }];
 
 
-  // Validate each parameter
-  for (let index = 0; index < paramNames.length; index++) {
-    let paramEntry = paramNames[index];
+  // Validate each query parameter
+  for (let index = 0; index < queryParamNames.length; index++) {
+    let paramEntry = queryParamNames[index];
 
     // Validate the field
-    validation = apiController.validateField(params, paramEntry.name);
+    validation = apiController.validateField(queryParams, paramEntry.name);
     if (validation.valid) {
       // Execute
       let returnValue = paramEntry.execute(
-        params, paramEntry.name, relativePath,
+        queryParams, paramEntry.name, relativePath,
       );
 
       // If invalid
@@ -969,14 +970,21 @@ apiController.defaultGetRoute = async function(
 
     // If is invalid and not undefined or null return the error
     } else if (
-      params[paramEntry.name] !== null &&
-      params[paramEntry.name] !== undefined
+      queryParams[paramEntry.name] !== null &&
+      queryParams[paramEntry.name] !== undefined
     ) {
       return response
         .status(validation.statusCode)
         .json(validation.message);
     }
   }
+
+
+  // Set default values
+  mergedParams['page'] = mergedParams['page'] ?
+    mergedParams['page'] : 1;
+  mergedParams['pageLimit'] = mergedParams['pageLimit'] ?
+    mergedParams['pageLimit'] : MAX_PAGE_SIZE;
 
 
   // Try finding the device

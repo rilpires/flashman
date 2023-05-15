@@ -39,7 +39,7 @@ router.use(
 
 // Routes
 router.get(
-  '/device/pppoe-username/:pppoeUsername/:field?',
+  '/device/pppoe-username/:pppoeUsername/',
   (request, response) => apiController.defaultGetRoute(
     request, response, null, 'pppoeUsername',
   ),
@@ -47,7 +47,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/lan-devices/page/:page/page-limit/:pageLimit/:field?',
+  '/device/mac/:mac/lan-devices/',
   (request, response) => apiController.defaultGetRoute(
     request, response, 'lan_devices', 'mac',
   ),
@@ -55,8 +55,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/lan-devices/page/:page/page-limit/:pageLimit/' +
-    'mac/:lanDeviceMac/:field?',
+  '/device/mac/:mac/lan-devices/mac/:lanDeviceMac/',
   (request, response) => apiController.defaultGetRoute(
     request, response, 'lan_devices', 'mac', 'lanDeviceMac',
   ),
@@ -64,8 +63,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/lan-devices/page/:page/page-limit/:pageLimit/' +
-    'name/:lanDeviceName/:field?',
+  '/device/mac/:mac/lan-devices/name/:lanDeviceName/',
   (request, response) => apiController.defaultGetRoute(
     request, response, 'lan_devices', 'mac', 'lanDeviceName',
   ),
@@ -73,7 +71,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/site-survey/page/:page/page-limit/:pageLimit/:field?',
+  '/device/mac/:mac/site-survey/',
   (request, response) => apiController.defaultGetRoute(
     request, response, 'ap_survey', 'mac',
   ),
@@ -81,8 +79,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/condition/:conditionField/greater-than/:greaterValue/' +
-    ':field?',
+  '/device/mac/:mac/',
   (request, response) => apiController.defaultGetRoute(
     request, response, null, 'mac',
   ),
@@ -90,24 +87,7 @@ router.get(
 
 
 router.get(
-  '/device/mac/:mac/condition/:conditionField/lower-than/:lowerValue/' +
-    ':field?',
-  (request, response) => apiController.defaultGetRoute(
-    request, response, null, 'mac',
-  ),
-);
-
-
-router.get(
-  '/device/mac/:mac/:field?',
-  (request, response) => apiController.defaultGetRoute(
-    request, response, null, 'mac',
-  ),
-);
-
-
-router.get(
-  '/device/serial-tr069/:serialTR069/:field?',
+  '/device/serial-tr069/:serialTR069/',
   (request, response) => apiController.defaultGetRoute(
     request, response, null, 'serialTR069',
   ),
@@ -115,7 +95,7 @@ router.get(
 
 
 router.get(
-  '/device/external-reference-data/:externalReferenceData/:field?',
+  '/device/external-reference-data/:externalReferenceData/',
   (request, response) => apiController.defaultGetRoute(
     request, response, null, 'externalReferenceData',
   ),
@@ -123,7 +103,7 @@ router.get(
 
 
 router.get(
-  '/device/wan-mac/:wanMac/:field?',
+  '/device/wan-mac/:wanMac/',
   (request, response) => apiController.defaultGetRoute(
     request, response, null, 'wanMac',
   ),

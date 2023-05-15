@@ -1,46 +1,5 @@
-# Get device by WAN MAC address without Field
+# Get device by WAN MAC address
 /api/v3/device/wan-mac/{wanMac}/:
-  get:
-    summary: Get a device by it's WAN MAC address.
-
-    description: Query the first device that has the same WAN MAC address
-      passed as a URL parameter.
-
-    tags: ['Get Device | WAN MAC']
-
-    parameters:
-      - in: path
-        name: wanMac
-        schema:
-          type: string
-        required: true
-        description: The WAN MAC address of the device to be returned.
-
-    security:
-      - basicAuth: []
-
-    responses:
-      200:
-        $ref: '#/components/responses/200'
-
-      400:
-        $ref: '#/components/responses/400'
-
-      401:
-        $ref: '#/components/responses/401'
-
-      403:
-        $ref: '#/components/responses/403'
-
-      404:
-        $ref: '#/components/responses/404'
-
-      500:
-        $ref: '#/components/responses/500'
-
-
-# Get device by WAN MAC address with Field
-/api/v3/device/wan-mac/{wanMac}/{field}:
   get:
     summary: Get a device by it's WAN MAC address.
 
@@ -57,11 +16,58 @@
         required: true
         description: The WAN MAC address of the device to be returned.
 
-      - in: path
+      - in: query
+        name: conditionField
+        schema:
+          type: string
+        required: false
+        description: |
+          A field from device to set a condition and only a device or entries
+          that matches this condition will be returned. The field must be either
+          a Date, a Number or a Boolean. `greaterValue` or `equalValue` or
+          `lowerValue` must be setted.
+
+      - in: query
+        name: greaterValue
+        schema:
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be greater
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: query
+        name: equalValue
+        schema:
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be equal
+          to the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: query
+        name: lowerValue
+        schema:
+          type: string
+        required: false
+        description: |
+          The field defined by `conditionField` should be lower
+          than the value passed here in order to the device or entries be
+          returned. Allowed values are: Date (Example:
+          "2022-07-11T13:13:22.379Z"), Number (Example: "-5"),
+          Boolean (Example: "true" or "1").
+
+      - in: query
         name: field
         schema:
           type: string
-        required: true
+        required: false
         description: The specific field to be returned from the device
           instead of the whole information. If the field is not one of
           the device's, it will return the error explaining what happenned.
