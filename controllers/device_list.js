@@ -96,38 +96,64 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
   // due to switch case statements below on aggregation query
   timeThresholds = timeThresholds.sort((a, b)=>b-a);
 
-  let now = Date.now();
-  let aggregationQueryResult = await DeviceModel.aggregate([
-    // Filtering
-    {$match: query},
-
-    // Grouping
-    {
-      $group: {
-        _id: {
-          use_tr069: '$use_tr069',
-          mqtt_on: {$in: ['$_id', mqttClients]},
-          mesh_mode: '$mesh_mode',
-          last_contact_floor: {
-            $switch: {
-              branches:
-                timeThresholds.map(function(date) {
-                  return {
-                    case: {$gt: ['$last_contact', date]},
-                    then: date,
-                  };
-                }),
-            },
+  let groupStage = {
+    $group: {
+      _id: {
+        use_tr069: '$use_tr069',
+        mqtt_on: {$in: ['$_id', mqttClients]},
+        is_mesh: {$gt: ['$mesh_mode', 0]},
+        last_contact_floor: {
+          $switch: {
+            branches:
+              timeThresholds.map(function(date) {
+                return {
+                  case: {$gt: ['$last_contact', date]},
+                  then: date,
+                };
+              }),
           },
         },
-        count: {$count: {}},
-        _ids: {$push: '$_id'},
       },
+      count: {$count: {}},
+      _ids: {$push: '$_id'},
+      _slave_ids: {$push: '$mesh_slaves'},
+      _master_id: {$push: '$mesh_master'},
     },
-  ]).exec();
-  console.log(`ret1 - ${Date.now() - now}`);
+  };
 
-  //let meshOnlineCount = await getOnlineCountMesh(query, lastHour);
+  let aggregationQueryResult = await DeviceModel.aggregate([
+    {$match: query},
+    groupStage,
+  ]).exec();
+
+  // Finding out mesh related devices not yet included in our query...
+  let fetchedDevices = [];
+  let relatedDevices = [];
+  aggregationQueryResult
+    .forEach(function(group) {
+      fetchedDevices = fetchedDevices.concat(group._ids);
+      if (group._id.is_mesh) {
+        group._slave_ids
+          .filter((arr)=>arr.length>0)
+          .forEach(function(slaveIds) {
+            relatedDevices = relatedDevices.concat(slaveIds);
+          });
+        relatedDevices = relatedDevices.concat(group._master_id);
+      }
+  });
+  fetchedDevices = new Set(fetchedDevices);
+  relatedDevices = Array.from(new Set(relatedDevices));
+  let missingDevices =
+    relatedDevices.filter((deviceId)=>!fetchedDevices.has(deviceId));
+  let meshRelatedGroups = await DeviceModel.aggregate([
+    {$match: {
+      _id: {$in: missingDevices},
+    }},
+    groupStage,
+  ])
+  .exec();
+
+  aggregationQueryResult = aggregationQueryResult.concat(meshRelatedGroups);
 
   let status = {
     offlinenum: 0,
@@ -155,64 +181,9 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
     }
   });
   status.totalnum = status.offlinenum +status.recoverynum + status.onlinenum;
-
   return status;
 };
 
-const getOnlineCountMesh = function(query, lastHour) {
-  return new Promise(async (resolve, reject)=> {
-    let queryKeys = Object.keys(query);
-    let meshQuery;
-    if (queryKeys.length==1 && queryKeys.includes('$and') ) {
-      meshQuery = {
-        '$and': Array.from(query['$and']),
-      };
-      meshQuery['$and'].push({mesh_mode: {$gt: 0}});
-    } else {
-      meshQuery = {$and: [{mesh_mode: {$gt: 0}}, query]};
-    }
-
-    let now = Date.now();
-    let err = undefined;
-    let devices = await DeviceModel.aggregate([
-      // Stage 1
-      {$match: query},
-
-      // Stage 2
-      {
-        $group: {mesh_mode: {$gt: 0}},
-      },
-
-      // Stage 3
-      {
-        $project: {'_id': 1, 'mesh_master': 1, 'mesh_slaves': 1},
-      },
-    ]).exec().catch((_err)=>{
-      err = _err;
-    });
-    if (err) {
-      return reject(err);
-    }
-
-    console.log(`rrret0 - ${Date.now() - now}`);
-
-    let status = {onlinenum: 0, recoverynum: 0, offlinenum: 0};
-    const mqttClients = Object.values(mqtt.unifiedClientsMap)
-    .reduce((acc, curr) => {
-      return acc.concat(Object.keys(curr));
-    }, []);
-
-    meshHandlers.enhanceSearchResult(devices).then((extra)=>{
-      console.log(`rrret1 - ${Date.now() - now}`);
-      extra.forEach((e)=>{
-        if (mqttClients.includes(e._id)) status.onlinenum += 1;
-        else if (e.last_contact >= lastHour.getTime()) status.recoverynum += 1;
-        else status.offlinenum += 1;
-      });
-      return resolve(status);
-    });
-  });
-};
 
 deviceListController.sendCustomPing = async function(
   device, reqBody, user, sessionID,
