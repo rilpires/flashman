@@ -1324,11 +1324,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
   // time threshold for tr069 status (status color).
   let tr069Times = await deviceHandlers.buildTr069Thresholds(currentTimestamp);
 
-  // MOCKING THRESHOLDS
-  lastHour = new Date('2023-04-15T06:38:38.957+00:00');
-  tr069Times.offline = new Date('2023-04-20T06:58:38.957+00:00');
-  tr069Times.recovery = new Date('2023-04-25T06:48:38.957+00:00');
-
   const userRole = await Role.findOne({
     name: util.returnObjOrEmptyStr(req.user.role),
   });
@@ -1370,7 +1365,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
       paginateOpts.select = queryResFilter;
     }
   }
-  let now = Date.now();
 
   DeviceModel.paginate(finalQuery, paginateOpts, function(err, matchedDevices) {
     if (err) {
@@ -1380,7 +1374,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
         message: err.message,
       });
     }
-    console.log(`0 - ${Date.now() - now}`);
     deviceListController.getReleases(userRole, req.user.is_superuser)
     .then(function(releases) {
       let enrichDevice = function(device) {
@@ -1450,19 +1443,14 @@ deviceListController.searchDeviceReg = async function(req, res) {
         }
         return device;
       };
-      console.log(`1 - ${Date.now() - now}`);
       meshHandlers.enhanceSearchResult(matchedDevices.docs)
       .then(function(extra) {
-        console.log(`2 - ${Date.now() - now}`);
         let allDevices = extra.concat(matchedDevices.docs).map(enrichDevice);
         User.findOne({name: req.user.name}, function(err, user) {
-          console.log(`3 - ${Date.now() - now}`);
           Config.findOne({is_default: true}, {device_update_schedule: false})
           .lean().exec(function(err, matchedConfig) {
-            console.log(`4 - ${Date.now() - now}`);
             getOnlineCount(finalQuery, mqttClientsArray, lastHour, tr069Times)
             .then((onlineStatus) => {
-              console.log(`5 - ${Date.now() - now}`);
               // Counters
               let status = {};
               status = Object.assign(status, onlineStatus);
@@ -1470,7 +1458,6 @@ deviceListController.searchDeviceReg = async function(req, res) {
               deviceListController.getReleases(userRole,
                                                req.user.is_superuser, true)
               .then(function(singleReleases) {
-                console.log(`6 - ${Date.now() - now}`);
                 /* validate if is to show ssid prefix checkbox
                     for each device */
                 let ssidPrefix = matchedConfig.ssidPrefix;
@@ -1492,12 +1479,10 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   );
                 });
 
-                console.log(`7 - ${Date.now() - now}`);
                 let mustBlockLicenseAtRemoval = (
                   matchedConfig.blockLicenseAtDeviceRemoval === true
                 ) ? true : false;
 
-                console.log(`8 - ${Date.now() - now}`);
                 return res.json({
                 success: true,
                   type: 'success',
