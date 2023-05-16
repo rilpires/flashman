@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "2.74.0",
+  "version": "2.74.2",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -95,7 +95,7 @@
     "unzipper": "~0.10.11"
   },
   "devDependencies": {
-    "@anlix-io/genieacs-sim": "1.2.4",
+    "@anlix-io/genieacs-sim": "1.3.0",
     "@babel/core": "^7.13.1",
     "@babel/preset-env": "^7.13.5",
     "babel-loader": "^8.2.2",

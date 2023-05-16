@@ -10,6 +10,8 @@ datacomModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
 
   permissions.wan.speedTestLimit = 200;
   permissions.wan.portForwardPermissions =
@@ -34,6 +36,7 @@ datacomModel.modelPermissions = function() {
   permissions.firmwareUpgrades = {
     'V4.6.0-210709': ['V5.4.0-220624'],
     'V5.4.0-220624': [],
+    'V5.6.0-221130': [],
   };
   permissions.lan.dnsServersLimit = 3;
   return permissions;
@@ -86,12 +89,16 @@ datacomModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
+datacomModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000000;
+};
+
 datacomModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+    'WANConnectionDevice.*.X_RTK_WANGponLinkConfig.VLANIDMark';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_WebUserInfo.UserPassword';
   fields.port_mapping_fields.external_port_end = [
@@ -108,15 +115,12 @@ datacomModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_GponInterafceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.' +
     'ChannelWidth';
   fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.' +
     'ChannelWidth';
-
 
   // IPv6
   // Address
@@ -131,14 +135,12 @@ datacomModel.getModelFields = function() {
   fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_RTK_DefaultIPv6Gateway';
 
-
   // IPv6 Prefix Delegation
   // Address
   fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice'+
     '.1.WANConnectionDevice.*.WANIPConnection.*.X_RTK_IPv6Prefix';
   fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
     '.1.WANConnectionDevice.*.WANPPPConnection.*.X_RTK_IPv6Prefix';
-
 
   Object.keys(fields.wifi2).forEach((k)=>{
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');

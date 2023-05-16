@@ -1471,7 +1471,7 @@ deviceListController.searchDeviceReg = async function(req, res) {
                   type: 'success',
                   limit: elementsPerPage,
                   page: matchedDevices.page,
-                  pages: matchedDevices.pages,
+                  pages: matchedDevices.totalPages,
                   min_length_pass_pppoe: matchedConfig.pppoePassLength,
                   status: status,
                   single_releases: singleReleases,

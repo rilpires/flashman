@@ -116,7 +116,7 @@ tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields = basicCPEModel.convertIGDtoDevice(fields);
   // Common
-  fields.common.mac = 'Device.Ethernet.Interface.*.MACAddress';
+  fields.common.mac = 'Device.Ethernet.Interface.1.MACAddress';
   fields.common.stun_enable = 'Device.ManagementServer.STUNEnable';
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
