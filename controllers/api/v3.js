@@ -148,15 +148,18 @@ const translationObject = {
   },
   // Those fields are used for pagination
   page: {
-    field: '', validation: (page) => apiController.validatePage(page),
+    field: '', validation: (page, relativePath) => apiController
+      .validatePage(page, relativePath),
   },
   pageLimit: {
-    field: '', validation: (page) => apiController.validatePageLimit(page),
+    field: '', validation: (page, relativePath) => apiController
+      .validatePageLimit(page, relativePath),
   },
   // This field is used for conditions like: last_seen > xyz
   conditionField: {
     field: '',
-    validation: (field) => apiController.validateDeviceProjection(field),
+    validation: (field, relativePath) => apiController
+      .validateDeviceProjection(field, relativePath),
   },
 };
 
@@ -235,6 +238,7 @@ apiController.validateRequest = function(request) {
  * @param {Object} params - The object that might contain the `field`.
  * @param {String} field - The field name to be validated.
  * `field`.
+ * @param {String} relativePath - The relative path in `device` model.
  *
  * @return {Object} The object containing:
  *  - `valid` - `Boolean`: If the `field` is valid or not;
@@ -243,7 +247,7 @@ apiController.validateRequest = function(request) {
  *  - `message` - `Object`: The object of the response to be returned in case of
  *    an error.
  */
-apiController.validateField = function(params, field) {
+apiController.validateField = function(params, field, relativePath = null) {
   // Check the `params` and the `field`
   if (!params || !params[field] || typeof params[field] !== 'string') {
     return apiController.buildDeviceResponse(
@@ -254,7 +258,7 @@ apiController.validateField = function(params, field) {
 
   // Validate the field
   let validationFunction = translationObject[field].validation;
-  let valid = validationFunction(params[field]);
+  let valid = validationFunction(params[field], relativePath);
 
   if (!valid.valid) {
     // Error from device_validator or from buildDeviceResponse
@@ -278,6 +282,7 @@ apiController.validateField = function(params, field) {
  * @memberof controllers/api/v3
  *
  * @param {String} projection - The projection path.
+ * @param {String} relativePath - The relative path in `device` model.
  *
  * @return {Object} The object containing:
  *  - `valid` - `Boolean`: If the `projection` is valid or not;
@@ -286,7 +291,10 @@ apiController.validateField = function(params, field) {
  *  - `message` - `Object`: The object of the response to be returned in case of
  *    an error.
  */
-apiController.validateDeviceProjection = function(projection) {
+apiController.validateDeviceProjection = function(
+  projection,
+  relativePath = null,
+) {
   // Check if is a valid string
   if (!projection || typeof projection !== 'string') {
     return apiController.buildDeviceResponse(
@@ -303,6 +311,10 @@ apiController.validateDeviceProjection = function(projection) {
       false, 400, projection + ': ' + t('mustBeAString'),
     );
   }
+
+
+  // Add `relativePath`
+  projection = (relativePath ? relativePath + '.' : '') + projection;
 
 
   // Check if `device` model contains `projection`
@@ -419,8 +431,8 @@ apiController.translateField = function(field) {
  * internal fields used by Flashman are removed alongside big fields like
  * `traceroute_results` and `current_diagnostic` among others. This function is
  * <b>NOT SAFE</b> to be used without a try and catch block due to the use of
- * the `findOne` function that can throw an error. A projection can be passed to
- * this function. If the projection is null or the device does not have the
+ * the `aggregate` function that can throw an error. A projection can be passed
+ * to this function. If the projection is null or the device does not have the
  * field passed, the whole device will be returned instead.
  *
  * @memberof controllers/api/v3
@@ -653,7 +665,7 @@ apiController.getDeviceByFields = async function(
  *
  * @memberof controllers/api/v3
  *
- * @param {Object} params - The `params` object that comes with the route.
+ * @param {Object} params - An object containing the `field`.
  * @param {String} field - The parameter name to be searched and parsed inside
  * `param`.
  *
@@ -688,7 +700,7 @@ apiController.parseRouteIntParameter = function(params, field) {
  *
  * @memberof controllers/api/v3
  *
- * @param {Object} params - The `params` object that comes with the route.
+ * @param {Object} params - An object containing the `field`.
  * @param {String} field - The parameter name to be searched and parsed inside
  * `param`.
  * @param {String} relativePath - The relative path in `device` to be added if
@@ -735,7 +747,7 @@ apiController.parseRouteStringArrayParameter = function(
  *
  * @memberof controllers/api/v3
  *
- * @param {Object} params - The `params` object that comes with the route.
+ * @param {Object} params - An object containing the `field`.
  * @param {String} field - The parameter name to be searched and parsed inside
  * `param`.
  * @param {String} relativePath - The relative path in `device` to be added if
@@ -775,7 +787,7 @@ apiController.parseRouteConditionParameter = function(
     return {
       valid: false,
       statusCode: 400,
-      message: t('fieldWrongType', {dataType: 'Date/Number/Boolean'}),
+      message: conditionField + ': ' + t('fieldInvalid', {errorline: __line}),
       value: {},
     };
   }
@@ -831,7 +843,7 @@ apiController.parseRouteConditionParameter = function(
         return {
           valid: false,
           statusCode: 400,
-          message: t('fieldWrongType', {dataType: type}),
+          message: t('fieldWrongType', {dataType: 'Date|Number|Boolean'}),
           value: {},
         };
       }
@@ -947,7 +959,10 @@ apiController.defaultGetRoute = async function(
     let paramEntry = queryParamNames[index];
 
     // Validate the field
-    validation = apiController.validateField(queryParams, paramEntry.name);
+    validation = apiController.validateField(
+      queryParams, paramEntry.name, relativePath,
+    );
+
     if (validation.valid) {
       // Execute
       let returnValue = paramEntry.execute(
