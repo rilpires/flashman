@@ -204,6 +204,7 @@ const createRegistry = async function(req, cpe, permissions) {
     data.wan = chosenWan.value;
     data.wan.chosen_wan = chosenWan.key;
   } else {
+    console.error(t('wanInformationCannotBeEmpty'));
     return false;
   }
   let changes = {wan: {}, lan: {}, wifi2: {}, wifi5: {}, common: {}, stun: {}};
@@ -1969,7 +1970,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
     if (await createRegistry(req, cpe, permissions)) {
       return res.status(200).json({success: true});
     } else {
-      console.error(t('wanInformationCannotBeEmpty'));
       return res.status(500).json({
         success: false,
         message: t('acsCreateCpeRegistryError', {errorline: __line}),
