@@ -114,7 +114,6 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
           },
         },
       },
-      count: {$count: {}},
       _ids: {$push: '$_id'},
       _slave_ids: {$push: '$mesh_slaves'},
       _master_id: {$push: '$mesh_master'},
@@ -163,20 +162,20 @@ const getOnlineCount = async function(query, mqttClients, lastHour,
 
   aggregationQueryResult.map(function(group) {
     if (group._id.mqtt_on) {
-      status.onlinenum += group.count;
+      status.onlinenum += group._ids.length;
     } else if (group._id.use_tr069) {
       if (group._id.last_contact_floor >= tr069Times.recovery ) {
-        status.onlinenum += group.count;
+        status.onlinenum += group._ids.length;
       } else if (group._id.last_contact_floor >= tr069Times.offline ) {
-        status.recoverynum += group.count;
+        status.recoverynum += group._ids.length;
       } else {
-        status.offlinenum += group.count;
+        status.offlinenum += group._ids.length;
       }
     } else {
       if (group._id.last_contact_floor >= lastHour ) {
-        status.recoverynum += group.count;
+        status.recoverynum += group._ids.length;
       } else {
-        status.offlinenum += group.count;
+        status.offlinenum += group._ids.length;
       }
     }
   });
@@ -1351,7 +1350,8 @@ deviceListController.searchDeviceReg = async function(req, res) {
     limit: elementsPerPage,
     lean: true,
     sort: sortKeys,
-    collation: {locale: 'en_US', strength: isComplexSearch?undefined:1},
+    collation: isComplexSearch ?
+      {locale: 'en_US'} : {locale: 'en_US', strength: 1},
     projection: {
       lan_devices: false, port_mapping: false, ap_survey: false,
       mesh_routers: false, pingtest_results: false, speedtest_results: false,
