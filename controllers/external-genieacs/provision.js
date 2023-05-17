@@ -188,7 +188,7 @@ let data = {
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 
-args = {acs_id: genieID, data: data};
+args = {acs_id: genieID, data: data, events: event};
 
 // Send data to Flashman via HTTP request
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));

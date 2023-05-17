@@ -80,7 +80,6 @@ utilHandlers.traverseNestedKey = function(
 };
 
 utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
-  data = utilHandlers.convertWanToFlashmanFormat(data);
   let idealCandidates = [];
   let possibleCandidates = [];
 
@@ -118,7 +117,7 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     const firstKey = keys[0];
     const lastKey = keys[keys.length - 1];
     const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
-    return {key: correctKey, value: data[correctKey]};
+    return correctKey;
   }
 
   if (idealCandidates.length === 1) {
@@ -131,21 +130,21 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
     if (pppWans.length > 0) {
       if (pppWans.length === 1) {
         // There is only one ppp-type WAN that meets the ideal conditions
-        return {key: pppWans[0], value: data[pppWans[0]]};
+        return pppWans[0];
       } else {
         // There are multiple ppp-type WANs with ideal conditions and it is not
         // possible to make a decision
         const firstKey = pppWans[0];
         const lastKey = pppWans[pppWans.length - 1];
         const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
-        return {key: correctKey, value: data[correctKey]};
+        return correctKey;
       }
     } else {
       // There are multiple DHCP-type WANs that meet the ideal conditions
       const firstKey = idealCandidates[0];
       const lastKey = idealCandidates[idealCandidates.length - 1];
       const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
-      return {key: correctKey, value: data[correctKey]};
+      return correctKey;
     }
   }
 
@@ -155,7 +154,7 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
   const firstKey = possibleCandidates[0];
   const lastKey = possibleCandidates[possibleCandidates.length - 1];
   const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
-  return {key: correctKey, value: data[correctKey]};
+  return correctKey;
 };
 
 utilHandlers.convertWanToFlashmanFormat = function(data) {

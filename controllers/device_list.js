@@ -2537,19 +2537,21 @@ deviceListController.setDeviceReg = function(req, res) {
             let audit = {};
 
             // Update chosen WAN information only if field is undefined
-            if (!matchedDevice.wan_chosen) {
-              let chosenWan = await acsDeviceInfo.updateChosenWan(
-                 matchedDevice.acs_id, cpe,
-              );
-              if (chosenWan.key === undefined) {
+            if (matchedDevice.use_tr069 && !matchedDevice.wan_chosen) {
+              let multiwan =
+                acsDeviceInfo.getMultiWan(matchedDevice.acs_id, cpe);
+              multiwan = util.convertWanToFlashmanFormat(multiwan);
+              let chosenWan = util.chooseWan(multiwan,
+                cpe.modelPermissions().useLastIndexOnWildcard);
+              if (chosenWan === undefined) {
                 return res.status(500).json({
                   success: false,
                   message: t('wanInformationCannotBeEmpty',
                     {errorline: __line}),
                 });
               }
-              console.log('Chosen WAN was set to ' + chosenWan.key);
-              matchedDevice.wan_chosen = chosenWan.key;
+              console.log('Chosen WAN was set to ' + chosenWan);
+              matchedDevice.wan_chosen = chosenWan;
               updateParameters = true;
             }
 
