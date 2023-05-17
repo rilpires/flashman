@@ -843,8 +843,7 @@ const assembleWanObj = function(args, callback) {
     for (let prop of properties) {
       let pathType = obj.path.includes('PPP') ? 'ppp' :
                      obj.path.includes('IP') ? 'dhcp' :
-                     obj.path.includes('Ethernet') ? 'ethernet' : 'undefined';
-      let propType = prop.includes('ppp') ? 'ppp' : 'dhcp';
+                     obj.path.includes('Ethernet') ? 'ethernet' : 'none';
 
       // The keys associated with port mapping must be treated differently
       // because, in the TR-098, they will be classified as dhcp or ppp
@@ -860,8 +859,7 @@ const assembleWanObj = function(args, callback) {
       for (let key of Object.keys(result)) {
         const keyType = key.split('_')[1];
         const keyIndexes = key.split('_').filter((key) => !isNaN(key));
-        let typeMatch = (keyType === propType);
-        if (!typeMatch && !isPortMapping) continue;
+        if (keyType === 'ppp' && prop.includes('dhcp')) continue;
         // If the path does not have indexes, the same must be added on all WANs
         if (indexes.length === 0) {
           Object.assign(result[key], field);
@@ -871,7 +869,7 @@ const assembleWanObj = function(args, callback) {
         // the type of the path is different from the type of the property, it
         // means that we must disregard the current indices and look for the
         // correct ones to insert the field
-        if (propType !== pathType && isTR181) {
+        if (keyType !== pathType && isTR181) {
           let linkPath;
           let correctPath;
           if (pathType === 'dhcp') {
