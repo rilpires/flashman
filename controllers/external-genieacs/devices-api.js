@@ -790,6 +790,11 @@ const wanKeyCriation = function(data, isTR181) {
         if (value === 'DHCP') {
           // If the connection is DHCP, the path index already represents a
           // physical connection
+          let linkPath = extractLinkPath(obj.path, true);
+          let interfPath = findInterfaceLink(data, linkPath, indexes[0]);
+          // If the LowerLayer of the IP interface points to a PPP interface,
+          // this must not be a key on the multi-wan
+          if (interfPath.includes('PPP')) break;
           correctPath = extractLinkPath(obj.path);
         } else if (value === 'IPCP') {
           let linkPath = extractLinkPath(obj.path, true);
