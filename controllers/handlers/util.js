@@ -122,7 +122,7 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
 
   if (idealCandidates.length === 1) {
     // There is only one WAN that has the ideal conditions
-    return {key: idealCandidates[0], value: data[idealCandidates[0]]};
+    return idealCandidates[0];
   } else if (idealCandidates.length > 1) {
     // There are multiple candidates. Verifies ideal candidates, giving
     // preference to ppp-type WANs
