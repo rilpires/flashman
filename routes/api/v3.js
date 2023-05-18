@@ -110,4 +110,10 @@ router.get(
 );
 
 
+router.get(
+  '/device/search/',
+  apiController.search,
+);
+
+
 module.exports = router;

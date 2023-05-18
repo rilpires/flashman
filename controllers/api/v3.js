@@ -9,6 +9,7 @@
 // Imports
 const Validator = require('../../public/javascripts/device_validator');
 const DeviceModel = require('../../models/device');
+const deviceList = require('../../controllers/device_list');
 
 const t = require('../language').i18next.t;
 
@@ -206,6 +207,30 @@ apiController.buildDeviceResponse = function(valid, statusCode, extra) {
 
 
 /**
+ * A helper function to reduce code.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {HTTPResponse} response - The HTTP response;
+ * @param {Object} validation - The object containing at least the following
+ * items:
+ *  - `statusCode` - `Integer`: The status code of the response to be sent;
+ *  - `message` - `String`: The message to be returned in the response.
+ *
+ * @return {HTTPResponse} The HTTP response.
+ */
+apiController.returnDevicesError = function(response, validation) {
+  return response
+    .status(validation.statusCode)
+    .json({
+      success: false,
+      message: validation.message,
+      devices: [],
+    });
+};
+
+
+/**
  * Validates the HTTP request to check if `params` is not empty.
  *
  * @memberof controllers/api/v3
@@ -356,7 +381,9 @@ apiController.validateDeviceProjection = function(
 apiController.validatePage = function(page) {
   // Check if page is a string and has at least 1 character
   if (!page || typeof page !== 'string' || page.length < 1) {
-    return {valid: false, err: t('mustBeAString')};
+    return apiController.buildDeviceResponse(
+      false, 400, t('mustBeAString'),
+    );
   }
 
   // Parse the number
@@ -364,7 +391,9 @@ apiController.validatePage = function(page) {
 
   // Check if the number is valid
   if (!pageNumber || pageNumber < 1) {
-    return {valid: false, err: t('invalidPageError', {errorline: __line})};
+    return apiController.buildDeviceResponse(
+      false, 400, t('invalidPageError', {errorline: __line}),
+    );
   }
 
   return {valid: true, value: pageNumber};
@@ -398,16 +427,81 @@ apiController.validatePageLimit = function(page) {
 
   // Check if the upper limit is valid
   if (pageNumber > MAX_PAGE_SIZE) {
-    return {
-      valid: false,
-      err: t('invalidPageLimitError', {
+    return apiController.buildDeviceResponse(
+      false,
+      400,
+      t('invalidPageLimitError', {
         upperLimit: MAX_PAGE_SIZE,
         errorline: __line,
       }),
-    };
+    );
   }
 
   return {valid: true, value: pageNumber};
+};
+
+
+/**
+ * Validates and return the list of items inside `params` splitted by ';'.
+ * It validates if `params` and `field` exists and if `params` contains `field`.
+ * If so, it splits this field inside `params` by ';' and checks if `options`
+ * contains each parameter splitted and returns the array with all of those
+ * parameters.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {Object} params - An object containing `field`.
+ * @param {String} field - The field name inside `params`.
+ * @param {Array<String>} options - The list of possible inputs.
+ *
+ * @return {Object} It returns the object containing:
+ *  - `valid` - `Boolean`: If it is valid or not;
+ *  - `statusCode` - `Integer`: The status code in the case this message should
+ *    be returned;
+ *  - `message` - `String`: The error message wich occurred or 'OK';
+ *  - `values` - `Array`: The array containing all splitted parameters from
+ *    `params[field]`.
+ */
+apiController.validateOptions = function(params, field, options) {
+  // Check if something is invalid and make sure that the field is the string
+  // type
+  if (
+    !params || !field || !params[field] ||
+    typeof params[field] !== 'string'
+  ) {
+    return apiController.buildDeviceResponse(
+      false, 400, t('fieldInvalid', {errorline: __line}),
+    );
+  }
+
+  // Split the input by ';'
+  const splitted = params[field].split(';');
+
+  let finalArray = [];
+
+  // Check if options contains each parameter passed
+  for (let index = 0; index < splitted.length; index++) {
+    const element = splitted[index];
+
+    // If the element is in options, append it to be returned
+    if (options.includes(element)) finalArray.push(element);
+
+    // Otherwise return the error
+    else {
+      return apiController.buildDeviceResponse(
+        false, 400, t('fieldNameInvalid', {name: field, errorline: __line}),
+      );
+    }
+  }
+
+
+  // Build the response
+  return {
+    valid: true,
+    statusCode: 200,
+    message: t('OK'),
+    value: finalArray,
+  };
 };
 
 
@@ -906,7 +1000,7 @@ apiController.parseRouteConditionParameter = function(
  * @return {Response} The return wil send the status code based on the REST API
  * and the body will contain:
  *  - `success` - `Boolean`: If could find the device or an error occurred;
- *  - `message` - `String`: The error message with occurred or 'OK'.
+ *  - `message` - `String`: The error message wich occurred or 'OK'.
  *  - `device` - `Object`: The device if could find it.
  */
 apiController.defaultGetRoute = async function(
@@ -1013,6 +1107,373 @@ apiController.defaultGetRoute = async function(
   return response
     .status(validation.statusCode)
     .json(validation.message);
+};
+
+
+/**
+ * Searches for multiple devices and return them. It splits the devices by
+ * pages. Each page can have 50 devices at maximum and be limited to return
+ * less.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @param {HTTPRequest} request - The HTTP request.
+ * @param {HTTPResponse} response  - The HTTP response.
+ *
+ * @return {Response} The return wil send the status code based on the REST API
+ * and the body will contain:
+ *  - `success` - `Boolean`: If could find the device or an error occurred;
+ *  - `message` - `String`: The error message wich occurred or 'OK'.
+ *  - `devices` - `Object`: The devices if could find it.
+ *  - `page` - `Integer`: The current page if could find the devices and no
+ *    error occurred.
+ *  - `pageLimit` - `Integer`: The limit of the devices per page if could find
+ *    devices and no error occurred.
+ *  - `totalPages` - `Integer`: The total amount of pages if could find devices
+ *    and no error occurred.
+ */
+apiController.search = async function(request, response) {
+  const returnError = (validation) => apiController.returnDevicesError(
+    response, validation,
+  );
+
+  // Validate the request
+  let validation = apiController.validateRequest(request);
+
+  if (!validation.valid) return returnError(validation);
+
+
+  let queryParams = request.query;
+  let fullQuery = [];
+  let querySetup = {};
+
+
+  const booleanParameters = [
+    {name: 'alert', translate: t('alert')},
+    {name: 'online', translate: t('online')},
+    {name: 'offline', translate: t('offline')},
+    {name: 'unstable', translate: t('unstable')},
+    {name: 'noSignal', translate: t('noSignal')},
+    {name: 'flashbox', translate: 'flashbox'},
+    {name: 'tr069', translate: 'tr069'},
+  ];
+
+  const selectParameters = [
+    {name: 'signal', options: ['bad', 'weak', 'good']},
+    {name: 'ipv6', options: ['off', 'on', 'unknown']},
+    {name: 'mesh', options: ['off', 'on']},
+    {name: 'mode', options: ['router', 'bridge']},
+  ];
+
+  const integerParameters = [
+    {name: 'onlineFor', translate: t('online') + ' >'},
+    {name: 'offlineFor', translate: t('offline') + ' >'},
+  ];
+
+  const stringParameters = [
+    {name: 'query', isPath: false},
+    {name: 'fields', isPath: true},
+    {name: 'exclude', isPath: false},
+  ];
+
+  const pageParameters = [
+    {name: 'page', default: 1},
+    {name: 'pageLimit', default: MAX_PAGE_SIZE},
+  ];
+
+
+  // Parse boolean parameters
+  for (let index = 0; index < booleanParameters.length; index++) {
+    let param = booleanParameters[index];
+    let value = '';
+
+    // If the query does not have it, continue to the next iteration
+    if (!queryParams[param.name]) continue;
+
+    // Check if is a string
+    if (queryParams[param.name] !== 'string') {
+      return returnError({statusCode: 400, message: t('mustBeAString')});
+    }
+
+    // Validate the parameter
+    // False
+    if (
+      queryParams[param.name] === '0' ||
+      queryParams[param.name].toLowerCase() === 'false'
+    ) value = '';
+
+    // True
+    else if (
+      queryParams[param.name] === '1' ||
+      queryParams[param.name].toLowerCase() === 'true'
+    ) value = param.translate;
+
+    // Invalid
+    else {
+      return returnError({
+        statusCode: 400,
+        message: t('fieldNameInvalid', {name: param.name, errorline: __line}),
+      });
+    }
+
+    // Append to the full query if value is not empty
+    if (value) fullQuery.push(value);
+  }
+
+  // Parse select parameters
+  for (let index = 0; index < selectParameters.length; index++) {
+    let param = selectParameters[index];
+
+    // If the query does not have it, continue to the next iteration
+    if (!queryParams[param.name]) continue;
+
+    // Validate
+    let validation = apiController.validateOptions(
+      queryParams, param.name, param.options,
+    );
+
+    // If invalid, return the error
+    if (!validation.valid) return returnError(validation);
+
+    // Append each value
+    validation.value.forEach(
+      // Even though some translations do not exists it will use the same name
+      // as in complex search
+      (element) => fullQuery.push(t(param.name) + ' ' + t(element)),
+    );
+  }
+
+  // Parse interger parameters
+  for (let index = 0; index < integerParameters.length; index++) {
+    let param = integerParameters[index];
+
+    // If the query does not have it, continue to the next iteration
+    if (!queryParams[param.name]) continue;
+
+    // Validate
+    let validation = apiController.parseRouteIntParameter(
+      queryParams, param.name,
+    );
+
+    // If the value is not valid, return the error
+    if (!validation.valid) return returnError(validation);
+
+    // Check if the value is positive and bigger than 0
+    if (validation.value <= 0) {
+      return returnError({
+        statusCode: 400,
+        message: param.name + ': ' + t('valueInvalid'),
+      });
+    }
+
+    // Append the value
+    fullQuery.push(param.translate + validation.value);
+  }
+
+  // Parse string parameters
+  for (let index = 0; index < stringParameters.length; index++) {
+    let param = stringParameters[index];
+
+    // If the query does not have it, continue to the next iteration
+    if (!queryParams[param.name]) continue;
+
+    // Validate invalid characters
+
+
+    // Try splitting it
+    let validation = apiController.parseRouteStringArrayParameter(
+      queryParams, param.name, null,
+    );
+
+    if (!validation.valid) return returnError(validation);
+
+    // Create the entry in `querySetup`
+    querySetup[param.name] = [];
+
+    // Pass by each parameter inside of value
+    for (let project = 0; project < validation.value.length; project++) {
+      let value = validation.value[project];
+
+      // Validate the size
+      if (value.length <= 0) {
+        return returnError({
+          statusCode: 400,
+          message: t('fieldNameInvalid', {name: 'sortType', errorline: __line}),
+        });
+      }
+
+      // If is a path or subpath of `device` model, validate it
+      if (param.isPath) {
+        // Validate
+        let projectValidation = apiController.validateDeviceProjection(
+          value, null,
+        );
+
+        // Check if valid
+        if (!projectValidation.valid) return returnError(projectValidation);
+
+        value = projectValidation.value;
+      }
+
+      // Push to array
+      querySetup[param.name].push(value);
+    }
+  }
+
+  // Parse pages parameters, use default if missing
+  for (let index = 0; index < pageParameters.length; index++) {
+    let param = pageParameters[index];
+
+    // If the field exists
+    if (queryParams[param.name]) {
+      let validation = apiController.validateField(
+        queryParams, param.name, null,
+      );
+
+      // If page does not exists, return the error
+      if (!validation.valid) return returnError(validation);
+
+      // Assign the value
+      querySetup[param.name] = validation.value;
+
+    // Otherwise, assign the default
+    } else querySetup[param.name] = param.default;
+  }
+
+  // Parse other values
+  // sortType
+  // Set to use ascending if `sortType` is not provided
+  let sortType = 1;
+  if (queryParams['sortType'] && typeof queryParams['sortType'] === 'string') {
+    // Descending
+    if (
+      queryParams['sortType'].toLowerCase() === 'desc' ||
+      queryParams['sortType'].toLowerCase() === 'descending'
+    ) sortType = -1;
+
+    // Not ascending nor descending
+    else if (
+      queryParams['sortOn'].toLowerCase() !== 'asc' &&
+      queryParams['sortOn'].toLowerCase() === 'ascending'
+    ) {
+      return returnError({
+        statusCode: 400,
+        message: t('fieldNameInvalid', {name: 'sortType', errorline: __line}),
+      });
+    }
+  }
+
+  // sortOn
+  if (queryParams['sortOn'] && typeof queryParams['sortOn'] === 'string') {
+    // Validate it
+    let validation = apiController.validateDeviceProjection(
+      queryParams['sortOn'], null,
+    );
+
+    if (!validation.valid) return returnError(validation);
+
+    // Append it
+    querySetup['sort'] = {};
+    querySetup['sort'][validation.value] = sortType;
+  }
+
+  // operation
+  if (
+    queryParams['operation'] &&
+    typeof queryParams['operation'] === 'string'
+  ) {
+    // And
+    if (
+      queryParams['operation'].toLowerCase() === 'and'
+    ) querySetup.push(t('/and'));
+
+    // Or
+    else if (
+      queryParams['operation'].toLowerCase() === 'or'
+    ) querySetup.push(t('/or'));
+
+    // Invalid entry
+    else {
+      return returnError({
+        statusCode: 400,
+        message: t('fieldNameInvalid', {name: 'operation', errorline: __line}),
+      });
+    }
+  }
+
+  // Enhance query with exclude
+  if (querySetup['exclude']) {
+    querySetup['exclude'].forEach(
+      (element) => fullQuery.push(t('/exclude') + ' ' + element),
+    );
+  }
+
+  // Enhance query with names
+  if (querySetup['query']) {
+    fullQuery = fullQuery.concat(querySetup['query']);
+  }
+
+  // Get the projection
+  let projection = reducedDeviceFields;
+
+  if (querySetup['fields']) {
+    projection = {};
+
+    querySetup['fields'].forEach((element) => projection[element] = true);
+  }
+
+  // Build query options
+  const queryOptions = {
+    page: querySetup['page'],
+    limit: querySetup['pageLimit'],
+    lean: true,
+    sort: querySetup['sort'],
+    projection: projection,
+  };
+
+  // Get the final query from complex search
+  const finalQuery = await deviceList.complexSearchDeviceQuery(fullQuery);
+
+  // Get the device with pagination
+  let devices = null;
+
+  try {
+    devices = await DeviceModel.paginate(finalQuery, queryOptions);
+
+  // Error from mongo
+  } catch (error) {
+    console.log(
+      'Failed to find device in search with error: ' + error,
+    );
+
+    return apiController.returnError({
+      statusCode: 500,
+      message: t('databaseFindError', {errorline: __line}),
+    });
+  }
+
+  // if could not find the device
+  if (
+    !devices || devices.length <= 0 ||
+    !devices.docs || devices.docs.length <= 0
+  ) {
+    return apiController.returnError({
+      statusCode: 404,
+      message: t('noDevicesFound'),
+    });
+  }
+
+  // Could find the device
+  return response
+    .status(200)
+    .json({
+      success: true,
+      message: t('OK'),
+      devices: devices.docs,
+      page: devices.page,
+      pageLimit: devices.limit,
+      totalPages: devices.totalPages,
+    });
 };
 
 
