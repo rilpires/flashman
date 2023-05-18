@@ -289,23 +289,36 @@ module.exports = async (app) => {
         }
       }
     });
-    /* Check if not exists indexes and sync them */
-    Device.collection.getIndexes({full: true}).then(async (idxs) => {
-      let neededIndexes = ['_id_', 'serial_tr069_1',
-                           'alt_uid_tr069_1', 'acs_id_1',
-                           'pppoe_user_1', 'external_reference.data_1'];
-      let idxNames = idxs.map((idx) => idx.name);
-      let reloadIndexes = false;
-      for (let neededIdx of neededIndexes) {
-        if (!(idxNames.includes(neededIdx))) {
-          reloadIndexes = true;
-          break;
+
+    /* Check if indexes exists and sync them if necessary,
+    but we also gotta create the collection if not created yet*/
+    Device.createCollection()
+    .then((_)=>{
+      Device.collection.getIndexes({full: true}).then(async (idxs) => {
+        let neededIndexes = [
+          '_id_', 'search_texts', 'simple_search_index',
+          // Below indexes has both collation and no-collation versions
+          'alt_uid_tr069_1', 'alt_uid_tr069_collation',
+          'acs_id_1', 'acs_id_collation',
+          'serial_tr069_1', 'serial_tr069_collation',
+          'pppoe_user_1', 'pppoe_user_collation',
+          'external_reference.data_1', 'external_reference.data_collation',
+          'wan_bssid_1', 'wan_bssid_collation',
+        ];
+        let idxNames = idxs.map((idx) => idx.name);
+        let reloadIndexes = false;
+        for (let neededIdx of neededIndexes) {
+          if (!(idxNames.includes(neededIdx))) {
+            reloadIndexes = true;
+            break;
+          }
         }
-      }
-      if (reloadIndexes) {
-        console.log('Creating devices indexes');
-        await Device.syncIndexes();
-      }
-    }).catch(console.error);
+        if (reloadIndexes) {
+          console.log('Creating devices indexes');
+          await Device.syncIndexes();
+        }
+      }).catch(console.err);
+    })
+    .catch(console.err);
   }
 };

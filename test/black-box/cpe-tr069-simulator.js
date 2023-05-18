@@ -1,3 +1,4 @@
+const util = require('util');
 const geanieacsSim = require('@anlix-io/genieacs-sim');
 
 const formatXML = geanieacsSim.formatXML;
@@ -23,7 +24,6 @@ const createSimulator = (...args) => {
       taskName = undefined; // clearing name to await for.
     }
   }).on('diagnostic', (name) => {
-    if (debug.diagnostic) console.log(`- PROCESSED task ${name}`);
     if (
       // if 'diagnosticResolve' reference is assigned.
       diagnosticResolve &&
@@ -36,7 +36,7 @@ const createSimulator = (...args) => {
       diganosticName = undefined; // clearing name to await for.
     }
   }).on('error', (e) => {
-    if (debug.error) console.log(`- Simulator error`, e);
+    if (debug.error) console.log('- Simulator error.', e);
     // error can be either communication error or wrong task name.
     if (!errorResolve) return;
     errorResolve(e);
@@ -84,8 +84,7 @@ const createSimulator = (...args) => {
 
   let debug = {
     beforeReady: false,
-    error: false,
-    xml: false,
+    error: true,
     requested: false,
     response: false,
     sent: false,
@@ -96,30 +95,34 @@ const createSimulator = (...args) => {
     // eslint-disable-next-line guard-for-in
     for (const k in options) debug[k] = options[k];
 
-    const verboseDebug = () => {
+    const debugVerbosity = () => {
       simulator.on('requested', (request) => {
         if (!debug.requested) return;
-        console.log(`- CPE RECEIVED REQUEST BODY.`);
+        console.log(`- RECEIVED REQUEST FROM ACS.`);
       }).on('sent', (request) => {
         if (!debug.sent) return;
-        const xml = debug.xml ? '\n\''+formatXML(request.body)+'\'.' : '.';
-        console.log(`- CPE SENT BODY${xml}`);
+        const xml = formatXML(request.body, '  ');
+        console.log(`- CPE SENT BODY: '${xml}'.`);
       }).on('response', (response) => {
         if (!debug.response) return;
-        const xml = debug.xml ? '\n\''+formatXML(response.body)+'\'.' : '.';
-        console.log(`- CPE RECEIVED RESPONSE BODY${xml}`);
+        const xml = formatXML(response.body, '  ');
+        console.log(`- RECEIVED RESPONSE BODY FROM ACS: '${xml}'.`);
       }).on('task', (task) => {
         if (!debug.task) return;
-        const body = debug.xml ?
-          `'${JSON.stringify(task, null, '  ')}'.` : task.localName;
-        console.log(`- CPE PROCESSED task ${body}`);
+        const body = debug.task === 'name' ?
+          task.name :
+          util.inspect(task, {depth: Infinity, colors: true, breakLength: 100});
+        console.log(`- CPE EXECUTED task ${body}.`);
+      }).on('diagnostic', (diagnostic) => {
+        if (!debug.diagnostic) return;
+        console.log(`- CPE FINISHED diagnostic '${diagnostic}'.`);
       });
     };
 
     if (debug.beforeReady) {
-      verboseDebug();
+      debugVerbosity();
     } else {
-      simulator.on('ready', verboseDebug);
+      simulator.on('ready', debugVerbosity);
     }
 
     return simulator;
