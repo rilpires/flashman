@@ -78,36 +78,15 @@ module.exports = promBundle({
     ['^/vlan/update/.*', '/vlan/update/<DEVICE_ID>'],
 
     // API - v3
+    // Search
+    [
+      '^/api/v3/device/search$',
+      '^/api/v3/device/search',
+    ],
     // Commands
     [
       '^/api/v3/device/.*/.*$',
       '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>',
-    ],
-    [
-      '^/api/v3/device/.*/.*/.*$',
-      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>',
-    ],
-    // Commands with paginate
-    [
-      '^/api/v3/device/.*/.*/.*/page/.*/page-limit/.*$',
-      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/page/<PAGE>' +
-        'page-limit/<PAGE_LIMIT>',
-    ],
-    [
-      '^/api/v3/device/.*/.*/.*/page/.*/page-limit/.*/.*$',
-      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/page/<PAGE>' +
-        'page-limit/<PAGE_LIMIT>/<SUB_FIELD>',
-    ],
-    // Sub commands
-    [
-      '^/api/v3/device/.*/.*/.*/.*/.*$',
-      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/<SUB_COMMAND>' +
-        '/<SUB_COMMAND_VALUE>',
-    ],
-    [
-      '^/api/v3/device/.*/.*/.*/.*/.*/.*$',
-      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<FIELD>/<SUB_COMMAND>' +
-        '/<SUB_COMMAND_VALUE>/<SUB_FIELD>',
     ],
   ],
 });
