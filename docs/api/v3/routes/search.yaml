@@ -1,0 +1,278 @@
+# Search device
+/api/v3/device/search/:
+  get:
+    summary: Search for multiple devices.
+
+    description: |
+      Queries for devices with the filters passed. It can return only specific
+      fields, if provided, for performance improvement. It limits a maximum of
+      50 devices to be returned. If a query returns more than 50 devices, it is
+      possible to paginate through devices with `page` parameter. If less than
+      50 devices is desirable, the parameter `pageLimit` can be passed to limit
+      the quantity of devices returned even more. The `operation` parameter can
+      be used to only return devices that matches all filters or at least one
+      filter .
+    
+    tags: ['Get Device | Search']
+
+    parameters:
+      - in: query
+        name: alert
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that has an alert. It works as following:
+            + ```false``` or not passed - do not care if the device has an
+              alert;
+            + ```true``` - include device if it has an alert.
+      
+      - in: query
+        name: online
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that are online. It works as following:
+            + ```false``` or not passed - do not care if the device is online;
+            + ```true``` - include device if it is online.
+      
+      - in: query
+        name: offline
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that are offline. It works as following:
+            + ```false``` or not passed - do not care if the device is offline;
+            + ```true``` - include device if it is offline.
+      
+      - in: query
+        name: unstable
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that are unstable. It works as following:
+            + ```false``` or not passed - do not care if the device is unstable;
+            + ```true``` - include device if it is unstable.
+      
+      - in: query
+        name: noSignal
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that has no signal information. It works as following:
+            + ```false``` or not passed - do not care if the device has no
+              signal;
+            + ```true``` - include device if it has no signal.
+      
+      - in: query
+        name: flashbox
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that are Flashbox. It works as following:
+            + ```false``` or not passed - do not care if the device is Flashbox;
+            + ```true``` - include device if it is Flashbox.
+      
+      - in: query
+        name: tr069
+        schema:
+          type: boolean
+        required: false
+        description: |
+          Include routers that are TR-069. It works as following:
+            + ```false``` or not passed - do not care if the device is TR-069;
+            + ```true``` - include device if it is TR-069.
+      
+      - in: query
+        name: signal
+        schema:
+          type: string
+        required: false
+        description: |
+          Include routers that has each specific signal status informed.
+          Multiple status can be passed separated by ';'. It works as following:
+            + ```bad``` - include devices with a bad signal;
+            + ```weak``` - include devices with a weak signal;
+            + ```good``` - include devices with a good signal;
+            + empty or not passed - ignore the status signal.
+      
+      - in: query
+        name: ipv6
+        schema:
+          type: string
+        required: false
+        description: |
+          Include routers that has each specific IPv6 information passed.
+          Multiple informations can be passed separated by ';'. It works as
+          following:
+            + ```off``` - include devices that the IPv6 are off;
+            + ```on``` - include devices that the IPv6 are on;
+            + ```unknown``` - include devices that the IPv6 are unknown.
+              It usually happens with old firmwares;
+            + empty or not passed - ignore the IPv6 information.
+      
+      - in: query
+        name: mesh
+        schema:
+          type: string
+        required: false
+        description: |
+          Include routers that has either the mesh on or off. It works as
+          following:
+            + ```off``` - include devices that the mesh are off;
+            + ```on``` - include devices that the mesh are on;
+            + empty or not passed - ignore the mesh information.
+      
+      - in: query
+        name: mode
+        schema:
+          type: string
+        required: false
+        description: |
+          Include routers that are either router or in bridge mode. It works as
+          following:
+            + ```router``` - include devices that are in router mode;
+            + ```bridge``` - include devices that are in bridge mode;
+            + empty or not passed - ignore the which mode the device is.
+
+      - in: query
+        name: onlineFor
+        schema:
+          type: integer
+          minimun: 1
+        required: false
+        description: |
+          Include routers that are online for at least the value in hours
+          passed.
+      
+      - in: query
+        name: offlineFor
+        schema:
+          type: integer
+          minimun: 1
+        required: false
+        description: |
+          Include routers that are offline for at least the value in hours
+          passed.
+
+      - in: query
+        name: query
+        schema:
+          type: string
+        required: false
+        description: |
+          Informations separated by ';' that the device must have to be
+          returned. It will search each of these information in the following
+          specific fields:
+            + ```_id```;
+            + ```pppoe_user```;
+            + ```serial_tr069```;
+            + ```external_reference.data```;
+            + ```alt_uid_tr069```;
+            + ```acs_id```;
+            + ```wan_bssid```;
+
+      - in: query
+        name: fields
+        schema:
+          type: string
+        required: false
+        description: |
+          The specific fields of device to be returned. Only the fields passed
+          in this parameter will be returned. Many fields can be specified by
+          separating each parameter with ';'.
+
+      - in: query
+        name: exclude
+        schema:
+          type: string
+        required: false
+        description: |
+          Informations separated by ';' that the device must not have to be
+          returned.
+
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimun: 1
+        required: false
+        description: |
+          The page to be retrieved. The maximum amount of devices that will be
+          returned per page will be 50 or the value setted in `pageLimit`.
+      
+      - in: query
+        name: pageLimit
+        schema:
+          type: integer
+          minimun: 1
+          maximum: 50
+        required: false
+        description: |
+          The max amount of devices to be returned per page. To change the page,
+          use the `page` parameter. The default value is 50.
+      
+      - in: query
+        name: sortType
+        schema:
+          type: string
+        required: false
+        description: |
+          If must sort the query ascending or descending. The default value is
+          to sort ascending. See `sortOn` parameter to choose which parameter to
+          sort on. The possible inputs are:
+            + ```desc``` or ```descending``` - sort descending;
+            + ```asc``` or ```ascending``` - sort ascending;
+            + empty or not passed - sort ascending.
+
+      - in: query
+        name: sortOn
+        schema:
+          type: string
+        required: false
+        description: |
+          The specific field of device to be used to sort. See `sortType` to
+          choose the sort type.
+
+      - in: query
+        name: operation
+        schema:
+          type: string
+        required: false
+        description: |
+          If the device that will be returned must have all the parameters and
+          queries informed or if it just have at least one. The default is to
+          use the `and`. It works as following:
+            + ```and``` - if the device must have all queries and parameters in
+              order to be returned;
+            + ```or``` - if the device must have at least one of all the queries
+              and parameters informed in order to be returned;
+            + empty or not passed - it will use the ```and```.
+
+    security:
+      - basicAuth: []
+
+    responses:
+      200:
+        $ref: '#/components/responses/200 - Search'
+
+      400:
+        $ref: '#/components/responses/400 - Search'
+
+      401:
+        $ref: '#/components/responses/401 - Search'
+
+      403:
+        $ref: '#/components/responses/403 - Search'
+
+      404:
+        $ref: '#/components/responses/404 - Search'
+
+      500:
+        $ref: '#/components/responses/500 - Search'
+    
