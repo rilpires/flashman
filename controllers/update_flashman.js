@@ -240,9 +240,9 @@ updateController.updateProvisionsPresets = async function() {
       console.log(logText);
       // Only call func if is valid, otherwise return reject
       promise = (func ? func(
-        // If is delete type, use the presetName, otherwise use the
+        // If is delete type, use the presetPath, otherwise use the
         // preset/script
-        presetType === 'delete' ? presetName: preset,
+        presetType === 'delete' ? presetPath: preset,
 
         // Only needed for provision
         presetType === 'provision' ? presetName : undefined,
