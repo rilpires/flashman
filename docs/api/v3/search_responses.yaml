@@ -1,52 +1,36 @@
 components:
   responses:
     '200 - Search':
-      description: The first device found that matches the field passed as
-        URL parameter or an empty device with success false as it could
-        not find the device.
+      description: The devices that matches the query and are contained inside
+        the pages.
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/Get Device - 200 Response -
+              - $ref: '#/components/schemas/Search - 200 Response -
                   Success'
-              - $ref: '#/components/schemas/Get Device - 200 Response -
+              - $ref: '#/components/schemas/Search - 200 Response -
                   Success - Single field'
 
     '400 - Search':
-      description: The request is malformed. It can be caused by the missing URL
-        parameter, an invalid parameter or an invalid request. The message
-        returned as the body of the response will explain the error better.
+      description: The request is malformed. It can be caused by an invalid
+        parameter or an invalid request. The message returned as the body of the
+        response will explain the error better.
       content:
         application/json:
           schema:
             oneOf:
-              - $ref: '#/components/schemas/Get Device - 400 Response -
+              - $ref: '#/components/schemas/Search - 400 Response -
                   Request Error'
-              - $ref: '#/components/schemas/Get Device - 400 Response -
-                  Field Error'
-              - $ref: '#/components/schemas/Get Device - 400 Response -
+              - $ref: '#/components/schemas/Search - 400 Response -
                   Field Validity Error'
-
-    '401 - Search':
-      description: Authentication information is missing or invalid. Send
-        the correct user and password as basic auth.
-
-    '403 - Search':
-      description: The user authentication used in this request does not
-        access to API routes.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Get Device - 403 Response -
-              Forbidden'
 
     '404 - Search':
       description: This errors occurs if could not find a device.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Get Device - 404 Response -
+            $ref: '#/components/schemas/Search - 404 Response -
               Device Not Found'
 
     '500 - Search':
@@ -55,5 +39,5 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Get Device - 500 Response -
+            $ref: '#/components/schemas/Search - 500 Response -
               Database Error'

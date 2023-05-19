@@ -63,7 +63,9 @@
           type: boolean
         required: false
         description: |
-          Include routers that has no signal information. It works as following:
+          Include routers that has no signal information. It will only show
+          devices with TR-069 as it is a property of those kind of routers.
+          It works as following:
             + ```false``` or not passed - do not care if the device has no
               signal;
             + ```true``` - include device if it has no signal.
@@ -153,7 +155,7 @@
       - in: query
         name: offlineFor
         schema:
-          type: integer
+          type: string
           minimun: 1
         required: false
         description: |
@@ -175,7 +177,7 @@
             + ```external_reference.data```;
             + ```alt_uid_tr069```;
             + ```acs_id```;
-            + ```wan_bssid```;
+            + ```wan_bssid```.
 
       - in: query
         name: fields
@@ -194,12 +196,12 @@
         required: false
         description: |
           Informations separated by ';' that the device must not have to be
-          returned.
+          returned. This field cannot be setted with `operation` `or`.
 
       - in: query
         name: page
         schema:
-          type: integer
+          type: string
           minimun: 1
         required: false
         description: |
@@ -209,7 +211,7 @@
       - in: query
         name: pageLimit
         schema:
-          type: integer
+          type: string
           minimun: 1
           maximum: 50
         required: false
@@ -246,8 +248,9 @@
         required: false
         description: |
           If the device that will be returned must have all the parameters and
-          queries informed or if it just have at least one. The default is to
-          use the `and`. It works as following:
+          queries informed or if it just have at least one. The `or` option
+          cannot be used with `exclude`. The default is to use the `and`. It
+          works as following:
             + ```and``` - if the device must have all queries and parameters in
               order to be returned;
             + ```or``` - if the device must have at least one of all the queries
@@ -265,10 +268,12 @@
         $ref: '#/components/responses/400 - Search'
 
       401:
-        $ref: '#/components/responses/401 - Search'
+        # Use the default one from Get Device
+        $ref: '#/components/responses/401'
 
       403:
-        $ref: '#/components/responses/403 - Search'
+        # Use the default one from Get Device
+        $ref: '#/components/responses/403'
 
       404:
         $ref: '#/components/responses/404 - Search'
