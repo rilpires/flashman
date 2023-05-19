@@ -374,8 +374,7 @@ let startWebServer = function() {
 };
 
 /**
- * Listen on provided port, on all network interfaces, after
- * all preinitPromises resolves.
+ * Every server/watcher starts here, sequentially
  */
 setTimeout( async function() {
   for (let preinitPromise of preinitPromises) {
