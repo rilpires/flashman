@@ -4,6 +4,7 @@
 const request = require('request-promise-native');
 const keyHandlers = require('../handlers/keys');
 const t = require('../language').i18next.t;
+let app = require('../../app');
 
 let Config = require('../../models/config');
 
@@ -14,7 +15,7 @@ if (process.env.production === 'true' || process.env.production === true) {
 
 const controlController = {};
 
-controlController.checkPubKey = async function(app) {
+controlController.checkPubKey = async function() {
   let newConfig = new Config({
     is_default: true,
     autoUpdate: true,
@@ -34,13 +35,13 @@ controlController.checkPubKey = async function(app) {
       // Generate key pair
       await keyHandlers.generateAuthKeyPair();
       // Send public key to be included in firmwares
-      await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
+      await keyHandlers.sendPublicKey(pubKeyUrl, app.app.locals.secret);
     } else {
       // Check flashman key pair existence and generate it otherwise
       if (matchedConfig.auth_privkey === '') {
         await keyHandlers.generateAuthKeyPair();
         // Send public key to be included in firmwares
-        await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
+        await keyHandlers.sendPublicKey(pubKeyUrl, app.app.locals.secret);
       }
     }
   } catch (err) {
@@ -48,7 +49,7 @@ controlController.checkPubKey = async function(app) {
   }
 };
 
-controlController.getMessageConfig = async function(app) {
+controlController.getMessageConfig = async function() {
   let matchedConfig = null;
 
   try {
@@ -67,7 +68,7 @@ controlController.getMessageConfig = async function(app) {
       url: controlApiAddr + '/message/config',
       method: 'POST',
       json: {
-        secret: app.locals.secret,
+        secret: app.app.locals.secret,
       },
     }).then((resp) => {
       if (resp && resp.token && resp.fqdn) {
@@ -84,13 +85,13 @@ controlController.getMessageConfig = async function(app) {
   });
 };
 
-controlController.getLicenseStatus = function(app, deviceId) {
+controlController.getLicenseStatus = function(deviceId) {
   return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/device/list',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
         'all': false,
         'mac': deviceId,
       },
@@ -108,7 +109,7 @@ controlController.getLicenseStatus = function(app, deviceId) {
   });
 };
 
-controlController.changeLicenseStatus = function(app, blockStatus, devices) {
+controlController.changeLicenseStatus = function(blockStatus, devices) {
   if (!Array.isArray(devices)) {
     return {success: false,
             message: t('jsonInvalidFormat', {errorline: __line})};
@@ -119,7 +120,7 @@ controlController.changeLicenseStatus = function(app, blockStatus, devices) {
       url: controlApiAddr + '/device/block',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
         'block': newBlockStatus,
         'ids': devices,
       },
@@ -154,6 +155,7 @@ controlController.authUser = function(name, password) {
   });
 };
 
+// Can we delete this function? not called anywhere
 controlController.sendTokenControl = function(req, token) {
   return request({
     url: controlApiAddr + '/measure/token',
@@ -167,13 +169,13 @@ controlController.sendTokenControl = function(req, token) {
   );
 };
 
-controlController.isAccountBlocked = function(app) {
+controlController.isAccountBlocked = function() {
   return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/user/blocked',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
       },
       timeout: 20000,
     }).then((res) => {
@@ -189,7 +191,7 @@ controlController.isAccountBlocked = function(app) {
   });
 };
 
-controlController.reportDevices = function(app, devicesArray) {
+controlController.reportDevices = function(devicesArray) {
   let stdDevicesArray = [];
   for (let i = 0; i < devicesArray.length; i++) {
     stdDevicesArray[i] = {
@@ -203,7 +205,7 @@ controlController.reportDevices = function(app, devicesArray) {
       url: controlApiAddr + '/device/report',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
         'devices': stdDevicesArray,
       },
       timeout: 20000,
@@ -221,13 +223,13 @@ controlController.reportDevices = function(app, devicesArray) {
   });
 };
 
-controlController.getPersonalizationHash = function(app) {
+controlController.getPersonalizationHash = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/appinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
       },
     }).then((res) => {
       if (res.success) {
@@ -246,13 +248,13 @@ controlController.getPersonalizationHash = function(app) {
   });
 };
 
-controlController.getLicenseApiSecret = function(app) {
+controlController.getLicenseApiSecret = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/apiinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
       },
     }).then((res) => {
       if (res.success) {
@@ -311,13 +313,13 @@ controlController.meshLicenseCredit = async function(slaveId) {
   });
 };
 
-controlController.getApiUserLogin = function(app) {
+controlController.getApiUserLogin = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/flashmanapiinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': app.app.locals.secret,
       },
     }).then((res) => {
       if (res.success) {

@@ -16,12 +16,12 @@ if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
   instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
 }
 
-module.exports = async (app) => {
+let runMigrations = async () => {
   if (instanceNumber === 0) {
     // Check default config
-    controlApi.checkPubKey(app).then(() => {
+    controlApi.checkPubKey().then(() => {
       // Get message configs from control
-      controlApi.getMessageConfig(app);
+      controlApi.getMessageConfig();
     });
 
     // put default values in old config
@@ -322,3 +322,5 @@ module.exports = async (app) => {
     .catch(console.err);
   }
 };
+
+module.exports = runMigrations;

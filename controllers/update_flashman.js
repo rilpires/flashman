@@ -1105,8 +1105,8 @@ updateController.setAutoConfig = async function(req, res) {
   }
 };
 
-updateController.updateAppPersonalization = async function(app) {
-  let controlReq = await controlApi.getPersonalizationHash(app);
+updateController.updateAppPersonalization = async function() {
+  let controlReq = await controlApi.getPersonalizationHash();
   if (controlReq.success == true) {
     let hash = controlReq.personalizationHash;
     let android = controlReq.androidLink;
@@ -1132,8 +1132,8 @@ updateController.updateAppPersonalization = async function(app) {
   }
 };
 
-updateController.updateLicenseApiSecret = async function(app) {
-  let controlReq = await controlApi.getLicenseApiSecret(app);
+updateController.updateLicenseApiSecret = async function() {
+  let controlReq = await controlApi.getLicenseApiSecret();
   if (controlReq.success == true) {
     const licenseApiSecret = controlReq.apiSecret;
     const company = controlReq.company;
@@ -1157,8 +1157,8 @@ updateController.updateLicenseApiSecret = async function(app) {
   }
 };
 
-updateController.updateApiUserLogin = async function(app) {
-  let controlReq = await controlApi.getApiUserLogin(app);
+updateController.updateApiUserLogin = async function() {
+  let controlReq = await controlApi.getApiUserLogin();
   if (controlReq.success == true) {
     const apiUser = controlReq.apiUser;
     const apiPass = controlReq.apiPass;

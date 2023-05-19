@@ -3482,7 +3482,7 @@ acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
       return {success: false,
         message: t('nothingToReport', {errorline: __line})};
     }
-    let response = await controlApi.reportDevices(app, devicesArray);
+    let response = await controlApi.reportDevices(devicesArray);
     if (response.success) {
       for (let device of devicesArray) {
         device.is_license_active = true;

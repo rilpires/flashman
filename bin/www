@@ -10,11 +10,11 @@ require('./globals.js');
 let app = require('../app');
 let mqtts = require('../mqtts');
 let sio = require('../sio');
-let debug = require('debug')('flashman:server');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
+const preinitPromises = require('../preinit.js');
 
 /* APP */
 
@@ -30,7 +30,7 @@ let pm2InstanceNumber = parseInt(process.env.NODE_APP_INSTANCE || 0);
 
 let port = normalizePort(process.env.FLM_WEB_PORT || '8000');
 port = port + pm2InstanceNumber;
-app.set('port', port);
+app.app.set('port', port);
 
 /**
  * Create HTTP server.
@@ -41,18 +41,23 @@ if (process.env.USE_HTTPS_SERVER_DIR) {
     key: fs.readFileSync(process.env.USE_HTTPS_SERVER_DIR + '/key.pem'),
     cert: fs.readFileSync(process.env.USE_HTTPS_SERVER_DIR + '/cert.pem'),
   };
-  server = https.createServer(options, app);
+  server = https.createServer(options, app.app);
 } else {
-  server = http.createServer(app);
+  server = http.createServer(app.app);
 }
 
 /**
- * Listen on provided port, on all network interfaces.
+ * Listen on provided port, on all network interfaces, after
+ * all preinitPromises resolves.
  */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+setTimeout( async function() {
+  for (let preinitPromise of preinitPromises) {
+    await preinitPromise().catch((_)=>process.exit(1));
+  }
+  server.listen(port);
+  server.on('error', onError);
+  server.on('listening', onListening);
+}, 1000);
 
 // Attach socket.io messages to the server
 if (process.env.FLM_USE_MQTT_PERSISTENCE) {
@@ -120,7 +125,7 @@ function onListening() {
   let bind = typeof addr === 'string'
     ? 'pipe ' + addr
     : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+  console.log(`Started web server on port ${bind}`);
 }
 
 /* MQTTS */

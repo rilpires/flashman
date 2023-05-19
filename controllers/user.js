@@ -1166,9 +1166,9 @@ userController.getCertificationCrudTrap = function(req, res) {
   });
 };
 
-userController.checkAccountIsBlocked = async function(app) {
+userController.checkAccountIsBlocked = async function() {
   try {
-    let response = await controlApi.isAccountBlocked(app);
+    let response = await controlApi.isAccountBlocked();
     if (response.success) {
       if (response.isBlocked) {
         let matchedNotif = await Notification.findOne({
