@@ -187,7 +187,8 @@ const reducedFieldsByRelativePath = {
  * HTTP response. It contains:
  *  - `valid` - `Boolean`: If the request was valid;
  *  - `statusCode` - `Integer`: The status code to be returned to the user;
- *  - `message` - `Object`: The object to be returned to the user as the body.
+ *  - `json` - `Object`: The object to be returned to the user as the body;
+ *  - `message` - `String`: The text of the error or OK.
  */
 apiController.buildDeviceResponse = function(valid, statusCode, extra) {
   let responseMessage = {
@@ -201,7 +202,9 @@ apiController.buildDeviceResponse = function(valid, statusCode, extra) {
   return {
     valid: valid,
     statusCode: statusCode,
-    message: responseMessage,
+    json: responseMessage,
+    // If not valid, extra is the message
+    message: valid ? t('OK') : extra,
   };
 };
 
@@ -287,7 +290,7 @@ apiController.validateField = function(params, field, relativePath = null) {
 
   if (!valid.valid) {
     // Error from device_validator or from buildDeviceResponse
-    let message = valid.err ? valid.err : valid.message.message;
+    let message = valid.err ? valid.err : valid.message;
 
     return apiController.buildDeviceResponse(
       false, 400, field + ': ' + message,
@@ -779,7 +782,6 @@ apiController.parseRouteIntParameter = function(params, field) {
     isValid,
     isValid ? 200 : 400,
     isValid ? t('OK') : field + ': ' + t('valueInvalid'),
-    {},
   );
 
   // Set the value to return
@@ -1015,7 +1017,7 @@ apiController.defaultGetRoute = async function(
   if (!validation.valid) {
     return response
       .status(validation.statusCode)
-      .json(validation.message);
+      .json(validation.json);
   }
 
 
@@ -1084,7 +1086,7 @@ apiController.defaultGetRoute = async function(
     ) {
       return response
         .status(validation.statusCode)
-        .json(validation.message);
+        .json(validation.json);
     }
   }
 
@@ -1106,7 +1108,7 @@ apiController.defaultGetRoute = async function(
 
   return response
     .status(validation.statusCode)
-    .json(validation.message);
+    .json(validation.json);
 };
 
 
@@ -1139,7 +1141,6 @@ apiController.search = async function(request, response) {
 
   // Validate the request
   let validation = apiController.validateRequest(request);
-
   if (!validation.valid) return returnError(validation);
 
 
@@ -1191,8 +1192,11 @@ apiController.search = async function(request, response) {
     if (!queryParams[param.name]) continue;
 
     // Check if is a string
-    if (queryParams[param.name] !== 'string') {
-      return returnError({statusCode: 400, message: t('mustBeAString')});
+    if (typeof queryParams[param.name] !== 'string') {
+      return returnError({
+        statusCode: 400,
+        message: param.name + ': ' + t('mustBeAString'),
+      });
     }
 
     // Validate the parameter
@@ -1226,6 +1230,14 @@ apiController.search = async function(request, response) {
 
     // If the query does not have it, continue to the next iteration
     if (!queryParams[param.name]) continue;
+
+    // Check if is a string
+    if (typeof queryParams[param.name] !== 'string') {
+      return returnError({
+        statusCode: 400,
+        message: param.name + ': ' + t('mustBeAString'),
+      });
+    }
 
     // Validate
     let validation = apiController.validateOptions(
@@ -1277,7 +1289,13 @@ apiController.search = async function(request, response) {
     // If the query does not have it, continue to the next iteration
     if (!queryParams[param.name]) continue;
 
-    // Validate invalid characters
+    // Check if is a string
+    if (typeof queryParams[param.name] !== 'string') {
+      return returnError({
+        statusCode: 400,
+        message: param.name + ': ' + t('mustBeAString'),
+      });
+    }
 
 
     // Try splitting it
@@ -1298,7 +1316,7 @@ apiController.search = async function(request, response) {
       if (value.length <= 0) {
         return returnError({
           statusCode: 400,
-          message: t('fieldNameInvalid', {name: 'sortType', errorline: __line}),
+          message: t('fieldNameInvalid', {name: param.name, errorline: __line}),
         });
       }
 
@@ -1310,7 +1328,9 @@ apiController.search = async function(request, response) {
         );
 
         // Check if valid
-        if (!projectValidation.valid) return returnError(projectValidation);
+        if (!projectValidation.valid) {
+          return returnError(projectValidation);
+        }
 
         value = projectValidation.value;
       }
@@ -1353,8 +1373,8 @@ apiController.search = async function(request, response) {
 
     // Not ascending nor descending
     else if (
-      queryParams['sortOn'].toLowerCase() !== 'asc' &&
-      queryParams['sortOn'].toLowerCase() === 'ascending'
+      queryParams['sortType'].toLowerCase() !== 'asc' &&
+      queryParams['sortType'].toLowerCase() !== 'ascending'
     ) {
       return returnError({
         statusCode: 400,
@@ -1378,6 +1398,7 @@ apiController.search = async function(request, response) {
   }
 
   // operation
+  let isOperationOr = false;
   if (
     queryParams['operation'] &&
     typeof queryParams['operation'] === 'string'
@@ -1385,12 +1406,15 @@ apiController.search = async function(request, response) {
     // And
     if (
       queryParams['operation'].toLowerCase() === 'and'
-    ) querySetup.push(t('/and'));
+    ) fullQuery.push(t('/and'));
 
     // Or
     else if (
       queryParams['operation'].toLowerCase() === 'or'
-    ) querySetup.push(t('/or'));
+    ) {
+      isOperationOr = true;
+      fullQuery.push(t('/or'));
+    }
 
     // Invalid entry
     else {
@@ -1403,6 +1427,14 @@ apiController.search = async function(request, response) {
 
   // Enhance query with exclude
   if (querySetup['exclude']) {
+    // If the `operation` is `or`, return an error
+    if (isOperationOr) {
+      return returnError({
+        statusCode: 400,
+        message: t('queryWithOrAndExclude', {errorline: __line}),
+      });
+    }
+
     querySetup['exclude'].forEach(
       (element) => fullQuery.push(t('/exclude') + ' ' + element),
     );
@@ -1446,7 +1478,7 @@ apiController.search = async function(request, response) {
       'Failed to find device in search with error: ' + error,
     );
 
-    return apiController.returnError({
+    return returnError({
       statusCode: 500,
       message: t('databaseFindError', {errorline: __line}),
     });
@@ -1457,7 +1489,7 @@ apiController.search = async function(request, response) {
     !devices || devices.length <= 0 ||
     !devices.docs || devices.docs.length <= 0
   ) {
-    return apiController.returnError({
+    return returnError({
       statusCode: 404,
       message: t('noDevicesFound'),
     });
