@@ -22,6 +22,14 @@ const MAX_PAGE_SIZE = 50;
 
 const validator = new Validator();
 
+/**
+ * Objects containing all fields in `device` model that will not be returned in
+ * a full device.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @type {Object<Boolean>}
+ */
 const reducedDeviceFields = {
   use_tr069: false,
   secure_tr069: false,
@@ -85,6 +93,14 @@ const reducedDeviceFields = {
   traceroute_route: false,
 };
 
+/**
+ * Objects containing all fields in `device.lan_devices` model that will be
+ * returned when returning all `lan_devices` from a CPE.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @type {Object<Boolean>}
+ */
 const reducedLanDevicesField = {
   'lan_devices.mac': true,
   'lan_devices.dhcp_name': true,
@@ -108,6 +124,14 @@ const reducedLanDevicesField = {
   'lan_devices.ping': true,
 };
 
+/**
+ * Objects containing all fields in `device.ap_survey` model that will be
+ * returned when returning `ap_survey` from a CPE.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @type {Object<Boolean>}
+ */
 const reducedApSurveyField = {
   'ap_survey.mac': true,
   'ap_survey.ssid': true,
@@ -119,6 +143,16 @@ const reducedApSurveyField = {
   'ap_survey.first_seen': true,
 };
 
+/**
+ * A mapping object to map route parameter to `device` model parameter and it's
+ * validation. Other fields can be added in order to only validate it but still
+ * have the translation capability between what comes from the request and what
+ * is being validated.
+ *
+ * @memberof controllers/api/v3
+ *
+ * @type {Object<Object>}
+ */
 const translationObject = {
   mac: {
     field: '_id', validation: validator.validateMac,
@@ -164,6 +198,11 @@ const translationObject = {
   },
 };
 
+/**
+ * An object to fast convert which specific `device` field to return with the
+ * reduced version of the `device` model field. It converts a field name in
+ * `device` model to their specific reduced fields to be returned.
+ */
 const reducedFieldsByRelativePath = {
   default: reducedDeviceFields,
   lan_devices: reducedLanDevicesField,
@@ -633,6 +672,8 @@ apiController.getLeanDevice = function(
  *
  * @memberof controllers/api/v3
  *
+ * @async
+ *
  * @param {Object} params - The object containing the keys setted by what was
  * defined in the route and what the user passed, with their respective values.
  * @param {Object} defaultProjection - An object containing all the fields that
@@ -991,6 +1032,8 @@ apiController.parseRouteConditionParameter = function(
  *
  * @memberof controllers/api/v3
  *
+ * @async
+ *
  * @param {HTTPRequest} request - The HTTP request.
  * @param {HTTPResponse} response  - The HTTP response.
  * @param {String} relativePath - The relative path inside the `device` model.
@@ -1118,6 +1161,8 @@ apiController.defaultGetRoute = async function(
  * less.
  *
  * @memberof controllers/api/v3
+ *
+ * @async
  *
  * @param {HTTPRequest} request - The HTTP request.
  * @param {HTTPResponse} response  - The HTTP response.
