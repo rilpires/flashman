@@ -40,23 +40,28 @@ let genie = {}; // to be exported.
 // starting a connection to MongoDB so we can start a change stream to the
 // tasks collection when necessary.
 let genieDB;
-if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-  mongodb.MongoClient.connect(mongoURI,
-    {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
-    genieDB = client.db('genieacs');
-    // Only watch faults if flashman instance is the first one dispatched
-    if (parseInt(instanceNumber) === 0) {
-      console.log('Watching for faults in GenieACS database');
-      watchGenieFaults(); // start watcher for genie faults.
-    }
-    // Always watch for tasks associated with this instance
-    watchGenieTasks();
-    // Always clean old Get Parameters Tasks. This improves performance
-    genie.deleteGetParamTasks();
-    /* we should never close connection to database. it will be close when
-     application stops. */
+
+genie.configureTaskApiWatcher = function() {
+  return new Promise((resolve, reject)=>{
+    mongodb.MongoClient.connect(mongoURI,
+      {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
+      genieDB = client.db('genieacs');
+      // Only watch faults if flashman instance is the first one dispatched
+      if (parseInt(instanceNumber) === 0) {
+        console.log('Watching for faults in GenieACS database');
+        watchGenieFaults(); // start watcher for genie faults.
+      }
+      // Always watch for tasks associated with this instance
+      watchGenieTasks();
+      // Always clean old Get Parameters Tasks. This improves performance
+      genie.deleteGetParamTasks();
+      /* we should never close connection to database. it will be close when
+       application stops. */
+      resolve();
+    });
   });
-}
+};
+
 
 const watchGenieTasks = async function() {
   let tasksCollection = genieDB.collection('tasks');

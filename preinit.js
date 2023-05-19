@@ -1,6 +1,8 @@
 /**
  *  This module exports a list of promises, supposed to be executed
  * sequentially, right before express server going up.
+ * It >> SHOULD NOT << require app.js to make sure we don't have any
+ * cyclic dependencies
  */
 
 const fs = require('fs');
