@@ -1188,4 +1188,7 @@ updateController.updateApiUserLogin = async function() {
   }
 };
 
-module.exports = updateController;
+
+for (let key of Object.keys(updateController)) {
+  module.exports[key] = updateController[key];
+}

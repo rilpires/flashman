@@ -1,4 +1,4 @@
-const app = require('../app.js');
+const locals = require('../locals');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
 const Validator = require('../public/javascripts/device_validator');
@@ -223,7 +223,7 @@ controller.init = async function(
     product,
     serverBrokers,
     sslEnabled: !isEnvTrue(process.env.KAFKA_SSL_DISABLED),
-    auth: {username: client, password: app.app.locals.secret},
+    auth: {username: client, password: locals.getSecret()},
     runtimeValidation: false,
   });
 

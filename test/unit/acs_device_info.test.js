@@ -761,7 +761,6 @@ describe('ACS Device Info Tests', () => {
         // It is expected that wan_mac_ppp value is rejected and that the device
         // object does not have the corresponding property (wan_bssid)
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.not.objectContaining({wan_bssid: expect.any(String)}),
           ]),
@@ -822,7 +821,6 @@ describe('ACS Device Info Tests', () => {
         // device object and that the value of the corresponding property
         // (wan_bssid) is exactly equal to the value received
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.objectContaining(
               {wan_bssid: body.data.wan.wan_mac_ppp.value}),
@@ -886,7 +884,6 @@ describe('ACS Device Info Tests', () => {
         // It is expected that rate and duplex are rejected and that the device
         // object does not have the corresponding properties
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.not.objectContaining({
               wan_negociated_speed: expect.any(String),
@@ -953,7 +950,6 @@ describe('ACS Device Info Tests', () => {
         // the device object and that the value of the corresponding
         // properties is exactly equal to the values received
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.objectContaining({
               wan_negociated_speed: body.data.wan.rate.value,
@@ -1014,7 +1010,6 @@ describe('ACS Device Info Tests', () => {
         // It is expected that: the field value of lan_dns_servers is accepted
         // and strictly equal to the passed value
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.objectContaining({lan_dns_servers: device.lan_dns_servers}),
           ]),
@@ -1072,7 +1067,6 @@ describe('ACS Device Info Tests', () => {
         // Is expected lan_dns_servers field value to filter out duplicate
         // addresses
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.objectContaining({lan_dns_servers: '192.168.3.1'}),
           ]),
@@ -1131,7 +1125,6 @@ describe('ACS Device Info Tests', () => {
 
         // It is expected field lan_dns_servers to be undefined
         expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-          app,
           expect.arrayContaining([
             expect.objectContaining({lan_dns_servers: undefined}),
           ]),
@@ -1196,7 +1189,6 @@ describe('ACS Device Info Tests', () => {
       // Validate
       expect(result).toBe(true);
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
         expect.arrayContaining([
           expect.objectContaining({
             wan_ipv6: device.wan_ipv6,
@@ -1273,7 +1265,6 @@ describe('ACS Device Info Tests', () => {
       // Validate
       expect(result).toBe(true);
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
         expect.arrayContaining([
           expect.objectContaining({
             wan_ipv4_mask: device.wan_ipv4_mask,
@@ -1285,7 +1276,6 @@ describe('ACS Device Info Tests', () => {
         ]),
       );
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
         expect.arrayContaining([
           expect.not.objectContaining({
             wan_ipv6: device.wan_ipv6,
@@ -1357,7 +1347,6 @@ describe('ACS Device Info Tests', () => {
       // Validate
       expect(result).toBe(true);
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
         expect.arrayContaining([
           expect.not.objectContaining({
             wan_ipv4_mask: device.wan_ipv4_mask,
@@ -1456,7 +1445,6 @@ describe('ACS Device Info Tests', () => {
       // Validate
       expect(result).toBe(true);
       expect(reportOnuDevicesSpy).toHaveBeenCalledWith(
-        app,
         expect.arrayContaining([
           expect.anything(),
         ]),

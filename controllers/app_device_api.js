@@ -14,6 +14,7 @@ const acsController = require('./acs_device_info');
 const crypt = require('crypto');
 const {sendGenericSpeedTest} = require('./device_list.js');
 const t = require('./language').i18next.t;
+const locals = require('../locals');
 
 let appDeviceAPIController = {};
 
@@ -658,7 +659,7 @@ const makeDeviceBackupData = function(device, config, certFile) {
 };
 
 appDeviceAPIController.registerApp = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_registered: 0});
@@ -707,7 +708,7 @@ appDeviceAPIController.registerApp = function(req, res) {
 };
 
 appDeviceAPIController.registerPassword = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_registered: 0});
@@ -740,7 +741,7 @@ appDeviceAPIController.registerPassword = function(req, res) {
 };
 
 appDeviceAPIController.removeApp = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         return res.status(400).json({is_unregistered: 0});

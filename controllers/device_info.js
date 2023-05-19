@@ -18,6 +18,7 @@ const crypto = require('crypto');
 const dataCollectingController = require('./data_collecting');
 const metricsApi = require('./handlers/metrics/custom_metrics');
 const t = require('./language').i18next.t;
+const locals = require('../locals');
 
 const Mutex = require('async-mutex').Mutex;
 
@@ -468,7 +469,7 @@ deviceInfoController.syncDate = function(req, res) {
 // Create new device entry or update an existing one
 deviceInfoController.updateDevicesInfo = async function(req, res) {
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (req.body.secret != req.app.locals.secret) {
+    if (req.body.secret != locals.getSecret()) {
       console.log('Error in SYN: Secret not match!');
       return res.status(404).end();
     }
@@ -1286,7 +1287,7 @@ deviceInfoController.confirmDeviceUpdate = function(req, res) {
 };
 
 deviceInfoController.registerMqtt = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, async function(err, matchedDevice) {
       if (err) {
         console.log('Attempt to register MQTT secret for device ' +
@@ -1365,7 +1366,7 @@ deviceInfoController.registerMqtt = function(req, res) {
 };
 
 deviceInfoController.registerMeshSlave = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Attempt to register mesh slave for device ' +
@@ -1448,7 +1449,7 @@ deviceInfoController.receiveLog = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Log: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -1506,7 +1507,7 @@ deviceInfoController.receiveLog = function(req, res) {
 };
 
 deviceInfoController.getPortForward = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get Port Forwards ' +
@@ -1566,7 +1567,7 @@ deviceInfoController.receiveDevices = async function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -1883,7 +1884,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Site Survey: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -1994,7 +1995,7 @@ deviceInfoController.receiveSiteSurvey = function(req, res) {
 // to traceroute. When no customized test is in progress,
 // return device.ping_hosts. Else, current_diagnostic.targets
 deviceInfoController.getPingHosts = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get Ping Hosts ' +
@@ -2035,7 +2036,7 @@ deviceInfoController.getPingHosts = function(req, res) {
 // Return the speedtest host
 deviceInfoController.getCustomSpeedtestHost = function(request, response) {
   // Verify secret and find device
-  if (request.body.secret == request.app.locals.secret) {
+  if (request.body.secret == locals.getSecret()) {
     DeviceModel.findById(request.body.id, function(err, matchedDevice) {
       // Error trying to find the device
       if (err) {
@@ -2078,7 +2079,7 @@ deviceInfoController.getCustomSpeedtestHost = function(request, response) {
 };
 
 deviceInfoController.getUpnpDevsPerm = function(req, res) {
-  if (req.body.secret == req.app.locals.secret) {
+  if (req.body.secret == locals.getSecret()) {
     DeviceModel.findById(req.body.id, function(err, matchedDevice) {
       if (err) {
         console.log('Router ' + req.body.id + ' Get uPnP devices permissions ' +
@@ -2120,7 +2121,7 @@ deviceInfoController.receivePingResult = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2206,7 +2207,7 @@ deviceInfoController.receiveSpeedtestResult = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Speedtest: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2237,7 +2238,7 @@ deviceInfoController.receiveUpnp = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Upnp request: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2294,7 +2295,7 @@ deviceInfoController.receiveRouterUpStatus = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2357,7 +2358,7 @@ deviceInfoController.receiveWanInfo = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2430,7 +2431,7 @@ deviceInfoController.receiveLanInfo = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2483,7 +2484,7 @@ deviceInfoController.receiveTraceroute = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Error Receiving Devices: Secret not match!');
       return res.status(404).json({processed: 0});
     }
@@ -2572,7 +2573,7 @@ deviceInfoController.receiveWpsResult = function(req, res) {
   let envsec = req.headers['x-anlix-sec'];
 
   if (process.env.FLM_BYPASS_SECRET == undefined) {
-    if (envsec != req.app.locals.secret) {
+    if (envsec != locals.getSecret()) {
       console.log('Wps: Secrets do not match');
       return res.status(404).json({processed: 0});
     }

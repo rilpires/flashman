@@ -4,7 +4,7 @@
 const request = require('request-promise-native');
 const keyHandlers = require('../handlers/keys');
 const t = require('../language').i18next.t;
-let app = require('../../app');
+const locals = require('../../locals');
 
 let Config = require('../../models/config');
 
@@ -35,13 +35,13 @@ controlController.checkPubKey = async function() {
       // Generate key pair
       await keyHandlers.generateAuthKeyPair();
       // Send public key to be included in firmwares
-      await keyHandlers.sendPublicKey(pubKeyUrl, app.app.locals.secret);
+      await keyHandlers.sendPublicKey(pubKeyUrl, locals.getSecret());
     } else {
       // Check flashman key pair existence and generate it otherwise
       if (matchedConfig.auth_privkey === '') {
         await keyHandlers.generateAuthKeyPair();
         // Send public key to be included in firmwares
-        await keyHandlers.sendPublicKey(pubKeyUrl, app.app.locals.secret);
+        await keyHandlers.sendPublicKey(pubKeyUrl, locals.getSecret());
       }
     }
   } catch (err) {
@@ -68,7 +68,7 @@ controlController.getMessageConfig = async function() {
       url: controlApiAddr + '/message/config',
       method: 'POST',
       json: {
-        secret: app.app.locals.secret,
+        secret: locals.getSecret(),
       },
     }).then((resp) => {
       if (resp && resp.token && resp.fqdn) {
@@ -91,7 +91,7 @@ controlController.getLicenseStatus = function(deviceId) {
       url: controlApiAddr + '/device/list',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
         'all': false,
         'mac': deviceId,
       },
@@ -120,7 +120,7 @@ controlController.changeLicenseStatus = function(blockStatus, devices) {
       url: controlApiAddr + '/device/block',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
         'block': newBlockStatus,
         'ids': devices,
       },
@@ -175,7 +175,7 @@ controlController.isAccountBlocked = function() {
       url: controlApiAddr + '/user/blocked',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
       },
       timeout: 20000,
     }).then((res) => {
@@ -205,7 +205,7 @@ controlController.reportDevices = function(devicesArray) {
       url: controlApiAddr + '/device/report',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
         'devices': stdDevicesArray,
       },
       timeout: 20000,
@@ -229,7 +229,7 @@ controlController.getPersonalizationHash = function() {
       url: controlApiAddr + '/user/appinfo',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {
@@ -254,7 +254,7 @@ controlController.getLicenseApiSecret = function() {
       url: controlApiAddr + '/user/apiinfo',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {
@@ -319,7 +319,7 @@ controlController.getApiUserLogin = function() {
       url: controlApiAddr + '/user/flashmanapiinfo',
       method: 'POST',
       json: {
-        'secret': app.app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {

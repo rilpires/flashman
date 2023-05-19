@@ -12,6 +12,7 @@ const sio = require('./sio');
 const serveStatic = require('serve-static');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
+const locals = require('./locals');
 
 let index = require('./routes/index');
 let packageJson = require('./package.json');
@@ -19,7 +20,7 @@ let packageJson = require('./package.json');
 let app = express();
 
 if (process.env.FLM_COMPANY_SECRET) {
-  app.locals.secret = process.env.FLM_COMPANY_SECRET;
+  locals.setSecret(process.env.FLM_COMPANY_SECRET);
 } else {
   // check secret file and load if available
   let companySecret = {};
@@ -35,10 +36,10 @@ if (process.env.FLM_COMPANY_SECRET) {
       companySecret['secret'] = '';
     }
   }
-  app.locals.secret = companySecret.secret;
+  locals.setSecret(companySecret.secret);
 }
 // Specify some variables available to all views
-app.locals.appVersion = packageJson.version;
+locals.setAppVersion(packageJson.version);
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -92,7 +93,7 @@ app.use('/firmwares',
 }));
 
 let sessParam = session({
-  secret: app.locals.secret,
+  secret: locals.getSecret(),
   resave: false,
   saveUninitialized: false,
   cookie: {

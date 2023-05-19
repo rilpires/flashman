@@ -738,7 +738,7 @@ const createRegistry = async function(req, cpe, permissions) {
   });
   try {
     await newDevice.save();
-    await acsDeviceInfoController.reportOnuDevices(req.app, [newDevice]);
+    await acsDeviceInfoController.reportOnuDevices([newDevice]);
   } catch (err) {
     console.error('Error on device tr-069 creation: ' + err);
     return false;
@@ -3462,7 +3462,7 @@ acsDeviceInfoController.pingOfflineDevices = async function() {
   }
 };
 
-acsDeviceInfoController.reportOnuDevices = async function(app, devices=null) {
+acsDeviceInfoController.reportOnuDevices = async function(devices=null) {
   try {
     let devicesArray = null;
     if (!devices) {
