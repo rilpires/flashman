@@ -51,12 +51,14 @@ components:
                 properties:
                   cpu_usage:
                     type: integer
-                    description: The CPU usage in percentage.
+                    description: The CPU usage in percentage. The value 101
+                      represents an invalid value.
                     example: 57
 
                   memory_usage:
                     type: integer
-                    description: The Memory usage in percentage.
+                    description: The Memory usage in percentage. The value 101
+                      represents an invalid value.
                     example: 34
 
               version:
