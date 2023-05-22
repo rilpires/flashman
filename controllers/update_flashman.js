@@ -374,7 +374,7 @@ updateController.rebootGenie = async function() {
   let instances = parseInt(process.env.FLM_CWMP_CALLBACK_INSTANCES);
 
   // Second case: env.instances
-  if (isNaN()) {
+  if (isNaN(instances)) {
     instances = parseInt(process.env.instances);
   }
 
