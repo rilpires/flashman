@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 /**
  *  This module exports a list of promises, supposed to be executed
  * sequentially, right before express server going up.
@@ -91,7 +92,6 @@ const assuringDirectories = function() {
 };
 
 const assuringFirmwareMD5 = function() {
-  // eslint-disable-next-line no-async-promise-executor
   return new Promise( async (resolve, reject)=>{
     // Check md5 file hashes on firmware directory
     let filenames = fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR);
@@ -132,7 +132,7 @@ const assuringFirmwareMD5 = function() {
 };
 
 const activateSchedulers = function() {
-  return new Promise((resolve, reject)=>{
+  return new Promise(async (resolve, reject)=>{
     // Runs every day at 20:00 - automatic update
     let late8pmRule = new schedule.RecurrenceRule();
     late8pmRule.hour = 20;
@@ -181,18 +181,13 @@ const activateSchedulers = function() {
     updater.updateAppPersonalization();
     updater.updateLicenseApiSecret();
     updater.updateApiUserLogin();
+    await updater.updateProvisionsPresets();
     // Only used at scenarios where Flashman was installed directly on a host
     // Undefined - Covers legacy host install cases
     if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
         process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
       // Restart TR-069 services whenever Flashman is restarted
-      if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
-        updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
-      } else {
-        updater.rebootGenie(process.env.instances);
-      }
-    } else {
-      updater.updateProvisionsPresets();
+      await updater.rebootGenie();
     }
     // Force an update check to alert user on app startup
     updater.checkUpdate();
@@ -243,7 +238,8 @@ let preinitPromises = stepObjects.map((stepObject, i)=>{
   return function() {
     return new Promise((resolve, reject)=>{
       let prestring =
-        `[${stepObject.name} (Step #${i+1}/${stepObjects.length})]`;
+        `Pre-initialization step #${i+1}/${stepObjects.length}:` +
+        `"${stepObject.name}"`;
       let timeoutMs = stepObject.timeout_ms || 10000;
       let errorTimeout = setTimeout(()=>{
         console.error(`${prestring} - Timeout`);
