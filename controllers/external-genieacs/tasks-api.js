@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 /* global __line */
 /*
 Set of functions that will handle the communication from flashman to genieacs
@@ -45,25 +46,30 @@ genie.configureTaskApiWatcher = function() {
   return new Promise((resolve, reject)=>{
     mongodb.MongoClient.connect(mongoURI,
       {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
-      genieDB = client.db('genieacs');
-      // Only watch faults if flashman instance is the first one dispatched
-      if (parseInt(instanceNumber) === 0) {
-        console.log('Watching for faults in GenieACS database');
-        watchGenieFaults(); // start watcher for genie faults.
-      }
-      // Always watch for tasks associated with this instance
-      watchGenieTasks();
-      // Always clean old Get Parameters Tasks. This improves performance
-      genie.deleteGetParamTasks();
-      /* we should never close connection to database. it will be close when
-       application stops. */
-      resolve();
+        try {
+          genieDB = client.db('genieacs');
+          // Only watch faults if flashman instance is the first one dispatched
+          if (parseInt(instanceNumber) === 0) {
+            console.log('Watching for faults in GenieACS database');
+            await watchGenieFaults(); // start watcher for genie faults.
+          }
+          // Always watch for tasks associated with this instance
+          console.log('Watching for tasks in GenieACS database');
+          watchGenieTasks();
+          // Always clean old Get Parameters Tasks. This improves performance
+          await genie.deleteGetParamTasks();
+          /* we should never close connection to database. it will be close when
+           application stops. */
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
     });
   });
 };
 
 
-const watchGenieTasks = async function() {
+const watchGenieTasks = function() {
   let tasksCollection = genieDB.collection('tasks');
   let changeStream = tasksCollection.watch([
     {$match: {'operationType': 'delete'}},
@@ -230,7 +236,7 @@ genie.deleteGetParamTasks = async function() {
       {name: 'getParameterValues'});
     console.log('Number of deleted Get tasks: ' + ret.deletedCount);
   } catch (err) {
-    console.log('Error deleting Get parameters tasks: ' + err);
+    console.error('Error deleting Get parameters tasks:', err);
   }
 };
 

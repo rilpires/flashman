@@ -373,8 +373,16 @@ let startWebServer = function() {
   });
 };
 
+
 /**
  * Every server/watcher starts here, sequentially
+ * 1 - all preinit.js promises
+ * 2 - starting webserver
+ * 3 - attaching socket.io
+ * 4 - starting tasksApi watcher
+ * 5 - starting temporary mqtt server
+ * 6 - starting the main mqtt server
+ * 7 - configuring mqtt cert watcher
  */
 setTimeout( async function() {
   for (let preinitPromise of preinitPromises) {
@@ -382,9 +390,18 @@ setTimeout( async function() {
   }
   await startWebServer();
   await attachSocketIO();
+
+  // Question: if enabled, should tasks-api be configured before or after
+  // starting web server? Delete this comment when someone responsible
+  // assures the correct way. If choosing to watch before webserver,
+  // please move it to preinit.js
   if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-    await tasksApi.configureTaskApiWatcher();
+    await tasksApi.configureTaskApiWatcher().catch((err)=>{
+      console.error('Couldn\'t initialize TasksApi watcher. '
+    + 'This will probably lead to malfunctioning.');
+    });
   }
+
   if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
     await startTemporaryMqttServer();
   }
@@ -393,4 +410,10 @@ setTimeout( async function() {
     if (mqttSecure) await configureMqttCertWatcher();
   }
   console.log('Flashman successfully initialized!');
+  clearTimeout(initializationAssert);
 }, 1000);
+
+let initializationAssert = setTimeout(()=>{
+  console.error('Flashman is taking too long to initialize...\n'+
+  'Something unexpected happened');
+}, 1000*60*5 ); // 5 minutes to assure proper initialization
