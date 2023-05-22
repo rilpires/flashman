@@ -99,39 +99,42 @@ tplinkModel.useModelAlias = function(fwVersion) {
 
 tplinkModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
+  let roots = tplinkModel.getTR181Roots();
+  let wanRoot = roots.wan;
+
   fields = basicCPEModel.convertIGDtoDevice(fields);
   // Common
   fields.common.mac = 'Device.Ethernet.Link.1.MACAddress';
   fields.common.stun_enable = 'Device.ManagementServer.STUNEnable';
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
+
   // Wan
-  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
-  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
-  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
-  fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
-  fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
-  fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
-  fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
-  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
+  fields.wan.dhcp_status = wanRoot.ip+'Status';
+  fields.wan.dhcp_enable = wanRoot.ip+'Enable';
+  fields.wan.pppoe_status = wanRoot.ppp+'Status';
+  fields.wan.pppoe_enable = wanRoot.ppp+'Enable';
+  fields.wan.pppoe_user = wanRoot.ppp+'Username';
+  fields.wan.pppoe_pass = wanRoot.ppp+'Password';
+  fields.wan.duplex = wanRoot.iface+'DuplexMode';
+  fields.wan.rate = wanRoot.iface+'MaxBitRate';
+  fields.wan.wan_ip = wanRoot.ip+'IPv4Address.*.IPAddress';
   fields.wan.wan_ip_ppp = fields.wan.wan_ip;
-  delete fields.wan.uptime;
-  delete fields.wan.uptime_ppp;
-  fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
+  fields.wan.mtu = wanRoot.ip+'MaxMTUSize';
   fields.wan.mtu_ppp = fields.wan.mtu;
-  fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
-  // This router does not have the fields referring to wan_mac and wan_mac_ppp.
-  // They were mapped to this value so that the field is not undefined
-  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
+  fields.wan.vlan_ppp = wanRoot.vlan+'VLANID';
+  fields.wan.vlan = wanRoot.vlan+'VLANID';
+  fields.wan.recv_bytes = wanRoot.ip+'Stats.BytesReceived';
+  fields.wan.sent_bytes = wanRoot.ip+'Stats.BytesSent';
+  fields.wan.wan_mac = wanRoot.link+'MACAddress';
   fields.wan.wan_mac_ppp = fields.wan.wan_mac;
-  fields.wan.pppoe_root = 'Device.PPP';
-  fields.wan.dhcp_root = 'Device.IP';
-  fields.wan.nat_root = 'Device.NAT';
-  fields.wan.port_mapping = 'Device.NAT.PortMapping';
-  fields.wan.link_root = 'Device.Ethernet.Link';
-  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
+  fields.wan.remote_address_ppp = wanRoot.ppp+'IPCP.RemoteIPAddress';
+  fields.wan.dns_servers_ppp = wanRoot.ppp+'IPCP.DNSServers';
+  fields.wan.port_mapping_entries_dhcp =
+    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+  fields.wan.port_mapping_entries_ppp =
+    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';

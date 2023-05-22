@@ -136,32 +136,18 @@ let appSet = function(req, res, processFunction) {
       }
       delete tr069Changes.changeBlockedDevices;
 
-      if (matchedDevice.use_tr069) {
-        // Update chosen WAN if necessary
-        if (!matchedDevice.wan_chosen) {
-          let cpe =
-            DevicesAPI.instantiateCPEByModelFromDevice(matchedDevice).cpe;
-          let multiwan =
-            acsController.getMultiWan(matchedDevice.acs_id, cpe);
-          multiwan = util.convertWanToFlashmanFormat(multiwan);
-          let chosenWan = util.chooseWan(multiwan,
-            cpe.modelPermissions().useLastIndexOnWildcard);
-          if (chosenWan !== undefined) {
-            console.log('Chosen WAN was set to ' + chosenWan);
-            matchedDevice.wan_chosen = chosenWan;
-          } else {
-            console.error(t('wanInformationCannotBeEmpty'));
-            return res.status(500).json({is_set: 0});
-          }
-        }
-      }
-
       await matchedDevice.save().catch((err) => {
         console.log('Error setting app sent data: ' + err);
         return res.status(500).json({is_set: 0});
       });
 
       if (matchedDevice.use_tr069) {
+        if (Object.keys(tr069Changes.wan).length !== 0) {
+          // We never set WAN information from Client APP
+          console.error('Client APP can not set WAN information!');
+          tr069Changes.wan = {};
+        }
+
         acsController.updateInfo(matchedDevice, tr069Changes);
         meshHandlers.syncSlaves(matchedDevice);
         return res.status(200).json({is_set: 1});

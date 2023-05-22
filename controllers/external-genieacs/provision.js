@@ -52,13 +52,19 @@ const updateWanConfiguration = function(fields, isTR181) {
     fields: fields,
     isTR181: isTR181,
   };
-  let nodes = ext('devices-api', 'getParentNode', JSON.stringify(args));
+  let nodes = ext('devices-api', 'getWanNodesProvision', JSON.stringify(args));
   let data = [];
   let addedPaths = new Set();
+  let NodesDeclares = new Map();
+  // First, ask for all nodes to the CPE
+  for (let node of nodes) {
+    NodesDeclares[node] = declare(node, {value: now, writable: now});
+  }
+  // Then, execute all gets at once and use their values
+  commit();
   for (let node of nodes) {
     // Update node
-    let responses = declare(node, {value: now, writable: now});
-    if (responses.value) {
+    let responses = NodesDeclares[node];
       for (let resp of responses) {
         if (resp.value) {
           // Collect field properties
@@ -72,11 +78,11 @@ const updateWanConfiguration = function(fields, isTR181) {
             addedPaths.add(resp.path);
           }
         }
-      }
     }
   }
   args.data = data;
-  let result = ext('devices-api', 'assembleWanObj', JSON.stringify(args));
+  args.fields = fields.wan;
+  let result = ext('devices-api', 'assembleWanObjProvision', JSON.stringify(args));
   return result;
 };
 

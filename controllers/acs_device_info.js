@@ -211,6 +211,8 @@ const createRegistry = async function(req, cpe, permissions) {
     return false;
   }
 
+  console.log(`MULTIWAN ON CREATE (${chosenWan}): ${JSON.stringify(multiwan)}`);
+
   const hasPPPoE = getPPPoEenabledMultiWan(cpe, multiwan, chosenWan);
   data.wan = multiwan[chosenWan];
   data.wan.chosen_wan = chosenWan;
@@ -1107,7 +1109,7 @@ acsDeviceInfoController.requestSync = async function(device) {
   let fields = cpe.getModelFields();
   let permissions = DeviceVersion.devicePermissions(device);
   let cpePermissions = cpe.modelPermissions();
-  let isTR181 = permissions.isTR181;
+  let isTR181 = cpePermissions.isTR181;
   let dataToFetch = {
     basic: false,
     alt_uid: false,
@@ -1149,109 +1151,135 @@ acsDeviceInfoController.requestSync = async function(device) {
     dataToFetch.web_admin_pass = true;
     parameterNames.push(fields.common.web_admin_password);
   }
+
   // WAN configuration fields
   dataToFetch.wan = true;
-  parameterNames.push(fields.wan.pppoe_enable);
-  parameterNames.push(fields.wan.pppoe_status);
-  parameterNames.push(fields.wan.pppoe_user);
-  parameterNames.push(fields.wan.pppoe_pass);
-  parameterNames.push(fields.wan.dhcp_enable);
-  parameterNames.push(fields.wan.dhcp_status);
-  parameterNames.push(fields.wan.rate);
-  parameterNames.push(fields.wan.duplex);
-  parameterNames.push(fields.wan.wan_ip);
-  parameterNames.push(fields.wan.wan_ip_ppp);
-  parameterNames.push(fields.wan.wan_mac);
-  parameterNames.push(fields.wan.wan_mac_ppp);
-  if (isTR181) {
-    parameterNames.push(fields.wan.pppoe_root);
-    parameterNames.push(fields.wan.dhcp_root);
-    parameterNames.push(fields.wan.nat_root);
-    parameterNames.push(fields.wan.port_mapping);
-    parameterNames.push(fields.wan.link_root);
-    parameterNames.push(fields.wan.vlan_termination_root);
-  }
-
-  // WAN and LAN information
-  if (permissions.grantWanLanInformation) {
-    // IPv4 Mask
-    if (cpePermissions.wan.hasIpv4MaskField) {
-      if (fields.wan.mask_ipv4) {
-        parameterNames.push(fields.wan.mask_ipv4);
-      }
-
-      if (fields.wan.mask_ipv4_ppp) {
-        parameterNames.push(fields.wan.mask_ipv4_ppp);
-      }
-    }
-
-    // Remote IP Address
-    if (cpePermissions.wan.hasIpv4RemoteAddressField) {
-      if (fields.wan.remote_address) {
-        parameterNames.push(fields.wan.remote_address);
-      }
-
-      if (fields.wan.remote_address_ppp) {
-        parameterNames.push(fields.wan.remote_address_ppp);
-      }
-    }
-
-    // Remote MAC
-    if (cpePermissions.wan.hasIpv4RemoteMacField) {
-      if (fields.wan.remote_mac) {
-        parameterNames.push(fields.wan.remote_mac);
-      }
-
-      if (fields.wan.remote_mac_ppp) {
-        parameterNames.push(fields.wan.remote_mac_ppp);
-      }
-    }
-
-    // IPv4 Default Gateway
-    if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
-      if (fields.wan.default_gateway) {
-        parameterNames.push(fields.wan.default_gateway);
-      }
-
-      if (fields.wan.default_gateway_ppp) {
-        parameterNames.push(fields.wan.default_gateway_ppp);
-      }
-    }
-
-    // DNS Server
-    if (cpePermissions.wan.hasDnsServerField) {
-      if (fields.wan.dns_servers) {
-        parameterNames.push(fields.wan.dns_servers);
-      }
-
-      if (fields.wan.dns_servers_ppp) {
-        parameterNames.push(fields.wan.dns_servers_ppp);
-      }
-    }
-  }
-
-  if (cpePermissions.wan.hasUptimeField) {
-    parameterNames.push(fields.wan.uptime);
-    parameterNames.push(fields.wan.uptime_ppp);
-  }
-  parameterNames.push(fields.wan.mtu);
-  parameterNames.push(fields.wan.mtu_ppp);
-  if (fields.wan.vlan) {
-    dataToFetch.vlan = true;
-    parameterNames.push(fields.wan.vlan);
+  dataToFetch.bytes = true;
+  if (permissions.grantPonSignalSupport) {
+    dataToFetch.pon = true;
   }
   if (fields.wan.vlan_ppp) {
     dataToFetch.vlan_ppp = true;
-    parameterNames.push(fields.wan.vlan_ppp);
   }
-  // WAN bytes and PON signal fields
-  dataToFetch.bytes = true;
-  parameterNames.push(fields.wan.recv_bytes);
-  parameterNames.push(fields.wan.sent_bytes);
-  if (permissions.grantPonSignalSupport) {
-    dataToFetch.pon = true;
-    parameterNames.push(fields.wan.pon_rxpower);
-    parameterNames.push(fields.wan.pon_txpower);
+  if (fields.wan.vlan) {
+    dataToFetch.vlan = true;
+  }
+  if (
+    permissions.grantPortForward &&
+    fields.wan.port_mapping_entries_dhcp &&
+    fields.wan.port_mapping_entries_ppp
+  ) {
+    dataToFetch.port_forward = true;
+  }
+
+  if (isTR181) {
+    // for TR181, we need to get all that is needed
+    // for multiwan
+    let fields = cpe.getModelFields();
+    let isTR181 = cpe.modelPermissions().isTR181;
+    let result = DevicesAPI.getWanNodes(fields, isTR181, false);
+    parameterNames = parameterNames.concat(result);
+  } else {
+    parameterNames.push(fields.wan.pppoe_enable);
+    parameterNames.push(fields.wan.pppoe_status);
+    parameterNames.push(fields.wan.pppoe_user);
+    parameterNames.push(fields.wan.pppoe_pass);
+    parameterNames.push(fields.wan.dhcp_enable);
+    parameterNames.push(fields.wan.dhcp_status);
+    parameterNames.push(fields.wan.rate);
+    parameterNames.push(fields.wan.duplex);
+    parameterNames.push(fields.wan.wan_ip);
+    parameterNames.push(fields.wan.wan_ip_ppp);
+    parameterNames.push(fields.wan.wan_mac);
+    parameterNames.push(fields.wan.wan_mac_ppp);
+
+    // WAN and LAN information
+    if (permissions.grantWanLanInformation) {
+      // IPv4 Mask
+      if (cpePermissions.wan.hasIpv4MaskField) {
+        if (fields.wan.mask_ipv4) {
+          parameterNames.push(fields.wan.mask_ipv4);
+        }
+
+        if (fields.wan.mask_ipv4_ppp) {
+          parameterNames.push(fields.wan.mask_ipv4_ppp);
+        }
+      }
+
+      // Remote IP Address
+      if (cpePermissions.wan.hasIpv4RemoteAddressField) {
+        if (fields.wan.remote_address) {
+          parameterNames.push(fields.wan.remote_address);
+        }
+
+        if (fields.wan.remote_address_ppp) {
+          parameterNames.push(fields.wan.remote_address_ppp);
+        }
+      }
+
+      // Remote MAC
+      if (cpePermissions.wan.hasIpv4RemoteMacField) {
+        if (fields.wan.remote_mac) {
+          parameterNames.push(fields.wan.remote_mac);
+        }
+
+        if (fields.wan.remote_mac_ppp) {
+          parameterNames.push(fields.wan.remote_mac_ppp);
+        }
+      }
+
+      // IPv4 Default Gateway
+      if (cpePermissions.wan.hasIpv4DefaultGatewayField) {
+        if (fields.wan.default_gateway) {
+          parameterNames.push(fields.wan.default_gateway);
+        }
+
+        if (fields.wan.default_gateway_ppp) {
+          parameterNames.push(fields.wan.default_gateway_ppp);
+        }
+      }
+
+      // DNS Server
+      if (cpePermissions.wan.hasDnsServerField) {
+        if (fields.wan.dns_servers) {
+          parameterNames.push(fields.wan.dns_servers);
+        }
+
+        if (fields.wan.dns_servers_ppp) {
+          parameterNames.push(fields.wan.dns_servers_ppp);
+        }
+      }
+    }
+
+    if (cpePermissions.wan.hasUptimeField) {
+      parameterNames.push(fields.wan.uptime);
+      parameterNames.push(fields.wan.uptime_ppp);
+    }
+    parameterNames.push(fields.wan.mtu);
+    parameterNames.push(fields.wan.mtu_ppp);
+    if (fields.wan.vlan) {
+      parameterNames.push(fields.wan.vlan);
+    }
+    if (fields.wan.vlan_ppp) {
+      parameterNames.push(fields.wan.vlan_ppp);
+    }
+    // WAN bytes and PON signal fields
+    parameterNames.push(fields.wan.recv_bytes);
+    parameterNames.push(fields.wan.sent_bytes);
+    if (permissions.grantPonSignalSupport) {
+      parameterNames.push(fields.wan.pon_rxpower);
+      parameterNames.push(fields.wan.pon_txpower);
+    }
+
+    // Port forward configuration fields - only if has support
+    if (
+      permissions.grantPortForward &&
+      fields.wan.port_mapping_entries_dhcp &&
+      fields.wan.port_mapping_entries_ppp
+    ) {
+      parameterNames.push(fields.wan.port_mapping_entries_dhcp);
+      parameterNames.push(fields.wan.port_mapping_entries_ppp);
+    }
   }
 
   // WAN and LAN information - IPv6
@@ -1382,23 +1410,13 @@ acsDeviceInfoController.requestSync = async function(device) {
     parameterNames.push(fields.mesh5.bssid);
     parameterNames.push(fields.mesh5.ssid);
   }
-  // Port forward configuration fields - only if has support
-  if (permissions.grantPortForward) {
-    if (
-      fields.wan.port_mapping_entries_dhcp &&
-      fields.wan.port_mapping_entries_ppp
-    ) {
-      dataToFetch.port_forward = true;
-      parameterNames.push(fields.wan.port_mapping_entries_dhcp);
-      parameterNames.push(fields.wan.port_mapping_entries_ppp);
-    }
-  }
   // Stun configuration fields - only if has support
   if (permissions.grantSTUN) {
     dataToFetch.stun = true;
     parameterNames.push(fields.common.stun_enable);
     parameterNames.push(fields.common.stun_udp_conn_req_addr);
   }
+
   // Send task to GenieACS
   let task = {name: 'getParameterValues', parameterNames: parameterNames};
   let cback = (acsID)=>fetchSyncResult(acsID, dataToFetch, parameterNames, cpe);
@@ -2026,6 +2044,8 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
   let cpePermissions = cpe.modelPermissions();
   let changes = {};
+
+  console.log(`MULTIWAN ON syncWanData (${chosenWan}): ${JSON.stringify(multiwan)}`);
 
   const hasPPPoE = getPPPoEenabledMultiWan(cpe, multiwan, chosenWan);
   const suffixPPPoE = hasPPPoE ? '_ppp' : '';
@@ -3296,19 +3316,10 @@ acsDeviceInfoController.getMultiWan = async function(
 ) {
   let data = {};
   let fields = cpe.getModelFields();
-  let permissions = cpe.modelPermissions();
-  let isTR181 = permissions.isTR181;
-  const cb = (err, res) => {
-    return res;
-  };
-  let args = {
-    update: true,
-    fields: fields,
-    isTR181: isTR181,
-  };
-
+  let isTR181 = cpe.modelPermissions().isTR181;
   let query = {_id: acsId};
-  let projection = DevicesAPI.getParentNode(args, cb);
+  let projection = DevicesAPI.getWanNodes(fields, isTR181, true);
+
   if (projection === null) {
     console.error('projection is null in getMultiWan');
     return undefined;
@@ -3322,75 +3333,8 @@ acsDeviceInfoController.getMultiWan = async function(
       'Exception fetching Genie database (getMultiWan): ' + e);
     return undefined;
   }
-  args.data = data;
-  return DevicesAPI.assembleWanObj(args, cb);
+  return DevicesAPI.assembleWanObj(data, fields.wan, isTR181);
 };
-
-const replaceWanFieldsWildcards = async function(device, changes, task) {
-  let chosenWanKey = device.wan_chosen;
-  if (chosenWanKey === undefined) {
-    return {'success': false, 'task': undefined};
-  }
-  let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
-  let fields = cpe.getModelFields();
-  let permissions = cpe.modelPermissions();
-  let isTR181 = permissions.isTR181;
-  const [, type, ...indexes] = chosenWanKey.split('_');
-  // Iterates through changes to WAN fields and replaces the corresponding value
-  // in task
-  let fieldName = '';
-  let success = false;
-  Object.keys(changes.wan).forEach((key)=>{
-    let path = fields.wan[key];
-    if (!path) return;
-    // Find the properties that match the path and choose the correct
-    let properties = DevicesAPI.getFieldProperties(fields.wan, path);
-    let prop;
-    if (properties.length === 1) {
-      prop = properties[0];
-    } else {
-      prop = (type === 'ppp' ? properties.find((prop) => prop.includes('ppp')) :
-        properties.find((prop) => !prop.includes('ppp')));
-    }
-    // Checks if the property has additional indexes to replace the path
-    let extraIndexes = prop.split('_').filter((e) => !isNaN(parseInt(e, 10)));
-    indexes.concat(extraIndexes);
-    if (!isTR181) {
-      // For TR098 devices, the first index of the path is always 1. The first
-      // element of indexes represents this key. We discard it, but if we want
-      // to keep all numeric key indices as wildcards in the future, we must
-      // discard the following code
-      indexes.shift();
-    }
-    // Replace wildcards
-    let parts = path.split('.');
-    fieldName = parts.map((c) => {
-      if (c === '*') {
-        return indexes.shift();
-      } else {
-        return c;
-      }
-    }).join('.');
-    // Find matching field in task and replace it
-    for (let i = 0; i < task.parameterValues.length; i++) {
-      if (task.parameterValues[i][0] === path) {
-        task.parameterValues[i][0] = fieldName;
-        success = true;
-        break;
-      }
-    }
-  });
-  return {
-    'success': success,
-    'task': (success)? task : undefined,
-  };
-};
-/*
- * This function is being exported in order to test it.
- * The ideal way is to have a condition to only export it when testing
- */
-acsDeviceInfoController.__testReplaceWanFieldsWildcards =
-  replaceWanFieldsWildcards;
 
 acsDeviceInfoController.updateInfo = async function(
   device, changes, awaitUpdate = false, mustExecute = true,
@@ -3427,12 +3371,42 @@ acsDeviceInfoController.updateInfo = async function(
   if (changes.wifi5 && changes.wifi5.ssid && device.wifi_password_5ghz) {
     changes.wifi5.password = device.wifi_password_5ghz;
   }
-  // Similarly to the WiFi issue above, in cases where the PPPoE credentials are
-  // reset, only the username is fixed by Flashman - force password sync too in
-  // those cases
-  if (changes.wan && changes.wan.pppoe_user && device.pppoe_password) {
-    changes.wan.pppoe_pass = device.pppoe_password;
+
+  // If there are changes in the WAN fields, we have to replace the fields that
+  // have wildcards with the correct indexes. Only the fields referring to the
+  // WAN are changed
+  if (changes.wan && Object.keys(changes.wan).length > 0) {
+    let wanFields = await acsDeviceInfoController.getMultiWan(acsID, cpe);
+    wanFields = wanFields[device.wan_chosen];
+
+    Object.keys(changes.wan).forEach((key)=>{
+      let convertedValue = cpe.convertField(
+        'wan', key, // key to be changed, eg: wifi2, ssid
+        changes.wan[key], // new value
+        cpe.getFieldType, // convert type function
+        cpe.convertWifiMode, // convert wifi mode function
+        cpe.convertWifiBand, // convert wifi band function
+      );
+      task.parameterValues.push([
+        wanFields[key].path, // tr-069 field name
+        convertedValue.value, // value to change to
+        convertedValue.type, // genieacs type
+      ]);
+      hasChanges = true;
+    });
+
+    // CPEs needs to reboot after change PPPoE parameters
+    if (
+      cpe.modelPermissions().wan.mustRebootAfterChanges &&
+      (changes.wan.pppoe_user || changes.wan.pppoe_pass)
+    ) {
+      rebootAfterUpdate = true;
+    }
   }
+
+  // Remove wan changes (we have already proccessed them)
+  changes.wan = {};
+
   Object.keys(changes).forEach((masterKey)=>{
     Object.keys(changes[masterKey]).forEach((key)=>{
       if (!fields[masterKey][key]) return;
@@ -3488,31 +3462,10 @@ acsDeviceInfoController.updateInfo = async function(
       hasChanges = true;
     });
   });
-  // If there are changes in the WAN fields, we have to replace the fields that
-  // have wildcards with the correct indexes. Only the fields referring to the
-  // WAN are changed
-  if (changes.wan && Object.keys(changes.wan).length > 0) {
-    try {
-      let ret = await replaceWanFieldsWildcards(device, changes, task);
-      if (ret.success) {
-        task = ret.task;
-      } else {
-        // If the wildcards are not replaced correctly, it prevents the update
-        // from taking place
-        return;
-      }
-    } catch (e) {
-      return;
-    }
-  }
-  // CPEs needs to reboot after change PPPoE parameters
-  if (
-    cpe.modelPermissions().wan.mustRebootAfterChanges &&
-    changes.wan && Object.entries(changes.wan).length > 0 &&
-    (changes.wan.pppoe_user || changes.wan.pppoe_pass)
-  ) {
-    rebootAfterUpdate = true;
-  }
+
+  console.log(`TASKS: ${JSON.stringify(task)}`);
+  console.log(`CHANGES: ${JSON.stringify(changes)}`);
+
   if (!hasChanges) return; // No need to sync data with genie
   let taskCallback = (acsID)=>{
     if (rebootAfterUpdate) {

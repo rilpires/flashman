@@ -106,10 +106,10 @@ huaweiModel.getModelFields = function() {
     'X_HW_WebUserInfo.2.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_HW_WebUserInfo.2.Password';
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'X_GponInterafceConfig.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
-    'X_GponInterafceConfig.Stats.BytesSent';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +

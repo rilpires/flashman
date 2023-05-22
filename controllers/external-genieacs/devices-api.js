@@ -684,33 +684,35 @@ const findInterfaceLink = function(data, path, i) {
   return null;
 };
 
-const findEthernetLink = function(data, path, i) {
-  // Device.Ethernet.Interface.*. -> Device.Ethernet.Link.*.LowerLayers
-  // Device.Ethernet.Link.*.LowerLayers ->
-  //    Device.Ethernet.VLANTermination.*.LowerLayers
-  // Device.Ethernet.VLANTermination.*. -> Device.PPP.Interface.*.LowerLayers
+const findEthernetLink = function(data, path, i, root) {
+  // Root is the start
+  // Path is the key we want to find
+
+  // We need to search for an:
+  // Device.Ethernet.Interface.*
+  // Device.Ethernet.Link.*
+  // Device.Ethernet.VLANTermination
+
+  // The idea is: starting from IP or PPP, we need to find
+  // the Ethernet PATH
   let connectionPath = path.replace('*', i);
-  let ethernetLink;
-  let vlanLink;
-  for (let j = 0; j < data.length; j++) {
-    let value = getObjValue(data[j]);
-    if (connectionPath === value) {
-      ethernetLink = extractLinkPath(data[j].path);
+  let level = 0;
+  let searchpath = root;
+  // No more than 4 levels of recursion (avoid infinite loop)
+  while (level < 4) {
+    level++;
+    let link = searchpath+'LowerLayers';
+    for (let j = 0; j < data.length; j++) {
+      if (data[j].path === link) {
+        let value = getObjValue(data[j]);
+        if (value === connectionPath) {
+          return root;
+        } else {
+          searchpath = value;
+        }
+      }
     }
   }
-  for (let j = 0; j < data.length; j++) {
-    let value = getObjValue(data[j]);
-    if (ethernetLink === value) {
-      vlanLink = extractLinkPath(data[j].path);
-    }
-  }
-  for (let j = 0; j < data.length; j++) {
-    let value = getObjValue(data[j]);
-    if (vlanLink === value) {
-      return data[j].path;
-    }
-  }
-  return null;
 };
 
 const findPortMappingLink = function(data, path) {
@@ -825,19 +827,18 @@ const wanKeyCriation = function(data, isTR181) {
   return wanKeySort(result, isTR181);
 };
 
-const assembleWanObj = function(args, callback) {
-  let params;
-  if (args.update) {
-    params = args;
-  } else {
-    params = JSON.parse(args[0]);
-  }
-  let data = params.data;
-  let fields = params.fields.wan;
-  let isTR181 = params.isTR181;
+const assembleWanObjProvision = function(args, callback) {
+  let params = JSON.parse(args[0]);
+  let result = assembleWanObj(params.data, params.fields, params.isTR181);
+  callback(null, result);
+};
+
+const assembleWanObj = function(data, fields, isTR181) {
   let result = wanKeyCriation(data, isTR181);
+
   for (let obj of data) {
     let [indexes, surplus] = extractIndexes(obj.path, isTR181);
+
     // Addition of obj to WANs: depending on the property's match, since there
     // may be PPP-type properties associated with IP-type paths
     let properties = getFieldProperties(fields, obj.path);
@@ -874,6 +875,7 @@ const assembleWanObj = function(args, callback) {
         // the type of the path is different from the type of the property, it
         // means that we must disregard the current indices and look for the
         // correct ones to insert the field
+
         if (keyType !== pathType && isTR181) {
           let linkPath;
           let correctPath;
@@ -881,13 +883,17 @@ const assembleWanObj = function(args, callback) {
             linkPath = extractLinkPath(obj.path, true);
             correctPath = findInterfaceLink(data, linkPath, indexes[0]);
           } else if (pathType === 'ethernet') {
+            let root = (keyType === 'ppp')?
+              'Device.PPP.Interface.':'Device.IP.Interface.';
+            root = root+keyIndexes+'.';
             linkPath = extractLinkPath(obj.path);
-            correctPath = findEthernetLink(data, linkPath, indexes[0]);
+            correctPath = findEthernetLink(data, linkPath, indexes[0], root);
           } else if (pathType === 'port_mapping') {
             linkPath = extractLinkPath(obj.path) + 'Interface';
             correctPath = findPortMappingLink(data, linkPath);
           }
           if (!correctPath) continue;
+
           // Update indexes with correct path
           indexes = extractIndexes(correctPath, isTR181)[0];
         }
@@ -903,45 +909,38 @@ const assembleWanObj = function(args, callback) {
       }
     }
   }
-  return callback(null, result);
+  return result;
 };
 
-const getParentNode = function(args, callback) {
-  let params;
-  let update = false;
-  if (args.update) {
-    params = args;
-    update = true;
-  } else {
-    params = JSON.parse(args[0]);
-  }
+const getWanNodesProvision = function(args, callback) {
+  let params = JSON.parse(args[0]);
   let fields = params.fields;
   let isTR181 = params.isTR181;
+  let result = getWanNodes(fields, isTR181, false);
+  callback(null, result);
+};
+
+
+// Return all the nodes that need to be retrieved from genie/CPE
+// update: true -> Retrieve from Genie
+//         false -> Retrieve from declare/provision or getParameters
+const getWanNodes = function(fields, isTR181, update) {
   let nodes = [];
-  const hasNumericKey = (str) => str.split('.').some((s) => !isNaN(s));
   const hasWildcardKey = (str) => str.includes('*');
   let wanFields = fields.wan;
+
   Object.keys(wanFields).forEach((key) => {
     let node;
-    if (!hasNumericKey(wanFields[key]) && !hasWildcardKey(wanFields[key])) {
-      // If the field does not have numeric keys or wildcards, it must not be
-      // changed
+    if (!hasWildcardKey(wanFields[key])) {
+      // If the field does not have wildcards, it must not be changed
       node = wanFields[key];
     } else {
-      // Otherwise, the last substring is discarded and we add the string '.*.*'
+      // Otherwise, the last substring is discarded and we add the string '.*'
       // to update the entire parent node of the given field
       let tmp = wanFields[key].split('.').slice(0, -1);
-      if (tmp[tmp.length - 1] === '*') {
-        // If the parent node already ends with the string '.*', just add '.*'
-        node = tmp.join('.');
-      } else if (!isNaN(parseInt(tmp[tmp.length - 1]))) {
-        // If the parent node already ends with a numerical key, it is discarded
-        // and '.*.*' is added
-        node = tmp.slice(0, -1).join('.');
-      } else {
-        // If none of the previous cases is true, it is only necessary to add
-        // the string '.*.*'
-        node = tmp.join('.');
+      node = tmp.join('.');
+      if (!update) {
+        node += '.*';
       }
     }
     if (!nodes.includes(node)) {
@@ -950,6 +949,18 @@ const getParentNode = function(args, callback) {
   });
   nodes.push(fields.port_mapping_dhcp);
   nodes.push(fields.port_mapping_ppp);
+
+  // clean up TR181 fields
+  // Some devices do not map fields correctly
+  // (Device.WANDevice.1.WANConnectionDevic for exemple)
+  // Need to correct homologation, but we double check here
+  nodes = nodes.filter((value) => {
+      if (isTR181) {
+        return !value.startsWith('Device.WANDevice.');
+      }
+      return true;
+    });
+
   let result;
   if (update) {
     let nodesWithNoWildcards = nodes
@@ -977,21 +988,10 @@ const getParentNode = function(args, callback) {
     });
     result = projection.join(',');
   } else {
-    result = nodes.map((node) => {
-      if (node.endsWith('.*')) {
-        return node + '.*';
-      } else {
-        return node + '.*.*';
-      }
-    });
-    Object.keys(wanFields).forEach((key) => {
-      let node = convertIndexIntoWildcard(wanFields[key]);
-      if (!result.includes(node)) {
-        result.push(node);
-      }
-    });
+    result = nodes;
   }
-  return callback(null, result);
+
+  return result;
 };
 
 /**
@@ -1035,17 +1035,23 @@ const syncDeviceChanges = async function(args, callback) {
 /**
  * @exports controllers/external-genieacs/devices-api
  */
-exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
-exports.instantiateCPEByModel = instantiateCPEByModel;
+
+// Used on provisions
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.syncDeviceChanges = syncDeviceChanges;
+exports.assembleWanObjProvision = assembleWanObjProvision;
+exports.getWanNodesProvision = getWanNodesProvision;
+
+// Used by flashman
+exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
+exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
 exports.wanKeyCriation = wanKeyCriation;
 exports.assembleWanObj = assembleWanObj;
-exports.getParentNode = getParentNode;
+exports.getWanNodes = getWanNodes;
 exports.getFieldProperties = getFieldProperties;
 exports.verifyIndexesMatch = verifyIndexesMatch;
 

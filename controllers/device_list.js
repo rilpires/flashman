@@ -2536,25 +2536,6 @@ deviceListController.setDeviceReg = function(req, res) {
                            wifi5: {}, mesh2: {}, mesh5: {}};
             let audit = {};
 
-            // Update chosen WAN information only if field is undefined
-            if (matchedDevice.use_tr069 && !matchedDevice.wan_chosen) {
-              let multiwan =
-                acsDeviceInfo.getMultiWan(matchedDevice.acs_id, cpe);
-              multiwan = util.convertWanToFlashmanFormat(multiwan);
-              let chosenWan = util.chooseWan(multiwan,
-                cpe.modelPermissions().useLastIndexOnWildcard);
-              if (chosenWan === undefined) {
-                return res.status(500).json({
-                  success: false,
-                  message: t('wanInformationCannotBeEmpty',
-                    {errorline: __line}),
-                });
-              }
-              console.log('Chosen WAN was set to ' + chosenWan);
-              matchedDevice.wan_chosen = chosenWan;
-              updateParameters = true;
-            }
-
             if (connectionType !== '' && !matchedDevice.bridge_mode_enabled &&
                 connectionType !== matchedDevice.connection_type &&
                 !matchedDevice.use_tr069) {
@@ -2649,6 +2630,19 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
+
+            // We are changing TR069 WAN information
+            // Update WAN information only if WAN is defined
+            if (matchedDevice.use_tr069 &&
+              Object.keys(changes.wan).length !== 0 &&
+              !matchedDevice.wan_chosen) {
+                return res.status(500).json({
+                  success: false,
+                  message: t('wanInformationCannotBeEmpty',
+                    {errorline: __line}),
+                });
+            }
+
             if (content.hasOwnProperty('ipv6_enabled')) {
               if (ipv6Enabled !== matchedDevice.ipv6_enabled) {
                 audit['ipv6_enabled'] = {

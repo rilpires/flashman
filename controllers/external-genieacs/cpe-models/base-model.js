@@ -568,6 +568,19 @@ basicCPEModel.readTracerouteRTTs = function(genieHopRoot) {
     .map((e)=>parseFloat(e).toString());
 };
 
+basicCPEModel.getTR181Roots = function() {
+  return {
+    wan: {
+      ip: 'Device.IP.Interface.*.',
+      ppp: 'Device.PPP.Interface.*.',
+      iface: 'Device.Ethernet.Interface.*.',
+      link: 'Device.Ethernet.Link.*.',
+      vlan: 'Device.Ethernet.VLANTermination.*.',
+      port_mapping: 'Device.NAT.PortMapping.*.',
+    },
+  };
+};
+
 // Map TR-069 XML fields to Flashman fields
 basicCPEModel.getModelFields = function() {
   return {
@@ -686,14 +699,6 @@ basicCPEModel.getModelFields = function() {
         //   'EponInterfaceConfig.RXPower',
         // pon_txpower_epon: 'InternetGatewayDevice.WANDevice.1.'+
         //   'EponInterfaceConfig.TXPower',
-
-      // These should only be added for TR-181
-        // pppoe_root: '',
-        // dhcp_root: '',
-        // nat_root: '',
-        // port_mapping: '',
-        // link_root: '',
-        // vlan_termination_root: '',
     },
     port_mapping_dhcp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.'+
       '*.WANIPConnection.*.PortMapping',
