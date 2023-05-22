@@ -50,12 +50,10 @@ genie.configureTaskApiWatcher = function() {
           genieDB = client.db('genieacs');
           // Only watch faults if flashman instance is the first one dispatched
           if (parseInt(instanceNumber) === 0) {
-            console.log('Watching for faults in GenieACS database');
             await watchGenieFaults(); // start watcher for genie faults.
           }
           // Always watch for tasks associated with this instance
-          console.log('Watching for tasks in GenieACS database');
-          watchGenieTasks();
+          await watchGenieTasks();
           // Always clean old Get Parameters Tasks. This improves performance
           await genie.deleteGetParamTasks();
           /* we should never close connection to database. it will be close when
@@ -69,12 +67,11 @@ genie.configureTaskApiWatcher = function() {
 };
 
 
-const watchGenieTasks = function() {
+const watchGenieTasks = async function() {
   let tasksCollection = genieDB.collection('tasks');
   let changeStream = tasksCollection.watch([
     {$match: {'operationType': 'delete'}},
   ]);
-  changeStream.on('error', (e)=>console.log('Error in genieacs tasks stream'));
   changeStream.on('change', (change)=>{
     let taskID = change.documentKey['_id'];
     if (taskID && taskID in taskWatchlist) {
@@ -94,6 +91,25 @@ const watchGenieTasks = function() {
         }
       });
     }
+  });
+  return new Promise((resolve, reject)=>{
+    // mongodb's ChangeStream class doesnt expose any "init" event.
+    // So we are awaiting one second to without error to consider it ok
+    let timer = setTimeout(()=>{
+      console.log('Watching for faults in GenieACS database');
+      resolve();
+    }, 1000);
+    changeStream.on('error', (e) => {
+      if (e.code==40573) {
+        console.error('Replica set is not enabled on genieacs database');
+      } else {
+        console.error(
+          'Error in watching genieacs faults collection change stream:\n', e,
+        );
+      }
+      clearTimeout(timer);
+      reject(e);
+    });
   });
 };
 
@@ -128,10 +144,6 @@ const watchGenieFaults = async function() {
   let changeStream = faultsCollection.watch([
     {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
   ]);
-  changeStream.on('error', (e) => {
-    console.log('Error in genieacs faults collection change stream.');
-    console.log(e);
-  });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
     console.log('WARNING: genieacs created a fault'+(doc.device ?
@@ -165,6 +177,23 @@ const watchGenieFaults = async function() {
       errorMsg += JSON.stringify(doc);
     }
     await createNotificationForDevice(errorMsg, doc.device, doc);
+  });
+  return new Promise((resolve, reject)=>{
+    let timer = setTimeout(()=>{
+      console.log('Watching for faults in GenieACS database');
+      resolve();
+    }, 1000);
+    changeStream.on('error', (e) => {
+      if (e.code==40573) {
+        console.error('Replica set is not enabled on genieacs database');
+      } else {
+        console.error(
+          'Error in watching genieacs faults collection change stream:\n', e,
+        );
+      }
+      clearTimeout(timer);
+      reject(e);
+    });
   });
 };
 
