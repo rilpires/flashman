@@ -57,6 +57,7 @@ jobs:
           set +a
           echo Running node version: "$(node --version)"
           node ./bin/www &
+          sleep 5
 
       - name: Run Blackbox tests
         run: npm run bb-test
