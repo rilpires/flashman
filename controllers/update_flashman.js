@@ -383,8 +383,6 @@ updateController.rebootGenie = async function() {
     instances = parseInt(localEnvironmentJson.apps[0].instances);
   }
 
-  instances = NaN; // THIS SHOULD NOT BE COMMITED BY MISTAKE
-
   // Fourth case: Calling nproc
   if (isNaN(instances)) {
     instances = await new Promise((resolve, reject)=>{
