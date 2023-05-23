@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 
 /* global __line */
 
@@ -45,42 +46,58 @@ controlController.checkPubKey = async function() {
       }
     }
   } catch (err) {
-    console.error('Error retrieving Config collection from DB');
+    if (err) console.error(err);
+    // We only consider it as an error if it is production
+    if (['true', true, 1].includes(process.env.production)) {
+      throw err;
+    }
   }
 };
 
-controlController.getMessageConfig = async function() {
-  let matchedConfig = null;
-
-  try {
-    matchedConfig = await Config.findOne({is_default: true},
-                                         {messaging_configs: true});
-    if (!matchedConfig) {
-      console.error('Error obtaining message config');
-      return;
+controlController.getMessageConfig = function() {
+  return new Promise( async (resolve, reject) => {
+    // We only consider it as an error if it is production, or else
+    // all our not-production servers will not pass pre-initialization
+    let onError = function(msg) {
+      if (['true', true, 1].includes(process.env.production)) {
+        if (msg) console.error(msg);
+        return reject();
+      } else {
+        console.log('Unable to getMessageConfig from control '
+          + 'but proceding because !env.production');
+        return resolve();
+      }
+    };
+    let matchedConfig = null;
+    try {
+      matchedConfig = await Config.findOne({is_default: true},
+                                          {messaging_configs: true});
+      if (!matchedConfig) return resolve();
+    } catch (err) {
+      matchedConfig = null;
+      return onError('Error obtaining message config');
     }
-  } catch (err) {
-    console.error('Error obtaining message config');
-  }
-
-  return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/message/config',
       method: 'POST',
       json: {
         secret: locals.getSecret(),
       },
-    }).then((resp) => {
+    }).then(async (resp) => {
       if (resp && resp.token && resp.fqdn) {
+        console.log('Obtained message config successfully!');
         matchedConfig.messaging_configs.secret_token = resp.token;
         matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-        matchedConfig.save().catch((err) => {
-          console.log('Error saving first Config');
+        await matchedConfig.save()
+        .then(resolve)
+        .catch((_) => {
+          return onError('Error saving message config');
         });
-        console.log('Obtained message config successfully!');
+      } else {
+        onError('Invalid response from control about message config');
       }
     }, (err) => {
-      console.error('Error obtaining message config');
+      onError('Error obtaining message config from control');
     });
   });
 };

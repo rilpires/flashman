@@ -15,7 +15,7 @@ const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
 const preinitPromises = require('../preinit.js');
-const tasksApi = require('../controllers/external-genieacs/tasks-api.js')
+const tasksApi = require('../controllers/external-genieacs/tasks-api.js');
 
 /* APP */
 
@@ -386,7 +386,7 @@ let startWebServer = function() {
  */
 setTimeout( async function() {
   for (let preinitPromise of preinitPromises) {
-    await preinitPromise().catch((_)=>process.exit(1));
+    await preinitPromise();
   }
   await startWebServer();
   await attachSocketIO();

@@ -20,6 +20,7 @@ let userController = require('./controllers/user');
 let Config = require('./models/config');
 const runMigrations = require('./migrations');
 const audit = require('./controllers/audit');
+const controlController = require('./controllers/external-api/control');
 
 let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
   process.env.FLM_DOCKER_INSTANCE || 0);
@@ -230,6 +231,13 @@ let stepObjects = [
   (instanceNumber === 0)
     ? {name: 'Activating recovery scheduler', promiseCreator: recoverySchedule}
     : undefined,
+  (instanceNumber === 0)
+    ? {
+        name: 'Configuring message token',
+        promiseCreator: controlController.getMessageConfig,
+        keepProcessIfFail: true,
+      }
+    : undefined,
 ];
 
 stepObjects = stepObjects.filter((prom)=>prom);
@@ -256,8 +264,8 @@ let preinitPromises = stepObjects.map((stepObject, i)=>{
           console.error(`${prestring} - Failed`);
           console.error(err);
           clearTimeout(errorTimeout);
-          reject();
-          process.exit(1);
+          if (stepObject.keepProcessIfFail) reject();
+          else process.exit(1);
         });
     });
   };
