@@ -102,6 +102,7 @@ const reducedDeviceFields = {
  * @type {Object<Boolean>}
  */
 const reducedLanDevicesField = {
+  'last_devices_refresh': true,
   'lan_devices.mac': true,
   'lan_devices.dhcp_name': true,
   'lan_devices.upnp_name': true,
@@ -338,7 +339,7 @@ apiController.validateField = function(params, field, relativePath = null) {
 
 
   // Valid field
-  return valid;
+  return apiController.buildDeviceResponse(true, 200, t('OK'));
 };
 
 
@@ -375,7 +376,7 @@ apiController.validateDeviceProjection = function(
 
   if (!validation.valid) {
     return apiController.buildDeviceResponse(
-      false, 400, projection + ': ' + t('mustBeAString'),
+      false, 400, projection + ': ' + validation.err,
     );
   }
 
@@ -465,7 +466,7 @@ apiController.validatePageLimit = function(page) {
   if (!validation.valid) return validation;
 
   // Get the number
-  let pageNumber = validation.value;
+  const pageNumber = validation.value;
 
   // Check if the upper limit is valid
   if (pageNumber > MAX_PAGE_SIZE) {
@@ -704,7 +705,7 @@ apiController.getLeanDevice = function(
  */
 apiController.getDeviceByFields = async function(
   params,
-  defaultProjection,
+  defaultProjection = null,
   projections = null,
   additionalQueries = null,
   page = null,
@@ -902,6 +903,7 @@ apiController.parseRouteConditionParameter = function(
   params, field, relativePath = null,
 ) {
   // Get the condition field and add the relative path if necessary
+  // Parses automatically `params[field]` even if it is invalid
   let conditionField = (relativePath ? relativePath + '.' : '' ) +
     params[field];
   let type = null;

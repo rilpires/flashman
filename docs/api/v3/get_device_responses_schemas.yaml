@@ -699,6 +699,11 @@ components:
               type: string
               description: The MAC address of the device.
               example: 'AA:BB:CC:DD:EE:FF'
+
+            last_devices_refresh:
+              type: date
+              description: The last time the lan_devices was updated.
+              example: '2023-01-30T10:14:29.453Z'
       
             lan_devices:
               type: array
