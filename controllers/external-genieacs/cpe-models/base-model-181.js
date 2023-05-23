@@ -83,6 +83,13 @@ basic181CPEModel.getModelFields = function() {
       port_mapping_entries_dhcp: 'Device.NAT.PortMappingNumberOfEntries',
       port_mapping_entries_ppp: 'Device.NAT.PortMappingNumberOfEntries',
 
+      // Roots to stablish links relationships
+      pppoe_root: '',
+      dhcp_root: '',
+      nat_root: '',
+      link_root: '',
+      vlan_termination_root: '',
+
       // These should only be added whenever they exist, for legacy reasons:
       // vlan: 'Device.Ethernet.VLANTermination.*.VLANID',
       // vlan_ppp: 'Device.Ethernet.VLANTermination.*.VLANID',
@@ -184,17 +191,14 @@ basic181CPEModel.getModelFields = function() {
       host_mac: 'Device.Hosts.Host.*.PhysAddress',
       host_name: 'Device.Hosts.Host.*.HostName',
       host_ip: 'Device.Hosts.Host.*.IPAddress',
-      host_layer2: 'Device.LANDevice.1.Hosts.Host.*.Layer2Interface',
-      associated: 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
-        'AssociatedDevice',
-      assoc_mac: 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
-        'AssociatedDevice.*.MACAddress',
+      host_layer2: 'Device.LANDevice.1.Hosts.Host.*.Layer2InterfaceAssociatedDevice',
       host_active: 'Device.Hosts.Host.*.Active',
-      host_rssi: 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.' +
-        'AssociatedDevice.*.SignalStrength',
+      host_rssi: 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice.*.SignalStrength',
       host_snr: '',
       host_cable_rate: '',
       host_rate: '',
+      associated: '',
+      assoc_mac: 'Device.WiFi.MultiAP.APDevice.1.Radio.*.AP.2.AssociatedDevice.*.MACAddress',
       rate: 'Device.WiFi.AccessPoint.1.AssociatedDevice.*.LastDataUplinkRate',
     },
     diagnostics: {
