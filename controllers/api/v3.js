@@ -92,6 +92,11 @@ const reducedDeviceFields = {
   traceroute_numberProbes: false,
   traceroute_route: false,
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+apiController.__testReducedDeviceFields = reducedDeviceFields;
 
 /**
  * Objects containing all fields in `device.lan_devices` model that will be
@@ -198,6 +203,11 @@ const translationObject = {
       .validateDeviceProjection(field, relativePath),
   },
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+apiController.__testTranslationObject = translationObject;
 
 /**
  * An object to fast convert which specific `device` field to return with the
