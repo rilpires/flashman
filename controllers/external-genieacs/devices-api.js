@@ -38,6 +38,7 @@ const tr069Models = {
   dlinkDir842Model: require('./cpe-models/dlink-dir-842'),
   e4lH5410WAModel: require('./cpe-models/e4l-h5410wa'),
   fastwirelessFW323DACModel: require('./cpe-models/fastwireless-fw323dac'),
+  fhtt2FFG1200MModel: require('./cpe-models/fhtt-2f-fg1200m'),
   fiberhomeHG6143DModel: require('./cpe-models/fiberhome-hg6143d'),
   fiberhomeHG6145FModel: require('./cpe-models/fiberhome-hg6145f'),
   fiberhomeHG6245DModel: require('./cpe-models/fiberhome-hg6245d'),
@@ -223,6 +224,9 @@ const instantiateCPEByModel = function(
   ) {
     // FastWireless FW323DAC
     result = {success: true, cpe: tr069Models.fastwirelessFW323DACModel};
+  } else if (modelName === '2F-FG1200M') {
+    // FHTT 2F-FG1200M
+    result = {success: true, cpe: tr069Models.fhtt2FFG1200MModel};
   } else if (modelName === 'HG6143D') {
     // Fiberhome HG6143D
     result = {success: true, cpe: tr069Models.fiberhomeHG6143DModel};
