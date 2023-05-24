@@ -6,15 +6,73 @@ fhttModel.identifier = {vendor: 'FHTT', model: '2F-FG1200M'};
 
 fhttModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.lan.LANDeviceSkipIfNoWifiMode = true;
+  permissions.lan.dnsServersLimit = 3;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
+  permissions.wan.dhcpUptime = false;
+  permissions.wan.hasUptimeField = true;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108,
+    112, 116, 120, 124, 128, 132, 136, 140,
+  ];
+  permissions.wifi.allowSpaces = false;
+  permissions.wifi.bandAuto5 = false;
+  permissions.firmwareUpgrades = {
+    'HGUV6.5.0B01': [],
+  };
   return permissions;
+};
+
+fhttModel.convertWifiMode = function(mode, is5ghz=false) {
+  switch (mode) {
+    case '11g':
+      return 'b,g';
+    case '11n':
+      return 'b,g,n';
+    case '11na':
+      return 'a,n';
+    case '11ac':
+      return 'a,n,ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+fhttModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '20Mhz';
+    case 'HT40':
+    case 'VHT40':
+      return '40Mhz';
+    case 'VHT80':
+      return '80Mhz';
+    case 'auto':
+      return 'Auto';
+    default:
+      return undefined;
+  }
+};
+
+fhttModel.convertToDbm = function(power) {
+  return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
+};
+
+fhttModel.convertWifiRate = function(rate) {
+  return parseInt(rate) / 1000;
+};
+
+fhttModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000;
 };
 
 fhttModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
 
   // ---------- FIELDS NOT SUPPORTED BY FLASHIFY ----------
-  // TODO: check fields.common.hw_version
-  // TODO: check fields.common.alt_uid
   // TODO: check fields.wan.pon_rxpower_epon
   // TODO: check fields.wan.pon_txpower_epon
 
