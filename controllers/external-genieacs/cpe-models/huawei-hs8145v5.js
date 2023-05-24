@@ -2,58 +2,135 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8145V5'};
+huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8545V5'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.speedTest = true;
+  permissions.features.ponSignal = true;
+  permissions.features.portForward = true;
+  permissions.features.siteSurvey = true;
+  permissions.features.traceroute = true;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.lan.listLANDevices = false;
+  permissions.lan.LANDeviceCanTrustActive = false;
+  permissions.lan.LANDeviceHasSNR = true;
+  permissions.wan.speedTestLimit = 850;
+  permissions.wifi.list5ghzChannels = [
+    36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120,
+    124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165,
+  ];
+  permissions.firmwareUpgrades = {
+    'V5R019C00S050': [],
+  };
   return permissions;
 };
 
+huaweiModel.getFieldType = function(masterKey, key) {
+  if ((masterKey === 'wifi2' || masterKey === 'wifi5') && key === 'band') {
+    return 'xsd:unsignedInt';
+  }
+  return basicCPEModel.getFieldType(masterKey, key);
+};
+
+huaweiModel.convertWifiMode = function(mode) {
+  switch (mode) {
+    case '11g':
+      return '11bg';
+    case '11n':
+      return '11bgn';
+    case '11na':
+      return '11na';
+    case '11ac':
+      return '11ac';
+    case '11ax':
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBand = function(band, is5ghz=false) {
+  switch (band) {
+    case 'HT20':
+    case 'VHT20':
+      return '1';
+    case 'HT40':
+    case 'VHT40':
+      return '2';
+    case 'VHT80':
+      return '3';
+    case 'auto':
+      return '0';
+    default:
+      return '';
+  }
+};
+
+huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
+  switch (band) {
+    // String input
+    case '0':
+      return 'auto';
+    case '1':
+      return (isAC) ? 'VHT20' : 'HT20';
+    case '2':
+      return (isAC) ? 'VHT40' : 'HT40';
+    case '3':
+      return (isAC) ? 'VHT80' : undefined;
+    default:
+      return undefined;
+  }
+};
+
+huaweiModel.getBeaconType = function() {
+  return 'WPAand11i';
+};
+
 huaweiModel.getModelFields = function() {
-  let fields = huaweiModel.getModelFields();
-
-  // ---------- FIELDS NOT SUPPORTED BY FLASHIFY ----------
-  // TODO: check fields.common.hw_version
-  // TODO: check fields.common.alt_uid
-  // TODO: check fields.wan.pon_rxpower_epon
-  // TODO: check fields.wan.pon_txpower_epon
-  // TODO: check fields.devices.hosts
-
-  // ---------- FIELDS SUPPORTED BY FLASHIFY ----------
-  fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.VendorLogFile.1.Name'
-  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.X_HW_WebUserInfo.2.Password'
-  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate'
-  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower'
-  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower'
-  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesReceived'
-  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.TotalBytesSent'
-  // TODO: check fields.wan.pppoe_enable
-  // TODO: check fields.wan.mtu
-  // TODO: check fields.wan.wan_ip
-  // TODO: check fields.wan.uptime
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN'
-  // TODO: check fields.wan.vlan
-  fields.wifi2.password = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.PreSharedKey.1.KeyPassphrase'
-  fields.wifi2.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HW_HT20'
-  fields.wifi5.password = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.PreSharedKey.1.KeyPassphrase'
-  fields.wifi5.band = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.5.X_HW_HT20'
-  fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.Hosts.Host.*.InterfaceType'
-  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice.1.X_HW_RSSI'
-  fields.devices.snr = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice.1.X_HW_SNR'
-  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.AssociatedDevice.1.X_HW_TxRate'
-  // TODO: check fields.devices.host_mode
-  // TODO: check fields.devices.host_band
-  // TODO: check fields.diagnostics.speedtest.bgn_time
-  // TODO: check fields.diagnostics.speedtest.end_time
-  // TODO: check fields.diagnostics.speedtest.test_bytes_rec
-  // TODO: check fields.diagnostics.speedtest.full_load_bytes_rec
-  // TODO: check fields.diagnostics.speedtest.full_load_period
-  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice.1.WiFi'
-  fields.diagnostics.sitesurvey.diag_state = 'DiagnosticsState'
-  fields.diagnostics.sitesurvey.result = 'Result'
-  fields.diagnostics.sitesurvey.signal = 'SignalStrength'
-  fields.diagnostics.sitesurvey.mode = 'OperatingStandards'
-  fields.diagnostics.traceroute.root = 'InternetGatewayDevice.TraceRouteDiagnostics'
+  let fields = basicCPEModel.getModelFields();
+  fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
+    'X_HW_WebUserInfo.2.UserName';
+  fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
+    'X_HW_WebUserInfo.2.Password';
+  fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_GponInterafceConfig.Stats.BytesReceived';
+  fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_GponInterafceConfig.Stats.BytesSent';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_GponInterafceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_GponInterafceConfig.TXPower';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
+  fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
+  fields.port_mapping_fields.internal_port_end = [
+    'X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt',
+  ];
+  fields.port_mapping_fields.external_port_end = [
+    'ExternalPortEndRange', 'external_port_end', 'xsd:unsignedInt',
+  ];
+  delete fields.port_mapping_values.remote_host;
+  fields.port_mapping_values.protocol[1] = 'TCP/UDP';
+  fields.wifi2.password = fields.wifi2.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
+  );
+  fields.wifi5.password = fields.wifi5.password.replace(
+    /KeyPassphrase/g, 'PreSharedKey.1.PreSharedKey',
+  );
+  delete fields.diagnostics.speedtest.num_of_conn;
+  fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
+  fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+    '.1.WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
   return fields;
 };
 
