@@ -794,9 +794,13 @@ const wanKeyCriation = function(data, isTR181) {
           // physical connection
           let linkPath = extractLinkPath(obj.path, true);
           let interfPath = findInterfaceLink(data, linkPath, indexes[0]);
+          // We cant find a valid interface (PPP or IP)
+          // Some routers have a USB interface.
+          // We do not support those at the moment.
+          if (!interfPath) continue;
           // If the LowerLayer of the IP interface points to a PPP interface,
           // this must not be a key on the multi-wan
-          if (interfPath.includes('PPP')) break;
+          if (interfPath.includes('PPP')) continue;
           correctPath = extractLinkPath(obj.path);
         } else if (value === 'IPCP') {
           let linkPath = extractLinkPath(obj.path, true);
@@ -990,7 +994,6 @@ const getWanNodes = function(fields, isTR181, update) {
   } else {
     result = nodes;
   }
-
   return result;
 };
 
