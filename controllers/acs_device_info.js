@@ -648,7 +648,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let wrongPortMapping = false;
   let portMapping = [];
   if (cpePermissions.features.portForward &&
-    data.port_mapping && data.port_mapping.length > 0) {
+    ((data.wan.port_mapping_entries_ppp &&
+      data.wan.port_mapping_entries_ppp.value > 0) ||
+     (data.wan.port_mapping_entries_dhcp &&
+      data.wan.port_mapping_entries_dhcp.value > 0))) {
     wrongPortMapping = true;
   }
 
