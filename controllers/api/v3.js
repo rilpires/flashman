@@ -1319,6 +1319,14 @@ apiController.search = async function(request, response) {
     // If the query does not have it, continue to the next iteration
     if (!queryParams[param.name]) continue;
 
+    // Check if is a string
+    if (typeof queryParams[param.name] !== 'string') {
+      return returnError({
+        statusCode: 400,
+        message: param.name + ': ' + t('mustBeAString'),
+      });
+    }
+
     // Validate
     let validation = apiController.parseRouteIntParameter(
       queryParams, param.name,
@@ -1471,10 +1479,9 @@ apiController.search = async function(request, response) {
     ) {
       isOperationOr = true;
       fullQuery.push(t('/or'));
-    }
 
     // Invalid entry
-    else {
+    } else {
       return returnError({
         statusCode: 400,
         message: t('fieldNameInvalid', {name: 'operation', errorline: __line}),
@@ -1516,7 +1523,7 @@ apiController.search = async function(request, response) {
     page: querySetup['page'],
     limit: querySetup['pageLimit'],
     lean: true,
-    sort: querySetup['sort'],
+    sort: querySetup['sort'] ? querySetup['sort'] : null,
     projection: projection,
   };
 
@@ -1543,8 +1550,7 @@ apiController.search = async function(request, response) {
 
   // if could not find the device
   if (
-    !devices || devices.length <= 0 ||
-    !devices.docs || devices.docs.length <= 0
+    !devices || !devices.docs || devices.docs.length <= 0
   ) {
     return returnError({
       statusCode: 404,
