@@ -219,6 +219,11 @@ const reducedFieldsByRelativePath = {
   lan_devices: reducedLanDevicesField,
   ap_survey: reducedApSurveyField,
 };
+/*
+ * This function is being exported in order to test it.
+ * The ideal way is to have a condition to only export it when testing
+ */
+apiController.__testReducedFieldsByRelativePath = reducedFieldsByRelativePath;
 
 
 // Functions

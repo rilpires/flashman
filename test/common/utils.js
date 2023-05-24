@@ -516,6 +516,67 @@ const fakeStatus = function(errorCode, promiseResolve, header) {
 
 
 /**
+ * Create a fake request object to be sent to routes.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @param {Object} data - The data to be sent.
+ * @param {Object} files - All files to be sent.
+ * @param {Object} query - URL parameters to be passed.
+ * @param {Object} user - An object containing user and role information.
+ * @param {Object} params - The object containing params of the request.
+ * @param {Object} sessionID - The session ID of the request.
+ *
+ * @return {Object} The request object.
+ */
+utils.common.fakeRequest = function(
+  data = null, files = null, query = null,
+  user = null, params = null, sessionID = null,
+) {
+  // Return the request
+  let request = {
+    body: data,
+    // Use the user passed or a default
+    user: (user) ? user : {
+      role: undefined,
+      is_superuser: true,
+    },
+    files: files,
+    query: query,
+    params: params,
+    sessionID: sessionID,
+  };
+
+  return request;
+};
+
+
+/**
+ * Create a fake response object to be sent to routes.
+ *
+ * @memberOf test/common/utils.common
+ *
+ * @return {Object} The response object.
+ */
+utils.common.fakeResponse = function() {
+  // Return the response
+  let response = {
+    header: {},
+    status: (errorCode) => fakeStatus(
+      errorCode, () => true, this.header,
+    ),
+    set: function(headerName, value) {
+      this.header[headerName] = value;
+    },
+    json: (data) => fakeJson(200, () => true, {}, data),
+    render: (view, data) => fakeJson(200, () => true, {}, data),
+  };
+
+  return response;
+};
+
+
+/**
  * Call the function passed, faking a request. This is not a real http request
  * but pretends to be.
  *

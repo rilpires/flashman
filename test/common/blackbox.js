@@ -78,6 +78,23 @@ blackbox.deleteAllDevices = async function(cookie) {
 };
 
 /**
+ * Delete devices in Flashman with an array of IDs.
+ *
+ * @memberOf test/common/blackbox
+ *
+ * @async
+ *
+ * @param {Array<String>} cpes - An array of ID strings. Those ID's are the MAC
+ * address of the devices to remove from Flashman.
+ * @param {Cookie} cookie - The login cookie.
+ */
+blackbox.deleteDevices = async function(cpes, cookie) {
+  for (let id of cpes) {
+    await blackbox.deleteCPE(id, cookie);
+  }
+};
+
+/**
  * Sends the request to the route specified to Flashman, with the data passed.
  *
  * @memberOf test/common/blackbox
