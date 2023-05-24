@@ -71,12 +71,6 @@ fhttModel.convertWanRate = function(rate) {
 
 fhttModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
-
-  // ---------- FIELDS NOT SUPPORTED BY FLASHIFY ----------
-  // TODO: check fields.wan.pon_rxpower_epon
-  // TODO: check fields.wan.pon_txpower_epon
-
-  // ---------- FIELDS SUPPORTED BY FLASHIFY ----------
   fields.common.web_admin_username = 'InternetGatewayDevice.DeviceInfo.' +
     'X_CT-COM_ServiceManage.FtpUserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.DeviceInfo.' +
@@ -103,20 +97,16 @@ fhttModel.getModelFields = function() {
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.X_CT-COM_WANGponLinkConfig.VLANIDMark';
+  fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_CT-COM_GponInterfaceConfig.RXPower';
+  fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
+    'X_CT-COM_GponInterfaceConfig.TXPower';
   delete fields.port_mapping_fields.external_port_end;
   delete fields.port_mapping_fields.internal_port_end;
   fields.lan.subnet_mask = 'InternetGatewayDevice.LANDevice.1.' +
     'LANHostConfigManagement.SubnetMask';
   fields.devices.host_layer2 = 'InternetGatewayDevice.LANDevice.1.' +
     'Hosts.Host.*.InterfaceType';
-  fields.diagnostics.traceroute.root = 'InternetGatewayDevice.' +
-    'X_CT-COM_IPTraceRouteDiagnostics';
-  fields.diagnostics.traceroute.number_of_hops = 'HopsNumberOfEntries';
-  fields.diagnostics.traceroute.protocol = 'Mode';
-  fields.diagnostics.traceroute.ip_version = 'Mode';
-  fields.diagnostics.traceroute.hops_root = 'Hops';
-  fields.diagnostics.traceroute.hop_host = 'ResponseIPAddress';
-  fields.diagnostics.traceroute.hop_ip_address = 'ResponseIPAddress';
   return fields;
 };
 
