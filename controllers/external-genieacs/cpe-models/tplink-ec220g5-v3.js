@@ -98,42 +98,13 @@ tplinkModel.useModelAlias = function(fwVersion) {
 };
 
 tplinkModel.getModelFields = function() {
-  let fields = basicCPEModel.getModelFields();
-  let roots = tplinkModel.getTR181Roots();
-  let wanRoot = roots.wan;
+  let fields = basicCPEModel.getTR181ModelFields();
 
-  fields = basicCPEModel.convertIGDtoDevice(fields);
   // Common
   fields.common.mac = 'Device.Ethernet.Link.1.MACAddress';
   fields.common.stun_enable = 'Device.ManagementServer.STUNEnable';
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
-
-  // Wan
-  fields.wan.dhcp_status = wanRoot.ip+'Status';
-  fields.wan.dhcp_enable = wanRoot.ip+'Enable';
-  fields.wan.pppoe_status = wanRoot.ppp+'Status';
-  fields.wan.pppoe_enable = wanRoot.ppp+'Enable';
-  fields.wan.pppoe_user = wanRoot.ppp+'Username';
-  fields.wan.pppoe_pass = wanRoot.ppp+'Password';
-  fields.wan.duplex = wanRoot.iface+'DuplexMode';
-  fields.wan.rate = wanRoot.iface+'MaxBitRate';
-  fields.wan.wan_ip = wanRoot.ip+'IPv4Address.*.IPAddress';
-  fields.wan.wan_ip_ppp = fields.wan.wan_ip;
-  fields.wan.mtu = wanRoot.ip+'MaxMTUSize';
-  fields.wan.mtu_ppp = fields.wan.mtu;
-  fields.wan.vlan_ppp = wanRoot.vlan+'VLANID';
-  fields.wan.vlan = wanRoot.vlan+'VLANID';
-  fields.wan.recv_bytes = wanRoot.ip+'Stats.BytesReceived';
-  fields.wan.sent_bytes = wanRoot.ip+'Stats.BytesSent';
-  fields.wan.wan_mac = wanRoot.link+'MACAddress';
-  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
-  fields.wan.remote_address_ppp = wanRoot.ppp+'IPCP.RemoteIPAddress';
-  fields.wan.dns_servers_ppp = wanRoot.ppp+'IPCP.DNSServers';
-  fields.wan.port_mapping_entries_dhcp =
-    wanRoot.port_mapping+'PortMappingNumberOfEntries';
-  fields.wan.port_mapping_entries_ppp =
-    wanRoot.port_mapping+'PortMappingNumberOfEntries';
 
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';

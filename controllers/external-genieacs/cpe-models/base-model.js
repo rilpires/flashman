@@ -581,9 +581,59 @@ basicCPEModel.getTR181Roots = function() {
   };
 };
 
-// Map TR-069 XML fields to Flashman fields
-basicCPEModel.getModelFields = function() {
+basicCPEModel.getRoots = function() {
   return {
+    wan: {
+      ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+        'WANIPConnection.*.',
+      ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
+        'WANPPPConnection.*.',
+      iface: 'InternetGatewayDevice.WANDevice.1.'+
+        'WANEthernetInterfaceConfig.',
+    },
+  };
+};
+
+basicCPEModel.getTR181ModelFields = function(newroots) {
+  let roots = basicCPEModel.getTR181Roots();
+  let fields = basicCPEModel.getModelFields(roots);
+
+  fields = basicCPEModel.convertIGDtoDevice(fields);
+  let wanRoot = fields.roots.wan;
+
+  // Wan
+  fields.wan.dhcp_status = wanRoot.ip+'Status';
+  fields.wan.pppoe_status = wanRoot.ppp+'Status';
+
+  fields.wan.wan_ip = wanRoot.ip+'IPv4Address.*.IPAddress';
+  fields.wan.wan_ip_ppp = fields.wan.wan_ip;
+  fields.wan.mtu = wanRoot.ip+'MaxMTUSize';
+  fields.wan.mtu_ppp = fields.wan.mtu;
+  fields.wan.vlan_ppp = wanRoot.vlan+'VLANID';
+  fields.wan.vlan = wanRoot.vlan+'VLANID';
+  fields.wan.recv_bytes = wanRoot.ip+'Stats.BytesReceived';
+  fields.wan.sent_bytes = wanRoot.ip+'Stats.BytesSent';
+  fields.wan.wan_mac = wanRoot.link+'MACAddress';
+  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
+  fields.wan.remote_address_ppp = wanRoot.ppp+'IPCP.RemoteIPAddress';
+  fields.wan.dns_servers_ppp = wanRoot.ppp+'IPCP.DNSServers';
+  fields.wan.port_mapping_entries_dhcp =
+    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+  fields.wan.port_mapping_entries_ppp =
+    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+
+  return fields;
+};
+
+// Map TR-069 XML fields to Flashman fields
+basicCPEModel.getModelFields = function(newroots) {
+  let roots = basicCPEModel.getRoots();
+  if (newroots) {
+    roots = newroots;
+  }
+
+  return {
+    roots: roots,
     common: {
       mac: 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1.'+
         'MACAddress',
@@ -605,38 +655,26 @@ basicCPEModel.getModelFields = function() {
     },
     wan: {
       // PPPoE
-      pppoe_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.Enable',
-      pppoe_status: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-        'WANPPPConnection.*.ConnectionStatus',
-      pppoe_user: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.Username',
-      pppoe_pass: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.Password',
+      pppoe_enable: roots.wan.ppp+'Enable',
+      pppoe_status: roots.wan.ppp+'ConnectionStatus',
+      pppoe_user: roots.wan.ppp+'Username',
+      pppoe_pass: roots.wan.ppp+'Password',
 
       // DHCP
-      dhcp_enable: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-        'WANIPConnection.*.Enable',
-      dhcp_status: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-        'WANIPConnection.*.ConnectionStatus',
+      dhcp_enable: roots.wan.ip+'Enable',
+      dhcp_status: roots.wan.ip+'ConnectionStatus',
 
       // Mode
-      rate: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
-        'MaxBitRate',
-      duplex: 'InternetGatewayDevice.WANDevice.1.WANEthernetInterfaceConfig.'+
-        'DuplexMode',
+      rate: roots.wan.iface+'MaxBitRate',
+      duplex: roots.wan.iface+'DuplexMode',
 
       // WAN IP
-      wan_ip: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.*.ExternalIPAddress',
-      wan_ip_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.ExternalIPAddress',
+      wan_ip: roots.wan.ip+'ExternalIPAddress',
+      wan_ip_ppp: roots.wan.ppp+'ExternalIPAddress',
 
       // WAN MAC address
-      wan_mac: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-        'WANIPConnection.*.MACAddress',
-      wan_mac_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-        'WANPPPConnection.*.MACAddress',
+      wan_mac: roots.wan.ip+'MACAddress',
+      wan_mac_ppp: roots.wan.ppp+'MACAddress',
 
       // IPv4 Mask
       // mask_ipv4: '',
@@ -644,48 +682,35 @@ basicCPEModel.getModelFields = function() {
 
       // Remote Address
       // remote_address: '',
-      remote_address_ppp: 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANPPPConnection.*.RemoteIPAddress',
+      remote_address_ppp: roots.wan.ppp+'RemoteIPAddress',
 
       // Remote Mac
       // remote_mac: '',
       // remote_mac_ppp: '',
 
       // Default Gateway
-      default_gateway: 'InternetGatewayDevice.WANDevice.1' +
-        '.WANConnectionDevice.*.WANIPConnection.*.DefaultGateway',
-      default_gateway_ppp: 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANPPPConnection.*.DefaultGateway',
+      default_gateway: roots.wan.ip+'DefaultGateway',
+      default_gateway_ppp: roots.wan.ppp+'DefaultGateway',
 
       // DNS Server
-      dns_servers: 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANIPConnection.*.DNSServers',
-      dns_servers_ppp: 'InternetGatewayDevice.WANDevice.1.' +
-        'WANConnectionDevice.*.WANPPPConnection.*.DNSServers',
+      dns_servers: roots.wan.ip+'DNSServers',
+      dns_servers_ppp: roots.wan.ppp+'DNSServers',
 
       // Uptime
-      uptime: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.*.Uptime',
-      uptime_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.Uptime',
+      uptime: roots.wan.ip+'Uptime',
+      uptime_ppp: roots.wan.ppp+'Uptime',
 
       // MTU
-      mtu: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANIPConnection.*.MaxMTUSize',
-      mtu_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-        'WANPPPConnection.*.MaxMRUSize',
+      mtu: roots.wan.ip+'MaxMTUSize',
+      mtu_ppp: roots.wan.ppp+'MaxMRUSize',
 
       // Bytes
-      recv_bytes: 'InternetGatewayDevice.WANDevice.1.'+
-        'WANEthernetInterfaceConfig.Stats.BytesReceived',
-      sent_bytes: 'InternetGatewayDevice.WANDevice.1.'+
-        'WANEthernetInterfaceConfig.Stats.BytesSent',
+      recv_bytes: roots.wan.iface+'Stats.BytesReceived',
+      sent_bytes: roots.wan.iface+'Stats.BytesSent',
 
       // Port Mapping
-      port_mapping_entries_dhcp: 'InternetGatewayDevice.WANDevice.1.'+
-        'WANConnectionDevice.*.WANIPConnection.*.PortMappingNumberOfEntries',
-      port_mapping_entries_ppp: 'InternetGatewayDevice.WANDevice.1.'+
-        'WANConnectionDevice.*.WANPPPConnection.*.PortMappingNumberOfEntries',
+      port_mapping_entries_dhcp: roots.wan.ip+'PortMappingNumberOfEntries',
+      port_mapping_entries_ppp: roots.wan.ppp+'PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
         // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',

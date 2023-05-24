@@ -106,43 +106,38 @@ huaweiModel.getModelFields = function() {
     'X_HW_WebUserInfo.2.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_HW_WebUserInfo.2.Password';
+
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesReceived';
+    'X_GponInterafceConfig.Stats.BytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.Stats.EthernetBytesSent';
+    'X_GponInterafceConfig.Stats.BytesSent';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+  fields.wan.vlan = fields.roots.wan.ip+'X_HW_VLAN';
+  fields.wan.vlan_ppp = fields.roots.wan.ppp+'X_HW_VLAN';
 
 // IPv6
   // Address
-  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
-    'IPAddress';
-  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
-    'IPAddress';
+  fields.ipv6.address = fields.roots.wan.ip+
+    'X_HW_IPv6.IPv6Address.*.IPAddress';
+  fields.ipv6.address_ppp = fields.roots.wan.ppp+
+    'X_HW_IPv6.IPv6Address.*.IPAddress';
 
   // Default gateway
-  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
-    'DefaultGateway';
-  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
-    'DefaultGateway';
+  fields.ipv6.default_gateway = fields.roots.wan.ip+
+    'X_HW_IPv6.IPv6Address.*.DefaultGateway';
+  fields.ipv6.default_gateway_ppp = fields.roots.wan.ppp+
+    'X_HW_IPv6.IPv6Address.*.DefaultGateway';
 
 
   // IPv6 Prefix Delegation
   // Address
-  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
-    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
-  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
-    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address = fields.roots.wan.ip+
+    'X_HW_IPv6.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = fields.roots.wan.ppp+
+    'X_HW_IPv6.IPv6Prefix.*.Prefix';
 
   // Local Address
   fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice'+
