@@ -338,7 +338,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
           const band = content.wifi_band.trim();
           if (band !== device.wifi_band) {
-            audit['wifi5Band'] = {old: device.wifi_password, new: band};
+            audit['wifi2Band'] = {old: device.wifi_band, new: band};
           }
           device.wifi_band = band;
           changes.wifi2.band = band;
