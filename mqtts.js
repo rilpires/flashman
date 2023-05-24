@@ -8,6 +8,7 @@ const debug = require('debug')('MQTT');
 
 const REDISHOST = (process.env.FLM_REDIS_HOST || 'localhost');
 const REDISPORT = (process.env.FLM_REDIS_PORT || 6379);
+const REDIS_MQTT_SYNC_MS = parseInt(process.env.FLM_REDIS_MQTT_SYNC_MS) || 1000;
 
 /**
  * Instance number will help identifying broker instance
@@ -46,6 +47,21 @@ if (('FLM_USE_MQTT_PERSISTENCE' in process.env) &&
 // This object will contain clients ids
 // from all flashman mqtt brokers
 mqtts.unifiedClientsMap = {};
+
+let hasSyncToDo = false;
+setInterval(function() {
+  if (hasSyncToDo) {
+    hasSyncToDo = false;
+    const rawMqttClients = mqtts.unifiedClientsMap[mqtts.id];
+    mqtts.publish({
+      cmd: 'publish',
+      qos: 2,
+      retain: true,
+      topic: '$SYS/' + mqtts.id + '/current/clients',
+      payload: Buffer.from(JSON.stringify(rawMqttClients)),
+    });
+  }
+}, REDIS_MQTT_SYNC_MS);
 
 const findServerId = function(id) {
   let correctServerId = null;
@@ -125,13 +141,7 @@ mqtts.on('client', function(client, err) {
     }, {});
   // Update unified map
   mqtts.unifiedClientsMap[mqtts.id] = rawMqttClients;
-  mqtts.publish({
-    cmd: 'publish',
-    qos: 2,
-    retain: true,
-    topic: '$SYS/' + mqtts.id + '/current/clients',
-    payload: Buffer.from(JSON.stringify(rawMqttClients)),
-  });
+  hasSyncToDo = true;
   mqtts.publish({
     cmd: 'publish',
     qos: 2,
@@ -153,13 +163,7 @@ mqtts.on('clientDisconnect', function(client, err) {
     }, {});
   // Update unified map
   mqtts.unifiedClientsMap[mqtts.id] = rawMqttClients;
-  mqtts.publish({
-    cmd: 'publish',
-    qos: 2,
-    retain: true,
-    topic: '$SYS/' + mqtts.id + '/current/clients',
-    payload: Buffer.from(JSON.stringify(rawMqttClients)),
-  });
+  hasSyncToDo = true;
   mqtts.publish({
     cmd: 'publish',
     qos: 2,
