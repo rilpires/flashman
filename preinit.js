@@ -212,6 +212,14 @@ const recoverySchedule = function() {
   });
 };
 
+const waitFor = function(timeMs) {
+  return function() {
+    return new Promise((resolve, reject)=>{
+      setTimeout(resolve, parseInt(timeMs) || 5000 );
+    });
+  };
+};
+
 // "promiseCreator" field SHOULD be a function that returns a promise,
 // not a promise, or else it would start as soon as this synchronous code
 // is executed, not preserving the sequential order
@@ -220,7 +228,10 @@ let stepObjects = [
   {name: 'Assuring directories exists', promiseCreator: assuringDirectories},
   (instanceNumber === 0 )
     ? {name: 'Running migrations', promiseCreator: runMigrations}
-    : undefined,
+    : {
+      name: 'Awaiting for migrations on main flashman',
+      promiseCreator: waitFor(5000), // 5 seconds
+    },
   {name: 'Initializing audit', promiseCreator: audit.init},
   (instanceNumber === 0 )
     ? {name: 'Assuring flashbox MD5', promiseCreator: assuringFirmwareMD5}
