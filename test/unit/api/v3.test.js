@@ -5,6 +5,7 @@ const models = require('../../common/models');
 
 const api = require('../../../controllers/api/v3');
 const DeviceModel = require('../../../models/device');
+const DeviceList = require('../../../controllers/device_list');
 const t = require('../../../controllers/language').i18next.t;
 
 
@@ -66,20 +67,16 @@ describe('API V3 Tests', () => {
   // Tests if it can return the response to the user
   describe('returnDevicesError Tests', () => {
     test('Normal operation', () => {
-      // Spy
-      let jsonSpy = jest.fn();
-      let statusSpy = jest.fn().mockImplementation(() => ({json: jsonSpy}));
-
       // Variables
-      let response = {status: statusSpy};
+      let response = utils.common.fakeResponse();
       const validation = {statusCode: 123, message: 'test'};
 
       // Execute
-      api.returnDevicesError(response, validation);
+      const result = api.returnDevicesError(response, validation);
 
       // Validate
-      expect(statusSpy).toHaveBeenCalledWith(validation.statusCode);
-      expect(jsonSpy).toHaveBeenCalledWith({
+      expect(result.statusCode).toBe(validation.statusCode);
+      expect(result.body).toStrictEqual({
         success: false,
         message: validation.message,
         devices: [],
@@ -221,18 +218,20 @@ describe('API V3 Tests', () => {
 
     // Check what happens if the validation returns valid
     test('Valid', () => {
+      const value = 534;
       let params = {};
       params[testField] = 'Test123';
 
-      api.__testTranslationObject[testField].validation = () => ({valid: true});
+      api.__testTranslationObject[testField].validation = () => ({
+        valid: true, value: value,
+      });
 
       // Execute
       const response = api.validateField(params, testField, 'test');
 
       // Validate
       expect(response.valid).toBe(true);
-      expect(response.status).toBe(200);
-      expect(response.extra).toContain(t('OK'));
+      expect(response.value).toBe(value);
     });
   });
 
@@ -1600,6 +1599,821 @@ describe('API V3 Tests', () => {
         expect(response.statusCode).toBe(200);
         expect(response.message).toContain(t('OK'));
         expect(response.value).toStrictEqual(value);
+    });
+  });
+
+
+  // Test if can get a device through the default GET route
+  describe('defaultGetRoute Tests', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+    });
+
+    // Test what happens if the request is invalid
+    test('Invalid request', async () => {
+      const errorMessage = 'errorMessage';
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest').mockImplementation(() => ({
+        valid: false, statusCode: 400, json: errorMessage,
+      }));
+
+      // Execute
+      const result = await api.defaultGetRoute(null, response, null);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body).toBe(errorMessage);
+    });
+
+    // Test what happens if a field is invalid
+    test('Invalid fields', async () => {
+      const errorMessage = 'errorMessage';
+      let request = utils.common.fakeRequest(null, null, {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      });
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField').mockImplementation(() => ({
+          valid: false, statusCode: 400, json: errorMessage,
+      }));
+
+      // Execute
+      const result = await api.defaultGetRoute(request, response, null);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body).toBe(errorMessage);
+    });
+
+    // Test what happens if a parse results in error
+    test('Parsing error - condition', async () => {
+      const errorMessage = 'errorMessage';
+      let request = utils.common.fakeRequest(null, null, {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      });
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter').mockImplementation(
+        () => ({valid: false, statusCode: 400, message: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(request, response, null);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.device).toStrictEqual({});
+    });
+
+    // Test what happens if a parse results in error
+    test('Parsing error - integer', async () => {
+      const errorMessage = 'errorMessage';
+      let request = utils.common.fakeRequest(null, null, {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      });
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteIntParameter').mockImplementation(
+        () => ({valid: false, statusCode: 400, message: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(request, response, null);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.device).toStrictEqual({});
+    });
+
+    // Test what happens if a parse results in error
+    test('Parsing error - string array', async () => {
+      const errorMessage = 'errorMessage';
+      let request = utils.common.fakeRequest(null, null, {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      });
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteIntParameter')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter').mockImplementation(
+        () => ({valid: false, statusCode: 400, message: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(request, response, null);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.device).toStrictEqual({});
+    });
+
+    // Test what happens if everything is valid
+    test('Valid', async () => {
+      const errorMessage = 'errorMessage';
+      const query = {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      };
+      const params = 'params';
+      const addParams1 = 'addParams1';
+      const addParams2 = 'addParams2';
+      const parseCondition = {'condition': true};
+      const parseInt = 56;
+      const parseArray = ['value1', 'value2'];
+      let request = utils.common.fakeRequest(null, null, query, null, params);
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter')
+        .mockImplementation(() => ({valid: true, value: parseCondition}));
+      jest.spyOn(api, 'parseRouteIntParameter')
+        .mockImplementation(() => ({valid: true, value: parseInt}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter')
+        .mockImplementation(() => ({valid: true, value: parseArray}));
+      let getSpy = jest.spyOn(api, 'getDeviceByFields').mockImplementation(
+        () => ({valid: true, statusCode: 200, json: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(
+        request, response, null, addParams1, addParams2,
+      );
+
+      // Validate
+      expect(getSpy).toHaveBeenCalledWith(
+        params, api.__testReducedDeviceFields, parseArray, parseCondition,
+        parseInt, parseInt, null, [addParams1, addParams2],
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toBe(errorMessage);
+    });
+
+    // Test what happens if everything is valid and has a relative path
+    test('Relative path', async () => {
+      const errorMessage = 'errorMessage';
+      const query = {
+        conditionField: true, page: true, pageLimit: true, field: true,
+      };
+      const params = 'params';
+      const addParams1 = 'addParams1';
+      const addParams2 = 'addParams2';
+      const parseCondition = {'condition': true};
+      const parseInt = 34;
+      const parseArray = ['value1', 'value2'];
+      const relativePath = Object.keys(
+        api.__testReducedFieldsByRelativePath,
+      )[2];
+      let request = utils.common.fakeRequest(null, null, query, null, params);
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter')
+        .mockImplementation(() => ({valid: true, value: parseCondition}));
+      jest.spyOn(api, 'parseRouteIntParameter')
+        .mockImplementation(() => ({valid: true, value: parseInt}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter')
+        .mockImplementation(() => ({valid: true, value: parseArray}));
+      let getSpy = jest.spyOn(api, 'getDeviceByFields').mockImplementation(
+        () => ({valid: true, statusCode: 200, json: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(
+        request, response, relativePath, addParams1, addParams2,
+      );
+
+      // Validate
+      expect(getSpy).toHaveBeenCalledWith(
+        params, api.__testReducedFieldsByRelativePath[relativePath],
+        parseArray, parseCondition, parseInt, parseInt, relativePath,
+        [addParams1, addParams2],
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toBe(errorMessage);
+    });
+
+    // Test what happens if everything is valid and has no page and pageLimit
+    test('No page', async () => {
+      const errorMessage = 'errorMessage';
+      const query = {
+        conditionField: true, field: true,
+      };
+      const params = 'params';
+      const addParams1 = 'addParams1';
+      const addParams2 = 'addParams2';
+      const parseCondition = {'condition': true};
+      const parseArray = ['value1', 'value2'];
+      const relativePath = Object.keys(
+        api.__testReducedFieldsByRelativePath,
+      )[2];
+      let request = utils.common.fakeRequest(null, null, query, null, params);
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementationOnce(() => ({valid: true}))
+        .mockImplementationOnce(() => ({valid: false}))
+        .mockImplementationOnce(() => ({valid: false}))
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteConditionParameter')
+        .mockImplementation(() => ({valid: true, value: parseCondition}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter')
+        .mockImplementation(() => ({valid: true, value: parseArray}));
+      let getSpy = jest.spyOn(api, 'getDeviceByFields').mockImplementation(
+        () => ({valid: true, statusCode: 200, json: errorMessage}),
+      );
+
+      // Execute
+      const result = await api.defaultGetRoute(
+        request, response, relativePath, addParams1, addParams2,
+      );
+
+      // Validate
+      expect(getSpy).toHaveBeenCalledWith(
+        params, api.__testReducedFieldsByRelativePath[relativePath],
+        parseArray, parseCondition, 1, MAX_PAGE_SIZE, relativePath,
+        [addParams1, addParams2],
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body).toBe(errorMessage);
+    });
+  });
+
+
+  describe('Search Tests', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+    });
+
+    // Test what happens if the request is invalid
+    test('Invalid request', async () => {
+      const errorMessage = 'errorMessage';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(api.search);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toBe(errorMessage);
+    });
+
+    // Test what happens if any entry is not a string
+    test.each([
+      'alert', 'online', 'offline', 'unstable', 'noSignal', 'flashbox', 'tr069',
+      'signal', 'ipv6', 'mesh', 'mode', 'onlineFor', 'offlineFor', 'query',
+      'fields', 'exclude',
+    ])('Parameter not a string - %p', async (parameter) => {
+      let query = {};
+      query[parameter] = 42;
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(t('mustBeAString'));
+    });
+
+    // Test what happens if a boolean entry is invalid
+    test.each([
+      'alert', 'online', 'offline', 'unstable', 'noSignal', 'flashbox', 'tr069',
+    ])('Invalid boolean - %p', async (parameter) => {
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(
+        t('fieldNameInvalid', {name: parameter}).replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test what happens if a select entry is invalid
+    test.each([
+      'signal', 'ipv6', 'mesh', 'mode',
+    ])('Invalid select - %p', async (parameter) => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateOptions').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toBe(errorMessage);
+    });
+
+    // Test what happens if an integer entry parse is invalid
+    test.each([
+      'onlineFor', 'offlineFor',
+    ])('Invalid integer parse - %p', async (parameter) => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteIntParameter').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toBe(errorMessage);
+    });
+
+    // Test what happens if an integer entry is invalid
+    test.each([
+      'onlineFor', 'offlineFor',
+    ])('Invalid integer - %p', async (parameter) => {
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteIntParameter')
+        .mockImplementation(() => ({valid: true, value: -42}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(t('valueInvalid'));
+    });
+
+    // Test what happens if an string array entry parse is invalid
+    test.each([
+      'query', 'fields', 'exclude',
+    ])('Invalid string array parse - %p', async (parameter) => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter').mockImplementation(
+        () => ({valid: false, statusCode: 400, message: errorMessage}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toBe(errorMessage);
+    });
+
+    // Test what happens if an string array parse is empty
+    test.each([
+      'query', 'fields', 'exclude',
+    ])('Empty string array - %p', async (parameter) => {
+      let query = {};
+      query[parameter] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter').mockImplementation(
+        () => ({valid: true, value: ['aaa', 'bbb', '', 'ccc']}));
+      jest.spyOn(api, 'validateDeviceProjection').mockImplementation(
+        (value) => ({valid: true, value: value}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(
+        t('fieldNameInvalid', {name: parameter}).replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test what happens if an string array parse results in an invalid
+    // projection
+    test('Invalid projection', async () => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query['fields'] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'parseRouteStringArrayParameter').mockImplementation(
+        () => ({valid: true, value: ['aaa', 'bbb', 'ccc', 'ddd']}));
+      jest.spyOn(api, 'validateDeviceProjection').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(errorMessage);
+    });
+
+    // Test what happens if a page is invalid
+    test.each([
+      'page', 'pageLimit',
+    ])('Invalid page - %p', async (parameter) => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query[parameter] = '12';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(errorMessage);
+    });
+
+    // Test what happens if the sortType is wrong
+    test('Invalid sortType', async () => {
+      let query = {};
+      query['sortType'] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(
+        t('fieldNameInvalid', {name: 'sortType'})
+          .replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test what happens if the sortOn is wrong
+    test('Invalid sortOn', async () => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      query['sortOn'] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateDeviceProjection').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(errorMessage);
+    });
+
+    // Test what happens if the operation is wrong
+    test('Invalid operation', async () => {
+      let query = {};
+      query['operation'] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(
+        t('fieldNameInvalid', {name: 'operation'})
+          .replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test what happens if the operation is or and exclude was passed
+    test('Invalid operation OR + exclude', async () => {
+      let query = {};
+      query['operation'] = 'or';
+      query['exclude'] = 'abcd';
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query,
+      );
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.message).toContain(
+        t('queryWithOrAndExclude').replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test a valid setup but the device was not found
+    test('Not found device', async () => {
+      let query = {};
+      const number = '12';
+      const booleans = [
+        'alert', 'online', 'offline', 'unstable',
+        'noSignal', 'flashbox', 'tr069',
+      ];
+      const integers = ['onlineFor', 'offlineFor', 'page', 'pageLimit'];
+      const arrays = ['query', 'fields', 'exclude'];
+      const path1 = Object.keys(DeviceModel.schema.paths)[0];
+      const path2 = Object.keys(DeviceModel.schema.paths)[1];
+
+      // Build the query
+      query['signal'] = 'bad;weak;good';
+      query['ipv6'] = 'off;on;unknown';
+      query['mesh'] = 'off;on';
+      query['mode'] = 'router;bridge';
+      query['sortType'] = 'desc';
+      query['sortOn'] = path2;
+      booleans.forEach((element) => query[element] = 'true');
+      integers.forEach((element) => query[element] = number);
+      arrays.forEach((element) => query[element] = path1 + ';' + path2);
+
+      // Mocks
+      let complexSpy = jest.spyOn(DeviceList, 'complexSearchDeviceQuery')
+        .mockImplementation(() => ({}));
+      let paginateSpy = jest.spyOn(DeviceModel, 'paginate')
+        .mockImplementation(() => {});
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query, null, {},
+      );
+
+      // Validate
+      const complexCall = complexSpy.mock.calls[0][0];
+      let projection = {};
+      let sort = {};
+      projection[path1] = true;
+      projection[path2] = true;
+      sort[path2] = -1;
+
+      booleans.forEach((element) => expect(complexCall).toContain(t(element)));
+      expect(complexCall).toContain(t('online') + ' >' + number);
+      expect(complexCall).toContain(t('offline') + ' >' + number);
+      ['signal', 'ipv6', 'mesh', 'mode'].forEach((element) =>
+        query[element].split(';').forEach((element2) =>
+          expect(complexCall).toContain(t(element) + ' ' + t(element2))),
+      );
+      expect(complexCall).toContain(path1);
+      expect(complexCall).toContain(path2);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path1);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path2);
+      expect(paginateSpy).toHaveBeenCalledWith({}, {
+        lean: true, page: parseInt(number), limit: parseInt(number),
+        projection: projection, sort: sort,
+      });
+      expect(result.statusCode).toBe(404);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+    });
+
+    // Test what happens when the database fails
+    test('Database error', async () => {
+      const errorMessage = 'errorMessage';
+      let query = {};
+      const number = '12';
+      const booleans = [
+        'alert', 'online', 'offline', 'unstable',
+        'noSignal', 'flashbox', 'tr069',
+      ];
+      const integers = ['onlineFor', 'offlineFor', 'page', 'pageLimit'];
+      const arrays = ['query', 'fields', 'exclude'];
+      const path1 = Object.keys(DeviceModel.schema.paths)[0];
+      const path2 = Object.keys(DeviceModel.schema.paths)[1];
+
+      // Build the query
+      query['signal'] = 'bad;weak;good';
+      query['ipv6'] = 'off;on;unknown';
+      query['mesh'] = 'off;on';
+      query['mode'] = 'router;bridge';
+      query['sortType'] = 'desc';
+      query['sortOn'] = path2;
+      booleans.forEach((element) => query[element] = 'true');
+      integers.forEach((element) => query[element] = number);
+      arrays.forEach((element) => query[element] = path1 + ';' + path2);
+
+      // Mocks
+      let complexSpy = jest.spyOn(DeviceList, 'complexSearchDeviceQuery')
+        .mockImplementation(() => ({}));
+      let paginateSpy = jest.spyOn(DeviceModel, 'paginate')
+        .mockImplementation(() => {
+          throw new Error(errorMessage);
+        });
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query, null, {},
+      );
+
+      // Validate
+      const complexCall = complexSpy.mock.calls[0][0];
+      let projection = {};
+      let sort = {};
+      projection[path1] = true;
+      projection[path2] = true;
+      sort[path2] = -1;
+
+      booleans.forEach((element) => expect(complexCall).toContain(t(element)));
+      expect(complexCall).toContain(t('online') + ' >' + number);
+      expect(complexCall).toContain(t('offline') + ' >' + number);
+      ['signal', 'ipv6', 'mesh', 'mode'].forEach((element) =>
+        query[element].split(';').forEach((element2) =>
+          expect(complexCall).toContain(t(element) + ' ' + t(element2))),
+      );
+      expect(complexCall).toContain(path1);
+      expect(complexCall).toContain(path2);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path1);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path2);
+      expect(paginateSpy).toHaveBeenCalledWith({}, {
+        lean: true, page: parseInt(number), limit: parseInt(number),
+        projection: projection, sort: sort,
+      });
+      expect(result.statusCode).toBe(500);
+      expect(result.body.message).toContain(
+        t('databaseFindError').replace('({{errorline}})', ''),
+      );
+    });
+
+    // Test a valid setup
+    test('Valid', async () => {
+      let query = {};
+      const number = '12';
+      const page = 5;
+      const pageLimit = 2;
+      const totalPages = 100;
+      const devices = ['a', 'b'];
+      const booleans = [
+        'alert', 'online', 'offline', 'unstable',
+        'noSignal', 'flashbox', 'tr069',
+      ];
+      const integers = ['onlineFor', 'offlineFor', 'page', 'pageLimit'];
+      const arrays = ['query', 'fields', 'exclude'];
+      const path1 = Object.keys(DeviceModel.schema.paths)[0];
+      const path2 = Object.keys(DeviceModel.schema.paths)[1];
+
+      // Build the query
+      query['signal'] = 'bad;weak;good';
+      query['ipv6'] = 'off;on;unknown';
+      query['mesh'] = 'off;on';
+      query['mode'] = 'router;bridge';
+      query['sortType'] = 'desc';
+      query['sortOn'] = path2;
+      booleans.forEach((element) => query[element] = 'true');
+      integers.forEach((element) => query[element] = number);
+      arrays.forEach((element) => query[element] = path1 + ';' + path2);
+
+      // Mocks
+      let complexSpy = jest.spyOn(DeviceList, 'complexSearchDeviceQuery')
+        .mockImplementation(() => ({}));
+      let paginateSpy = jest.spyOn(DeviceModel, 'paginate')
+        .mockImplementation(() => ({
+          docs: devices, page: page, limit: pageLimit,
+          totalPages: totalPages,
+        }));
+
+      // Execute
+      const result = await utils.common.sendFakeRequest(
+        api.search, null, null, query, null, {},
+      );
+
+      // Validate
+      const complexCall = complexSpy.mock.calls[0][0];
+      let projection = {};
+      let sort = {};
+      projection[path1] = true;
+      projection[path2] = true;
+      sort[path2] = -1;
+
+      booleans.forEach((element) => expect(complexCall).toContain(t(element)));
+      expect(complexCall).toContain(t('online') + ' >' + number);
+      expect(complexCall).toContain(t('offline') + ' >' + number);
+      ['signal', 'ipv6', 'mesh', 'mode'].forEach((element) =>
+        query[element].split(';').forEach((element2) =>
+          expect(complexCall).toContain(t(element) + ' ' + t(element2))),
+      );
+      expect(complexCall).toContain(path1);
+      expect(complexCall).toContain(path2);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path1);
+      expect(complexCall).toContain(t('/exclude') + ' ' + path2);
+      expect(paginateSpy).toHaveBeenCalledWith({}, {
+        lean: true, page: parseInt(number), limit: parseInt(number),
+        projection: projection, sort: sort,
+      });
+      expect(result.body.success).toBe(true);
+      expect(result.statusCode).toBe(200);
+      expect(result.body.message).toContain(t('OK'));
+      expect(result.body.devices).toStrictEqual(devices);
+      expect(result.body.page).toBe(page);
+      expect(result.body.pageLimit).toBe(pageLimit);
+      expect(result.body.totalPages).toBe(totalPages);
     });
   });
 });
