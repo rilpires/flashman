@@ -349,7 +349,7 @@ apiController.validateField = function(params, field, relativePath = null) {
 
 
   // Valid field
-  return apiController.buildDeviceResponse(true, 200, t('OK'));
+  return valid;
 };
 
 

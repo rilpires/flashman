@@ -6,6 +6,26 @@ const authController = require('../../controllers/auth');
 const apiController = require('../../controllers/api/v3');
 
 
+/**
+ * Do not forget to alter docs/api/v3 files. Those files are needed for swagger,
+ * an UI for sending and testing the commands defined here.
+ *
+ * For `GET` routes that get specific a device through specific fields inside
+ * the device model, just create a route based on the routes that already exists
+ * and change the `translationObject` if needed.
+ * If the return is a field in device model that has other fields inside of it,
+ * pass the name of the field to the route and add a constant at the top of the
+ * API V3 controller specifying the reduced version of this field (the fields
+ * that should or should not be returned). Add the field name and the created
+ * constant to `reducedFieldsByRelativePath`.
+ *
+ * @summary For `GET` routes for specific device fields, change
+ * `translationObject` and `reducedFieldsByRelativePath`.
+ *
+ * @memberof controllers/api/v3
+ */
+
+
 // Enable CORS to all V3 routes as it is necessary for Swagger to send commands.
 router.use((_request, response, next) => {
   // Set the headers
