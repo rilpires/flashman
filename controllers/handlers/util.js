@@ -101,29 +101,51 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
   for (const key of Object.keys(data)) {
     const wan = data[key];
 
+    let internet = true;
+    let ppp = false;
     let enable = false;
     let status = false;
+
     if (wan.pppoe_enable && wan.pppoe_enable.value) {
+      ppp = true;
       wanClassPPP.push(key);
       enable = wan.pppoe_enable.value;
       if (wan.pppoe_status &&
           wan.pppoe_status.value) status = wan.pppoe_status.value;
+      if (wan.service_type_ppp &&
+          wan.service_type_ppp.value) {
+        internet =
+          wan.service_type_ppp.value.toLowerCase().includes('internet');
+      }
     } else {
       if (wan.dhcp_enable &&
           wan.dhcp_enable.value) enable = wan.dhcp_enable.value;
       if (wan.dhcp_status &&
           wan.dhcp_status.value) status = wan.dhcp_status.value;
+      if (wan.service_type &&
+          wan.service_type.value) {
+        internet = wan.service_type.value.toLowerCase().includes('internet');
+      }
     }
 
     enable = utilHandlers.convertToBoolean(enable);
-    if (enable === true && (status === 'Connected' || status === 'Up')) {
-      // Ideal conditions: Status = Connected and Enable = true
-      idealCandidates.push(key);
-    } else if (enable === true || (status === 'Dormant' ||
-        status === 'Connected' || status === 'Up')) {
-      // In the absence of WANs in ideal conditions, we map those that have at
-      // least one of the conditions met
-      possibleCandidates.push(key);
+    if (enable && internet) {
+      if (ppp) {
+        // PPP dont need to be connected to be ideal
+        // Provider can have a dhcp in service TR69 and
+        // PPP in Internet and Flashman sets username and password
+        // for this interface to connect
+        idealCandidates.push(key);
+      } else {
+        // DHCP/Static interfaces
+        if (status === 'Up' || status === 'Connected') {
+          idealCandidates.push(key);
+        } else if (status === 'Dormant') {
+          // If the interface is dormant, its not ideal
+          // but can be used in absense of others
+          possibleCandidates.push(key);
+        }
+      }
     }
   }
 

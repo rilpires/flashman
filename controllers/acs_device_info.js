@@ -183,13 +183,7 @@ const getPPPoEenabledMultiWan = function(cpe, multiwan, idx) {
   let hasPPPoE = false;
   let wan = multiwan[idx];
   if (wan.pppoe_enable && wan.pppoe_enable.value) {
-    if (typeof wan.pppoe_enable.value === 'string') {
-      hasPPPoE = (utilHandlers.isTrueValueString(wan.pppoe_enable.value));
-    } else if (typeof wan.pppoe_enable.value === 'number') {
-      hasPPPoE = (wan.pppoe_enable.value == 0) ? false : true;
-    } else if (typeof wan.pppoe_enable.value === 'boolean') {
-      hasPPPoE = wan.pppoe_enable.value;
-    }
+    hasPPPoE = utilHandlers.convertToBoolean(wan.pppoe_enable.value);
   }
   return hasPPPoE;
 };

@@ -603,7 +603,6 @@ basicCPEModel.getTR181ModelFields = function(newroots) {
 
   // Wan
   fields.wan.dhcp_status = wanRoot.ip+'Status';
-  fields.wan.pppoe_status = wanRoot.ppp+'Status';
 
   fields.wan.wan_ip = wanRoot.ip+'IPv4Address.*.IPAddress';
   fields.wan.wan_ip_ppp = fields.wan.wan_ip;
@@ -654,6 +653,9 @@ basicCPEModel.getModelFields = function(newroots) {
         //   'LANEthernetInterfaceConfig.1.MACAddress',
     },
     wan: {
+      name: roots.wan.ip+'Name',
+      name_ppp: roots.wan.ppp+'Name',
+
       // PPPoE
       pppoe_enable: roots.wan.ppp+'Enable',
       pppoe_status: roots.wan.ppp+'ConnectionStatus',
@@ -712,6 +714,10 @@ basicCPEModel.getModelFields = function(newroots) {
       port_mapping_entries_dhcp: roots.wan.ip+'PortMappingNumberOfEntries',
       port_mapping_entries_ppp: roots.wan.ppp+'PortMappingNumberOfEntries',
       // These should only be added whenever they exist, for legacy reasons:
+        // service_type: InternetGatewayDevice.WANDevice.1.
+        //   WANConnectionDevice.*.WANIPConnection.*.X_HW_SERVICELIST
+        // service_type_ppp: InternetGatewayDevice.WANDevice.1.
+        //   WANConnectionDevice.*.WANPPPConnection.*.X_HW_SERVICELIST
         // vlan: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
         //   'GponLinkConfig.VLANIDMark',
         // vlan_ppp: 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+

@@ -117,6 +117,8 @@ huaweiModel.getModelFields = function() {
     'X_GponInterafceConfig.TXPower';
   fields.wan.vlan = fields.roots.wan.ip+'X_HW_VLAN';
   fields.wan.vlan_ppp = fields.roots.wan.ppp+'X_HW_VLAN';
+  fields.wan.service_type = fields.roots.wan.ip+'X_HW_SERVICELIST';
+  fields.wan.service_type_ppp = fields.roots.wan.ppp+'X_HW_SERVICELIST';
 
 // IPv6
   // Address
