@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.72.1",
+	"latest_version": "2.74.2",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,76 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.74.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Fiberhome SR1041E por TR-069"
+		],
+		"fixes": [
+			"Corrigimos uma falha na leitura do MTU do modelo Nokia G2425",
+			"Corrigimos uma falha na leitura da VLAN do modelo Datacom DM986-414",
+			"Corrigimos uma falha que causava a demorava para a CPE sincronizar com o flashman depois de um hard reset",
+			"Corrigimos uma falha que fazia com que o usuário web não fosse alterado em algumas CPEs TR-069"
+		],
+		"improvements": [
+			"Adicionamos uma melhoria no processo de conexão de firmwares por MQTT",
+			"Adicionamos suporte a leitura IPv6 ao modelo Nokia G2425"
+
+		],
+		"features": []
+	},
+	"2.74.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug da versão 2.74.0 que não mostrava a paginação da listagem de CPEs na página principal."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.74.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Intelbras TWIBI por TR-069"
+		],
+		"fixes": [],
+		"improvements": [
+			"Otimizamos o processo de busca de informação pela interface e pela API, o que reduz o tempo de resposta das pesquisas"
+		],
+		"features": []
+	},
+	"2.73.1": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug da versão 2.73.0 que evitava a detecção correta da CPE ZTE F6600P."
+		],
+		"improvements": [],
+		"features": []
+	},
+	"2.73.0": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Datacom DM955-5GT por TR-069",
+			"Adicionamos suporte ao modelo TP-Link XX230v por TR-069",
+			"Adicionamos suporte ao modelo Multilaser/ZTE F6600P por TR-069"
+		],
+		"fixes": [
+		],
+		"improvements": [
+			"Adicionamos suporte a coleta de informação IPv6 para roteadores Fiberhome HG6245G, HG8145F, Intelbras AC120/121."
+		],
+		"features": []
+	},
+	"2.72.2": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [],
+		"fixes": [
+			"Corrigimos um bug nas permissões de usuarios para edição do DNS para dispositivos na LAN"
+		],
+		"improvements": [],
+		"features": []
 	},
 	"2.72.1": {
 		"custom_firmware_compatibilities": [],
