@@ -488,9 +488,9 @@ const checkTask = function(task) {
 /* given an array of tasks, ignores tasks that can't be joined (the one which
  parameters data type aren't an array) and returns an array in which the first
  position has an array of tasks that will be new tasks sent to genie and the
- second position has an object where key is a task type/name and the value is
- an array of task ids to be deleted. It's implicit that all tasks belong to the
- same device id. The tasks to be delete are tasks that have the same name/type.
+ second position has an array of ids to delete.
+ It's implicit that all tasks belong to the same device id.
+ The tasks to be delete are tasks that have the same name/type.
  All tasks with the same name/type are returned in the second argument. Tasks
  are not checked for being identical, in that case all identical tasks are
  marked to be removed and new identical task is created. The tasks to be added
@@ -762,5 +762,9 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
 genie.getTaskWatchListLength = function() {
   return Object.keys(taskWatchlist).length;
 };
+
+// below methods shoud be used only on unit tests
+genie.tests = {};
+genie.tests.joinAllTasks = joinAllTasks;
 
 module.exports = genie;
