@@ -4215,22 +4215,27 @@ deviceListController.getDefaultLanDNSServers = async function(req, res) {
 };
 
 deviceListController.setDefaultLanDNSServers = async function(req, res) {
-  let success = true;
-  let type = 'success';
-  let message = t('operationSuccessful', {errorline: __line});
-
   if (!util.isJSONObject(req.body)) {
-    success = false; type = 'error';
-    message = t('jsonError', {errorline: __line});
+    return res.status(200).json({
+      success: false,
+      type: 'error',
+      message: t('jsonError', {errorline: __line}),
+    });
   } else if (!req.body.default_dns_servers) {
-    success = false; type = 'error';
-    message = t('configNotFound', {errorline: __line});
+    return res.status(200).json({
+      success: false,
+      type: 'error',
+      message: t('bodyNotObject', {errorline: __line}),
+    });
   } else {
     let matchedConfig = await Config.findOne(
       {is_default: true}, {default_dns_servers: true}).exec().catch(
       (err) => {
-        success = false; type = 'error';
-        message = t('configFindError', {errorline: __line});
+        return res.status(200).json({
+          success: false,
+          type: 'error',
+          message: t('configNotFound', {errorline: __line}),
+        });
       },
     );
     if (matchedConfig) {
@@ -4242,8 +4247,11 @@ deviceListController.setDefaultLanDNSServers = async function(req, res) {
         if (server.match(util.ipv4Regex)) {
           approvedHostsIpv4.push(server);
         } else {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
+          return res.status(200).json({
+            success: false,
+            type: 'error',
+            message: t('dnsShouldBeIPFormat', {ipType: 'IPv4'}),
+          });
         }
       });
       servers.ipv6.forEach((server) => {
@@ -4251,20 +4259,28 @@ deviceListController.setDefaultLanDNSServers = async function(req, res) {
         if (util.testIPv6(server)) {
           approvedHostsIpv6.push(server);
         } else {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
+          return res.status(200).json({
+            success: false,
+            type: 'error',
+            message: t('dnsShouldBeIPFormat', {ipType: 'IPv6'}),
+          });
         }
       });
       matchedConfig.default_dns_servers.ipv4 = approvedHostsIpv4;
       matchedConfig.default_dns_servers.ipv6 = approvedHostsIpv6;
       await matchedConfig.save().catch((err) => {
-        success = false; type = 'error';
-        message = t('configSaveError', {errorline: __line});
+          return res.status(200).json({
+            success: false,
+            type: 'error',
+            message: t('deviceSaveError', {errorline: __line}),
+          });
       });
     }
   }
   return res.status(200).json({
-    success: success, type: type, message: message,
+    success: true,
+    type: 'success',
+    message: t('operationSuccessful', {errorline: __line}),
   });
 };
 

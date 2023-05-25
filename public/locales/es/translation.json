@@ -246,6 +246,7 @@
 	"duplicatedDNS": "¡La dirección {{-dns}} ya está registrada!",
 	"configDnsServers": "Configurar Servidores de Dominio (DNS)",
 	"dnsCannotBeEmpty": "¡Cuidadoso! No es posible eliminar todos los servidores DNS configurados. Si desea continuar con esta acción, se configurará un servidor DNS que asume el mismo valor que la IP de la LAN.",
+	"dnsShouldBeIPFormat": "La dirección DNS debe estar en formato IPv4 o IPv6 según la pestaña que se esté editando",
 	"wait": "Esperar",
 	"prefixDelegationInfoTitle": "Delegación de Prefijo",
 	"ipv6PrefixDelegation": "Delegación de Prefijo IPv6",
