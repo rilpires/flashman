@@ -95,6 +95,9 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
 
+  fields.wan.service_type = fields.roots.wan.ip+'X_TP_ServiceType';
+  fields.wan.service_type_ppp = fields.roots.wan.ip+'X_TP_ServiceType';
+
   // Port Mapping
   fields.port_mapping_dhcp = 'Device.NAT.PortMapping';
   fields.port_mapping_ppp = 'Device.NAT.PortMapping';
