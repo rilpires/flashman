@@ -488,9 +488,9 @@ const checkTask = function(task) {
 /* given an array of tasks, ignores tasks that can't be joined (the one which
  parameters data type aren't an array) and returns an array in which the first
  position has an array of tasks that will be new tasks sent to genie and the
- second position has an object where key is a task type/name and the value is
- an array of task ids to be deleted. It's implicit that all tasks belong to the
- same device id. The tasks to be delete are tasks that have the same name/type.
+ second position has an array of ids to delete.
+ It's implicit that all tasks belong to the same device id.
+ The tasks to be delete are tasks that have the same name/type.
  All tasks with the same name/type are returned in the second argument. Tasks
  are not checked for being identical, in that case all identical tasks are
  marked to be removed and new identical task is created. The tasks to be added
@@ -592,7 +592,13 @@ const joinAllTasks = function(tasks) {
       tasksToAdd.push(newTask); // save to list of tasks to be added.
     }
   }
-  return [tasksToAdd, taskIdsForType];
+  let tasksToDelete = [];
+  for (let taskType of Object.keys(taskIdsForType)) {
+    for (let taskId of Object.keys(taskIdsForType[taskType])) {
+      tasksToDelete.push(taskId);
+    }
+  }
+  return [tasksToAdd, tasksToDelete];
 };
 
 /* for each task id, send a request to GenieACS to delete that task. GenieACS
@@ -600,14 +606,9 @@ const joinAllTasks = function(tasks) {
  to print error messages. */
 const deleteOldTasks = async function(tasksToDelete, deviceid) {
   let promises = []; // array that will hold http request promises.
-  /* eslint-disable guard-for-in */
-  for (let name in tasksToDelete) { // for each task name/type.
-    // for each task._id in this task type/name.
-    /* eslint-disable guard-for-in*/
-    for (let id in tasksToDelete[name]) {
-      promises.push(deleteTask(id)); // delete task.
-    }
-  } // add a request to array of promises.
+  for (let id of tasksToDelete) { // for each task name/type.
+    promises.push(deleteTask(id));
+  }
   // wait for all promises to finish.
   let results = await Promise.allSettled(promises);
   for (let i = 0; i < results.length; i++) { // for each request result.
@@ -806,7 +807,7 @@ counterpart, in which case deleting it would make genie return 'task not found'.
 So we delete old tasks as fast as we can. Adding a task makes us wait at least
 a 'timeout' amount of milliseconds, so it isn't fast. */
     // if there are tasks being substituted by new ones.
-    if (Object.keys(tasksToDelete).length > 0) {
+    if (tasksToDelete.length > 0) {
       // there will be tasks to be deleted.
       try {
         await deleteOldTasks(tasksToDelete, deviceid);
@@ -827,5 +828,9 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
 genie.getTaskWatchListLength = function() {
   return Object.keys(taskWatchlist).length;
 };
+
+// below methods shoud be used only on unit tests
+genie.tests = {};
+genie.tests.joinAllTasks = joinAllTasks;
 
 module.exports = genie;
