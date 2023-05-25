@@ -12,7 +12,7 @@ mixin single-list-modal-header(title, icon)
     button.close(type="button", data-dismiss="modal")
       span.white-text &times;
 
-mixin single-list-input(id, inputLabel, invalidMsg, inputTooltip)
+mixin single-list-input(id, inputLabel, mask, invalidMsg, inputTooltip)
   .row.mt-1.align-items-center.flexwrap
     .col-8
       .md-form.input-entry
@@ -23,6 +23,7 @@ mixin single-list-input(id, inputLabel, invalidMsg, inputTooltip)
         input.form-control(
           id=id+"-input"
           type="text",
+          class=mask,
         )
         .invalid-feedback= invalidMsg
 
@@ -109,12 +110,12 @@ mixin single-list-modal-footer(id, warningMsg)
         )
         span &nbsp; #{t('Apply')}
 
-mixin single-list-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
+mixin single-list-modal-body(id, inputLabel, mask, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
   .modal-body(
     id=id+"-canvas"
   )
     //- Input row
-    +single-list-input(id, inputLabel, invalidMsg, inputTooltip)
+    +single-list-input(id, inputLabel, mask, invalidMsg, inputTooltip)
     //- Entries table
     +single-list-table(id, columnTitle)
     //- Empty table placeholder
@@ -122,7 +123,7 @@ mixin single-list-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTit
     //- Modal footer
     +single-list-modal-footer(id, warningMsg)
 
-mixin tab-lists-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
+mixin tab-lists-modal-body(id, inputLabel, mask, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
   .modal-body(
     id=id+"-canvas"
   )
@@ -151,7 +152,7 @@ mixin tab-lists-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle
         id=id+"-tab-content"
       )
         //- Input row
-        +single-list-input(id+"-tab", inputLabel, invalidMsg, inputTooltip)
+        +single-list-input(id+"-tab", inputLabel, mask, invalidMsg, inputTooltip)
         //- Entries table
         +single-list-table(id+"-tab", columnTitle)
         //- Empty table placeholder
@@ -159,7 +160,7 @@ mixin tab-lists-modal-body(id, inputLabel, invalidMsg, inputTooltip, columnTitle
         //- Modal footer
         +single-list-modal-footer(id+"-tab", warningMsg)
 
-mixin single-list-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
+mixin single-list-modal(id, title, icon, inputLabel, mask, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg)
   .modal.fade(
     id=id
     tabindex="-1",
@@ -170,10 +171,10 @@ mixin single-list-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, c
         //- Header of the modal
         +single-list-modal-header(title, icon)
         //- Modal body
-        +single-list-modal-body(id, inputLabel, invalidMsg,
+        +single-list-modal-body(id, inputLabel, mask, invalidMsg,
                                 inputTooltip, columnTitle, emptyMsg, warningMsg)
 
-mixin tab-lists-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
+mixin tab-lists-modal(id, title, icon, inputLabel, mask, invalidMsg, inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
   .modal.fade(
     id=id
     tabindex="-1",
@@ -184,5 +185,5 @@ mixin tab-lists-modal(id, title, icon, inputLabel, invalidMsg, inputTooltip, col
         //- Header of the modal
         +single-list-modal-header(title, icon)
         //- Modal body
-        +tab-lists-modal-body(id, inputLabel, invalidMsg,
+        +tab-lists-modal-body(id, inputLabel, mask, invalidMsg,
                               inputTooltip, columnTitle, emptyMsg, warningMsg, ...tabs)
