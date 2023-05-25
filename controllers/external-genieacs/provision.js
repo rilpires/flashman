@@ -70,7 +70,7 @@ const updateWanConfiguration = function(fields, isTR181) {
           // Collect field properties
           let obj = {};
           obj.path = resp.path;
-          obj.writable = Boolean(resp.writable);
+          obj.writable = resp.writable;
           obj.value = resp.value;
           // Ensures that no duplicate paths will be added
           if (!addedPaths.has(resp.path)) {

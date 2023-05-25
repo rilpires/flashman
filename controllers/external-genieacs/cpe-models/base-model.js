@@ -618,9 +618,9 @@ basicCPEModel.getTR181ModelFields = function(newroots) {
   fields.wan.remote_address_ppp = wanRoot.ppp+'IPCP.RemoteIPAddress';
   fields.wan.dns_servers_ppp = wanRoot.ppp+'IPCP.DNSServers';
   fields.wan.port_mapping_entries_dhcp =
-    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+    'Device.NAT.PortMappingNumberOfEntries';
   fields.wan.port_mapping_entries_ppp =
-    wanRoot.port_mapping+'PortMappingNumberOfEntries';
+    'Device.NAT.PortMappingNumberOfEntries';
 
   return fields;
 };

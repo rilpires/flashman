@@ -623,9 +623,6 @@ const getFieldProperties = function(fields, path) {
       properties.push(key);
     }
   }
-  if (path.includes('PortMapping') && properties.length === 0) {
-    properties.push('port_mapping');
-  }
   return properties;
 };
 
@@ -669,32 +666,22 @@ const getObjValue = function(obj) {
   return Array.isArray(obj.value) ? obj.value[0] : obj.value;
 };
 
-const findInterfaceLink = function(data, path, i) {
-  // Device.IP.Interface.*.LowerLayers -> Device.PPP.Interface.*.
-  let connectionPath = path.replace('*', i);
-  let interfPPP = 'Device.PPP.Interface.';
-  let interfIP = 'Device.IP.Interface.';
+// Used by TR181 to find and get data
+const getValueData = function(data, path) {
   for (let j = 0; j < data.length; j++) {
-    let value = getObjValue(data[j]);
-    if (connectionPath === data[j].path && (value.includes(interfPPP)
-        || value.includes(interfIP))) {
+    if (path === data[j].path) {
+      let value = getObjValue(data[j]);
       return value;
     }
   }
   return null;
 };
 
-const findEthernetLink = function(data, path, i, root) {
+const findPathLink = function(data, path, i, root) {
   // Root is the start
   // Path is the key we want to find
 
-  // We need to search for an:
-  // Device.Ethernet.Interface.*
-  // Device.Ethernet.Link.*
-  // Device.Ethernet.VLANTermination
-
-  // The idea is: starting from IP or PPP, we need to find
-  // the Ethernet PATH
+  // We need to walk in LowerLayers to find the path
   let connectionPath = path.replace('*', i);
   let level = 0;
   let searchpath = root;
@@ -702,43 +689,24 @@ const findEthernetLink = function(data, path, i, root) {
   while (level < 4) {
     level++;
     let link = searchpath+'LowerLayers';
+    searchpath = null;
     for (let j = 0; j < data.length; j++) {
       if (data[j].path === link) {
         let value = getObjValue(data[j]);
+        // Link is empty (end of tree)
+        if (!value) return null;
         if (value === connectionPath) {
           return root;
         } else {
           searchpath = value;
+          break;
         }
       }
     }
+    // link not found!
+    if (!searchpath) return null;
   }
-};
-
-const findPortMappingLink = function(data, path) {
-  // If the connection is IP:
-  // Device.NAT.PortMapping.*.Interface -> Device.IP.Interface.*.
-  // If the connection is PPP:
-  // Device.NAT.PortMapping.*.Interface -> Device.IP.Interface.*.
-  // Device.IP.Interface.*.LowerLayers -> Device.PPP.Interface.*.
-  let ipLink = null;
-  for (let j = 0; j < data.length; j++) {
-    if (path === data[j].path) {
-    let value = getObjValue(data[j]);
-      ipLink = extractLinkPath(value);
-      break;
-    }
-  }
-  let pppLink = ipLink + 'LowerLayers';
-  for (let j = 0; j < data.length; j++) {
-    if (pppLink === data[j].path) {
-      let value = getObjValue(data[j]);
-      if (value.includes('PPP')) {
-        return value;
-      }
-    }
-  }
-  return ipLink;
+  return null;
 };
 
 const wanKeySort = function(keys, isTR181) {
@@ -752,9 +720,9 @@ const wanKeySort = function(keys, isTR181) {
   const sortKeys = (a, b) => {
     // Sort keys according to their type for TR-181 (dhcp first, ppp second)
     if (isTR181) {
-      if (a.key.includes('dhcp') && b.key.includes('ppp')) {
+      if (a.key.includes('ip') && b.key.includes('ppp')) {
         return -1;
-      } else if (a.key.includes('ppp') && b.key.includes('dhcp')) {
+      } else if (a.key.includes('ppp') && b.key.includes('ip')) {
         return 1;
       }
     }
@@ -779,53 +747,56 @@ const wanKeySort = function(keys, isTR181) {
 const wanKeyCriation = function(data, isTR181) {
   let result = {};
   for (let obj of data) {
-    let pathType = obj.path.includes('PPP') ? 'ppp' :
-                   obj.path.includes('IP') ? 'dhcp' : 'common';
+    let pathType = undefined;
     let indexes = [];
     if (isTR181) {
       // TR-181 devices, it is necessary to filter the interfaces, because not
       // all of them are WANs. To decide whether a path should generate a new
-      // key, we evaluate the AddressingType node, which receives the conn type
-      if (obj.path.includes('AddressingType')) {
-        let correctPath;
-        let value = getObjValue(obj);
-        if (value === 'DHCP') {
-          // If the connection is DHCP, the path index already represents a
-          // physical connection
-          let linkPath = extractLinkPath(obj.path, true);
-          let interfPath = findInterfaceLink(data, linkPath, indexes[0]);
-          // We cant find a valid interface (PPP or IP)
-          // Some routers have a USB interface.
-          // We do not support those at the moment.
-          if (!interfPath) continue;
-          // If the LowerLayer of the IP interface points to a PPP interface,
-          // this must not be a key on the multi-wan
-          if (interfPath.includes('PPP')) continue;
-          correctPath = extractLinkPath(obj.path);
-        } else if (value === 'IPCP') {
-          let linkPath = extractLinkPath(obj.path, true);
-          correctPath = findInterfaceLink(data, linkPath, indexes[0]);
-        }
-        if (correctPath) {
-          // Update indexes and path type
-          indexes = extractIndexes(correctPath, isTR181)[0];
-          pathType = correctPath.includes('PPP') ? 'ppp' :
-                     correctPath.includes('IP') ? 'dhcp' : 'common';
-        }
+      // key, we start from Device.IP.Interface
+      if (!obj.path.startsWith('Device.IP.Interface.')) continue;
+      if (obj.path.slice(-11) !== 'LowerLayers') continue;
+
+      // we have obj as Device.IP.Interface.*.LowerLayers
+      let value = getObjValue(obj);
+
+      // Link.1 is the LAN (need confirmation, all TR181
+      // homologated are this way)
+      if (value === 'Device.Ethernet.Link.1.') continue;
+
+      // We do not give support for USB devices (for now)
+      if (value.startsWith('Device.USB.')) continue;
+
+      // if this is a PPP iface, look if down is usb
+      if (value.startsWith('Device.PPP.')) {
+        let interfPath = getValueData(data, value+'LowerLayers');
+        if (interfPath && interfPath.startsWith('Device.USB.')) continue;
       }
+
+      // This is a WAN
+      // Update indexes -- TR181 pathType is always ip
+      indexes = extractIndexes(obj.path, isTR181)[0];
+      pathType = 'ip';
     } else {
+      if (obj.path.slice(-16) !== 'ConnectionStatus') continue;
+      if (obj.path.includes('WANPPPConnection')) {
+        pathType = 'ppp';
+      } else if (obj.path.includes('WANIPConnection')) {
+        pathType = 'ip';
+      } else continue;
+
       // For TR-098 devices, key creation is straightforward
       indexes = extractIndexes(obj.path, isTR181)[0];
     }
+
+    if (!pathType) continue;
     // Once we have the correct indexes, a new key is created
     let key = 'wan_' + pathType + '_' + indexes.join('_');
     let indexesHasCorrectSize = ((indexes.length === 3 && !isTR181) ||
       (indexes.length === 1 && isTR181));
-    let pathHasCorrectType = (pathType === 'ppp' || pathType === 'dhcp');
+    let pathHasCorrectType = (pathType === 'ppp' || pathType === 'ip');
     if (indexes.length > 0 && !result[key] &&
         indexesHasCorrectSize && pathHasCorrectType) {
       result[key] = {};
-      result[key]['port_mapping'] = [];
     }
   }
   return wanKeySort(result, isTR181);
@@ -851,25 +822,12 @@ const assembleWanObj = function(data, fields, isTR181) {
     // Looks for the correct WAN: This depends on the prop match type and the
     // path index
     for (let prop of properties) {
-      let pathType = obj.path.includes('PPP') ? 'ppp' :
-                     obj.path.includes('IP') ? 'dhcp' :
-                     obj.path.includes('Ethernet') ? 'ethernet' : 'none';
-
-      // The keys associated with port mapping must be treated differently
-      // because, in the TR-098, they will be classified as dhcp or ppp
-      let isPortMapping = (obj.path.includes('PortMapping') &&
-                           properties.length === 1 &&
-                           properties[0] === 'port_mapping');
-      if (isPortMapping) pathType = 'port_mapping';
-
       let field = {};
       if (surplus.length > 0) prop += '_' + surplus.join('_');
       field[prop] = obj;
 
       for (let key of Object.keys(result)) {
-        const keyType = key.split('_')[1];
         const keyIndexes = key.split('_').filter((key) => !isNaN(key));
-        if (keyType === 'ppp' && prop.includes('dhcp')) continue;
         // If the path does not have indexes, the same must be added on all WANs
         if (indexes.length === 0) {
           Object.assign(result[key], field);
@@ -880,21 +838,17 @@ const assembleWanObj = function(data, fields, isTR181) {
         // means that we must disregard the current indices and look for the
         // correct ones to insert the field
 
-        if (keyType !== pathType && isTR181) {
-          let linkPath;
-          let correctPath;
-          if (pathType === 'dhcp') {
-            linkPath = extractLinkPath(obj.path, true);
-            correctPath = findInterfaceLink(data, linkPath, indexes[0]);
-          } else if (pathType === 'ethernet') {
-            let root = (keyType === 'ppp')?
-              'Device.PPP.Interface.':'Device.IP.Interface.';
-            root = root+keyIndexes+'.';
-            linkPath = extractLinkPath(obj.path);
-            correctPath = findEthernetLink(data, linkPath, indexes[0], root);
-          } else if (pathType === 'port_mapping') {
-            linkPath = extractLinkPath(obj.path) + 'Interface';
-            correctPath = findPortMappingLink(data, linkPath);
+        if (isTR181) {
+          let root = 'Device.IP.Interface.'+keyIndexes+'.';
+          let linkPath = extractLinkPath(obj.path);
+          let correctPath = undefined;
+          if (root === linkPath) {
+            // The obj path is the root, no need to search
+            correctPath = root;
+          } else {
+            // This can be highly optimized
+            // We search for in IP interfaces, but we can search for just one
+            correctPath = findPathLink(data, linkPath, indexes[0], root);
           }
           if (!correctPath) continue;
 
@@ -904,15 +858,12 @@ const assembleWanObj = function(data, fields, isTR181) {
         // If the flow reached this point, it means that we have a path with
         // indixes and these must be an exact match of the key
         if (verifyIndexesMatch(keyIndexes, indexes)) {
-          if (isPortMapping) {
-            result[key]['port_mapping'].push(obj);
-          } else {
-            Object.assign(result[key], field);
-          }
+          Object.assign(result[key], field);
         }
       }
     }
   }
+  console.log(`RESULT: ${JSON.stringify(result)}`);
   return result;
 };
 
@@ -951,8 +902,6 @@ const getWanNodes = function(fields, isTR181, update) {
       nodes.push(node);
     }
   });
-  nodes.push(fields.port_mapping_dhcp);
-  nodes.push(fields.port_mapping_ppp);
 
   // clean up TR181 fields
   // Some devices do not map fields correctly

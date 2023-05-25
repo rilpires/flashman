@@ -79,25 +79,43 @@ utilHandlers.traverseNestedKey = function(
   };
 };
 
+utilHandlers.convertToBoolean = function(value) {
+  if (typeof value === 'string') {
+    return (utilHandlers.isTrueValueString(value));
+  } else if (typeof value === 'number') {
+    return (value == 0) ? false : true;
+  } else if (typeof value === 'boolean') {
+    return value;
+  }
+  // If we cant convert, return false
+  return false;
+};
+
 utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
   let idealCandidates = [];
   let possibleCandidates = [];
+  let wanClassPPP = [];
 
   // Checks if there are WANs that meet the ideal conditions, that is:
   // Status = Connected and Enable = true
   for (const key of Object.keys(data)) {
     const wan = data[key];
 
-    let enable = (key.includes('ppp')) ? wan.pppoe_enable : wan.dhcp_enable;
-    let status = (key.includes('ppp')) ? wan.pppoe_status : wan.dhcp_status;
-
-    if (enable && enable.hasOwnProperty('value')) {
-      enable = enable.value;
+    let enable = false;
+    let status = false;
+    if (wan.pppoe_enable && wan.pppoe_enable.value) {
+      wanClassPPP.push(key);
+      enable = wan.pppoe_enable.value;
+      if (wan.pppoe_status &&
+          wan.pppoe_status.value) status = wan.pppoe_status.value;
+    } else {
+      if (wan.dhcp_enable &&
+          wan.dhcp_enable.value) enable = wan.dhcp_enable.value;
+      if (wan.dhcp_status &&
+          wan.dhcp_status.value) status = wan.dhcp_status.value;
     }
-    if (status && status.hasOwnProperty('value')) {
-      status = status.value;
-    }
 
+    enable = utilHandlers.convertToBoolean(enable);
     if (enable === true && (status === 'Connected' || status === 'Up')) {
       // Ideal conditions: Status = Connected and Enable = true
       idealCandidates.push(key);
@@ -126,7 +144,7 @@ utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
   } else if (idealCandidates.length > 1) {
     // There are multiple candidates. Verifies ideal candidates, giving
     // preference to ppp-type WANs
-    let pppWans = idealCandidates.filter((key) => key.includes('ppp'));
+    let pppWans = idealCandidates.filter((key) => wanClassPPP.includes(key));
     if (pppWans.length > 0) {
       if (pppWans.length === 1) {
         // There is only one ppp-type WAN that meets the ideal conditions
@@ -170,7 +188,7 @@ utilHandlers.convertWanToFlashmanFormat = function(data) {
         let value = Array.isArray(obj[prop].value) ?
           obj[prop].value[0] : obj[prop].value;
         temp[prop] = {
-          writable: obj[prop].writable,
+          writable: utilHandlers.convertToBoolean(obj[prop].writable),
           value: value,
         };
       }
@@ -191,7 +209,7 @@ utilHandlers.convertWanToProvisionFormat = function(data) {
           !field._object) {
         result.push({
           path: path.concat(key).join('.'),
-          writable: field._writable,
+          writable: utilHandlers.convertToBoolean(field._writable),
           value: field._value,
         });
       } else if (typeof field === 'object') {
