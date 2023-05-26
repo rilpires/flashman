@@ -106,10 +106,11 @@ blackbox.deleteDevices = async function(cpes, cookie) {
  * @param {String} route - The cpeID to be deleted from Flahsman.
  * @param {Cookie} cookie - The cookie login.
  * @param {Object} data - The data to be sent to the route.
+ * @param {Object} query - The query parameters to be passed.
  *
  * @return {Response} The response.
  */
-blackbox.sendRequestAdmin = async function(type, route, cookie, data) {
+blackbox.sendRequestAdmin = async function(type, route, cookie, data, query) {
   let flashmanRequest = request(constants.FLASHMAN_HOST);
 
   flashmanRequest = flashmanRequest[type](route);
@@ -119,6 +120,7 @@ blackbox.sendRequestAdmin = async function(type, route, cookie, data) {
 
   return await flashmanRequest
     .auth(constants.BASIC_AUTH_USER, constants.BASIC_AUTH_PASS)
+    .query(query)
     .send(data)
     .catch((error) => console.error(error));
 };
