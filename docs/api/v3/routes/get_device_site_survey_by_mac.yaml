@@ -65,12 +65,12 @@
           Boolean (Example: "true" or "1").
 
       - in: query
-        name: field
+        name: fields
         schema:
           type: string
         required: false
-        description: The specific field to be returned from the device
-          instead of the whole information. If the field is not one of
+        description: The specific fields to be returned from the device
+          instead of the whole information. If the fields are not one of
           the device's, it will return the error explaining what happenned.
           Multiple fields can be passed and must be separated by semicolons
           (';'). Do not add a semicolon at the end.

@@ -65,15 +65,36 @@
           Boolean (Example: "true" or "1").
 
       - in: query
-        name: field
+        name: fields
         schema:
           type: string
         required: false
-        description: The specific field to be returned from the device
-          instead of the whole information. If the field is not one of
+        description: The specific fields to be returned from the device
+          instead of the whole information. If the fields are not one of
           the device's, it will return the error explaining what happenned.
           Multiple fields can be passed and must be separated by semicolons
           (';'). Do not add a semicolon at the end.
+
+      - in: query
+        name: page
+        schema:
+          type: string
+          minimun: 1
+        required: false
+        description: |
+          The page to be retrieved. The maximum amount of devices that will be
+          returned per page will be 50 or the value setted in `pageLimit`.
+      
+      - in: query
+        name: pageLimit
+        schema:
+          type: string
+          minimun: 1
+          maximum: 50
+        required: false
+        description: |
+          The max amount of devices to be returned per page. To change the page,
+          use the `page` parameter. The default value is 50.
 
     security:
       - basicAuth: []
@@ -173,15 +194,36 @@
           Boolean (Example: "true" or "1").
 
       - in: query
-        name: field
+        name: fields
         schema:
           type: string
         required: false
-        description: The specific field to be returned from the device
-          instead of the whole information. If the field is not one of
+        description: The specific fields to be returned from the device
+          instead of the whole information. If the fields are not one of
           the device's, it will return the error explaining what happenned.
           Multiple fields can be passed and must be separated by semicolons
           (';'). Do not add a semicolon at the end.
+
+      - in: query
+        name: page
+        schema:
+          type: string
+          minimun: 1
+        required: false
+        description: |
+          The page to be retrieved. The maximum amount of devices that will be
+          returned per page will be 50 or the value setted in `pageLimit`.
+      
+      - in: query
+        name: pageLimit
+        schema:
+          type: string
+          minimun: 1
+          maximum: 50
+        required: false
+        description: |
+          The max amount of devices to be returned per page. To change the page,
+          use the `page` parameter. The default value is 50.
 
     security:
       - basicAuth: []
@@ -281,15 +323,36 @@
           Boolean (Example: "true" or "1").
 
       - in: query
-        name: field
+        name: fields
         schema:
           type: string
         required: false
-        description: The specific field to be returned from the device
-          instead of the whole information. If the field is not one of
+        description: The specific fields to be returned from the device
+          instead of the whole information. If the fields are not one of
           the device's, it will return the error explaining what happenned.
           Multiple fields can be passed and must be separated by semicolons
           (';'). Do not add a semicolon at the end.
+
+      - in: query
+        name: page
+        schema:
+          type: string
+          minimun: 1
+        required: false
+        description: |
+          The page to be retrieved. The maximum amount of devices that will be
+          returned per page will be 50 or the value setted in `pageLimit`.
+      
+      - in: query
+        name: pageLimit
+        schema:
+          type: string
+          minimun: 1
+          maximum: 50
+        required: false
+        description: |
+          The max amount of devices to be returned per page. To change the page,
+          use the `page` parameter. The default value is 50.
 
     security:
       - basicAuth: []

@@ -184,7 +184,7 @@ const translationObject = {
 
   // Those fields should not be used as parameter for finding
   // This field is used to specify a projection
-  field: {
+  fields: {
     field: '', validation: validator.validateProjection,
   },
   // Those fields are used for pagination
@@ -1091,7 +1091,7 @@ apiController.defaultGetRoute = async function(
     conditionField: null,
     page: null,
     pageLimit: null,
-    field: null,
+    fields: null,
   };
 
 
@@ -1105,7 +1105,7 @@ apiController.defaultGetRoute = async function(
     name: 'pageLimit',
     execute: apiController.parseRouteIntParameter,
   }, {
-    name: 'field',
+    name: 'fields',
     execute: apiController.parseRouteStringArrayParameter,
   }];
 
@@ -1160,7 +1160,7 @@ apiController.defaultGetRoute = async function(
 
   // Try finding the device
   validation = await apiController.getDeviceByFields(
-    params, defaultProjection, mergedParams['field'],
+    params, defaultProjection, mergedParams['fields'],
     mergedParams['conditionField'], mergedParams['page'],
     mergedParams['pageLimit'], relativePath, routeParameters,
   );
