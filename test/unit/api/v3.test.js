@@ -1632,7 +1632,7 @@ describe('API V3 Tests', () => {
     test('Invalid fields', async () => {
       const errorMessage = 'errorMessage';
       let request = utils.common.fakeRequest(null, null, {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       });
       let response = utils.common.fakeResponse();
 
@@ -1655,7 +1655,7 @@ describe('API V3 Tests', () => {
     test('Parsing error - condition', async () => {
       const errorMessage = 'errorMessage';
       let request = utils.common.fakeRequest(null, null, {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       });
       let response = utils.common.fakeResponse();
 
@@ -1682,7 +1682,7 @@ describe('API V3 Tests', () => {
     test('Parsing error - integer', async () => {
       const errorMessage = 'errorMessage';
       let request = utils.common.fakeRequest(null, null, {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       });
       let response = utils.common.fakeResponse();
 
@@ -1711,7 +1711,7 @@ describe('API V3 Tests', () => {
     test('Parsing error - string array', async () => {
       const errorMessage = 'errorMessage';
       let request = utils.common.fakeRequest(null, null, {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       });
       let response = utils.common.fakeResponse();
 
@@ -1742,7 +1742,7 @@ describe('API V3 Tests', () => {
     test('Valid', async () => {
       const errorMessage = 'errorMessage';
       const query = {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       };
       const params = 'params';
       const addParams1 = 'addParams1';
@@ -1786,7 +1786,7 @@ describe('API V3 Tests', () => {
     test('Relative path', async () => {
       const errorMessage = 'errorMessage';
       const query = {
-        conditionField: true, page: true, pageLimit: true, field: true,
+        conditionField: true, page: true, pageLimit: true, fields: true,
       };
       const params = 'params';
       const addParams1 = 'addParams1';
@@ -1834,7 +1834,7 @@ describe('API V3 Tests', () => {
     test('No page', async () => {
       const errorMessage = 'errorMessage';
       const query = {
-        conditionField: true, field: true,
+        conditionField: true, fields: true,
       };
       const params = 'params';
       const addParams1 = 'addParams1';
