@@ -191,7 +191,7 @@ describe('Test API v2', () => {
   };
 
   const speedtestDiagnostic = async () => {
-    // console.log('=========== Firing speed test diagnostic ===========', deviceDataModel)
+    // console.log('=========== Firing speed test diagnostic ===========')
     // issuing a speed test diagnostic.
     const url = `/api/v2/device/command/${simulator.mac}/speedtest`;
     let res = await flashman('put', url);
@@ -217,7 +217,7 @@ describe('Test API v2', () => {
     expect(success).toBe(true);
     expect(res.body.current_diagnostic.in_progress).toBe(false);
     expect(res.body.current_diagnostic.stage).toBe('done');
-  }
+  };
 
 
   describe('TR181', () => {
@@ -245,8 +245,8 @@ describe('Test API v2', () => {
 
   describe('TR098', () => {
     beforeAll(() => {
-      deviceDataModel =
-        'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z'; // tr-069.
+      deviceDataModel = // tr-069.
+        'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z';
       return initiateCpe();
     });
 
