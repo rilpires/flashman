@@ -31,7 +31,7 @@ describe('Test API v2', () => {
   });
 
   const initiateCpe = async () => {
-    console.log('=========== Initiation CPE ===========', deviceDataModel)
+    // console.log('=========== Initiating CPE ===========', deviceDataModel)
     // Creating a device.
     let mac = 'FF:FF:FF:00:00:01';
     const genieAddress = constants.GENIEACS_HOST;
@@ -39,17 +39,17 @@ describe('Test API v2', () => {
     .debug({ // enabling/disabling prints for device events.
       beforeReady: false,
       error: true,
-      requested: true,
-      response: true,
-      sent: true,
-      task: 'name',
-      diagnostic: true,
+      requested: false,
+      response: false,
+      sent: false,
+      task: false,
+      diagnostic: false,
     });
     await simulator.start(); // starting device.
   };
 
   const removeCpe = async () => {
-    console.log('=========== Removing CPE ===========', deviceDataModel)
+    // console.log('=========== Removing CPE ===========', deviceDataModel)
     if (simulator) await simulator.shutDown();
     await blackbox.deleteCPE(simulator.mac, adminCookie);
   };
@@ -149,6 +149,7 @@ describe('Test API v2', () => {
     // getting CPE until traceroute diagnostic is not running anymore.
     const success = await pulling(async () => {
       res = await flashman('get', `/api/v2/device/update/${simulator.mac}`);
+      // console.log('res.body', res.body);
       expect(res.statusCode).toBe(200);
       return !res.body.current_diagnostic.in_progress; // success condition.
     }, 200, 5000); // 200ms intervals between executions, fails after 5000ms.
@@ -190,11 +191,11 @@ describe('Test API v2', () => {
   };
 
   const speedtestDiagnostic = async () => {
-    console.log('=========== Firing speed test diagnostic ===========', deviceDataModel)
+    // console.log('=========== Firing speed test diagnostic ===========', deviceDataModel)
     // issuing a speed test diagnostic.
     const url = `/api/v2/device/command/${simulator.mac}/speedtest`;
     let res = await flashman('put', url);
-    console.log('res.body', res.body)
+    // console.log('res.body', res.body)
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
@@ -222,7 +223,7 @@ describe('Test API v2', () => {
   describe('TR181', () => {
     beforeAll(() => {
       deviceDataModel =
-        'device-1C61B4-XX230v-22275A7000395-2023-04-27T154050686Z'; // tr-181.
+        'device-1C61B4-EX220-2226469000523'; // tr-181.
       return initiateCpe();
     });
 
