@@ -1,5 +1,4 @@
 const promClient = require('prom-client');
-const genie = require('../../external-genieacs/tasks-api');
 
 /**
  *  Check about metric types on Prometheus documentation
@@ -32,14 +31,6 @@ let metrics = {
     help: 'A diagnostic state was changed to "diagnostic_state".',
     labelNames: ['diagnostic_type', 'diagnostic_state'],
   }),
-  flm_tasks_api_list_length: new promClient.Gauge({
-    name: 'flm_tasks_api_list_length',
-    help: 'Length of current task watch list',
-    labelNames: [],
-    collect: function() {
-      this.set( genie.getTaskWatchListLength() );
-    },
-  }),
 };
 
 // Exported wrappers for usage out there
@@ -49,22 +40,72 @@ let metricsApi = {
       .inc({'diagnostic_type': type, 'diagnostic_state': state});
   },
 
-  // Below functions register a metric with a provided collector function
-
-  // This callback has no parameters
-  registerAuditMemoryQueueSize: function(callback) {
-    if (typeof(callback)=='function') {
-      new promClient.Gauge({
-        name: 'flm_audit_memory_queue_size',
-        help: 'Length of the list where not sent audit messages are queued',
-        collect: function() {
-          let value = callback();
-          if (typeof(value)=='number' && !isNaN(value)) {
-            this.set(value);
-          }
-        },
-      });
+  // This function should be called once for each new metric to be registered,
+  // passing a callback to be executed every sample
+  registerMetricGauge: function(params) {
+    let error = undefined;
+    if (typeof(params)!='object') {
+      error = '"registerMetricGauge" params should be an object';
+    } else if (!params.collect || (typeof(params.collect) != 'function')) {
+      error = 'params of "registerMetricGauge" doesnt have a "collect" func';
+    } else if (typeof(params.name)!='string') {
+      error = 'params of "registerMetricGauge" should have a name string field';
+    } else if (typeof(params.help)!='string') {
+      error = 'params of "registerMetricGauge" should have a help string field';
+    } else if (params.labels && !Array.isArray(params.labels)) {
+      error = 'params.labels from "registerMetricGauge" should be an array';
     }
+    if (error) {
+      console.error(`Error registering gauge metric: ${error}`);
+      console.error(`params: ${params}`);
+      return;
+    }
+    if (!params.name.startsWith('flm_')) {
+      params.name = `flm_${params.name}`;
+    }
+    params.labels = params.labels || [];
+    new promClient.Gauge({
+      name: params.name,
+      help:
+        params.help || 'Someone was lazy enough to not provide any help here',
+      labelNames: params.labels,
+      collect: async function() {
+        try {
+          let collectResponse = params.collect();
+          let isPromise = (
+            typeof(collectResponse)=='object'
+            && typeof(collectResponse.then)=='function'
+          );
+          if (isPromise) collectResponse = await collectResponse;
+          let collectResponses;
+          if (Array.isArray(collectResponse)) {
+            collectResponses = collectResponse;
+          } else {
+            collectResponses = [collectResponse];
+          }
+          for (let metric of collectResponses) {
+            if (typeof(metric)=='number') {
+              this.set(metric);
+            } else if (typeof(metric)=='object'
+              && typeof(metric.value)=='number'
+            ) {
+              if (typeof(metric.labels)=='object') {
+                this.set(metric.labels, metric.value);
+              } else {
+                this.set(metric.value);
+              }
+            } else {
+              console.error(
+                `Invalid "collect" return value from metric "${params.name}":`);
+              console.error(metric);
+            }
+          }
+        } catch (err) {
+          console.error(
+            `Error calling callback on metric "${params.name}": ${err}`);
+        }
+      },
+    });
   },
 };
 

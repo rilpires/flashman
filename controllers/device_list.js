@@ -4575,8 +4575,12 @@ deviceListController.setLanDeviceName = async function(request, response) {
 
 
   // Validate Device's MAC address
-  const deviceMacValidation = validator.validateMac(data.device_id);
-  const lanDeviceMacValidation = validator.validateMac(data.lan_device_id);
+  const deviceMacValidation = validator.validateMac(
+    data.device_id.toUpperCase(),
+  );
+  const lanDeviceMacValidation = validator.validateMac(
+    data.lan_device_id.toUpperCase(),
+  );
 
   if (!deviceMacValidation.valid || !lanDeviceMacValidation.valid) {
     return response.status(500).json({
