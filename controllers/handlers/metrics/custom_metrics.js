@@ -1,5 +1,4 @@
 const promClient = require('prom-client');
-const genie = require('../../external-genieacs/tasks-api');
 
 /**
  *  Check about metric types on Prometheus documentation
