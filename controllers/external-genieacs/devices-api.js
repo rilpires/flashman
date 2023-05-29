@@ -62,6 +62,7 @@ const tr069Models = {
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
   intelbrasW4300FModel: require('./cpe-models/intelbras-w4-300f'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
+  intelbrasRX1500Model: require('./cpe-models/intelbras-rx1500'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
@@ -286,6 +287,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (modelSerial === 'RX1500') {
+    // Intelbras RX1500
+    result = {success: true, cpe: tr069Models.intelbrasRX1500Model};
   } else if (['W5-2100G', 'W5%2D2100G'].includes(modelSerial)) {
     // Intelbras W5-2100G
     result = {success: true, cpe: tr069Models.intelbrasW52100GModel};
