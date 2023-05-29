@@ -158,36 +158,40 @@ const generateSessionCredential = async (user) => {
 };
 
 diagAppAPIController.sessionLogin = (req, res) => {
-  UserModel.findOne({name: req.body.user}, (err, user) => {
-    if (err || !user) {
-      return res.status(404).json({
-        success: false,
-        message: t('userNotFound', {errorline: __line}),
+  UserModel.findOne(
+    {name: req.body.user},
+    {deviceCertifications: false},
+    (err, user) => {
+      if (err || !user) {
+        return res.status(404).json({
+          success: false,
+          message: t('userNotFound', {errorline: __line}),
+        });
+      }
+      Role.findOne({name: user.role}, async (err, role) => {
+        if (err || (!user.is_superuser && !role)) {
+          return res.status(500).json({
+            success: false,
+            message: t('permissionFindError', {errorline: __line}),
+          });
+        }
+        if (!user.is_superuser && !role.grantDiagAppAccess) {
+          return res.status(403).json({
+            success: false,
+            message: t('permissionDenied', {errorline: __line}),
+          });
+        }
+        let session = await generateSessionCredential(user.name);
+        const factoryCredentials =
+          await onuFactoryCredentials.getCredentialsAtConfig();
+        if (factoryCredentials.success) {
+          session.onuFactoryCredentials = factoryCredentials.credentials;
+        }
+        session.success = true;
+        return res.status(200).json(session);
       });
-    }
-    Role.findOne({name: user.role}, async (err, role) => {
-      if (err || (!user.is_superuser && !role)) {
-        return res.status(500).json({
-          success: false,
-          message: t('permissionFindError', {errorline: __line}),
-        });
-      }
-      if (!user.is_superuser && !role.grantDiagAppAccess) {
-        return res.status(403).json({
-          success: false,
-          message: t('permissionDenied', {errorline: __line}),
-        });
-      }
-      let session = await generateSessionCredential(user.name);
-      const factoryCredentials =
-        await onuFactoryCredentials.getCredentialsAtConfig();
-      if (factoryCredentials.success) {
-        session.onuFactoryCredentials = factoryCredentials.credentials;
-      }
-      session.success = true;
-      return res.status(200).json(session);
-    });
-  });
+    },
+  );
 };
 
 diagAppAPIController.configureWifi = async function(req, res) {
@@ -334,7 +338,7 @@ diagAppAPIController.configureWifi = async function(req, res) {
         if (content.wifi_band !== 'auto' || permissions.grantWifiBandAuto2) {
           const band = content.wifi_band.trim();
           if (band !== device.wifi_band) {
-            audit['wifi5Band'] = {old: device.wifi_password, new: band};
+            audit['wifi2Band'] = {old: device.wifi_band, new: band};
           }
           device.wifi_band = band;
           changes.wifi2.band = band;
