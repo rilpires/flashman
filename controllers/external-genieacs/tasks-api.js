@@ -9,6 +9,7 @@ const mongodb = require('mongodb');
 const NotificationModel = require('../../models/notification');
 const DeviceModel = require('../../models/device');
 const SchedulerCommon = require('../update_scheduler_common');
+const {registerMetricGauge} = require('../handlers/metrics/custom_metrics');
 const t = require('../language').i18next.t;
 
 
@@ -823,9 +824,11 @@ a 'timeout' amount of milliseconds, so it isn't fast. */
   return sendTasks(deviceid, tasks, callback, legacyTimeout, requestConn);
 };
 
-// For metrics collecting
-genie.getTaskWatchListLength = function() {
-  return Object.keys(taskWatchlist).length;
-};
+registerMetricGauge({
+  name: 'flm_tasks_api_list_length',
+  help: 'Length of current task watch list',
+  collect: () => Object.keys(taskWatchlist).length,
+});
+
 
 module.exports = genie;

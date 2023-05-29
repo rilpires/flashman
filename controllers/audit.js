@@ -2,8 +2,7 @@ const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
 const Validator = require('../public/javascripts/device_validator');
 const ConfigModel = require('../models/config');
-const {registerAuditMemoryQueueSize}
-  = require('./handlers/metrics/custom_metrics');
+const {registerMetricGauge} = require('./handlers/metrics/custom_metrics');
 
 // returns true if environment variable value can be recognized as true.
 const isEnvTrue = (envVar) => /^(true|t|1)$/i.test(envVar);
@@ -226,11 +225,26 @@ controller.init = async function(
     runtimeValidation: false,
   });
 
+  registerMetricGauge({
+    name: 'flm_audit_queue_size',
+    help: 'Length of the list where not sent audit messages are queued',
+    labels: ['type'],
+    collect: async ()=>[
+      {
+        labels: {'type': 'db'},
+        value: await audits.countDocuments(),
+      },
+      {
+        labels: {'type': 'mem'},
+        value: localStore.length,
+      },
+    ],
+  });
+
   sendFunc = controller.sendWithPersistence;
 
   // ignore setup if audit messages should remain only in process memory.
   if (process.env.FLASHAUDIT_MEMORY_ONLY) {
-    registerAuditMemoryQueueSize(()=>localStore.length);
     sendFunc = controller.sendWithoutPersistence;
     hasInitialized = true;
     return;
