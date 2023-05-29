@@ -12,7 +12,8 @@
       "FLM_CONCURRENT_UPDATES_LIMIT": 50,
       "FLM_MONGODB_HOST": "localhost",
       "FLM_ADM_USER": "admin",
-      "FLM_ADM_PASS": "flashman"
+      "FLM_ADM_PASS": "flashman",
+      "FLASHIFY_SERVER_PORT": 19282
     },
     "exec_mode": "cluster"
   }]
