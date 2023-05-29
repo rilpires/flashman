@@ -9,11 +9,16 @@ intelbrasModel.modelPermissions = function() {
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
-  permissions.lan.dnsServersWrite = false;
+  permissions.features.siteSurvey = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
+  permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.sendRoutersOnLANChange = false;
   permissions.lan.dnsServersLimit = 2;
   permissions.wan.dhcpUptime = false;
   permissions.wan.hasUptimeField = true;
+  permissions.wan.canTrustWanRate = false;
   permissions.wan.speedTestLimit = 320;
   permissions.wan.hasIpv4DefaultGatewayField = true;
   permissions.wan.hasDnsServerField = true;
@@ -29,6 +34,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.firmwareUpgrades = {
     '2.1.3': [],
+    '2.1.4': [],
   };
   return permissions;
 };
@@ -58,6 +64,16 @@ intelbrasModel.getModelFields = function() {
     fields.wifi2[k] = fields.wifi5[k].replace(/5/g, '6');
     fields.wifi5[k] = fields.wifi5[k].replace(/5/g, '1');
   });
+
+  fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
+    'Hosts.Host.*.Rssi';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'WiFi.NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
+
   return fields;
 };
 
