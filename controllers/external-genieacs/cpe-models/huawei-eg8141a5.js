@@ -10,6 +10,8 @@ huaweiModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.speedTest = true;
   permissions.features.traceroute = true;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
   permissions.features.hasMemoryUsage = true;
   permissions.firmwareUpgrades = {
     'V5R019C00S120': [],
@@ -21,8 +23,10 @@ huaweiModel.modelPermissions = function() {
   permissions.wan.hasUptimeField = true;
   permissions.wan.hasDnsServerField = true;
   permissions.wan.speedTestLimit = 500;
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
   permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
-  permissions.features.hasIpv6Information = true;
   permissions.wifi.dualBand = false;
   permissions.wifi.bandRead5 = false;
   permissions.wifi.bandWrite5 = false;
@@ -110,23 +114,32 @@ huaweiModel.getModelFields = function() {
     'X_GponInterafceConfig.TXPower';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
-  fields.wan.vlan = 'InternetGatewayDevice.DeviceInfo.' +
-    'VendorLogFile.1.Persistent';
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
+  fields.ipv6.address =
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
+    'WANIPConnection.*.X_HW_IPv6.IPv6Address.1.IPAddress';
+  fields.ipv6.default_gateway =
+    'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
+    'WANIPConnection.*.X_HW_IPv6.IPv6Address.1.DefaultGateway';
+  fields.ipv6.prefix_delegation_address =
+    'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.1.Prefix';
   fields.ipv6.address_ppp =
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
-    'WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.IPAddress';
+    'WANPPPConnection.*.X_HW_IPv6.IPv6Address.1.IPAddress';
   fields.ipv6.default_gateway_ppp =
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.'+
-    'WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.DefaultGateway';
+    'WANPPPConnection.*.X_HW_IPv6.IPv6Address.1.DefaultGateway';
   fields.ipv6.prefix_delegation_address_ppp =
     'InternetGatewayDevice.WANDevice.1.' +
-    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.1.Prefix';
   fields.ipv6.prefix_delegation_local_address_ppp =
     'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement' +
-    '.X_HW_IPv6Interface.1.IPv6Prefix.*.Prefix';
+    '.X_HW_IPv6Interface.1.IPv6Prefix.1.Prefix';
   fields.ipv6.prefix_delegation_local_address =
     'InternetGatewayDevice.LANDevice.1.LANHostConfigManagement' +
-    '.X_HW_IPv6Interface.1.IPv6Prefix.*.Prefix';
+    '.X_HW_IPv6Interface.1.IPv6Prefix.1.Prefix';
   delete fields.port_mapping_fields.external_port_end;
   delete fields.port_mapping_fields.internal_port_end;
   fields.lan.router_ip = 'InternetGatewayDevice.LANDevice.1.' +
