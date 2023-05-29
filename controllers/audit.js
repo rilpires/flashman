@@ -126,7 +126,7 @@ const buildAndSendMessage = async function(
     client, product, user._id.toString(), object, searchable, operation, values,
   );
   if (err) {
-    return console.log(
+    return console.error(
       `Error creating Audit message. `+
       `operation: ${operation}, object: ${object}, searchables: ${searchable}.`,
       err,
@@ -259,10 +259,12 @@ controller.init = async function(
       // audits stuck at sending state or audits that belong to this process
       // will have their send state set to false.
       {s: true, $or: [{'m.date': {$lte: d}}, {p}]}, {$set: {s: false}},
-    ).catch((e) => console.log('Error resetting audits state at setup.', e));
+    ).catch((e) => console.error('Error resetting audits state at setup.', e));
 
     // if audits are cached in database, send all audits, if any.
-    controller.tryLaterWithPersistence(waitPromises);
+    flushCachedAudits();
+    setInterval(flushCachedAudits, 1000*60*5 );
+
 
     hasInitialized = true;
   };
@@ -288,8 +290,8 @@ controller.getServerAvailability = () => isFlashAuditAvailable;
 // sends message and returns true if successful. Else, return false.
 const sendToFlashAudit = async function(message) {
   let err = await flashAuditServer.send(message).catch((e) => e);
-  if (err instanceof Error && err.errorCode !== 'unauthorized') {
-    console.log('Error sending audit message:', err.message);
+  if (err instanceof Error) {
+    console.error(`Error sending audit message: ${err.message}`);
     isFlashAuditAvailable = false;
   } else {
     isFlashAuditAvailable = true;
@@ -324,73 +326,36 @@ controller.tryLaterWithoutPersistence = async function(waitPromises, attempt) {
 
 // persists unsent audit messages.
 controller.sendWithPersistence = async function(message, waitPromises) {
-  // skip sending if no connectivity.
-  if (!isFlashAuditAvailable) {
+  if (await sendToFlashAudit(message)) {
+    isFlashAuditAvailable = true;
+  } else {
+    isFlashAuditAvailable = false;
+    console.error('Error sending message to flashaudit, caching on DB');
     const cached = {s: false, d: new Date(), p, m: message};
     const insert = await audits.insertOne(cached).catch((e) => e);
-    if (insert instanceof Error) { // if insert had any error.
-      console.log('FlashAudit unavailable and Error caching ' +
-                  'audit message with persistence.', insert);
+    if (insert instanceof Error) {
+      console.error('...but caching on DB has also failed, oops?');
     }
-    return;
-  }
-
-  const cached = {s: true, d: new Date(), p, m: message};
-  const insert = await audits.insertOne(cached).catch((e) => e);
-  if (insert instanceof Error) { // if insert had any error.
-    // if persistence has failed we hope FlashAudit is available to receive it.
-    if (!(await sendToFlashAudit(message))) {
-      console.log('FlashAudit unavailable and Error caching ' +
-                  'audit message with persistence.', insert);
-    }
-    return;
-  }
-
-  // a query for selecting the inserted message.
-  let inserted = {_id: insert.insertedId};
-
-  if (!(await sendToFlashAudit(message))) {
-    // if sent is unsuccessful, change message state to pending.
-    let set = {$set: {s: false}};
-    const update = await audits.updateOne(inserted, set).catch((e) => e);
-    if (update instanceof Error) {
-      return console.log('Error updating audit message cache state.', update);
-    }
-
-    controller.tryLaterWithPersistence(waitPromises); // try sending later.
-    return;
-  }
-
-  // message has been received by FlashAudit. now we can forget it.
-  const del = await audits.deleteOne(inserted).catch((e) => e);
-  if (del instanceof Error) {
-    return console.log('Error removing audit message from cache.', del);
   }
 };
 
 // keeps trying to send unsent audit messages that are persisted.
-controller.tryLaterWithPersistence = async function(waitPromises, attempt=1) {
-  await waitPromises.exponential(attempt);
+let flushCachedAudits = async function() {
   try {
     let cached;
-    while (
-      cached = await audits.findOneAndUpdate({s: false}, {$set: {s: true}})
-        .then((ret) => ret.value)
-    ) {
-      if (!(await sendToFlashAudit(cached.m))) { // sending.
-        // if send is unsuccessful, change message state to pending.
-        await audits.updateOne({_id: cached._id}, {$set: {s: false}});
-        // will try again later.
-        controller.tryLaterWithPersistence(waitPromises, attempt+1);
+    while (cached = await audits.findOne({s: false})) {
+      let sent = await sendToFlashAudit(cached.m);
+      if (sent) {
+        isFlashAuditAvailable = true;
+        await audits.deleteOne({_id: cached._id});
+        await waitPromisesForNetworking.short();
+      } else {
+        isFlashAuditAvailable = false;
         return;
       }
-      attempt = 0; // after a successful attempt, we reset 'attempt' counter.
-      await audits.deleteOne({_id: cached._id}); // removing cached message.
-      await waitPromises.short(); // will send next message in a short while.
     }
   } catch (e) {
-    console.log('Database error dealing with audits cache.', e);
-    controller.tryLaterWithPersistence(waitPromises, attempt+1);
+    console.error('Database error dealing with audits cache:', e);
     return;
   }
 };
