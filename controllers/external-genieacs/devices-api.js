@@ -46,6 +46,7 @@ const tr069Models = {
   greatekGwr300Model: require('./cpe-models/greatek-gwr300'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
+  huaweiEG8141A5Model: require('./cpe-models/huawei-eg8141a5'),
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
@@ -62,6 +63,7 @@ const tr069Models = {
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
   intelbrasW4300FModel: require('./cpe-models/intelbras-w4-300f'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
+  intelbrasRX1500Model: require('./cpe-models/intelbras-rx1500'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
@@ -247,6 +249,9 @@ const instantiateCPEByModel = function(
   } else if (['GONUAC001', 'GONUAC002'].includes(modelName)) {
     // Greatek Stavix
     result = {success: true, cpe: tr069Models.greatekStavixModel};
+  } else if (modelName === 'EG8141A5') {
+    // Huawei EG8141A5
+    result = {success: true, cpe: tr069Models.huaweiEG8141A5Model};
   } else if (['EG8145V5', 'EG8145V5-V2'].includes(modelName)) {
     // Huawei EG8145V5
     result = {success: true, cpe: tr069Models.huaweiEG8145V5Model};
@@ -286,6 +291,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (modelSerial === 'RX1500') {
+    // Intelbras RX1500
+    result = {success: true, cpe: tr069Models.intelbrasRX1500Model};
   } else if (['W5-2100G', 'W5%2D2100G'].includes(modelSerial)) {
     // Intelbras W5-2100G
     result = {success: true, cpe: tr069Models.intelbrasW52100GModel};
