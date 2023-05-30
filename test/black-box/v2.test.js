@@ -14,7 +14,6 @@ jest.setTimeout( 30*1000 );
 describe('Test API v2', () => {
   let adminCookie = null;
 
-  let flashmanClient;
   let flashmanDb;
   let flashmanConfig;
 
@@ -49,6 +48,7 @@ describe('Test API v2', () => {
         returnNewDocument: false,
       },
     );
+    expect(result.ok).toBe(1);
     flashmanConfig = result.value;
   });
 
@@ -56,7 +56,7 @@ describe('Test API v2', () => {
     // resetting speed test measure server config values to previous values.
     const configUpdate = {$set: {}, $unset: {}};
     // eslint-disable-next-line guard-for-in
-    for (let k in flashmanConfig) {
+    for (let k in flashmanConfig) { // for each parameter in the projection.
       let v = flashmanConfig[k];
       if (v !== undefined) configUpdate.$set[k] = v;
       else configUpdate.$unset[k] = true;
@@ -65,8 +65,9 @@ describe('Test API v2', () => {
     for (let k in configUpdate) { // removing empty '$set' and '$unset' parts.
       if (Object.keys(configUpdate[k]).length === 0) delete configUpdate[k];
     }
-    await flashmanDb.collection('configs')
+    let result = await flashmanDb.collection('configs')
       .updateOne({is_default: true}, configUpdate);
+    expect(result.acknowledged).toBe(true);
     await closeFlashmanDbConnection();
   });
 

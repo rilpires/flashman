@@ -35,7 +35,7 @@ const startFlashmanDbConnection = async function() {
     maxPoolSize: 100000,
   }).then((client) => {
     mongodbClient = client;
-    return client.db(process.env.FLM_DATABASE_NAME || 'flashman-blackbox');
+    return client.db(process.env.FLM_DATABASE_NAME || 'flashman');
   }).catch((e) => {
     console.log('Error connecting to Flashman database in MongoDB', e);
     throw e;
