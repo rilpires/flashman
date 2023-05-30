@@ -117,7 +117,7 @@ const tr069Models = {
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
-if (process.env.FLASHIFY_SECONDARY) {
+if (process.env.FLASHIFY) {
   tr069Models.flashifyModel = require('./cpe-models/flashify-model');
 }
 
@@ -456,7 +456,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     result = {success: true, cpe: tr069Models.zyxelEMG3524Model};
-  } else if (process.env.FLASHIFY_SECONDARY) {
+  } else if (process.env.FLASHIFY) {
     // Flashify Model
     result = {success: true, cpe: tr069Models.flashifyModel};
   }
@@ -514,97 +514,45 @@ const getDeviceFields = async function(args, callback) {
       Object.prototype.hasOwnProperty.call(flashRes, 'measure')) {
     return callback(null, flashRes);
   }
-  let fieldsResult;
-  if (process.env.FLASHIFY_PRIMARY) {
-    fieldsResult = await sendFlashmanRequest('device/getcpefields', {
-      acs_id: params.acs_id,
-      modelSerial: params.model,
-      modelName: params.modelName,
-      fwVersion: params.firmwareVersion,
-      hwVersion: params.hardwareVersion,
-    });
-  } else {
-    fieldsResult = getModelFields(
-      params.oui, params.model, params.modelName,
-      params.firmwareVersion, params.hardwareVersion,
-    );
-  }
+  let fieldsResult = getModelFields(
+    params.oui, params.model, params.modelName,
+    params.firmwareVersion, params.hardwareVersion,
+  );
   if (!fieldsResult['success']) {
     return callback(null, fieldsResult);
   }
   return callback(null, {
     success: true,
-    fields: process.env.FLASHIFY_PRIMARY ?
-      fieldsResult.fields : fieldsResult.data.fields,
+    fields: fieldsResult.fields,
     measure: flashRes.data.measure,
     measure_type: flashRes.data.measure_type,
     connection: flashRes.data.connection,
-    useLastIndexOnWildcard: process.env.FLASHIFY_PRIMARY ?
-      fieldsResult.useLastIndexOnWildcard :
-      fieldsResult.data.useLastIndexOnWildcard,
+    useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
   });
 };
 
-const computeFlashmanUrl = function(shareLoad, cpeId='') {
-  if (process.env.FLASHIFY_PRIMARY) {
-    return new Promise((resolve, reject)=>{
-      request({
-        url: `http://${FLASHIFY_SERVER_HOST}:${FLASHIFY_SERVER_PORT}`
-           + `/api/v1/flashmancourier/getflashmanreg/${cpeId}`,
-        method: 'GET',
-      },
-      function(error, response, body) {
-        if (error) {
-          return resolve('');
-        }
-        if (response.statusCode !== 200) {
-          return resolve('');
-        }
-        if (typeof body === 'string') {
-          body = JSON.parse(body);
-        }
-        if (!Object.prototype.hasOwnProperty.call(body, 'fqdn') ||
-            !Object.prototype.hasOwnProperty.call(body, 'port')) {
-          return resolve('');
-        }
-        return resolve(`http://${body.fqdn}:${body.port}/acs/`);
-      });
-    });
+const computeFlashmanUrl = function(shareLoad=true) {
+  let url = API_URL;
+  let numInstances = INSTANCES_COUNT;
+  // Only used at scenarios where Flashman was installed directly on a host
+  // without docker and with more than 1 vCPU
+  if (shareLoad && numInstances > 1) {
+    // More than 1 instance - share load between instances 1 and N-1
+    // We ignore instance 0 for the same reason we ignore it for router syn
+    // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
+    // FLASHMAN_PORT+i
+    let target = Math.floor(Math.random()*(numInstances-1)) + FLASHMAN_PORT + 1;
+    url = url.replace('$PORT', target.toString());
   } else {
-    let url = API_URL;
-    let numInstances = INSTANCES_COUNT;
-    // Only used at scenarios where Flashman was installed directly on a host
-    // without docker and with more than 1 vCPU
-    if (shareLoad && numInstances > 1) {
-      // More than 1 instance - share load between instances 1 and N-1
-      // We ignore instance 0 for the same reason we ignore it for router syn
-      // Instance 0 will be at port FLASHMAN_PORT, instance i will be at
-      // FLASHMAN_PORT+i
-      let target =
-        Math.floor(Math.random()*(numInstances-1)) + FLASHMAN_PORT + 1;
-      url = url.replace('$PORT', target.toString());
-    } else {
-      // Only 1 instance - force on instance 0
-      url = url.replace('$PORT', FLASHMAN_PORT.toString());
-    }
-    return url;
+    // Only 1 instance - force on instance 0
+    url = url.replace('$PORT', FLASHMAN_PORT.toString());
   }
+  return url;
 };
 
-const sendFlashmanRequest = async function(route, params, shareLoad=true) {
-  let url;
-  if (process.env.FLASHIFY_PRIMARY) {
-    url = await computeFlashmanUrl(shareLoad, params.acs_id);
-    if (url === '') {
-      return {
-        success: false,
-        message: 'Error contacting Flashify Server',
-      };
-    }
-  } else {
-    url = await computeFlashmanUrl(shareLoad);
-  }
+const sendFlashmanRequest = function(route, params, shareLoad=true) {
   return new Promise((resolve, reject)=>{
+    let url = computeFlashmanUrl(shareLoad);
     request({
       url: url + route,
       method: 'POST',
@@ -682,7 +630,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
     });
   }
   let result = await sendFlashmanRequest('receive/diagnostic', params, false);
-  if (process.env.FLASHIFY_PRIMARY) {
+  if (process.env.FLASHIFY) {
     result.success = await sendDiagnosticComplete(params);
   }
   callback(null, result);

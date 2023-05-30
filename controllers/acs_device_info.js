@@ -3428,31 +3428,6 @@ acsDeviceInfoController.forcePingOfflineDevices = async function(req, res) {
   });
 };
 
-acsDeviceInfoController.getCPEFields = async function(req, res) {
-  let modelSerial = req.body.modelSerial;
-  let modelName = req.body.modelName;
-  let fwVersion = req.body.fwVersion;
-  let hwVersion = req.body.hwVersion;
-
-  let instance = DevicesAPI.instantiateCPEByModel(
-    modelSerial,
-    modelName,
-    fwVersion,
-    hwVersion,
-  );
-
-  if (!instance.success) {
-    return res.status(500).json({success: false, message: t('Unknown Model')});
-  }
-  return res.status(200).json({
-    success: true,
-    message: '',
-    fields: instance.cpe.getModelFields(),
-    useLastIndexOnWildcard:
-      instance.cpe.modelPermissions().useLastIndexOnWildcard,
-  });
-};
-
 acsDeviceInfoController.pingOfflineDevices = async function() {
   // Get TR-069 configs from database
   let matchedConfig = await Config.findOne(
