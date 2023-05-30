@@ -1,7 +1,11 @@
 // this test need to be run InBand (synchronous)
 require('../../bin/globals.js');
 const {createSimulator} = require('./cpe-tr069-simulator');
-const {pulling} = require('./utils.js');
+const {
+  pulling,
+  startFlashmanDbConnection,
+  closeFlashmanDbConnection
+} = require('./utils.js');
 const blackbox = require('../common/blackbox.js');
 const constants = require('../common/constants.js');
 
@@ -10,15 +14,20 @@ jest.setTimeout( 30*1000 );
 describe('Test API v2', () => {
   let adminCookie = null;
 
+  let flashmanClient;
+  let flashmanDb;
+  let flashmanConfig;
+
   let simulator;
   let deviceDataModel;
 
   // returns response from an http request, sent to flashman, with a user
   // already logged in.
-  const flashman = (method, url, body) =>
-    blackbox.sendRequestAdmin(method, url || '', adminCookie, body);
+  const flashman = (method, route, body) =>
+    blackbox.sendRequestAdmin(method, route || '', adminCookie, body);
 
   beforeAll(async () => {
+    // logging into flashman.
     const adminLogin = await blackbox.loginAsAdmin();
     adminCookie = adminLogin.header['set-cookie'];
 
@@ -28,6 +37,37 @@ describe('Test API v2', () => {
       + `HTTP error: ${adminLogin.error}\n`,
       );
     }
+
+    flashmanDb = await startFlashmanDbConnection().catch((e) => e);
+    expect(flashmanDb).not.toBeInstanceOf(Error);
+
+    const result = await flashmanDb.collection('configs').findOneAndUpdate(
+      {is_default: true},
+      {$set: {measureServerIP: '127.0.0.1', measureServerPort: '33333'}},
+      {
+        projection: {measureServerIP: 1, measureServerPort: 1, _id: 0},
+        returnNewDocument: false,
+      },
+    );
+    flashmanConfig = result.value;
+  });
+
+  afterAll(async () => {
+    // resetting speed test measure server config values to previous values.
+    const configUpdate = {$set: {}, $unset: {}};
+    // eslint-disable-next-line guard-for-in
+    for (let k in flashmanConfig) {
+      let v = flashmanConfig[k];
+      if (v !== undefined) configUpdate.$set[k] = v;
+      else configUpdate.$unset[k] = true;
+    }
+    // eslint-disable-next-line guard-for-in
+    for (let k in configUpdate) { // removing empty '$set' and '$unset' parts.
+      if (Object.keys(configUpdate[k]).length === 0) delete configUpdate[k];
+    }
+    await flashmanDb.collection('configs')
+      .updateOne({is_default: true}, configUpdate);
+    await closeFlashmanDbConnection();
   });
 
   const initiateCpe = async () => {
@@ -195,7 +235,7 @@ describe('Test API v2', () => {
     // issuing a speed test diagnostic.
     const url = `/api/v2/device/command/${simulator.mac}/speedtest`;
     let res = await flashman('put', url);
-    // console.log('res.body', res.body)
+    // console.log('res.body', res.body);
     expect(res.statusCode).toBe(200);
     expect(res.body.success).toBe(true);
 
