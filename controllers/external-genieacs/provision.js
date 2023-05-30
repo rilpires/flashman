@@ -61,7 +61,6 @@ const updateWanConfiguration = function(fields, isTR181) {
     NodesDeclares[node] = declare(node, {value: now, writable: now});
   }
   // Then, execute all gets at once and use their values
-  commit();
   for (let node of nodes) {
     // Update node
     let responses = NodesDeclares[node];
@@ -198,6 +197,7 @@ args = {acs_id: genieID, data: data, events: event};
 
 // Send data to Flashman via HTTP request
 result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
 }

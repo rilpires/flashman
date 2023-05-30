@@ -871,7 +871,6 @@ const assembleWanObj = function(data, fields, isTR181) {
       }
     }
   }
-  console.log(`RESULT: ${JSON.stringify(result)}`);
   return result;
 };
 
