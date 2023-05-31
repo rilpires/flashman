@@ -198,14 +198,10 @@ const createRegistry = async function(req, cpe, permissions) {
   let multiwan = utilHandlers.convertWanToFlashmanFormat(data.wan);
   let chosenWan = utilHandlers.chooseWan(multiwan,
     cpePermissions.useLastIndexOnWildcard);
-  if (chosenWan !== undefined) {
-    console.log('Chosen WAN was set to ' + chosenWan + ' at registry');
-  } else {
+  if (!chosenWan) {
     console.error(t('wanInformationCannotBeEmpty'));
     return false;
   }
-
-  console.log(`MULTIWAN ON CREATE (${chosenWan}): ${JSON.stringify(multiwan)}`);
 
   const hasPPPoE = getPPPoEenabledMultiWan(cpe, multiwan, chosenWan);
   data.wan = multiwan[chosenWan];
@@ -2001,13 +1997,14 @@ const syncDeviceData = async function(
   let multiwan = utilHandlers.convertWanToFlashmanFormat(data.wan);
   let chosenWan = utilHandlers.chooseWan(multiwan,
     cpePermissions.useLastIndexOnWildcard);
-  if (chosenWan === undefined) {
+  if (!chosenWan) {
     console.error('Error chosenWan Undefined!!!');
     return;
   }
 
-  if (!device.wan_chosen || (device.wan_chosen !== chosenWan)) {
-    console.log('Chosen WAN was set to ' + chosenWan);
+  if (device.wan_chosen && (device.wan_chosen !== chosenWan)) {
+    console.error(
+      `Chosen WAN was changed from ${device.wan_chosen} to ${chosenWan}`);
   }
 
   let wanChanges = syncWanData(device, multiwan, chosenWan, cpe, hardReset);
@@ -3094,9 +3091,6 @@ acsDeviceInfoController.updateInfo = async function(
       hasChanges = true;
     });
   });
-
-  console.log(`TASKS: ${JSON.stringify(task)}`);
-  console.log(`CHANGES: ${JSON.stringify(changes)}`);
 
   if (!hasChanges) return; // No need to sync data with genie
   let taskCallback = (acsID)=>{
