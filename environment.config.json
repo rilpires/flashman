@@ -13,7 +13,8 @@
       "FLM_MONGODB_HOST": "localhost",
       "FLM_ADM_USER": "admin",
       "FLM_ADM_PASS": "flashman",
-      "FLASHIFY_SERVER_PORT": 19282
+      "FLASHIFY_SERVER_PORT": 19282,
+      "FLM_FOR_FLASHIFY": false
     },
     "exec_mode": "cluster"
   }]

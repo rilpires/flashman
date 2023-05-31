@@ -77,7 +77,9 @@ ENV production=true \
     AIX_B2_BUCKET="" \
     AIX_B2_ACCOUNT="" \
     AIX_B2_SECRET="" \
-    MONGODB_USE_HA=false
+    MONGODB_USE_HA=false \
+    FLM_FOR_FLASHIFY=false \
+    FLASHIFY_SERVER_PORT=19282
 
 EXPOSE 8000
 EXPOSE 1883

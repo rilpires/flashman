@@ -119,7 +119,7 @@ const tr069Models = {
   zyxelEMG3524Model: require('./cpe-models/zyxel-emg3524'),
 };
 
-if (process.env.FLASHIFY) {
+if (process.env.FLM_FOR_FLASHIFY) {
   tr069Models.flashifyModel = require('./cpe-models/flashify-model');
 }
 
@@ -464,7 +464,7 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'EMG3524-T10A') {
     // Zyxel EMG1702
     result = {success: true, cpe: tr069Models.zyxelEMG3524Model};
-  } else if (process.env.FLASHIFY) {
+  } else if (process.env.FLM_FOR_FLASHIFY) {
     // Flashify Model
     result = {success: true, cpe: tr069Models.flashifyModel};
   }
@@ -638,7 +638,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
     });
   }
   let result = await sendFlashmanRequest('receive/diagnostic', params, false);
-  if (process.env.FLASHIFY) {
+  if (process.env.FLM_FOR_FLASHIFY) {
     result.success = await sendDiagnosticComplete(params);
   }
   callback(null, result);
