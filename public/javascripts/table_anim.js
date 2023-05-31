@@ -647,7 +647,8 @@ anlixDocumentReady.add(function() {
   };
 
   const buildStatusAttributes = function(device) {
-    return 'data-toggle="tooltip" title="'+device.last_contact.toString()+'"';
+    return 'data-toggle="tooltip" title="' +
+      new Date(device.last_contact).toString() + '"';
   };
 
   const buildNotification = function() {
