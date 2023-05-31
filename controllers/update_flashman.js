@@ -172,7 +172,6 @@ updateController.updateProvisionsPresets = async function() {
   const presets = [
     {type: 'provision', path: 'provision', name: 'flashman'},
     {type: 'provision', path: 'diagnostic-provision', name: 'diagnostic'},
-    {type: 'provision', path: 'changes-provision', name: 'changes'},
     {type: 'preset', path: 'bootstrap-preset'},
     {type: 'preset', path: 'boot-preset'},
     {type: 'preset', path: 'periodic-preset'},

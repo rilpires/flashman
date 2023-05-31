@@ -882,7 +882,6 @@ const getWanNodesProvision = function(args, callback) {
   callback(null, result);
 };
 
-
 // Return all the nodes that need to be retrieved from genie/CPE
 // update: true -> Retrieve from Genie
 //         false -> Retrieve from declare/provision or getParameters
@@ -954,44 +953,6 @@ const getWanNodes = function(fields, isTR181, update) {
 };
 
 /**
- * Calls Flashman to save parameters that got a notification in
- * GenieACS.
- *
- * @memberof controllers/external-genieacs/devices-api
- *
- * @param {String} args - The data and ACS ID as a JSON string.
- * @param {Function} callback - The function to be called when an error or
- * success occurs.
- *
- * @return {Any} The callback response.
- */
-const syncDeviceChanges = async function(args, callback) {
-  let params = null;
-
-  // Try parsing the data received
-  try {
-    params = JSON.parse(args[0]);
-  } catch (error) {
-    return callback(null, {
-      success: false,
-      message: 'Invalid JSON',
-    });
-  }
-
-  // Check params
-  if (!params || !params.data || !params.acs_id) {
-    return callback(null, {
-      success: false,
-      message: 'Incomplete arguments',
-    });
-  }
-
-  let result = await sendFlashmanRequest('device/syncchanges', params);
-  return callback(null, result);
-};
-
-
-/**
  * @exports controllers/external-genieacs/devices-api
  */
 
@@ -999,7 +960,6 @@ const syncDeviceChanges = async function(args, callback) {
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
-exports.syncDeviceChanges = syncDeviceChanges;
 exports.assembleWanObjProvision = assembleWanObjProvision;
 exports.getWanNodesProvision = getWanNodesProvision;
 

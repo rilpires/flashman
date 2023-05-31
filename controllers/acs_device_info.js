@@ -957,6 +957,7 @@ acsDeviceInfoController.informDevice = async function(req, res) {
   }
 
   let doFullSync = false;
+  let doChangeSync = false;
   let doSync = false;
   let incorrectLogin = false;
 
@@ -973,11 +974,18 @@ acsDeviceInfoController.informDevice = async function(req, res) {
     doFullSync = ((device.do_update && device.do_update_status === 0) ||
     device.recovering_tr069_reset);
 
-    // Check if this is a bootstrap event
-    // Bootstrap events happens when CPE is Factory Reset
-    if (req.body.events && req.body.events.bootstrap) {
-      // Do a full sync
-      doFullSync = true;
+    if (req.body.events) {
+      // Check if this is a bootstrap event
+      // Bootstrap events happens when CPE is Factory Reset
+      if (req.body.events.bootstrap) {
+        // Do a full sync
+        doFullSync = true;
+      } else
+      // Changes need to ask for information from the CPE
+      if (req.body.events.change) {
+        // Do a full sync
+        doChangeSync = true;
+      }
     }
 
     // Check if connection password is empty
@@ -1054,7 +1062,11 @@ acsDeviceInfoController.informDevice = async function(req, res) {
       let syncDiff = dateNow - device.last_tr069_sync;
       // Give an extra 10 seconds to buffer out race conditions
       syncDiff += 10000;
-      if (syncDiff >= config.tr069.sync_interval) {
+
+      // For now, a ChangeSync is the same as the normal sync
+      // In the future, put the changes in a "fast lane"
+      // Only updating ip information or other things
+      if (doChangeSync || (syncDiff >= config.tr069.sync_interval)) {
         if (addRCSync(id)) {
           device.last_tr069_sync = dateNow;
           doSync = true;
@@ -1584,154 +1596,6 @@ const fetchSyncResult = async function(
  */
 acsDeviceInfoController.__testFetchSyncResult = fetchSyncResult;
 
-
-/**
- * A fast update for only values that changes easily and needs to be in constant
- * sync with Flashman.
- *
- * @memberof controllers/acsDeviceInfo
- *
- * @param {Request} request - The HTTP request.
- * @param {Response} response - The HTTP response.
- *
- * @return {Response} The body of the response might contains:
- *  - `success`: If could execute the function properly;
- *  - `message`: The message of what happenned if `success` is false.
- */
-acsDeviceInfoController.syncDeviceChangedValues = async function(
-  request, response,
-) {
-  // Validate data and MAC
-  if (
-      !request.body || !request.body.data || !request.body.data.common ||
-      !request.body.data.common.mac || !request.body.data.common.mac.value
-    ) {
-    return response.status(500).json({
-      success: false,
-      message: t('fieldNameMissing', {name: 'MAC', errorline: __line}),
-    });
-  }
-  const data = request.body.data;
-
-  // Get the ID of CPE and convert the MAC field from - to : if necessary
-  const mac = (data.common.mac.value.includes('-') ?
-    data.common.mac.value.replace(/-/g, ':') :
-    data.common.mac.value
-  );
-
-  // Get the device
-  let device = await DeviceModel.findById(
-    mac.toUpperCase(),
-    {
-      acs_id: true, model: true, version: true, hw_version: true, wan_ip: true,
-      ip: true,
-    },
-  );
-
-  // Check if device exists, This function should only be called by the device
-  // that already exists
-  if (!device) {
-    return response.status(500).json({
-      success: false,
-      message: t('noDevicesFound'),
-    });
-  }
-
-
-  // Get the instance
-  const cpeInstance = DevicesAPI.instantiateCPEByModelFromDevice(device);
-
-  if (!cpeInstance.success) {
-    return response.status(500).json({
-      success: false,
-      message: t('noDevicesFound'),
-    });
-  }
-
-
-  // End the session and continue to speed up the process
-  response.status(200).json({success: true});
-
-  const permissions = DeviceVersion.devicePermissions(device);
-  const cpePermissions = cpeInstance.cpe.modelPermissions();
-
-  // Change each value
-  let shouldSaveDevice = false;
-
-
-  // IP
-  let cpeIP;
-  // Check STUN
-  if (
-    data.common.stun_enable &&
-    data.common.stun_enable.value &&
-    data.common.stun_enable.value.toString() === 'true' &&
-    data.common.stun_udp_conn_req_addr &&
-    data.common.stun_udp_conn_req_addr.value &&
-    typeof data.common.stun_udp_conn_req_addr.value === 'string' &&
-    data.common.stun_udp_conn_req_addr.value !== ''
-  ) {
-    cpeIP = processHostFromURL(data.common.stun_udp_conn_req_addr.value);
-
-  // Otherwise use the connection request URL to get the IP
-  } else if (data.common.ip && data.common.ip.value) {
-    cpeIP = processHostFromURL(data.common.ip.value);
-  }
-
-  if (cpeIP) {
-    device.ip = cpeIP;
-    shouldSaveDevice = true;
-  }
-
-  // WAN
-  if (data.wan) {
-    const wan = data.wan;
-    const hasPPPoE = getPPPoEenabled(cpeInstance.cpe, wan);
-
-    // WAN IP
-    // PPPoE first as it is more common to happen
-    if (hasPPPoE && wan.wan_ip_ppp && wan.wan_ip_ppp.value) {
-      device.wan_ip = wan.wan_ip_ppp.value;
-      shouldSaveDevice = true;
-    } else if (wan.wan_ip && wan.wan_ip.value) {
-      device.wan_ip = wan.wan_ip.value;
-      shouldSaveDevice = true;
-    }
-  }
-
-  // IPv6
-  if (
-    data.wan && data.ipv6 &&
-    permissions.grantWanLanInformation &&
-    cpePermissions.features.hasIpv6Information &&
-    cpePermissions.ipv6.hasAddressField
-  ) {
-    const wan = data.wan;
-    const hasPPPoE = getPPPoEenabled(cpeInstance.cpe, wan);
-
-    // Address
-    // PPPoE first as it is more common to happen
-    if (hasPPPoE && data.ipv6.address_ppp && data.ipv6.address_ppp.value) {
-      device.wan_ipv6 = data.ipv6.address_ppp.value;
-      shouldSaveDevice = true;
-    } else if (data.ipv6.address && data.ipv6.address.value) {
-      device.wan_ipv6 = data.ipv6.address.value;
-      shouldSaveDevice = true;
-    }
-  }
-
-
-  // Try saving the device
-  try {
-    if (shouldSaveDevice) await device.save();
-  } catch (error) {
-    console.error(
-      'Error saving device changed values to database: ' + error,
-    );
-  }
-};
-
-
 /**
  * Legacy GenieACS sync function that is still used for new devices and devices
  * that are recovering from hard reset or from a new firmware upgrade - should
@@ -1814,8 +1678,6 @@ acsDeviceInfoController.syncDevice = async function(req, res) {
 const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
   let cpePermissions = cpe.modelPermissions();
   let changes = {};
-
-  console.log(`MULTIWAN ON syncWanData (${chosenWan}): ${JSON.stringify(multiwan)}`);
 
   const hasPPPoE = getPPPoEenabledMultiWan(cpe, multiwan, chosenWan);
   const suffixPPPoE = hasPPPoE ? '_ppp' : '';

@@ -122,11 +122,13 @@ firmwareVersion = firmwareVersion.value[0];
 hardwareVersion = hardwareVersion.value[0];
 
 // Pass event type to flashman
-let event = {boot: false, bootstrap: false};
+let event = {boot: false, bootstrap: false, change: false};
 if(bootstrapEvent && bootstrapEvent.value && bootstrapEvent.value[0] >= now)
   event.bootstrap = true;
 if(bootEvent && bootEvent.value && bootEvent.value[0] >= now)
   event.boot = true;
+if(args[0] === 'CHANGE')
+  event.change = true;
 
 // Pass connection request credentials to flashman
 let connection = {
@@ -139,7 +141,7 @@ if(connUserName && connUserName.value && connUserName.value[0] != '')
 if(connPassword && connPassword.value && connPassword.value[0] != '')
   connection.password = connPassword.value[0];
 
-let args = {
+let Fargs = {
   oui: oui,
   model: modelClass,
   modelName: modelName,
@@ -151,7 +153,7 @@ let args = {
 };
 
 // Get configs and model fields from Flashman via HTTP request
-let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
+let result = ext('devices-api', 'getDeviceFields', JSON.stringify(Fargs));
 
 // Error contacting Flashman - could be network issue or unknown model
 if (!result.success || !result.fields) {
@@ -193,10 +195,10 @@ let data = {
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
 
-args = {acs_id: genieID, data: data, events: event};
+Fargs = {acs_id: genieID, data: data, events: event};
 
 // Send data to Flashman via HTTP request
-result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+result = ext('devices-api', 'syncDeviceData', JSON.stringify(Fargs));
 
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
