@@ -2634,7 +2634,7 @@ deviceListController.setDeviceReg = function(req, res) {
             // We are changing TR069 WAN information
             // Update WAN information only if WAN is defined
             if (matchedDevice.use_tr069 &&
-              Object.keys(changes.wan).length !== 0 &&
+              Object.keys(changes.wan).length > 0 &&
               !matchedDevice.wan_chosen) {
                 return res.status(500).json({
                   success: false,

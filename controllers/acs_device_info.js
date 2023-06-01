@@ -1998,7 +1998,7 @@ const syncDeviceData = async function(
   let chosenWan = utilHandlers.chooseWan(multiwan,
     cpePermissions.useLastIndexOnWildcard);
   if (!chosenWan) {
-    console.error('Error chosenWan Undefined!!!');
+    console.error(`Error chosenWan Undefined!!! (${acsID})`);
     return;
   }
 
@@ -2011,6 +2011,7 @@ const syncDeviceData = async function(
   // Any change in the wan only happens if we are recovering from hard reset
   if (hardReset) {
     changes.wan = wanChanges;
+    hasChanges = true;
   }
 
   // Process wan connection type, but only if data sent
@@ -3005,31 +3006,51 @@ acsDeviceInfoController.updateInfo = async function(
   // have wildcards with the correct indexes. Only the fields referring to the
   // WAN are changed
   if (changes.wan && Object.keys(changes.wan).length > 0) {
-    let wanFields = await acsDeviceInfoController.getMultiWan(acsID, cpe);
-    wanFields = wanFields[device.wan_chosen];
+    if (device.wan_chosen) {
+      let wanFields = await acsDeviceInfoController.getMultiWan(acsID, cpe);
+      wanFields = wanFields[device.wan_chosen];
+      if (wanFields) {
+        // Validate WAN: Check if all fields exist
+        let valid = true;
+        Object.keys(changes.wan).forEach((key)=>{
+          if (!(key in wanFields)) {
+            valid = false;
+            console.error(`updateInfo invalid wanFields `+
+              `(${key}): ${device.wan_chosen} -> (${acsID})`);
+          }
+        });
 
-    Object.keys(changes.wan).forEach((key)=>{
-      let convertedValue = cpe.convertField(
-        'wan', key, // key to be changed, eg: wifi2, ssid
-        changes.wan[key], // new value
-        cpe.getFieldType, // convert type function
-        cpe.convertWifiMode, // convert wifi mode function
-        cpe.convertWifiBand, // convert wifi band function
-      );
-      task.parameterValues.push([
-        wanFields[key].path, // tr-069 field name
-        convertedValue.value, // value to change to
-        convertedValue.type, // genieacs type
-      ]);
-      hasChanges = true;
-    });
+        if (valid) {
+          Object.keys(changes.wan).forEach((key)=>{
+            let convertedValue = cpe.convertField(
+              'wan', key, // key to be changed, eg: wifi2, ssid
+              changes.wan[key], // new value
+              cpe.getFieldType, // convert type function
+              cpe.convertWifiMode, // convert wifi mode function
+              cpe.convertWifiBand, // convert wifi band function
+            );
+            task.parameterValues.push([
+              wanFields[key].path, // tr-069 field name
+              convertedValue.value, // value to change to
+              convertedValue.type, // genieacs type
+            ]);
+            hasChanges = true;
+          });
 
-    // CPEs needs to reboot after change PPPoE parameters
-    if (
-      cpe.modelPermissions().wan.mustRebootAfterChanges &&
-      (changes.wan.pppoe_user || changes.wan.pppoe_pass)
-    ) {
-      rebootAfterUpdate = true;
+          // CPEs needs to reboot after change PPPoE parameters
+          if (
+            cpe.modelPermissions().wan.mustRebootAfterChanges &&
+            (changes.wan.pppoe_user || changes.wan.pppoe_pass)
+          ) {
+            rebootAfterUpdate = true;
+          }
+        }
+      } else {
+        console.error(`updateInfo chosenWAN index`+
+         `not exist! ${device.wan_chosen} -> (${acsID})`);
+      }
+    } else {
+      console.error(`updateInfo change WAN in undefined! (${acsID})`);
     }
   }
 
@@ -3099,6 +3120,7 @@ acsDeviceInfoController.updateInfo = async function(
     }
     return true;
   };
+
   try {
     if (awaitUpdate) {
       // We need to wait for task to be completed before we can return - caller

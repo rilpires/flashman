@@ -142,7 +142,7 @@ let appSet = function(req, res, processFunction) {
       });
 
       if (matchedDevice.use_tr069) {
-        if (Object.keys(tr069Changes.wan).length !== 0) {
+        if (Object.keys(tr069Changes.wan).length > 0) {
           // We never set WAN information from Client APP
           console.error('Client APP can not set WAN information!');
           tr069Changes.wan = {};
