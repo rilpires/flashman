@@ -1721,7 +1721,7 @@ const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
       device.pppoe_password = remotePPPPassword;
     } else {
       // DB have a user
-      if (localPPPPassword && hardReset) {
+      if (localPPPPassword && hardReset && (localPPPUser!==remotePPPUser)) {
         // DB have user and password
         // And is a hard reset
         // Define PPP in CPE
@@ -2009,7 +2009,7 @@ const syncDeviceData = async function(
 
   let wanChanges = syncWanData(device, multiwan, chosenWan, cpe, hardReset);
   // Any change in the wan only happens if we are recovering from hard reset
-  if (hardReset) {
+  if (hardReset && Object.keys(wanChanges).length > 0) {
     changes.wan = wanChanges;
     hasChanges = true;
   }
