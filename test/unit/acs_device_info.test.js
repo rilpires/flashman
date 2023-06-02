@@ -107,7 +107,7 @@ let assembleBody = (device) => {
         band: bodyField(device.wifi_band, 1),
       },
       wifi5: {
-        ssid: bodyField(device.wifi_bssid_5ghz, 1),
+        ssid: bodyField(device.wifi_ssid_5ghz, 1),
         bssid: bodyField(device.wifi_bssid_5ghz, 0),
         password: bodyField('', 1),
         channel: bodyField(device.wifi_channel_5ghz, 1),
@@ -909,6 +909,7 @@ describe('ACS Device Info Tests', () => {
       async () => {
         // Flag canTrustWanRate for ZTE H199 is true
         const id = models.defaultMockDevices[0]._id;
+        // H199 shows rate in bytes
         const device = models.copyDeviceFrom(
           id,
           {
@@ -917,6 +918,8 @@ describe('ACS Device Info Tests', () => {
             model: 'ZXHN H199A', // ZTE H199
             version: 'V9.1.0P4N1_MUL',
             hw_version: 'V9.1.1',
+            wan_negociated_speed: '1000000000',
+            wan_negociated_duplex: 'Full',
           },
         );
         let splitID = device.acs_id.split('-');
@@ -961,7 +964,7 @@ describe('ACS Device Info Tests', () => {
           app,
           expect.arrayContaining([
             expect.objectContaining({
-              wan_negociated_speed: body.data.wan.rate.value,
+              wan_negociated_speed: '1000',
               wan_negociated_duplex: body.data.wan.duplex.value,
             }),
           ]),
@@ -1747,7 +1750,6 @@ describe('ACS Device Info Tests', () => {
         },
       );
 
-
       // Mocks
       utils.common.mockConfigs(config, 'findOne');
       let successUpdateSpy = jest.spyOn(updateSchedulerCommon, 'successUpdate')
@@ -1760,19 +1762,15 @@ describe('ACS Device Info Tests', () => {
         });
       };
 
+      let body = assembleBody(device);
+      body.data.common.web_admin_username = {writable: true, value: oldLogin};
+      body.data.common.web_admin_password = {writable: true, value: oldPass};
 
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
         device._id,
         device,
-        {
-          common: {
-            version: {value: '1234'},
-            web_admin_username: {writable: true, value: oldLogin},
-            web_admin_password: {writable: true, value: oldPass},
-          },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
-        },
+        body.data,
         {
           grantMeshV2HardcodedBssid: null,
         },
@@ -1789,7 +1787,6 @@ describe('ACS Device Info Tests', () => {
       expect(device.web_admin_username).toBe(newLogin);
       expect(device.web_admin_password).toBe(newPass);
     });
-
 
     // Undefined device password
     test('Undefined device password', async () => {
@@ -1833,19 +1830,15 @@ describe('ACS Device Info Tests', () => {
         });
       };
 
+      let body = assembleBody(device);
+      body.data.common.web_admin_username = {writable: true, value: oldLogin};
+      body.data.common.web_admin_password = {writable: true, value: oldPass};
 
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
         device._id,
         device,
-        {
-          common: {
-            version: {value: '1234'},
-            web_admin_username: {writable: true, value: oldLogin},
-            web_admin_password: {writable: true, value: oldPass},
-          },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
-        },
+        body.data,
         {
           grantMeshV2HardcodedBssid: null,
         },
@@ -1906,19 +1899,15 @@ describe('ACS Device Info Tests', () => {
         });
       };
 
+      let body = assembleBody(device);
+      body.data.common.web_admin_username = {writable: true, value: oldLogin};
+      body.data.common.web_admin_password = {writable: true, value: oldPass};
 
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
         device._id,
         device,
-        {
-          common: {
-            version: {value: '1234'},
-            web_admin_username: {writable: true, value: oldLogin},
-            web_admin_password: {writable: true, value: oldPass},
-          },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
-        },
+        body.data,
         {
           grantMeshV2HardcodedBssid: null,
         },
@@ -2269,7 +2258,7 @@ describe('ACS Device Info Tests', () => {
 
 
     // Same config
-    test('New config', async () => {
+    test('Same Config', async () => {
       let oldLogin = 'teste123';
       let oldPass = 'teste321';
 
@@ -2554,25 +2543,32 @@ describe('ACS Device Info Tests', () => {
         fields,
       );
 
-      // Execute the request
-      await acsDeviceInfoController.__testSyncDeviceData(
-        device.acs_id, device, {
-          common: {}, wan: {
+      let body = assembleBody(device);
+      let data = {...body.data,
+        wan: {
+          wan_dhcp_1_1_1: {
+            ...body.data.wan['wan_dhcp_1_1_1'],
             mask_ipv4: {writable: false, value: '24'},
             remote_address: {writable: false, value: '192.168.89.2'},
             remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
             default_gateway: {writable: false, value: '192.168.80.1'},
             dns_servers: {writable: false, value: '8.8.8.8'},
-          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
-            address: {writable: false, value: '2804:1234:5678::a1'},
-            mask: {writable: false, value: '78'},
-            default_gateway: {writable: false, value: '2804:1234:5678::a0'},
-            prefix_address: {writable: false, value: '2804:1234:5679::'},
-            prefix_mask: {writable: false, value: '64'},
-            prefix_local_address:
-              {writable: false, value: '2804:1234:5679::b1'},
           },
+        }, ipv6: {
+          ...body.data.ipv6,
+          address: {writable: false, value: '2804:1234:5678::a1'},
+          mask: {writable: false, value: '78'},
+          default_gateway: {writable: false, value: '2804:1234:5678::a0'},
+          prefix_address: {writable: false, value: '2804:1234:5679::'},
+          prefix_mask: {writable: false, value: '64'},
+          prefix_local_address:
+            {writable: false, value: '2804:1234:5679::b1'},
         },
+      };
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, data,
         {grantWanLanInformation: true},
       );
 
@@ -2634,25 +2630,32 @@ describe('ACS Device Info Tests', () => {
         fields,
       );
 
-      // Execute the request
-      await acsDeviceInfoController.__testSyncDeviceData(
-        device.acs_id, device, {
-          common: {}, wan: {
+      let body = assembleBody(device);
+      let data = {...body.data,
+        wan: {
+          wan_dhcp_1_1_1: {
+            ...body.data.wan['wan_dhcp_1_1_1'],
             mask_ipv4: {writable: false, value: '24'},
             remote_address: {writable: false, value: '192.168.89.2'},
             remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
             default_gateway: {writable: false, value: '192.168.80.1'},
             dns_servers: {writable: false, value: '8.8.8.8'},
-          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
-            address: {writable: false, value: '2804:1234:5678::a1'},
-            mask: {writable: false, value: '78'},
-            default_gateway: {writable: false, value: '2804:1234:5678::a0'},
-            prefix_address: {writable: false, value: '2804:1234:5679::'},
-            prefix_mask: {writable: false, value: '64'},
-            prefix_local_address:
-              {writable: false, value: '2804:1234:5679::b1'},
           },
+        }, ipv6: {
+          ...body.data.ipv6,
+          address: {writable: false, value: '2804:1234:5678::a1'},
+          mask: {writable: false, value: '78'},
+          default_gateway: {writable: false, value: '2804:1234:5678::a0'},
+          prefix_address: {writable: false, value: '2804:1234:5679::'},
+          prefix_mask: {writable: false, value: '64'},
+          prefix_local_address:
+            {writable: false, value: '2804:1234:5679::b1'},
         },
+      };
+
+      // Execute the request
+      await acsDeviceInfoController.__testSyncDeviceData(
+        device.acs_id, device, data,
         {grantWanLanInformation: true},
       );
 
@@ -2836,15 +2839,22 @@ describe('ACS Device Info Tests', () => {
         fields,
       );
 
+      let body = assembleBody(device);
+      let data = {...body.data,
+        wan: {
+          wan_dhcp_1_1_1: {
+            ...body.data.wan['wan_dhcp_1_1_1'],
+            mask_ipv4: {writable: false, value: '32'},
+          },
+        }, ipv6: {
+          ...body.data.ipv6,
+          mask: {writable: false, value: '128'},
+        },
+      };
+
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
-        device.acs_id, device, {
-          common: {}, wan: {
-            mask_ipv4: {writable: false, value: '32'},
-          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
-            mask: {writable: false, value: '128'},
-          },
-        },
+        device.acs_id, device, data,
         {grantWanLanInformation: true},
       );
 
@@ -2897,15 +2907,22 @@ describe('ACS Device Info Tests', () => {
         fields,
       );
 
+      let body = assembleBody(device);
+      let data = {...body.data,
+        wan: {
+          wan_dhcp_1_1_1: {
+            ...body.data.wan['wan_dhcp_1_1_1'],
+            mask_ipv4: {writable: false, value: '0'},
+          },
+        }, ipv6: {
+          ...body.data.ipv6,
+          mask: {writable: false, value: '0'},
+        },
+      };
+
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
-        device.acs_id, device, {
-          common: {}, wan: {
-            mask_ipv4: {writable: false, value: '0'},
-          }, lan: {}, wifi2: {}, wifi5: {}, ipv6: {
-            mask: {writable: false, value: '0'},
-          },
-        },
+        device.acs_id, device, data,
         {grantWanLanInformation: true},
       );
 
