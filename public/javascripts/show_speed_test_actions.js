@@ -3,6 +3,8 @@ import {displayAlertMsg, socket} from './common_actions.js';
 
 const t = i18next.t;
 
+let SPEEDTEST_NO_LIMIT;
+
 anlixDocumentReady.add(function() {
   let socketIoResponse = false;
 
@@ -19,6 +21,7 @@ anlixDocumentReady.add(function() {
       success: function(res) {
         if (res.success) {
           let limit = res.limit;
+          SPEEDTEST_NO_LIMIT = res.noLimit;
           let pastMeasures = res.measures;
           if (!pastMeasures || pastMeasures.length === 0) {
             $('#measure-previous-nodata').show();
@@ -30,7 +33,7 @@ anlixDocumentReady.add(function() {
           $('#measure-previous-data').empty();
           pastMeasures.forEach((measure)=>{
             let downSpeed = parseInt(measure.down_speed);
-            if (downSpeed > limit) {
+            if ((downSpeed > limit) && !SPEEDTEST_NO_LIMIT) {
               measure.down_speed = t('moreThanXMbps', {x: limit});
             }
             let name = measure.user.replace(/_/g, ' ');
@@ -149,7 +152,7 @@ anlixDocumentReady.add(function() {
         socketIoResponse = true;
         if (data.downSpeed.includes(t('Mbps'))) {
           let downSpeed = parseInt(data.downSpeed);
-          if (downSpeed > data.limit) {
+          if ((downSpeed > data.limit) && !SPEEDTEST_NO_LIMIT) {
             data.downSpeed = t('moreThanXMbps', {x: data.limit});
           }
           $('#speed-test-shown-text').html(`${t('speedMeasured')}:`);

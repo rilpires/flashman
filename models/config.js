@@ -14,6 +14,7 @@ let configSchema = new mongoose.Schema({
   pppoePassLength: {type: Number, default: 1, min: 1, max: 64},
   measureServerIP: {type: String},
   measureServerPort: {type: Number, default: 80},
+  measureNoLimit: {type: Boolean, default: false},
   messaging_configs: {
     functions_fqdn: String,
     secret_token: String,
