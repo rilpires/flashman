@@ -176,7 +176,6 @@
             + ```serial_tr069```;
             + ```external_reference.data```;
             + ```alt_uid_tr069```;
-            + ```acs_id```;
             + ```wan_bssid```.
 
       - in: query
