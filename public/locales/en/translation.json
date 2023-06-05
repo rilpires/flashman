@@ -1114,5 +1114,8 @@
 	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Only characters, numbers, underscores, dots and semicolons are accepted.",
 	"invalidPageError": "Invalid page. Type a valid number that is equal or bigger than 1. ({{errorline}})",
 	"invalidPageLimitError": "Invalid page limit count. Type a valid number that is equal or bigger than 1 and is equal or less than {{upperLimit}}. ({{errorline}})",
-	"queryWithOrAndExclude": "Do not make a query with 'operation' field as 'or' and use the 'exclude' field at the same time. ({{errorline}})"
+	"queryWithOrAndExclude": "Do not make a query with 'operation' field as 'or' and use the 'exclude' field at the same time. ({{errorline}})",
+	"invalidTask": "Invalid task. ({{errorline}})",
+	"errorAddingTask": "Error adding task. ({{errorline}})",
+	"errorGettingCollection": "Error when getting the collection from genie. ({{errorline}})"
 }

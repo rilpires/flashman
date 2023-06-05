@@ -1122,5 +1122,8 @@
 	"mustOnlyContainCharsNumbersUnderscoresDotsSemicolon": "Apenas caracteres, números, sublinhados, pontos e pontos e vírgulas são aceitos.",
 	"invalidPageError": "Página inválida. Digite um número válido igual ou maior que 1. ({{errorline}})",
 	"invalidPageLimitError": "Contagem de limite de página inválida. Digite um número válido igual ou maior que 1 e igual ou menor que {{upperLimit}}. ({{errorline}})",
-	"queryWithOrAndExclude": "Não faça uma consulta com o campo 'operation' como 'or' e use o campo 'exclude' ao mesmo tempo. ({{errorline}})"
+	"queryWithOrAndExclude": "Não faça uma consulta com o campo 'operation' como 'or' e use o campo 'exclude' ao mesmo tempo. ({{errorline}})",
+	"invalidTask": "Tarefa inválida. ({{errorline}})",
+	"errorAddingTask": "Erro ao adicionar a tarefa. ({{errorline}})",
+	"errorGettingCollection": "Erro ao obter a coleção do genie. ({{errorline}})"
 }
