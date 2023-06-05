@@ -7,8 +7,8 @@ const apiController = require('../../controllers/api/v3');
 
 
 /**
- * Do not forget to alter docs/api/v3 files. Those files are needed for swagger,
- * an UI for sending and testing the commands defined here.
+ * Do not forget to alter `docs/api/v3 files`. Those files are needed for
+ * swagger, an UI for sending and testing the commands defined here.
  *
  * For `GET` routes that get specific a device through specific fields inside
  * the device model, just create a route based on the routes that already exists
@@ -19,8 +19,8 @@ const apiController = require('../../controllers/api/v3');
  * that should or should not be returned). Add the field name and the created
  * constant to `reducedFieldsByRelativePath`.
  *
- * @summary For `GET` routes for specific device fields, change
- * `translationObject` and `reducedFieldsByRelativePath`.
+ * @summary ALWAYS UPDATE `docs/api/v3 files`. For `GET` routes for specific
+ * device fields, change `translationObject` and `reducedFieldsByRelativePath`.
  *
  * @memberof controllers/api/v3
  */
