@@ -136,4 +136,17 @@ router.get(
 );
 
 
+// Genie Routes
+router.post(
+  '/device/mac/:mac/genie/raw/task',
+  apiController.postGenieTask,
+);
+
+
+router.get(
+  '/device/mac/:mac/genie/raw/collection/',
+  apiController.getGenieDeviceCollection,
+);
+
+
 module.exports = router;
