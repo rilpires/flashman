@@ -294,6 +294,8 @@ apiController.returnDevicesError = function(response, validation) {
  * @memberof controllers/api/v3
  *
  * @param {HTTPRequest} request - The HTTP request.
+ * @param {Boolean} hasBody - If the request contains a body or not to be
+ * tested.
  *
  * @return {Object} The object containing:
  *  - `valid` - `Boolean`: If the request is valid or not;
@@ -302,8 +304,16 @@ apiController.returnDevicesError = function(response, validation) {
  *  - `message` - `Object`: The object of the response to be returned in case of
  *    an error.
  */
-apiController.validateRequest = function(request) {
+apiController.validateRequest = function(request, hasBody = false) {
   if (!request || !request.params || !request.query) {
+    return apiController.buildDeviceResponse(
+      false, 400, t('requestError', {errorline: __line}),
+    );
+
+  // Validate the body if needed
+  } else if (
+    hasBody && (!request.body || request.body.constructor !== Object)
+  ) {
     return apiController.buildDeviceResponse(
       false, 400, t('requestError', {errorline: __line}),
     );
