@@ -698,7 +698,11 @@ const checkNewDiagnosticAvailability = function(device) {
   }
   const msSinceLastModified =
     new Date() - device.current_diagnostic.last_modified_at;
-  const timeoutThresholdMs = 2 * 60 * 1000; // 2 minutes;
+  let timeoutMinutes = 2;
+  if (process.env.FLM_FOR_FLASHIFY) {
+    timeoutMinutes = 0;
+  }
+  const timeoutThresholdMs = timeoutMinutes * 60 * 1000;
   if (!isNaN(msSinceLastModified) &&
       msSinceLastModified<timeoutThresholdMs &&
       device.current_diagnostic.in_progress
