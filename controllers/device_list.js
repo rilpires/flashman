@@ -4223,27 +4223,35 @@ deviceListController.setDefaultLanDNSServers = async function(req, res) {
     success = false; type = 'error';
     message = t('jsonError', {errorline: __line});
   } else if (!req.body.default_dns_servers) {
-    success = false; type = 'error';
-    message = t('configNotFound', {errorline: __line});
+    if (success) {
+      success = false; type = 'error';
+      message = t('bodyNotObject', {errorline: __line});
+    }
   } else {
     let matchedConfig = await Config.findOne(
       {is_default: true}, {default_dns_servers: true}).exec().catch(
       (err) => {
-        success = false; type = 'error';
-        message = t('configFindError', {errorline: __line});
+        if (success) {
+          success = false; type = 'error';
+          message = t('configFindError', {errorline: __line});
+        }
       },
     );
     if (matchedConfig) {
       let servers = req.body.default_dns_servers;
       let approvedHostsIpv4 = [];
       let approvedHostsIpv6 = [];
+      let editIpv4 = false;
       servers.ipv4.forEach((server) => {
         server = server.toLowerCase();
         if (server.match(util.ipv4Regex)) {
           approvedHostsIpv4.push(server);
         } else {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
+          if (success) {
+            editIpv4 = true;
+            success = false; type = 'error';
+            message = t('dnsShouldBeIPFormat', {ipType: 'IPv4'});
+          }
         }
       });
       servers.ipv6.forEach((server) => {
@@ -4251,15 +4259,26 @@ deviceListController.setDefaultLanDNSServers = async function(req, res) {
         if (util.testIPv6(server)) {
           approvedHostsIpv6.push(server);
         } else {
-          success = false; type = 'error';
-          message = t('configSaveError', {errorline: __line});
+          if (editIpv4) {
+            success = false; type = 'error';
+            message = t('dnsShouldBeBothIPFormat', {errorline: __line});
+          } else if (success) {
+            success = false; type = 'error';
+            message = t('dnsShouldBeIPFormat', {ipType: 'IPv6'});
+          }
         }
       });
-      matchedConfig.default_dns_servers.ipv4 = approvedHostsIpv4;
-      matchedConfig.default_dns_servers.ipv6 = approvedHostsIpv6;
+      if (approvedHostsIpv4.length > 0) {
+        matchedConfig.default_dns_servers.ipv4 = approvedHostsIpv4;
+      }
+      if (approvedHostsIpv6.length > 0) {
+        matchedConfig.default_dns_servers.ipv6 = approvedHostsIpv6;
+      }
       await matchedConfig.save().catch((err) => {
-        success = false; type = 'error';
-        message = t('configSaveError', {errorline: __line});
+        if (success) {
+          success = false; type = 'error';
+          message = t('deviceSaveError', {errorline: __line});
+        }
       });
     }
   }

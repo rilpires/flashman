@@ -4,17 +4,18 @@ block content
   include mixins/_modals.pug
   include includes/showfactorycredentials
   +single-list-modal("default-hosts-config-modal", t('defaultHostsConfig'),
-                      "fa-stethoscope", t('pingAddress'),
+                      "fa-stethoscope", t('pingAddress'), "",
                       t('invalidAddress'), t('targetAddressesTooltip'),
                       t('defaultHosts'),
                       t('noDefaultHostsConfigured'),
                       t('defaultHostsConfigWarning'))
   +tab-lists-modal("default-dns-servers-modal", t('defaultLanDnsServersConfig'),
-                     "fa-server", t('dnsServerAddress'),
+                     "fa-server", t('dnsServerAddress'), "ip-mask-field",
                      t('invalidAddress'), t('dnsServerAddressTooltip'),
                      t('dnsServerAddresses'),
                      t('noDnsServerConfigured'),
-                     t('defaultLanDnsServersConfigWarning'), "IPv4", "IPv6")
+                     t('defaultLanDnsServersConfigWarning'),
+                     "IPv4", "IPv6")
 
   form#config-flashman-form.needs-validation(
     method="post",
