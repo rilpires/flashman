@@ -346,7 +346,7 @@
 	"VersionName": "Version Name",
 	"selectAnyVersion": "Select some version",
 	"typeVersionName": "Type the version name",
-	"invalidVersionName": "Nombre de versión no válido. No use &, /, \\, \", ', `, < o >.",
+	"invalidVersionName": "Invalid version name. Do not use &, /, \\, \", ', `, < or >.",
 	"selectFirmware": "Select a firmware",
 	"Synchronize": "Synchronize",
 	"Manufacturer": "Vendor",
