@@ -799,7 +799,7 @@ apiController.getDeviceByFields = async function(
 
   // Error from mongo
   } catch (error) {
-    console.log(
+    console.error(
       'Failed to find device in getDeviceByFields with error: ' + error,
     );
 
@@ -1553,7 +1553,7 @@ apiController.search = async function(request, response) {
 
   // Error from mongo
   } catch (error) {
-    console.log(
+    console.error(
       'Failed to find device in search with error: ' + error,
     );
 
