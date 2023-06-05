@@ -419,8 +419,7 @@
   "personIdentificationMask": "0000000-S",
   "enterpriseIdentificationMask": "S-0000000-S",
   "personIdentificationRegex": "^[0-9]{7}[-]{0,1}[A-Za-z]{1}$",
->>>>>>> development
-    "enterpriseIdentificationRegex": "^([A-Za-z]{1}[-][0-9]{7}[-][A-Za-z]{1}|[A-Za-z]{1}[0-9]{7}[A-Za-z]{1})$",
+  "enterpriseIdentificationRegex": "^([A-Za-z]{1}[-][0-9]{7}[-][A-Za-z]{1}|[A-Za-z]{1}[0-9]{7}[A-Za-z]{1})$",
   "clientIdentificationOptional": "ID de cliente (opcional)",
   "macAddress": "Dirección MAC",
   "wifiChannel": "Canal Wi-Fi",
