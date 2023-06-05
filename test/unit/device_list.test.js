@@ -2837,6 +2837,54 @@ describe('Controllers - Device List', () => {
     });
 
 
+    // MAC with lowercase
+    test('MAC with lowercase', async () => {
+      const mac = 'aa:bb:cc:dd:ee:ff';
+      const oldName = 'teste2';
+      const newName = 'aaaaa';
+
+      let data = {
+        name: newName,
+        device_id: 'bb:cc:dd:ee:ff:aa',
+        lan_device_id: mac,
+      };
+      let device = models.copyDeviceFrom(
+        models.defaultMockDevices[0]._id,
+        {lan_devices: [
+          {mac: '12:34:56:78:90:12', name: 'teste1'},
+          {mac: mac, name: oldName},
+          {mac: '12:34:56:78:90:14', name: 'teste3'},
+        ]},
+      );
+
+      // Mocks
+      let saveSpy = jest.fn();
+      device.save = saveSpy;
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => device);
+      let auditSpy = jest.spyOn(audit, 'cpe').mockImplementation(() => true);
+
+      // Execute
+      let response = await testUtils.common.sendFakeRequest(
+        deviceListController.setLanDeviceName, data,
+      );
+
+      // Validate
+      let auditDevices = {lan_devices: {}};
+      auditDevices.lan_devices[mac] = {name: {new: newName, old: oldName}};
+      expect(response.statusCode).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toBeUndefined();
+      expect(saveSpy).toBeCalled();
+      expect(device.lan_devices[1].name).toBe(data.name);
+      expect(auditSpy).toHaveBeenCalledWith(
+        {is_superuser: true, role: undefined},
+        expect.anything(),
+        'edit',
+        auditDevices,
+      );
+    });
+
+
     // Name: Empty string
     test('Name: Empty string', async () => {
       const mac = '56:78:90:12:34:56';

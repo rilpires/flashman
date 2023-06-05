@@ -4343,13 +4343,24 @@ deviceListController.getSpeedtestResults = function(req, res) {
         message: t('cpeNotFound', {errorline: __line}),
       });
     }
+    let query = {is_default: true};
+    let projection = {measureNoLimit: true};
+    Config.findOne(query, projection).exec(function(err, matchedConfig) {
+      if (err || !matchedConfig) {
+        return res.status(500).json({
+          success: false,
+          message: t('configFindError', {errorline: __line}),
+        });
+      } else {
+        let permissions = DeviceVersion.devicePermissions(matchedDevice);
 
-    let permissions = DeviceVersion.devicePermissions(matchedDevice);
-
-    return res.status(200).json({
-      success: true,
-      measures: matchedDevice.speedtest_results,
-      limit: permissions.grantSpeedTestLimit,
+        return res.status(200).json({
+          success: true,
+          measures: matchedDevice.speedtest_results,
+          limit: permissions.grantSpeedTestLimit,
+          noLimit: matchedConfig.measureNoLimit,
+        });
+      }
     });
   });
 };
@@ -4594,8 +4605,12 @@ deviceListController.setLanDeviceName = async function(request, response) {
 
 
   // Validate Device's MAC address
-  const deviceMacValidation = validator.validateMac(data.device_id);
-  const lanDeviceMacValidation = validator.validateMac(data.lan_device_id);
+  const deviceMacValidation = validator.validateMac(
+    data.device_id.toUpperCase(),
+  );
+  const lanDeviceMacValidation = validator.validateMac(
+    data.lan_device_id.toUpperCase(),
+  );
 
   if (!deviceMacValidation.valid || !lanDeviceMacValidation.valid) {
     return response.status(500).json({
