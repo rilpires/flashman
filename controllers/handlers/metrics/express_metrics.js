@@ -83,7 +83,25 @@ module.exports = promBundle({
       '^/api/v3/device/search$',
       '^/api/v3/device/search',
     ],
+    // Genie
+    [
+      '^/api/v3/device/mac/.*/genie/raw/task$',
+      '^/api/v3/device/mac/<CPE_ID>/genie/raw/task',
+    ],
+    [
+      '^/api/v3/device/mac/.*/genie/raw/collection$',
+      '^/api/v3/device/mac/<CPE_ID>/genie/raw/collection',
+    ],
     // Commands
+    [
+      '^/api/v3/device/.*/.*/.*/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<SUB_COMMAND>/' +
+      '<SUB_PARAMETER>/<SUB_PARAMETER_VALUE>',
+    ],
+    [
+      '^/api/v3/device/.*/.*/.*$',
+      '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>/<SUBCOMMAND>',
+    ],
     [
       '^/api/v3/device/.*/.*$',
       '^/api/v3/device/<COMMAND>/<COMMAND_VALUE>',
