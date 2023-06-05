@@ -32,8 +32,11 @@ describe('API V3', () => {
   let lanDevMacs = {};
 
   const getFlashman = (url, query) => blackbox.sendRequestAdmin(
-      'get', url || '', adminCookie, null, query,
-    );
+    'get', url || '', adminCookie, null, query,
+  );
+  const postFlashman = (url, body, query) => blackbox.sendRequestAdmin(
+    'post', url || '', adminCookie, body, query,
+  );
 
   beforeAll(async () => {
     // Login
@@ -1116,6 +1119,287 @@ describe('API V3', () => {
         expect(response.body.message).toContain(
           t('queryWithOrAndExclude').replace('({{errorline}})', ''),
         );
+      });
+    });
+
+
+    // Genie Routes
+    describe('Genie Device Collection', () => {
+      // Get The whole device tree of the device
+      test('Get whole device tree', async () => {
+        const mac = macs[4];
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.message).toBe(t('OK'));
+        expect(Object.keys(response.body.result))
+          .toContain('InternetGatewayDevice');
+      });
+
+      // Test what happens if an invalid mac is passed
+      test('Invalid MAC', async () => {
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await getFlashman(
+          '/api/v3/device/mac/' + '12345678' + '/genie/raw/collection', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toContain(t('invalidMacAddress'));
+        expect(response.body.result).toStrictEqual({});
+      });
+
+      // Test what happens if it cannot find a device
+      test('Device not found', async () => {
+        const mac = lanMacBase + 'F';
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(404);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toBe(t('noDevicesFound'));
+        expect(response.body.result).toStrictEqual({});
+      });
+
+      // Test what happens if invalid fields are passed
+      test.each([
+        ';;', ';', ['a1'], {},
+      ])('Invalid fields - %p', async () => {
+        const mac = macs[4];
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.message).toBe(t('OK'));
+        expect(Object.keys(response.body.result))
+          .toContain('InternetGatewayDevice');
+      });
+
+      // Test what happens with valid fields projection
+      test.each(['BSSID', 'SSID'])('Valid fields - %p', async (fieldName) => {
+        const mac = macs[4];
+        const query = {
+          fields: 'InternetGatewayDevice.LANDevice.1.' +
+            'WLANConfiguration.1.' + fieldName,
+        };
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection', query,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(response.body.message).toBe(t('OK'));
+        expect(Object.keys(response.body.result))
+          .toContain('InternetGatewayDevice');
+        expect(Object.keys(response.body.result.InternetGatewayDevice))
+          .toContain('LANDevice');
+        expect(Object.keys(
+          response.body.result.InternetGatewayDevice.LANDevice['1'],
+        )).toContain('WLANConfiguration');
+        expect(Object.keys(
+          response.body.result.InternetGatewayDevice.LANDevice['1']
+          .WLANConfiguration['1'],
+        )).toContain(fieldName);
+        expect(Object.keys(
+          response.body.result.InternetGatewayDevice.LANDevice['1']
+          .WLANConfiguration['1'],
+        )).not.toContain('Channel');
+      });
+    });
+  });
+
+  describe('POST routes', () => {
+    // Genie Routes
+    describe('Genie Post Task', () => {
+      // Test what happens if an invalid mac is passed
+      test('Invalid MAC', async () => {
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + '12345678' + '/genie/raw/task', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toContain(t('invalidMacAddress'));
+        expect(response.body.executed).toBe(false);
+      });
+
+      // Test what happens if it cannot find a device
+      test('Device not found', async () => {
+        const mac = lanMacBase + 'F';
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', null,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(404);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toBe(t('noDevicesFound'));
+        expect(response.body.executed).toBe(false);
+      });
+
+      // Test what happens if an invalid task is passed
+      test.each([
+        undefined, null, [], 'a',
+      ])('Invalid task - %p', async (task) => {
+        const mac = macs[4];
+        const body = {task: task};
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', body,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.message).toContain(
+          t('invalidTask').replace('({{errorline}})', ''),
+        );
+        expect(response.body.executed).toBe(false);
+      });
+
+      // Test what happens if the body passed is empty
+      test('Empty body', async () => {
+        const mac = macs[4];
+        const body = {};
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', body,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(400);
+        expect(response.body.success).toBe(false);
+        expect(response.body.executed).toBe(false);
+      });
+
+      // Test what happens if a valid task is passed and wait for it to be
+      // processed
+      test('Normal Operation', async () => {
+        const id = 4;
+        const mac = macs[id];
+        const newSSID = 'NEW-SSID';
+        const path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1' +
+          '.SSID';
+        const setBody = {
+          timeout: 1,
+          connectionRequest: true,
+          task: {
+            name: 'setParameterValues',
+            parameterValues: [[path, newSSID, 'xsd:string']],
+          },
+        };
+        const getBody = {
+          timeout: 1,
+          connectionRequest: true,
+          task: {
+            name: 'getParameterValues',
+            parameterNames: [path],
+          },
+        };
+
+        const beforeDate = new Date();
+        // Get the current SSID
+        let oldSSIDResponse = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection',
+          {fields: path},
+        );
+
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', setBody,
+        );
+        await simulators[id].nextTask();
+
+        let response2 = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', getBody,
+        );
+
+        // Get the new SSID
+        let newSSIDResponse = await getFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/collection',
+          {fields: path},
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000)
+          .toBeLessThan(apiCallMaxTime * 4);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+
+        expect(response2.statusCode).toBe(200);
+        expect(response2.body.success).toBe(true);
+
+        expect(
+          oldSSIDResponse.body.result.InternetGatewayDevice.LANDevice['1']
+          .WLANConfiguration['1'].SSID._value,
+        ).not.toBe(newSSID);
+        expect(
+          newSSIDResponse.body.result.InternetGatewayDevice.LANDevice['1']
+          .WLANConfiguration['1'].SSID._value,
+        ).toBe(newSSID);
+      });
+
+      // Test invalid timeouts
+      test.each([
+        undefined, null, [], 'a', 0, -5,
+      ])('Invalid timeout - %p', async (timeout) => {
+        const mac = macs[4];
+        const path = 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.1' +
+          '.SSID';
+        const body = {
+          timeout: timeout,
+          task: {
+            name: 'getParameterValues',
+            parameterNames: [path],
+          },
+        };
+        const beforeDate = new Date();
+        // Pick a random device
+        let response = await postFlashman(
+          '/api/v3/device/mac/' + mac + '/genie/raw/task', body,
+        );
+        const afterDate = new Date();
+
+        expect((afterDate - beforeDate) / 1000).toBeLessThan(apiCallMaxTime);
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
       });
     });
   });

@@ -6,10 +6,12 @@ const models = require('../../common/models');
 const api = require('../../../controllers/api/v3');
 const DeviceModel = require('../../../models/device');
 const DeviceList = require('../../../controllers/device_list');
+const TasksAPI = require('../../../controllers/external-genieacs/tasks-api');
 const t = require('../../../controllers/language').i18next.t;
 
 
 const MAX_PAGE_SIZE = 50;
+const MAXIMUM_ADD_TASK_TIMEOUT = 1;
 
 
 // API V3 Tests
@@ -1880,6 +1882,7 @@ describe('API V3 Tests', () => {
   });
 
 
+  // Test if it can search properly
   describe('Search Tests', () => {
     beforeEach(() => {
       jest.restoreAllMocks();
@@ -2414,6 +2417,687 @@ describe('API V3 Tests', () => {
       expect(result.body.page).toBe(page);
       expect(result.body.pageLimit).toBe(pageLimit);
       expect(result.body.totalPages).toBe(totalPages);
+    });
+  });
+
+
+  // Test if it can send a task to genie
+  describe('postGenieTask Tests', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+    });
+
+    // Test what happens if the request is invalid
+    test('Invalid request', async () => {
+      const errorMessage = 'errorMessage';
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await api.postGenieTask(null, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if the MAC is invalid
+    test('Invalid MAC', async () => {
+      const errorMessage = 'errorMessage';
+      let request = {params: {}, body: {}};
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField').mockImplementationOnce(() => ({
+          valid: false, statusCode: 400, message: errorMessage,
+      }));
+      jest.spyOn(api, 'validateField').mockImplementation(
+        () => ({valid: true}),
+      );
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if the device database fails
+    test('Device database fail', async () => {
+      const errorMessage = 'errorMessage';
+      let request = {params: {}, body: {}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => {
+        throw new Error(errorMessage);
+      });
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('databaseFindError').replace('({{errorline}})', ''),
+      );
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if the database does not find the device
+    test('Device not found', async () => {
+      let request = {params: {mac: '11:22:33:44:55:66'}, body: {}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      let deviceSpy = jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => null}));
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(deviceSpy).toHaveBeenCalledWith(
+        {_id: request.params['mac'], use_tr069: true},
+        {acs_id: true},
+      );
+      expect(result.statusCode).toBe(404);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if the task is undefined
+    test('Undefined task', async () => {
+      const device = {acs_id: '1234'};
+      let request = {params: {mac: '11:22:33:44:55:66'}, body: {}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      let deviceSpy = jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(deviceSpy).toHaveBeenCalledWith(
+        {_id: request.params['mac'], use_tr069: true},
+        {acs_id: true},
+      );
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('invalidTask').replace('({{errorline}})', ''),
+      );
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if the task is invalid
+    test.each([
+      undefined, null, 0, [],
+    ])('Invalid task', async (task) => {
+      const device = {acs_id: '1234'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task},
+      };
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      let deviceSpy = jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(deviceSpy).toHaveBeenCalledWith(
+        {_id: request.params['mac'], use_tr069: true},
+        {acs_id: true},
+      );
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('invalidTask').replace('({{errorline}})', ''),
+      );
+      expect(result.body.executed).toBe(false);
+    });
+
+    // Test what happens if genie fails and throws an error
+    test('Genie fail', async () => {
+      const errorMessage = 'errorMessage';
+      const device = {acs_id: '1234'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: {}},
+      };
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => ({
+        lean: () => device,
+      }));
+      jest.spyOn(TasksAPI, 'addTask').mockImplementation(() => {
+        throw new Error(errorMessage);
+      });
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('errorAddingTask').replace('({{errorline}})', ''),
+      );
+      expect(result.body.executed).toStrictEqual(false);
+    });
+
+    // Test what happens when genie returns error
+    test('Genie returns error', async () => {
+      const device = {acs_id: '1234'};
+      const addTaskResponse = {
+        success: false, executed: false, message: t('enabledToModifyFields'),
+      };
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: {}},
+      };
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+
+    // Test what happens when normal operation
+    test('Normal operation', async () => {
+      const device = {acs_id: '1234'};
+      const addTaskResponse = {
+        success: true, executed: true, message: t('OK'),
+      };
+      const task = {test: 'Test'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task},
+      };
+      let response = utils.common.fakeResponse();
+
+      // Spys
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let taskSpy = jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(taskSpy).toHaveBeenCalledWith(
+        device.acs_id, task, null, MAXIMUM_ADD_TASK_TIMEOUT, false,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+
+    // Test what happens when connectionRequest is added
+    test('Connection request', async () => {
+      const device = {acs_id: '1234'};
+      const addTaskResponse = {
+        success: true, executed: true, message: t('OK'),
+      };
+      const task = {test: 'Test'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task, connectionRequest: true},
+      };
+      let response = utils.common.fakeResponse();
+
+      // Spys
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let taskSpy = jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(taskSpy).toHaveBeenCalledWith(
+        device.acs_id, task, null, MAXIMUM_ADD_TASK_TIMEOUT, true,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+
+    // Test what happens when connectionRequest is invalid
+    test.each([
+      undefined, null, 0, [], {},
+    ])('Invalid Connection request - %p', async (connectionRequest) => {
+      const device = {acs_id: '1234'};
+      const addTaskResponse = {
+        success: true, executed: true, message: t('OK'),
+      };
+      const task = {test: 'Test'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task, connectionRequest: connectionRequest},
+      };
+      let response = utils.common.fakeResponse();
+
+      // Spys
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let taskSpy = jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(taskSpy).toHaveBeenCalledWith(
+        device.acs_id, task, null, MAXIMUM_ADD_TASK_TIMEOUT, false,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+
+    // Test what happens when timeout is invalid
+    test.each([
+      undefined, null, 0, [], {}, -5,
+    ])('Invalid timeout - %p', async (timeout) => {
+      const device = {acs_id: '1234'};
+      const addTaskResponse = {
+        success: true, executed: true, message: t('OK'),
+      };
+      const task = {test: 'Test'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task, timeout: timeout},
+      };
+      let response = utils.common.fakeResponse();
+
+      // Spys
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let taskSpy = jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(taskSpy).toHaveBeenCalledWith(
+        device.acs_id, task, null, MAXIMUM_ADD_TASK_TIMEOUT, false,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+
+    // Test what happens when timeout is valid
+    test('Valid timeout', async () => {
+      const device = {acs_id: '1234'};
+      const timeout = 10;
+      const addTaskResponse = {
+        success: true, executed: true, message: t('OK'),
+      };
+      const task = {test: 'Test'};
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        body: {task: task, timeout: timeout},
+      };
+      let response = utils.common.fakeResponse();
+
+      // Spys
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let taskSpy = jest.spyOn(TasksAPI, 'addTask')
+        .mockImplementation(() => addTaskResponse);
+
+      // Execute
+      const result = await api.postGenieTask(request, response);
+
+      // Validate
+      expect(taskSpy).toHaveBeenCalledWith(
+        device.acs_id, task, null, timeout, false,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(addTaskResponse.success);
+      expect(result.body.message).toContain(addTaskResponse.message);
+      expect(result.body.executed).toStrictEqual(addTaskResponse.executed);
+    });
+  });
+
+
+  // Test if it can get a collection from genie
+  describe('getGenieDeviceCollection Tests', () => {
+    beforeEach(() => {
+      jest.restoreAllMocks();
+      jest.clearAllMocks();
+    });
+
+    // Test what happens if the request is invalid
+    test('Invalid request', async () => {
+      const errorMessage = 'errorMessage';
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest').mockImplementation(() => ({
+        valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(null, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if the MAC is invalid
+    test('Invalid MAC', async () => {
+      const errorMessage = 'errorMessage';
+      let request = {params: {}, query: {}};
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField').mockImplementationOnce(() => ({
+          valid: false, statusCode: 400, message: errorMessage,
+      }));
+      jest.spyOn(api, 'validateField').mockImplementation(
+        () => ({valid: true}),
+      );
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if the device database fails
+    test('Device database fail', async () => {
+      const errorMessage = 'errorMessage';
+      let request = {params: {}, query: {}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => {
+        throw new Error(errorMessage);
+      });
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('databaseFindError').replace('({{errorline}})', ''),
+      );
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if the database does not find the device
+    test('Device not found', async () => {
+      let request = {params: {mac: '11:22:33:44:55:66'}, query: {}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      let deviceSpy = jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => null}));
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(deviceSpy).toHaveBeenCalledWith(
+        {_id: request.params['mac'], use_tr069: true},
+        {acs_id: true},
+      );
+      expect(result.statusCode).toBe(404);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if the fields is invalid
+    test('Invalid fields', async () => {
+      const errorMessage = 'errorMessage';
+      const device = {acs_id: '1234'};
+      let request = {params: {}, query: {fields: 'a'}};
+      let response = utils.common.fakeResponse();
+
+      // Mocks
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField').mockImplementationOnce(
+        () => ({valid: true}),
+      );
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => ({
+        lean: () => device,
+      }));
+      jest.spyOn(api, 'validateField').mockImplementation(() => ({
+          valid: false, statusCode: 400, message: errorMessage,
+      }));
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(400);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toBe(errorMessage);
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if genie fails and throws an error
+    test('Genie fail', async () => {
+      const errorMessage = 'errorMessage';
+      const device = {acs_id: '1234'};
+      let request = {params: {}, query: {fields: ''}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne').mockImplementation(() => ({
+        lean: () => device,
+      }));
+      jest.spyOn(TasksAPI, 'getFromCollection').mockImplementation(() => {
+        throw new Error(errorMessage);
+      });
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(500);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(
+        t('errorGettingCollection').replace('({{errorline}})', ''),
+      );
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if genie cannot find the device
+    test('Genie device not found', async () => {
+      const device = {acs_id: '1234'};
+      let request = {params: {}, query: {fields: ''}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      jest.spyOn(TasksAPI, 'getFromCollection')
+        .mockImplementation(() => null);
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(404);
+      expect(result.body.success).toBe(false);
+      expect(result.body.message).toContain(t('noDevicesFound'));
+      expect(result.body.result).toStrictEqual({});
+    });
+
+    // Test what happens if everything is right
+    test('Normal operation', async () => {
+      const device = {acs_id: '1234'};
+      const genieResponse = [{test: 'Test Genie Device'}];
+      let request = {params: {mac: '11:22:33:44:55:66'}, query: {fields: ''}};
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      jest.spyOn(TasksAPI, 'getFromCollection')
+        .mockImplementation(() => genieResponse);
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      // Validate
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toContain(t('OK'));
+      expect(result.body.result).toStrictEqual(genieResponse[0]);
+    });
+
+    // Test what happens if invalid are passed fields
+    test.each([
+      ';', ';;;', 'teste;',
+    ])('Invalid fields - %p', async (fields) => {
+      const device = {acs_id: '1234'};
+      const genieResponse = [{test: 'Test Genie Device'}];
+      let request = {
+        params: {mac: '11:22:33:44:55:66'},
+        query: {fields: fields},
+      };
+      let response = utils.common.fakeResponse();
+
+      jest.spyOn(api, 'validateRequest')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(api, 'validateField')
+        .mockImplementation(() => ({valid: true}));
+      jest.spyOn(DeviceModel, 'findOne')
+        .mockImplementation(() => ({lean: () => device}));
+      let genieSpy = jest.spyOn(TasksAPI, 'getFromCollection')
+        .mockImplementation(() => genieResponse);
+
+      // Execute
+      const result = await api.getGenieDeviceCollection(request, response);
+
+      let projectionFields = fields.split(';');
+      let projection = '';
+
+      projectionFields.forEach((element) => {
+        if (element && element.length > 2) {
+          if (projection) projection += ',' + element;
+          else projection = element;
+        }
+      });
+
+      // Validate
+      expect(genieSpy).toHaveBeenCalledWith(
+        'devices', {_id: device.acs_id}, projection,
+      );
+      expect(result.statusCode).toBe(200);
+      expect(result.body.success).toBe(true);
+      expect(result.body.message).toContain(t('OK'));
+      expect(result.body.result).toStrictEqual(genieResponse[0]);
     });
   });
 });
