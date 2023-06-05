@@ -658,6 +658,11 @@ describe('API V3', () => {
         );
 
         // Validate
+        if (
+          response.statusCode !== 200 ||
+          response.body.success !== true
+        ) console.error(response.body);
+
         expect(response.statusCode).toBe(200);
         expect(response.body.success).toBe(true);
 
