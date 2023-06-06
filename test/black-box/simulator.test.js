@@ -315,11 +315,10 @@ describe('Test API v2', () => {
       'FF:FF:FF:00:00:'+(cpeIndex%100).toString().padStart(2, 0),
     ));
 
-    afterEach(() => {
+    afterEach(async () => {
+      await removeCpe();
       cpeIndex++;
     });
-
-    afterAll(removeCpe);
 
     test('Getting LAN device added', async () => {
       let lanDeviceMac = 'AA:AA:AA:AA:AA:00';
