@@ -6,17 +6,36 @@ huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8545V5'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
+  permissions.features.pingTest = true;
   permissions.features.speedTest = true;
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.siteSurvey = true;
   permissions.features.traceroute = true;
-  permissions.wan.portForwardPermissions =
-    basicCPEModel.portForwardPermissions.noAsymRanges;
-  permissions.lan.listLANDevices = false;
+  permissions.features.hasIpv6Information = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+
+  permissions.lan.listLANDevices = true;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceHasSNR = true;
+  permissions.lan.dnsServersLimit = 2;
+
+  permissions.wan.pingTestSingleAttempt = true;
+  permissions.wan.allowReadWanVlan = true;
+  permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 850;
+  permissions.wan.portForwardPermissions =
+    basicCPEModel.portForwardPermissions.noAsymRanges;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+  permissions.ipv6.hasPrefixDelegationLocalAddressField = true;
+
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120,
     124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165,
@@ -83,6 +102,10 @@ huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
+huaweiModel.convertWanRate = function(rate) {
+  return rate / 1000000;
+};
+
 huaweiModel.getBeaconType = function() {
   return 'WPAand11i';
 };
@@ -93,6 +116,8 @@ huaweiModel.getModelFields = function() {
     'X_HW_WebUserInfo.2.UserName';
   fields.common.web_admin_password = 'InternetGatewayDevice.UserInterface.' +
     'X_HW_WebUserInfo.2.Password';
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
   fields.wan.recv_bytes = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.Stats.BytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.' +
@@ -105,10 +130,48 @@ huaweiModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+
+// IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'DefaultGateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.' +
+    'DefaultGateway';
+
+  // IPv6 Prefix Delegation
+  // Address
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+    '.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
+
+  // Local Address
+  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice'+
+    '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
+    'Prefix';
+  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice'+
+    '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
+    'Prefix';
+
   fields.devices.host_rssi = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_HW_RSSI';
   fields.devices.host_snr = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.*.AssociatedDevice.*.X_HW_SNR';
+  fields.devices.host_rate = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_TxRate';
+  fields.devices.host_mode = 'InternetGatewayDevice.LANDevice.1.' +
+    'WLANConfiguration.*.AssociatedDevice.*.X_HW_WorkingMode';
+
   fields.port_mapping_fields.internal_port_end = [
     'X_HW_InternalEndPort', 'internal_port_end', 'xsd:unsignedInt',
   ];
