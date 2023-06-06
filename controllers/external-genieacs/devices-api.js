@@ -50,6 +50,7 @@ const tr069Models = {
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
+  huaweiHG8145V5Model: require('./cpe-models/huawei-hg8145v5'),
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
   huaweiHS8546V5Model: require('./cpe-models/huawei-hs8546v5'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
@@ -261,6 +262,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG8121H') {
     // Huawei HG8121H
     result = {success: true, cpe: tr069Models.huaweiHG8121HModel};
+  } else if (modelName === 'HG8145V5') {
+    // Huawei HG8145V5
+    result = {success: true, cpe: tr069Models.huaweiHG8145V5Model};
   } else if (modelName === 'HG8245Q2') {
     // Huawei HG8245Q2
     result = {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
