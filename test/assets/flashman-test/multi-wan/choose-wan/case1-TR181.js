@@ -1,5 +1,5 @@
 const wanList = {
-  'wan_dhcp_1': {
+  'wan_ip_1': {
     'dhcp_enable': {
       'path': 'Device.IP.Interface.1.Enable',
       'writable': true,
@@ -11,7 +11,7 @@ const wanList = {
       'value': 'Down',
     },
   },
-  'wan_dhcp_2': {
+  'wan_ip_2': {
     'dhcp_enable': {
       'path': 'Device.IP.Interface.2.Enable',
       'writable': true,

@@ -32,7 +32,7 @@ let bodyField = (value, writable) => {
 
 let assembleBody = (device) => {
   let wanKey = (device.connection_type === 'pppoe') ? 'wan_ppp_1_1_1' :
-    'wan_dhcp_1_1_1';
+    'wan_ip_1_1_1';
   return {
     acs_id: device._id,
     data: {
@@ -2546,8 +2546,8 @@ describe('ACS Device Info Tests', () => {
       let body = assembleBody(device);
       let data = {...body.data,
         wan: {
-          wan_dhcp_1_1_1: {
-            ...body.data.wan['wan_dhcp_1_1_1'],
+          wan_ip_1_1_1: {
+            ...body.data.wan['wan_ip_1_1_1'],
             mask_ipv4: {writable: false, value: '24'},
             remote_address: {writable: false, value: '192.168.89.2'},
             remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
@@ -2633,8 +2633,8 @@ describe('ACS Device Info Tests', () => {
       let body = assembleBody(device);
       let data = {...body.data,
         wan: {
-          wan_dhcp_1_1_1: {
-            ...body.data.wan['wan_dhcp_1_1_1'],
+          wan_ip_1_1_1: {
+            ...body.data.wan['wan_ip_1_1_1'],
             mask_ipv4: {writable: false, value: '24'},
             remote_address: {writable: false, value: '192.168.89.2'},
             remote_mac: {writable: false, value: 'AA:BB:CC:DD:EE:FF'},
@@ -2842,8 +2842,8 @@ describe('ACS Device Info Tests', () => {
       let body = assembleBody(device);
       let data = {...body.data,
         wan: {
-          wan_dhcp_1_1_1: {
-            ...body.data.wan['wan_dhcp_1_1_1'],
+          wan_ip_1_1_1: {
+            ...body.data.wan['wan_ip_1_1_1'],
             mask_ipv4: {writable: false, value: '32'},
           },
         }, ipv6: {
@@ -2910,8 +2910,8 @@ describe('ACS Device Info Tests', () => {
       let body = assembleBody(device);
       let data = {...body.data,
         wan: {
-          wan_dhcp_1_1_1: {
-            ...body.data.wan['wan_dhcp_1_1_1'],
+          wan_ip_1_1_1: {
+            ...body.data.wan['wan_ip_1_1_1'],
             mask_ipv4: {writable: false, value: '0'},
           },
         }, ipv6: {

@@ -80,7 +80,7 @@ const wanList = {
       'value': 1,
     },
   },
-  'wan_dhcp_1_2_1': {
+  'wan_ip_1_2_1': {
     'port_mapping': [],
     'recv_bytes': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANCommonInterfaceConfig.' +

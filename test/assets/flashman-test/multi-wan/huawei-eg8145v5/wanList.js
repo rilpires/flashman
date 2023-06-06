@@ -80,7 +80,7 @@ const wanList = {
       'value': 1,
     },
   },
-  'wan_dhcp_1_2_1': {
+  'wan_ip_1_2_1': {
     'port_mapping': [],
     'dhcp_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
@@ -246,7 +246,7 @@ const wanList = {
       'value': 3,
     },
   },
-  'wan_dhcp_1_4_1': {
+  'wan_ip_1_4_1': {
     'port_mapping': [],
     'dhcp_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +

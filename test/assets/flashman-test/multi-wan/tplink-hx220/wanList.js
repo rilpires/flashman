@@ -1,5 +1,5 @@
 const wanList = {
-  'wan_dhcp_3': {
+  'wan_ip_3': {
     'port_mapping': [],
     'dhcp_enable': {
       'path': 'Device.IP.Interface.3.Enable',
@@ -32,7 +32,7 @@ const wanList = {
       'value': 'Down',
     },
   },
-  'wan_dhcp_14': {
+  'wan_ip_14': {
     'port_mapping': [],
     'dhcp_enable': {
       'path': 'Device.IP.Interface.14.Enable',
