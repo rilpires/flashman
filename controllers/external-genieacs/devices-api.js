@@ -904,7 +904,8 @@ const getWanNodes = function(fields, isTR181, update) {
         node += '.*';
       }
     }
-    if (!nodes.includes(node)) {
+
+    if (node && !nodes.includes(node)) {
       nodes.push(node);
     }
   });
