@@ -571,6 +571,7 @@ updateController.getAutoConfig = function(req, res) {
         bypassMqttSecretCheck: matchedConfig.mqtt_secret_bypass,
         measureServerIP: matchedConfig.measureServerIP,
         measureServerPort: matchedConfig.measureServerPort,
+        measureNoLimit: matchedConfig.measureNoLimit,
         blockLicenseAtDeviceRemoval: matchedConfig.blockLicenseAtDeviceRemoval,
         tr069ServerURL: matchedConfig.tr069.server_url,
         tr069WebLogin: matchedConfig.tr069.web_login,
@@ -753,8 +754,10 @@ updateController.setAutoConfig = async function(req, res) {
         message: t('fieldsInvalid', {errorline: __line}),
       });
     }
+    let measureNoLimit = (req.body.measure_no_limit === 'on') ? true : false;
     config.measureServerIP = measureServerIP;
     config.measureServerPort = measureServerPort;
+    config.measureNoLimit = measureNoLimit;
 
     let mustBlockLicense = req.body['must-block-license-at-removal'];
     mustBlockLicense = (
