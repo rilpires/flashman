@@ -504,15 +504,17 @@ const createRegistry = async function(req, cpe, permissions) {
   // Collect PON signal, if available
   let rxPowerPon;
   let txPowerPon;
-  if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
-    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower.value);
-  } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
-    rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
-  }
-  if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
-    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower.value);
-  } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
-    txPowerPon = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
+  if (cpePermissions.features.ponSignal) {
+    if (data.wan.pon_rxpower && data.wan.pon_rxpower.value) {
+      rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower.value);
+    } else if (data.wan.pon_rxpower_epon && data.wan.pon_rxpower_epon.value) {
+      rxPowerPon = cpe.convertToDbm(data.wan.pon_rxpower_epon.value);
+    }
+    if (data.wan.pon_txpower && data.wan.pon_txpower.value) {
+      txPowerPon = cpe.convertToDbm(data.wan.pon_txpower.value);
+    } else if (data.wan.pon_txpower_epon && data.wan.pon_txpower_epon.value) {
+      txPowerPon = cpe.convertToDbm(data.wan.pon_txpower_epon.value);
+    }
   }
 
   // Force a web credentials sync
