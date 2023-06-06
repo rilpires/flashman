@@ -2,7 +2,7 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8545V5'};
+huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8145V5'};
 
 huaweiModel.modelPermissions = function() {
   let permissions = basicCPEModel.modelPermissions();
