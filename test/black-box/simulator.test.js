@@ -12,7 +12,7 @@ const constants = require('../common/constants.js');
 
 jest.setTimeout( 30*1000 );
 
-describe('Test API v2', () => {
+describe('Test @anlix-io/genieacs-sim', () => {
   let adminCookie = null;
 
   let flashmanDb;
