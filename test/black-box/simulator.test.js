@@ -3,8 +3,9 @@ require('../../bin/globals.js');
 const {createSimulator} = require('./cpe-tr069-simulator');
 const {
   pulling,
+  sleep,
   startFlashmanDbConnection,
-  closeFlashmanDbConnection
+  closeFlashmanDbConnection,
 } = require('./utils.js');
 const blackbox = require('../common/blackbox.js');
 const constants = require('../common/constants.js');
@@ -18,7 +19,6 @@ describe('Test API v2', () => {
   let flashmanConfig;
 
   let simulator;
-  let deviceDataModel;
 
   // returns response from an http request, sent to flashman, with a user
   // already logged in.
@@ -71,11 +71,10 @@ describe('Test API v2', () => {
     await closeFlashmanDbConnection();
   });
 
-  const initiateCpe = async () => {
-    // console.log('=========== Initiating CPE ===========', deviceDataModel)
-    // Creating a device.
-    let mac = 'FF:FF:FF:00:00:01';
+  const initiateCpe = async (deviceDataModel, mac='FF:FF:FF:00:00:01') => {
+    // console.log('=========== Initiating CPE ===========', deviceDataModel);
     const genieAddress = constants.GENIEACS_HOST;
+    // Creating a device.
     simulator = createSimulator(genieAddress, deviceDataModel, 1000, mac)
     .debug({ // enabling/disabling prints for device events.
       beforeReady: false,
@@ -90,9 +89,9 @@ describe('Test API v2', () => {
   };
 
   const removeCpe = async () => {
-    // console.log('=========== Removing CPE ===========', deviceDataModel)
+    // console.log('=========== Removing CPE ===========');
     if (simulator) await simulator.shutDown();
-    await blackbox.deleteCPE(simulator.mac, adminCookie);
+    let res = await blackbox.deleteCPE(simulator.mac, adminCookie);
   };
 
   const checkCpeHasBeenRegistered = async () => {
@@ -260,13 +259,8 @@ describe('Test API v2', () => {
     expect(res.body.current_diagnostic.stage).toBe('done');
   };
 
-
   describe('TR181', () => {
-    beforeAll(() => {
-      deviceDataModel =
-        'device-1C61B4-EX220-2226469000523'; // tr-181.
-      return initiateCpe();
-    });
+    beforeAll(() => initiateCpe('device-1C61B4-EX220-2226469000523'));
 
     afterAll(removeCpe);
 
@@ -285,11 +279,8 @@ describe('Test API v2', () => {
   });
 
   describe('TR098', () => {
-    beforeAll(() => {
-      deviceDataModel = // tr-069.
-        'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z';
-      return initiateCpe();
-    });
+    beforeAll(() =>initiateCpe(
+      'device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z'));
 
     afterAll(removeCpe);
 
@@ -305,5 +296,64 @@ describe('Test API v2', () => {
     // TR098 does not have Site Survey, only on proprietary fields
 
     test('Firing speed test diagnostic', speedtestDiagnostic);
+  });
+
+  let cpeIndex = 1;
+
+  describe.each([
+    ['device-1C61B4-EX220-2226469000523'],
+    ['device-00259E-EG8145V5-48575443A94196A5-2023-03-28T154335106Z'],
+    ['device-9CA2F4-EC220_G5_V2-22282X5007025'],
+    ['device-9CA2F4-EC220_G5_V3-22275K2000315'],
+    ['device-1C61B4-XX230v-22275A7000395-2023-04-27T154050686Z'],
+    ['device-C0B101-ZXHN%20H199A-ZTEYH86LCN10105-2023-03-28T154022233Z'],
+    ['device-9075BC-G%2D1425G%2DA-ALCLFC265D6F-2023-03-28T160833431Z'],
+    ['device-00E04C-W5%2D2100G-D8365F659C6E'],
+  ])('Adding Lan Devices for CPE \'%s\'', (deviceDataModel) => {
+    beforeEach(() => initiateCpe(
+      deviceDataModel,
+      'FF:FF:FF:00:00:'+(cpeIndex%100).toString().padStart(2, 0),
+    ));
+
+    afterEach(() => {
+      cpeIndex++;
+    });
+
+    afterAll(removeCpe);
+
+    test('Getting LAN device added', async () => {
+      let lanDeviceMac = 'AA:AA:AA:AA:AA:00';
+      simulator.addLanDevice({'mac': lanDeviceMac, 'radio': 2});
+
+      // Requesting connected devices to CPE.
+      let res = await flashman('post',
+        `/devicelist/command/${simulator.mac}/onlinedevs`);
+      // console.log('res.body', res.body);
+      expect(res.statusCode).toBe(200);
+      expect(res.body.success).toBe(true);
+
+      // waiting values to be called for, in CPE, and responded to ACS.
+      await simulator.nextTask('GetParameterValues');
+      // Flashman always set a periodic inform after getting lan devices
+      // We race that promise with a sleep promise, in case Flashman doesn't.
+      await Promise.race([
+        simulator.nextTask('SetParameterValues'),
+        sleep(2000),
+      ]);
+
+      // pulling CPE from Flashman and checking if LAN device appears.
+      const success = await pulling(async () => {
+        // getting LAN devices from the CPE.
+        res = await flashman('get', `/devicelist/landevices/${simulator.mac}`);
+        // console.log('res.body', res.body);
+
+        // checking CPE has the LAN device and returning result as the success
+        // condition for the pulling attempt.
+        return res.body.lan_devices.find((dev) => lanDeviceMac === dev.mac);
+      }, 400, 5000); // 400ms intervals between executions, fails after 5000ms.
+      // 'success' will be true if our pulling returns true within the timeout.
+      expect(success).toBe(true);
+      // await new Promise(r => setTimeout(r, 1000))
+    });
   });
 });

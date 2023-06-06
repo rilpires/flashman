@@ -60,14 +60,14 @@ describe('api_v2', () => {
         diagnostic: false,
       });
       simulator.addLanDevice({
-        Active: true,
-        HostName: 'test-device',
-        IPAddress: '192.168.1.38',
-        InterfaceType: 'Ethernet',
-        Layer2Interface:
-          'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.2',
-        LeaseTimeRemaining: 3000,
-        MACAddress: lanDeviceID,
+        active: true,
+        name: 'test-device',
+        ip: '192.168.1.38',
+        interface: 'Ethernet',
+        // Layer2Interface:
+        //   'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.2',
+        leaseTime: 3000,
+        mac: lanDeviceID,
       });
       await simulator.start();
 
