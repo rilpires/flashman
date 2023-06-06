@@ -1,5 +1,5 @@
 {
-	"latest_version": "2.74.3",
+	"latest_version": "2.74.4",
 	"x.y.z": {
 		"about": "Exemplo. Deixe SEMPRE ele aqui na parte superior!. INCLUA TODAS AS CHAVES, MESMO COM ARRAY VAZIO",
 		"custom_firmware_compatibilities": ["CPE FIRMWARE ANLIX A", "CPE FIRMWARE ANLIX B"],
@@ -7,6 +7,23 @@
 		"fixes": ["Consertamos A", "consertamos B"],
 		"improvements": [],
 		"features": ["Adicionamos E", "Agora é possível R"]
+	},
+	"2.74.4": {
+		"custom_firmware_compatibilities": [],
+		"tr069_compatibilities": [
+			"Adicionamos suporte ao modelo Intelbras AX1800 por TR-069",
+			"Adicionamos suporte ao modelo Huawey HG8145v5 por TR-069",
+			"Adicionamos suporte ao modelo Huawey HS8145v5 por TR-069"
+		],
+		"fixes": [
+			"Corrigimos um erro na interface da abertura de portas que permitia selecionar portas assimetricas quando uma CPE não possui este recurso",
+			"Corrigimos a validação do campo DNS da interface LAN",
+			"Corrigimos a visualização de algumas datas para apresentar com o fuso horario correto"
+		],
+		"improvements": [
+			"Adicionamos a para sempre visualizar o resultado de teste de velocidade ao inves de apresentar o limite indicado da CPE"
+		],
+		"features": []
 	},
 	"2.74.3": {
 		"custom_firmware_compatibilities": [],
