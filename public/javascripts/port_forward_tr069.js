@@ -70,11 +70,18 @@ let showIncompatibilityMessage = function(compatibility) {
     portInputs[0].disabled = portInputs[1].disabled =
      portInputs[2].disabled = portInputs[3].disabled = true;
   }
+
+  // Disable the asymmetric checkbox if the router does not support it
   if (!compatibility.simpleAsymmetric) {
     isAsymOpening.disabled = true;
+    isAsymOpening.checked = false;
   }
+
+  // If the router does not support symmetric range, it does not support
+  // assymetric range too, disable the checkbox
   if (!compatibility.rangeSymmetric) {
     isRangeOfPorts.disabled = true;
+    isRangeOfPorts.checked = false;
   }
 };
 
@@ -87,19 +94,25 @@ window.checkAdvancedOptions = function() {
   let portLabel = $('.port-forward-tr069-port-label');
   let portInputs = $('.port-forward-tr069-port-input');
 
-  if (compatibility.simpleSymmetric &&
-    compatibility.simpleAsymmetric &&
-    !compatibility.rangeAsymmetric) {
-    if (isRangeOfPorts.checked) {
-      isAsymOpening.disabled = true;
-    } else {
-      isAsymOpening.disabled = false;
-    }
-    if (isAsymOpening.checked) {
-      isRangeOfPorts.disabled = true;
-    } else {
-      isRangeOfPorts.disabled = false;
-    }
+  // Deactivate the asymmetric if the router does not support it
+  if (!compatibility.simpleAsymmetric) {
+    isAsymOpening.disabled = true;
+    isAsymOpening.checked = false;
+  } else {
+    isAsymOpening.disabled = false;
+  }
+
+  // Deactivate the range if the router does not support it
+  if (
+    // Asymmetric and has asymmetric range
+    (isAsymOpening.checked && compatibility.rangeAsymmetric) ||
+    // Symmetric and has symmetric range
+    (!isAsymOpening.checked && compatibility.rangeSymmetric)
+  ) {
+    isRangeOfPorts.disabled = false;
+  } else {
+    isRangeOfPorts.disabled = true;
+    isRangeOfPorts.checked = false;
   }
 
   if (isRangeOfPorts.checked == false && isAsymOpening.checked == false) {
