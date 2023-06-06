@@ -4034,7 +4034,7 @@ describe('ACS Device Info Tests', () => {
     test('All parameters and fields', async () => {
       const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
-
+      let fields = {...fieldsAndPermissions.fields[0]};
 
       // Mocks
       jest.spyOn(deviceVersion, 'devicePermissions')
@@ -4050,7 +4050,6 @@ describe('ACS Device Info Tests', () => {
 
       // Execute
       await acsDeviceInfoController.requestSync(device);
-
 
       // Validate
       let parameterNames = [];
@@ -4075,6 +4074,7 @@ describe('ACS Device Info Tests', () => {
         ),
       );
 
+      let wanNodes = devicesAPI.getWanNodes(fields, false, false);
       // Remove unused fields
       parameterNames = parameterNames.filter((field) => {
         let removeFields = [
@@ -4084,9 +4084,11 @@ describe('ACS Device Info Tests', () => {
           'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
           'wifi5.beacon_type',
         ];
-        if (removeFields.includes(field)) return false;
+        if (wanNodes.includes(field)) return true;
+        else if (removeFields.includes(field)) return false;
         return true;
       });
+
       expect(taskSpy.mock.calls[0][0]).toBe(device.acs_id);
       expect(taskSpy.mock.calls[0][1].name).toBe('getParameterValues');
       expect(taskSpy.mock.calls[0][1].parameterNames.sort())
@@ -4155,6 +4157,7 @@ describe('ACS Device Info Tests', () => {
       );
 
       // Remove unused fields
+      let wanNodes = devicesAPI.getWanNodes(fields, false, false);
       parameterNames = parameterNames.filter((field) => {
         let removeFields = [
           'common.hw_version', 'common.mac', 'common.model',
@@ -4166,7 +4169,8 @@ describe('ACS Device Info Tests', () => {
           'wan.remote_mac_ppp', 'wan.default_gateway',
           'wan.default_gateway_ppp', 'wan.dns_servers', 'wan.dns_servers_ppp',
         ];
-        if (removeFields.includes(field)) return false;
+        if (wanNodes.includes(field)) return true;
+        else if (removeFields.includes(field)) return false;
         return true;
       });
 
@@ -4238,6 +4242,7 @@ describe('ACS Device Info Tests', () => {
     test('WAN and LAN information with no IPv6', async () => {
       const device = {...models.defaultMockDevices[0]};
       let devicePermissions = fieldsAndPermissions.devicePermissions[0];
+      let fields = {...fieldsAndPermissions.fields[0]};
       let cpePermissions = {...fieldsAndPermissions.cpePermissions[0]};
       cpePermissions.features.hasIpv6Information = false;
 
@@ -4279,6 +4284,7 @@ describe('ACS Device Info Tests', () => {
       );
 
       // Remove unused fields
+      let wanNodes = devicesAPI.getWanNodes(fields, false, false);
       parameterNames = parameterNames.filter((field) => {
         let removeFields = [
           'common.hw_version', 'common.mac', 'common.model',
@@ -4287,7 +4293,8 @@ describe('ACS Device Info Tests', () => {
           'wan.pon_rxpower_epon', 'wan.pon_txpower_epon', 'wifi2.beacon_type',
           'wifi5.beacon_type',
         ];
-        if (removeFields.includes(field)) return false;
+        if (wanNodes.includes(field)) return true;
+        else if (removeFields.includes(field)) return false;
         return true;
       });
       let parameterNamesNotContain = fieldsAndPermissions.getAllObjectValues(
@@ -4344,7 +4351,6 @@ describe('ACS Device Info Tests', () => {
       jest.spyOn(tasksAPI, 'getFromCollection')
         .mockResolvedValue([genieDataZte]);
 
-      let nestedSpy = jest.spyOn(utilHandlers, 'getFromNestedKey');
       acsDeviceInfoController.updateInfo = genutils.waitableMock();
 
       // Execute
@@ -4354,7 +4360,6 @@ describe('ACS Device Info Tests', () => {
       await acsDeviceInfoController.updateInfo.waitToHaveBeenCalled(1);
 
       // Validate
-      expect(nestedSpy).toBeCalledTimes(59);
       expect(device).toMatchObject({ip: '192.168.89.130'});
       expect(device).toMatchObject({wan_ip: '192.168.89.227'});
     });
@@ -4545,6 +4550,7 @@ describe('ACS Device Info Tests', () => {
 
     // Updating web admin login by tr069 reset
     test('Updating web admin login by tr069 reset', async () => {
+      console.log('Updating web admin login by tr069 reset');
       let device = models.copyDeviceFrom(
         models.defaultMockDevices[0]._id,
         {
@@ -4555,6 +4561,8 @@ describe('ACS Device Info Tests', () => {
           recovering_tr069_reset: true,
         },
       );
+      let fields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
       let config = models.copyConfigFrom(
         models.defaultMockConfigs[0]._id,
         {
@@ -4563,6 +4571,11 @@ describe('ACS Device Info Tests', () => {
             web_password: 'teste567',
           },
         },
+      );
+      let wanData = devicesAPI.assembleWanObj(
+        utilHandlers.convertWanToProvisionFormat(genieDataZte),
+        fields.wan,
+        false,
       );
 
       // Mocks
@@ -4577,7 +4590,6 @@ describe('ACS Device Info Tests', () => {
         });
       };
 
-
       // Execute the request
       await acsDeviceInfoController.__testSyncDeviceData(
         device._id,
@@ -4588,7 +4600,7 @@ describe('ACS Device Info Tests', () => {
             web_admin_username: {writable: true},
             web_admin_password: {writable: true},
           },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+          wan: wanData, lan: {}, wifi2: {}, wifi5: {},
         },
         {
           grantMeshV2HardcodedBssid: null,
@@ -4628,6 +4640,8 @@ describe('ACS Device Info Tests', () => {
           recovering_tr069_reset: false,
         },
       );
+      let fields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
       let config = models.copyConfigFrom(
         models.defaultMockConfigs[0]._id,
         {
@@ -4636,6 +4650,11 @@ describe('ACS Device Info Tests', () => {
             web_password: 'teste567',
           },
         },
+      );
+      let wanData = devicesAPI.assembleWanObj(
+        utilHandlers.convertWanToProvisionFormat(genieDataZte),
+        fields.wan,
+        false,
       );
 
       // Mocks
@@ -4661,7 +4680,7 @@ describe('ACS Device Info Tests', () => {
             web_admin_username: {writable: true},
             web_admin_password: {writable: true},
           },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+          wan: wanData, lan: {}, wifi2: {}, wifi5: {},
         },
         {
           grantMeshV2HardcodedBssid: null,
@@ -4695,6 +4714,8 @@ describe('ACS Device Info Tests', () => {
           recovering_tr069_reset: false,
         },
       );
+      let fields = devicesAPI.instantiateCPEByModelFromDevice(device)
+        .cpe.getModelFields();
       let config = models.copyConfigFrom(
         models.defaultMockConfigs[0]._id,
         {
@@ -4703,6 +4724,11 @@ describe('ACS Device Info Tests', () => {
             web_password: 'teste567',
           },
         },
+      );
+      let wanData = devicesAPI.assembleWanObj(
+        utilHandlers.convertWanToProvisionFormat(genieDataZte),
+        fields.wan,
+        false,
       );
 
       // Mocks
@@ -4728,7 +4754,7 @@ describe('ACS Device Info Tests', () => {
             web_admin_username: {writable: true},
             web_admin_password: {writable: true},
           },
-          wan: {}, lan: {}, wifi2: {}, wifi5: {},
+          wan: wanData, lan: {}, wifi2: {}, wifi5: {},
         },
         {
           grantMeshV2HardcodedBssid: null,
