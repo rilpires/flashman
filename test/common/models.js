@@ -426,6 +426,7 @@ models.defaultMockConfigs = [
     hasMajorUpdate: false,
     pppoePassLength: 1,
     measureServerPort: 25752,
+    measureNoLimit: false,
     auth_pubkey: `-----BEGIN PUBLIC KEY-----
       AAAAAAATESTESTESTESTETSTESTETSTESTETSE
       -----END PUBLIC KEY-----`,

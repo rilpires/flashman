@@ -130,6 +130,7 @@ module.exports = async (app) => {
           grantCsvExport: true,
           grantFirmwareBetaUpgrade: true,
           grantFirmwareRestrictedUpgrade: true,
+          grantDiagAppAccess: true,
         });
         managerRole.save();
       }

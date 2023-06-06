@@ -4,17 +4,18 @@ block content
   include mixins/_modals.pug
   include includes/showfactorycredentials
   +single-list-modal("default-hosts-config-modal", t('defaultHostsConfig'),
-                      "fa-stethoscope", t('pingAddress'),
+                      "fa-stethoscope", t('pingAddress'), "",
                       t('invalidAddress'), t('targetAddressesTooltip'),
                       t('defaultHosts'),
                       t('noDefaultHostsConfigured'),
                       t('defaultHostsConfigWarning'))
   +tab-lists-modal("default-dns-servers-modal", t('defaultLanDnsServersConfig'),
-                     "fa-server", t('dnsServerAddress'),
+                     "fa-server", t('dnsServerAddress'), "ip-mask-field",
                      t('invalidAddress'), t('dnsServerAddressTooltip'),
                      t('dnsServerAddresses'),
                      t('noDnsServerConfigured'),
-                     t('defaultLanDnsServersConfigWarning'), "IPv4", "IPv6")
+                     t('defaultLanDnsServersConfigWarning'),
+                     "IPv4", "IPv6")
 
   form#config-flashman-form.needs-validation(
     method="post",
@@ -159,28 +160,40 @@ block content
               .col-10.text-center
                 span.card-title= t('speedMeasureServerConfigurations')
           #speed-measurement.card-body.collapse.out
-            .md-form.input-entry
-              label(style="pointer-events: none;")= t('speedMeasureServerIpAddress')
-              input#measure-server-ip.form-control.ip-mask-field(
-                type="text",
-                name="measure-server-ip",
-                minlength=7,
-                maxlength=15,
-                size=15,
-                pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
-              )
-              .invalid-feedback= t('insertValidIp')
-            .md-form.input-entry
-              label(style="pointer-events: none;")= t('speedMeasureServerPort')
-              input#measure-server-port.form-control(
-                type="number",
-                name="measure-server-port",
-                min=1,
-                max=65535,
-                value=80,
-                placeholder="80"
-              )
-              .invalid-feedback= t('insertValidPort')
+            .row
+              .col-6
+                .md-form.input-entry
+                  label(style="pointer-events: none;")= t('speedMeasureServerIpAddress')
+                  input#measure-server-ip.form-control.ip-mask-field(
+                    type="text",
+                    name="measure-server-ip",
+                    minlength=7,
+                    maxlength=15,
+                    size=15,
+                    pattern="^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$"
+                  )
+                  .invalid-feedback= t('insertValidIp')
+                .custom-control.custom-checkbox.mt-2
+                  input#measure_no_limit.custom-control-input(
+                    name="measure_no_limit",
+                    type="checkbox",
+                  )
+                  label.custom-control-label.text-muted.mr-2(for="measure_no_limit")
+                    | #{t('speedtestNoLimit')}
+                  a.fas.fa-question-circle(data-toggle="tooltip" title=t('actionWillBeAppliedToAllCPE'))
+                  .invalid-feedback
+              .col-6
+                .md-form.input-entry
+                  label(style="pointer-events: none;")= t('speedMeasureServerPort')
+                  input#measure-server-port.form-control(
+                    type="number",
+                    name="measure-server-port",
+                    min=1,
+                    max=65535,
+                    value=80,
+                    placeholder="80"
+                  )
+                  .invalid-feedback= t('insertValidPort')
 
           h5.card-header.primary-color.white-text.mt-2(
             data-toggle="collapse",
