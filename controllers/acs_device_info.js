@@ -3050,7 +3050,7 @@ acsDeviceInfoController.updateInfo = async function(
          `not exist! ${device.wan_chosen} -> (${acsID})`);
       }
     } else {
-      console.error(`updateInfo change WAN in undefined! (${acsID})`);
+      console.error(`updateInfo change WAN is undefined! (${acsID})`);
     }
   }
 

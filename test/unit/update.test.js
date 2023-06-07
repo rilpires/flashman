@@ -353,7 +353,7 @@ describe('Update Tests - Functions', () => {
         ],
         [
           'wan_chosen is undefined',
-          'updateInfo change WAN in undefined! ',
+          'updateInfo change WAN is undefined! ',
         ],
       ])('Reject WAN changes - %s', async (description, expectedErrorMsg) => {
         if (description === 'wan_chosen is undefined') {
