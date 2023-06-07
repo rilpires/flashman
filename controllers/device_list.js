@@ -1969,7 +1969,7 @@ deviceListController.sendCommandMsg = async function(req, res) {
           });
         }
         if (device && device.use_tr069) {
-          acsDeviceInfo.requestUpStatus(device);
+          await acsDeviceInfo.requestUpStatus(device);
         } else {
           mqtt.anlixMessageRouterUpStatus(req.params.id.toUpperCase());
         }

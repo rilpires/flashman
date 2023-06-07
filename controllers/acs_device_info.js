@@ -2876,35 +2876,53 @@ acsDeviceInfoController.requestPonData = function(device) {
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchPonSignalFromGenie);
 };
 
-acsDeviceInfoController.requestUpStatus = function(device) {
+acsDeviceInfoController.requestUpStatus = async function(device) {
   // Make sure we only work with TR-069 devices with a valid ID
   if (!device || !device.use_tr069 || !device.acs_id) return;
   let acsID = device.acs_id;
   let cpe = DevicesAPI.instantiateCPEByModelFromDevice(device).cpe;
   let fields = cpe.getModelFields();
-  let task = {
-    name: 'getParameterValues',
-    parameterNames: [
-      fields.common.uptime,
-    ],
-  };
-  if (cpe.modelPermissions().wan.hasUptimeField) {
-    if (device.connection_type === 'pppoe') {
-      task.parameterNames.push(fields.wan.uptime_ppp);
-      task.parameterNames.push(fields.wan.pppoe_user);
-    } else if (device.connection_type === 'dhcp') {
-      task.parameterNames.push(fields.wan.uptime);
-    }
-  }
   let permissions = DeviceVersion.devicePermissions(device);
-  if (permissions.grantPonSignalSupport) {
-    task.parameterNames.push(fields.wan.pon_rxpower);
-    task.parameterNames.push(fields.wan.pon_txpower);
-    if (fields.wan.pon_rxpower_epon && fields.wan.pon_txpower_epon) {
-      task.parameterNames.push(fields.wan.pon_rxpower_epon);
-      task.parameterNames.push(fields.wan.pon_txpower_epon);
+  let parameterNames = [];
+  // Basic fields should always be updated
+  parameterNames.push(fields.common.uptime);
+  parameterNames.push(fields.common.ip);
+  if (device.wan_chosen) {
+    let wanFields = await acsDeviceInfoController.getMultiWan(acsID, cpe);
+    wanFields = wanFields[device.wan_chosen];
+    if (wanFields) {
+      // Request WAN IP
+      if (device.connection_type === 'pppoe') {
+        parameterNames.push(wanFields.wan_ip_ppp.path);
+      } else if (device.connection_type === 'dhcp') {
+        parameterNames.push(wanFields.wan_ip.path);
+      }
+      // Request uptime, if the device has this field
+      if (cpe.modelPermissions().wan.hasUptimeField) {
+        if (device.connection_type === 'pppoe') {
+          parameterNames.push(wanFields.uptime_ppp.path);
+          parameterNames.push(wanFields.pppoe_user.path);
+        } else if (device.connection_type === 'dhcp') {
+          parameterNames.push(wanFields.uptime.path);
+        }
+      }
+      // Request pon signal, if the device is an ONU
+      if (permissions.grantPonSignalSupport) {
+        parameterNames.push(wanFields.pon_rxpower.path);
+        parameterNames.push(wanFields.pon_txpower.path);
+        if (wanFields.pon_rxpower_epon && wanFields.pon_txpower_epon) {
+          parameterNames.push(wanFields.pon_rxpower_epon.path);
+          parameterNames.push(wanFields.pon_txpower_epon.path);
+        }
+      }
+    } else {
+      console.error(`requestUpStatus chosenWAN index `+
+         `not exist! ${device.wan_chosen} -> (${acsID})`);
     }
+  } else {
+    console.error(`requestUpStatus change WAN is undefined! (${acsID})`);
   }
+  let task = {name: 'getParameterValues', parameterNames: parameterNames};
   TasksAPI.addTask(acsID, task, acsMeasuresHandler.fetchUpStatusFromGenie);
 };
 
