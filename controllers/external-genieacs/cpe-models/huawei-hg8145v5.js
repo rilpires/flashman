@@ -4,9 +4,9 @@ let flashifyModel = Object.assign({}, basicCPEModel);
 
 // generated with Flashify version 2.13.0
 
-flashifyModel.identifier = {vendor: 'Huawei', model: 'HG8145V5'};
+flashifyModel.identifier = { vendor: 'Huawei', model: 'HG8145V5' };
 
-flashifyModel.modelPermissions = function() {
+flashifyModel.modelPermissions = function () {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.cableRxRate = true;
   permissions.features.pingTest = true;
@@ -80,7 +80,7 @@ flashifyModel.modelPermissions = function() {
   return permissions;
 };
 
-flashifyModel.getFieldType = function(masterKey, key) {
+flashifyModel.getFieldType = function (masterKey, key) {
   // Necessary for InternetGatewayDevice.LANDevice.1.WLANConfiguration.1.X_HW_HT20
   if (masterKey === 'wifi2' && key === 'band') {
     return 'xsd:unsignedInt';
@@ -97,7 +97,7 @@ flashifyModel.getFieldType = function(masterKey, key) {
   return basicCPEModel.getFieldType(masterKey, key);
 };
 
-flashifyModel.convertWifiMode = function(mode, is5ghz=false) {
+flashifyModel.convertWifiMode = function (mode, is5ghz = false) {
   switch (mode) {
     case '11g':
       return '11bg';
@@ -113,7 +113,7 @@ flashifyModel.convertWifiMode = function(mode, is5ghz=false) {
   }
 };
 
-flashifyModel.convertWifiBand = function(band, is5ghz=false) {
+flashifyModel.convertWifiBand = function (band, is5ghz = false) {
   switch (band) {
     case 'HT20':
       return 1;
@@ -129,7 +129,7 @@ flashifyModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-flashifyModel.convertWifiBandToFlashman = function(band, isAC) {
+flashifyModel.convertWifiBandToFlashman = function (band, isAC) {
   switch (band) {
     case 0:
     case 3:
@@ -143,11 +143,11 @@ flashifyModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
-flashifyModel.convertWanRate = function(rate) {
+flashifyModel.convertWanRate = function (rate) {
   return rate / 1000000;
 };
 
-flashifyModel.isDeviceConnectedViaWifi = function(
+flashifyModel.isDeviceConnectedViaWifi = function (
   layer2iface, wifi2iface, wifi5iface,
 ) {
   if (layer2iface === '802.11') {
@@ -156,7 +156,7 @@ flashifyModel.isDeviceConnectedViaWifi = function(
   return 'cable';
 };
 
-flashifyModel.getModelFields = function() {
+flashifyModel.getModelFields = function () {
   let fields = basicCPEModel.getModelFields();
 
   // ---------- FIELDS SUPPORTED BY FLASHIFY ----------
@@ -170,6 +170,8 @@ flashifyModel.getModelFields = function() {
   fields.wan.pppoe_enable = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.Enable';
   fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
+  fields.wan.service_type = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_SERVICELIST';
+  fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_SERVICELIST';
   fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.IPAddress';
   fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.IPAddress';
   fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Address.*.DefaultGateway';
@@ -197,7 +199,7 @@ flashifyModel.getModelFields = function() {
   fields.diagnostics.traceroute.root = 'InternetGatewayDevice.TraceRouteDiagnostics';
   fields.diagnostics.traceroute.hop_host = 'Host';
 
-  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice' +
     '.1.WiFi.NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
@@ -205,7 +207,7 @@ flashifyModel.getModelFields = function() {
   return fields;
 };
 
-flashifyModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
+flashifyModel.applyVersionDifferences = function (base, fwVersion, hwVersion) {
   // TODO: check manually!
   return base;
 };
