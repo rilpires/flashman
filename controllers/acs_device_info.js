@@ -3015,7 +3015,7 @@ acsDeviceInfoController.updateInfo = async function(
         Object.keys(changes.wan).forEach((key)=>{
           if (!(key in wanFields)) {
             valid = false;
-            console.error(`updateInfo invalid wanFields `+
+            console.error(`updateInfo invalid wanFields ` +
               `(${key}): ${device.wan_chosen} -> (${acsID})`);
           }
         });
@@ -3046,7 +3046,7 @@ acsDeviceInfoController.updateInfo = async function(
           }
         }
       } else {
-        console.error(`updateInfo chosenWAN index`+
+        console.error(`updateInfo chosenWAN index `+
          `not exist! ${device.wan_chosen} -> (${acsID})`);
       }
     } else {
