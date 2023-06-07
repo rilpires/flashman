@@ -219,6 +219,7 @@ describe('Controllers - Update Flashman', () => {
           'ssid-prefix': '',
           'measure-server-ip': '192.168.0.1',
           'measure-server-port': '2121',
+          'measure_no_limit': 'on',
           'wan-step-required': 'true',
           'flashman-step-required': 'true',
           'speedtest-step-required': 'false',

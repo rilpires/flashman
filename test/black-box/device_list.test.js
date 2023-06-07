@@ -67,7 +67,7 @@ describe('api_v2', () => {
         Layer2Interface:
           'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.2',
         LeaseTimeRemaining: 3000,
-        MACAddress: 'AA:BB:CC:DD:EE:FF',
+        MACAddress: lanDeviceID,
       });
       await simulator.start();
 
