@@ -262,12 +262,19 @@ describe('Update Tests - Functions', () => {
   });
 
   describe('updateInfo Tests', () => {
-    // Validate updateInfo - Happy Case
-    test(
-      'Validate updateInfo - Happy Case',
-      async () => {
-        const id = models.defaultMockDevices[0]._id;
-        const device = models.copyDeviceFrom(
+    describe('WAN tests', () => {
+      let eg8145v5;
+      let id;
+      let device;
+      let config;
+      let deviceFields;
+      let changes;
+
+      beforeEach(() => {
+        eg8145v5 = utils.common.loadFile(
+          '../assets/flashman-test/multi-wan/huawei-eg8145v5/wanData.json');
+        id = models.defaultMockDevices[0]._id;
+        device = models.copyDeviceFrom(
           id,
           {
             _id: '94:25:33:3B:D1:C2',
@@ -276,10 +283,7 @@ describe('Update Tests - Functions', () => {
             version: 'V5R020C00S280',
           },
         );
-        let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
-          .cpe.getModelFields();
-
-        const config = models.copyConfigFrom(
+        config = models.copyConfigFrom(
           models.defaultMockConfigs[0]._id,
           {
             _id: '84b9f57c7beaae3b4f9d4656',
@@ -287,8 +291,9 @@ describe('Update Tests - Functions', () => {
             device_update_schedule: false,
           },
         );
-
-        let changes = {
+        deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
+          .cpe.getModelFields();
+        changes = {
           wan: {mtu_ppp: 1487},
           lan: {},
           wifi2: {ssid: 'Anlix-Teste'},
@@ -296,7 +301,9 @@ describe('Update Tests - Functions', () => {
           mesh2: {},
           mesh5: {},
         };
+      });
 
+      test('WAN edition successfull - Happy Case', async () => {
         let expectedTask = {
           name: 'setParameterValues',
           parameterValues: [
@@ -319,9 +326,12 @@ describe('Update Tests - Functions', () => {
         };
 
         // Mocks
+        jest.spyOn(tasksAPI, 'getFromCollection')
+          .mockResolvedValue([eg8145v5]);
         utils.common.mockConfigs(config, 'findOne');
 
         // Spies
+        let consoleErrorSpy = jest.spyOn(console, 'error');
         let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
           .mockReturnValue(undefined);
 
@@ -329,102 +339,30 @@ describe('Update Tests - Functions', () => {
         await acsDeviceInfo.__testUpdateInfo(device, changes);
 
         // Verify
+        expect(consoleErrorSpy).not.toHaveBeenCalled();
         expect(addTaskSpy).toHaveBeenCalledTimes(1);
         expect(addTaskSpy).toHaveBeenCalledWith(
           device.acs_id, expectedTask, expect.anything(),
         );
-      },
-    );
+      });
 
-    // Validate updateInfo - Error fetching genie data: Expect addTask not to be
-    // called
-    test(
-      'Validate updateInfo - Unable to replace wildcards',
-      async () => {
-        const id = models.defaultMockDevices[0]._id;
-        let device = models.copyDeviceFrom(
-          id,
-          {
-            _id: '94:25:33:3B:D1:C2',
-            acs_id: '00259E-EG8145V5-48575443A94196A5',
-            model: 'EG8145V5',
-            version: 'V5R020C00S280',
-          },
-        );
-
-        device.wan_chosen = undefined;
-
-        const config = models.copyConfigFrom(
-          models.defaultMockConfigs[0]._id,
-          {
-            _id: '84b9f57c7beaae3b4f9d4656',
-            is_default: true,
-            device_update_schedule: false,
-          },
-        );
-
-        let changes = {
-          wan: {mtu_ppp: 1487},
-          lan: {},
-          wifi2: {ssid: 'Anlix-Teste'},
-          wifi5: {},
-          mesh2: {},
-          mesh5: {},
-        };
-
-        // Mocks
-        utils.common.mockConfigs(config, 'findOne');
-
-        // Spies
-        let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
-          .mockReturnValue(undefined);
-
-        jest.spyOn(tasksAPI, 'getFromCollection')
-          .mockImplementation(() => [{_id: id}]);
-
-        // Execute
-        await acsDeviceInfo.__testUpdateInfo(device, changes);
-
-        // Verify
-        expect(addTaskSpy).not.toHaveBeenCalled();
-      },
-    );
-
-    // Validate updateInfo - No WAN edition (legacy case): Expect
-    // replaceWanFieldsWildcards (and getFromCollection) not to be called
-    test(
-      'Validate updateInfo - No WAN edition (legacy case)',
-      async () => {
-        const id = models.defaultMockDevices[0]._id;
-        const device = models.copyDeviceFrom(
-          id,
-          {
-            _id: '94:25:33:3B:D1:C2',
-            acs_id: '00259E-EG8145V5-48575443A94196A5',
-            model: 'EG8145V5',
-            version: 'V5R020C00S280',
-          },
-        );
-        let deviceFields = devicesAPI.instantiateCPEByModelFromDevice(device)
-          .cpe.getModelFields();
-
-        const config = models.copyConfigFrom(
-          models.defaultMockConfigs[0]._id,
-          {
-            _id: '84b9f57c7beaae3b4f9d4656',
-            is_default: true,
-            device_update_schedule: false,
-          },
-        );
-
-        let changes = {
-          wan: {},
-          lan: {},
-          wifi2: {ssid: 'Anlix-Teste'},
-          wifi5: {},
-          mesh2: {},
-          mesh5: {},
-        };
+      test.each([
+        [
+          'WAN data is undefined',
+          'updateInfo chosenWAN index not exist! ',
+        ],
+        [
+          'wan_chosen is undefined',
+          'updateInfo change WAN in undefined! ',
+        ],
+      ])('Reject WAN changes - %s', async (description, expectedErrorMsg) => {
+        if (description === 'wan_chosen is undefined') {
+          expectedErrorMsg += `(${device.acs_id})`;
+          // Force wan_chosen to be undefined
+          delete device.wan_chosen;
+        } else {
+          expectedErrorMsg += `${device.wan_chosen} -> (${device.acs_id})`;
+        }
 
         let expectedTask = {
           name: 'setParameterValues',
@@ -443,28 +381,75 @@ describe('Update Tests - Functions', () => {
         };
 
         // Mocks
+        jest.spyOn(tasksAPI, 'getFromCollection')
+            .mockImplementation(() => [{_id: device.acs_id}]);
         utils.common.mockConfigs(config, 'findOne');
 
         // Spies
+        let consoleErrorSpy = jest.spyOn(console, 'error');
         let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
           .mockReturnValue(undefined);
-
-        let getFromCollectionSpy = jest.spyOn(tasksAPI, 'getFromCollection');
 
         // Execute
         await acsDeviceInfo.__testUpdateInfo(device, changes);
 
         // Verify
-        expect(getFromCollectionSpy).not.toHaveBeenCalled();
-
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(expectedErrorMsg);
         expect(addTaskSpy).toHaveBeenCalledTimes(1);
         expect(addTaskSpy).toHaveBeenCalledWith(
           device.acs_id, expectedTask, expect.anything(),
         );
-      },
-    );
+      });
 
-    test(
+      test('Reject WAN changes - Invalid WAN field', async () => {
+        // Force an invalid WAN field
+        changes.wan.invalid = 123;
+
+        let expectedTask = {
+          name: 'setParameterValues',
+          parameterValues: [
+            [
+              deviceFields['wifi2']['ssid'],
+              changes.wifi2.ssid,
+              'xsd:string',
+            ],
+            [
+              deviceFields['wifi2']['password'],
+              device.wifi_password,
+              'xsd:string',
+            ],
+          ],
+        };
+
+        // Mocks
+        jest.spyOn(tasksAPI, 'getFromCollection')
+          .mockResolvedValue([eg8145v5]);
+        utils.common.mockConfigs(config, 'findOne');
+
+        // Spies
+        let consoleErrorSpy = jest.spyOn(console, 'error');
+        let addTaskSpy = jest.spyOn(tasksAPI, 'addTask')
+          .mockReturnValue(undefined);
+
+        // Execute
+        await acsDeviceInfo.__testUpdateInfo(device, changes);
+
+        // Verify
+        expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          `updateInfo invalid wanFields ` +
+            `(invalid): ${device.wan_chosen} -> (${device.acs_id})`,
+        );
+        expect(addTaskSpy).toHaveBeenCalledTimes(1);
+        expect(addTaskSpy).toHaveBeenCalledWith(
+          device.acs_id, expectedTask, expect.anything(),
+        );
+      });
+    });
+
+    describe('DNS tests', () => {
+      test(
       'Subnet edit + dnsServersWrite true + Old subnet is contained in DNS ' +
       'servers = triggers DNS edit removing old subnet and adding new subnet',
       async () => {
@@ -897,5 +882,6 @@ describe('Update Tests - Functions', () => {
         );
       },
     );
+    });
   });
 });
