@@ -1,39 +1,5 @@
 const wanList = {
-  'wan_ip_3': {
-    'port_mapping': [],
-    'dhcp_enable': {
-      'path': 'Device.IP.Interface.3.Enable',
-      'writable': true,
-      'value': true,
-    },
-    'wan_ip_1': {
-      'path': 'Device.IP.Interface.3.IPv4Address.1.IPAddress',
-      'writable': true,
-      'value': '0.0.0.0',
-    },
-    'mtu': {
-      'path': 'Device.IP.Interface.3.MaxMTUSize',
-      'writable': true,
-      'value': 1500,
-    },
-    'sent_bytes': {
-      'path': 'Device.IP.Interface.3.Stats.BytesReceived',
-      'writable': false,
-      'value': 0,
-    },
-    'recv_bytes': {
-      'path': 'Device.IP.Interface.3.Stats.BytesSent',
-      'writable': false,
-      'value': 0,
-    },
-    'dhcp_status': {
-      'path': 'Device.IP.Interface.3.Status',
-      'writable': false,
-      'value': 'Down',
-    },
-  },
   'wan_ip_14': {
-    'port_mapping': [],
     'dhcp_enable': {
       'path': 'Device.IP.Interface.14.Enable',
       'writable': true,
@@ -44,7 +10,17 @@ const wanList = {
       'writable': true,
       'value': '192.168.88.71',
     },
+    'wan_ip_ppp_1': {
+      'path': 'Device.IP.Interface.14.IPv4Address.1.IPAddress',
+      'writable': true,
+      'value': '192.168.88.71',
+    },
     'mtu': {
+      'path': 'Device.IP.Interface.14.MaxMTUSize',
+      'writable': true,
+      'value': 1493,
+    },
+    'mtu_ppp': {
       'path': 'Device.IP.Interface.14.MaxMTUSize',
       'writable': true,
       'value': 1493,
@@ -63,19 +39,53 @@ const wanList = {
       'path': 'Device.IP.Interface.14.Status',
       'writable': false,
       'value': 'Up',
-    },
+    }
   },
-  'wan_ppp_6': {
-    'port_mapping': [],
+  'wan_ip_15': {
+    'dhcp_enable': {
+      'path': 'Device.IP.Interface.15.Enable',
+      'writable': true,
+      'value': true,
+    },
+    'wan_ip_1': {
+      'path': 'Device.IP.Interface.15.IPv4Address.1.IPAddress',
+      'writable': true,
+      'value': '0.0.0.0',
+    },
     'wan_ip_ppp_1': {
       'path': 'Device.IP.Interface.15.IPv4Address.1.IPAddress',
       'writable': true,
       'value': '0.0.0.0',
     },
+    'mtu': {
+      'path': 'Device.IP.Interface.15.MaxMTUSize',
+      'writable': true,
+      'value': 1492,
+    },
     'mtu_ppp': {
       'path': 'Device.IP.Interface.15.MaxMTUSize',
       'writable': true,
       'value': 1492,
+    },
+    'sent_bytes': {
+      'path': 'Device.IP.Interface.15.Stats.BytesReceived',
+      'writable': false,
+      'value': 0,
+    },
+    'recv_bytes': {
+      'path': 'Device.IP.Interface.15.Stats.BytesSent',
+      'writable': false,
+      'value': 0,
+    },
+    'dhcp_status': {
+      'path': 'Device.IP.Interface.15.Status',
+      'writable': false,
+      'value': 'Down',
+    },
+    'pppoe_enable': {
+      'path': 'Device.PPP.Interface.6.Enable',
+      'writable': true,
+      'value': true,
     },
     'dns_servers_ppp': {
       'path': 'Device.PPP.Interface.6.IPCP.DNSServers',
@@ -91,11 +101,6 @@ const wanList = {
       'path': 'Device.PPP.Interface.6.Password',
       'writable': true,
       'value': '',
-    },
-    'pppoe_enable': {
-      'path': 'Device.PPP.Interface.6.Enable',
-      'writable': true,
-      'value': true,
     },
     'pppoe_status': {
       'path': 'Device.PPP.Interface.6.Status',

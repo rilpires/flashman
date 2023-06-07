@@ -1,6 +1,5 @@
 const wanList = {
   'wan_ppp_1_1_1': {
-    'port_mapping': [],
     'pppoe_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
         'WANPPPConnection.1.ConnectionStatus',
@@ -43,6 +42,12 @@ const wanList = {
       'writable': true,
       'value': 1427,
     },
+    'name_ppp': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+        'WANPPPConnection.1.Name',
+      'writable': true,
+      'value': '1_TR069_INTERNET_R_VID_1',
+    },
     'pppoe_pass': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
         'WANPPPConnection.1.Password',
@@ -73,15 +78,44 @@ const wanList = {
       'writable': true,
       'value': 'admin123',
     },
+    'service_type_ppp': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
+        'WANPPPConnection.1.X_HW_SERVICELIST',
+      'writable': true,
+      'value': 'TR069_INTERNET',
+    },
     'vlan_ppp': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.1.' +
         'WANPPPConnection.1.X_HW_VLAN',
       'writable': true,
       'value': 1,
     },
+    'pon_rxpower': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'RXPower',
+      'writable': false,
+      'value': -3,
+    },
+    'recv_bytes': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesReceived',
+      'writable': false,
+      'value': 7412326259,
+    },
+    'sent_bytes': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesSent',
+      'writable': false,
+      'value': 312287362,
+    },
+    'pon_txpower': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'TXPower',
+      'writable': false,
+      'value': 2,
+    },
   },
   'wan_ip_1_2_1': {
-    'port_mapping': [],
     'dhcp_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
         'WANIPConnection.1.ConnectionStatus',
@@ -124,6 +158,12 @@ const wanList = {
       'writable': true,
       'value': 1500,
     },
+    'name': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
+        'WANIPConnection.1.Name',
+      'writable': true,
+      'value': '2_INTERNET_R_VID_2',
+    },
     'port_mapping_entries_dhcp': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
         'WANIPConnection.1.PortMappingNumberOfEntries',
@@ -136,14 +176,21 @@ const wanList = {
       'writable': false,
       'value': 0,
     },
+    'service_type': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
+        'WANIPConnection.1.X_HW_SERVICELIST',
+      'writable': true,
+      'value': 'INTERNET',
+    },
     'vlan': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.2.' +
         'WANIPConnection.1.X_HW_VLAN',
       'writable': true,
-      'value': 2,
+      'value':2,
     },
     'pon_rxpower': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'RXPower',
       'writable': false,
       'value': -3,
     },
@@ -160,13 +207,13 @@ const wanList = {
       'value': 312287362,
     },
     'pon_txpower': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'TXPower',
       'writable': false,
-      'value': 2,
+      'value':2,
     },
   },
   'wan_ppp_1_3_1': {
-    'port_mapping': [],
     'pppoe_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.' +
         'WANPPPConnection.1.ConnectionStatus',
@@ -209,6 +256,12 @@ const wanList = {
       'writable': true,
       'value': 1492,
     },
+    'name_ppp': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.' +
+        'WANPPPConnection.1.Name',
+      'writable': true,
+      'value': '3_INTERNET_R_VID_3',
+    },
     'pppoe_pass': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.' +
         'WANPPPConnection.1.Password',
@@ -239,15 +292,44 @@ const wanList = {
       'writable': true,
       'value': 'iadtest@pppoe',
     },
+    'service_type_ppp': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.' +
+        'WANPPPConnection.1.X_HW_SERVICELIST',
+      'writable': true,
+      'value': 'INTERNET',
+    },
     'vlan_ppp': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.3.' +
         'WANPPPConnection.1.X_HW_VLAN',
       'writable': true,
       'value': 3,
     },
+    'pon_rxpower': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'RXPower',
+      'writable': false,
+      'value': -3,
+    },
+    'recv_bytes': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesReceived',
+      'writable': false,
+      'value': 7412326259,
+    },
+    'sent_bytes': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesSent',
+      'writable': false,
+      'value': 312287362,
+    },
+    'pon_txpower': {
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'TXPower',
+      'writable': false,
+      'value': 2,
+    },
   },
   'wan_ip_1_4_1': {
-    'port_mapping': [],
     'dhcp_status': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +
         'WANIPConnection.1.ConnectionStatus',
@@ -290,6 +372,12 @@ const wanList = {
       'writable': true,
       'value': 1500,
     },
+    'name': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +
+        'WANIPConnection.1.Name',
+      'writable': true,
+      'value': '4_INTERNET_R_VID_4',
+    },
     'port_mapping_entries_dhcp': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +
         'WANIPConnection.1.PortMappingNumberOfEntries',
@@ -302,6 +390,12 @@ const wanList = {
       'writable': false,
       'value': 0,
     },
+    'service_type': {
+      'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +
+        'WANIPConnection.1.X_HW_SERVICELIST',
+      'writable': true,
+      'value': 'INTERNET',
+    },
     'vlan': {
       'path': 'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.4.' +
         'WANIPConnection.1.X_HW_VLAN',
@@ -309,24 +403,26 @@ const wanList = {
       'value': 4,
     },
     'pon_rxpower': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.RXPower',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'RXPower',
       'writable': false,
       'value': -3,
     },
     'recv_bytes': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.' +
-        'BytesReceived',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesReceived',
       'writable': false,
       'value': 7412326259,
     },
     'sent_bytes': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.Stats.' +
-        'BytesSent',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'Stats.BytesSent',
       'writable': false,
       'value': 312287362,
     },
     'pon_txpower': {
-      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.TXPower',
+      'path': 'InternetGatewayDevice.WANDevice.1.X_GponInterafceConfig.' +
+        'TXPower',
       'writable': false,
       'value': 2,
     },
