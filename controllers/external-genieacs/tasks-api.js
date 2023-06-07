@@ -726,19 +726,17 @@ genie.addTask = async function(
 
   // getting older tasks for this device id.
   let query = {device: deviceid}; // selecting all tasks for a given device id.
-  let currentTasks 
-    = await genie.getFromCollection('tasks', query).catch((e) => {
-  /* rejected value will be error object in case of connection errors.*/
+  let currentTasks
+    = await genie.getFromCollection('tasks', query).catch((e) => e);
+  // rejected value will be error object in case of connection errors.
+  if (currentTasks instanceof Error) {
     return {
       success: false,
-      message: `${e.code} when getting old tasks from genieacs ` +
-      `rest api, for device ${deviceid}.`,
+      message: 'Error when getting old tasks from genieacs rest api, for device'
+        +` ${deviceid}. ${currentTasks.code} ${currentTasks.message}`,
     };
-  });
-  let tasksToAdd;
-  let taskIdsToDelete;
-  [tasksToAdd, taskIdsToDelete]
-    = joinAllTasks([...currentTasks, task]);
+  }
+  let [tasksToAdd, taskIdsToDelete] = joinAllTasks([...currentTasks, task]);
 
     /* we have to delete old tasks before adding the joined tasks because it
 could happen that an old task is executed while we add their joined
