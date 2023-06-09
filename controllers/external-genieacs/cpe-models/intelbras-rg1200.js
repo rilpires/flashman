@@ -144,7 +144,7 @@ intelbrasModel.getModelCommands = function() {
     // Set LAN Configuration
     {
       path: 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.*',
-      value: {path: 8},
+      value: {path: 1},
     },
     // Set the MAC
     {

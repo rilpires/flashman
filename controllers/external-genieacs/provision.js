@@ -150,7 +150,8 @@ if (!result.success || !result.fields) {
 // Flashman will change it to the proper value in the next connection request or
 // the next periodic inform
 if (event.bootstrap) {
-  declare(result.fields.common.interval, {path: now}, {value: 30});
+  declare(result.fields.common.interval, null, {value: 30});
+  commit()
 }
 
 
@@ -186,6 +187,7 @@ if (registeredTime === now) {
     }
 
     // Return in order to apply the setup configuration in the router
+    commit()
     return;
   }
 }
