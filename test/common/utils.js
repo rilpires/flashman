@@ -761,11 +761,6 @@ utils.devicesAPICommon.mockInstantiateCPEByModelFromDevice = function(
           return fields;
         },
 
-        // PPPoE Enable
-        convertPPPoEEnable: (enable) => {
-          return enable === 'true' || enable === 1 || enable === true;
-        },
-
         // Get Serial
         convertGenieSerial: (serial, mac) => {
           return serial;

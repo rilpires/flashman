@@ -27,6 +27,7 @@ tpLinkModel.modelPermissions = function() {
   permissions.wifi.axWiFiMode = true;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.13.0 2.0.0 v605f.0 Build 220618 Rel.77647n': [],
   };
@@ -71,10 +72,6 @@ tpLinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
-tpLinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tpLinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /Radio\.[0-9*]+\./g,
@@ -92,7 +89,10 @@ tpLinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
@@ -107,6 +107,12 @@ tpLinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = 'Device.IP.Interface.*.MaxMTUSize';
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

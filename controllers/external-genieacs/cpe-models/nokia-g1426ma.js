@@ -180,6 +180,11 @@ nokiaModel.getModelFields = function() {
     'WANCommonInterfaceConfig.TotalBytesReceived';
   fields.wan.sent_bytes = 'InternetGatewayDevice.WANDevice.1.'+
     'WANCommonInterfaceConfig.TotalBytesSent';
+  fields.wan.service_type = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_ServiceList';
+  fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_ServiceList';
+
   fields.port_mapping_values.protocol[1] = 'TCP';
   fields.port_mapping_values.remote_host[1] = '';
   return fields;
