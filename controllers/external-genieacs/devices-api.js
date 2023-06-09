@@ -494,6 +494,28 @@ const getModelFields = function(
   };
 };
 
+const getModelCommands = function(
+  oui, model, modelName, firmwareVersion, hardwareVersion,
+) {
+  // Try finding the device model
+  let cpeResult = instantiateCPEByModel(
+    model, modelName, firmwareVersion, hardwareVersion,
+  );
+
+  // Get the commands if the model has it
+  let commands = [];
+  if (cpeResult.success) {
+    commands = cpeResult.cpe.getModelCommands();
+  }
+
+  // Return the result with the commands to be executed
+  return {
+    success: cpeResult.success,
+    message: cpeResult.success ? 'OK' : 'Unknown Model',
+    commands: commands,
+  };
+};
+
 const getDeviceFields = async function(args, callback) {
   let params = null;
 
@@ -539,6 +561,53 @@ const getDeviceFields = async function(args, callback) {
     measure_type: flashRes.data.measure_type,
     connection: flashRes.data.connection,
     useLastIndexOnWildcard: fieldsResult.useLastIndexOnWildcard,
+  });
+};
+
+const getRegistrationSetupCommands = function(args, callback) {
+  let params = null;
+
+  // If callback not defined, define a simple one
+  if (!callback) {
+    callback = (arg1, arg2) => {
+      return arg2;
+    };
+  }
+
+  // Parse arguments
+  try {
+    params = JSON.parse(args[0]);
+  } catch (error) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
+  // Check arguments
+  if (!params || !params.oui || !params.model) {
+    return callback(null, {
+      success: false,
+      message: 'Incomplete arguments',
+    });
+  }
+
+  // Get the commands
+  let commandsResult = getModelCommands(
+    params.oui, params.model, params.modelName,
+    params.firmwareVersion, params.hardwareVersion,
+  );
+
+  // Failed to get commands
+  if (!commandsResult['success']) {
+    return callback(null, commandsResult);
+  }
+
+  // Return the commands
+  return callback(null, {
+    success: true,
+    message: 'OK',
+    commands: commandsResult.commands,
   });
 };
 
@@ -669,6 +738,7 @@ const syncDeviceChanges = async function(args, callback) {
 exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
 exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getDeviceFields = getDeviceFields;
+exports.getRegistrationSetupCommands = getRegistrationSetupCommands;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
 exports.syncDeviceChanges = syncDeviceChanges;
