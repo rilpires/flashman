@@ -580,12 +580,12 @@ const getRegistrationSetupCommands = function(args, callback) {
   } catch (error) {
     return callback(null, {
       success: false,
-      message: 'Incomplete arguments',
+      message: 'Invalid JSON',
     });
   }
 
   // Check arguments
-  if (!params || !params.oui || !params.model) {
+  if (!params || !params.modelName || !params.model) {
     return callback(null, {
       success: false,
       message: 'Incomplete arguments',
