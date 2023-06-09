@@ -68,6 +68,9 @@ const fetchPortFoward = function(fields, data) {
 };
 
 // 1. Collect information
+// Check if it is a new device
+let registeredTime = declare('Events.Registered', {value: 1}).value[0];
+
 // Collect basic CPE information from database
 let genieID = declare('DeviceID.ID', {value: 1});
 let oui = declare('DeviceID.OUI', {value: 1});
@@ -141,6 +144,52 @@ if (!result.success || !result.fields) {
   log('Model identified: ' + modelClass);
   return;
 }
+
+
+// If bootstrap event, set the periodic inform for the minimum value.
+// Flashman will change it to the proper value in the next connection request or
+// the next periodic inform
+if (event.bootstrap) {
+  declare(result.fields.common.interval, {path: now}, {value: 30});
+}
+
+
+// If the device is connecting to Flashman for the first time, run the setup
+// before connecting to the Flashman.
+if (registeredTime === now) {
+  // Call Flashman to get the setup configuration
+  let resultRegistration = ext(
+    'devices-api',
+    'getRegistrationSetupCommands',
+    JSON.stringify(args),
+  );
+
+  if (!resultRegistration.success) {
+    log(
+      'Registration setup commands for device ' +
+      genieID + ' failed: ' + result.message
+    );
+
+    return;
+  
+    // Apply setup configuration
+  } else if (resultRegistration.commands.length > 0) {
+    let commands = resultRegistration.commands;
+
+    for (let index = 0; index < commands.length; index++) {
+      let command = commands[index];
+      let path = command.path;
+      let value = command.value;
+
+      log('Setting ' + path + ' to ' + JSON.stringify(value));
+      declare(path, {path: now}, value);
+    }
+
+    // Return in order to apply the setup configuration in the router
+    return;
+  }
+}
+
 
 // Apply connection request credentials preset configuration
 if (result.connection) {
