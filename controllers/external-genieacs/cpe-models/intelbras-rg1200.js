@@ -1,3 +1,8 @@
+/**
+ * @namespace controllers/external-genieacs/cpe-models/intelbras-rg1200
+ */
+
+
 const basicCPEModel = require('./base-model');
 
 let intelbrasModel = Object.assign({}, basicCPEModel);
@@ -150,5 +155,8 @@ intelbrasModel.getModelCommands = function() {
   ];
 };
 
+/**
+ * @exports controllers/external-genieacs/cpe-models/intelbras-rg1200
+ */
 module.exports = intelbrasModel;
 

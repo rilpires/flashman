@@ -1,3 +1,10 @@
+/**
+ * This file includes functions and constants that are used by all CPE models.
+ * It contains the default for all CPEs, but may be overridden by some models.
+ * @namespace controllers/external-genieacs/cpe-models/base-model
+ */
+
+
 let basicCPEModel = {};
 
 // These should not be copied over to each model, only referenced
@@ -958,4 +965,7 @@ basicCPEModel.applyVersionDifferences = function(base, fwVersion, hwVersion) {
   return base;
 };
 
+/**
+ * @exports controllers/external-genieacs/cpe-models/base-model
+ */
 module.exports = basicCPEModel;
