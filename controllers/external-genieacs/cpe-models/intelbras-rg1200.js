@@ -121,5 +121,34 @@ intelbrasModel.getModelFields = function() {
   return fields;
 };
 
+/**
+ * Override the default model commands with the ones specific to this model
+ * because RG 1200 might no come with some fields in the TR-069 tree.
+ *
+ * @memberof controllers/external-genieacs/cpe-models/intelbras-rg1200
+ *
+ * @return {Array} The array of commands.
+ */
+intelbrasModel.getModelCommands = function() {
+  return [
+    // Set WLAN Configuration
+    {
+      path: 'InternetGatewayDevice.LANDevice.1.WLANConfiguration.*',
+      value: {path: 8},
+    },
+    // Set LAN Configuration
+    {
+      path: 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.*',
+      value: {path: 8},
+    },
+    // Set the MAC
+    {
+      path: 'InternetGatewayDevice.LANDevice.1.LANEthernetInterfaceConfig.1' +
+        '.MACAddress',
+      value: {path: 1},
+    },
+  ];
+};
+
 module.exports = intelbrasModel;
 

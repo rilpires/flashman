@@ -938,6 +938,18 @@ basicCPEModel.getModelFields = function() {
   };
 };
 
+/**
+ * This function returns the array of commands that are used to setup a router
+ * when registrating for the first time with Flashman.
+ *
+ * @memberof controllers/external-genieacs/cpe-models/base-model
+ *
+ * @return {Array} The array of commands.
+ */
+basicCPEModel.getModelCommands = function() {
+  return [];
+};
+
 // This function can be called to apply changes to the functions declared above
 // based on firmware/hardware versions, to avoid creating entirely new files for
 // very basic changes. "Base" is exactly what is exported below: basicCPEModel.
