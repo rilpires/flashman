@@ -147,4 +147,159 @@ describe('Devices API Tests', () => {
       });
     });
   });
+
+
+  // getRegistrationSetupCommands
+  describe('getRegistrationSetupCommands', () => {
+    // Undefined args
+    test('Undefined args', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(undefined, callbackSpy);
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: false,
+        message: 'Invalid JSON',
+      });
+    });
+
+    // Empty JSON args
+    test('Invalid JSON args', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands([], callbackSpy);
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: false,
+        message: 'Invalid JSON',
+      });
+    });
+
+    // Invalid JSON args
+    test('Invalid JSON args', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(['abc'], callbackSpy);
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: false,
+        message: 'Invalid JSON',
+      });
+    });
+
+    // Missing model modelName
+    test('Missing model modelName', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(
+        ['{"model": "teste123"}'],
+        callbackSpy,
+      );
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: false,
+        message: 'Incomplete arguments',
+      });
+    });
+
+    // Missing model model
+    test('Missing model model', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(
+        ['{"modelName": "teste123"}'],
+        callbackSpy,
+      );
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: false,
+        message: 'Incomplete arguments',
+      });
+    });
+
+    // Unknown model
+    test('Unknown model', async () => {
+       // Mocks
+       let callbackSpy = jest.fn();
+
+       // Execute
+       await DevicesAPI.getRegistrationSetupCommands(
+         ['{"model": "teste123", "modelName": "teste123"}'],
+         callbackSpy,
+       );
+
+       // Validate
+       expect(callbackSpy).toBeCalled();
+       expect(callbackSpy).toHaveBeenCalledWith(null, {
+         success: false,
+         message: 'Unknown Model',
+         commands: [],
+       });
+    });
+
+    // No commands
+    test('No commands', async () => {
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(
+        ['{"model": "teste", "modelName": "ONU GW24AC"}'],
+        callbackSpy,
+      );
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: true,
+        message: 'OK',
+        commands: [],
+      });
+    });
+
+    // Commands
+    test('Commands', async () => {
+      const commands = DevicesAPI.instantiateCPEByModel(
+        '', 'ACtion RG1200',
+      ).cpe.getModelCommands();
+
+      // Mocks
+      let callbackSpy = jest.fn();
+
+      // Execute
+      await DevicesAPI.getRegistrationSetupCommands(
+        ['{"model": "teste", "modelName": "ACtion RG1200"}'],
+        callbackSpy,
+      );
+
+      // Validate
+      expect(callbackSpy).toBeCalled();
+      expect(commands.length).toBeGreaterThan(0);
+      expect(callbackSpy).toHaveBeenCalledWith(null, {
+        success: true,
+        message: 'OK',
+        commands: commands,
+      });
+    });
+  });
 });
