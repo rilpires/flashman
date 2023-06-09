@@ -11,6 +11,11 @@ nokiaModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.hasCPUUsage = true;
+  permissions.features.hasMemoryUsage = true;
+  permissions.features.hasIpv6Information = true;
+
+  permissions.wan.dhcpUptime = true;
   permissions.wan.allowReadWanVlan = true;
   permissions.wan.allowEditWanVlan = true;
   permissions.wan.speedTestLimit = 1000;
@@ -18,6 +23,14 @@ nokiaModel.modelPermissions = function() {
   permissions.wan.portForwardQueueTasks = true;
   permissions.wan.portForwardPermissions =
     basicCPEModel.portForwardPermissions.noRanges;
+  permissions.wan.hasIpv4RemoteAddressField = true;
+  permissions.wan.hasIpv4DefaultGatewayField = true;
+  permissions.wan.hasDnsServerField = true;
+
+  permissions.ipv6.hasAddressField = true;
+  permissions.ipv6.hasDefaultGatewayField = true;
+  permissions.ipv6.hasPrefixDelegationAddressField = true;
+
   permissions.traceroute.protocol = 'ICMP';
   permissions.wifi.list5ghzChannels = [
     36, 40, 44, 48, 52, 56, 60, 64, 149, 153, 157, 161, 165,
@@ -168,6 +181,9 @@ nokiaModel.getModelFields = function() {
   fields.wifi5.band = fields.wifi5.band.replace(
     /BandWidth/g, 'X_CMCC_ChannelWidth',
   );
+
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.'+
+    'X_CMCC_GponInterfaceConfig.X_ALU-COM_DownstreamMaxRate';
   fields.wan.pon_rxpower = 'InternetGatewayDevice.WANDevice.1.'+
     'X_CMCC_GponInterfaceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
@@ -184,6 +200,25 @@ nokiaModel.getModelFields = function() {
     'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_ServiceList';
   fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_ServiceList';
+
+  // IPv6
+  // Address
+  fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_IPv6IPAddress';
+  fields.ipv6.address_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_IPv6IPAddress';
+
+  // Default gateway
+  fields.ipv6.default_gateway = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_CMCC_DefaultIPv6Gateway';
+  fields.ipv6.default_gateway_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_DefaultIPv6Gateway';
+
+  // IPv6 Prefix Delegation
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice' +
+    '.1.WANConnectionDevice.*.WANIPConnection.*.X_CMCC_IPv6Prefix';
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.' +
+    'WANDevice.1.WANConnectionDevice.*.WANPPPConnection.*.X_CMCC_IPv6Prefix';
 
   fields.port_mapping_values.protocol[1] = 'TCP';
   fields.port_mapping_values.remote_host[1] = '';

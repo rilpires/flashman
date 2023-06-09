@@ -89,6 +89,7 @@ const tr069Models = {
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG1425GBModel: require('./cpe-models/nokia-g1425gb'),
   nokiaG1426MAModel: require('./cpe-models/nokia-g1426ma'),
+  nokiaG1426MBModel: require('./cpe-models/nokia-g1426mb'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   parksFiberlink501: require('./cpe-models/parks-fiberlink-501'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
@@ -386,6 +387,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'G-1426-MA') {
     // Nokia G-1426-MA
     result = {success: true, cpe: tr069Models.nokiaG1426MAModel};
+  } else if (modelName === 'G-1426-MB') {
+    // Nokia G-1426-MB
+    result = {success: true, cpe: tr069Models.nokiaG1426MBModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     result = {success: true, cpe: tr069Models.nokiaG2425Model};
