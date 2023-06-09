@@ -11,6 +11,7 @@ nokiaModel.modelPermissions = function() {
   permissions.features.ponSignal = true;
   permissions.features.portForward = true;
   permissions.features.speedTest = true;
+  permissions.features.siteSurvey = true;
   permissions.features.hasCPUUsage = true;
   permissions.features.hasMemoryUsage = true;
   permissions.features.hasIpv6Information = true;
@@ -39,6 +40,9 @@ nokiaModel.modelPermissions = function() {
   permissions.lan.dnsServersWrite = false;
   permissions.lan.LANDeviceCanTrustActive = false;
   permissions.lan.LANDeviceSkipIfNoWifiMode = true;
+
+  permissions.siteSurvey.requiresPolling = true;
+
   permissions.firmwareUpgrades = {
     '3FE49218HJIJ62': [],
   };
@@ -223,6 +227,13 @@ nokiaModel.getModelFields = function() {
 
   fields.port_mapping_values.protocol[1] = 'TCP';
   fields.port_mapping_values.remote_host[1] = '';
+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.'+
+    'X_ALU-COM_NeighboringWiFiDiagnostic';
+  fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';
+  fields.diagnostics.sitesurvey.signal = 'SignalStrength';
+  fields.diagnostics.sitesurvey.mode = 'OperatingStandards';
+
   return fields;
 };
 
