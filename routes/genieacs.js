@@ -11,8 +11,6 @@ router.route('/device/syn')
   .post(genieDeviceInfoController.syncDevice);
 router.route('/receive/diagnostic')
   .post(genieDeviceInfoController.requestDiagnosticsResults);
-router.route('/device/syncchanges')
-  .post(genieDeviceInfoController.syncDeviceChangedValues);
 router.route('/forceOfflineReconnect').post(
   authController.ensurePermission('grantFlashmanManage'),
   genieDeviceInfoController.forcePingOfflineDevices,

@@ -338,6 +338,9 @@ anlixDocumentReady.add(function() {
         $('#measure-server-port').val(resp.measureServerPort)
                                  .siblings('label').addClass('active');
       }
+      if (resp.measureNoLimit) {
+        $('#measure_no_limit').prop('checked', true).change();
+      }
       if (resp.pon_signal_threshold) {
         $('#pon-signal-threshold')
           .val(resp.pon_signal_threshold)

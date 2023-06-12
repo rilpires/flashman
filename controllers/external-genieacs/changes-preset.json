@@ -8,7 +8,7 @@
   "precondition": "",
   "configurations": [{
     "type": "provision",
-    "name": "changes",
-    "args": null
+    "name": "flashman",
+    "args": "CHANGE"
   }]
 }

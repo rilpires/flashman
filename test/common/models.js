@@ -142,6 +142,7 @@ models.defaultMockDevices = [
     connection_type: 'pppoe',
     pppoe_user: 'admin123',
     pppoe_password: '',
+    wan_chosen: 'wan_ppp_1_1_1',
     wan_vlan_id: 10,
     wan_mtu: 1492,
     wifi_ssid: 'ANLIX_WiFiber121AC',
@@ -425,6 +426,7 @@ models.defaultMockConfigs = [
     hasMajorUpdate: false,
     pppoePassLength: 1,
     measureServerPort: 25752,
+    measureNoLimit: false,
     auth_pubkey: `-----BEGIN PUBLIC KEY-----
       AAAAAAATESTESTESTESTETSTESTETSTESTETSE
       -----END PUBLIC KEY-----`,

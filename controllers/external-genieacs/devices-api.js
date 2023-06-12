@@ -46,10 +46,13 @@ const tr069Models = {
   greatekGwr300Model: require('./cpe-models/greatek-gwr300'),
   greatekGwr1200Model: require('./cpe-models/greatek-gwr1200'),
   greatekStavixModel: require('./cpe-models/greatek-stavix'),
+  huaweiEG8141A5Model: require('./cpe-models/huawei-eg8141a5'),
   huaweiEG8145V5Model: require('./cpe-models/huawei-eg8145v5'),
   huaweiEG8145X6Model: require('./cpe-models/huawei-eg8145x6'),
   huaweiHG8121HModel: require('./cpe-models/huawei-hg8121h'),
+  huaweiHG8145V5Model: require('./cpe-models/huawei-hg8145v5'),
   huaweiHG8245Q2Model: require('./cpe-models/huawei-hg8245q2'),
+  huaweiHS8145V5Model: require('./cpe-models/huawei-hs8145v5'),
   huaweiHS8546V5Model: require('./cpe-models/huawei-hs8546v5'),
   huaweiWS5200Model: require('./cpe-models/huawei-ws5200'),
   huaweiWS7001Model: require('./cpe-models/huawei-ws7001'),
@@ -62,6 +65,8 @@ const tr069Models = {
   intelbrasW51200GModel: require('./cpe-models/intelbras-w5-1200g'),
   intelbrasW4300FModel: require('./cpe-models/intelbras-w4-300f'),
   intelbrasRG1200Model: require('./cpe-models/intelbras-rg1200'),
+  intelbrasRX1500Model: require('./cpe-models/intelbras-rx1500'),
+  intelbrasAX1800Model: require('./cpe-models/intelbras-ax1800'),
   intelbrasWiFiberModel120AC: require('./cpe-models/intelbras-wifiber-120ac'),
   intelbrasWiFiberModel121AC: require('./cpe-models/intelbras-wifiber-121ac'),
   intelbrasWiFiber1200RModel: require('./cpe-models/intelbras-wifiber-1200r'),
@@ -84,6 +89,7 @@ const tr069Models = {
   nokiaG1425GAModel: require('./cpe-models/nokia-g1425ga'),
   nokiaG1425GBModel: require('./cpe-models/nokia-g1425gb'),
   nokiaG1426MAModel: require('./cpe-models/nokia-g1426ma'),
+  nokiaG1426MBModel: require('./cpe-models/nokia-g1426mb'),
   nokiaG2425Model: require('./cpe-models/nokia-g2425'),
   parksFiberlink501: require('./cpe-models/parks-fiberlink-501'),
   phyhomeP20Model: require('./cpe-models/phyhome-p20'),
@@ -248,6 +254,9 @@ const instantiateCPEByModel = function(
   } else if (['GONUAC001', 'GONUAC002'].includes(modelName)) {
     // Greatek Stavix
     result = {success: true, cpe: tr069Models.greatekStavixModel};
+  } else if (modelName === 'EG8141A5') {
+    // Huawei EG8141A5
+    result = {success: true, cpe: tr069Models.huaweiEG8141A5Model};
   } else if (['EG8145V5', 'EG8145V5-V2'].includes(modelName)) {
     // Huawei EG8145V5
     result = {success: true, cpe: tr069Models.huaweiEG8145V5Model};
@@ -257,9 +266,15 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'HG8121H') {
     // Huawei HG8121H
     result = {success: true, cpe: tr069Models.huaweiHG8121HModel};
+  } else if (modelName === 'HG8145V5') {
+    // Huawei HG8145V5
+    result = {success: true, cpe: tr069Models.huaweiHG8145V5Model};
   } else if (modelName === 'HG8245Q2') {
     // Huawei HG8245Q2
     result = {success: true, cpe: tr069Models.huaweiHG8245Q2Model};
+  } else if (modelName === 'HS8145V5') {
+    // Huawei HS8145V5
+    result = {success: true, cpe: tr069Models.huaweiHS8145V5Model};
   } else if (modelName === 'HS8546V5') {
     // Huawei HS8546V5
     result = {success: true, cpe: tr069Models.huaweiHS8546V5Model};
@@ -287,6 +302,12 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'ACtion RG1200' || modelName === 'Intelbras') {
     // Intelbras RG-1200
     result = {success: true, cpe: tr069Models.intelbrasRG1200Model};
+  } else if (modelSerial === 'RX1500') {
+    // Intelbras RX1500
+    result = {success: true, cpe: tr069Models.intelbrasRX1500Model};
+  } else if (modelName === 'AX1800') {
+    // Intelbras AX1800
+    result = {success: true, cpe: tr069Models.intelbrasAX1800Model};
   } else if (['W5-2100G', 'W5%2D2100G'].includes(modelSerial)) {
     // Intelbras W5-2100G
     result = {success: true, cpe: tr069Models.intelbrasW52100GModel};
@@ -367,6 +388,9 @@ const instantiateCPEByModel = function(
   } else if (modelName === 'G-1426-MA') {
     // Nokia G-1426-MA
     result = {success: true, cpe: tr069Models.nokiaG1426MAModel};
+  } else if (modelName === 'G-1426-MB') {
+    // Nokia G-1426-MB
+    result = {success: true, cpe: tr069Models.nokiaG1426MBModel};
   } else if (modelName === 'G-2425G-A') {
     // Nokia G-2425
     result = {success: true, cpe: tr069Models.nokiaG2425Model};
@@ -608,56 +632,368 @@ const syncDeviceDiagnostics = async function(args, callback) {
   callback(null, result);
 };
 
-
-/**
- * Calls Flashman to save parameters that got a notification in
- * GenieACS.
- *
- * @memberof controllers/external-genieacs/devices-api
- *
- * @param {String} args - The data and ACS ID as a JSON string.
- * @param {Function} callback - The function to be called when an error or
- * success occurs.
- *
- * @return {Any} The callback response.
- */
-const syncDeviceChanges = async function(args, callback) {
-  let params = null;
-
-  // Try parsing the data received
-  try {
-    params = JSON.parse(args[0]);
-  } catch (error) {
-    return callback(null, {
-      success: false,
-      message: 'Invalid JSON',
-    });
-  }
-
-  // Check params
-  if (!params || !params.data || !params.acs_id) {
-    return callback(null, {
-      success: false,
-      message: 'Incomplete arguments',
-    });
-  }
-
-  let result = await sendFlashmanRequest('device/syncchanges', params);
-  return callback(null, result);
+const convertIndexIntoWildcard = function(path) {
+  return path.split('.').map((part, i) => {
+    if (isNaN(parseInt(part))) {
+      return part;
+    } else {
+      return '*';
+    }
+  }).join('.');
 };
 
+const getFieldProperties = function(fields, path) {
+  let properties = [];
+  let pattern = convertIndexIntoWildcard(path);
+  for (let key of Object.keys(fields)) {
+    let prop = convertIndexIntoWildcard(fields[key]);
+    if (pattern === prop) {
+      properties.push(key);
+    }
+  }
+  return properties;
+};
+
+const extractIndexes = function(path, isTR181) {
+  // For TR-181 devices, only the first numeric key is used as a reference.
+  // For TR-098 devices, a maximum of the first three numeric keys are used as
+  // references. The surplus will be used to tag repeat properties later
+  const endIndex = isTR181 ? 1 : 3;
+  const keys = path.split('.').filter((key) => !isNaN(parseInt(key)))
+                .map((key) => parseInt(key, 10));
+  const indexes = keys.slice(0, endIndex);
+  const surplus = keys.slice(endIndex);
+  return [indexes, surplus];
+};
+
+const verifyIndexesMatch = function(keyIndexes, indexes) {
+  if (keyIndexes.length > indexes.length) {
+    keyIndexes = keyIndexes.slice(0, (indexes.length));
+  } else if (keyIndexes.length < indexes.length) {
+    return false;
+  }
+  return keyIndexes.every((k, i) => parseInt(k) === indexes[i]);
+};
+
+const extractLinkPath = function(path, addLowerLayer = false) {
+  const parts = path.split('.');
+  let linkPath = '';
+  for (let i = 0; i < parts.length; i++) {
+    const curr = parts[i];
+    // If is a number, add and break the loop, so only the first index is added
+    if (!isNaN(parseInt(curr))) {
+      linkPath += curr + ((addLowerLayer) ? '.LowerLayers' : '.');
+      break;
+    }
+    linkPath += curr + '.';
+  }
+  return linkPath;
+};
+
+const getObjValue = function(obj) {
+  return Array.isArray(obj.value) ? obj.value[0] : obj.value;
+};
+
+// Used by TR181 to find and get data
+const getValueData = function(data, path) {
+  for (let j = 0; j < data.length; j++) {
+    if (path === data[j].path) {
+      let value = getObjValue(data[j]);
+      return value;
+    }
+  }
+  return null;
+};
+
+const findPathLink = function(data, path, i, root) {
+  // Root is the start
+  // Path is the key we want to find
+
+  // We need to walk in LowerLayers to find the path
+  let connectionPath = path.replace('*', i);
+  let level = 0;
+  let searchpath = root;
+  // No more than 4 levels of recursion (avoid infinite loop)
+  while (level < 4) {
+    level++;
+    let link = searchpath+'LowerLayers';
+    searchpath = null;
+    for (let j = 0; j < data.length; j++) {
+      if (data[j].path === link) {
+        let value = getObjValue(data[j]);
+        // Link is empty (end of tree)
+        if (!value) return null;
+        if (value === connectionPath) {
+          return root;
+        } else {
+          searchpath = value;
+          break;
+        }
+      }
+    }
+    // link not found!
+    if (!searchpath) return null;
+  }
+  return null;
+};
+
+const wanKeySort = function(keys, isTR181) {
+  const result = [];
+
+  for (const [key, value] of Object.entries(keys)) {
+    const [, , ...indexes] = key.split('_');
+    result.push({key, value, indexes});
+  }
+
+  const sortKeys = (a, b) => {
+    // Sort keys according to their type for TR-181 (dhcp first, ppp second)
+    if (isTR181) {
+      if (a.key.includes('ip') && b.key.includes('ppp')) {
+        return -1;
+      } else if (a.key.includes('ppp') && b.key.includes('ip')) {
+        return 1;
+      }
+    }
+
+    // Compare indexes based on hierarchy
+    for (let i = 0; i < a.indexes.length; i++) {
+      const diff = a.indexes[i] - b.indexes[i];
+      if (diff !== 0) {
+        return diff;
+      }
+    }
+
+    // Elements have the same order and should remain in their current positions
+    return 0;
+  };
+
+  result.sort(sortKeys);
+
+  return Object.fromEntries(result.map(({key, value}) => [key, value]));
+};
+
+const wanKeyCriation = function(data, isTR181) {
+  let result = {};
+  for (let obj of data) {
+    let pathType = undefined;
+    let indexes = [];
+    if (isTR181) {
+      // TR-181 devices, it is necessary to filter the interfaces, because not
+      // all of them are WANs. To decide whether a path should generate a new
+      // key, we start from Device.IP.Interface
+      if (!obj.path.startsWith('Device.IP.Interface.')) continue;
+      if (obj.path.slice(-11) !== 'LowerLayers') continue;
+
+      // we have obj as Device.IP.Interface.*.LowerLayers
+      let value = getObjValue(obj);
+
+      // Link.1 is the LAN (need confirmation, all TR181
+      // homologated are this way)
+      if (value === 'Device.Ethernet.Link.1.') continue;
+
+      // We do not give support for USB devices (for now)
+      if (value.startsWith('Device.USB.')) continue;
+
+      // if this is a PPP iface, look if down is usb
+      if (value.startsWith('Device.PPP.')) {
+        let interfPath = getValueData(data, value+'LowerLayers');
+        if (interfPath && interfPath.startsWith('Device.USB.')) continue;
+      }
+
+      // This is a WAN
+      // Update indexes -- TR181 pathType is always ip
+      indexes = extractIndexes(obj.path, isTR181)[0];
+      pathType = 'ip';
+    } else {
+      if (obj.path.slice(-16) !== 'ConnectionStatus') continue;
+      if (obj.path.includes('WANPPPConnection')) {
+        pathType = 'ppp';
+      } else if (obj.path.includes('WANIPConnection')) {
+        pathType = 'ip';
+      } else continue;
+
+      // For TR-098 devices, key creation is straightforward
+      indexes = extractIndexes(obj.path, isTR181)[0];
+    }
+
+    if (!pathType) continue;
+    // Once we have the correct indexes, a new key is created
+    let key = 'wan_' + pathType + '_' + indexes.join('_');
+    let indexesHasCorrectSize = ((indexes.length === 3 && !isTR181) ||
+      (indexes.length === 1 && isTR181));
+    let pathHasCorrectType = (pathType === 'ppp' || pathType === 'ip');
+    if (indexes.length > 0 && !result[key] &&
+        indexesHasCorrectSize && pathHasCorrectType) {
+      result[key] = {};
+    }
+  }
+  return wanKeySort(result, isTR181);
+};
+
+const assembleWanObjProvision = function(args, callback) {
+  let params = JSON.parse(args[0]);
+  let result = assembleWanObj(params.data, params.fields, params.isTR181);
+  callback(null, result);
+};
+
+const assembleWanObj = function(data, fields, isTR181) {
+  let result = wanKeyCriation(data, isTR181);
+
+  for (let obj of data) {
+    let [indexes, surplus] = extractIndexes(obj.path, isTR181);
+
+    // Addition of obj to WANs: depending on the property's match, since there
+    // may be PPP-type properties associated with IP-type paths
+    let properties = getFieldProperties(fields, obj.path);
+    if (properties.length === 0) continue;
+
+    // Looks for the correct WAN: This depends on the prop match type and the
+    // path index
+    for (let prop of properties) {
+      let field = {};
+      if (surplus.length > 0) prop += '_' + surplus.join('_');
+      field[prop] = obj;
+
+      for (let key of Object.keys(result)) {
+        const keyIndexes = key.split('_').filter((key) => !isNaN(key));
+        // If the path does not have indexes, the same must be added on all WANs
+        if (indexes.length === 0) {
+          Object.assign(result[key], field);
+          continue;
+        }
+        // The TR-181 works with a stack of links to connect the trees. Whenever
+        // the type of the path is different from the type of the property, it
+        // means that we must disregard the current indices and look for the
+        // correct ones to insert the field
+
+        if (isTR181) {
+          let root = 'Device.IP.Interface.'+keyIndexes+'.';
+          let linkPath = extractLinkPath(obj.path);
+          let correctPath = undefined;
+          if (root === linkPath) {
+            // The obj path is the root, no need to search
+            correctPath = root;
+          } else {
+            // This can be highly optimized
+            // We search for in IP interfaces, but we can search for just one
+            correctPath = findPathLink(data, linkPath, indexes[0], root);
+          }
+          if (!correctPath) continue;
+
+          // Update indexes with correct path
+          indexes = extractIndexes(correctPath, isTR181)[0];
+        }
+        // If the flow reached this point, it means that we have a path with
+        // indixes and these must be an exact match of the key
+        if (verifyIndexesMatch(keyIndexes, indexes)) {
+          Object.assign(result[key], field);
+        }
+      }
+    }
+  }
+  return result;
+};
+
+const getWanNodesProvision = function(args, callback) {
+  let params = JSON.parse(args[0]);
+  let fields = params.fields;
+  let isTR181 = params.isTR181;
+  let result = getWanNodes(fields, isTR181, false);
+  callback(null, result);
+};
+
+// Return all the nodes that need to be retrieved from genie/CPE
+// update: true -> Retrieve from Genie
+//         false -> Retrieve from declare/provision or getParameters
+const getWanNodes = function(fields, isTR181, update) {
+  let nodes = [];
+  const hasWildcardKey = (str) => str.includes('*');
+  let wanFields = fields.wan;
+
+  Object.keys(wanFields).forEach((key) => {
+    let node;
+    if (!hasWildcardKey(wanFields[key])) {
+      // If the field does not have wildcards, it must not be changed
+      node = wanFields[key];
+    } else {
+      // Otherwise, the last substring is discarded and we add the string '.*'
+      // to update the entire parent node of the given field
+      let tmp = wanFields[key].split('.').slice(0, -1);
+      node = tmp.join('.');
+      if (!update) {
+        node += '.*';
+      }
+    }
+
+    if (node && !nodes.includes(node)) {
+      nodes.push(node);
+    }
+  });
+
+  // clean up TR181 fields
+  // Some devices do not map fields correctly
+  // (Device.WANDevice.1.WANConnectionDevic for exemple)
+  // Need to correct homologation, but we double check here
+  nodes = nodes.filter((value) => {
+      if (isTR181) {
+        return !value.startsWith('Device.WANDevice.');
+      }
+      return true;
+    });
+
+  let result;
+  if (update) {
+    let nodesWithNoWildcards = nodes
+      .map((node) => {
+        const wildcardIndex = node.indexOf('*');
+        if (wildcardIndex !== -1) {
+          return node.substring(0, wildcardIndex - 1);
+        } else {
+          return node;
+        }
+      });
+    let projection = [];
+    nodesWithNoWildcards.map((node, i) => {
+      let j = projection.findIndex((e) => {
+        return e === node || e.includes(node) || node.includes(e);
+      });
+      if (j === -1) {
+        projection.push(node);
+      } else {
+        let pNode = projection[j];
+        if (node.length < pNode.length) {
+          projection[j] = node;
+        }
+      }
+    });
+    result = projection.join(',');
+  } else {
+    result = nodes;
+  }
+  return result;
+};
 
 /**
  * @exports controllers/external-genieacs/devices-api
  */
-exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
-exports.instantiateCPEByModel = instantiateCPEByModel;
+
+// Used on provisions
 exports.getDeviceFields = getDeviceFields;
 exports.syncDeviceData = syncDeviceData;
 exports.syncDeviceDiagnostics = syncDeviceDiagnostics;
-exports.syncDeviceChanges = syncDeviceChanges;
+exports.assembleWanObjProvision = assembleWanObjProvision;
+exports.getWanNodesProvision = getWanNodesProvision;
+
+// Used by flashman
+exports.instantiateCPEByModelFromDevice = instantiateCPEByModelFromDevice;
+exports.instantiateCPEByModel = instantiateCPEByModel;
 exports.getTR069UpgradeableModels = getTR069UpgradeableModels;
 exports.getTR069CustomFactoryModels = getTR069CustomFactoryModels;
+exports.wanKeyCriation = wanKeyCriation;
+exports.assembleWanObj = assembleWanObj;
+exports.getWanNodes = getWanNodes;
+exports.getFieldProperties = getFieldProperties;
+exports.verifyIndexesMatch = verifyIndexesMatch;
 
 /*
  * This function is being exported in order to test it.
