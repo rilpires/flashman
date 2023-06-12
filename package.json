@@ -1,6 +1,6 @@
 {
   "name": "flashman",
-  "version": "romeutest",
+  "version": "2.74.4",
   "private": true,
   "scripts": {
     "dev": "webpack --watch --config webpack.dev.js",
@@ -15,9 +15,9 @@
   "updater": {
     "jsonHost": "raw.githubusercontent.com",
     "contentHost": "codeload.github.com",
-    "githubUser": "anlix-io",
+    "githubUser": "rilpires",
     "githubRepo": "flashman",
-    "githubBranch": "romeutest"
+    "githubBranch": "master"
   },
   "genieacs": {
     "ref": "fa95d7a310b7faaccf574d6de53e134558cdab69",
