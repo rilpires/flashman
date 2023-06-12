@@ -1,94 +1,26 @@
-
-const fs = require('fs');
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
 const favicon = require('serve-favicon');
 const logger = require('morgan');
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
-const schedule = require('node-schedule');
 const mongoose = require('mongoose');
 const passport = require('passport');
 const fileUpload = require('express-fileupload');
 const sio = require('./sio');
 const serveStatic = require('serve-static');
-const md5File = require('md5-file');
-const utilHandlers = require('./controllers/handlers/util');
 const session = require('express-session');
 const MongoStore = require('connect-mongo')(session);
-const TasksAPI = require('./controllers/external-genieacs/tasks-api');
+const locals = require('./locals');
 
-let updater = require('./controllers/update_flashman');
-let acsDeviceController = require('./controllers/acs_device_info');
-let userController = require('./controllers/user');
-let deviceUpdater = require('./controllers/update_scheduler');
-let Config = require('./models/config');
 let index = require('./routes/index');
 let packageJson = require('./package.json');
-const runMigrations = require('./migrations');
-const audit = require('./controllers/audit');
-const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
-const metricsMiddleware
-  = require('./controllers/handlers/metrics/express_metrics');
 
 let app = express();
 
-// Specify some variables available to all views
-app.locals.appVersion = packageJson.version;
-
-const MONGOHOST = (process.env.FLM_MONGODB_HOST || 'localhost');
-const MONGOPORT = (process.env.FLM_MONGODB_PORT || 27017);
-
-let instanceNumber = parseInt(process.env.NODE_APP_INSTANCE ||
-                              process.env.FLM_DOCKER_INSTANCE || 0);
-if (process.env.FLM_DOCKER_INSTANCE && instanceNumber > 0) {
-  instanceNumber = instanceNumber - 1; // Docker swarm starts counting at 1
-}
-
-const databaseName = process.env.FLM_DATABASE_NAME === undefined ?
-  'flashman' :
-  process.env.FLM_DATABASE_NAME;
-
-let mongoURI = 'mongodb://' + MONGOHOST + ':' + MONGOPORT + '/' + databaseName;
-if (process.env.MONGODB_USE_HA === true ||
-    process.env.MONGODB_USE_HA === 'true'
-) {
-  // FLM_MONGODB_HA_LIST format 'mongodb,mongoha_mongodb2,mongoha_mongodb3'
-  mongoURI = 'mongodb://' + process.env.FLM_MONGODB_HA_LIST +
-             '/' + databaseName + '?replicaSet=rs0';
-}
-
-const metricsPath = process.env.FLM_PROM_METRICS_PATH || '/metrics';
-
-mongoose.connect(
-  mongoURI,
-  {useNewUrlParser: true,
-   serverSelectionTimeoutMS: 2**31-1, // biggest positive signed int w/ 32 bits.
-   useUnifiedTopology: true,
-   useFindAndModify: false,
-   useCreateIndex: true,
-   maxPoolSize: 200,
-})
-.then((_)=>console.log(`Connected to Mongo database "${databaseName}"`
-                       + ` on "${MONGOHOST}:${MONGOPORT}"`))
-.catch((_)=>console.error(`Couldnt connect to Mongo database "${databaseName}"`
-                       + `on "${MONGOHOST}:${MONGOPORT}`));
-mongoose.set('useCreateIndex', true);
-
-// Release dir must exists
-if (!fs.existsSync(process.env.FLM_IMG_RELEASE_DIR) &&
-    process.env.FLM_IMG_RELEASE_DIR !== undefined
-) {
-  fs.mkdirSync(process.env.FLM_IMG_RELEASE_DIR);
-}
-
-// Temporary dir must exist
-if (!fs.existsSync('./tmp')) {
-  fs.mkdirSync('./tmp');
-}
-
 if (process.env.FLM_COMPANY_SECRET) {
-  app.locals.secret = process.env.FLM_COMPANY_SECRET;
+  locals.setSecret(process.env.FLM_COMPANY_SECRET);
 } else {
   // check secret file and load if available
   let companySecret = {};
@@ -102,45 +34,12 @@ if (process.env.FLM_COMPANY_SECRET) {
     } else if (err.code === 'EACCES') {
       console.log('Cannot open shared secret file!');
       companySecret['secret'] = '';
-    } else {
-      throw err;
     }
   }
-  app.locals.secret = companySecret.secret;
+  locals.setSecret(companySecret.secret);
 }
-// setting FlashAudit node client connection password.
-audit.init(app.locals.secret);
-
-// run db migrations
-runMigrations(app);
-
-// Check md5 file hashes on firmware directory
-if (instanceNumber === 0) {
-  fs.readdirSync(process.env.FLM_IMG_RELEASE_DIR).forEach((filename) => {
-    // File name pattern is VENDOR_MODEL_MODELVERSION_RELEASE.md5
-    let fnameSubStrings = filename.split('_');
-    let releaseSubStringRaw = fnameSubStrings[fnameSubStrings.length - 1];
-    let releaseSubStringsRaw = releaseSubStringRaw.split('.');
-    if (releaseSubStringsRaw[1] == 'md5') {
-      // Skip MD5 hash files
-      return;
-    } else if (releaseSubStringsRaw[1] == 'bin') {
-      const md5fname = '.' + filename.replace('.bin', '.md5');
-      const md5fpath = path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname);
-      const filePath = path.join(process.env.FLM_IMG_RELEASE_DIR, filename);
-      if (!fs.existsSync(md5fpath)) {
-        // Generate MD5 file
-        const md5Checksum = md5File.sync(filePath);
-        fs.writeFile(md5fpath, md5Checksum, function(err) {
-          if (err) {
-            console.log('Error generating MD5 hash file: ' + md5fpath);
-            throw err;
-          }
-        });
-      }
-    }
-  });
-}
+// Specify some variables available to all views
+locals.setAppVersion(packageJson.version);
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(bodyParser.json());
@@ -176,32 +75,25 @@ app.use('/firmwares',
   serveStatic(path.join(__dirname, 'public/firmwares'), {
     dotfiles: 'ignore',
     cacheControl: false,
-    setHeaders: setMd5Sum,
+    setHeaders: function setMd5Sum(res, filePath) {
+      let md5Checksum;
+      let pathElements = filePath.split('/');
+      let fname = pathElements[pathElements.length - 1];
+
+      const md5fname = '.' + fname.replace('.bin', '.md5');
+      try {
+        md5Checksum = fs.readFileSync(
+          path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname), 'utf8');
+        res.setHeader('X-Checksum-Md5', md5Checksum);
+      } catch (err) {
+        md5Checksum = '';
+        res.setHeader('X-Checksum-Md5', md5Checksum);
+      }
+    },
 }));
 
-/**
- * Generate MD5 hash for firmware files
- * @param {string} res Response to be modified
- * @param {string} filePath Path to file with MD5 sum pending
- */
-function setMd5Sum(res, filePath) {
-  let md5Checksum;
-  let pathElements = filePath.split('/');
-  let fname = pathElements[pathElements.length - 1];
-
-  const md5fname = '.' + fname.replace('.bin', '.md5');
-  try {
-    md5Checksum = fs.readFileSync(
-      path.join(process.env.FLM_IMG_RELEASE_DIR, md5fname), 'utf8');
-    res.setHeader('X-Checksum-Md5', md5Checksum);
-  } catch (err) {
-    md5Checksum = '';
-    res.setHeader('X-Checksum-Md5', md5Checksum);
-  }
-}
-
 let sessParam = session({
-  secret: app.locals.secret,
+  secret: locals.getSecret(),
   resave: false,
   saveUninitialized: false,
   cookie: {
@@ -215,6 +107,12 @@ sio.anlixBindSession(sessParam);
 app.use(passport.initialize());
 app.use(passport.session());
 app.use(fileUpload());
+
+
+const metricsAuth = require('./controllers/handlers/metrics/metrics_auth');
+const metricsMiddleware
+  = require('./controllers/handlers/metrics/express_metrics');
+const metricsPath = process.env.FLM_PROM_METRICS_PATH || '/metrics';
 if (metricsPath && process.env.FLM_PROM_METRICS=='true') {
   if (process.env.FLM_PROM_METRICS_BASIC_AUTH) {
     app.use(metricsPath, metricsAuth);
@@ -225,7 +123,6 @@ if (metricsPath && process.env.FLM_PROM_METRICS=='true') {
     res.send('# Metrics not enabled\nup 1');
   });
 }
-
 
 app.use('/', index);
 
@@ -259,90 +156,4 @@ app.use(function(err, req, res, next) {
   }
 });
 
-// Check device update schedule, if active must re-initialize
-if (instanceNumber === 0) {
-  Config.findOne({is_default: true}, function(err, matchedConfig) {
-    if (err || !matchedConfig || !matchedConfig.device_update_schedule) return;
-    // Do nothing if no active schedule
-    if (!matchedConfig.device_update_schedule.is_active) return;
-    deviceUpdater.recoverFromOffline(matchedConfig);
-  }).lean();
-}
-
-if (instanceNumber === 0 && (
-    typeof process.env.FLM_SCHEDULER_ACTIVE === 'undefined' ||
-    (process.env.FLM_SCHEDULER_ACTIVE === 'true' ||
-     process.env.FLM_SCHEDULER_ACTIVE === true))
-) {
-  let schedulePort = 3000;
-  if (typeof process.env.FLM_SCHEDULE_PORT !== 'undefined') {
-    schedulePort = process.env.FLM_SCHEDULE_PORT;
-  }
-  app.listen(parseInt(schedulePort), function() {
-    // Runs every day at 20:00 - automatic update
-    let late8pmRule = new schedule.RecurrenceRule();
-    late8pmRule.hour = 20;
-    late8pmRule.minute = 0;
-    schedule.scheduleJob(late8pmRule, function() {
-      updater.update();
-    });
-
-    // Runs every day at 00:00 - sync data with anlix control
-    let midnightRule = new schedule.RecurrenceRule();
-    midnightRule.hour = 0;
-    midnightRule.minute = utilHandlers.getRandomInt(10, 50);
-    schedule.scheduleJob(midnightRule, function() {
-      // Schedule license report
-      acsDeviceController.reportOnuDevices(app);
-      userController.checkAccountIsBlocked(app);
-      updater.updateAppPersonalization(app);
-      updater.updateLicenseApiSecret(app);
-    });
-
-    // Runs every day at 04:00 - contact offline TR069 devices
-    let early4amRule = new schedule.RecurrenceRule();
-    early4amRule.hour = 4;
-    early4amRule.minute = 0;
-    schedule.scheduleJob(early4amRule, function() {
-      // Issue a command to offline ONUs to try and fix exp. backoff bug
-      // This is only relevant for a few ONU models, and currently this is
-      // out best fix available...
-      acsDeviceController.pingOfflineDevices();
-    });
-
-    // Runs every day at 05:00 - clean up tasks in genieacs database
-    let early5amRule = new schedule.RecurrenceRule();
-    early5amRule.hour = 5;
-    early5amRule.minute = 0;
-    schedule.scheduleJob(early5amRule, function() {
-      // After issuing a command to offline ONUs to try and fix exp. backoff bug
-      // its necessary to clean tasks that will not be effective. Lots of
-      // tasks generated a great mongoDB CPU overhead
-      TasksAPI.deleteGetParamTasks();
-    });
-
-    /* Routines to execute on each startup/reload of main flashman proccess */
-    acsDeviceController.reportOnuDevices(app);
-    userController.checkAccountIsBlocked(app);
-    updater.updateAppPersonalization(app);
-    updater.updateLicenseApiSecret(app);
-    updater.updateApiUserLogin(app);
-    // Only used at scenarios where Flashman was installed directly on a host
-    // Undefined - Covers legacy host install cases
-    if (typeof process.env.FLM_IS_A_DOCKER_RUN === 'undefined' ||
-        process.env.FLM_IS_A_DOCKER_RUN.toString() !== 'true') {
-      // Restart TR-069 services whenever Flashman is restarted
-      if (typeof process.env.FLM_CWMP_CALLBACK_INSTANCES !== 'undefined') {
-        updater.rebootGenie(process.env.FLM_CWMP_CALLBACK_INSTANCES);
-      } else {
-        updater.rebootGenie(process.env.instances);
-      }
-    } else {
-      updater.updateProvisionsPresets();
-    }
-    // Force an update check to alert user on app startup
-    updater.checkUpdate();
-  });
-}
-
-module.exports = app;
+module.exports.app = app;

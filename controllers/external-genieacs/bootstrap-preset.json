@@ -9,6 +9,6 @@
     "configurations": [{
         "type": "provision",
         "name": "flashman",
-        "args": null
+        "args": "BOOTSTRAP"
     }]
 }

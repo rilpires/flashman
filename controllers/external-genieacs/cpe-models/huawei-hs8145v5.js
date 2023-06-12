@@ -2,9 +2,9 @@ const basicCPEModel = require('./base-model');
 
 let huaweiModel = Object.assign({}, basicCPEModel);
 
-huaweiModel.identifier = {vendor: 'Huawei', model: 'HS8145V5'};
+huaweiModel.identifier = { vendor: 'Huawei', model: 'HS8145V5' };
 
-huaweiModel.modelPermissions = function() {
+huaweiModel.modelPermissions = function () {
   let permissions = basicCPEModel.modelPermissions();
   permissions.features.pingTest = true;
   permissions.features.speedTest = true;
@@ -46,14 +46,14 @@ huaweiModel.modelPermissions = function() {
   return permissions;
 };
 
-huaweiModel.getFieldType = function(masterKey, key) {
+huaweiModel.getFieldType = function (masterKey, key) {
   if ((masterKey === 'wifi2' || masterKey === 'wifi5') && key === 'band') {
     return 'xsd:unsignedInt';
   }
   return basicCPEModel.getFieldType(masterKey, key);
 };
 
-huaweiModel.convertWifiMode = function(mode) {
+huaweiModel.convertWifiMode = function (mode) {
   switch (mode) {
     case '11g':
       return '11bg';
@@ -69,7 +69,7 @@ huaweiModel.convertWifiMode = function(mode) {
   }
 };
 
-huaweiModel.convertWifiBand = function(band, is5ghz=false) {
+huaweiModel.convertWifiBand = function (band, is5ghz = false) {
   switch (band) {
     case 'HT20':
     case 'VHT20':
@@ -86,7 +86,7 @@ huaweiModel.convertWifiBand = function(band, is5ghz=false) {
   }
 };
 
-huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
+huaweiModel.convertWifiBandToFlashman = function (band, isAC) {
   switch (band) {
     // String input
     case '0':
@@ -102,15 +102,15 @@ huaweiModel.convertWifiBandToFlashman = function(band, isAC) {
   }
 };
 
-huaweiModel.convertWanRate = function(rate) {
+huaweiModel.convertWanRate = function (rate) {
   return rate / 1000000;
 };
 
-huaweiModel.getBeaconType = function() {
+huaweiModel.getBeaconType = function () {
   return 'WPAand11i';
 };
 
-huaweiModel.getModelFields = function() {
+huaweiModel.getModelFields = function () {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.UserInterface.' +
     'X_HW_WebUserInfo.2.UserName';
@@ -126,12 +126,17 @@ huaweiModel.getModelFields = function() {
     'X_GponInterafceConfig.RXPower';
   fields.wan.pon_txpower = 'InternetGatewayDevice.WANDevice.1.' +
     'X_GponInterafceConfig.TXPower';
-  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.'+
+  fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
-  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.'+
+  fields.wan.vlan_ppp = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
+  // format lines in 80 chars
+  fields.wan.service_type = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_SERVICELIST';
+  fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_SERVICELIST';
 
-// IPv6
+  // IPv6
   // Address
   fields.ipv6.address = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Address.*.' +
@@ -150,16 +155,16 @@ huaweiModel.getModelFields = function() {
 
   // IPv6 Prefix Delegation
   // Address
-  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.'+
+  fields.ipv6.prefix_delegation_address = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
-  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice'+
+  fields.ipv6.prefix_delegation_address_ppp = 'InternetGatewayDevice.WANDevice' +
     '.1.WANConnectionDevice.*.WANPPPConnection.*.X_HW_IPv6.IPv6Prefix.*.Prefix';
 
   // Local Address
-  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice'+
+  fields.ipv6.prefix_delegation_local_address = 'InternetGatewayDevice' +
     '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
     'Prefix';
-  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice'+
+  fields.ipv6.prefix_delegation_local_address_ppp = 'InternetGatewayDevice' +
     '.LANDevice.1.LANHostConfigManagement.X_HW_IPv6Interface.*.IPv6Prefix.*.' +
     'Prefix';
 
@@ -189,7 +194,7 @@ huaweiModel.getModelFields = function() {
   delete fields.diagnostics.speedtest.num_of_conn;
   fields.wifi2.band = fields.wifi2.band.replace(/BandWidth/g, 'X_HW_HT20');
   fields.wifi5.band = fields.wifi5.band.replace(/BandWidth/g, 'X_HW_HT20');
-  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice'+
+  fields.diagnostics.sitesurvey.root = 'InternetGatewayDevice.LANDevice' +
     '.1.WiFi.NeighboringWiFiDiagnostic';
   fields.diagnostics.sitesurvey.signal = 'SignalStrength';
   fields.diagnostics.sitesurvey.band = 'OperatingChannelBandwidth';

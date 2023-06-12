@@ -1,3 +1,4 @@
+const locals = require('../locals');
 const FlashAudit = require('@anlix-io/flashaudit-node-client');
 const Mongoose = require('mongoose');
 const Validator = require('../public/javascripts/device_validator');
@@ -201,7 +202,7 @@ let hasInitialized = false;
 
 // check initializes configs based on environment variables received an entry
 controller.init = async function(
-  secret, waitPromises=waitPromisesForNetworking, db,
+  waitPromises=waitPromisesForNetworking, db,
 ) {
   if (turnedOff) return;
 
@@ -221,7 +222,7 @@ controller.init = async function(
     product,
     serverBrokers,
     sslEnabled: !isEnvTrue(process.env.KAFKA_SSL_DISABLED),
-    auth: {username: client, password: secret},
+    auth: {username: client, password: locals.getSecret()},
     runtimeValidation: false,
   });
 

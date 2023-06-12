@@ -1,9 +1,11 @@
+/* eslint-disable no-async-promise-executor */
 
 /* global __line */
 
 const request = require('request-promise-native');
 const keyHandlers = require('../handlers/keys');
 const t = require('../language').i18next.t;
+const locals = require('../../locals');
 
 let Config = require('../../models/config');
 
@@ -14,7 +16,7 @@ if (process.env.production === 'true' || process.env.production === true) {
 
 const controlController = {};
 
-controlController.checkPubKey = async function(app) {
+controlController.checkPubKey = async function() {
   let newConfig = new Config({
     is_default: true,
     autoUpdate: true,
@@ -34,63 +36,79 @@ controlController.checkPubKey = async function(app) {
       // Generate key pair
       await keyHandlers.generateAuthKeyPair();
       // Send public key to be included in firmwares
-      await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
+      await keyHandlers.sendPublicKey(pubKeyUrl, locals.getSecret());
     } else {
       // Check flashman key pair existence and generate it otherwise
       if (matchedConfig.auth_privkey === '') {
         await keyHandlers.generateAuthKeyPair();
         // Send public key to be included in firmwares
-        await keyHandlers.sendPublicKey(pubKeyUrl, app.locals.secret);
+        await keyHandlers.sendPublicKey(pubKeyUrl, locals.getSecret());
       }
     }
   } catch (err) {
-    console.error('Error retrieving Config collection from DB');
+    if (err) console.error(err);
+    // We only consider it as an error if it is production
+    if (['true', true, 1].includes(process.env.production)) {
+      throw err;
+    }
   }
 };
 
-controlController.getMessageConfig = async function(app) {
-  let matchedConfig = null;
-
-  try {
-    matchedConfig = await Config.findOne({is_default: true},
-                                         {messaging_configs: true});
-    if (!matchedConfig) {
-      console.error('Error obtaining message config');
-      return;
+controlController.getMessageConfig = function() {
+  return new Promise( async (resolve, reject) => {
+    // We only consider it as an error if it is production, or else
+    // all our not-production servers will not pass pre-initialization
+    let onError = function(msg) {
+      if (['true', true, 1].includes(process.env.production)) {
+        if (msg) console.error(msg);
+        return resolve();
+      } else {
+        console.log('Unable to getMessageConfig from control '
+          + 'but proceding because !env.production');
+        return resolve();
+      }
+    };
+    let matchedConfig = null;
+    try {
+      matchedConfig = await Config.findOne({is_default: true},
+                                          {messaging_configs: true});
+      if (!matchedConfig) return resolve();
+    } catch (err) {
+      matchedConfig = null;
+      return onError('Error obtaining message config');
     }
-  } catch (err) {
-    console.error('Error obtaining message config');
-  }
-
-  return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/message/config',
       method: 'POST',
       json: {
-        secret: app.locals.secret,
+        secret: locals.getSecret(),
       },
-    }).then((resp) => {
+    }).then(async (resp) => {
       if (resp && resp.token && resp.fqdn) {
+        console.log('Obtained message config successfully!');
         matchedConfig.messaging_configs.secret_token = resp.token;
         matchedConfig.messaging_configs.functions_fqdn = resp.fqdn;
-        matchedConfig.save().catch((err) => {
-          console.log('Error saving first Config');
+        await matchedConfig.save()
+        .then(resolve)
+        .catch((_) => {
+          return onError('Error saving message config');
         });
-        console.log('Obtained message config successfully!');
+      } else {
+        onError('Invalid response from control about message config');
       }
     }, (err) => {
-      console.error('Error obtaining message config');
+      onError('Error obtaining message config from control');
     });
   });
 };
 
-controlController.getLicenseStatus = function(app, deviceId) {
+controlController.getLicenseStatus = function(deviceId) {
   return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/device/list',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
         'all': false,
         'mac': deviceId,
       },
@@ -108,7 +126,7 @@ controlController.getLicenseStatus = function(app, deviceId) {
   });
 };
 
-controlController.changeLicenseStatus = function(app, blockStatus, devices) {
+controlController.changeLicenseStatus = function(blockStatus, devices) {
   if (!Array.isArray(devices)) {
     return {success: false,
             message: t('jsonInvalidFormat', {errorline: __line})};
@@ -119,7 +137,7 @@ controlController.changeLicenseStatus = function(app, blockStatus, devices) {
       url: controlApiAddr + '/device/block',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
         'block': newBlockStatus,
         'ids': devices,
       },
@@ -154,6 +172,7 @@ controlController.authUser = function(name, password) {
   });
 };
 
+// Can we delete this function? not called anywhere
 controlController.sendTokenControl = function(req, token) {
   return request({
     url: controlApiAddr + '/measure/token',
@@ -167,13 +186,13 @@ controlController.sendTokenControl = function(req, token) {
   );
 };
 
-controlController.isAccountBlocked = function(app) {
+controlController.isAccountBlocked = function() {
   return new Promise((resolve, reject) => {
     request({
       url: controlApiAddr + '/user/blocked',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
       },
       timeout: 20000,
     }).then((res) => {
@@ -189,7 +208,7 @@ controlController.isAccountBlocked = function(app) {
   });
 };
 
-controlController.reportDevices = function(app, devicesArray) {
+controlController.reportDevices = function(devicesArray) {
   let stdDevicesArray = [];
   for (let i = 0; i < devicesArray.length; i++) {
     stdDevicesArray[i] = {
@@ -203,7 +222,7 @@ controlController.reportDevices = function(app, devicesArray) {
       url: controlApiAddr + '/device/report',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
         'devices': stdDevicesArray,
       },
       timeout: 20000,
@@ -221,13 +240,13 @@ controlController.reportDevices = function(app, devicesArray) {
   });
 };
 
-controlController.getPersonalizationHash = function(app) {
+controlController.getPersonalizationHash = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/appinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {
@@ -246,13 +265,13 @@ controlController.getPersonalizationHash = function(app) {
   });
 };
 
-controlController.getLicenseApiSecret = function(app) {
+controlController.getLicenseApiSecret = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/apiinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {
@@ -311,13 +330,13 @@ controlController.meshLicenseCredit = async function(slaveId) {
   });
 };
 
-controlController.getApiUserLogin = function(app) {
+controlController.getApiUserLogin = function() {
   return new Promise((resolve) => {
     request({
       url: controlApiAddr + '/user/flashmanapiinfo',
       method: 'POST',
       json: {
-        'secret': app.locals.secret,
+        'secret': locals.getSecret(),
       },
     }).then((res) => {
       if (res.success) {

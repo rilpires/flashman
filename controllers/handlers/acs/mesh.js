@@ -258,7 +258,7 @@ acsMeshDeviceHandler.getMeshBSSIDFromGenie = async function(device, meshMode) {
   };
 };
 
-acsMeshDeviceHandler.getMeshBSSIDs = async function(cpe, mac) {
+acsMeshDeviceHandler.getMeshBSSIDs = function(cpe, mac) {
   let meshBSSIDs = {mesh2: '', mesh5: ''};
   let permissions = cpe.modelPermissions();
   if (

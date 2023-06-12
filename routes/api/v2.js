@@ -4,6 +4,7 @@ const express = require('express');
 const deviceListController = require('../../controllers/device_list');
 const userController = require('../../controllers/user');
 const authController = require('../../controllers/auth');
+const locals = require('../../locals');
 
 let router = express.Router();
 
@@ -13,7 +14,7 @@ let router = express.Router();
 
 router.route('/health')
   .get((req, res) => res.json({
-    version: req.app.locals.appVersion,
+    version: locals.appVersion,
     uptime: process.uptime(),
   }));
 

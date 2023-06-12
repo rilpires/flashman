@@ -169,10 +169,10 @@ const updateGenieACS = function(upgrades) {
 };
 
 updateController.updateProvisionsPresets = async function() {
+  console.log('Updating genieACS provisions and presets');
   const presets = [
     {type: 'provision', path: 'provision', name: 'flashman'},
     {type: 'provision', path: 'diagnostic-provision', name: 'diagnostic'},
-    {type: 'provision', path: 'changes-provision', name: 'changes'},
     {type: 'preset', path: 'bootstrap-preset'},
     {type: 'preset', path: 'boot-preset'},
     {type: 'preset', path: 'periodic-preset'},
@@ -194,7 +194,7 @@ updateController.updateProvisionsPresets = async function() {
     let fileType = '';
     let isJSON = false;
     let func = null;
-    let logText = '';
+    // let logText = '';
 
 
     // Provision
@@ -203,7 +203,7 @@ updateController.updateProvisionsPresets = async function() {
       fileType = '.js';
       isJSON = false;
       func = tasksApi.putProvision;
-      logText = 'Updating Genie provision: ' + presetPath + '...';
+      // logText = 'Updating Genie provision: ' + presetPath + '...';
 
     // Preset
     } else if (presetType === 'preset') {
@@ -211,7 +211,7 @@ updateController.updateProvisionsPresets = async function() {
       fileType = '.json';
       isJSON = true;
       func = tasksApi.putPreset;
-      logText = 'Updating Genie preset: ' + presetPath + '...';
+      // logText = 'Updating Genie preset: ' + presetPath + '...';
 
     // Delete
     } else if (presetType === 'delete') {
@@ -219,7 +219,7 @@ updateController.updateProvisionsPresets = async function() {
       fileType = '';
       isJSON = false;
       func = tasksApi.deletePreset;
-      logText = 'Removing Genie preset: ' + presetPath + '...';
+      // logText = 'Removing Genie preset: ' + presetPath + '...';
     }
 
 
@@ -237,7 +237,7 @@ updateController.updateProvisionsPresets = async function() {
         if (isJSON) preset = JSON.parse(preset);
       }
 
-      console.log(logText);
+      // console.log(logText);
       // Only call func if is valid, otherwise return reject
       promise = (func ? func(
         // If is delete type, use the presetPath, otherwise use the
@@ -284,6 +284,9 @@ updateController.updateProvisionsPresets = async function() {
       presetsDone +
       ' GenieACS presets and provisions were updated successfully!',
     );
+  } else {
+    console.error(`${presetCount - presetsDone} GenieACS presets and/or `
+    + `provisions couldn't be updated. This can lead to malfunctioning.`);
   }
 };
 
@@ -358,46 +361,66 @@ const startInsecureGenieACS = function() {
   exec('pm2 start genieacs-cwmp-http');
 };
 
-updateController.rebootGenie = function(instances) {
-  // Treat bugged case where pm2 may fail to provide the number of instances
-  // correctly - it may be 0 or undefined, and we must then rely on both the
-  // envitonment.config.json file and nproc to tell us how many flashman
-  // instances there are
-  Config.findOne({is_default: true}).then((config)=>{
-    exec('nproc', (err, stdout, stderr)=>{
-      instances = parseInt(instances);
-      if (isNaN(instances)) {
-        instances = parseInt(localEnvironmentJson.apps[0].instances);
-        if (isNaN(instances)) {
-          instances = parseInt(stdout.trim()); // remove trailing newline
-        }
-      }
-      // If somehow is still NaN, replace with 1 as a fallback
-      if (isNaN(instances)) {
-        instances = '1';
-      } else {
-        instances = instances.toString(); // Merely for type safety
-      }
-      // We do a stop/start instead of restart to avoid racing conditions when
-      // genie's worker processes are killed and then respawned - this prevents
-      // issues with CPEs connections since exceptions lead to buggy exp.backoff
-      let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
-      exec(pm2Command, async (err, stdout, stderr)=>{
-        // Replace genieacs instances config with what flashman gives us
-        let replace = 'const INSTANCES_COUNT = .*;';
-        let newText = 'const INSTANCES_COUNT = ' + instances + ';';
-        let sedExpr = 's/' + replace + '/' + newText + '/';
-        let targetFile = 'controllers/external-genieacs/devices-api.js';
-        let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+// Treat bugged case where pm2 may fail to provide the number of instances
+// correctly - it may be 0 or undefined, and we must then rely on both the
+// envitonment.config.json file and nproc to tell us how many flashman
+// instances there are
+updateController.rebootGenie = async function() {
+  let config = await Config.findOne({is_default: true});
+  if (!config) throw new Error('Config not found');
 
-        // Update genieACS provisions and presets
-        console.log('Updating genieACS provisions and presets');
-        await updateController.updateProvisionsPresets();
+  // First case: env.FLM_CWMP_CALLBACK_INSTANCES
+  let instances = parseInt(process.env.FLM_CWMP_CALLBACK_INSTANCES);
 
-        exec(sedCommand, (err, stdout, stderr)=>{
-          exec('pm2 start genieacs-cwmp');
+  // Second case: env.instances
+  if (isNaN(instances)) {
+    instances = parseInt(process.env.instances);
+  }
+
+  // Third case: instances from environment.config.json
+  if (isNaN(instances)) {
+    instances = parseInt(localEnvironmentJson.apps[0].instances);
+  }
+
+  // Fourth case: Calling nproc
+  if (isNaN(instances)) {
+    instances = await new Promise((resolve, reject)=>{
+      exec('nproc', (err, stdout, stderr)=>{
+        resolve(parseInt(stdout.trim())); // remove trailing newline
+      });
+    });
+  }
+
+  // If somehow is still NaN, replace with 1 as a fallback
+  if (isNaN(instances)) {
+    instances = 1;
+  }
+
+
+  // eslint-disable-next-line no-async-promise-executor
+  return new Promise( async (resolve, reject)=> {
+    // Cascading sequence of execs on a promise
+    // We do a stop/start instead of restart to avoid racing conditions when
+    // genie's worker processes are killed and then respawned - this prevents
+    // issues with CPEs connections since exceptions lead to buggy exp.backoff
+    // Replace genieacs instances config with what flashman gives us
+    let pm2Command = 'pm2 stop genieacs-cwmp genieacs-cwmp-http';
+    let replace = 'const INSTANCES_COUNT = .*;';
+    let newText = 'const INSTANCES_COUNT = ' + instances.toString() + ';';
+    let sedExpr = 's/' + replace + '/' + newText + '/';
+    let targetFile = 'controllers/external-genieacs/devices-api.js';
+    let sedCommand = 'sed -i \'' + sedExpr + '\' ' + targetFile;
+
+
+    exec(pm2Command, async (err, stdout, stderr)=>{
+      exec(sedCommand, (err, stdout, stderr)=>{
+        exec('pm2 start genieacs-cwmp', (err, stdout, stderr)=>{
           if (config && config.tr069.insecure_enable) {
-            exec('pm2 start genieacs-cwmp-http');
+            exec('pm2 start genieacs-cwmp-http', (err, stdout, stderr)=>{
+              resolve();
+            });
+          } else {
+            resolve();
           }
         });
       });
@@ -1108,8 +1131,8 @@ updateController.setAutoConfig = async function(req, res) {
   }
 };
 
-updateController.updateAppPersonalization = async function(app) {
-  let controlReq = await controlApi.getPersonalizationHash(app);
+updateController.updateAppPersonalization = async function() {
+  let controlReq = await controlApi.getPersonalizationHash();
   if (controlReq.success == true) {
     let hash = controlReq.personalizationHash;
     let android = controlReq.androidLink;
@@ -1131,12 +1154,12 @@ updateController.updateAppPersonalization = async function(app) {
       });
     });
   } else {
-    console.log('App personalization hash update error');
+    console.error('App personalization hash update error');
   }
 };
 
-updateController.updateLicenseApiSecret = async function(app) {
-  let controlReq = await controlApi.getLicenseApiSecret(app);
+updateController.updateLicenseApiSecret = async function() {
+  let controlReq = await controlApi.getLicenseApiSecret();
   if (controlReq.success == true) {
     const licenseApiSecret = controlReq.apiSecret;
     const company = controlReq.company;
@@ -1156,12 +1179,12 @@ updateController.updateLicenseApiSecret = async function(app) {
       });
     });
   } else {
-    console.log('License API secret update error');
+    console.error('License API secret update error');
   }
 };
 
-updateController.updateApiUserLogin = async function(app) {
-  let controlReq = await controlApi.getApiUserLogin(app);
+updateController.updateApiUserLogin = async function() {
+  let controlReq = await controlApi.getApiUserLogin();
   if (controlReq.success == true) {
     const apiUser = controlReq.apiUser;
     const apiPass = controlReq.apiPass;
@@ -1187,7 +1210,7 @@ updateController.updateApiUserLogin = async function(app) {
       }
     }
   } else {
-    console.log('API user login update error: ' + controlReq.message);
+    console.error('API user login update error: ' + controlReq.message);
   }
 };
 

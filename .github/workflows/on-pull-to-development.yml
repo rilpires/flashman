@@ -36,6 +36,7 @@ jobs:
         uses: supercharge/mongodb-github-action@1.8.0
         with:
           mongodb-version: ${{ matrix.mongodb-version }}
+          mongodb-replica-set: rs0
           mongodb-db: flashman
       
       - name: Setting up genieacs
@@ -57,6 +58,7 @@ jobs:
           set +a
           echo Running node version: "$(node --version)"
           node ./bin/www &
+          sleep 5
 
       - name: Run Blackbox tests
         run: npm run bb-test

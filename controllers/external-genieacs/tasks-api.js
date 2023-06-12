@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 /* global __line */
 /*
 Set of functions that will handle the communication from flashman to genieacs
@@ -41,30 +42,37 @@ let genie = {}; // to be exported.
 // starting a connection to MongoDB so we can start a change stream to the
 // tasks collection when necessary.
 let genieDB;
-if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
-  mongodb.MongoClient.connect(mongoURI,
-    {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
-    genieDB = client.db('genieacs');
-    // Only watch faults if flashman instance is the first one dispatched
-    if (parseInt(instanceNumber) === 0) {
-      console.log('Watching for faults in GenieACS database');
-      watchGenieFaults(); // start watcher for genie faults.
-    }
-    // Always watch for tasks associated with this instance
-    watchGenieTasks();
-    // Always clean old Get Parameters Tasks. This improves performance
-    genie.deleteGetParamTasks();
-    /* we should never close connection to database. it will be close when
-     application stops. */
+
+genie.configureTaskApiWatcher = function() {
+  return new Promise((resolve, reject)=>{
+    mongodb.MongoClient.connect(mongoURI,
+      {useUnifiedTopology: true, maxPoolSize: 100000}).then(async (client) => {
+        try {
+          genieDB = client.db('genieacs');
+          // Only watch faults if flashman instance is the first one dispatched
+          if (parseInt(instanceNumber) === 0) {
+            await watchGenieFaults(); // start watcher for genie faults.
+          }
+          // Always watch for tasks associated with this instance
+          await watchGenieTasks();
+          // Always clean old Get Parameters Tasks. This improves performance
+          await genie.deleteGetParamTasks();
+          /* we should never close connection to database. it will be close when
+           application stops. */
+          resolve();
+        } catch (err) {
+          reject(err);
+        }
+    });
   });
-}
+};
+
 
 const watchGenieTasks = async function() {
   let tasksCollection = genieDB.collection('tasks');
   let changeStream = tasksCollection.watch([
     {$match: {'operationType': 'delete'}},
   ]);
-  changeStream.on('error', (e)=>console.log('Error in genieacs tasks stream'));
   changeStream.on('change', (change)=>{
     let taskID = change.documentKey['_id'];
     if (taskID && taskID in taskWatchlist) {
@@ -84,6 +92,25 @@ const watchGenieTasks = async function() {
         }
       });
     }
+  });
+  return new Promise((resolve, reject)=>{
+    // mongodb's ChangeStream class doesnt expose any "init" event.
+    // So we are awaiting one second to without error to consider it ok
+    let timer = setTimeout(()=>{
+      console.log('Watching for faults in GenieACS database');
+      resolve();
+    }, 1000);
+    changeStream.on('error', (e) => {
+      if (e.code==40573) {
+        console.error('Replica set is not enabled on genieacs database');
+      } else {
+        console.error(
+          'Error in watching genieacs faults collection change stream:\n', e,
+        );
+      }
+      clearTimeout(timer);
+      reject(e);
+    });
   });
 };
 
@@ -118,10 +145,6 @@ const watchGenieFaults = async function() {
   let changeStream = faultsCollection.watch([
     {$match: {'operationType': 'insert'}}, // listening for 'insert' events.
   ]);
-  changeStream.on('error', (e) => {
-    console.log('Error in genieacs faults collection change stream.');
-    console.log(e);
-  });
   changeStream.on('change', async (change) => { // for each inserted document.
     let doc = change.fullDocument;
     console.log('WARNING: genieacs created a fault'+(doc.device ?
@@ -155,6 +178,23 @@ const watchGenieFaults = async function() {
       errorMsg += JSON.stringify(doc);
     }
     await createNotificationForDevice(errorMsg, doc.device, doc);
+  });
+  return new Promise((resolve, reject)=>{
+    let timer = setTimeout(()=>{
+      console.log('Watching for faults in GenieACS database');
+      resolve();
+    }, 1000);
+    changeStream.on('error', (e) => {
+      if (e.code==40573) {
+        console.error('Replica set is not enabled on genieacs database');
+      } else {
+        console.error(
+          'Error in watching genieacs faults collection change stream:\n', e,
+        );
+      }
+      clearTimeout(timer);
+      reject(e);
+    });
   });
 };
 
@@ -226,7 +266,7 @@ genie.deleteGetParamTasks = async function() {
       {name: 'getParameterValues'});
     console.log('Number of deleted Get tasks: ' + ret.deletedCount);
   } catch (err) {
-    console.log('Error deleting Get parameters tasks: ' + err);
+    console.error('Error deleting Get parameters tasks:', err);
   }
 };
 
@@ -671,7 +711,8 @@ const sendTasks = async function(
       return {success: true, executed: !requestConn, message: 'task scheduled'};
     } else {
       // something went wrong, log error and return
-      console.log('Error adding task to GenieACS: ' + response.data);
+      console.log(`Error adding task to GenieACS `+
+        `(${deviceid}): ${response.data}`);
       return {success: false, message: 'error in genie response'};
     }
   }

@@ -1658,7 +1658,7 @@ deviceListController.delDeviceAndBlockLicense = async function(req, res) {
     }
     // Move on to blocking the licenses
     let retObj =
-      await controlApi.changeLicenseStatus(req.app, true, delRetObj.removedIds);
+      await controlApi.changeLicenseStatus(true, delRetObj.removedIds);
     if (!retObj.success) {
       return res.status(500).json({success: false, type: 'danger',
                                  message: t('operationUnsuccessful',
@@ -2630,6 +2630,19 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
+
+            // We are changing TR069 WAN information
+            // Update WAN information only if WAN is defined
+            if (matchedDevice.use_tr069 &&
+              Object.keys(changes.wan).length > 0 &&
+              !matchedDevice.wan_chosen) {
+                return res.status(500).json({
+                  success: false,
+                  message: t('wanInformationCannotBeEmpty',
+                    {errorline: __line}),
+                });
+            }
+
             if (content.hasOwnProperty('ipv6_enabled')) {
               if (ipv6Enabled !== matchedDevice.ipv6_enabled) {
                 audit['ipv6_enabled'] = {
@@ -4711,7 +4724,7 @@ deviceListController.updateLicenseStatus = async function(req, res) {
     } else if (matchedDevice.use_tr069) {
       deviceId = matchedDevice.serial_tr069;
     }
-    let retObj = await controlApi.getLicenseStatus(req.app, deviceId);
+    let retObj = await controlApi.getLicenseStatus(deviceId);
     if (retObj.success) {
       if (matchedDevice.is_license_active === undefined) {
         matchedDevice.is_license_active = !retObj.isBlocked;
@@ -4767,7 +4780,7 @@ deviceListController.changeLicenseStatus = async function(req, res) {
       }
     });
     let retObj =
-      await controlApi.changeLicenseStatus(req.app, newBlockStatus, idsArray);
+      await controlApi.changeLicenseStatus(newBlockStatus, idsArray);
     if (retObj.success) {
       for (let device of matchedDevices) {
         device.is_license_active = !newBlockStatus;

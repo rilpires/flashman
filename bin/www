@@ -2,6 +2,9 @@
 
 /* eslint require-jsdoc: 0 */
 
+// Before any module load to assure as first line
+console.log('Initializing flashman');
+
 /**
  * Module dependencies.
  */
@@ -10,13 +13,12 @@ require('./globals.js');
 let app = require('../app');
 let mqtts = require('../mqtts');
 let sio = require('../sio');
-let debug = require('debug')('flashman:server');
 const http = require('http');
 const https = require('https');
 const fs = require('fs');
 const tls = require('tls');
-
-/* APP */
+const preinitPromises = require('../preinit.js');
+const tasksApi = require('../controllers/external-genieacs/tasks-api.js');
 
 /**
  * This is only relevant if process is running directly on a host by pm2
@@ -30,7 +32,7 @@ let pm2InstanceNumber = parseInt(process.env.NODE_APP_INSTANCE || 0);
 
 let port = normalizePort(process.env.FLM_WEB_PORT || '8000');
 port = port + pm2InstanceNumber;
-app.set('port', port);
+app.app.set('port', port);
 
 /**
  * Create HTTP server.
@@ -41,27 +43,30 @@ if (process.env.USE_HTTPS_SERVER_DIR) {
     key: fs.readFileSync(process.env.USE_HTTPS_SERVER_DIR + '/key.pem'),
     cert: fs.readFileSync(process.env.USE_HTTPS_SERVER_DIR + '/cert.pem'),
   };
-  server = https.createServer(options, app);
+  server = https.createServer(options, app.app);
 } else {
-  server = http.createServer(app);
+  server = http.createServer(app.app);
 }
 
-/**
- * Listen on provided port, on all network interfaces.
- */
-
-server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
 
 // Attach socket.io messages to the server
-if (process.env.FLM_USE_MQTT_PERSISTENCE) {
-  Promise.all([sio.pubClient.connect(), sio.subClient.connect()]).then(() => {
-    sio.listen(server);
+let attachSocketIO = async function() {
+  return new Promise((resolve, reject)=>{
+    if (process.env.FLM_USE_MQTT_PERSISTENCE) {
+      Promise.all([sio.pubClient.connect(), sio.subClient.connect()])
+      .then(() => {
+        sio.listen(server);
+        resolve();
+      })
+      .catch((err) => {
+        reject(err);
+      });
+    } else {
+      sio.listen(server);
+      resolve();
+    }
   });
-} else {
-  sio.listen(server);
-}
+};
 
 /**
  * Normalize a port into a number, string, or false.
@@ -83,50 +88,14 @@ function normalizePort(val) {
   return false;
 }
 
-/**
- * Event listener for HTTP server "error" event.
- */
-
-function onError(error) {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  let bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
-
-  // handle specific listen errors with friendly messages
-  switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
-      break;
-    default:
-      throw error;
-  }
-}
-
-/**
- * Event listener for HTTP server "listening" event.
- */
-
-function onListening() {
-  let addr = server.address();
-  let bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
-  debug('Listening on ' + bind);
-}
-
 /* MQTTS */
 let mqttsPort = 1883;
 let mqttsOptions;
 let mqttServer;
+let mqttsDomain = '';
+let mqttSecure = false;
+let mqttExternalFilesCRT = false;
+let mqttExternalFilesACME = false;
 
 function getDomainACMECerts(acme, domainName) {
   let opts;
@@ -138,7 +107,8 @@ function getDomainACMECerts(acme, domainName) {
     while (i<certs.length && opts === undefined) {
       if (certs[i].Certificate.Domain == domainName) {
         let keybuff = Buffer.from(certs[i].Certificate.PrivateKey, 'base64');
-        let certbuff = Buffer.from(certs[i].Certificate.Certificate, 'base64');
+        let certbuff
+          = Buffer.from(certs[i].Certificate.Certificate, 'base64');
         opts = tls.createSecureContext({
           key: keybuff.toString('ascii'),
           cert: certbuff.toString('ascii'),
@@ -165,7 +135,6 @@ function getDomainACMECerts(acme, domainName) {
 
   return opts;
 }
-
 function getFileCerts(KeyDir) {
   let opts;
   try {
@@ -191,12 +160,10 @@ function getFileCerts(KeyDir) {
 
   return opts;
 }
-
 function restartWatcher(interval, filename) {
   fs.unwatchFile(filename);
   watchChangeCert(interval, filename, false);
 }
-
 function watchChangeCert(interval, filename, needrestart) {
   fs.watchFile(filename + '/cert.pem', {interval: interval},
   (current, previous) => {
@@ -249,10 +216,6 @@ if (process.env.FLM_MQTT_PORT) {
   mqttsPort = parseInt(mqttsJsonParams.port) + pm2InstanceNumber;
 }
 
-let mqttsDomain = '';
-let mqttSecure = false;
-let mqttExternalFilesCRT = false;
-let mqttExternalFilesACME = false;
 if (process.env.FLM_MQTTS_DOMAIN) {
   mqttsDomain = process.env.FLM_MQTTS_DOMAIN;
 } else {
@@ -289,73 +252,169 @@ if (mqttSecure) {
   mqttServer = require('net').createServer(mqtts.handle);
 }
 
-if (mqttServer) {
-  mqttServer.listen(mqttsPort, function() {
-    console.log('MQTT started and listening on port ' + mqttsPort.toString());
+let startMqttServer = function() {
+  return new Promise((resolve, reject)=>{
+    mqttServer.listen(mqttsPort, function() {
+      console.log(
+        'MQTT started and listening on port ' + mqttsPort.toString(),
+      );
+      resolve();
+    });
   });
-}
+};
 
-
-if (mqttSecure) {
-  // Install a watcher for file changes
-  // Restart the service when certificate changes
-  if (mqttExternalFilesCRT) {
-    if (!mqttsOptions) {
-      if (!fs.existsSync(process.env.FLM_CERT_MQTT_DIR)) {
-        console.log('Creating certificate directory ' +
-          process.env.FLM_CERT_MQTT_DIR + ' ...');
-        fs.mkdirSync(process.env.FLM_CERT_MQTT_DIR);
-        fs.closeSync(fs.openSync(process.env.FLM_CERT_MQTT_DIR +
-          '/cert.pem', 'w'));
-        fs.closeSync(fs.openSync(process.env.FLM_CERT_MQTT_DIR +
-          '/key.pem', 'w'));
-      }
-    }
-
-    console.log('Watching for file changes on '+process.env.FLM_CERT_MQTT_DIR +
-      '/cert.pem');
-    // If we do not have a key, wait for the key to start the server
-    // If we have a key, look every hour for changes
-    if (mqttServer) {
-      watchChangeCert(3600000, process.env.FLM_CERT_MQTT_DIR, false);
-    } else {
-      watchChangeCert(100, process.env.FLM_CERT_MQTT_DIR, true);
-    }
-  } else if (mqttExternalFilesACME) {
-    console.log('Watching for file changes on ACME file ' +
-                process.env.FLM_ACME_FILE);
-    fs.watch(process.env.FLM_ACME_FILE, (event, filename) => {
-      if (filename && event ==='change') {
-        console.log('Certificate file ' + filename +
-                    ' Changed. Reloading MQTTS Certificates...');
-        let opts = getDomainACMECerts(process.env.FLM_ACME_FILE, mqttsDomain);
-        if (opts) {
-          mqttsOptions = opts;
-          if (!mqttServer) {
-            console.log('Using MQTT Server with TLS (MQTTS)');
-            mqttServer = tls.createServer( {
-              SNICallback: (servername, cb) => {
-                cb(null, mqttsOptions);
-              }}, mqtts.handle);
-            mqttServer.listen(mqttsPort, function() {
-              console.log('MQTT started and listening on port ' +
-                          mqttsPort.toString());
-            });
-          }
-        } else {
-          console.log('Error getting new certificates! Using old ones...');
+// Install a watcher for file changes
+// Restart the service when certificate changes
+let configureMqttCertWatcher = function() {
+  return new Promise((resolve, reject) => {
+    if (mqttExternalFilesCRT) {
+      if (!mqttsOptions) {
+        if (!fs.existsSync(process.env.FLM_CERT_MQTT_DIR)) {
+          console.log('Creating certificate directory ' +
+            process.env.FLM_CERT_MQTT_DIR + ' ...');
+          fs.mkdirSync(process.env.FLM_CERT_MQTT_DIR);
+          fs.closeSync(fs.openSync(process.env.FLM_CERT_MQTT_DIR +
+            '/cert.pem', 'w'));
+          fs.closeSync(fs.openSync(process.env.FLM_CERT_MQTT_DIR +
+            '/key.pem', 'w'));
         }
       }
+
+      console.log(
+        'Watching for file changes on '
+        + process.env.FLM_CERT_MQTT_DIR
+        + '/cert.pem',
+      );
+      // If we do not have a key, wait for the key to start the server
+      // If we have a key, look every hour for changes
+      if (mqttServer) {
+        watchChangeCert(3600000, process.env.FLM_CERT_MQTT_DIR, false);
+      } else {
+        watchChangeCert(100, process.env.FLM_CERT_MQTT_DIR, true);
+      }
+    } else if (mqttExternalFilesACME) {
+      console.log('Watching for file changes on ACME file ' +
+                  process.env.FLM_ACME_FILE);
+      fs.watch(process.env.FLM_ACME_FILE, (event, filename) => {
+        if (filename && event ==='change') {
+          console.log('Certificate file ' + filename +
+                      ' Changed. Reloading MQTTS Certificates...');
+          let opts = getDomainACMECerts(
+            process.env.FLM_ACME_FILE,
+            mqttsDomain,
+          );
+          if (opts) {
+            mqttsOptions = opts;
+            if (!mqttServer) {
+              console.log('Using MQTT Server with TLS (MQTTS)');
+              mqttServer = tls.createServer( {
+                SNICallback: (servername, cb) => {
+                  cb(null, mqttsOptions);
+                }}, mqtts.handle);
+              mqttServer.listen(mqttsPort, function() {
+                console.log('MQTT started and listening on port ' +
+                            mqttsPort.toString());
+              });
+            }
+          } else {
+            console.log('Error getting new certificates! Using old ones...');
+          }
+        }
+      });
+    }
+    resolve();
+  });
+};
+
+let startTemporaryMqttServer = function() {
+  return new Promise((resolve, reject) => {
+    let mqtts = require('../mqtts');
+    let mqttServerTmp = require('net').createServer(mqtts.handle);
+    mqttServerTmp.listen(
+      process.env.FLM_TEMPORARY_MQTT_BROKER_PORT, function() {
+        console.log('Using a TEMPORARY INSECURE MQTT server on port ' +
+                    process.env.FLM_TEMPORARY_MQTT_BROKER_PORT);
+        return resolve();
+    });
+  });
+};
+
+let startWebServer = function() {
+  return new Promise((resolve, reject) => {
+    server.on('error', (error) => {
+      if (error.syscall !== 'listen') {
+        reject(error);
+      }
+      let bind = typeof port === 'string'
+        ? 'Pipe ' + port
+        : 'Port ' + port;
+      // handle specific listen errors with friendly messages
+      switch (error.code) {
+        case 'EACCES':
+          console.error(bind + ' requires elevated privileges');
+          process.exit(1);
+          break;
+        case 'EADDRINUSE':
+          console.error(bind + ' is already in use');
+          process.exit(1);
+          break;
+        default:
+          reject(error);
+      }
+    });
+    server.on('listening', () => {
+      let addr = server.address();
+      let bind = typeof addr === 'string'
+        ? 'pipe ' + addr
+        : 'port ' + addr.port;
+      console.log(`Started web server on port ${bind}`);
+      resolve();
+    });
+    server.listen(port);
+  });
+};
+
+
+/**
+ * Every server/watcher starts here, sequentially
+ * 1 - all preinit.js promises
+ * 2 - starting webserver
+ * 3 - attaching socket.io
+ * 4 - starting tasksApi watcher
+ * 5 - starting temporary mqtt server
+ * 6 - starting the main mqtt server
+ * 7 - configuring mqtt cert watcher
+ */
+setTimeout( async function() {
+  for (let preinitPromise of preinitPromises) {
+    await preinitPromise();
+  }
+  await startWebServer();
+  await attachSocketIO();
+
+  // Question: if enabled, should tasks-api be configured before or after
+  // starting web server? Delete this comment when someone responsible
+  // assures the correct way. If choosing to watch before webserver,
+  // please move it to preinit.js
+  if (!process.env.FLM_GENIE_IGNORED) { // if there's a GenieACS running.
+    await tasksApi.configureTaskApiWatcher().catch((err)=>{
+      console.error('Couldn\'t initialize TasksApi watcher. '
+    + 'This will probably lead to malfunctioning.');
     });
   }
-}
 
-if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
-  console.log();
-  let mqttServerTmp = require('net').createServer(mqtts.handle);
-  mqttServerTmp.listen(
-    process.env.FLM_TEMPORARY_MQTT_BROKER_PORT, function() {
-      console.log('Using a TEMPORARY INSECURE MQTT server on port ' +
-                  process.env.FLM_TEMPORARY_MQTT_BROKER_PORT);
-  });
-}
+  if (process.env.FLM_TEMPORARY_MQTT_BROKER_PORT) {
+    await startTemporaryMqttServer();
+  }
+  if (mqttServer) {
+    await startMqttServer();
+    if (mqttSecure) await configureMqttCertWatcher();
+  }
+  console.log('Flashman successfully initialized!');
+  clearTimeout(initializationAssert);
+}, 1000);
+
+let initializationAssert = setTimeout(()=>{
+  console.error('Flashman is taking too long to initialize...\n'+
+  'Something unexpected happened');
+}, 1000*60*5 ); // 5 minutes to assure proper initialization
