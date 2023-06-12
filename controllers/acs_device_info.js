@@ -333,12 +333,21 @@ const createRegistry = async function(req, cpe, permissions) {
   }
 
   let wanIP;
-  if (hasPPPoE && data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
-    wanIP = data.wan.wan_ip_ppp.value;
-  } else if (data.wan.wan_ip && data.wan.wan_ip.value) {
-    wanIP = data.wan.wan_ip.value;
+  if (hasPPPoE) {
+    if (data.wan.wan_ip_ppp && data.wan.wan_ip_ppp.value) {
+      wanIP = data.wan.wan_ip_ppp.value;
+    } else
+    if (data.wan.wan_ip_ppp_1 && data.wan.wan_ip_ppp_1.value) {
+      wanIP = data.wan.wan_ip_ppp_1.value;
+    }
+  } else {
+    if (data.wan.wan_ip && data.wan.wan_ip.value) {
+      wanIP = data.wan.wan_ip.value;
+    } else
+    if (data.wan.wan_ip_1 && data.wan.wan_ip_1.value) {
+      wanIP = data.wan.wan_ip_1.value;
+    }
   }
-
 
   let maskIPv4;
   let pppoeIp;
@@ -1733,7 +1742,12 @@ const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
     // Process other fields like IP, uptime and MTU
     if (data.wan_ip_ppp && data.wan_ip_ppp.value) {
       device.wan_ip = data.wan_ip_ppp.value;
+    } else
+    // Can have multiple ips
+    if (data.wan_ip_ppp_1 && data.wan_ip_ppp_1.value) {
+      device.wan_ip = data.wan_ip_ppp_1.value;
     }
+
     // Get WAN MAC address
     if (data.wan_mac_ppp && data.wan_mac_ppp.value
         && utilHandlers.isMacValid(data.wan_mac_ppp.value)) {
@@ -1753,6 +1767,10 @@ const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
     // Only have to process fields like IP, uptime and MTU
     if (data.wan_ip && data.wan_ip.value) {
       device.wan_ip = data.wan_ip.value;
+    } else
+    // Can have multiple ips
+    if (data.wan_ip_1 && data.wan_ip_1.value) {
+      device.wan_ip = data.wan_ip_1.value;
     }
 
     // Get WAN MAC address
