@@ -44,6 +44,7 @@ tplinkModel.modelPermissions = function() {
 
   permissions.lan.dnsServersLimit = 2;
 
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.12.0 2.0.0 v605f.0 Build 220710 Rel.13422n': [],
   };
@@ -88,10 +89,6 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   return assocFieldKey.replace(
     /Radio\.[0-9*]+\./g,
@@ -109,7 +106,10 @@ tplinkModel.getModelFields = function() {
     'Device.ManagementServer.UDPConnectionRequestAddress';
   fields.common.web_admin_password = 'Device.Users.User.2.Password';
   // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
@@ -131,6 +131,12 @@ tplinkModel.getModelFields = function() {
     'Device.Routing.Router.1.IPv4Forwarding.*.GatewayIPAddress';
   fields.wan.dns_servers = 'Device.DHCPv4.Client.*.DNSServers';
   fields.wan.dns_servers_ppp = 'Device.PPP.Interface.*.IPCP.DNSServers';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

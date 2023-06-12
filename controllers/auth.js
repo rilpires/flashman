@@ -9,8 +9,12 @@ const Role = require('../models/role');
 const t = require('./language').i18next.t;
 
 passport.use(new BasicStrategy(
-  function(name, password, callback) {
-    User.findOne({name: name}, function(err, user) {
+  async function(name, password, callback) {
+    let err;
+    let user = await User
+      .findOne({name: name}, {deviceCertifications: false})
+      .catch((error)=>err=error);
+
       if (err) {
         return callback(err);
       }
@@ -30,7 +34,6 @@ passport.use(new BasicStrategy(
         // Success
         return callback(null, user);
       });
-    });
   },
 ));
 

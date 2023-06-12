@@ -190,6 +190,7 @@ let assureRoles = function() {
         grantCsvExport: true,
         grantFirmwareBetaUpgrade: true,
         grantFirmwareRestrictedUpgrade: true,
+        grantDiagAppAccess: true,
       });
       await managerRole.save().catch(reject);
     }
@@ -250,7 +251,6 @@ let updateDefaultRoles = function() {
         }
       }
     }
-    resolve();
   });
 };
 

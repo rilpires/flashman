@@ -30,6 +30,7 @@ tplinkModel.modelPermissions = function() {
   permissions.siteSurvey.survey5Index = '3';
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '1.11.0 Build 220724 Rel.58300n(4252)': [],
   };
@@ -97,31 +98,14 @@ tplinkModel.useModelAlias = function(fwVersion) {
 };
 
 tplinkModel.getModelFields = function() {
-  let fields = basicCPEModel.getModelFields();
-  fields = basicCPEModel.convertIGDtoDevice(fields);
+  let fields = basicCPEModel.getTR181ModelFields();
+
   // Common
   fields.common.mac = 'Device.Ethernet.Link.1.MACAddress';
   fields.common.stun_enable = 'Device.ManagementServer.STUNEnable';
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
-  // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
-  fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
-  fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
-  fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
-  fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
-  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
-  fields.wan.wan_ip_ppp = fields.wan.wan_ip;
-  delete fields.wan.uptime;
-  delete fields.wan.uptime_ppp;
-  fields.wan.mtu = 'Device.IP.Interface.*.MaxMTUSize';
-  fields.wan.mtu_ppp = fields.wan.mtu;
-  fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
-  // This router does not have the fields referring to wan_mac and wan_mac_ppp.
-  // They were mapped to this value so that the field is not undefined
-  fields.wan.wan_mac = 'Device.Ethernet.Interface.*.MACAddress';
-  fields.wan.wan_mac_ppp = fields.wan.wan_mac;
+
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';
