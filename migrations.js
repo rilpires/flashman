@@ -251,6 +251,7 @@ let updateDefaultRoles = function() {
         }
       }
     }
+    resolve();
   });
 };
 
