@@ -671,7 +671,8 @@ const sendTasks = async function(
       return {success: true, executed: !requestConn, message: 'task scheduled'};
     } else {
       // something went wrong, log error and return
-      console.log('Error adding task to GenieACS: ' + response.data);
+      console.log(`Error adding task to GenieACS `+
+        `(${deviceid}): ${response.data}`);
       return {success: false, message: 'error in genie response'};
     }
   }

@@ -95,12 +95,24 @@ multilaserModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
 
+multilaserModel.convertWanRate = function(rate) {
+  return parseInt(rate) / 1000000;
+};
+
 multilaserModel.getModelFields = function() {
   let fields = basicCPEModel.getModelFields();
   fields.common.web_admin_username = 'InternetGatewayDevice.' +
     'User.1.Username';
   fields.common.web_admin_password = 'InternetGatewayDevice.' +
     'User.1.Password';
+
+  fields.wan.rate = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANCommonInterfaceConfig.Layer1DownstreamMaxBitRate';
+  fields.wan.service_type = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_ZTE-COM_ServiceList';
+  fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_ZTE-COM_ServiceList';
+
   fields.devices.associated = 'InternetGatewayDevice.LANDevice.1.' +
     'WLANConfiguration.1.AssociatedDevice';
   fields.devices.associated_5 = 'InternetGatewayDevice.LANDevice.1.' +

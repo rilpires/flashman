@@ -116,6 +116,11 @@ huaweiModel.getModelFields = function() {
     'WANConnectionDevice.*.WANPPPConnection.*.X_HW_VLAN';
   fields.wan.vlan = 'InternetGatewayDevice.WANDevice.1.' +
     'WANConnectionDevice.*.WANIPConnection.*.X_HW_VLAN';
+  fields.wan.service_type = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANIPConnection.*.X_HW_SERVICELIST';
+  fields.wan.service_type_ppp = 'InternetGatewayDevice.WANDevice.1.' +
+    'WANConnectionDevice.*.WANPPPConnection.*.X_HW_SERVICELIST';
+
   fields.ipv6.address =
     'InternetGatewayDevice.WANDevice.1.WANConnectionDevice.*.' +
     'WANIPConnection.*.X_HW_IPv6.IPv6Address.1.IPAddress';

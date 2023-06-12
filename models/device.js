@@ -47,6 +47,7 @@ let deviceSchema = new Schema({
   pon_rxpower: {type: Number},
   pon_txpower: {type: Number},
   pon_signal_measure: Object,
+  wan_chosen: String,
   wan_vlan_id: Number,
   wan_mtu: Number,
   wan_bssid: {type: String, sparse: true},
