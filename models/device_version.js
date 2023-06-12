@@ -1832,6 +1832,7 @@ const convertTR069Permissions = function(cpePermissions) {
     grantTraceroute: cpePermissions.features.traceroute,
     grantRebootAfterWANChange: cpePermissions.wan.mustRebootAfterChanges,
     grantCanTrustWanRate: cpePermissions.wan.canTrustWanRate,
+    grantIsTR181: cpePermissions.isTR181,
   };
   if (permissions.grantPortForward) {
     permissions.grantPortForwardOpts =
@@ -1937,6 +1938,7 @@ DeviceVersion.devicePermissions = function(device) {
   result.grantTraceroute = grantTraceroute(version);
   result.grantRebootAfterWANChange = grantRebootAfterWANChange();
   result.grantCanTrustWanRate = true;
+  // result.grantIsTR181 = to do
   return result;
 };
 

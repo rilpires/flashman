@@ -166,6 +166,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -201,6 +202,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -249,6 +251,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -301,6 +304,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -371,6 +375,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -448,6 +453,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -514,6 +520,7 @@ describe('Controllers - Device List', () => {
         wifi_ssid_5ghz: 'old-wifi-test-5g',
         wifi_state: 0,
         wifi_state_5ghz: 1,
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -595,6 +602,7 @@ describe('Controllers - Device List', () => {
         pppoe_password: 'dummypass',
         wan_vlan_id: 1,
         wan_mtu: 1500,
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -678,6 +686,7 @@ describe('Controllers - Device List', () => {
         wifi_ssid_5ghz: 'old-wifi-test-5g',
         wifi_state: 0,
         wifi_state_5ghz: 0,
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -744,6 +753,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 2,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -814,6 +824,7 @@ describe('Controllers - Device List', () => {
         wan_vlan_id: 10,
         wan_mtu: 1480,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -883,6 +894,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -950,6 +962,7 @@ describe('Controllers - Device List', () => {
         wifi_is_5ghz_capable: true,
         mesh_mode: 0,
         pppoe_password: 'dummypass',
+        wan_chosen: 'wan_ppp_1_1_1',
       }];
       const returnDeviceMock = (query) => {
         if (query.getQuery()['$or'][0]._id['$regex']
@@ -2223,35 +2236,52 @@ describe('Controllers - Device List', () => {
 
   // setDefaultLanDNSServers
   describe('setDefaultLanDNSServers', () => {
-    test('Happy path', async () => {
-      // Mocks
-      let config = models.copyConfigFrom(
-        models.defaultMockConfigs[0],
-        {
+    test.each([
+      [
+        'emptyDNS',
+        {ipv4: [], ipv6: []},
+        {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+      ],
+      [
+        'emptyIPv4',
+        {ipv4: [], ipv6: ['2840::1']},
+        {ipv4: ['8.8.8.8'], ipv6: ['2840::1']},
+      ],
+      [
+        'emptyIPv6',
+        {ipv4: ['8.8.8.7'], ipv6: []},
+        {ipv4: ['8.8.8.7'], ipv6: ['2800::1']},
+      ],
+    ])(
+      'Never save empty DNS list in database - %s',
+      async (testCaseName, newDNS, expectedReturn) => {
+        // Mocks
+        let config = models.copyConfigFrom(models.defaultMockConfigs[0], {
           default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
-        },
-      );
-      testUtils.common.mockAwaitConfigs(config, 'findOne');
+        });
+        testUtils.common.mockAwaitConfigs(config, 'findOne');
 
-      let saveSpy = jest.spyOn(config, 'save');
+        let saveSpy = jest.spyOn(config, 'save');
 
-      // Request data
-      let newDNS = {ipv4: [], ipv6: []};
-      let reqData = {default_dns_servers: newDNS};
+        // Request data
+        let reqData = {default_dns_servers: newDNS};
 
-      // Execute
-      let response = await testUtils.common.sendFakeRequest(
-        deviceListController.setDefaultLanDNSServers,
-        reqData, null, null, null, {
-          id: '12345',
-        },
-      );
+        // Execute
+        let response = await testUtils.common.sendFakeRequest(
+          deviceListController.setDefaultLanDNSServers,
+          reqData,
+          null,
+          null,
+          null,
+          {
+            id: '12345',
+          },
+        );
 
-      expect(saveSpy).toBeCalled();
-      expect(response.statusCode).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(config.default_dns_servers)
-        .toStrictEqual(newDNS);
+        expect(saveSpy).toBeCalled();
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(true);
+        expect(config.default_dns_servers).toStrictEqual(expectedReturn);
     });
 
 
@@ -2284,24 +2314,43 @@ describe('Controllers - Device List', () => {
       });
     });
 
+    test.each([
+      [
+        'IPv4',
+        {ipv4: ['invalid'], ipv6: ['2840::1']},
+        {ipv4: ['8.8.8.8'], ipv6: ['2840::1']},
+      ],
+      [
+        'IPv6',
+        {ipv4: ['8.8.8.7'], ipv6: ['invalid']},
+        {ipv4: ['8.8.8.7'], ipv6: ['2800::1']},
+      ],
+    ])(
+      'Error on IP format - %s',
+      async (testCaseName, newDNS, expectedReturn) => {
+        // Mocks
+        let config = models.copyConfigFrom(models.defaultMockConfigs[0], {
+          default_dns_servers: {ipv4: ['8.8.8.8'], ipv6: ['2800::1']},
+        });
+        testUtils.common.mockAwaitConfigs(config, 'findOne');
 
-    test('Error on IPv4 format', async () => {
-      // Mocks
-      testUtils.common.mockConfigs(models.defaultMockConfigs[0], 'findOne');
+        let saveSpy = jest.spyOn(config, 'save');
 
-      // Request data
-      let reqData =
-        {default_dns_servers: {ipv4: ['444.444.444.444'], ipv6: []}};
+        // Request data
+        let reqData = {default_dns_servers: newDNS};
 
-      // Execute
-      let response = await testUtils.common.sendFakeRequest(
-        deviceListController.setDefaultLanDNSServers,
-        reqData, null, null, null, {
-          id: '12345',
-        },
-      );
-      expect(response.statusCode).toBe(200);
-      expect(response.body.success).toBe(false);
+        // Execute
+        let response = await testUtils.common.sendFakeRequest(
+          deviceListController.setDefaultLanDNSServers,
+          reqData, null, null, null, {
+            id: '12345',
+          },
+        );
+
+        expect(saveSpy).toBeCalled();
+        expect(response.statusCode).toBe(200);
+        expect(response.body.success).toBe(false);
+        expect(config.default_dns_servers).toStrictEqual(expectedReturn);
     });
   });
 
