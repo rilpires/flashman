@@ -12,7 +12,7 @@
   "updater": {
     "jsonHost": "raw.githubusercontent.com",
     "contentHost": "codeload.github.com",
-    "githubUser": "anlix-io",
+    "githubUser": "rilpires",
     "githubRepo": "flashman",
     "githubBranch": "master"
   },
