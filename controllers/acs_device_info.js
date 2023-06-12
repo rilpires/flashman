@@ -1742,9 +1742,8 @@ const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
     // Process other fields like IP, uptime and MTU
     if (data.wan_ip_ppp && data.wan_ip_ppp.value) {
       device.wan_ip = data.wan_ip_ppp.value;
-    }
+    } else
     // Can have multiple ips
-    else
     if (data.wan_ip_ppp_1 && data.wan_ip_ppp_1.value) {
       device.wan_ip = data.wan_ip_ppp_1.value;
     }
@@ -1768,9 +1767,8 @@ const syncWanData = function(device, multiwan, chosenWan, cpe, hardReset) {
     // Only have to process fields like IP, uptime and MTU
     if (data.wan_ip && data.wan_ip.value) {
       device.wan_ip = data.wan_ip.value;
-    }
+    } else
     // Can have multiple ips
-    else
     if (data.wan_ip_1 && data.wan_ip_1.value) {
       device.wan_ip = data.wan_ip_1.value;
     }
