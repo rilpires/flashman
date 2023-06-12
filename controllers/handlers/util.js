@@ -79,6 +79,170 @@ utilHandlers.traverseNestedKey = function(
   };
 };
 
+utilHandlers.convertToBoolean = function(value) {
+  if (typeof value === 'string') {
+    return (utilHandlers.isTrueValueString(value));
+  } else if (typeof value === 'number') {
+    return (value == 0) ? false : true;
+  } else if (typeof value === 'boolean') {
+    return value;
+  }
+  // If we cant convert, return false
+  return false;
+};
+
+utilHandlers.chooseWan = function(data, useLastIndexOnWildcard) {
+  let idealCandidates = [];
+  let possibleCandidates = [];
+  let wanClassPPP = [];
+
+  // Checks if there are WANs that meet the ideal conditions, that is:
+  // Status = Connected and Enable = true
+  for (const key of Object.keys(data)) {
+    const wan = data[key];
+
+    let internet = true;
+    let ppp = false;
+    let enable = false;
+    let status = false;
+
+    if (wan.pppoe_enable && wan.pppoe_enable.value) {
+      ppp = true;
+      wanClassPPP.push(key);
+      enable = wan.pppoe_enable.value;
+      if (wan.pppoe_status &&
+          wan.pppoe_status.value) status = wan.pppoe_status.value;
+      if (wan.service_type_ppp &&
+          wan.service_type_ppp.value) {
+        internet =
+          wan.service_type_ppp.value.toLowerCase().includes('internet');
+      }
+    } else {
+      if (wan.dhcp_enable &&
+          wan.dhcp_enable.value) enable = wan.dhcp_enable.value;
+      if (wan.dhcp_status &&
+          wan.dhcp_status.value) status = wan.dhcp_status.value;
+      if (wan.service_type &&
+          wan.service_type.value) {
+        internet = wan.service_type.value.toLowerCase().includes('internet');
+      }
+    }
+
+    enable = utilHandlers.convertToBoolean(enable);
+    if (enable && internet) {
+      if (ppp) {
+        // PPP dont need to be connected to be ideal
+        // Provider can have a dhcp in service TR69 and
+        // PPP in Internet and Flashman sets username and password
+        // for this interface to connect
+        idealCandidates.push(key);
+      } else {
+        // DHCP/Static interfaces
+        if (status === 'Up' || status === 'Connected') {
+          idealCandidates.push(key);
+        } else if (status === 'Dormant') {
+          // If the interface is dormant, its not ideal
+          // but can be used in absense of others
+          possibleCandidates.push(key);
+        }
+      }
+    }
+  }
+
+  // No WANs meet any of the conditions. Keeps legacy case of returning the
+  // first or last WAN without criteria (remembering that the keys in data are
+  // already sorted!)
+  if (idealCandidates.length === 0 && possibleCandidates.length === 0) {
+    const keys = Object.keys(data);
+    const firstKey = keys[0];
+    const lastKey = keys[keys.length - 1];
+    const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+    return correctKey;
+  }
+
+  if (idealCandidates.length === 1) {
+    // There is only one WAN that has the ideal conditions
+    return idealCandidates[0];
+  } else if (idealCandidates.length > 1) {
+    // There are multiple candidates. Verifies ideal candidates, giving
+    // preference to ppp-type WANs
+    let pppWans = idealCandidates.filter((key) => wanClassPPP.includes(key));
+    if (pppWans.length > 0) {
+      if (pppWans.length === 1) {
+        // There is only one ppp-type WAN that meets the ideal conditions
+        return pppWans[0];
+      } else {
+        // There are multiple ppp-type WANs with ideal conditions and it is not
+        // possible to make a decision
+        const firstKey = pppWans[0];
+        const lastKey = pppWans[pppWans.length - 1];
+        const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+        return correctKey;
+      }
+    } else {
+      // There are multiple DHCP-type WANs that meet the ideal conditions
+      const firstKey = idealCandidates[0];
+      const lastKey = idealCandidates[idealCandidates.length - 1];
+      const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+      return correctKey;
+    }
+  }
+
+  // In case there is no WAN that meets the ideal conditions, we have to choose
+  // one that partially meets it. In this case, to preserve the legacy behavior,
+  // we select the first or the last
+  const firstKey = possibleCandidates[0];
+  const lastKey = possibleCandidates[possibleCandidates.length - 1];
+  const correctKey = (useLastIndexOnWildcard) ? lastKey : firstKey;
+  return correctKey;
+};
+
+utilHandlers.convertWanToFlashmanFormat = function(data) {
+  const result = {};
+  for (const key in data) {
+    if (!data.hasOwnProperty(key)) continue;
+    const obj = data[key];
+    const temp = {};
+    for (const prop in obj) {
+      if (!obj.hasOwnProperty(prop)) continue;
+      if (obj[prop] === undefined) continue;
+      if (obj[prop].hasOwnProperty('value')) {
+        let value = Array.isArray(obj[prop].value) ?
+          obj[prop].value[0] : obj[prop].value;
+        temp[prop] = {
+          writable: utilHandlers.convertToBoolean(obj[prop].writable),
+          value: value,
+        };
+      }
+    }
+    result[key] = temp;
+  }
+  return result;
+};
+
+utilHandlers.convertWanToProvisionFormat = function(data) {
+  const result = [];
+  const traverse = (node, path) => {
+    for (let key in node) {
+      if (!node.hasOwnProperty(key)) continue;
+      let field = node[key];
+      if (field.hasOwnProperty('_writable') &&
+          field.hasOwnProperty('_value') &&
+          !field._object) {
+        result.push({
+          path: path.concat(key).join('.'),
+          writable: utilHandlers.convertToBoolean(field._writable),
+          value: field._value,
+        });
+      } else if (typeof field === 'object') {
+        traverse(field, path.concat(key));
+      }
+    }
+  };
+  traverse(data, []);
+  return result;
+};
+
 utilHandlers.checkForNestedKey = function(
   data, key, useLastIndexOnWildcard = false,
 ) {
@@ -99,9 +263,11 @@ utilHandlers.getFromNestedKey = function(
 };
 
 utilHandlers.replaceNestedKeyWildcards = function(
-  data, key, useLastIndexOnWildcard = false,
+  data, key, useLastIndexOnWildcard = false, checkForWanEnable = false,
 ) {
-  let ret = utilHandlers.traverseNestedKey(data, key, useLastIndexOnWildcard);
+  let ret = utilHandlers.traverseNestedKey(
+    data, key, useLastIndexOnWildcard, checkForWanEnable,
+  );
   if (!ret.success) return undefined;
   return ret.key;
 };

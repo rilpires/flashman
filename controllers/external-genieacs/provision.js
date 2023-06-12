@@ -47,24 +47,42 @@ const updateConfiguration = function(fields, useLastIndexOnWildcard) {
   return result;
 };
 
-const fetchPortFoward = function(fields, data) {
-  let base = '';
-  let ret = [];
-  if (data.port_mapping_entries_dhcp &&
-      data.port_mapping_entries_dhcp.value) {
-    base = fields.port_mapping_dhcp;
-  } else if(data.port_mapping_entries_ppp &&
-    data.port_mapping_entries_ppp.value) {
-    base = fields.port_mapping_ppp;
+const updateWanConfiguration = function(fields, isTR181) {
+  let args = {
+    fields: fields,
+    isTR181: isTR181,
+  };
+  let nodes = ext('devices-api', 'getWanNodesProvision', JSON.stringify(args));
+  let data = [];
+  let addedPaths = new Set();
+  let NodesDeclares = new Map();
+  // First, ask for all nodes to the CPE
+  for (let node of nodes) {
+    NodesDeclares[node] = declare(node, {value: now, writable: now});
   }
-  let subtree = declare(base+'.*.*', {value: now});
-  for (let st of subtree) {
-    let obj = {};
-    obj.path = st.path;
-    obj.value = st.value;
-    ret.push(obj);
+  // Then, execute all gets at once and use their values
+  for (let node of nodes) {
+    // Update node
+    let responses = NodesDeclares[node];
+      for (let resp of responses) {
+        if (resp.value) {
+          // Collect field properties
+          let obj = {};
+          obj.path = resp.path;
+          obj.writable = resp.writable;
+          obj.value = resp.value;
+          // Ensures that no duplicate paths will be added
+          if (!addedPaths.has(resp.path)) {
+            data.push(obj);
+            addedPaths.add(resp.path);
+          }
+        }
+    }
   }
-  return ret;
+  args.data = data;
+  args.fields = fields.wan;
+  let result = ext('devices-api', 'assembleWanObjProvision', JSON.stringify(args));
+  return result;
 };
 
 // 1. Collect information
@@ -79,6 +97,7 @@ let modelClass = declare('DeviceID.ProductClass', {value: 1});
 // Detect TR-098 or TR-181 data model based on database value
 let isIGDModel = declare('InternetGatewayDevice.ManagementServer.URL', {value: 1}).value;
 let prefix = (isIGDModel) ? 'InternetGatewayDevice' : 'Device';
+let isTR181 = (prefix === 'Device') ? true : false;
 
 let modelName = declare(prefix + '.DeviceInfo.ModelName', {value: 1});
 let firmwareVersion = declare(prefix + '.DeviceInfo.SoftwareVersion', {value: 1});
@@ -106,11 +125,13 @@ firmwareVersion = firmwareVersion.value[0];
 hardwareVersion = hardwareVersion.value[0];
 
 // Pass event type to flashman
-let event = {boot: false, bootstrap: false};
+let event = {boot: false, bootstrap: false, change: false};
 if(bootstrapEvent && bootstrapEvent.value && bootstrapEvent.value[0] >= now)
   event.bootstrap = true;
 if(bootEvent && bootEvent.value && bootEvent.value[0] >= now)
   event.boot = true;
+if(args[0] === 'CHANGE')
+  event.change = true;
 
 // Pass connection request credentials to flashman
 let connection = {
@@ -123,7 +144,7 @@ if(connUserName && connUserName.value && connUserName.value[0] != '')
 if(connPassword && connPassword.value && connPassword.value[0] != '')
   connection.password = connPassword.value[0];
 
-let args = {
+let Fargs = {
   oui: oui,
   model: modelClass,
   modelName: modelName,
@@ -135,7 +156,7 @@ let args = {
 };
 
 // Get configs and model fields from Flashman via HTTP request
-let result = ext('devices-api', 'getDeviceFields', JSON.stringify(args));
+let result = ext('devices-api', 'getDeviceFields', JSON.stringify(Fargs));
 
 // Error contacting Flashman - could be network issue or unknown model
 if (!result.success || !result.fields) {
@@ -213,9 +234,10 @@ if (!result.measure) {
 // Expected to run on creation, fware upgrade and cpe reset recovery
 log ('Provision collecting data for device ' + genieID + '...');
 let fields = result.fields;
+
 let data = {
   common: updateConfiguration(fields.common, result.useLastIndexOnWildcard),
-  wan: updateConfiguration(fields.wan, result.useLastIndexOnWildcard),
+  wan: updateWanConfiguration(fields, isTR181),
   lan: updateConfiguration(fields.lan, result.useLastIndexOnWildcard),
   ipv6: updateConfiguration(fields.ipv6, result.useLastIndexOnWildcard),
   wifi2: updateConfiguration(fields.wifi2, result.useLastIndexOnWildcard),
@@ -223,19 +245,12 @@ let data = {
   mesh2: updateConfiguration(fields.mesh2, result.useLastIndexOnWildcard),
   mesh5: updateConfiguration(fields.mesh5, result.useLastIndexOnWildcard),
 };
-/*if the nature of sync is for create a device and the device already
-  had previous port mapping entries, then we send back these entries
-  on creation to avoid sync race condition after the creation of
-  device in flashman database */
-if ((result.measure_type && result.measure_type === 'newDevice' &&
-  ((data.wan.port_mapping_entries_dhcp && data.wan.port_mapping_entries_dhcp.value > 0) ||
-  (data.wan.port_mapping_entries_ppp && data.wan.port_mapping_entries_ppp.value > 0)))) {
-  data.port_mapping = fetchPortFoward(fields, data.wan);
-}
-args = {acs_id: genieID, data: data};
+
+Fargs = {acs_id: genieID, data: data, events: event};
 
 // Send data to Flashman via HTTP request
-result = ext('devices-api', 'syncDeviceData', JSON.stringify(args));
+result = ext('devices-api', 'syncDeviceData', JSON.stringify(Fargs));
+
 if (!result.success) {
   log('Provision sync for device ' + genieID + ' failed: ' + result.message);
 }

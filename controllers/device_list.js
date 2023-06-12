@@ -2630,6 +2630,19 @@ deviceListController.setDeviceReg = function(req, res) {
                 hasPermissionError = true;
               }
             }
+
+            // We are changing TR069 WAN information
+            // Update WAN information only if WAN is defined
+            if (matchedDevice.use_tr069 &&
+              Object.keys(changes.wan).length > 0 &&
+              !matchedDevice.wan_chosen) {
+                return res.status(500).json({
+                  success: false,
+                  message: t('wanInformationCannotBeEmpty',
+                    {errorline: __line}),
+                });
+            }
+
             if (content.hasOwnProperty('ipv6_enabled')) {
               if (ipv6Enabled !== matchedDevice.ipv6_enabled) {
                 audit['ipv6_enabled'] = {

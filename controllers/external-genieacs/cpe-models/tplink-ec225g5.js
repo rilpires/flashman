@@ -22,6 +22,7 @@ tplinkModel.modelPermissions = function() {
   permissions.siteSurvey.survey5Index = '3';
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '1.12.0 Build 220622 Rel.38016n(4252)': [],
   };
@@ -78,10 +79,6 @@ tplinkModel.assocFieldWildcardReplacer = function(assocFieldKey, ifaceIndex) {
   );
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.convertSpeedValueFullLoad = function(period, bytesRec) {
   // 8 => byte to bit
   // 1024**2 => bit to megabit
@@ -97,7 +94,10 @@ tplinkModel.getModelFields = function() {
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
   // Wan
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
@@ -112,6 +112,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.mtu_ppp = fields.wan.mtu;
   fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';

@@ -56,7 +56,7 @@ tplinkModel.modelPermissions = function() {
   permissions.wifi.bandAuto2 = false;
   permissions.wifi.bandAuto5 = false;
   permissions.wifi.modeWrite = false;
-
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     '0.6.0 3.0.0 v6066.0 Build 220630 Rel.56119n': [],
   };
@@ -101,10 +101,6 @@ tplinkModel.convertRssiValue = function(rssiValue) {
   return (result / 2) - 110;
 };
 
-tplinkModel.convertPPPoEEnable = function(pppoe) {
-  return (pppoe.toLowerCase() === 'up') ? true : false;
-};
-
 tplinkModel.convertToDbm = function(power) {
   return parseFloat((10 * Math.log10(power * 0.0001)).toFixed(3));
 };
@@ -130,7 +126,10 @@ tplinkModel.getModelFields = function() {
     'Device.Optical.Interface.*.X_TP_GPON_Config.RXPower';
   fields.wan.pon_txpower =
     'Device.Optical.Interface.*.X_TP_GPON_Config.TXPower';
-  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Status';
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
+  fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
@@ -154,6 +153,12 @@ tplinkModel.getModelFields = function() {
   fields.wan.dns_servers_ppp = 'Device.PPP.Interface.*.IPCP.DNSServers';
   fields.wan.vlan_ppp = 'Device.Ethernet.VLANTermination.*.VLANID';
   fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.pppoe_root = 'Device.PPP';
+  fields.wan.dhcp_root = 'Device.IP';
+  fields.wan.nat_root = 'Device.NAT';
+  fields.wan.port_mapping = 'Device.NAT.PortMapping';
+  fields.wan.link_root = 'Device.Ethernet.Link';
+  fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
 
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
