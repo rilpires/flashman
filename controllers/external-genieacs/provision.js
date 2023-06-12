@@ -183,7 +183,7 @@ if (registeredTime === now) {
   let resultRegistration = ext(
     'devices-api',
     'getRegistrationSetupCommands',
-    JSON.stringify(args),
+    JSON.stringify(Fargs),
   );
 
   if (!resultRegistration.success) {
