@@ -113,6 +113,12 @@ tpLinkModel.getModelFields = function() {
   fields.wan.port_mapping = 'Device.NAT.PortMapping';
   fields.wan.link_root = 'Device.Ethernet.Link';
   fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
+
+  fields.wan.vlan_ppp = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.service_type = 'Device.IP.Interface.*.X_TP_ServiceType';
+  fields.wan.service_type_ppp = 'Device.IP.Interface.*.X_TP_ServiceType';
+
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

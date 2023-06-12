@@ -30,6 +30,7 @@ intelbrasModel.modelPermissions = function() {
   permissions.wifi.modeWrite = false;
   permissions.useLastIndexOnWildcard = true;
   permissions.needInterfaceInPortFoward = true;
+  permissions.isTR181 = true;
   permissions.firmwareUpgrades = {
     'FG10_CPE_V02.02.03': [],
   };
@@ -92,12 +93,15 @@ intelbrasModel.getModelFields = function() {
   fields.common.stun_udp_conn_req_addr =
     'Device.ManagementServer.UDPConnectionRequestAddress';
   // Wan
+  fields.wan.dhcp_status = 'Device.IP.Interface.*.Status';
+  fields.wan.dhcp_enable = 'Device.IP.Interface.*.Enable';
+  fields.wan.pppoe_status = 'Device.PPP.Interface.*.Status';
   fields.wan.pppoe_enable = 'Device.PPP.Interface.*.Enable';
   fields.wan.pppoe_user = 'Device.PPP.Interface.*.Username';
   fields.wan.pppoe_pass = 'Device.PPP.Interface.*.Password';
   fields.wan.duplex = 'Device.Ethernet.Interface.*.DuplexMode';
   fields.wan.rate = 'Device.Ethernet.Interface.*.MaxBitRate';
-  fields.wan.wan_ip = 'Device.IP.Interface.2.IPv4Address.1.IPAddress';
+  fields.wan.wan_ip = 'Device.IP.Interface.*.IPv4Address.1.IPAddress';
   fields.wan.wan_ip_ppp = fields.wan.wan_ip;
   delete fields.wan.uptime;
   delete fields.wan.uptime_ppp;
@@ -108,8 +112,8 @@ intelbrasModel.getModelFields = function() {
   fields.wan.link_root = 'Device.Ethernet.Link';
   fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
   // This router does not have the fields referring to mtu and mtu_ppp
-  fields.wan.recv_bytes = 'Device.IP.Interface.2.Stats.BytesReceived';
-  fields.wan.sent_bytes = 'Device.IP.Interface.2.Stats.BytesSent';
+  fields.wan.recv_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
+  fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesSent';
   // Port Mapping
   fields.wan.port_mapping_entries_dhcp =
     'Device.NAT.PortMappingNumberOfEntries';

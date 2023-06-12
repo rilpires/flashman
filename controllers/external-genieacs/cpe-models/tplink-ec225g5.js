@@ -118,6 +118,10 @@ tplinkModel.getModelFields = function() {
   fields.wan.port_mapping = 'Device.NAT.PortMapping';
   fields.wan.link_root = 'Device.Ethernet.Link';
   fields.wan.vlan_termination_root = 'Device.Ethernet.VLANTermination';
+
+  fields.wan.vlan_ppp = 'Device.Ethernet.VLANTermination.*.VLANID';
+  fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
+
   // Lan
   fields.lan.dns_servers = 'Device.DHCPv4.Server.Pool.1.DNSServers';
   fields.lan.lease_max_ip = 'Device.DHCPv4.Server.Pool.1.MaxAddress';

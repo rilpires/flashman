@@ -120,6 +120,10 @@ tplinkModel.getModelFields = function() {
   fields.wan.sent_bytes = 'Device.IP.Interface.*.Stats.BytesReceived';
   fields.wan.vlan = 'Device.Ethernet.VLANTermination.*.VLANID';
   fields.wan.vlan_ppp = fields.wan.vlan;
+
+  fields.wan.service_type = 'Device.IP.Interface.*.X_TP_ServiceType';
+  fields.wan.service_type_ppp = 'Device.IP.Interface.*.X_TP_ServiceType';
+
   fields.wan.pppoe_root = 'Device.PPP';
   fields.wan.dhcp_root = 'Device.IP';
   fields.wan.nat_root = 'Device.NAT';
