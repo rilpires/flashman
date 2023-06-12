@@ -616,7 +616,7 @@ const syncDeviceDiagnostics = async function(args, callback) {
     });
   }
   let result = await sendFlashmanRequest('receive/diagnostic', params, false);
-  result.success = await sendDiagnosticComplete(params);
+  sendDiagnosticComplete(params);
   callback(null, result);
 };
 
