@@ -61,7 +61,7 @@ controlController.getMessageConfig = function() {
     let onError = function(msg) {
       if (['true', true, 1].includes(process.env.production)) {
         if (msg) console.error(msg);
-        return reject();
+        return resolve();
       } else {
         console.log('Unable to getMessageConfig from control '
           + 'but proceding because !env.production');
